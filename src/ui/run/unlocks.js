@@ -15,7 +15,7 @@
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
-import { UNLOCKS, UNLOCK_IDS, UNLOCK_KINDS, KIND_LABEL, DEEDS, DEED_IDS, CURRENCY, EMBER_RULES, BOSSES, unlockState, nextGoals } from '../../data/unlocks.js';
+import { UNLOCKS, UNLOCK_IDS, UNLOCK_KINDS, KIND_LABEL, DEEDS, DEED_IDS, CURRENCY, EMBER_RULES, BOSSES, unlockState, nextGoals, lifeAfter } from '../../data/unlocks.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { RELICS } from '../../sim/relics.js';
 import { SKILLS } from '../../sim/skills.js';
@@ -53,6 +53,8 @@ function reqLabel(req) {
   // THE TIDECALLER (docs/TIDECALLER.md): the feats.
   if (req.feat === 'tidecaller') return t('Free Rill: fell the Level II boss');
   if (req.feat === 'rill_heron') return t('Fell the Drowned Heron with the Tidecaller in the party');
+  // ROUND TWO: an unlock a deed opens.
+  if (req.deed) return t('Earn the deed {deed}', { deed: DEEDS[req.deed] ? t(DEEDS[req.deed].name) : req.deed });
   return '';
 }
 
@@ -123,7 +125,7 @@ function installStyle() {
 .ul-unlocks .ul-tab small { font-size: ${px(16)}; opacity: 0.8; margin-left: ${px(6)}; }
 .ul-unlocks .ul-blurb { font-size: ${px(19)}; color: ${P.bone}; }
 .ul-unlocks .ul-grid { flex: 1 1 auto; min-height: 0; overflow: auto; padding: ${px(6)} ${px(6)} ${px(10)};
-  display: grid; grid-template-columns: repeat(auto-fill, minmax(${px(300)}, 1fr)); gap: ${px(14)}; align-content: start; }
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(${px(300)}, 1fr)); grid-auto-rows: max-content; gap: ${px(14)}; align-content: start; }
 .ul-unlocks .ul-card { position: relative; display: flex; flex-direction: column; gap: ${px(6)}; text-align: left; min-height: ${px(178)};
   padding: ${px(14)} ${px(16)} ${px(12)}; font: inherit; cursor: pointer; color: ${P.parchment};
   background: linear-gradient(172deg, #2C2823 0%, ${P.voidCharcoal} 75%); border: max(2px, ${px(2)}) solid ${P.warmGrey}77; border-radius: ${px(14)};
@@ -134,7 +136,8 @@ function installStyle() {
 .ul-unlocks .ul-card .ul-kind .ul-ico { width: ${px(30)}; height: ${px(30)}; display: inline-flex; }
 .ul-unlocks .ul-card .ul-kind .ul-ico svg { width: 100%; height: 100%; }
 .ul-unlocks .ul-card .ul-name { font-size: ${px(25)}; font-weight: 800; line-height: 1.1; }
-.ul-unlocks .ul-card .ul-text { font-size: ${px(18)}; color: ${P.bone}; line-height: 1.35; flex: 1 1 auto; }
+.ul-unlocks .ul-card .ul-text { font-size: ${px(18)}; color: ${P.bone}; line-height: 1.35; flex: 1 0 auto; }
+.ul-unlocks .ul-card > * { flex-shrink: 0; }
 .ul-unlocks .ul-card .ul-swatch { display: flex; gap: ${px(6)}; }
 .ul-unlocks .ul-card .ul-swatch i { width: ${px(26)}; height: ${px(14)}; border-radius: ${px(7)}; box-shadow: 0 0 ${px(8)} currentColor; }
 .ul-unlocks .ul-card .ul-foot { display: flex; align-items: center; justify-content: space-between; gap: ${px(8)}; font-size: ${px(19)}; font-weight: 800; }
@@ -151,6 +154,8 @@ function installStyle() {
 .ul-unlocks .ul-card[data-kind="vow"][data-equipped="true"] .ul-foot { color: ${P.godstuffViolet}; }
 .ul-unlocks .ul-card[data-state="done"] { border-color: ${P.paleGold}AA; }
 .ul-unlocks .ul-card[data-state="done"] .ul-foot { color: ${P.paleGold}; }
+.ul-unlocks .ul-card .ul-goal { flex: 0 0 auto; height: ${px(8)}; border-radius: ${px(4)}; background: ${P.voidCharcoal}; border: max(1px, ${px(1)}) solid ${P.warmGrey}55; overflow: hidden; }
+.ul-unlocks .ul-card .ul-goal i { display: block; height: 100%; background: linear-gradient(90deg, ${P.hearthAmber}, ${P.paleGold}); box-shadow: 0 0 ${px(10)} ${P.hearthAmber}AA; }
 .ul-unlocks .ul-card.ul-pulse { animation: ul-pulse 420ms ease; }
 @keyframes ul-pulse { 0% { box-shadow: 0 0 0 ${P.hearthAmber}00; } 40% { box-shadow: 0 0 ${px(34)} ${P.hearthAmber}AA; } 100% { box-shadow: 0 0 0 ${P.hearthAmber}00; } }
 .ul-unlocks .ul-card.ul-shake { animation: ul-shake 300ms ease; }
@@ -368,7 +373,11 @@ export function createUnlocksScreen(ctx) {
   function deedHtml(id, c) {
     const d = DEEDS[id];
     const done = c.meta.deeds.includes(id);
-    return { st: done ? 'done' : 'locked', html: `<div class="ul-kind">${esc(t('DEED'))}</div><div class="ul-name">${esc(t(d.name))}</div><div class="ul-text">${esc(t(d.text))}</div><div class="ul-foot"><span>${esc(done ? t('✓ Done') : t('Not yet'))}</span><span>+${d.embers} ${EMBER_SVG}</span></div>` };
+    // ROUND TWO: a deed counted across runs shows how far along it is.
+    const goal = !done && typeof d.goal === 'function' ? d.goal(c.life || (c.life = lifeAfter(c.meta, null))) : null;
+    const state = done ? t('✓ Done') : goal ? t('{have} of {need}', { have: goal[0], need: goal[1] }) : t('Not yet');
+    const bar = goal ? `<div class="ul-goal" aria-hidden="true"><i style="width:${Math.round((100 * Math.min(goal[0], goal[1])) / Math.max(1, goal[1]))}%"></i></div>` : '';
+    return { st: done ? 'done' : 'locked', html: `<div class="ul-kind">${esc(t('DEED'))}</div><div class="ul-name">${esc(t(d.name))}</div><div class="ul-text">${esc(t(d.text))}</div>${bar}<div class="ul-foot"><span>${esc(state)}</span><span>+${d.embers} ${EMBER_SVG}</span></div>` };
   }
 
   function renderGrid(c, { rebuild = false } = {}) {

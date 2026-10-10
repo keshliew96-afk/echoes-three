@@ -83,7 +83,7 @@ import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 // RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
-import { createRelicSystem, cursedDiff, dailyOmen, RELICS, RELIC_RULES } from './relics.js';
+import { createRelicSystem, cursedDiff, dailyOmen, RELICS, RELIC_RULES, CURSES } from './relics.js';
 // DAILY DESCENT (docs/DAILY.md): the shared run of the UTC day.
 import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
 // BOSS RUSH (docs/BOSS_RUSH.md): the bosses back to back.
@@ -227,7 +227,9 @@ export function createRunSystem({
   }
   enemies.setSpawnGate(combatAllowed);
   // RELICS (Short Fuse): a cursed room's shorter telegraphs.
-  if (typeof enemies.setFuse === 'function') enemies.setFuse(() => (active ? relics.fuse() : null));
+  // UNLOCKS round two: the Short Fuse vow shortens them in every combat room
+  // (read live from the run's boons, so a loaded save keeps it).
+  if (typeof enemies.setFuse === 'function') enemies.setFuse(() => (active ? relics.fuse() ?? vowFuse() : null));
   // RELICS batch 4: Warding Chalk slows the Hold ring's fade; Pauper's Mark
   // thins the ally purses too.
   if (typeof waves.setHoldFadeMul === 'function') waves.setHoldFadeMul(() => (active ? relics.holdFadeMul() : 1));
@@ -559,6 +561,12 @@ export function createRunSystem({
     });
   }
   const runVows = () => (campaign && campaign.boons && Array.isArray(campaign.boons.vows) ? campaign.boons.vows : null);
+  function vowFuse() {
+    const vows = runVows();
+    if (!vows || phase !== 'combat' || !frame || frame.modes[roomIndex - 1] === 'boss') return null;
+    for (const v of vows) if (CURSES[v] && CURSES[v].fuse) return CURSES[v].fuse;
+    return null;
+  }
 
   // `?partygrant=N` / `max` (PLAN §16.11) — marks the run harness.
   function applyHarnessGrant(g) {
