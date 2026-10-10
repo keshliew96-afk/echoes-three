@@ -364,6 +364,35 @@ export const BOSS_VFX = Object.freeze({
     flop: Object.freeze({ ripples: 3, drops: 30, silt: 12 }),
     camera: Object.freeze({ dolly: 0.1, kick: 0.07 }),
   }),
+  // Slice 11 (docs/THIRD_BOSSES.md).
+  //   ashraven    black feathers, pyre ash and cinders: a dive that tears a
+  //               furrow of embers down the lane, a gust of ash and feathers,
+  //               an omen of crows coming down on one spot
+  //   veinweaver  violet vein and crystal: a lit thread, a heartbeat slam
+  //               that cracks the floor into veins, egg sacs that burst
+  ashraven: Object.freeze({
+    id: 'ashraven',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'feather',
+    second: 'cinder',
+    dive: Object.freeze({ feathers: 18, cinders: 16 }),
+    gust: Object.freeze({ feathers: 22, ash: 8 }),
+    omen: Object.freeze({ crows: 7, feathers: 16 }),
+    camera: Object.freeze({ dolly: 0.09, kick: 0.07 }),
+  }),
+  veinweaver: Object.freeze({
+    id: 'veinweaver',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'heartcrystal',
+    second: 'heartflesh',
+    slam: Object.freeze({ veins: 8, shards: 16 }),
+    bind: Object.freeze({ beads: 8 }),
+    camera: Object.freeze({ dolly: 0.1, kick: 0.07 }),
+  }),
 });
 export function isVfxBoss(kind) {
   return Object.prototype.hasOwnProperty.call(BOSS_VFX, kind);

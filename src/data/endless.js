@@ -110,10 +110,11 @@ export function endlessLevel(depth) {
 }
 
 // Which boss a depth meets: the seed's own boss (bossIndexFor) on the first
-// cycle, the next one of the act's list on each later cycle.
+// cycle, the next one of the act's list on each later cycle (an endlessOnly
+// boss, the Vein Weaver, joins that cycle once the save has opened it).
 export function endlessBossIndex(depth, seed, open = null) {
   const act = levelOfDepth(depth);
-  const pool = bossPool(levelFor(act), act, open);
+  const pool = bossPool(levelFor(act), act, open, beyondCampaign(depth));
   const at = pool.indexOf(bossIndexFor(act, seed, open));
   return pool[(Math.max(0, at) + cycleOfDepth(depth)) % pool.length];
 }

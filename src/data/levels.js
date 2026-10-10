@@ -38,10 +38,11 @@
 //                              'stag' | 'heron' | 'wyrm', docs/CONTENT_PLAN.md §2)
 //   bossAdds                   [[etype, count], ...] per boss add phase (§11: 3 phases)
 //   bosses                     every boss this act can end on: [{ kind, name,
-//                              adds, layout?, gated? }] (layout: the boss's own room
-//                              dressing, else bossLayout; gated: met only once
-//                              the save has felled the act's other bosses, the
-//                              run's `thirdBosses` acts). The first is the act's original boss
+//                              adds, layout?, gated?, endlessOnly? }] (layout: the
+//                              boss's own room dressing, else bossLayout; gated:
+//                              met only once the save has felled the act's other
+//                              bosses, the run's `thirdBosses` acts; endlessOnly:
+//                              met only past the Endless Descent's first cycle). The first is the act's original boss
 //                              (= boss / bossName / bossAdds). Which one a run
 //                              meets is bossFor(act, seed): a pure function of
 //                              the run seed — no RNG draw, nothing saved, so
@@ -147,6 +148,9 @@ export const LEVELS = Object.freeze({
       Object.freeze({ kind: 'wyrm', name: 'The Barrow Wyrm', adds: Object.freeze([Object.freeze(['ram', 1]), Object.freeze(['mole', 2])]) }),
       // It raises moles itself (Grave Call), so its phases bring a crow.
       Object.freeze({ kind: 'lichram', name: 'The Lich Ram', adds: Object.freeze([Object.freeze(['ram', 1]), Object.freeze(['crow', 1])]) }),
+      // THIRD BOSSES (content plan 3 slice 11): the barrow's carrion bird in
+      // the Ash Amphitheatre, with its crows and a Grave Wisp.
+      Object.freeze({ kind: 'ashraven', name: 'The Ash Raven', layout: 25, gated: true, adds: Object.freeze([Object.freeze(['crow', 2]), Object.freeze(['gravewisp', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 2 }),
   }),
@@ -193,6 +197,11 @@ export const LEVELS = Object.freeze({
       }),
       // The Heart's own beasts: husks and a censer that mends them.
       Object.freeze({ kind: 'colossus', name: 'The Geode Colossus', adds: Object.freeze([Object.freeze(['husk', 2]), Object.freeze(['censer', 1])]) }),
+      // THIRD BOSSES (slice 11): the Heart's spider in the Hollow Nave. The
+      // Cantor stays the campaign's final boss, so the Weaver is met only past
+      // the Endless Descent's first cycle (endlessOnly), once the save has
+      // felled the Cantor and the Colossus (gated).
+      Object.freeze({ kind: 'veinweaver', name: 'The Vein Weaver', layout: 27, gated: true, endlessOnly: true, adds: Object.freeze([Object.freeze(['husk', 2]), Object.freeze(['siphon', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 3 }),
   }),
@@ -255,12 +264,15 @@ export function bossIndexFor(act, seed, open = null) {
 // THIRD BOSSES (docs/THIRD_BOSSES.md): the indices into the act's bosses a
 // run can meet. A `gated` boss joins only when `open` (the run's
 // thirdBosses: the acts whose other bosses the save has felled) names the
-// act; until then a seed rolls between the others exactly as before.
-export function bossPool(lv, act, open = null) {
+// act; until then a seed rolls between the others exactly as before. An
+// `endlessOnly` boss (slice 11: the Heart's Vein Weaver, so the Cantor stays
+// the campaign's final boss) joins only the pool of an Endless depth past
+// the first cycle (`endless`, data/endless.js endlessBossIndex).
+export function bossPool(lv, act, open = null, endless = false) {
   const list = lv.bosses ?? [];
   const on = Array.isArray(open) && open.includes(Number(act));
   const pool = [];
-  for (let i = 0; i < list.length; i++) if (on || !list[i].gated) pool.push(i);
+  for (let i = 0; i < list.length; i++) if ((on || !list[i].gated) && (endless || !list[i].endlessOnly)) pool.push(i);
   return pool.length ? pool : [0];
 }
 

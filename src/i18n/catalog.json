@@ -2590,6 +2590,12 @@
   ],
   "data": true
  },
+ "Ashfeather tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "At camp · Play": {
   "files": [
    "src/ui/run/classpick.js"
@@ -3247,6 +3253,12 @@
   ],
   "data": true
  },
+ "Bind: a warning lane for 9 that ties you to it for a few seconds. Heartbeat Slam: a ring round it for 18; at the end of the thread you are out of reach. Brood Sacs: three warning rings for 10 that leave webs.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Bites for 7, but its death is the danger: the cap bursts in a warning ring for 10 and leaves slowing spores. Kill it from range.": {
   "files": [
    "src/data/journal.js"
@@ -3677,6 +3689,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Carrion Dive: rises, then dives down a warning lane for 15. Wing Gust: a warning cone at its beak for 10 that blows you away. Omen: a warning ring that follows you, then locks and calls the crows down for 14.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "catchup": {
   "files": [
@@ -4700,6 +4718,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Defeat the Ash Raven.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Defeat the Barrow Wyrm.": {
   "files": [
    "src/data/unlocks.js"
@@ -4755,6 +4779,12 @@
   "data": true
  },
  "Defeat the Thornmother.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Vein Weaver.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5590,6 +5620,12 @@
   ],
   "data": true
  },
+ "Fell the Ash Raven": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Barrow Wyrm": {
   "files": [
    "src/data/unlocks.js"
@@ -5662,6 +5698,12 @@
   "data": true
  },
  "Fell the Thornmother": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Vein Weaver": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6958,6 +7000,12 @@
   "files": [
    "src/ui/menu/tabs/network.js"
   ]
+ },
+ "It ate from my pyres until it could carry the ash. Now it carries my song.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "It feeds on the major curses you carry (they stay on you).": {
   "files": [
@@ -11383,6 +11431,12 @@
   ],
   "data": true
  },
+ "Swordsman effects burn in Veinsilk colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Sworn": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -11467,6 +11521,12 @@
    "src/net/seats.js",
    "src/ui/menu/saves.js",
    "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Tank effects burn in Ashfeather colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -11789,6 +11849,32 @@
   ],
   "data": true
  },
+ "The Ash Raven": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE ASH RAVEN": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Ash Raven circles the amphitheatre ahead. When it rises, step out of its line. When its mark finds you, keep running.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Ash Raven falls out of the sky. The pyres burn down to embers.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
  "The Ashen Barrow": {
   "files": [
    "src/data/journal.js",
@@ -11823,7 +11909,7 @@
   ],
   "data": true
  },
- "The Barrow Wyrm guarded the way down, not the dead. The violet is oldest here because the Heart lies directly below. Felling the Wyrm or the Lich Ram frees the Verse of Stone.": {
+ "The Barrow Wyrm guarded the way down, not the dead. The violet is oldest here because the Heart lies directly below. Over the mounds the Ash Raven, fat on the pyres, calls its crows down on the living. Felling the Wyrm, the Lich Ram or the Raven frees the Verse of Stone.": {
   "files": [
    "src/data/story.js"
   ],
@@ -11836,6 +11922,12 @@
   ]
  },
  "The barrow's bailiff, who still collects what the dead are owed.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "The barrow's carrion bird, grown huge on the ash of the pyres and masked in bone.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -12339,6 +12431,12 @@
  "The Heart is quiet. Four verses burn in the hearth. Three are still missing, and somewhere above the world, the gods have stopped clapping.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Heart's own spider, met only in the deep descent, spinning violet veins through the dark.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -12930,7 +13028,7 @@
    "src/ui/hud/banner.js"
   ]
  },
- "The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding.": {
+ "The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding. Deeper still, past the end of the song, the Vein Weaver spins the Heart’s veins through the dark.": {
   "files": [
    "src/data/story.js"
   ],
@@ -13093,6 +13191,32 @@
  "THE VAULT'S CHEST": {
   "files": [
    "src/ui/run/relic.js"
+  ]
+ },
+ "The Vein Weaver": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE VEIN WEAVER": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Vein Weaver waits in the nave below. If its thread catches you, pull it tight and stay at the end of it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Vein Weaver’s threads go slack. Deep in the dark, the Heart misses a beat.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
   ]
  },
  "The violet is louder down here. The Choir must be past it, further down.": {
@@ -13760,6 +13884,12 @@
   ],
   "data": true
  },
+ "Veinsilk tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Verse of {verse}": {
   "files": [
    "src/ui/story/page.js"
@@ -14327,6 +14457,12 @@
   "files": [
    "src/ui/menu/lobby.js"
   ]
+ },
+ "You came past the end of my song. My weaver will tie you to it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "You can join again with the same code while the room is open.": {
   "files": [

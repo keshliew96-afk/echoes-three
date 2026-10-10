@@ -783,6 +783,20 @@ const ICONS = {
     ['path', { d: 'M5.4 11.4 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0 Z M7.6 11.2 H10.8 V12.4 H7.6 Z M19 11.4 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0 Z M21.2 11.2 H24.4 V12.4 H21.2 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
     ['path', { d: 'M12.2 10.4 L12.6 3.4 L14.4 6.8 L16 2.2 L17.6 6.8 L19.4 3.4 L19.8 10.4 Z', fill: 'currentColor', stroke: 'none' }],
   ],
+  // Slice 11. The Ash Raven: a raven's head in profile-free front view, the
+  // great beak driving down, a cracked bone mask with two eye holes cut out,
+  // ragged feathers either side.
+  boss_ashraven: [
+    ['path', { d: 'M16 3 C21.6 3 25.6 7 25.6 12.4 C25.6 16 23.8 18.6 21 20.4 L16 30 L11 20.4 C8.2 18.6 6.4 16 6.4 12.4 C6.4 7 10.4 3 16 3 Z M10.2 11.2 L14.4 12.4 L13.6 15 L10.6 14 Z M21.8 11.2 L17.6 12.4 L18.4 15 L21.4 14 Z M15.4 5.2 L16.6 5.2 L16.2 9 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M6.4 12 L1.6 9.6 L4.6 14.2 L1.2 15.6 L5.8 17.4 L3 20.6 L8.6 19.8 M25.6 12 L30.4 9.6 L27.4 14.2 L30.8 15.6 L26.2 17.4 L29 20.6 L23.4 19.8', 'stroke-width': 1.5 }],
+  ],
+  // The Vein Weaver: a spider seen from above, a faceted crystal abdomen,
+  // eight bent legs and a thread falling from it.
+  boss_veinweaver: [
+    ['path', { d: 'M16 13.4 L20.6 17.6 L19.8 24.4 L16 28.6 L12.2 24.4 L11.4 17.6 Z M16 17 L18 19.2 L17.6 23.2 L16 25 L14.4 23.2 L14 19.2 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['circle', { cx: 16, cy: 10.4, r: 3.2, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M13.4 9.6 L8 5.4 L5.6 9.4 M13 11.6 L6.6 10.6 L3 15.4 M13.4 13.6 L7.8 16.4 L5.8 22.4 M14 15.4 L10.4 21.4 L10.8 27.6 M18.6 9.6 L24 5.4 L26.4 9.4 M19 11.6 L25.4 10.6 L29 15.4 M18.6 13.6 L24.2 16.4 L26.2 22.4 M18 15.4 L21.6 21.4 L21.2 27.6 M16 2 V7.2', 'stroke-width': 1.5 }],
+  ],
   // Glint coin: rim, inner ring, a glint stroke.
   coin: [
     ['circle', { cx: 16, cy: 16, r: 12.5 }],

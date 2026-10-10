@@ -145,6 +145,8 @@ const TINT_ROWS = [
   // Third bosses (docs/THIRD_BOSSES.md).
   ['tint_gloamfang', 'swordsman', 'Gloamfang', { glow: '#C8D2E8', second: '#B79CF0', debris: '#5A6070' }, 0, { boss: 'gloamwolf' }],
   ['tint_millpond', 'healer', 'Millpond', { glow: '#5FC2B0', second: '#E2F2EC', debris: '#3D4840' }, 0, { boss: 'mireking' }],
+  ['tint_ashfeather', 'tank', 'Ashfeather', { glow: '#9AA0AE', second: '#C79BFF', debris: '#2E2C34' }, 0, { boss: 'ashraven' }],
+  ['tint_veinsilk', 'swordsman', 'Veinsilk', { glow: '#D06BFF', second: '#F6E6FF', debris: '#6A4A86' }, 0, { boss: 'veinweaver' }],
   // THE TIDECALLER (docs/TIDECALLER.md).
   ['tint_brine', 'tidecaller', 'Brine', { glow: '#3FC9A8', second: '#F2EEE2', debris: '#9FB8AE' }, 30, { feat: 'tidecaller' }],
   ['tint_heronrain', 'tidecaller', 'Heron Rain', { glow: '#8FB4D9', second: '#F4F8FC', debris: '#C7D3DD' }, 0, { feat: 'rill_heron' }],

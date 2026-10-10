@@ -25,8 +25,8 @@
 // payloads and entity kinds, so the goldens cannot move.
 import { midiHz } from './voices.js';
 
-export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking']);
-const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking']);
+export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver']);
+const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver']);
 
 // Measured design peaks (dBFS at unity gain) — tools/boss-identity-cuecal.mjs.
 export const BOSS_CUE_CAL = {
@@ -107,6 +107,20 @@ export const BOSS_CUE_CAL = {
   bx_mireking_flop: 3.2,
   bx_mireking_gape: -2.5,
   bx_mireking_swallow: 2.2,
+  bx_ashraven_sting: 5.2,
+  bx_ashraven_phase: 5.8,
+  bx_ashraven_fall: 6.4,
+  bx_veinweaver_sting: 4.8,
+  bx_veinweaver_phase: 5.6,
+  bx_veinweaver_fall: 5.9,
+  bx_ashraven_tell: -3,
+  bx_ashraven_dive: 2.4,
+  bx_ashraven_gust: 1.6,
+  bx_ashraven_omen: 2.6,
+  bx_veinweaver_tell: -3,
+  bx_veinweaver_bind: 1.4,
+  bx_veinweaver_slam: 3.2,
+  bx_veinweaver_brood: -1.5,
   // @cal end
 };
 
@@ -169,6 +183,8 @@ const VOICE = {
   colossus: { root: 49, lead: 'glass', drum: 'heart' }, // the Heart, C# phrygian
   gloamwolf: { root: 50, lead: 'horn', drum: 'hand' }, // Hollow Wood, D phrygian
   mireking: { root: 57, lead: 'reed', drum: 'frame' }, // Sunken Mill, A phrygian
+  ashraven: { root: 52, lead: 'toll', drum: 'taiko' }, // the Barrow, E harmonic minor
+  veinweaver: { root: 49, lead: 'choir', drum: 'heart' }, // the Heart, C# phrygian
 };
 
 // Signatures (~1.6-2.4 s): a phrase in the boss's own act key.
@@ -196,6 +212,12 @@ const STINGS = {
   // The Mire King: two low croaks on the reed, A then B-flat, a frame-drum
   // splash and drips falling back into the pond.
   mireking: [[0, 0, 'frame', 1], [0, 33, 'low', 1, 1.4], [0, 45, 'reed', 0.95, 0.4], [0.5, 46, 'reed', 1, 0.6], [0.5, 0, 'frame', 0.9], [0.5, 21, 'low', 0.8, 1.2], [1.0, 76, 'drip', 0.6], [1.12, 72, 'drip', 0.55], [1.24, 69, 'drip', 0.5], [1.0, 57, 'choir', 0.35, 1.0]],
+  // Slice 11. The Ash Raven: a caw on the toll falling a minor third, twice,
+  // the second a half step higher, over taiko and a held choir.
+  ashraven: [[0, 0, 'taiko', 1], [0, 28, 'low', 0.9, 1.6], [0, 55, 'toll', 0.9], [0.22, 52, 'toll', 0.85], [0.6, 56, 'toll', 1], [0.82, 53, 'toll', 0.95], [0.6, 0, 'taiko', 0.9], [0.1, 52, 'choir', 0.4, 1.6], [0.1, 59, 'choir', 0.35, 1.6], [1.1, 76, 'bell', 0.3, 1.2]],
+  // The Vein Weaver: glass picking up a web, C# D E F#, a heartbeat, then
+  // the thread snaps back down to the tonic under the choir.
+  veinweaver: [[0, 0, 'heart', 1], [0, 25, 'low', 1, 1.8], [0.1, 61, 'glass', 0.7], [0.22, 62, 'glass', 0.7], [0.34, 64, 'glass', 0.75], [0.46, 66, 'glass', 0.8], [0.7, 0, 'heart', 0.9], [0.7, 73, 'glass', 0.85, 0.8], [0.7, 49, 'choir', 0.45, 1.2], [0.7, 50, 'choir', 0.4, 1.2], [1.1, 61, 'glass', 0.6, 1.0]],
 };
 
 // Add phase / enrage: the boss's lead rises a half step over its drum.
@@ -490,6 +512,56 @@ Object.assign(CUES, {
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 700), f1: P(p, 180), q: 1, d: 0.3, gain: 0.9 }),
       k.tone(d, t + 0.22, { type: 'square', f0: P(p, 86), f1: P(p, 66), a: 0.02, hold: 0.1, d: 0.25, gain: 0.45, filter: { f0: 600, q: 3 } })
     ), { maxVoices: 1, cooldownMs: 200 }),
+  // --- The Ash Raven (Act III): a caw, wings, the crows coming down.
+  // Its tell is a rasping caw.
+  bx_ashraven_tell: sfx(-11, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 620), f1: P(p, 380), a: 0.01, hold: 0.06, d: 0.2, gain: 0.5, filter: { f0: 1400, q: 3 } }),
+      k.noise(d, t, { f0: P(p, 1500), f1: P(p, 900), q: 2.4, a: 0.01, d: 0.22, gain: 0.5 })
+    )),
+  // The dive: a rising rush of air that cracks on the landing.
+  bx_ashraven_dive: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 600), f1: P(p, 2600), q: 0.9, a: 0.02, d: 0.3, gain: 0.9 }),
+      k.tone(d, t + 0.18, { f0: P(p, 140), f1: P(p, 46), d: 0.32, gain: 0.9 }),
+      k.noise(d, t + 0.18, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 240), q: 0.8, d: 0.3, gain: 0.8 })
+    ), { maxVoices: 1, cooldownMs: 150 }),
+  // The gust: two heavy wingbeats.
+  bx_ashraven_gust: sfx(-9, (k, t, d, p) =>
+    Math.max(...[0, 0.16].map((dt, i) => k.noise(d, t + dt, { src: 'brown', type: 'lowpass', f0: P(p, 700 - i * 120), f1: P(p, 180), q: 0.7, a: 0.03, d: 0.24, gain: 1 - i * 0.15 })),
+      k.noise(d, t + 0.05, { type: 'highpass', f0: P(p, 2200), q: 0.6, a: 0.02, d: 0.3, gain: 0.35 })
+    ), { maxVoices: 1, cooldownMs: 150 }),
+  // The omen lands: a flurry of beaks and wings on one spot.
+  bx_ashraven_omen: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 110), f1: P(p, 40), d: 0.4, gain: 0.9 }),
+      ...[0, 0.04, 0.09, 0.13, 0.18].map((dt, i) => k.noise(d, t + dt, { f0: P(p, 1800 + i * 300), f1: P(p, 900), q: 1.8, a: 0.004, d: 0.08, gain: 0.55 })),
+      k.tone(d, t + 0.05, { type: 'sawtooth', f0: P(p, 700), f1: P(p, 420), hold: 0.04, d: 0.16, gain: 0.3, filter: { f0: 1600, q: 3 } })
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // --- The Vein Weaver (Act IV): a thread drawn taut, the Heart's beat.
+  // Its tell is a glassy creak.
+  bx_veinweaver_tell: sfx(-11, (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, 1100), ratio: 3.5, index: 1.4, d: 0.3, gain: 0.4 }),
+      k.noise(d, t, { f0: P(p, 2600), f1: P(p, 3400), q: 6, a: 0.05, d: 0.25, gain: 0.4 })
+    )),
+  // The bind: a thread whipping out and pulling tight (a rising whine).
+  bx_veinweaver_bind: sfx(-9, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'highpass', f0: P(p, 2000), f1: P(p, 5000), q: 0.9, a: 0.004, d: 0.1, gain: 0.8 }),
+      k.tone(d, t + 0.06, { type: 'sawtooth', f0: P(p, 300), f1: P(p, 900), glide: 0.25, a: 0.02, hold: 0.1, d: 0.2, gain: 0.35, filter: { f0: 1800, q: 4 } })
+    ), { maxVoices: 1, cooldownMs: 150 }),
+  // The slam: two heartbeats from inside the floor, crystal ringing.
+  bx_veinweaver_slam: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 90), f1: P(p, 38), d: 0.3, gain: 1 }),
+      k.tone(d, t + 0.22, { f0: P(p, 80), f1: P(p, 34), d: 0.36, gain: 0.95 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 800), f1: P(p, 200), q: 0.8, d: 0.4, gain: 0.8 }),
+      ...[0, 0.05].map((dt, i) => k.bell(d, t + 0.22 + dt, { f: P(p, 1300 + i * 500), ratio: 5.04, index: 1.1, d: 0.5, gain: 0.3 }))
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // The sacs: soft wet lobs.
+  bx_veinweaver_brood: sfx(-11, (k, t, d, p) =>
+    Math.max(...[0, 0.08, 0.16].map((dt, i) => k.tone(d, t + dt, { f0: P(p, 260 + i * 40), f1: P(p, 120), d: 0.12, gain: 0.5 }))), { maxVoices: 1, cooldownMs: 200 }),
 });
 
 // --------------------------------------------- sim-event -> cue map --
@@ -511,9 +583,11 @@ const SPAWN_VOICE = {
   colossus: [{ cue: 'roar', pitch: 0.62 }, { cue: 'bx_colossus_burst', gainDb: -4 }],
   gloamwolf: [{ cue: 'bx_gloamwolf_howl' }, { cue: 'bx_gloamwolf_tell', pitch: 0.8 }],
   mireking: [{ cue: 'bx_mireking_flop', gainDb: -3 }, { cue: 'bx_mireking_tell', pitch: 0.8 }],
+  ashraven: [{ cue: 'bx_ashraven_gust' }, { cue: 'bx_ashraven_tell', pitch: 0.85 }],
+  veinweaver: [{ cue: 'bx_veinweaver_slam', gainDb: -3 }, { cue: 'bx_veinweaver_tell', pitch: 0.8 }],
 };
 // Per-attack tell pitch (boss_telegraph_start.attack).
-const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1 };
+const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1, dive: 1, gust: 0.85, omen: 1.2, bind: 1.1, slam: 0.8 };
 
 // An attack with a tell of its own (the Mire King's gape draws breath in).
 const TELL_CUE = { swallow: 'bx_mireking_gape' };
@@ -587,6 +661,12 @@ export function createBossEventCues() {
     boss_tongue_lash: beat('bx_mireking_lash'),
     boss_belly_flop: beat('bx_mireking_flop'),
     boss_swallow: beat('bx_mireking_swallow'),
+    boss_carrion_dive: beat('bx_ashraven_dive'),
+    boss_wing_gust: beat('bx_ashraven_gust'),
+    boss_omen: beat('bx_ashraven_omen'),
+    boss_bind: beat('bx_veinweaver_bind'),
+    boss_vein_slam: beat('bx_veinweaver_slam'),
+    boss_brood_sacs: beat('bx_veinweaver_brood'),
   };
 }
 

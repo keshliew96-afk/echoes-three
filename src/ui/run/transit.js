@@ -59,6 +59,8 @@ const BOSS_FLAVOUR = {
   // Third bosses (docs/THIRD_BOSSES.md).
   gloamwolf: () => t('The Gloam Wolf lies down at last. The wood’s long night is over.'),
   mireking: () => t('The Mire King sinks into the silt. The millpond goes still.'),
+  ashraven: () => t('The Ash Raven falls out of the sky. The pyres burn down to embers.'),
+  veinweaver: () => t('The Vein Weaver’s threads go slack. Deep in the dark, the Heart misses a beat.'),
 };
 
 export const TRANSIT_CSS = `

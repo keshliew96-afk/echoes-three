@@ -34,7 +34,7 @@ import { buildHeron } from './heron.js';
 import { buildWyrm } from './wyrm.js';
 import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
 import { buildCantor, buildColossus } from './heart.js';
-import { buildGloamWolf, buildMireKing } from './third.js';
+import { buildGloamWolf, buildMireKing, buildAshRaven, buildVeinWeaver } from './third.js';
 import { createTelegraphShapes } from '../enemies/shapes.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
 import { releaseTree } from '../geocache.js';
@@ -44,7 +44,7 @@ import { impactFx } from '../vfx/hub.js';
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
-const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing };
+const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
@@ -105,7 +105,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   // and one burst are built and COMPILED a few frames after boot, parked far
   // under the floor, and then pooled for reuse.
   const spareRigs = []; // Stag rigs
-  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [], cantor: [], colossus: [], gloamwolf: [], mireking: [] };
+  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [], cantor: [], colossus: [], gloamwolf: [], mireking: [], ashraven: [], veinweaver: [] };
   // Lane / cone telegraphs (the Heron's spear, the Wyrm's breath) reuse the
   // enemy layer's pooled Ember shapes; rings stay the Stag's quake ring.
   const shapes = createTelegraphShapes(root);
@@ -202,6 +202,9 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   bus.on('boss_pounce', burstAt);
   bus.on('boss_howl', burstAt);
   bus.on('boss_belly_flop', burstAt);
+  // Slice 11: the Ash Raven's Omen, the Vein Weaver's Heartbeat Slam.
+  bus.on('boss_omen', burstAt);
+  bus.on('boss_vein_slam', burstAt);
   bus.on('death', (ev) => {
     if (!rec || ev.id !== rec.id) return;
     rec.rig.setFlash(BOSS_FLASH.peak);
@@ -363,7 +366,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       rec.walkPhase += simSpeed * dt * Math.PI * WALK_HZ;
       const telTarget = ent.telegraph ? 1 : 0;
       rec.telegraphK += (telTarget - rec.telegraphK) * (1 - Math.exp(-12 * dt));
-      const lungeTarget = ent.lungeTicksLeft > 0 || ent.mode === 'dash' || ent.mode === 'charge' || ent.mode === 'rush' || ent.mode === 'cut' || ent.mode === 'leap' || ent.mode === 'flop' ? 1 : 0;
+      const lungeTarget = ent.lungeTicksLeft > 0 || ent.mode === 'dash' || ent.mode === 'charge' || ent.mode === 'rush' || ent.mode === 'cut' || ent.mode === 'leap' || ent.mode === 'flop' || ent.mode === 'dive' ? 1 : 0;
       rec.lungeK += (lungeTarget - rec.lungeK) * (1 - Math.exp(-18 * dt));
 
       const hpFrac = Math.max(0, ent.hp / ent.maxHp);
