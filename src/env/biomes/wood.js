@@ -82,10 +82,74 @@ const FALLEN_OAK = Object.freeze({
   ],
 });
 
+// Plan 3 slice 8 (CONTENT_PLAN_3.md, 8): two more.
+//   21 Thornwood Ring — ARENA: the crossroads' sunlit grass; a ring track
+//                       round an open glade, a ring of old stones, the
+//                       monolith on the north wall behind the champion.
+//   22 Toadstool Dell  — the hollow's damp green, darker; a track up the
+//                       middle between the puffcap ring.
+const THORNWOOD_RING = Object.freeze({
+  ...VARIANTS[2],
+  id: 21,
+  name: 'thornwoodring',
+  paths: [
+    { pts: [[-6.2, -3.0], [-2.6, -4.4], [2.6, -4.4], [6.2, -3.0], [7.0, 1.4], [3.4, 4.4], [-3.4, 4.4], [-7.0, 1.4], [-6.2, -3.0]], w: 1.2 },
+    { pts: [[0.0, -8.6], [0.0, -4.4]], w: 1.1 },
+  ],
+  torches: [[-11.2, 0.0], [11.2, 0.0], [-1.6, -7.2], [1.6, 7.2]],
+  lightIdx: [2, 0],
+  lanterns: [[-4.4, -7.3, -1.5708], [4.6, 7.3, 1.5708]],
+  braziers: [[-4.6, -1.6], [4.6, -1.6], [-3.2, 3.4], [3.2, 3.4]],
+  monolith: [0.0, -7.0, 0.0],
+  clusters: [
+    [-2.6, -7.4, 0.6, 'boulder bush'],
+    [2.6, -7.4, 0.6, 'boulder stump'],
+    [-11.3, -1.8, 0.5, 'boulder'],
+    [11.3, 1.8, 0.5, 'boulder bush'],
+    [-11.3, 1.8, 0.5, 'bush'],
+    [11.3, -1.8, 0.5, 'boulder'],
+    [-4.0, 7.4, 0.6, 'boulder bush'],
+    [2.6, 7.4, 0.6, 'stump bush'],
+    [-8.6, -4.6, 0.5, 'boulder'],
+    [8.6, -4.6, 0.5, 'boulder'],
+    [-8.6, 4.4, 0.5, 'boulder stump'],
+    [8.6, 4.4, 0.5, 'boulder'],
+  ],
+});
+
+const TOADSTOOL_DELL = Object.freeze({
+  ...VARIANTS[3],
+  id: 22,
+  name: 'toadstooldell',
+  mood: { ...VARIANTS[3].mood, key: 0.44, fill: 0.7 },
+  paths: [{ pts: [[0.0, 8.6], [0.0, 5.2], [0.4, 0.8], [-0.2, -3.2], [0.0, -8.6]], w: 1.3 }],
+  torches: [[-11.2, -3.6], [11.2, -3.6], [-4.6, 7.2], [4.6, 7.2]],
+  lightIdx: [0, 1],
+  lanterns: [[-6.0, -7.3, -1.5708], [6.0, -7.3, -1.5708]],
+  braziers: [[-7.0, -3.4], [7.0, -3.4], [-8.0, 2.8], [8.0, 2.8]],
+  monolith: [-8.4, -6.6, -0.4],
+  clusters: [
+    [0.0, -7.4, 0.6, 'log bush'],
+    [-11.2, 0.8, 0.5, 'bush bush'],
+    [11.2, 0.8, 0.5, 'stump bush'],
+    [-11.2, 6.8, 0.6, 'log bush'],
+    [11.2, 6.8, 0.6, 'bush boulder'],
+    [-2.0, 7.4, 0.6, 'stump bush'],
+    [2.4, 7.4, 0.5, 'log'],
+    [9.6, -6.6, 0.6, 'bush stump'],
+    [-4.4, -7.4, 0.5, 'bush'],
+    [4.4, -7.4, 0.5, 'stump'],
+    [-9.0, 4.0, 0.5, 'tower bush'],
+    [9.0, 4.0, 0.5, 'banner bush'],
+  ],
+});
+
 export const LAYOUT_SPECS = Object.freeze({
   1: VARIANTS[1],
   2: VARIANTS[2],
   3: VARIANTS[3],
   10: BRAMBLE_MAZE,
   11: FALLEN_OAK,
+  21: THORNWOOD_RING,
+  22: TOADSTOOL_DELL,
 });

@@ -4,7 +4,7 @@
 // the layout's level with the autopilot on, steps until a combat room rolls
 // the layout, lets the fight open, and captures the frame.
 //
-//   PUPPETEER_EXECUTABLE_PATH=... node tools/slice2-layouts-shots.mjs [--url http://127.0.0.1:5199/] [--only 12]
+//   PUPPETEER_EXECUTABLE_PATH=... node tools/slice2-layouts-shots.mjs [--url http://127.0.0.1:5199/] [--only 12] [--ids 21,22] [--out dir]
 // Writes captures/slice2-layout-<id>.png; exit 1 on a page error or a layout
 // that never rolled.
 import { fileURLToPath } from 'node:url';
@@ -15,14 +15,18 @@ const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
 const URL0 = argv.includes('--url') ? argv[argv.indexOf('--url') + 1] : 'http://127.0.0.1:5199/';
 const ONLY = argv.includes('--only') ? Number(argv[argv.indexOf('--only') + 1]) : null;
+// --ids 21,22 shoots other layouts (plan 3 slice 8); --out dir writes there.
+const IDS = argv.includes('--ids') ? argv[argv.indexOf('--ids') + 1].split(',').map(Number) : [10, 11, 12, 13, 14, 15];
+const OUT = argv.includes('--out') ? argv[argv.indexOf('--out') + 1] : join(here, 'captures');
+const PREFIX = argv.includes('--out') ? 'layout' : 'slice2-layout';
 const { launchEchoes, openEchoes } = await import('./gnt-arch-browser.mjs');
 const { LAYOUTS } = await import('../src/data/layouts.js');
 const browser = await launchEchoes({ gpu: false, width: 1280, height: 720, extraArgs: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--no-sandbox'] });
-mkdirSync(join(here, 'captures'), { recursive: true });
+mkdirSync(OUT, { recursive: true });
 const wait = (ms) => new Promise((ok) => setTimeout(ok, ms));
 let bad = 0;
 
-for (const id of [10, 11, 12, 13, 14, 15]) {
+for (const id of IDS) {
   if (ONLY && id !== ONLY) continue;
   const L = LAYOUTS[id];
   let found = null;
@@ -54,8 +58,8 @@ for (const id of [10, 11, 12, 13, 14, 15]) {
       // Step into the first wave (spawn telegraphs up, party fanning out), then hold the frame.
       await page.evaluate(() => __echoes.sim.stepN(110, null));
       await wait(4000);
-      const f = join('captures', `slice2-layout-${id}.png`);
-      await page.screenshot({ path: join(here, f) });
+      const f = join(OUT, `${PREFIX}-${id}.png`);
+      await page.screenshot({ path: f });
       console.log(`L${id} ${L.name}: seed ${seed} room ${found.index} ${found.mode} -> ${f}`);
     }
     if (errors.length) {

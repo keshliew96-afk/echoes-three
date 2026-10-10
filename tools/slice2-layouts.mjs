@@ -15,7 +15,7 @@
 // from every ring point and every party entry spot to every other (walls and
 // barricades block; brambles, water and vents do not).
 //
-//   node tools/slice2-layouts.mjs [--seeds 12]   exit 1 on any failure
+//   node tools/slice2-layouts.mjs [--seeds 12] [--ids 21,22]   exit 1 on any failure
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -36,7 +36,8 @@ const { ARENA } = await import(u('src/core/constants.js'));
 const { INTERACT_TYPES } = await import(u('src/sim/interactables.js'));
 const { CLASS_OF_SEAT } = await import(u('src/data/classes.js'));
 
-const IDS = [10, 11, 12, 13, 14, 15];
+// --ids 21,22,... probes other layouts (plan 3 slice 8: 21-28).
+const IDS = argv.includes('--ids') ? argv[argv.indexOf('--ids') + 1].split(',').map(Number) : [10, 11, 12, 13, 14, 15];
 
 // ------------------------------------------------------------ reachability --
 function reachability(L) {
@@ -199,8 +200,16 @@ for (const id of IDS) {
   const reach = reachability(L);
   let res = null;
   let seed = 0;
+  // A party wipe in the probed room (run_end before the clear: the autopilot
+  // starting cold at Level III or IV) says nothing about the layout, so the
+  // next seed is tried; the wipes are counted. A STUCK room still fails.
+  let wipes = 0;
   for (seed = 1; seed <= MAX_SEEDS; seed++) {
     res = await probe(id, seed);
+    if (res.room && res.done === 'run_end' && !res.room.cleared) {
+      wipes += 1;
+      continue;
+    }
     if (res.room) break;
   }
   const r = res && res.room;
@@ -230,9 +239,9 @@ for (const id of IDS) {
   }
   const ok = Object.values(checks).every(Boolean);
   if (!ok) fails += 1;
-  rows.push({ id, name: L.name, act: L.act, ok, seed: r ? seed : null, checks, reach, room: r, end: res && res.done });
-  console.log(`L${id} ${L.name.padEnd(14)} ${ok ? 'PASS' : 'FAIL'}  seed ${r ? seed : '-'} room ${r ? r.index : '-'} ${r ? r.mode : ''}  ` + Object.entries(checks).map(([k, v]) => `${k}:${v ? 'ok' : 'NO'}`).join(' '));
+  rows.push({ id, name: L.name, act: L.act, ok, seed: r ? seed : null, wipes, checks, reach, room: r, end: res && res.done });
+  console.log(`L${id} ${L.name.padEnd(16)} ${ok ? 'PASS' : 'FAIL'}  seed ${r ? seed : '-'} (wipes ${wipes}) room ${r ? r.index : '-'} ${r ? r.mode : ''}  ` + Object.entries(checks).map(([k, v]) => `${k}:${v ? 'ok' : 'NO'}`).join(' '));
 }
 console.log(JSON.stringify(rows, null, 1));
-console.log(fails ? `${fails} layout(s) failed` : 'all six layouts pass');
+console.log(fails ? `${fails} layout(s) failed` : `all ${IDS.length} layouts pass`);
 process.exit(fails ? 1 : 0);

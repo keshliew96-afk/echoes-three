@@ -342,4 +342,89 @@ export const LAYOUT_SPECS = Object.freeze({
     ],
     rooms: ROOMS,
   }),
+  // ---- 27 · Hollow Nave (plan 3 slice 8, ARENA): the heart's long nave, an
+  // aisle down its middle, a heart node in the north wall over the
+  // champion's mark, great geodes in the south corners; veins climb both
+  // side walls from the vents.
+  27: Object.freeze({
+    id: 27,
+    name: 'hollownave',
+    biome: 'heart',
+    mood: MOOD,
+    ground: GROUND,
+    ...SHARED,
+    paths: [{ pts: [[0.0, -6.4], [0.4, -2.4], [-0.4, 2.0], [0.0, 8.6]], w: 1.6 }],
+    landmarks: [
+      [0.0, -7.3, 0.9, 'heartnode', 0],
+      [-9.6, 6.0, 1.0, 'geode', 0.6],
+      [9.6, 6.0, 1.0, 'geode', -0.6],
+    ],
+    crystals: [[-8.6, -6.4], [8.6, -6.4], [-3.2, 6.8], [3.2, 6.8]],
+    crystalLightIdx: [0, 1],
+    veinNet: {
+      seeds: [
+        [-11.7, 0.0, 0, 4.4, 0.16],
+        [11.7, 0.0, 180, 4.4, 0.16],
+        [0.0, -6.6, 90, 4.0, 0.14],
+        [-6.0, 7.8, -80, 3.0, 0.12],
+        [6.0, 7.8, -100, 3.0, 0.12],
+        [-11.7, -5.0, 10, 3.4, 0.12],
+        [11.7, 5.0, 190, 3.4, 0.12],
+      ],
+    },
+    clusters: [
+      [-4.6, -7.3, 0.5, 'crystalcluster roots'],
+      [4.6, -7.3, 0.5, 'roots bonepile'],
+      [-11.0, -5.6, 0.45, 'veinrock'],
+      [11.0, -5.6, 0.45, 'crystalcluster'],
+      [-11.0, 4.0, 0.45, 'ribcage'],
+      [11.0, 4.0, 0.45, 'polyp roots'],
+      [-7.4, 7.3, 0.5, 'bonepile shardfall'],
+      [7.4, 7.3, 0.5, 'polyp'],
+      [-8.4, -2.6, 0.45, 'polyp'],
+      [8.4, -2.6, 0.45, 'crystalcluster veinrock'],
+    ],
+    rooms: ROOMS,
+  }),
+
+  // ---- 28 · Crystal Thicket (plan 3 slice 8): crystal spires grown thick
+  // round the barricade chevrons, the floor flecked with shards, a geode in
+  // the south-west and one on the east wall.
+  28: Object.freeze({
+    id: 28,
+    name: 'crystalthicket',
+    biome: 'heart',
+    mood: MOOD,
+    ground: Object.freeze({ ...GROUND, flecks: Object.freeze({ n: 40, h: 268, s: 0.58, l: 0.52 }) }),
+    ...SHARED,
+    grass: 100,
+    paths: [{ pts: [[-12.6, -0.8], [-6.0, -0.4], [0.0, 0.6], [6.0, -0.4], [12.6, -0.8]], w: 1.3 }],
+    landmarks: [
+      [-9.4, 5.4, 1.0, 'geode', 0.4],
+      [9.8, -3.0, 0.8, 'geode', -1.2],
+    ],
+    crystals: [[-2.6, -6.6], [2.6, -6.6], [-6.4, 6.2], [6.4, 6.2]],
+    crystalLightIdx: [0, 3],
+    veinNet: {
+      seeds: [
+        [0.0, 7.8, -90, 2.4, 0.14],
+        [-6.0, 7.8, -70, 3.2, 0.12],
+        [6.0, 7.8, -110, 3.2, 0.12],
+        [-11.7, -3.0, 0, 3.6, 0.12],
+        [11.7, 3.0, 180, 3.6, 0.12],
+        [0.0, -7.8, 90, 2.0, 0.1],
+      ],
+    },
+    clusters: [
+      [-6.0, -7.3, 0.5, 'crystalcluster crystalcluster'],
+      [6.0, -7.3, 0.5, 'crystalcluster shardfall'],
+      [-11.0, -3.6, 0.5, 'crystalcluster'],
+      [11.0, 3.6, 0.5, 'geode crystalcluster'],
+      [-3.6, 7.4, 0.4, 'shardfall'],
+      [3.6, 7.4, 0.4, 'bonepile'],
+      [-8.4, -4.6, 0.45, 'crystalcluster veinrock'],
+      [8.4, 4.0, 0.45, 'polyp crystalcluster'],
+    ],
+    rooms: ROOMS,
+  }),
 });
