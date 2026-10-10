@@ -595,7 +595,10 @@ export function createRunSystem({
   // run keeps `legacyLayouts`, so the goldens roll the same rooms.
   function rollLayout(n, mode) {
     const level = levelFor(act);
-    if (mode === 'boss') return level.bossLayout;
+    // THIRD BOSSES (plan 3 slice 10): a boss row may name its own room (the
+    // Gloam Wolf hunts in the Thornwood Ring, the Mire King sits in the
+    // Millrace Basin); boss rooms carry no hazards, so only the dressing moves.
+    if (mode === 'boss') return currentBoss().layout ?? level.bossLayout;
     const table = campaign && campaign.mode !== 'campaign' && level.legacyLayouts ? level.legacyLayouts : level.layouts;
     // EVENT ROOMS: a "?" room stands in the last combat room's clearing, as
     // the shop does (no draw).

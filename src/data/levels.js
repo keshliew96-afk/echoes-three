@@ -38,7 +38,8 @@
 //                              'stag' | 'heron' | 'wyrm', docs/CONTENT_PLAN.md §2)
 //   bossAdds                   [[etype, count], ...] per boss add phase (§11: 3 phases)
 //   bosses                     every boss this act can end on: [{ kind, name,
-//                              adds }]. The first is the act's original boss
+//                              adds, layout? }] (layout: the boss's own room
+//                              dressing, else bossLayout). The first is the act's original boss
 //                              (= boss / bossName / bossAdds). Which one a run
 //                              meets is bossFor(act, seed): a pure function of
 //                              the run seed — no RNG draw, nothing saved, so
@@ -77,6 +78,9 @@ export const LEVELS = Object.freeze({
     bosses: Object.freeze([
       Object.freeze({ kind: 'stag', name: 'The Hollow Stag', adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['mantis', 1])]) }),
       Object.freeze({ kind: 'thornmother', name: 'The Thornmother', adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['mantis', 1])]) }),
+      // THIRD BOSSES (content plan 3 slice 10, docs/THIRD_BOSSES.md): the
+      // wood's old hunter, met in the Thornwood Ring with its night hunters.
+      Object.freeze({ kind: 'gloamwolf', name: 'The Gloam Wolf', layout: 21, adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['owl', 1])]) }),
     ]),
     unlock: null,
   }),
@@ -108,6 +112,9 @@ export const LEVELS = Object.freeze({
     bosses: Object.freeze([
       Object.freeze({ kind: 'heron', name: 'The Drowned Heron', adds: Object.freeze([Object.freeze(['toad', 1]), Object.freeze(['moth', 2])]) }),
       Object.freeze({ kind: 'millwheel', name: 'The Millwheel', adds: Object.freeze([Object.freeze(['crab', 1]), Object.freeze(['moth', 1])]) }),
+      // THIRD BOSSES: the millpond's crowned toad in the Millrace Basin, with
+      // its toads and a Mire Leech.
+      Object.freeze({ kind: 'mireking', name: 'The Mire King', layout: 23, adds: Object.freeze([Object.freeze(['toad', 2]), Object.freeze(['leech', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 1 }),
   }),

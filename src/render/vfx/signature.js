@@ -422,6 +422,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     thornmother: Object.freeze({ matter: 'bramble', family: 'brute', shard: 'needle', chunk: 5, dust: 2 }),
     millwheel: Object.freeze({ matter: 'oak', family: 'brute', shard: 'needle', chunk: 5, dust: 1 }),
     lichram: Object.freeze({ matter: 'boneplate', family: 'brute', shard: 'needle', chunk: 5, dust: 2 }),
+    gloamwolf: Object.freeze({ matter: 'owlfeather', family: 'brute', shard: 'feather', chunk: 3, dust: 2 }),
+    mireking: Object.freeze({ matter: 'slime', family: 'brute', shard: 'drop', chunk: 3, dust: 1 }),
   };
 
   // An enemy body breaking: what it was made of, scattered.
@@ -1462,6 +1464,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   bus.on('boss_enrage', (ev) => {
     if (byId(ev.id)?.kind === 'lichram') return lichEnrage(ev);
     if (byId(ev.id)?.kind === 'colossus') return colossusEnrage(ev);
+    if (byId(ev.id)?.kind === 'gloamwolf') return wolfEnrage(ev);
+    if (byId(ev.id)?.kind === 'mireking') return mirekingEnrage(ev);
     mark('wyrm_enrage');
     const { x, z } = ev;
     kit.pillar({ x, z, radius: 0.5, height: 2.6, color: WYRM.corruption, life: 0.7, opacity: 0.5 });
@@ -2481,7 +2485,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       anticipate(b.x, b.z, 1.2, LICH.corruption, { y: 0.9, lines: 8, core: LICH.peak });
       const d = faceOf(b);
       for (const s of [-1, 1]) flare(b.x + d.x * 0.7 - d.z * 0.35 * s, 1.0, b.z + d.z * 0.7 + d.x * 0.35 * s, LICH.corruption, 0.8, { life: 0.4, core: LICH.peak });
-    }
+    } else if (b.kind === 'gloamwolf' || b.kind === 'mireking') thirdBossWindup(b, ev);
   });
   bus.on('boss_charge', (ev) => {
     mark('thorn_charge');
@@ -2977,6 +2981,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       return;
     }
     if (e.kind === 'cantor' || e.kind === 'colossus') return heartBossFrame(e, rec);
+    if (e.kind === 'gloamwolf' || e.kind === 'mireking') return thirdBossFrame(e, rec);
     if (e.kind === 'keener' || e.kind === 'sexton' || e.kind === 'bloom' || e.kind === 'siphon') return barrowHeartFrame(e, rec);
     if (e.kind === 'thornmother') {
       if (e.mode !== 'charge' || rec.clock < THORN.charge.every) return;
@@ -3341,13 +3346,276 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     });
   });
 
-  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath };
+  // -------------------------------------------------------- third bosses --
+  // (docs/THIRD_BOSSES.md) The same law as every boss: Ember on the frame
+  // that hurts, the body's matter on what breaks, violet for the boss. The
+  // Gloam Wolf is grey fur, torn earth and a pale moon light; the Mire King
+  // is millpond water, black silt and green-black slime.
+  const WOLF = vfxBossStyle('gloamwolf');
+  const MIRE = vfxBossStyle('mireking');
+  const FURC = vfxMatterColor('owlfeather');
+  const MOON = '#DCE4F2';
+  const SLIME = vfxMatterColor('slime');
+  const RUSTC = vfxMatterColor('carapace');
+  // The Pounce lands: an Ember ring (the hit), a moonlit shockwave, four
+  // claw gouges torn out of the ring, earth and fur thrown up. In the Hunt
+  // the landing leaves a violet afterimage streak.
+  bus.on('boss_pounce', (ev) => {
+    mark('gloamwolf_pounce');
+    const r = ev.radius ?? 1.5;
+    const P = WOLF.pounce;
+    flare(ev.x, 0.45, ev.z, EMBER, 1.7, { kind: 'burst', life: 0.24, core: PARCH });
+    kit.flash({ x: ev.x, y: 0.6, z: ev.z, color: PARCH, size: 1.1, life: 0.12 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.26, width: 0.13, jag: 0.5 });
+    shock(ev.x, ev.z, r * 1.45, MOON, { life: 0.5, width: 0.2, core: WOLF.peak, delay: 0.03 });
+    shock(ev.x, ev.z, r * 1.9, WOLF.corruption, { life: 0.7, width: 0.1, core: WOLF.peak, delay: 0.08 });
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * TAU + 0.4;
+      kit.mark({ x: ev.x + Math.cos(a) * r * 0.45, z: ev.z + Math.sin(a) * r * 0.45, radius: r * 0.42, kind: 'gouge', angle: a, stretch: 2.4, stain: INK, glow: WOLF.corruption, glowOpacity: 0.4, cool: 0.8, life: 3.2, opacity: 0.45 });
+    }
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.1, kind: 'crater', stain: DIRT, glow: null, life: 3.6, opacity: 0.4 });
+    kit.crack({ x: ev.x, z: ev.z, radius: r * 0.75, glow: WOLF.corruption, life: 1.8, cool: 0.7 });
+    spray('chunk', ev.x, 0.2, ev.z, P.chunk, { color: DIRT, speed: [1.0, 2.4], up: [1.6, 3.0], size: [0.06, 0.13], life: [0.5, 0.85], jitter: r * 0.4 });
+    spray('smoke', ev.x, 0.2, ev.z, P.dust, { color: FURC, speed: [0.8, 1.8], up: [0.1, 0.4], size: [0.4, 0.6], grow: 1.5, life: [0.6, 0.9], opacity: 0.3, gravity: -0.1, drag: 2.4, jitter: r * 0.5 });
+    spray('shard', ev.x, 0.6, ev.z, P.fur, { color: FURC, tile: SHARD_TILE.feather, speed: [0.6, 1.6], up: [1.0, 2.2], size: [0.08, 0.13], life: [0.7, 1.1], gravity: 1.2, drag: 1.6, spin: [-6, 6], jitter: 0.4 });
+    spray('spark', ev.x, 0.3, ev.z, 10, { color: WOLF.corruption, speed: [0.4, 1.4], up: [0.8, 1.8], size: [0.05, 0.09], life: [0.6, 1.0], gravity: -0.3, drag: 1.4, jitter: r * 0.4 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.6, color: MOON, opacity: 0.45, life: 0.45, attack: 0.02 });
+    if (ev.hunt > 0) kit.pillar({ x: ev.x, z: ev.z, radius: 0.5, height: 2.6, color: WOLF.corruption, life: 0.5, opacity: 0.45 });
+    camfx.dolly(ev.x, ev.z, WOLF.camera.dolly, 0.3);
+  });
+  // The Rend: three claw arcs rake across the cone, Ember on the cut (the
+  // hit), violet in the wake, three parallel gouges left in the floor.
+  bus.on('boss_rend', (ev) => {
+    mark('gloamwolf_rend');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const ang = Math.atan2(d.z, d.x);
+    const reach = 2.6;
+    for (let i = 0; i < 3; i++) {
+      const off = (i - 1) * 0.32;
+      const a0 = ang - 0.95;
+      const a1 = ang + 0.95;
+      const rr = reach - Math.abs(off) * 0.6;
+      const pts = [];
+      for (let k = 0; k <= 4; k++) {
+        const a = a0 + ((a1 - a0) * k) / 4;
+        pts.push({ x: ev.x + Math.cos(a) * rr, y: 0.7 + off * 0.5, z: ev.z + Math.sin(a) * rr });
+      }
+      for (let k = 0; k < 4; k++) {
+        kit.streak({ a: pts[k], b: pts[k + 1], width: 0.16, tailW: 0.04, core: i === 1 ? PARCH : WOLF.peak, glow: k % 2 ? WOLF.corruption : EMBER, life: 0.22, fall: 1.4, opacity: 1, delay: 0.02 * k + 0.03 * i });
+      }
+    }
+    flare(ev.x + d.x * 1.4, 0.8, ev.z + d.z * 1.4, EMBER, 1.5, { life: 0.18, core: PARCH, angle: ang + Math.PI / 2 });
+    for (let i = -1; i <= 1; i++) {
+      const px = ev.x + d.x * 1.7 - d.z * i * 0.4;
+      const pz = ev.z + d.z * 1.7 + d.x * i * 0.4;
+      kit.mark({ x: px, z: pz, radius: 0.7, kind: 'gouge', angle: ang + Math.PI / 2, stretch: 2.6, stain: INK, glow: EMBER, glowOpacity: 0.35, cool: 0.6, life: 2.4, opacity: 0.4 });
+    }
+    spray('spark', ev.x + d.x * 1.6, 0.6, ev.z + d.z * 1.6, 12, { color: EMBER, speed: [1.2, 2.6], up: [0.4, 1.2], size: [0.04, 0.08], life: [0.25, 0.45], dir: d, dirBias: 0.6, jitter: 0.6 });
+    spray('chunk', ev.x + d.x * 1.6, 0.15, ev.z + d.z * 1.6, 5, { color: DIRT, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.05, 0.1], life: [0.4, 0.7], dir: d, dirBias: 0.5, jitter: 0.5 });
+    camfx.kick(d.x, d.z, WOLF.camera.kick * 0.5, 0.1);
+  });
+  // The Moon Howl: the throat blazes, sound rings roll out moon-pale and
+  // violet past the Ember edge (the hit), a column of light climbs from the
+  // head, leaves and dust lift off the floor.
+  bus.on('boss_howl', (ev) => {
+    mark('gloamwolf_howl');
+    const r = ev.radius ?? 3.2;
+    const H = WOLF.howl;
+    const b = byId(ev.id);
+    const f = faceOf(b);
+    const hx = ev.x + f.x * 1.3;
+    const hz = ev.z + f.z * 1.3;
+    flare(hx, 2.4, hz, WOLF.corruption, 2.6, { kind: 'burst', life: 0.36, core: WOLF.peak, spin: 0.6 });
+    kit.pillar({ x: hx, z: hz, radius: 0.45, height: 4.4, color: MOON, life: 0.8, opacity: 0.5 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.3, width: 0.14 });
+    for (let i = 0; i < H.rings; i++) shock(ev.x, ev.z, r * (1.15 + i * 0.35), i % 2 ? WOLF.corruption : MOON, { life: 0.55 + i * 0.12, width: 0.12, core: WOLF.peak, delay: 0.04 + i * 0.1, y: 0.1 + i * 0.35 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.05, kind: 'sigil', stain: INK, glow: WOLF.corruption, glowOpacity: 0.45, cool: 1.2, life: 3, opacity: 0.22 });
+    spray('shard', ev.x, 0.2, ev.z, H.leaves, { color: vfxMatterColor('bramble'), tile: SHARD_TILE.petal, speed: [1.2, 2.6], up: [0.8, 1.8], size: [0.08, 0.13], life: [0.8, 1.3], gravity: 1.0, drag: 1.4, spin: [-8, 8], jitter: r * 0.5 });
+    spray('spark', hx, 2.0, hz, 18, { color: WOLF.corruption, speed: [0.4, 1.6], up: [0.6, 1.8], size: [0.05, 0.1], life: [0.8, 1.3], gravity: -0.3, drag: 1.3, jitter: 0.4 });
+    spray('smoke', ev.x, 0.2, ev.z, 6, { color: FURC, speed: [1.2, 2.2], up: [0.1, 0.3], size: [0.4, 0.6], grow: 1.6, life: [0.7, 1.0], opacity: 0.26, gravity: -0.1, drag: 2.2, jitter: r * 0.4 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: MOON, opacity: 0.55, life: 0.7, attack: 0.03 });
+    camfx.dolly(ev.x, ev.z, WOLF.camera.dolly * 0.8, 0.4);
+  });
+  function wolfEnrage(ev) {
+    mark('gloamwolf_enrage');
+    const { x, z } = ev;
+    kit.pillar({ x, z, radius: 0.6, height: 3.0, color: WOLF.corruption, life: 0.7, opacity: 0.5 });
+    flare(x, 1.8, z, WOLF.corruption, 2.2, { kind: 'burst', life: 0.3, core: WOLF.peak });
+    kit.ring({ x, z, r0: 0.5, r1: 3.2, width: 0.2, life: 0.7, core: WOLF.peak, glow: MOON, soft: 0.5, y: 0.06 });
+    spray('spark', x, 1.4, z, 22, { color: WOLF.corruption, speed: [0.3, 1.0], up: [0.8, 2.0], size: [0.05, 0.1], life: [0.9, 1.4], gravity: -0.3, drag: 1.4, jitter: 0.8 });
+    kit.light({ x, z, radius: 3, color: WOLF.corruption, opacity: 0.5, life: 0.8 });
+  }
+  function gloamwolfDeath(x, z) {
+    // It lies down and the hollow leaves it: a moonlit column, the violet
+    // rising out of it as motes, fur and bramble falling away.
+    mark('gloamwolf_death');
+    kit.pillar({ x, z, radius: 1.0, height: 4.6, color: MOON, life: 1.6, opacity: 0.6 });
+    flare(x, 1.6, z, WOLF.corruption, 3.6, { kind: 'burst', life: 0.5, core: WOLF.peak, spin: 0.7 });
+    kit.flash({ x, y: 1.2, z, color: PARCH, size: 2.0, life: 0.22 });
+    for (let i = 0; i < 2; i++) kit.ring({ x, z, r0: 0.5, r1: 4 + i * 1.4, width: 0.3, life: 1.0 + i * 0.3, core: WOLF.peak, glow: i ? WOLF.corruption : MOON, soft: 0.5, y: 0.06 + i * 0.3, delay: i * 0.12 });
+    kit.mark({ x, z, radius: 3.0, kind: 'crater', stain: DIRT, glow: WOLF.corruption, glowOpacity: 0.45, cool: 2.0, life: 6, opacity: 0.45 });
+    spray('spark', x, 0.8, z, 40, { color: WOLF.corruption, speed: [0.2, 1.0], up: [1.2, 2.8], size: [0.06, 0.13], life: [1.6, 2.6], gravity: -0.35, drag: 1.2, jitter: 1.0 });
+    spray('shard', x, 1.2, z, 22, { color: FURC, tile: SHARD_TILE.feather, speed: [0.6, 1.8], up: [1.0, 2.4], size: [0.09, 0.14], life: [1.0, 1.6], gravity: 0.9, drag: 1.6, spin: [-6, 6], jitter: 0.8 });
+    spray('shard', x, 1.4, z, 14, { color: vfxMatterColor('bramble'), tile: SHARD_TILE.needle, speed: [1.0, 2.4], up: [1.2, 2.6], size: [0.1, 0.15], life: [0.7, 1.1], gravity: 4, spin: [-10, 10], jitter: 0.6 });
+    spray('smoke', x, 0.4, z, 8, { color: FURC, speed: [0.4, 1.2], up: [0.3, 0.8], size: [0.5, 0.7], grow: 1.6, life: [1.2, 1.8], opacity: 0.32, gravity: -0.2, drag: 2.0, jitter: 1.0 });
+    kit.light({ x, z, radius: 4.4, color: MOON, opacity: 0.6, life: 1.6 });
+    camfx.dolly(x, z, WOLF.camera.dolly * 1.2, 0.55);
+  }
+
+  // The Tongue Lash: a wet violet tongue shoots down the lane and snaps
+  // back, the Ember lane flashing the full width (the hit), slime thrown
+  // off its length, a splash where it strikes.
+  bus.on('boss_tongue_lash', (ev) => {
+    mark('mireking_lash');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.len ?? 6;
+    const ex = ev.x + d.x * len;
+    const ez = ev.z + d.z * len;
+    const SPEED = MIRE.lash.speed;
+    const out = len / SPEED;
+    kit.streak({ a: { x: ev.x, y: 0.12, z: ev.z }, b: { x: ex, y: 0.12, z: ez }, width: 1.0, tailW: 0.8, core: EMBER, glow: EMBER, life: 0.24, fall: 2.2, opacity: 0.5 });
+    kit.streak({ a: { x: ev.x + d.x * 0.9, y: 0.95, z: ev.z + d.z * 0.9 }, b: { x: ex, y: 0.5, z: ez }, width: 0.28, tailW: 0.2, core: MIRE.peak, glow: MIRE.corruption, life: out + 0.18, fall: 3.0, opacity: 0.95 });
+    kit.streak({ a: { x: ev.x + d.x * 0.9, y: 0.95, z: ev.z + d.z * 0.9 }, b: { x: ev.x + d.x * 1.5, y: 0.9, z: ev.z + d.z * 1.5 }, width: 0.34, tailW: 0.3, core: PARCH, glow: MIRE.corruption, life: out, travel: { x: d.x * SPEED, y: -1, z: d.z * SPEED }, fall: 0.3 });
+    after(out, () => {
+      flare(ex, 0.5, ez, MIRE.corruption, 1.3, { kind: 'burst', life: 0.22, core: MIRE.peak });
+      kit.ring({ x: ex, z: ez, r0: 0.2, r1: 1.2, width: 0.14, life: 0.4, core: WATER, glow: WATER, soft: 0.8, y: 0.04, opacity: 0.6 });
+      spray('shard', ex, 0.4, ez, 10, { color: SLIME, tile: SHARD_TILE.drop, speed: [1.0, 2.2], up: [1.2, 2.4], size: [0.09, 0.14], life: [0.45, 0.7], gravity: 7, drag: 0.4, spin: [-2, 2] });
+      kit.mark({ x: ex, z: ez, radius: 0.9, kind: 'splash', stain: SLIME, glow: null, life: 3, opacity: 0.45 });
+    });
+    const n = Math.max(2, Math.round(len / 1.6));
+    for (let i = 1; i <= n; i++) {
+      const k = i / (n + 1);
+      const px = ev.x + d.x * len * k;
+      const pz = ev.z + d.z * len * k;
+      after(out * k, () => spray('shard', px, 0.7, pz, 2, { color: SLIME, tile: SHARD_TILE.drop, speed: [0.6, 1.4], up: [0.6, 1.4], size: [0.07, 0.11], life: [0.35, 0.55], gravity: 7, drag: 0.4, jitter: 0.2 }));
+    }
+    camfx.kick(d.x, d.z, MIRE.camera.kick * 0.5, 0.12);
+  });
+  // The Belly Flop: the body comes down on the ring — an Ember ring (the
+  // hit), a crown of water and silt, foam rings rolling out, the mire it
+  // leaves (the sim's slick) under a splash stain.
+  bus.on('boss_belly_flop', (ev) => {
+    mark('mireking_flop');
+    const r = ev.radius ?? 2.0;
+    const F = MIRE.flop;
+    flare(ev.x, 0.5, ev.z, EMBER, 2.0, { kind: 'burst', life: 0.26, core: PARCH });
+    kit.flash({ x: ev.x, y: 0.6, z: ev.z, color: PARCH, size: 1.4, life: 0.12 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.28, width: 0.15 });
+    for (let i = 0; i < F.ripples; i++) kit.ring({ x: ev.x, z: ev.z, r0: r * 0.4, r1: r * (1.4 + i * 0.4), width: 0.18 - i * 0.03, life: 0.55 + i * 0.15, core: PARCH, glow: WATER, soft: 0.8, y: 0.04, opacity: 0.7, delay: 0.04 + i * 0.1 });
+    shock(ev.x, ev.z, r * 1.7, MIRE.corruption, { life: 0.7, width: 0.1, core: MIRE.peak, delay: 0.08 });
+    spray('shard', ev.x, 0.4, ev.z, F.drops, { color: WATER, tile: SHARD_TILE.drop, speed: [1.6, 3.4], up: [2.2, 4.0], size: [0.1, 0.17], life: [0.6, 1.0], gravity: 8, drag: 0.3, spin: [-2, 2], jitter: r * 0.5 });
+    spray('chunk', ev.x, 0.3, ev.z, F.silt, { color: SILT, speed: [1.2, 2.6], up: [1.6, 3.0], size: [0.06, 0.12], life: [0.5, 0.85], jitter: r * 0.5 });
+    spray('smoke', ev.x, 0.2, ev.z, 6, { color: SILT, speed: [1.0, 2.0], up: [0.1, 0.3], size: [0.45, 0.65], grow: 1.5, life: [0.7, 1.0], opacity: 0.3, gravity: -0.1, drag: 2.4, jitter: r * 0.4 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.25, kind: 'splash', stain: SLIME, glow: MIRE.corruption, glowOpacity: 0.3, cool: 1.2, life: 4.5, opacity: 0.5 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: MIRE.corruption, opacity: 0.45, life: 0.5, attack: 0.02 });
+    camfx.dolly(ev.x, ev.z, MIRE.camera.dolly, 0.38);
+  });
+  // The Swallow: the jaws snap shut — an Ember ring (the hit), a violet
+  // gulp out of the throat, slime sprayed from the lips.
+  bus.on('boss_swallow', (ev) => {
+    mark('mireking_swallow');
+    const r = ev.radius ?? 1.9;
+    const b = byId(ev.id);
+    const f = faceOf(b);
+    const mx = ev.x + f.x * 1.1;
+    const mz = ev.z + f.z * 1.1;
+    flare(mx, 1.0, mz, MIRE.corruption, 2.4, { kind: 'burst', life: 0.3, core: MIRE.peak, spin: 0.5 });
+    kit.flash({ x: mx, y: 1.0, z: mz, color: PARCH, size: 1.2, life: 0.12 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.3, width: 0.15 });
+    shock(ev.x, ev.z, r * 1.35, MIRE.corruption, { life: 0.5, width: 0.22, core: MIRE.peak, delay: 0.03 });
+    spray('shard', mx, 0.9, mz, 14, { color: SLIME, tile: SHARD_TILE.drop, speed: [1.2, 2.6], up: [1.0, 2.2], size: [0.09, 0.14], life: [0.45, 0.75], gravity: 7, drag: 0.4, jitter: 0.5 });
+    spray('spark', mx, 1.0, mz, 16, { color: MIRE.corruption, speed: [0.4, 1.4], up: [0.6, 1.6], size: [0.05, 0.1], life: [0.6, 1.0], gravity: -0.3, drag: 1.4, jitter: 0.4 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.1, kind: 'splash', stain: SLIME, glow: MIRE.corruption, glowOpacity: 0.35, cool: 1.0, life: 3.2, opacity: 0.4 });
+    kit.light({ x: mx, z: mz, radius: 2.6, color: MIRE.corruption, opacity: 0.55, life: 0.5, attack: 0.02 });
+    camfx.dolly(ev.x, ev.z, MIRE.camera.dolly * 0.8, 0.3);
+  });
+  function mirekingEnrage(ev) {
+    mark('mireking_enrage');
+    const { x, z } = ev;
+    kit.pillar({ x, z, radius: 0.7, height: 2.8, color: MIRE.corruption, life: 0.7, opacity: 0.5 });
+    flare(x, 1.2, z, MIRE.corruption, 2.4, { kind: 'burst', life: 0.32, core: MIRE.peak });
+    kit.ring({ x, z, r0: 0.6, r1: 3.4, width: 0.2, life: 0.75, core: PARCH, glow: WATER, soft: 0.8, y: 0.04, opacity: 0.7 });
+    spray('shard', x, 0.8, z, 18, { color: SLIME, tile: SHARD_TILE.drop, speed: [1.0, 2.2], up: [1.4, 2.6], size: [0.09, 0.14], life: [0.5, 0.8], gravity: 7, drag: 0.4, jitter: 0.8 });
+    kit.light({ x, z, radius: 3, color: MIRE.corruption, opacity: 0.5, life: 0.8 });
+  }
+  function mirekingDeath(x, z) {
+    // It sinks into its own pond: a great splash, the crown's bars fall, the
+    // violet bubbles up out of the silt and is gone.
+    mark('mireking_death');
+    kit.pillar({ x, z, radius: 1.2, height: 3.6, color: MIRE.corruption, life: 1.4, opacity: 0.6 });
+    flare(x, 1.0, z, MIRE.corruption, 3.4, { kind: 'burst', life: 0.5, core: MIRE.peak, spin: 0.7 });
+    for (let i = 0; i < 4; i++) kit.ring({ x, z, r0: 0.6, r1: 3 + i * 1.2, width: 0.26 - i * 0.04, life: 0.8 + i * 0.25, core: PARCH, glow: WATER, soft: 0.8, y: 0.04, opacity: 0.75, delay: i * 0.14 });
+    spray('shard', x, 0.6, z, 40, { color: WATER, tile: SHARD_TILE.drop, speed: [1.6, 3.6], up: [2.4, 4.4], size: [0.1, 0.18], life: [0.7, 1.1], gravity: 8, drag: 0.3, jitter: 1.0 });
+    spray('chunk', x, 1.2, z, 10, { color: RUSTC, speed: [0.8, 2.0], up: [1.6, 2.8], size: [0.07, 0.13], life: [0.7, 1.1], jitter: 0.5 });
+    spray('spark', x, 0.3, z, 36, { color: MIRE.corruption, speed: [0.2, 0.9], up: [1.0, 2.4], size: [0.06, 0.12], life: [1.5, 2.4], gravity: -0.35, drag: 1.2, jitter: 1.2 });
+    spray('smoke', x, 0.3, z, 10, { color: SILT, speed: [0.4, 1.2], up: [0.3, 0.8], size: [0.5, 0.75], grow: 1.6, life: [1.2, 1.8], opacity: 0.34, gravity: -0.2, drag: 2.0, jitter: 1.2 });
+    kit.mark({ x, z, radius: 3.4, kind: 'splash', stain: SLIME, glow: MIRE.corruption, glowOpacity: 0.45, cool: 2.0, life: 7, opacity: 0.55 });
+    kit.light({ x, z, radius: 4.4, color: MIRE.corruption, opacity: 0.6, life: 1.5 });
+    camfx.dolly(x, z, MIRE.camera.dolly * 1.2, 0.55);
+  }
+  // Wind-ups: the wolf scrapes the earth before a Pounce and fills its chest
+  // for the Howl; the toad's sac swells for the Swallow and the pond stirs
+  // under it before a Belly Flop.
+  function thirdBossWindup(b, ev) {
+    if (b.kind === 'gloamwolf') {
+      if (ev.attack === 'pounce') {
+        mark('gloamwolf_crouch');
+        const f = faceOf(b);
+        spray('chunk', b.x - f.x * 0.8, 0.1, b.z - f.z * 0.8, 5, { color: DIRT, speed: [0.6, 1.4], up: [0.8, 1.4], size: [0.05, 0.1], life: [0.4, 0.6], dir: { x: -f.x, z: -f.z }, dirBias: 0.7 });
+        for (const s of [-1, 1]) flare(b.x + f.x * 1.4 - f.z * 0.18 * s, 1.75, b.z + f.z * 1.4 + f.x * 0.18 * s, WOLF.corruption, 0.6, { life: 0.4, core: WOLF.peak });
+      } else if (ev.attack === 'howl') {
+        mark('gloamwolf_howl_windup');
+        anticipate(b.x, b.z, 2.4, WOLF.corruption, { y: 1.8, lines: 10, core: WOLF.peak });
+      }
+    } else if (b.kind === 'mireking') {
+      if (ev.attack === 'swallow') {
+        mark('mireking_gape');
+        anticipate(b.x, b.z, 2.0, MIRE.corruption, { y: 0.9, lines: 10, core: MIRE.peak });
+      } else if (ev.attack === 'flop') {
+        mark('mireking_heave');
+        kit.ring({ x: b.x, z: b.z, r0: 0.6, r1: 1.8, width: 0.12, life: 0.6, core: PARCH, glow: WATER, soft: 0.8, y: 0.04, opacity: 0.5 });
+      }
+    }
+  }
+  // Per frame: the wolf's bound throws a streak of dust and moonlight under
+  // it; while the toad gapes, mist and slime are drawn into its mouth.
+  function thirdBossFrame(e, rec) {
+    if (e.kind === 'gloamwolf') {
+      if (e.mode === 'leap' && rec.clock >= 0.04) {
+        rec.clock = 0;
+        spray('smoke', e.x, 0.15, e.z, 1, { color: FURC, speed: [0.1, 0.3], up: [0.1, 0.3], size: [0.34, 0.48], grow: 1.3, life: [0.5, 0.8], opacity: 0.28, gravity: -0.1, drag: 2.4, jitter: 0.3 });
+        spray('spark', e.x, 1.4, e.z, 1, { color: rnd(0, 1) < 0.5 ? MOON : WOLF.corruption, speed: [0.05, 0.2], up: [0.2, 0.5], size: [0.05, 0.09], life: [0.4, 0.7], gravity: -0.2, drag: 1.6, jitter: 0.4 });
+      } else if (e.enraged && rec.clock >= 0.22) {
+        rec.clock = 0;
+        spray('spark', e.x, 1.8, e.z, 1, { color: WOLF.corruption, speed: [0.05, 0.2], up: [0.5, 0.9], size: [0.05, 0.09], life: [0.7, 1.0], gravity: -0.3, drag: 1.4, jitter: 0.6, opacity: 0.85 });
+      }
+    } else if (e.kind === 'mireking') {
+      if (e.mode === 'gape' && rec.clock >= 0.05) {
+        rec.clock = 0;
+        const f = unit2(e.faceX ?? 0, e.faceZ ?? 1);
+        const mx = e.x + f.x * 1.1;
+        const mz = e.z + f.z * 1.1;
+        const a = Math.atan2(f.z, f.x) + rnd(-1.1, 1.1);
+        const dist = rnd(2.5, 5.5);
+        const sx = e.x + Math.cos(a) * dist;
+        const sz = e.z + Math.sin(a) * dist;
+        const tt = 0.45;
+        kit.streak({ a: { x: sx, y: 0.5, z: sz }, b: { x: sx + (mx - sx) * 0.12, y: 0.55, z: sz + (mz - sz) * 0.12 }, width: 0.06, tailW: 0, core: MIRE.peak, glow: MIRE.corruption, life: tt, travel: { x: (mx - sx) / tt, y: 0.8, z: (mz - sz) / tt }, fall: 1.0, opacity: 0.8 });
+        if (rnd(0, 1) < 0.5) spray('smoke', sx, 0.3, sz, 1, { color: SILT, speed: [0.05, 0.1], up: [0.05, 0.15], size: [0.3, 0.42], grow: 0.6, life: [0.4, 0.6], opacity: 0.22, gravity: 0, drag: 2.4 });
+      } else if (e.mode === 'wade' && rec.clock >= 0.6) {
+        rec.clock = 0;
+        kit.ring({ x: e.x, z: e.z, r0: 0.9, r1: 1.7, width: 0.06, life: 0.9, core: PARCH, glow: WATER, soft: 0.8, y: 0.03, opacity: 0.3 });
+      }
+    }
+  }
+
+  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath, gloamwolf: gloamwolfDeath, mireking: mirekingDeath };
 
   // Per frame: the Heron's drive throws spray off its legs and stops in a
   // splash; the burrowed Wyrm leaves a trail of turned earth so the party can
   // read where it is tunnelling.
   const bossMode = new Map(); // boss id -> { mode, clock }
-  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus', 'keener', 'sexton', 'bloom', 'siphon']);
+  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus', 'keener', 'sexton', 'bloom', 'siphon', 'gloamwolf', 'mireking']);
   function bossFrame(dt) {
     for (const e of world.entities()) {
       if (S2_FRAME.has(e.kind)) {

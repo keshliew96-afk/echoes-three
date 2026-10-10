@@ -4718,6 +4718,12 @@
   ],
   "data": true
  },
+ "Defeat the Gloam Wolf.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Defeat the Hollow Cantor.": {
   "files": [
    "src/data/unlocks.js"
@@ -4737,6 +4743,12 @@
   "data": true
  },
  "Defeat the Millwheel.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Mire King.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5613,6 +5625,12 @@
   ],
   "data": true
  },
+ "Fell the Gloam Wolf": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Hollow Cantor": {
   "files": [
    "src/data/unlocks.js"
@@ -5632,6 +5650,12 @@
   "data": true
  },
  "Fell the Millwheel": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Mire King": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6178,6 +6202,12 @@
   ],
   "data": true
  },
+ "Gloamfang tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Good. Now you sound a little more like me.": {
   "files": [
    "src/data/story.js"
@@ -6350,6 +6380,12 @@
    "src/scenes/camp.js",
    "src/ui/menu/saves.js",
    "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Healer effects burn in Millpond colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -6947,6 +6983,12 @@
   ],
   "data": true
  },
+ "It hunted before the wood had a warden. Now it hunts for me.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "It hunted mice in the Hollow Wood. Now it hunts whatever still has a heartbeat.": {
   "files": [
    "src/data/journal.js"
@@ -6968,6 +7010,12 @@
   "files": [
    "src/ui/menu/cloud.js"
   ]
+ },
+ "It swallowed my song with the millpond. Listen to it croak.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "It swallows the millrace mud and throws it back.": {
   "files": [
@@ -7826,6 +7874,12 @@
  "Millpond": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Millpond tint": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -9128,6 +9182,12 @@
   "files": [
    "src/ui/run/endscreens.js"
   ]
+ },
+ "Pounce: crouches, then lands in a warning ring for 15. Rend: a warning cone at its jaws for 13. Moon Howl: a ring round it for 8 that slows, then it pounces twice in a row.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "power": {
   "files": [
@@ -11311,6 +11371,12 @@
   ],
   "data": true
  },
+ "Swordsman effects burn in Gloamfang colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Swordsman effects burn in Gravefrost colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
@@ -12147,6 +12213,32 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The Gloam Wolf": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE GLOAM WOLF": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Gloam Wolf hunts the ring of stones ahead. When it crouches, it is coming for you. When it howls, it is coming for all of you.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Gloam Wolf lies down at last. The wood’s long night is over.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
  "The glowing spring heals the whole party once per room. Walk up to it and press {key} to drink.": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -12367,7 +12459,7 @@
   ],
   "data": true
  },
- "The Hollow Stag was the wood’s warden, the first creature to hear the hollow song. Where no warden stood, the briars grew a Thornmother instead. Felling either frees the Verse of Root.": {
+ "The Hollow Stag was the wood’s warden, the first creature to hear the hollow song. Where no warden stood, the briars grew a Thornmother instead, and the Gloam Wolf, the wood’s oldest hunter, still hunts the dark between them. Felling any of the three frees the Verse of Root.": {
   "files": [
    "src/data/story.js"
   ],
@@ -12396,6 +12488,12 @@
  "The Hollow Wood is on the map now. Shall I read you the story so far?": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Hollow Wood's oldest hunter, grey with years and hollow with the song.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -12505,6 +12603,12 @@
   ],
   "data": true
  },
+ "The millpond's old toad, grown vast on silt and crowned with the mill's grate.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The Millwheel": {
   "files": [
    "src/data/journal.js",
@@ -12530,6 +12634,32 @@
    "src/ui/run/endscreens.js",
    "src/ui/run/transit.js"
   ]
+ },
+ "The Mire King": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE MIRE KING": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Mire King sinks into the silt. The millpond goes still.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Mire King sits in the drained basin. When its throat swells, walk away from it, and do not let its tongue catch you.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "The name other players see in the lobby and above your seat in the connection chip. Up to 16 characters.": {
   "files": [
@@ -12836,7 +12966,7 @@
    "src/ui/run/index.js"
   ]
  },
- "The song travels with water. The Drowned Heron kept the river; the Millwheel is the mill itself, turned. Felling either frees the Verse of Water.": {
+ "The song travels with water. The Drowned Heron kept the river; the Millwheel is the mill itself, turned; the Mire King grew fat on the millpond and crowned itself with the grate. Felling any of the three frees the Verse of Water.": {
   "files": [
    "src/data/story.js"
   ],
@@ -13380,6 +13510,12 @@
   "files": [
    "src/ui/run/daily.js"
   ]
+ },
+ "Tongue Lash: a warning lane for 14 that drags you in. Belly Flop: lands in a warning ring for 16 and leaves mire. Swallow: its throat swells and pulls you close, then a ring round it snaps shut for 18.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Too late — that choice already closed": {
   "files": [

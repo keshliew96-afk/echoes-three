@@ -334,6 +334,26 @@ export const BOSS_MUSIC = Object.freeze({
     lead: 'brass',
     motif: [[0, 4, 4], [4, 3, 4], [8, 1, 4], [12, 0, 4], [16, 4, 2], [18, 3, 2], [20, 1, 4], [24, 0, 8]],
   },
+  // Third bosses (docs/THIRD_BOSSES.md). The Gloam Wolf's groove runs: a
+  // lute ostinato at a gallop over a hand drum on the off-beats, a horn lead
+  // that howls up the octave (brass). The Mire King's wallows: a low reed lead over
+  // a slow frame drum, drips for an ostinato, the progression sinking.
+  gloamwolf: {
+    theme: 'wood',
+    prog: [0, 4, 1, 0],
+    arp: { instr: 'lute', pattern: [0, 0, 2, 0, 4, 0, 2, 1] },
+    drum: { 0: 1, 3: 0.55, 4: 0.8, 6: 0.5, 7: 0.6, 8: 0.95, 11: 0.55, 12: 0.8, 14: 0.5, 15: 0.6 },
+    lead: 'brass',
+    motif: [[0, 0, 2], [2, 4, 2], [4, 7, 6], [12, 8, 2], [14, 7, 2], [16, 4, 4], [20, 1, 4], [24, 0, 8]],
+  },
+  mireking: {
+    theme: 'mill',
+    prog: [0, 6, 5, 1],
+    arp: { instr: 'drip', pattern: [0, 2, 4, 2, 0, 1, 3, 1] },
+    drum: { 0: 1, 6: 0.6, 8: 0.9, 14: 0.55 },
+    lead: 'reed',
+    motif: [[0, 0, 6], [6, 1, 2], [8, 0, 4], [12, -2, 4], [16, -3, 6], [22, -2, 2], [24, 0, 8]],
+  },
 });
 export const bossMusicKey = (kind) => (kind && BOSS_MUSIC[kind] ? kind : null);
 

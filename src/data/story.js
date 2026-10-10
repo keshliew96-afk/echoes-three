@@ -24,7 +24,7 @@ export const CHAPTERS = Object.freeze([
     name: 'Root@@verse',
     title: 'Chapter I · The Hollow Wood',
     summary:
-      'The Hollow Stag was the wood’s warden, the first creature to hear the hollow song. Where no warden stood, the briars grew a Thornmother instead. Felling either frees the Verse of Root.',
+      'The Hollow Stag was the wood’s warden, the first creature to hear the hollow song. Where no warden stood, the briars grew a Thornmother instead, and the Gloam Wolf, the wood’s oldest hunter, still hunts the dark between them. Felling any of the three frees the Verse of Root.',
   },
   {
     level: 2,
@@ -32,7 +32,7 @@ export const CHAPTERS = Object.freeze([
     name: 'Water@@verse',
     title: 'Chapter II · The Sunken Mill',
     summary:
-      'The song travels with water. The Drowned Heron kept the river; the Millwheel is the mill itself, turned. Felling either frees the Verse of Water.',
+      'The song travels with water. The Drowned Heron kept the river; the Millwheel is the mill itself, turned; the Mire King grew fat on the millpond and crowned itself with the grate. Felling any of the three frees the Verse of Water.',
   },
   {
     level: 3,
@@ -173,6 +173,9 @@ export const RUMOURS = Object.freeze({
   millwheel: { text: 'The Millwheel has torn loose ahead. It owns the edge of the room, so fight from the middle.' },
   wyrm: { text: 'The Barrow Wyrm coils beyond this clearing. It guards the way down. Don’t stand in front of it.' },
   lichram: { text: 'The Lich Ram walks ahead, and the graves answer it. Break what rises before it gathers.' },
+  // Third bosses (docs/THIRD_BOSSES.md).
+  gloamwolf: { text: 'The Gloam Wolf hunts the ring of stones ahead. When it crouches, it is coming for you. When it howls, it is coming for all of you.' },
+  mireking: { text: 'The Mire King sits in the drained basin. When its throat swells, walk away from it, and do not let its tongue catch you.' },
   // Level IV's own bosses (docs/ACT_IV_BOSSES.md).
   cantor: { text: 'The Hollow Cantor itself waits in the Heart Chamber. It sings the verses it stole from every land, and their beasts come with each one. Crowd it and it steps away.' },
   colossus: { text: 'The singer won’t come out today. The Heart has grown a Geode Colossus to guard its chamber. Step off the line when it raises a fist.' },
@@ -226,6 +229,8 @@ export const BOSS_VOICE = Object.freeze({
   millwheel: { text: 'Even the mill turns to my tune.' },
   wyrm: { text: 'It guarded my door. Now it guards my song.' },
   lichram: { text: 'The dead remember every song. Mine they remember best.' },
+  gloamwolf: { text: 'It hunted before the wood had a warden. Now it hunts for me.' },
+  mireking: { text: 'It swallowed my song with the millpond. Listen to it croak.' },
   // Level IV: the singer itself, and the body it grows to sing through.
   cantor: { text: 'You carried three verses all the way down. Sing them for me.' },
   colossus: { text: 'I would not come out for you, so I grew a body that would.' },
@@ -234,7 +239,7 @@ export const BOSS_VOICE = Object.freeze({
 });
 
 // THE TIDECALLER: the Hollow Voice the first time Rill stands in a Mill boss
-// room (either Level II boss), and her line on the Level II clear card.
+// room (any Level II boss), and her line on the Level II clear card.
 export const RILL_VOICE = Object.freeze({ text: 'The otter sang my river shut once. Sing for me now, little Tidecaller.' });
 export const RILL_CLEAR = Object.freeze({
   freed: { text: 'On the riverbank an otter shakes off the hollow song. Rill follows the bell home.' },
@@ -278,11 +283,11 @@ export function chorusLine({ bossRoom = false, room = 0, level = 1, curses = 0, 
 
 // Freed wardens: a land's warden spirit stands at the camp's edge once that
 // land's boss is felled. Keyed by the boss kind recorded in the profile
-// (meta.bosses); `also` names the level's alternate boss, which frees the same
+// (meta.bosses); `also` names the level's other bosses, which free the same
 // warden.
 export const WARDENS = Object.freeze({
-  stag: { model: 'warden_stag', also: ['thornmother'], x: -10.0, z: -3.9, yaw: 1.2, text: 'The Stag rests at the edge of the wood, free of the hollow song.' },
-  heron: { model: 'warden_heron', also: ['millwheel'], x: 10.1, z: 4.6, yaw: -2.2, text: 'The Heron stands quietly, listening to clear water.' },
+  stag: { model: 'warden_stag', also: ['thornmother', 'gloamwolf'], x: -10.0, z: -3.9, yaw: 1.2, text: 'The Stag rests at the edge of the wood, free of the hollow song.' },
+  heron: { model: 'warden_heron', also: ['millwheel', 'mireking'], x: 10.1, z: 4.6, yaw: -2.2, text: 'The Heron stands quietly, listening to clear water.' },
   wyrm: { model: 'warden_wyrm', also: ['lichram'], x: 9.9, z: -4.1, yaw: -0.9, text: 'The Wyrm sleeps at last. Its long watch is over.' },
 });
 

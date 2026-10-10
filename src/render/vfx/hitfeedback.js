@@ -39,7 +39,7 @@ const BOSS_HEAVY_FRAC = 0.1; // a boss blow reads heavy a little sooner
 const HURT_RGB = '194, 22, 40';
 const FLASH_HEX = 0xff4a4a;
 const SOFT_SHAPES = new Set(['molten', 'hazard', 'thorns']);
-const BOSS_KINDS = new Set(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus']);
+const BOSS_KINDS = new Set(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking']);
 
 // Vignette peak per tier, before the share-of-bar scaling.
 const PEAK = { soft: 0.22, light: 0.42, heavy: 0.78, down: 0.95 };

@@ -803,6 +803,9 @@ ${Object.entries({
   // Colossus into slate and pale glass.
   cantor: mix(VFX_MATTER.heartvein, VFX_MATTER.heartpeak, 0.3),
   colossus: mix(VFX_MATTER.stone, VFX_MATTER.heartcrystal, 0.4),
+  // Third bosses: the wolf in moonlit grey, the toad in millpond silt.
+  gloamwolf: mix(VFX_MATTER.owlfeather, VFX_BIOME[1], 0.45),
+  mireking: mix(VFX_MATTER.silt, VFX_MATTER.water, 0.4),
 })
   .map(
     ([k, tint]) => `.hud-bn-medal[data-boss="${k}"] {
