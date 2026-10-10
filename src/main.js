@@ -288,6 +288,9 @@ registerVaultCues(service('audio'));
 // NEW ENEMIES (docs/WOOD_MILL_ENEMIES.md): the Wood's and the Mill's new creatures.
 import { registerWoodMillCues } from './audio/woodmillcues.js';
 registerWoodMillCues(service('audio'));
+// THE TIDECALLER (docs/TIDECALLER.md): Rill's own water voices.
+import { registerTideCues } from './audio/tidecues.js';
+registerTideCues(service('audio'));
 // NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): the Keener, Sexton, Bloom
 // and Siphon voices.
 import { registerBarrowHeartCues } from './audio/barrowheartcues.js';

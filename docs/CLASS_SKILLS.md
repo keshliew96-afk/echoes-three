@@ -79,3 +79,9 @@ works on) are in `classVerdict` in `src/sim/nodes.js`. Prey is not called
 mid-fight save round trip. `node tools/gntM2-goldens.mjs` stays 9/9.
 
 Numbers are first guesses, not tuned by play.
+
+## The Tidecaller
+
+Rill's eleven skills and eight class nodes (all campaign-only) are listed in
+docs/TIDECALLER.md, with her AI rules, VFX and sounds;
+`node tools/tidecaller-kit-probe.mjs` checks them.

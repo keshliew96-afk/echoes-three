@@ -1080,6 +1080,18 @@
   ],
   "data": true
  },
+ "+15% per soaked enemy near.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+15% power for every soaked enemy within 3 u of where the cast lands, up to +45%.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "+25% area — bigger bursts and zones; a wider arc (to 90°).": {
   "files": [
    "src/ui/run/cards.js"
@@ -1523,6 +1535,12 @@
   ],
   "data": true
  },
+ "a bolt leaves a 2 s puddle (0.6 u) where it lands or falls; the puddle soaks.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A bolt of river water: 14, and the enemy is soaked (15% slower for 4 s).": {
   "files": [
    "src/ui/run/cards.js"
@@ -1554,6 +1572,12 @@
   "data": true
  },
  "A brand of dawn at the cursor for 4 s: 6 per second to enemies inside, who take 20% more damage.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A bubble on the ally enemies are after: a 14 shield for 4 s. When it breaks or ends, it pops and soaks enemies within 1 u.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -1595,6 +1619,24 @@
   "data": true
  },
  "a connecting cast cuts every other Swordsman skill’s cooldown by 0.3 s per copy.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "a Crash also stuns.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "a Crash cuts her other cooldowns.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "a Crash from this skill also stuns for 0.4 s (not the bosses).": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -1875,6 +1917,12 @@
    "src/save/index.js"
   ]
  },
+ "a second soak drenches (30% slow).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "a self burst has nothing to scatter": {
   "files": [
    "src/ui/socket/index.js"
@@ -1907,6 +1955,12 @@
   ]
  },
  "A spinning burst: 20 to up to 5 enemies around the Tank.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A squall over the target for 6 s: 3 per second to enemies inside, who are soaked and slowed 25%.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -1966,6 +2020,12 @@
   "data": true
  },
  "A whirl of blades: 10 to up to 6 enemies around the fox, then it runs 30% faster for 2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A whirlpool at the target for 5 s: 4 per second, soaks, slows 30% and drags enemies inside toward its centre.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -3098,6 +3158,12 @@
   ],
   "data": true
  },
+ "bolts leave a soaking puddle.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "bolts pierce one more.": {
   "files": [
    "src/ui/run/cards.js"
@@ -3255,6 +3321,12 @@
   ],
   "data": true
  },
+ "Bubble Ward": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "BUILD COMPLETE": {
   "files": [
    "src/ui/run/draft.js"
@@ -3317,6 +3389,12 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "BW": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Caltrops": {
   "files": [
@@ -3872,6 +3950,12 @@
    "src/ui/menu/confirm.js"
   ]
  },
+ "Confluence": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Connection {level}": {
   "files": [
    "src/ui/net/hud.js"
@@ -4097,6 +4181,30 @@
   ],
   "data": true
  },
+ "Crash. A jet of water: 18 to every enemy along a 5.5 u line. +60% on a soaked enemy, which spends the soak.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Crash. A wave rolls 2.2 u ahead in a 100° arc: 20 to up to 6 enemies, pushed back. +60% on a soaked enemy, which spends the soak.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Crash. Everything within 3 u is dragged 1 u in (not the bosses), then 1 s later the water bursts: 40 to up to 8 enemies. +60% on a soaked enemy.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Crashing Wave": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Crates under a rotten tarp. Nobody has come back for them.": {
   "files": [
    "src/sim/encounters.js"
@@ -4167,6 +4275,12 @@
   ],
   "data": true
  },
+ "Current": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Curse: {name}": {
   "files": [
    "src/ui/run/levels.js"
@@ -4224,6 +4338,12 @@
   "files": [
    "src/ui/menu/tabs/network.js"
   ]
+ },
+ "CW": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "DAILY": {
   "files": [
@@ -4446,6 +4566,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Deluge": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Depth": {
   "files": [
    "src/ui/run/daily.js"
@@ -4616,6 +4742,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "drags farther · pushes pull.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Drawn to the party lanterns, and to whatever holds them.": {
   "files": [
    "src/data/journal.js"
@@ -4722,6 +4854,12 @@
  "Earthshatter": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Ebb": {
+  "files": [
+   "src/sim/nodes.js"
   ],
   "data": true
  },
@@ -7170,10 +7308,22 @@
   ],
   "data": true
  },
+ "MA": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Made by a newer version of Echoes": {
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Maelstrom": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Magpie": {
   "files": [
@@ -8772,6 +8922,12 @@
   ],
   "data": true
  },
+ "Rain Squall": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Rally the party": {
   "files": [
    "src/ui/menu/tabs/controls.js"
@@ -9284,6 +9440,12 @@
    "src/ui/run/encounter.js"
   ]
  },
+ "RI": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Right mouse": {
   "files": [
    "src/app/controls.js"
@@ -9304,6 +9466,18 @@
  "Riposte": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Ripple Step": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Riptide": {
+  "files": [
+   "src/sim/nodes.js"
   ],
   "data": true
  },
@@ -10144,6 +10318,24 @@
   ],
   "data": true
  },
+ "soaking an enemy that is already soaked drenches it: 30% slower for the rest of the soak.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "soaks from this skill last 2 s longer per copy.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "soaks last +2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Socket my new nodes": {
   "files": [
    "src/ui/run/partysettings.js"
@@ -10323,6 +10515,18 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Spring Tide": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "SQ": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -10661,6 +10865,12 @@
   "files": [
    "src/ui/run/classpick.js"
   ]
+ },
+ "teammates on soaked foes cool this.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "technique": {
   "files": [
@@ -11732,6 +11942,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "The otter vaults 2.6 u away (untouchable) and leaves a puddle where she stood for 3 s: 6 per second, and it soaks.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "THE PARTY": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -12280,6 +12496,12 @@
   ],
   "data": true
  },
+ "this skill drags enemies 40% farther · a pushing skill pulls them in instead.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "This tab could not be loaded.": {
   "files": [
    "src/ui/menu/settings.js"
@@ -12422,6 +12644,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "TO": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "To keep both, load the older run from Load Game and save it to a numbered slot first.": {
   "files": [
    "src/ui/menu/title.js"
@@ -12452,6 +12680,12 @@
   "files": [
    "src/ui/menu/cloud.js"
   ]
+ },
+ "Torrent": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Toss 15 Glint into the well.": {
   "files": [
@@ -12530,6 +12764,12 @@
   "files": [
    "src/ui/menu/mpjoin.js"
   ]
+ },
+ "Undercurrent": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
  },
  "Undertow": {
   "files": [
@@ -12939,6 +13179,12 @@
    "src/net/session.js"
   ]
  },
+ "Wellspring": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Wet stone and grave frost are slick: you keep sliding when you stop, turn wide, and your dodge carries further. Ground enemies slide too.": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -12961,10 +13207,22 @@
   ],
   "data": true
  },
+ "when a Crash from this skill lands, her other skills cool down 0.5 s sooner.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "When you are hit, the screen edge pulses red toward the attacker, a struck character flashes and heavy hits kick the camera. Turn it off if flashing bothers you.": {
   "files": [
    "src/ui/run/hitfeedback.js"
   ]
+ },
+ "whenever a teammate hits a soaked enemy, this skill cools 0.1 s faster (at most every 0.5 s).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "Where": {
   "files": [
@@ -12987,6 +13245,12 @@
  "Whirling Guard": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Whirlpool": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -13081,6 +13345,12 @@
   "files": [
    "src/ui/run/levels.js"
   ]
+ },
+ "WP": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Wyrm Scale": {
   "files": [

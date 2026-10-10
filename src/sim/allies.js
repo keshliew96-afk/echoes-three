@@ -2161,7 +2161,8 @@ export function createAllySystem({
   }
   function puddleTick(z, tick) {
     const S = combat.status;
-    if (S) {
+    // A Deluge puddle checks every `every` ticks (the Dive puddle every tick).
+    if (S && !(z.every > 1 && (tick - z.nextTickTick) % z.every !== 0)) {
       for (const e of hostiles()) {
         if (dist2(e.x, e.z, z.x, z.z) <= z.radius * z.radius) S.apply(e, 'soaked', CLASS_TECH.soakMag, CLASS_TECH.soakTicks, tick, z.sourceId);
       }
@@ -2181,10 +2182,12 @@ export function createAllySystem({
       }
       z.ticksDone += 1;
       z.nextTickTick += ZONE_CADENCE_TICKS;
-      const occupants = hostiles().filter(
+      let occupants = hostiles().filter(
         (e) => dist2(e.x, e.z, z.x, z.z) <= z.radius * z.radius
       );
       sortNearFar(occupants, z.x, z.z);
+      // THE TIDECALLER: the Maelstrom's burst hits its nearest `count`.
+      if (z.count > 0) occupants = occupants.slice(0, z.count);
       const hitIds = [];
       for (const t of occupants) {
         const tl = Math.hypot(t.x - z.x, t.z - z.z) || 1;
@@ -2201,7 +2204,7 @@ export function createAllySystem({
         if (z.drag) opts.kbDist = t.boss === true || t.kind === 'stag' ? 0 : -Math.min(z.drag, Math.hypot(t.x - z.x, t.z - z.z));
         // PARTY: a built ally's zone (mods / a status) resolves through the
         // cast pipeline; a plain zone keeps this path.
-        const r = z.mods || z.applies ? caster.zoneHit(z, t, opts) : combat.applyDamage(t, z.power, opts);
+        const r = z.mods || z.applies || z.crash ? caster.zoneHit(z, t, opts) : combat.applyDamage(t, z.power, opts);
         if (r && !r.immune) hitIds.push(t.id);
       }
       events.emit(tick, 'azone_tick', { id: z.id, skill: z.skill, n: z.ticksDone, hit: hitIds });
@@ -2218,6 +2221,7 @@ export function createAllySystem({
   function endOfTick() {
     const tick = getTick();
     zonePhase(tick);
+    caster.bubbleStep(tick); // THE TIDECALLER: Bubble Ward's bubbles that ended burst
     const p = party();
     const allDown = p.length >= 4 && p.every((m) => m.hp <= 0);
     if (allDown && !defeated) {

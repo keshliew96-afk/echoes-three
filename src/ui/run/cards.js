@@ -66,6 +66,15 @@ export const NODE_GLYPH = {
   duel: '⚔',
   longshot: '⟶',
   prey: '◇',
+  // THE TIDECALLER's nodes (docs/TIDECALLER.md).
+  wellspring: '⊛',
+  deluge: '⇣',
+  current: '≈',
+  ebb: '↩',
+  spring_tide: '⇈',
+  undercurrent: '⥀',
+  riptide: '⌁',
+  confluence: '⋈',
 };
 
 // §15.1 "Effect" column + the §15.3 matrix summarised per node.
@@ -117,6 +126,15 @@ export const NODE_EFFECT = {
   duel: '+30% power while only one enemy stands within 2.5 u of the Swordsman.',
   longshot: 'an arrow lands +10% harder for every unit it flew, up to +50%.',
   prey: 'the first enemy each cast hits takes 25% more damage for 3 s.',
+  // THE TIDECALLER's nodes (docs/TIDECALLER.md).
+  wellspring: 'soaks from this skill last 2 s longer per copy.',
+  deluge: 'a bolt leaves a 2 s puddle (0.6 u) where it lands or falls; the puddle soaks.',
+  current: '+15% power for every soaked enemy within 3 u of where the cast lands, up to +45%.',
+  ebb: 'when a Crash from this skill lands, her other skills cool down 0.5 s sooner.',
+  spring_tide: 'soaking an enemy that is already soaked drenches it: 30% slower for the rest of the soak.',
+  undercurrent: 'this skill drags enemies 40% farther · a pushing skill pulls them in instead.',
+  riptide: 'a Crash from this skill also stuns for 0.4 s (not the bosses).',
+  confluence: 'whenever a teammate hits a soaked enemy, this skill cools 0.1 s faster (at most every 0.5 s).',
 };
 
 // The same effects in one breath. Used by the compact reflow (short windows),
@@ -166,6 +184,15 @@ export const NODE_EFFECT_SHORT = {
   duel: '+30% with one enemy near.',
   longshot: 'farther arrows hit harder.',
   prey: 'the first hit exposes its target.',
+  // THE TIDECALLER's nodes.
+  wellspring: 'soaks last +2 s.',
+  deluge: 'bolts leave a soaking puddle.',
+  current: '+15% per soaked enemy near.',
+  ebb: 'a Crash cuts her other cooldowns.',
+  spring_tide: 'a second soak drenches (30% slow).',
+  undercurrent: 'drags farther · pushes pull.',
+  riptide: 'a Crash also stuns.',
+  confluence: 'teammates on soaked foes cool this.',
 };
 
 // A skill's two-letter medallion (shown where a skill has no icon art). Two
@@ -242,6 +269,14 @@ export const SKILL_BODY = {
   undertow: 'An undertow at the target for 4 s: 6 per second, soaks, and drags enemies inside toward its centre.',
   breaker: 'Crash. A breaking wave around the otter: 22 to up to 5 enemies, knocked back. +60% on a soaked enemy, which spends the soak.',
   tidepool: 'A passive pool: every second, the 2 nearest enemies within 2.5 u take 5 and are soaked.',
+  // THE TIDECALLER, the rest of her kit (slice 3).
+  torrent: 'Crash. A jet of water: 18 to every enemy along a 5.5 u line. +60% on a soaked enemy, which spends the soak.',
+  whirlpool: 'A whirlpool at the target for 5 s: 4 per second, soaks, slows 30% and drags enemies inside toward its centre.',
+  ripple_step: 'The otter vaults 2.6 u away (untouchable) and leaves a puddle where she stood for 3 s: 6 per second, and it soaks.',
+  bubble_ward: 'A bubble on the ally enemies are after: a 14 shield for 4 s. When it breaks or ends, it pops and soaks enemies within 1 u.',
+  crashing_wave: 'Crash. A wave rolls 2.2 u ahead in a 100° arc: 20 to up to 6 enemies, pushed back. +60% on a soaked enemy, which spends the soak.',
+  rain_squall: 'A squall over the target for 6 s: 3 per second to enemies inside, who are soaked and slowed 25%.',
+  maelstrom: 'Crash. Everything within 3 u is dragged 1 u in (not the bosses), then 1 s later the water bursts: 40 to up to 8 enemies. +60% on a soaked enemy.',
 };
 
 // A skill candidate card body (no frame — the caller owns .rn-card).

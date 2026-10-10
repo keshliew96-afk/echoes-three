@@ -10,7 +10,8 @@
 // Hit feedback adds src/audio/hitcues.js (hurt_heavy / hurt_soft /
 // hurt_down); Champion rooms adds src/audio/championcues.js (ch_*); Keys
 // and vaults adds src/audio/vaultcues.js (vk_*); New enemies, Wood and Mill
-// adds src/audio/woodmillcues.js (wm_*);
+// adds src/audio/woodmillcues.js (wm_*); the Tidecaller's kit adds
+// src/audio/tidecues.js (td_*);
 // --only <file stem> measures just that file.
 // --write rewrites the `@cal begin/end` blocks; --verify re-measures: every
 // cue within 2 dB of levelDb and no SFX peak above the -6 dBFS pre-bus
@@ -29,6 +30,7 @@ const FILES = [
   { file: 'src/audio/vaultcues.js', match: (id) => id.startsWith('vk_') },
   { file: 'src/audio/woodmillcues.js', match: (id) => id.startsWith('wm_') },
   { file: 'src/audio/barrowheartcues.js', match: (id) => id.startsWith('bh_') },
+  { file: 'src/audio/tidecues.js', match: (id) => id.startsWith('td_') },
 ].filter((f) => !argv.includes('--only') || f.file.includes(argv[argv.indexOf('--only') + 1]));
 const { browser, page, errors } = await openAudio(`${BASE}?menu=0&seed=7`);
 try {

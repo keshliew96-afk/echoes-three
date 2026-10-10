@@ -24,7 +24,7 @@
 //
 // Sim discipline: no DOM, no render imports, no wall clock; the only RNG is
 // the combat pipeline's own crit roll per instance, in resolution order.
-import { TICK_HZ } from '../core/constants.js';
+import { TICK_HZ, KNOCKBACK } from '../core/constants.js';
 import { clampPlacement, countFinal, fanDirections, selectDirect, createSkillBolts } from './shapes.js';
 import { sweptStep } from './movement.js';
 import { CLASS_TECH, AI_ENGAGE } from '../data/classes.js';
@@ -274,6 +274,8 @@ export function createAllyCaster(ctx) {
         dispCause: disp.cause,
         viewTick: human && how.f ? how.f.viewTick ?? null : null,
       };
+      // THE TIDECALLER: Ripple Step's puddle lands where the vault began.
+      if (def.atOrigin) a.pendingCast.origin = { x: a.x, z: a.z };
       startDisplacement(a, disp, def, tick, human, how.tag);
       return true;
     }
@@ -306,6 +308,7 @@ export function createAllyCaster(ctx) {
         h = { mode: 'ai', target: null, facing: { x: a.faceX ?? 0, z: a.faceZ ?? 1 } };
       }
     }
+    if (p.origin) h.origin = p.origin;
     deliverPrimary(a, baseDef, def, p.slot, tick, h, p.dispCause);
     return true;
   }
@@ -314,9 +317,11 @@ export function createAllyCaster(ctx) {
     const seat = a.partyIndex;
     const T = tech();
     const castId = (castSeq += 1);
-    const M = T ? T.castMods(a, baseDef, def, tick, { echo: false }) : null;
-    const power = M && M.power !== undefined ? M.power : def.power;
     const human = how.mode === 'human';
+    // Current (a Tidecaller node) counts the soaked around where the cast lands.
+    const at = human ? (how.f && how.f.aim ? how.f.aim : null) : how.target ? { x: how.target.x, z: how.target.z } : null;
+    const M = T ? T.castMods(a, baseDef, def, tick, { echo: false, at }) : null;
+    const power = M && M.power !== undefined ? M.power : def.power;
     let d;
     if (human) d = how.d;
     else if (how.target) d = unit(how.target.x - a.x, how.target.z - a.z);
@@ -338,6 +343,7 @@ export function createAllyCaster(ctx) {
       castId,
       M,
       extra,
+      origin: how.origin ?? null,
     });
     // MORE CLASS SKILLS: `selfStatus` (Blade Dance, Feather Fan) lands on the
     // caster with the cast (never on an echo or a counter).
@@ -424,7 +430,7 @@ export function createAllyCaster(ctx) {
       if (T && !srcLabel) T.instance({ seat, castId, echo: echoFlag, skill: def.id }, () => combat.applyDamage(t, p, opts));
       else if (T && srcLabel) T.suppressed(seat, () => combat.applyDamage(t, p, opts));
       else combat.applyDamage(t, p, opts);
-      if (crashed) spendSoak(a.id, t, def.id);
+      if (crashed) spendSoak(a.id, t, def.id, castId, !!(M && M.riptide));
     }
     applySkillStatus(a, def, targets);
   }
@@ -436,11 +442,98 @@ export function createAllyCaster(ctx) {
     const S = combat.status;
     return !!(S && t && t.faction === 'hostile' && S.magnitude(t, 'soaked', getTick()) > 0);
   }
-  function spendSoak(attackerId, t, skill) {
+  function spendSoak(attackerId, t, skill, castId = null, riptide = false) {
     const S = combat.status;
     if (S && t && t.status) S.clear(t, 'soaked');
     const src = registry.byId(attackerId);
-    events.emit(getTick(), 'crash', { seat: src ? src.partyIndex : null, skill, target: t.id, x: r2(t.x), z: r2(t.z) });
+    // Riptide (a Tidecaller node): the Crash also stuns (never a boss: the
+    // status rules refuse it).
+    let stun = false;
+    if (riptide && S && t.hp > 0) stun = !!S.apply(t, 'stun', 1, CLASS_TECH.riptideTicks, getTick(), attackerId);
+    events.emit(getTick(), 'crash', { seat: src ? src.partyIndex : null, skill, target: t.id, x: r2(t.x), z: r2(t.z), ...(castId !== null && castId !== undefined ? { castId } : {}), ...(stun ? { stun: true } : {}) });
+  }
+
+  // THE TIDECALLER's nodes on a soaking skill: Wellspring lengthens the soak
+  // (+2 s per copy), Spring Tide drenches an enemy that is already soaked.
+  function tideStatus(seat, skillId, st) {
+    if (!st || st.kind !== 'soaked') return st;
+    const b = buildOf(seat);
+    const techs = b ? b.tech.liveTechs(skillId) : [];
+    if (techs.length === 0) return st;
+    const well = techs.filter((x) => x === 'wellspring').length;
+    const drench = techs.includes('spring_tide');
+    if (!well && !drench) return st;
+    return { ...st, ticks: st.ticks + well * CLASS_TECH.wellspringTicks, ...(drench ? { drench: true } : {}) };
+  }
+  function tideDef(a, def) {
+    if (!def.status || def.status.kind !== 'soaked' || a.partyIndex === undefined) return def;
+    const st = tideStatus(a.partyIndex, def.id, def.status);
+    return st === def.status ? def : { ...def, status: st };
+  }
+  // A status from a skill: a drenching soak on an enemy already soaked lands
+  // as the drench (a 30% slow for the new soak's length).
+  function soakApply(t, st, tick, src) {
+    const S = combat.status;
+    if (!S || !st) return null;
+    if (st.kind === 'soaked' && st.drench && S.magnitude(t, 'soaked', tick) > 0) return S.apply(t, 'soaked', CLASS_TECH.drenchMag, st.ticks, tick, src);
+    return S.apply(t, st.kind, st.mag, st.ticks, tick, src);
+  }
+  // Deluge (a Tidecaller node) and nothing else: a short puddle that soaks
+  // whatever stands in it (no damage), like the Dive puddle.
+  function spawnPuddle(x, z, sourceId, tick) {
+    const zone = registry.spawn({
+      kind: 'azone',
+      skill: 'deluge',
+      classId: 'tidecaller',
+      x,
+      z,
+      px: x,
+      pz: z,
+      radius: CLASS_TECH.delugeRadius,
+      power: 0,
+      sourceId,
+      puddle: true,
+      every: 6, // soak check every 0.1 s
+      ticksDone: 0,
+      totalTicks: 1,
+      untilTick: tick + CLASS_TECH.delugeTicks,
+      nextTickTick: tick,
+    });
+    events.emit(tick, 'azone_spawn', { id: zone.id, skill: 'deluge', classId: 'tidecaller', x: r2(x), z: r2(z), radius: zone.radius, totalTicks: 1, puddle: true });
+  }
+  // Bubble Ward (her guard): a bubble bursts when its shield is spent, when
+  // it runs out, or when its bearer goes down, soaking the enemies near it.
+  // The bubble rides its bearer (`bubble`, saved with the body).
+  function bubbleStep(tick) {
+    const S = combat.status;
+    for (const m of party()) {
+      const b = m.bubble;
+      if (!b) continue;
+      const sh = m.status && m.status.shield;
+      const holding = !!sh && sh.untilTick > tick && sh.mag > 1e-6;
+      if (holding && tick < b.untilTick && m.hp > 0) continue;
+      delete m.bubble;
+      const st = tideStatus(b.seat, 'bubble_ward', { kind: 'soaked', mag: CLASS_TECH.soakMag, ticks: CLASS_TECH.soakTicks });
+      const r2max = CLASS_TECH.bubbleBurstU * CLASS_TECH.bubbleBurstU;
+      const hit = [];
+      for (const e of hostiles()) {
+        if ((e.x - m.x) ** 2 + (e.z - m.z) ** 2 > r2max) continue;
+        if (S && soakApply(e, st, tick, b.src)) hit.push(e.id);
+      }
+      events.emit(tick, 'bubble_burst', { seat: b.seat, id: m.id, x: r2(m.x), z: r2(m.z), hit, broken: holding ? false : tick < b.untilTick });
+    }
+  }
+  // Bubble Ward's one recipient: the living member in reach that most
+  // enemies are after (the Tank last, it has shields of its own), then the
+  // most hurt, then the lowest seat.
+  function threatened(a, range, count) {
+    const r2max = range * range;
+    const hs = hostiles();
+    const rows = party()
+      .filter((m) => m.hp > 0 && (m.id === a.id || (m.x - a.x) ** 2 + (m.z - a.z) ** 2 <= r2max))
+      .map((m) => ({ m, n: hs.filter((e) => e.targetId === m.id).length, tank: m.classId === 'tank' ? 1 : 0, f: m.hp / (m.maxHp || 1) }));
+    rows.sort((p, q) => p.tank - q.tank || q.n - p.n || p.f - q.f || p.m.partyIndex - q.m.partyIndex);
+    return rows.slice(0, Math.max(1, Math.floor(count ?? 1))).map((r) => r.m);
   }
 
   // Crush: a stunned or taunted enemy takes x1.5.
@@ -463,15 +556,16 @@ export function createAllyCaster(ctx) {
         const T = tech();
         if (T && !T.mayTaunt(a, t)) continue;
       }
-      S.apply(t, st.kind, st.mag, st.ticks, tick, a.id);
+      soakApply(t, st, tick, a.id);
     }
   }
 
   // deliver(a, def, power, c) — the §6 delivery of one cast. c = { slot,
   // tick, human, target, f, tag, d, echo (the recorded cast | null), castId,
   // M, extra }. Returns the emitted cast payload.
-  function deliver(a, def, power, c) {
+  function deliver(a, def0, power, c) {
     const { tick, human, target, f, tag, echo, castId, M, extra } = c;
+    const def = tideDef(a, def0);
     let d = c.d;
     const seat = a.partyIndex;
     const T = tech();
@@ -499,6 +593,7 @@ export function createAllyCaster(ctx) {
     if (def.archetype === 'guard') {
       let recips;
       if (echo && Array.isArray(echo.targets)) recips = echo.targets.map((id) => registry.byId(id)).filter((m) => m && m.hp > 0);
+      else if (def.pick === 'threat') recips = threatened(a, def.range, def.count);
       else recips = selectDirect({ caster: a, party: party(), range: def.range, count: def.count, isIframed }).targets;
       cast.targets = recips.map((m) => m.id);
       Object.assign(cast, extra);
@@ -509,6 +604,8 @@ export function createAllyCaster(ctx) {
         if (!S) break;
         const rec = S.apply(m, 'shield', power, ticks, tick, a.id);
         if (rec) rec.skill = def.id;
+        // THE TIDECALLER: Bubble Ward's bubble bursts when this shield ends.
+        if (rec && def.burstSoak) m.bubble = { src: a.id, seat: a.partyIndex, untilTick: rec.untilTick };
         // MORE CLASS SKILLS: `grant` (Rallying Cry) — a second status on each.
         if (def.grant) S.apply(m, def.grant.kind, def.grant.mag, def.grant.ticks, tick, a.id);
       }
@@ -524,6 +621,66 @@ export function createAllyCaster(ctx) {
       Object.assign(cast, extra);
       events.emit(tick, 'ally_cast', cast);
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
+      return cast;
+    }
+
+    // THE TIDECALLER: the Maelstrom — the room dragged in now, the burst a
+    // beat later where she cast it (a one-tick zone that crashes).
+    if (def.shape === 'nova' && def.delaySec) {
+      const R = def.drawArea ?? def.area;
+      const dragMul = M && M.dragMul ? M.dragMul : 1;
+      const drawn = [];
+      for (const e of [...hostiles()].sort((p, q) => p.id - q.id)) {
+        const dx = e.x - a.x;
+        const dz = e.z - a.z;
+        const d = Math.hypot(dx, dz);
+        if (d > R || d < 1e-3 || e.boss === true || e.kind === 'stag' || !e.knockbackable) continue;
+        const L = Math.min((def.drawIn ?? 0) * dragMul, d);
+        if (!(L > 0)) continue;
+        e.kbVx = (-dx / d) * (L / KNOCKBACK.durationTicks);
+        e.kbVz = (-dz / d) * (L / KNOCKBACK.durationTicks);
+        e.kbTicks = KNOCKBACK.durationTicks;
+        drawn.push(e.id);
+      }
+      const delayTicks = Math.max(1, secTicks(def.delaySec));
+      let cx = a.x;
+      let cz = a.z;
+      if (echo && Number.isFinite(echo.zx)) {
+        cx = echo.zx;
+        cz = echo.zz;
+      }
+      const spec = {
+        kind: 'azone',
+        skill: def.id,
+        classId: a.classId,
+        x: cx,
+        z: cz,
+        px: cx,
+        pz: cz,
+        radius: def.area,
+        power,
+        count: def.count,
+        crash: true,
+        burst: true,
+        sourceId: a.id,
+        ticksDone: 0,
+        totalTicks: 1,
+        nextTickTick: tick + delayTicks,
+      };
+      const zm = boltMods(def, M, castId, !!echo);
+      if (zm) spec.mods = zm;
+      const zone = registry.spawn(spec);
+      cast.radius = def.area;
+      cast.drawArea = R;
+      cast.delayTicks = delayTicks;
+      cast.drawn = drawn;
+      cast.targets = [];
+      cast.zone = zone.id;
+      cast.zx = r2(cx);
+      cast.zz = r2(cz);
+      Object.assign(cast, extra);
+      events.emit(tick, 'ally_cast', cast);
+      events.emit(tick, 'azone_spawn', { id: zone.id, skill: def.id, classId: a.classId, x: r2(cx), z: r2(cz), radius: def.area, totalTicks: 1, burst: true, delayTicks, ...(tag || {}) });
       return cast;
     }
 
@@ -573,6 +730,7 @@ export function createAllyCaster(ctx) {
     // recorded placement. Clamped to the (resolved) placement range.
     let pos;
     if (echo && Number.isFinite(echo.zx)) pos = { x: echo.zx, z: echo.zz };
+    else if (def.atOrigin && c.origin) pos = { x: c.origin.x, z: c.origin.z };
     else if (human) pos = clampPlacement(a, f && f.aim ? { x: f.aim.x, z: f.aim.z } : { x: a.x + d.x, z: a.z + d.z }, def.range);
     else if (target) pos = clampPlacement(a, { x: target.x, z: target.z }, def.range);
     else pos = clampPlacement(a, { x: a.x + d.x * def.range, z: a.z + d.z * def.range }, def.range);
@@ -598,8 +756,11 @@ export function createAllyCaster(ctx) {
       };
       const zm = boltMods(def, M, castId, !!echo);
       if (zm) spec.mods = zm;
-      if (def.status) spec.applies = { kind: def.status.kind, mag: def.status.mag, ticks: def.status.ticks };
-      if (def.drag) spec.drag = def.drag; // THE TIDECALLER: Undertow pulls its occupants in
+      if (def.status) spec.applies = { kind: def.status.kind, mag: def.status.mag, ticks: def.status.ticks, ...(def.status.drench ? { drench: true } : {}) };
+      // THE TIDECALLER: Undertow and Whirlpool pull their occupants in
+      // (Undercurrent: 40% farther); Whirlpool and Rain Squall also slow.
+      if (def.drag) spec.drag = def.drag * (M && M.dragMul ? M.dragMul : 1);
+      if (def.also) spec.also = { kind: def.also.kind, mag: def.also.mag, ticks: def.also.ticks };
       zones.push(registry.spawn(spec));
     }
     const z0 = zones[0];
@@ -645,7 +806,7 @@ export function createAllyCaster(ctx) {
       m[k] = v;
       any = true;
     };
-    if (def.status && def.shape === 'projectile') put('applies', { kind: def.status.kind, mag: def.status.mag, ticks: def.status.ticks });
+    if (def.status && def.shape === 'projectile') put('applies', { kind: def.status.kind, mag: def.status.mag, ticks: def.status.ticks, ...(def.status.drench ? { drench: true } : {}) });
     if (M) {
       if (M.critMul) put('critMul', M.critMul);
       if (M.kbScale !== undefined) put('kbScale', M.kbScale);
@@ -655,6 +816,9 @@ export function createAllyCaster(ctx) {
       if (M.scatter && def.shape === 'projectile') put('scatter', true);
       if (M.crush) put('crush', true);
       if (M.longshot && def.shape === 'projectile') put('longshot', true);
+      // THE TIDECALLER's nodes riding a bolt or zone.
+      if (M.riptide) put('riptide', true);
+      if (M.deluge && def.shape === 'projectile') put('deluge', true);
     }
     if (def.critBonus) put('critBonus', def.critBonus);
     if (def.crash && def.shape === 'projectile') put('crash', true); // THE TIDECALLER: a crashing bolt
@@ -693,14 +857,23 @@ export function createAllyCaster(ctx) {
     const crashed = m.crash ? crashOn(t) : false;
     if (crashed) p *= CLASS_TECH.crashMul;
     const r = T ? T.instance({ seat, castId: m.castId ?? -1, echo: !!m.echo, skill: bolt.skill }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
-    if (crashed) spendSoak(bolt.sourceId, t, bolt.skill);
-    if (m.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) combat.status.apply(t, m.applies.kind, m.applies.mag, m.applies.ticks, tick, bolt.sourceId);
+    if (crashed) spendSoak(bolt.sourceId, t, bolt.skill, m.castId ?? null, !!m.riptide);
+    if (m.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) soakApply(t, m.applies, tick, bolt.sourceId);
+    // Deluge: the bolt leaves a puddle where it first lands.
+    if (m.deluge && !bolt.delugeDone) {
+      bolt.delugeDone = true;
+      spawnPuddle(t.x, t.z, bolt.sourceId, tick);
+    }
     return r;
   }
 
   // A spent ally bolt (max range, no hit) with Scatter bursts into 3 shards.
   function boltExpire(tick, bolt) {
     const m = bolt.mods;
+    if (m && m.deluge && !bolt.delugeDone) {
+      bolt.delugeDone = true;
+      spawnPuddle(bolt.x, bolt.z, bolt.sourceId, tick);
+    }
     if (!m || !m.scatter) return;
     const base = Math.atan2(bolt.vz, bolt.vx);
     const src = registry.byId(bolt.sourceId);
@@ -741,8 +914,13 @@ export function createAllyCaster(ctx) {
     const src = registry.byId(z.sourceId);
     const seat = src ? src.partyIndex : null;
     if (m.heartseeker && T && T.firstHit(m.castId, t.id)) opts.forceCrit = true;
+    // THE TIDECALLER: the Maelstrom's burst is a Crash.
+    const crashed = z.crash ? crashOn(t) : false;
+    if (crashed) p *= CLASS_TECH.crashMul;
     const r = T ? T.instance({ seat, castId: m.castId ?? -1, echo: !!m.echo, skill: z.skill, zone: z.id }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
-    if (z.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) combat.status.apply(t, z.applies.kind, z.applies.mag, z.applies.ticks, getTick(), z.sourceId);
+    if (crashed) spendSoak(z.sourceId, t, z.skill, m.castId ?? null, !!m.riptide);
+    if (z.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) soakApply(t, z.applies, getTick(), z.sourceId);
+    if (z.also && t.hp > 0 && t.faction === 'hostile' && combat.status) combat.status.apply(t, z.also.kind, z.also.mag, z.also.ticks, getTick(), z.sourceId);
     return r;
   }
 
@@ -762,6 +940,9 @@ export function createAllyCaster(ctx) {
     boltImpact,
     boltExpire,
     zoneHit,
+    tideStatus,
+    soakApply,
+    bubbleStep,
     scatterShards,
     startDisplacement,
     aiDisplacement,

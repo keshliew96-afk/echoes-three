@@ -277,6 +277,80 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
       if (rush.length >= 1) return rush[0];
       return null;
     }
+    // Her whole kit (Tidecaller slice 3).
+    case 'torrent': {
+      // The jet runs the whole line: aim where the line holds two enemies, or
+      // one soaked (each soaked one counts twice: the Crash).
+      let best = null;
+      let bestScore = 0;
+      for (const e of hostiles) {
+        const d = dist(e);
+        if (d > def.range || d < 1e-3) continue;
+        const ux = (e.x - a.x) / d;
+        const uz = (e.z - a.z) / d;
+        let score = 0;
+        for (const o of hostiles) {
+          const px = o.x - a.x;
+          const pz = o.z - a.z;
+          const along = px * ux + pz * uz;
+          if (along < 0 || along > def.range) continue;
+          if (Math.abs(px * uz - pz * ux) <= 0.45) score += soakedNow(o, tick) ? 2 : 1;
+        }
+        if (score > bestScore || (score === bestScore && best && e.id < best.id)) {
+          bestScore = score;
+          best = e;
+        }
+      }
+      return best && bestScore >= 2 ? best : null;
+    }
+    case 'whirlpool':
+    case 'rain_squall': {
+      // The densest pack (three or more), one by the Tank or the Waystone first.
+      const tank = ctx.party().find((m) => m.classId === 'tank' && m.hp > 0) ?? null;
+      const w = ctx.waystone ? ctx.waystone() : null;
+      let best = null;
+      let bestScore = 0;
+      for (const e of hostiles) {
+        if (dist(e) > def.range) continue;
+        const n = near(e.x, e.z, def.area).length;
+        const fed = (tank && d2(e.x, e.z, tank.x, tank.z) <= 4) || (w && d2(e.x, e.z, w.x, w.z) <= 4) ? 0.5 : 0;
+        const score = n + fed;
+        if (score > bestScore || (score === bestScore && best && e.id < best.id)) {
+          bestScore = score;
+          best = e;
+        }
+      }
+      return best && bestScore >= 3 ? best : null;
+    }
+    case 'ripple_step': {
+      // Her panic button: an enemy on top of her (inside 1.2 u and after her,
+      // or inside 0.8 u at all). The vault runs from the nearest.
+      const close = near(a.x, a.z, 1.2).filter((e) => e.targetId === a.id || d2(e.x, e.z, a.x, a.z) <= 0.64);
+      return close.sort((p, q) => d2(p.x, p.z, a.x, a.z) - d2(q.x, q.z, a.x, a.z) || p.id - q.id)[0] ?? null;
+    }
+    case 'bubble_ward': {
+      // A member in reach that an enemy is closing on (inside 1.6 u and after
+      // it) or that is hurt below 70%; the delivery picks the bubble's bearer.
+      const party = ctx.party().filter((m) => m.hp > 0 && (m.id === a.id || dist(m) <= def.range));
+      const need = party.some((m) => m.hp < m.maxHp * 0.7 || hostiles.some((e) => e.targetId === m.id && d2(e.x, e.z, m.x, m.z) <= 1.6 * 1.6));
+      return need ? a : null;
+    }
+    case 'crashing_wave': {
+      // Like Breaker, at reach: two soaked in front of her, or one soaked big
+      // target, or three of anything close.
+      const reach = def.range;
+      const wet = near(a.x, a.z, reach).filter((e) => soakedNow(e, tick)).sort((p, q) => dist(p) - dist(q) || p.id - q.id);
+      if (wet.length >= 2 || wet.some((e) => e.elite || CHAMPIONS.has(e.kind) || e.boss === true || e.kind === 'stag')) return wet[0];
+      const any = near(a.x, a.z, reach * 0.9);
+      if (any.length >= 3) return target && dist(target) <= reach ? target : any[0];
+      return null;
+    }
+    case 'maelstrom': {
+      // The capstone: four in the draw, or two soaked in it.
+      const drawn = near(a.x, a.z, def.drawArea ?? def.area);
+      if (drawn.length >= 4 || drawn.filter((e) => soakedNow(e, tick)).length >= 2) return target ?? drawn[0];
+      return null;
+    }
     default:
       // The 12 starting skills: §7 — target in shape range.
       return inRange ? target : null;

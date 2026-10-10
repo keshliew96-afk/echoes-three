@@ -568,6 +568,101 @@ const ICONS = {
     ['circle', { cx: 24, cy: 13, r: 2.4, fill: 'currentColor', stroke: 'none' }],
   ],
 
+  // ------------------ THE TIDECALLER, the rest of her kit (slice 3) --
+  // Torrent: a straight jet bursting from a nozzle of foam, through two marks.
+  torrent: [
+    ['path', { d: 'M3 13 H24 L29 16 L24 19 H3 Z', fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 4, cy: 16, r: 4.2 }],
+    ['path', { d: 'M12 8 V11 M18 8 V11 M12 21 V24 M18 21 V24', 'stroke-width': 1.6 }],
+  ],
+  // Whirlpool: a tight spiral inside a ring of foam.
+  whirlpool: [
+    ['circle', { cx: 16, cy: 16, r: 13, 'stroke-width': 1.4, 'stroke-dasharray': '3 2.5' }],
+    ['path', { d: 'M16 16 C17.5 16 17.5 14 16 13.5 C13.5 13 12 16 13 18.5 C14.5 21.5 20 21 21 17 C22 12 18 9 14 9.5 C9 10.5 7.5 16 9.5 20.5', 'stroke-width': 2.2 }],
+  ],
+  // Ripple Step: an arc vaulting away from a ripple left behind.
+  ripple_step: [
+    ['ellipse', { cx: 9, cy: 24, rx: 6.5, ry: 3, 'stroke-width': 1.8 }],
+    ['ellipse', { cx: 9, cy: 24, rx: 2.4, ry: 1.1, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M10 19 C12 7 22 5 27 12', 'stroke-width': 2.2, 'stroke-dasharray': '3 2.5' }],
+    ['path', { d: 'M22 11.5 L27.5 12.5 L28 7', 'stroke-width': 2 }],
+  ],
+  // Bubble Ward: a bubble with a highlight around a small figure.
+  bubble_ward: [
+    ['circle', { cx: 16, cy: 16, r: 12.5, 'stroke-width': 2 }],
+    ['path', { d: 'M9 11 A8 8 0 0 1 14 7', 'stroke-width': 2 }],
+    ['circle', { cx: 16, cy: 14, r: 2.6, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M11.5 23 C12 19 20 19 20.5 23 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Crashing Wave: a tall wave rolling right over three splash dots.
+  crashing_wave: [
+    ['path', { d: 'M2 27 C3 15 10 6 20 5 C27 4.5 30 10 27 13 C24 15.5 20 13 22 9.5 C15 10 12 18 13 27 Z', fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 20, cy: 22, r: 1.6, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 25, cy: 19, r: 1.6, fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 28, cy: 24, r: 1.6, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M1 29.5 H31', 'stroke-width': 1.8 }],
+  ],
+  // Rain Squall: a cloud with slanting rain over a ripple.
+  rain_squall: [
+    ['path', { d: 'M8 14 A5 5 0 0 1 10 5 A7 7 0 0 1 23 6 A5 5 0 0 1 25 14 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M10 17 L8 22 M16 17 L14 22 M22 17 L20 22 M13 23 L11.5 26.5 M19 23 L17.5 26.5', 'stroke-width': 1.8 }],
+    ['path', { d: 'M5 29 Q16 26 27 29', 'stroke-width': 1.4 }],
+  ],
+  // Maelstrom: a funnel narrowing to a point, with inward arrows.
+  maelstrom: [
+    ['path', { d: 'M3 6 H29 M6 11 H26 M9 16 H23 M12 21 H20 M15 26 H17', 'stroke-width': 2.2 }],
+    ['path', { d: 'M2 18 L6 22 L2 26 M30 18 L26 22 L30 26', 'stroke-width': 1.6 }],
+  ],
+  // Her nodes.
+  // Wellspring (node): a spring welling up from a ring (longer soaks).
+  wellspring: [
+    ['path', { d: 'M16 3 C19 8 20.5 11 18.5 13.5 C17.5 14.6 14.5 14.6 13.5 13.5 C11.5 11 13 8 16 3 Z', fill: 'currentColor', stroke: 'none' }],
+    ['ellipse', { cx: 16, cy: 22, rx: 12, ry: 5, 'stroke-width': 1.8 }],
+    ['path', { d: 'M16 17 V22', 'stroke-width': 1.6 }],
+  ],
+  // Deluge (node): a falling bolt leaving a puddle.
+  deluge: [
+    ['path', { d: 'M16 3 V15', 'stroke-width': 2.4 }],
+    ['path', { d: 'M11 11 L16 17 L21 11', 'stroke-width': 2.2 }],
+    ['ellipse', { cx: 16, cy: 24, rx: 11, ry: 4.5, fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Current (node): three streams that swell left to right.
+  current: [
+    ['path', { d: 'M3 9 Q8 6 13 9 T23 9', 'stroke-width': 1.4 }],
+    ['path', { d: 'M3 16 Q8 13 13 16 T23 16', 'stroke-width': 2.2 }],
+    ['path', { d: 'M3 23 Q8 20 13 23 T23 23', 'stroke-width': 3 }],
+    ['path', { d: 'M25 12 L29 16 L25 20', 'stroke-width': 2 }],
+  ],
+  // Ebb (node): a wave crest with an arrow turning back (cooldowns return).
+  ebb: [
+    ['path', { d: 'M3 24 C7 14 15 12 22 16', 'stroke-width': 2.4 }],
+    ['path', { d: 'M24 9 A7 7 0 1 1 15 6', 'stroke-width': 2 }],
+    ['path', { d: 'M15 2 L15 7 L20 7', 'stroke-width': 2 }],
+  ],
+  // Spring Tide (node): two stacked drops (a second soak drenches).
+  spring_tide: [
+    ['path', { d: 'M11 4 C14 9 15.5 12 13.5 14.5 C12.5 15.6 9.5 15.6 8.5 14.5 C6.5 12 8 9 11 4 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M21 12 C25 18 27 22 24.5 25.5 C23 27.3 19 27.3 17.5 25.5 C15 22 17 18 21 12 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M4 29 H28', 'stroke-width': 1.6 }],
+  ],
+  // Undercurrent (node): a hook of water pulling a dot in.
+  undercurrent: [
+    ['path', { d: 'M28 8 H12 A6 6 0 0 0 12 20 H20', 'stroke-width': 2.4 }],
+    ['path', { d: 'M16 16 L20 20 L16 24', 'stroke-width': 2 }],
+    ['circle', { cx: 26, cy: 20, r: 3, fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Riptide (node): a breaking crest with a stun spark.
+  riptide: [
+    ['path', { d: 'M2 26 C5 15 12 9 20 10 C24 10.5 25 15 21.5 16 C19 16.8 17.5 14.5 19 13 C13 13.5 10 19 10 26 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M25 2 L22 8 H27 L24 14', 'stroke-width': 1.8 }],
+  ],
+  // Confluence (node): two streams joining into one.
+  confluence: [
+    ['path', { d: 'M3 6 C10 6 12 16 18 16 M3 26 C10 26 12 16 18 16', 'stroke-width': 2.2 }],
+    ['path', { d: 'M18 16 H29', 'stroke-width': 3 }],
+    ['path', { d: 'M25 12 L29 16 L25 20', 'stroke-width': 2 }],
+  ],
+
   // ------------------------------------ class glyphs (§25.6 strip) --
   // The §19.2 silhouette props, drawn in Parchment ink on the party strip.
   cls_healer: [
