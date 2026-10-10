@@ -35,7 +35,7 @@ const check = (ok, what) => {
 const sfxIds = ENCOUNTER_CUE_IDS.filter((id) => !ENCOUNTER_UI_CUE_IDS.includes(id));
 check(sfxIds.every((id) => ENCOUNTER_CUE_CAL[id] !== undefined && ENCOUNTER_CUE_CAL[id] !== 0), `all ${sfxIds.length} SFX objective / slide cues carry a measured calDb (the ${ENCOUNTER_UI_CUE_IDS.length} UI cues level by their baked peak)`);
 check(HEART_CUE_IDS.every((id) => HEART_CUE_CAL[id] !== 0), `all ${HEART_CUE_IDS.length} Act IV creature cues carry a measured calDb`);
-check(Object.values(ENCOUNTER_TAKE_CUES).length === 8, 'each of the eight encounters has its own Take cue');
+check(Object.values(ENCOUNTER_TAKE_CUES).length === 14, 'each of the fourteen encounters has its own Take cue');
 const span = (keys) => [Math.min(...keys.map((k) => MUSIC_TRIM[k])) - 1.5, Math.max(...keys.map((k) => MUSIC_TRIM[k])) + 1.5];
 const [c0, c1] = span(['combat:wood', 'combat:mill', 'combat:barrow']);
 const [b0, b1] = span(['boss:wood', 'boss:mill', 'boss:barrow']);

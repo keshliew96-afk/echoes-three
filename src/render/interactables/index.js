@@ -44,7 +44,7 @@ import { ENV } from '../../env/colors.js';
 import { hslColor } from '../../env/colors.js';
 import { warmPark } from '../warmup.js';
 import { HITFLASH } from '../../core/constants.js';
-// EVENT ROOMS (docs/EVENT_ROOMS.md): the eight encounter bodies.
+// EVENT ROOMS (docs/EVENT_ROOMS.md): the fourteen encounter bodies.
 import { buildEncounter, ENCOUNTER_KINDS } from './encounters.js';
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the hoard and the vault.
 import { buildVaultRig, VAULT_KINDS } from './vaults.js';

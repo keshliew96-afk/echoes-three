@@ -3,8 +3,10 @@
 //
 //   node tools/relics3-probe.mjs
 //
-//   1. Data: ten new relics (27 in all), one class relic per class, rarities
-//      spread, an heirloom each.
+//   1. Data: ten new relics (29 in all since the Tidecaller's two class
+//      relics, Otter's Pearl and Millrace Charm), one class relic per
+//      original class and two for the Tidecaller, rarities spread, an
+//      heirloom each.
 //   2. Class gate: a class relic leaves the offer pool when its class is not
 //      in the party.
 //   3. Each relic in a live campaign room through the real pipeline:
@@ -114,9 +116,9 @@ const stepUntil = (W, pred, max = 600) => {
 {
   const rar = NEW.map((id) => RELICS[id] && RELICS[id].rarity);
   const n = (r) => rar.filter((x) => x === r).length;
-  check(RELIC_IDS.length === 27 && NEW.every((id) => RELICS[id]), `data: ${RELIC_IDS.length} relics, the ten new ones present`);
+  check(RELIC_IDS.length === 29 && NEW.every((id) => RELICS[id]), `data: ${RELIC_IDS.length} relics, the ten new ones present`);
   const cls = Object.values(CLASS_RELICS).sort().join(',');
-  check(cls === 'archer,healer,swordsman,tank', `data: one class relic per class (${cls})`);
+  check(cls === 'archer,healer,swordsman,tank,tidecaller,tidecaller', `data: one class relic per class, two for the Tidecaller (${cls})`);
   check(n('common') === 4 && n('rare') === 4 && n('legendary') === 2, `data: rarities common ${n('common')}, rare ${n('rare')}, legendary ${n('legendary')}`);
   check(NEW.every((id) => UNLOCKS[`heirloom_${id}`] && UNLOCKS[`heirloom_${id}`].relic === id), 'data: an heirloom unlock for each new relic');
 }

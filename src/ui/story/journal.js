@@ -19,6 +19,9 @@ import { RARITY_COLOR } from '../run/cards.js';
 import { relicIconHtml, curseIconHtml } from '../run/relicicons.js';
 import { encounterSigil, ENCOUNTER_COLOR } from '../run/encounter.js';
 import { createModelViewer, thumbFor } from './viewer.js';
+
+// More event rooms (slice 6): a land-bound encounter's land, by its biome.
+const LAND_NAME = Object.freeze(Object.fromEntries(ACT_IDS.map((a) => [LEVELS[a].biome, LEVELS[a].name]).filter(([b]) => !!b)));
 import { t, tn } from '../../i18n/index.js';
 
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -279,6 +282,7 @@ export function createJournalPage(kind, getInfo) {
       parts.push(`<div class="jr-name">${name}</div>`);
       if (e.seen) {
         parts.push(`<div class="jr-lore">${esc(t(v.text))}</div>`);
+        if (v.land && LAND_NAME[v.land]) parts.push(`<div class="jr-text jr-dim">${esc(t('Found only in {land}.', { land: t(LAND_NAME[v.land]) }))}</div>`);
         parts.push(`<div class="jr-h">${esc(t('Take').toUpperCase())}</div><div class="jr-text">${esc(t(v.detail))} ${esc(t(v.effect))}</div>`);
         parts.push(`<div class="jr-h">${esc(t('Leave').toUpperCase())}</div><div class="jr-text">${esc(t('Walk on with nothing gained and nothing lost.'))}</div>`);
         parts.push(`<div class="jr-count">${esc(tn(e.count, 'Visited {n} time', 'Visited {n} times'))}</div>`);

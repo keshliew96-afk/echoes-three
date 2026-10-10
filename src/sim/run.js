@@ -83,7 +83,7 @@ import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 // RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
-import { createRelicSystem, cursedDiff, dailyOmen } from './relics.js';
+import { createRelicSystem, cursedDiff, dailyOmen, RELICS, RELIC_RULES } from './relics.js';
 // DAILY DESCENT (docs/DAILY.md): the shared run of the UTC day.
 import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
@@ -204,7 +204,7 @@ export function createRunSystem({
   const relics = createRelicSystem({ registry, events, getTick, combat, skillSys, player, live: () => active, glint: (n, reason) => gainGlint(n, reason) });
   // EVENT ROOMS: on with the relics (campaigns only, never the tutorial).
   const encounters = createEncounterSystem({ events, getTick });
-  const encCtx = () => ({ wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length });
+  const encCtx = () => ({ wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length, majors: relics.majorCurses().length, land: levelFor(act)?.biome ?? null });
   events.on('event_touch', () => openEncounter());
   const autopilot = createAutopilot({
     registry,
@@ -1265,6 +1265,85 @@ export function createRunSystem({
         if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, R.cachePurse, 'event_cache');
         result.glint = R.cacheGlint;
         break;
+      // MORE EVENT ROOMS (slice 6).
+      case 'fey_ring': {
+        const paid = wallet;
+        spend(paid, 'event_fey');
+        relics.owe(room, 'fey');
+        result.paid = paid;
+        break;
+      }
+      case 'sluice_gate': {
+        if (encounters.coin()) {
+          const relic = relics.grantRandom('sluice', encounterBody() ?? player);
+          if (relic) result.relic = relic;
+          gainGlint(R.sluiceGlint, 'event_sluice');
+          result.glint = R.sluiceGlint;
+        } else {
+          let lost = 0;
+          for (const e of bodies) {
+            const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.sluiceFlood));
+            e.hp = r2(e.hp - loss);
+            lost += loss;
+          }
+          result.flood = true;
+          result.hp = r2(lost);
+        }
+        break;
+      }
+      case 'barrow_ossuary': {
+        let paid = 0;
+        for (const e of bodies) {
+          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.ossuaryCost));
+          e.hp = r2(e.hp - loss);
+          paid += loss;
+        }
+        result.hp = r2(paid);
+        result.draft = 'node';
+        break;
+      }
+      case 'heart_crystal': {
+        const grown = [];
+        const n = relics.majorCurses().length;
+        for (let k = 0; k < n; k++) {
+          const relic = relics.grantRandom('crystal', encounterBody() ?? player);
+          if (!relic) break;
+          grown.push(relic);
+        }
+        result.relics = grown;
+        if (grown.length < n) {
+          gainGlint(RELIC_RULES.emptyPoolGlint * (n - grown.length), 'relic_pool_empty');
+          result.glint = RELIC_RULES.emptyPoolGlint * (n - grown.length);
+        }
+        break;
+      }
+      case 'traveling_smith': {
+        spend(E.price, 'event_smith');
+        const lost = relics.loseNewest('smith');
+        const was = lost ? RELICS[lost].rarity : 'common';
+        const tiers = was === 'common' ? [['rare'], ['legendary']] : [['legendary']];
+        const relic = relics.grantTier('smith', tiers, lost ? [lost] : null, encounterBody() ?? player);
+        result.lost = lost;
+        if (relic) result.relic = relic;
+        break;
+      }
+      case 'gamblers_dice': {
+        spend(E.price, 'event_dice');
+        const dice = encounters.dice();
+        result.dice = dice;
+        if (dice[0] === dice[1]) {
+          const relic = relics.grantTier('dice', [['rare', 'legendary']], null, encounterBody() ?? player);
+          if (relic) result.relic = relic;
+          else {
+            gainGlint(R.diceGlint, 'event_dice');
+            result.glint = R.diceGlint;
+          }
+        } else if (dice[0] + dice[1] >= R.diceHigh) {
+          gainGlint(R.diceGlint, 'event_dice');
+          result.glint = R.diceGlint;
+        }
+        break;
+      }
       case 'healing_spring': {
         let healed = 0;
         for (const e of bodies) {
@@ -1282,7 +1361,7 @@ export function createRunSystem({
     encounters.finish('done', result);
     events.emit(tick, 'event_take', { room, encounter: enc.id, ...result });
     if (result.draft) {
-      rewardFor[room] = 'skill';
+      rewardFor[room] = result.draft;
       presentReward(null);
       return { took: true, encounter: enc.id, ...result };
     }
@@ -2780,6 +2859,13 @@ export function createRunSystem({
       case 'eventDoor':
         // ('eventDoor', encounterId[, side]) — the next path screen's "?" door.
         return encounters.force(args[0], args[1] ?? 0);
+      case 'eventMajor':
+        // ('eventMajor', curseId) — probe / lab: bind a major curse now (the
+        // Heart Crystal feeds on them).
+        return relics.takeMajor(args[0], roomIndex);
+      case 'eventLand':
+        // The land the door roll reads ('wood' | 'mill' | 'barrow' | 'heart').
+        return encCtx().land;
       case 'eventOpen':
         return openEncounter();
       case 'eventFocus':

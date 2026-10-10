@@ -817,6 +817,25 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       gain(id, source, at);
       return id;
     },
+    // More event rooms (slice 6): a relic given outright from the rarities
+    // listed (the first of `tiers` with anything left; any relic after
+    // that), never one of `not`. The smith's reforge and the dice's doubles.
+    grantTier(source, tiers = [], not = null, at = player) {
+      if (!on) return null;
+      let pool = pool0();
+      if (Array.isArray(not)) pool = pool.filter((id) => !not.includes(id));
+      for (const tier of tiers) {
+        const some = pool.filter((id) => tier.includes(RELICS[id].rarity));
+        if (some.length > 0) {
+          pool = some;
+          break;
+        }
+      }
+      if (pool.length === 0) return null;
+      const id = weightedTake(stream, pool);
+      gain(id, source, at);
+      return id;
+    },
     loseNewest(source) {
       if (!on || owned.length === 0) return null;
       const id = owned.pop();

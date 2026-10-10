@@ -78,7 +78,13 @@ const SCREEN_FOR = {
   encounter: 'encounter', // EVENT ROOMS: Take or Leave
 };
 
+// EVENT ROOMS: how long the room stays in view after a Take (or the trapped
+// chest's pay-out) before the pages that follow it open.
+export const TAKE_HOLD_MS = 1500;
+const TAKE_HOLD_PHASES = ['path', 'relic', 'reward'];
+
 export function createRunUi({ bus, world, socket = null, autostart = false }) {
+  let takeHoldUntil = 0;
   const style = document.createElement('style');
   style.id = 'run-style';
   style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS + END_CSS + RELIC_CSS + RELIC_STRIP_CSS + ENCOUNTER_CSS; // fix-INT-r5: + the end card
@@ -108,7 +114,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     end: createEndScreen({ run }),
     transit: createTransitScreen({ run }),
     relic: createRelicScreen({ run }),
-    encounter: createEncounterScreen({ run }),
+    encounter: createEncounterScreen({ run, onTake: () => (takeHoldUntil = performance.now() + TAKE_HOLD_MS) }),
   };
   const eventPlate = createEventPlate();
   const relicStrip = createRelicStrip();
@@ -749,7 +755,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const v = sys.view();
     relicStrip.update(v); // RELICS: the strip under the Glint plate
     eventPlate.update(v); // EVENT ROOMS: the plate over a "?" room
-    setScreen(SCREEN_FOR[v.phase] ?? 'none');
+    // EVENT ROOMS: after a Take the room stays in view a moment so the prop's
+    // reaction and its cue play before the next page opens (UI only: the sim
+    // is already at that page, so co-op, saves and the goldens are untouched).
+    const held = performance.now() < takeHoldUntil && TAKE_HOLD_PHASES.includes(v.phase);
+    setScreen(held ? 'none' : (SCREEN_FOR[v.phase] ?? 'none'));
     setVeilTone(v.phase);
     fade.classList.toggle('rn-on', v.phase === 'fade');
     if (!prepaintDone()) {
@@ -904,7 +914,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   });
   // EVENT ROOMS: what an encounter paid out when no page follows it, and
   // what it took (the spirit's relic, the altar's curse).
+  bus.on('event_chest', () => {
+    takeHoldUntil = performance.now() + TAKE_HOLD_MS;
+  });
   bus.on('event_take', (ev) => {
+    if (!ev.ambush) takeHoldUntil = performance.now() + TAKE_HOLD_MS;
     const a = service('app');
     if (!a || typeof a.toast !== 'function') return;
     const name = ENCOUNTERS[ev.encounter] ? t(ENCOUNTERS[ev.encounter].name) : '';
@@ -916,10 +930,23 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     else if (ev.encounter === 'healing_spring') a.toast(t('{name}: the party is whole again.', { name }), { tone: 'info', ms: 4200 });
     else if (ev.encounter === 'trapped_chest') a.toast(t('Ambush! Win the fight to open the chest.'), { tone: 'info', ms: 4200 });
     else if (c) a.toast(t('Bound for the run: {name}. {text}', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 6000 });
+    // More event rooms (slice 6).
+    else if (ev.encounter === 'sluice_gate' && ev.flood) a.toast(t('The flood! Every hero loses a third of their max HP.'), { tone: 'info', ms: 4800 });
+    else if (ev.encounter === 'sluice_gate' && r) a.toast(t('The race carries down {n} Glint and a relic: {name}. {text}', { n: ev.glint ?? 0, name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 5600 });
+    else if (ev.encounter === 'sluice_gate') a.toast(t('The race carries down {n} Glint.', { n: ev.glint ?? 0 }), { tone: 'info', ms: 4200 });
+    else if (ev.encounter === 'heart_crystal' && Array.isArray(ev.relics) && ev.relics.length) a.toast(t('The crystal grows: {names}.', { names: ev.relics.map((id) => (RELICS[id] ? t(RELICS[id].name) : id)).join(', ') }), { tone: 'info', ms: 5600 });
+    else if (ev.encounter === 'traveling_smith' && r && ev.lost && RELICS[ev.lost]) a.toast(t('The smith reforges {old} into {name}. {text}', { old: t(RELICS[ev.lost].name), name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 6000 });
+    else if (ev.encounter === 'gamblers_dice' && Array.isArray(ev.dice)) {
+      const [d1, d2] = ev.dice;
+      if (r) a.toast(t('Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}', { a: d1, b: d2, name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 6000 });
+      else if (ev.glint) a.toast(t('You roll {a} and {b}: {n} Glint.', { a: d1, b: d2, n: ev.glint }), { tone: 'info', ms: 4800 });
+      else a.toast(t('You roll {a} and {b}: the stranger keeps the stake.', { a: d1, b: d2 }), { tone: 'info', ms: 4800 });
+    }
   });
   bus.on('relic_lose', (ev) => {
     const a = service('app');
     const r = RELICS[ev.relic];
+    if (ev.source === 'smith') return; // the reforge toast names it
     if (a && typeof a.toast === 'function' && r) a.toast(t('The spirit takes {name}.', { name: t(r.name) }), { tone: 'info', ms: 4200 });
   });
   // Slice 2: an elite's relic drop, a relic bought at the peddler.
