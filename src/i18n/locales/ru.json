@@ -2698,5 +2698,20 @@
  "The smith reforges {old} into {name}. {text}": "Кузнец перековывает {old} в {name}. {text}",
  "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": "Дубль, {a} и {b}! Незнакомец платит реликвией: {name}. {text}",
  "You roll {a} and {b}: {n} Glint.": "Выпало {a} и {b}: {n} Блеска.",
- "You roll {a} and {b}: the stranger keeps the stake.": "Выпало {a} и {b}: незнакомец забирает ставку."
+ "You roll {a} and {b}: the stranger keeps the stake.": "Выпало {a} и {b}: незнакомец забирает ставку.",
+ "{n}% OF THE ROAD": "ПУТЬ: {n}%",
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": "Заблудший паломник с фонарём пересекает зал. Он идёт, только пока кто-то из вас рядом, и звери охотятся на него. Доведите его до другой стороны — и зал за вами; если он падёт, награды за зал не будет.",
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": "На полу горит кольцо печати, а разломы шлют на него зверей. Пусть кто-то стоит в нём, пока не выйдет время. Пустое кольцо за несколько секунд тускнеет и гаснет, и награды за зал не будет.",
+ "ESCORT THE PILGRIM": "ПРОВОДИ ПАЛОМНИКА",
+ "HOLD THE SIGIL": "УДЕРЖИ ПЕЧАТЬ",
+ "HOLD THE SIGIL · STAND IN THE RING": "УДЕРЖИ ПЕЧАТЬ · ВСТАНЬ В КОЛЬЦО",
+ "HOLD THE SIGIL · SURGE": "УДЕРЖИ ПЕЧАТЬ · НАТИСК",
+ "keep the sigil ring lit": "не дать кольцу печати погаснуть",
+ "see the pilgrim safely across": "довести паломника до другой стороны",
+ "The escort": "Сопровождение",
+ "THE ESCORT": "СОПРОВОЖДЕНИЕ",
+ "THE ESCORT · WAITING": "СОПРОВОЖДЕНИЕ · ЖДЁТ",
+ "THE PILGRIM FELL · NO REWARD": "ПАЛОМНИК ПАЛ · БЕЗ НАГРАДЫ",
+ "The sigil ring": "Кольцо печати",
+ "THE SIGIL WENT OUT · NO REWARD": "ПЕЧАТЬ ПОГАСЛА · БЕЗ НАГРАДЫ"
 }

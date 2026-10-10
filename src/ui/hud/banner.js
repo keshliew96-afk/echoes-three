@@ -7,6 +7,12 @@
 //               escape countdown; "QUARRY ESCAPED · NO REWARD" on a soft-fail
 //   purge    -> one pip per nest (filled = destroyed) + nests left + the purge
 //               countdown; "THE CORRUPTION TOOK ROOT · NO REWARD" on a soft-fail
+//   escort   -> the pilgrim's HP bar (Hearth Amber, its lantern) + how far
+//               along the road it is; "· WAITING" while nobody walks with it;
+//               "THE PILGRIM FELL · NO REWARD" on a soft-fail
+//   hold     -> the sigil ring's light (Pale Gold; it drains while the ring
+//               stands empty) + the hold countdown; "· SURGE" in the last
+//               stretch; "THE SIGIL WENT OUT · NO REWARD" on a soft-fail
 //   (ROOM OBJECTIVES, docs/ROOM_OBJECTIVES.md)
 //   champion -> the champion's name plate over a Pale Gold HP bar (gold, the
 //               crown's colour; violet stays the bosses'), "· ENRAGED" below
@@ -157,7 +163,7 @@ export function createBanner() {
     else if (boss) next = 'boss';
     else if (room && !room.cleared && room.mode === 'defend') next = 'defend';
     else if (room && !room.cleared && room.mode === 'kill_all') next = 'kill_all';
-    else if (room && !room.cleared && (room.mode === 'hunt' || room.mode === 'purge' || room.mode === 'champion')) next = room.mode;
+    else if (room && !room.cleared && (room.mode === 'hunt' || room.mode === 'purge' || room.mode === 'escort' || room.mode === 'hold' || room.mode === 'champion')) next = room.mode;
 
     let changed = false;
     if (next !== mode) {
@@ -173,7 +179,7 @@ export function createBanner() {
       bar.style.display = pipped ? 'none' : 'block';
       barRow.style.display = pipped ? 'none' : 'flex';
       phasesShown = -1;
-      timer.style.display = mode === 'defend' || mode === 'hunt' || mode === 'purge' ? 'inline' : 'none';
+      timer.style.display = mode === 'defend' || mode === 'hunt' || mode === 'purge' || mode === 'escort' || mode === 'hold' ? 'inline' : 'none';
       root.dataset.mode = mode;
       num.style.display = mode === 'kill_all' ? 'inline' : 'inline';
       lastKey = '';
@@ -263,6 +269,59 @@ export function createBanner() {
       num.className = 'hud-bn-num';
       timer.textContent = q.spawned ? clock(left) : '';
       timer.className = 'hud-bn-num' + (left <= 10 * TICK_HZ ? ' warn' : '');
+      return true;
+    }
+
+    if (mode === 'escort') {
+      const p = room.pilgrim ?? {};
+      const hp = Math.max(0, Math.ceil(p.hp ?? 0));
+      const maxHp = Math.max(1, Math.ceil(p.maxHp || 1));
+      const pct = Math.round((p.progress ?? 0) * 100);
+      const alive = (room.aliveEnemies ?? 0) + (room.pendingSpawns ?? 0);
+      const key = `e|${hp}|${maxHp}|${pct}|${room.softFailed}|${p.waiting}|${room.softFailed ? alive : ''}`;
+      if (key === lastKey) return changed;
+      lastKey = key;
+      const amber = PALETTE.hearthAmber;
+      if (room.softFailed) {
+        label.textContent = t('THE PILGRIM FELL · NO REWARD');
+        showBar(amber, mix(amber, PALETTE.parchment, 0.45), 0);
+        num.textContent = t('{alive} LEFT', { alive });
+        num.className = 'hud-bn-label hud-bn-sub';
+        timer.textContent = '';
+        return true;
+      }
+      label.textContent = p.waiting ? t('THE ESCORT · WAITING') : t('THE ESCORT');
+      showBar(amber, mix(amber, PALETTE.parchment, 0.45), p.spawned ? hp / maxHp : 1);
+      num.textContent = p.spawned ? `${hp}/${maxHp}` : '';
+      num.className = 'hud-bn-num';
+      timer.textContent = p.spawned ? t('{n}% OF THE ROAD', { n: pct }) : '';
+      timer.className = 'hud-bn-num' + (p.waiting ? ' warn' : '');
+      return true;
+    }
+
+    if (mode === 'hold') {
+      const sg = room.sigil ?? {};
+      const light = Math.max(0, 1 - (sg.fade ?? 0));
+      const left = room.holdTicksLeft ?? 0;
+      const alive = (room.aliveEnemies ?? 0) + (room.pendingSpawns ?? 0);
+      const key = `o|${Math.round(light * 50)}|${Math.ceil(left / TICK_HZ)}|${room.softFailed}|${sg.empty}|${sg.surge}|${room.softFailed ? alive : ''}`;
+      if (key === lastKey) return changed;
+      lastKey = key;
+      const gold = PALETTE.paleGold;
+      if (room.softFailed) {
+        label.textContent = t('THE SIGIL WENT OUT · NO REWARD');
+        showBar(gold, mix(gold, PALETTE.parchment, 0.5), 0);
+        num.textContent = t('{alive} LEFT', { alive });
+        num.className = 'hud-bn-label hud-bn-sub';
+        timer.textContent = '';
+        return true;
+      }
+      label.textContent = sg.empty ? t('HOLD THE SIGIL · STAND IN THE RING') : sg.surge ? t('HOLD THE SIGIL · SURGE') : t('HOLD THE SIGIL');
+      showBar(sg.empty ? mix(gold, PALETTE.emberDanger, 0.5) : gold, mix(gold, PALETTE.parchment, 0.5), light);
+      num.textContent = '';
+      num.className = 'hud-bn-num';
+      timer.textContent = clock(left);
+      timer.className = 'hud-bn-num' + (left <= 15 * TICK_HZ || sg.empty ? ' warn' : '');
       return true;
     }
 

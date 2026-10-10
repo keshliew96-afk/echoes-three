@@ -2670,5 +2670,20 @@
  "The smith reforges {old} into {name}. {text}": "El herrero reforja {old} en {name}. {text}",
  "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": "¡Dobles, {a} y {b}! El desconocido paga una reliquia: {name}. {text}",
  "You roll {a} and {b}: {n} Glint.": "Sacas {a} y {b}: {n} de Destello.",
- "You roll {a} and {b}: the stranger keeps the stake.": "Sacas {a} y {b}: el desconocido se queda la apuesta."
+ "You roll {a} and {b}: the stranger keeps the stake.": "Sacas {a} y {b}: el desconocido se queda la apuesta.",
+ "{n}% OF THE ROAD": "{n}% DEL CAMINO",
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": "Un peregrino perdido cruza la sala con un farol. Solo avanza mientras uno de vosotros siga cerca, y las bestias van a por él. Llévalo hasta el otro lado y la sala está ganada; si cae, la sala no da recompensa.",
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": "Un anillo de sello arde en el suelo mientras las grietas le lanzan bestias. Mantén a alguien dentro hasta que acabe el tiempo. Si se queda vacío, se apaga en pocos segundos y la sala no da recompensa.",
+ "ESCORT THE PILGRIM": "ESCOLTA AL PEREGRINO",
+ "HOLD THE SIGIL": "DEFIENDE EL SELLO",
+ "HOLD THE SIGIL · STAND IN THE RING": "DEFIENDE EL SELLO · ENTRA EN EL ANILLO",
+ "HOLD THE SIGIL · SURGE": "DEFIENDE EL SELLO · OLEADA",
+ "keep the sigil ring lit": "mantén encendido el anillo de sello",
+ "see the pilgrim safely across": "lleva al peregrino sano y salvo al otro lado",
+ "The escort": "La escolta",
+ "THE ESCORT": "LA ESCOLTA",
+ "THE ESCORT · WAITING": "LA ESCOLTA · ESPERANDO",
+ "THE PILGRIM FELL · NO REWARD": "EL PEREGRINO CAYÓ · SIN RECOMPENSA",
+ "The sigil ring": "El anillo de sello",
+ "THE SIGIL WENT OUT · NO REWARD": "EL SELLO SE APAGÓ · SIN RECOMPENSA"
 }

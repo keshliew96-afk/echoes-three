@@ -2568,5 +2568,20 @@
  "The smith reforges {old} into {name}. {text}": "鍛冶屋が{old}を{name}に鍛え直した。{text}",
  "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": "ゾロ目、{a}と{b}！見知らぬ者がレリックを払う：{name}。{text}",
  "You roll {a} and {b}: {n} Glint.": "出目は{a}と{b}：グリント{n}。",
- "You roll {a} and {b}: the stranger keeps the stake.": "出目は{a}と{b}：賭け金は見知らぬ者のものに。"
+ "You roll {a} and {b}: the stranger keeps the stake.": "出目は{a}と{b}：賭け金は見知らぬ者のものに。",
+ "{n}% OF THE ROAD": "道のり {n}%",
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": "迷える巡礼者がランタンを手に部屋を横切る。仲間の誰かがそばにいる間だけ歩き、獣たちは巡礼者を狙ってくる。向こう側まで送り届ければ部屋は勝利。倒れれば、部屋の報酬はない。",
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": "床に印の輪が燃え、裂け目から獣が送り込まれてくる。時間切れまで誰かを輪の中に立たせておけ。誰もいないと数秒で薄れて消え、部屋の報酬はなくなる。",
+ "ESCORT THE PILGRIM": "巡礼者を護衛せよ",
+ "HOLD THE SIGIL": "印を守り抜け",
+ "HOLD THE SIGIL · STAND IN THE RING": "印を守り抜け · 輪の中に立て",
+ "HOLD THE SIGIL · SURGE": "印を守り抜け · 猛攻",
+ "keep the sigil ring lit": "印の輪を灯し続ける",
+ "see the pilgrim safely across": "巡礼者を無事に向こうへ送り届ける",
+ "The escort": "護衛",
+ "THE ESCORT": "護衛",
+ "THE ESCORT · WAITING": "護衛 · 待っている",
+ "THE PILGRIM FELL · NO REWARD": "巡礼者が倒れた · 報酬なし",
+ "The sigil ring": "印の輪",
+ "THE SIGIL WENT OUT · NO REWARD": "印が消えた · 報酬なし"
 }

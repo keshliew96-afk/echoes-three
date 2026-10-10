@@ -49,6 +49,13 @@ const MODE_WORD = {
   get purge() {
     return t('PURGE THE NESTS');
   },
+  // ESCORT AND HOLD.
+  get escort() {
+    return t('ESCORT THE PILGRIM');
+  },
+  get hold() {
+    return t('HOLD THE SIGIL');
+  },
   // CHAMPION ROOMS (docs/CHAMPIONS.md).
   get champion() {
     return t('FELL THE CHAMPION');

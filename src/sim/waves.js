@@ -35,10 +35,11 @@
 // (gate G4a.6).
 import { innerBounds, staticClearance } from './movement.js';
 import { THREAT, ELITE_COST, WAVE_SIZE_CAP, ROOM_CONCURRENT_CAP } from '../data/difficulty.js';
-// ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms. Their
+// ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt, purge, escort and hold rooms. Their
 // state lives in `obj` (null in kill_all / defend rooms, so those rooms save,
 // hash and replay exactly as before).
-import { OBJECTIVE_RULES, quarryFor, quarryState, nestSpots, isObjectiveMode } from './objectives.js';
+import { OBJECTIVE_RULES, quarryFor, quarryState, nestSpots, isObjectiveMode, escortRoute, routeLength, pilgrimWalk, holdSpot } from './objectives.js';
+import { TICK_HZ } from '../core/constants.js';
 // CHAMPION ROOMS (docs/CHAMPIONS.md): the crown door's room. Two light waves
 // and the act's champion, which leads wave 1; cleared like a kill_all.
 import { CHAMPION_RULES, CHAMPION_SPOTS, championFor } from './champions.js';
@@ -98,8 +99,8 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // difficulty numbers the schedule was rolled with + what spawns carry.
   let plan = null; // { act, room, challenge, hpMul, dmgMul, eliteChance, intervalTicks, waystoneHp, budget, defendBudget }
   let planned = null; // mode staged by planRoom(), started by beginRoom()
-  // ROOM OBJECTIVES: { kind: 'hunt'|'purge', ...} while a hunt / purge room
-  // is planned or live (see objectives.js for the rules).
+  // ROOM OBJECTIVES: { kind: 'hunt'|'purge'|'escort'|'hold', ...} while an
+  // objective room is planned or live (see objectives.js for the rules).
   let obj = null;
 
   // Live hostile wave bodies (every enemy kind, by faction — PLAN §3.6 (d)):
@@ -208,6 +209,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     if (m !== 'kill_all' && m !== 'defend' && !((isObjectiveMode(m) || m === 'champion') && runPlan)) return null;
     enemies.reset();
     if (waystoneId !== null && registry.byId(waystoneId)) registry.despawn(waystoneId);
+    if (obj && obj.kind === 'escort' && obj.pilgrimId !== null && registry.byId(obj.pilgrimId)) registry.despawn(obj.pilgrimId);
     mode = null;
     waveIndex = -1;
     pending = [];
@@ -275,6 +277,24 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
         schedule[0].units.unshift({ etype, x: CHAMPION_SPOTS[0][0], z: CHAMPION_SPOTS[0][1], cost: 0, champion: true });
         schedule[0].size = schedule[0].units.length;
         obj = { kind: 'champion', etype, champId: null, felled: false, lx: 0, lz: 0, chest: null };
+      } else if (m === 'escort') {
+        // ESCORT: the kill_all wave count on a lighter budget; the road's two
+        // mirror bits (left/right, near/far) are this room's last draws.
+        const E = OBJECTIVE_RULES.escort;
+        const n = WAVE_RULES.killAll.minWaves + rng.int(WAVE_RULES.killAll.extraWaves) + (runPlan.room >= 4 ? 1 : 0);
+        for (let w = 0; w < n; w++) schedule.push(rollBudgetWave(r2(d.budget * E.budgetMul), plan));
+        const dir = rng.int(2) === 0 ? 1 : -1;
+        const side = rng.int(2) === 0 ? 1 : -1;
+        obj = { kind: 'escort', dir, side, pilgrimId: null, length: 0, arrived: false, lost: false, won: false };
+      } else if (m === 'hold') {
+        // HOLD: one opening wave; then three rifts on the room's edge feed it
+        // from their own lists (the purge's spawn timer) until the clock ends.
+        const H = OBJECTIVE_RULES.hold;
+        schedule.push(rollBudgetWave(r2(d.budget * H.openingBudgetMul), plan));
+        const start = rng.int(SPAWN_POINTS.length);
+        const lists = [];
+        for (let k = 0; k < H.rifts; k++) lists.push(rollNestList(H.spawnsPerRift, plan));
+        obj = { kind: 'hold', start, lists, rifts: [], x: 0, z: 0, endTick: null, fade: 0, empty: false, out: false, surge: false, won: false, ring: null };
       } else if (m === 'purge') {
         // One opening wave; then the nests feed the room from their own lists.
         const P = OBJECTIVE_RULES.purge;
@@ -319,6 +339,8 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       events.emit(tick, 'waystone_spawn', { id: ws.id, x: WAYSTONE.x, z: WAYSTONE.z, hp });
     }
     if (obj && obj.kind === 'purge') beginPurge(tick);
+    if (obj && obj.kind === 'escort') beginEscort(tick);
+    if (obj && obj.kind === 'hold') beginHold(tick);
     events.emit(tick, 'room_start', { mode: m, waves: schedule.map((w) => w.size) });
     beginWave(0);
     return { mode: m, waves: schedule.map((w) => w.size) };
@@ -330,7 +352,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // draws, and the relocated schedule is what serialize() already saves.
   function relocateSpawns(ring) {
     if (!Array.isArray(ring) || ring.length !== SPAWN_POINTS.length) return;
-    if (obj && obj.kind === 'purge') obj.ring = ring.map((p) => [p[0], p[1]]);
+    if (obj && (obj.kind === 'purge' || obj.kind === 'hold')) obj.ring = ring.map((p) => [p[0], p[1]]);
     for (const w of schedule) {
       for (const u of w.units) {
         if (u.champion) continue; // CHAMPION ROOMS: it picks its own spot
@@ -407,6 +429,14 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   function spawnUnit(p) {
     if (p.quarry) return spawnQuarry(p);
     if (p.champion) return spawnChampion(p);
+    if (p.rift !== undefined) {
+      const e = enemies.spawnScaled(p.etype, p.x, p.z, { hpMul: plan.hpMul, dmgMul: plan.dmgMul, elite: !!p.elite, wave: p.wave });
+      if (e) {
+        e.riftOf = p.rift;
+        events.emit(getTick(), 'rift_brood', { rift: p.rift, id: e.id, etype: p.etype });
+      }
+      return e;
+    }
     if (p.nest !== undefined) {
       const e = enemies.spawnScaled(p.etype, p.x, p.z, { hpMul: plan.hpMul, dmgMul: plan.dmgMul, elite: !!p.elite, wave: p.wave });
       if (e) {
@@ -473,14 +503,12 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     return e;
   }
 
-  // The nests stand at three points of the room's spawn ring.
-  function beginPurge(tick) {
-    const P = OBJECTIVE_RULES.purge;
-    const ring = obj.ring ?? SPAWN_POINTS.map((q) => [q[0], q[1]]);
-    // The drawn point first, then each next the ring point farthest from
-    // the ones already taken (ties: ring order), so the nests spread out.
-    const idx = [obj.start % ring.length];
-    while (idx.length < P.nests) {
+  // The drawn point of the room's spawn ring first, then each next the ring
+  // point farthest from the ones already taken (ties: ring order), so the
+  // nests (and the hold's rifts) spread out.
+  function spreadRing(ring, start, count) {
+    const idx = [start % ring.length];
+    while (idx.length < count) {
       let best = -1;
       let bestD = -1;
       ring.forEach(([x, z], i) => {
@@ -493,6 +521,14 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       });
       idx.push(best);
     }
+    return idx;
+  }
+
+  // The nests stand at three points of the room's spawn ring.
+  function beginPurge(tick) {
+    const P = OBJECTIVE_RULES.purge;
+    const ring = obj.ring ?? SPAWN_POINTS.map((q) => [q[0], q[1]]);
+    const idx = spreadRing(ring, obj.start, P.nests);
     const spots = nestSpots(idx.map((i) => ring[i]));
     const hp = r2(P.hp * (plan ? plan.hpMul : 1));
     obj.nests = [];
@@ -549,6 +585,140 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       if (u.elite) ev.elite = true;
       events.emit(tick, 'spawn_telegraph', ev);
       events.emit(tick, 'nest_pulse', { id: nest.id, etype: u.etype, x: r2(nest.x), z: r2(nest.z) });
+    }
+  }
+
+  // ------------------------------------------------- ESCORT AND HOLD --
+  // The pilgrim: a slow party-side body on its own road (objectives.js
+  // escortRoute), hunted by the waves like the Waystone is.
+  function beginEscort(tick) {
+    const E = OBJECTIVE_RULES.escort;
+    const route = escortRoute(obj.dir, obj.side, E.radius);
+    const [x, z] = route[0];
+    const hp = r2(E.hp * (plan ? plan.hpMul : 1));
+    const e = registry.spawn({
+      kind: 'pilgrim',
+      faction: 'party', // the waves' nearest-party-body rule finds it
+      hittable: true,
+      knockbackable: false,
+      hp,
+      maxHp: hp,
+      radius: E.radius,
+      x,
+      z,
+      px: x,
+      pz: z,
+      faceX: obj.dir,
+      faceZ: 0,
+      iframeUntilTick: 0,
+      escort: { route, leg: 1, setOff: tick + E.startTicks, flinchUntil: 0, lastHp: hp, alone: 0, waiting: false, arrived: false, walked: 0 },
+    });
+    obj.pilgrimId = e.id;
+    obj.length = r2(routeLength(route));
+    events.emit(tick, 'pilgrim_spawn', { id: e.id, x, z, hp, route: route.map((p) => [p[0], p[1]]), length: obj.length });
+  }
+
+  function stepEscort(tick) {
+    const E = OBJECTIVE_RULES.escort;
+    if (obj.arrived || obj.lost) return;
+    const p = registry.byId(obj.pilgrimId);
+    if (!p || !(p.hp > 0)) {
+      obj.lost = true;
+      softFailed = true;
+      events.emit(tick, 'pilgrim_lost', { id: obj.pilgrimId, x: p ? r2(p.x) : 0, z: p ? r2(p.z) : 0 });
+      events.emit(tick, 'room_soft_fail', { mode });
+      return;
+    }
+    const st = p.escort;
+    if (p.hp < st.lastHp - 1e-9) st.flinchUntil = tick + E.flinchTicks;
+    st.lastHp = p.hp;
+    const bodies = [];
+    for (const b of registry.all()) if (b.partyIndex !== undefined && b.hp > 0) bodies.push(b);
+    const out = pilgrimWalk(p, bodies, tick, E.speed / TICK_HZ);
+    if (out === 'wait') events.emit(tick, 'pilgrim_wait', { id: p.id, x: r2(p.x), z: r2(p.z) });
+    else if (out === 'walk') events.emit(tick, 'pilgrim_walk', { id: p.id, x: r2(p.x), z: r2(p.z) });
+    else if (out === 'arrived') {
+      obj.arrived = true;
+      obj.won = true;
+      events.emit(tick, 'pilgrim_arrive', { id: p.id, x: r2(p.x), z: r2(p.z) });
+    }
+  }
+
+  // The sigil ring and its three rifts.
+  function beginHold(tick) {
+    const H = OBJECTIVE_RULES.hold;
+    const spot = holdSpot();
+    obj.x = spot.x;
+    obj.z = spot.z;
+    obj.endTick = tick + H.timerTicks;
+    const ring = obj.ring ?? SPAWN_POINTS.map((q) => [q[0], q[1]]);
+    const idx = spreadRing(ring, obj.start, H.rifts);
+    obj.rifts = idx.map((i, k) => ({ index: k, x: r2(ring[i][0]), z: r2(ring[i][1]), nextSpawnTick: tick + H.firstSpawnTicks + k * H.staggerTicks, spawned: 0 }));
+    events.emit(tick, 'hold_start', { x: obj.x, z: obj.z, radius: H.radius, endTick: obj.endTick, rifts: obj.rifts.map((r) => ({ x: r.x, z: r.z })) });
+  }
+
+  function stepHold(tick) {
+    const H = OBJECTIVE_RULES.hold;
+    if (obj.out || obj.won) return;
+    // The ring: lit while a standing party member is inside it.
+    let inRing = false;
+    for (const b of registry.all()) {
+      if (b.partyIndex === undefined || !(b.hp > 0)) continue;
+      if (Math.hypot(b.x - obj.x, b.z - obj.z) <= H.radius) inRing = true;
+    }
+    if (inRing) obj.fade = Math.max(0, obj.fade - H.relight);
+    else obj.fade += 1;
+    if (!inRing && !obj.empty) {
+      obj.empty = true;
+      events.emit(tick, 'sigil_fading', { x: obj.x, z: obj.z });
+    } else if (inRing && obj.empty) {
+      obj.empty = false;
+      events.emit(tick, 'sigil_relit', { x: obj.x, z: obj.z, fade: obj.fade });
+    }
+    if (obj.fade >= H.fadeTicks) {
+      obj.out = true;
+      softFailed = true;
+      events.emit(tick, 'sigil_out', { x: obj.x, z: obj.z });
+      events.emit(tick, 'room_soft_fail', { mode });
+      return;
+    }
+    if (tick >= obj.endTick) {
+      obj.won = true;
+      events.emit(tick, 'sigil_sealed', { x: obj.x, z: obj.z });
+      return;
+    }
+    const surge = tick >= obj.endTick - H.surgeTicks;
+    if (surge && !obj.surge) {
+      obj.surge = true;
+      events.emit(tick, 'hold_surge', { x: obj.x, z: obj.z, endTick: obj.endTick });
+    }
+    // The rifts: one telegraphed spawn each from its list when it has room.
+    for (const rf of obj.rifts) {
+      if (tick < rf.nextSpawnTick) continue;
+      let kids = 0;
+      for (const e of registry.all()) if (e.riftOf === rf.index && e.state === 'active' && e.hp > 0) kids += 1;
+      for (const q of pending) if (q.rift === rf.index) kids += 1;
+      if (kids >= H.childCap) {
+        rf.nextSpawnTick = tick + 30;
+        continue;
+      }
+      const list = obj.lists[rf.index % obj.lists.length];
+      const u = list[rf.spawned % list.length];
+      // A small fan around the rift's mouth, nudged toward the room.
+      const a = rf.spawned * 2.39996 + rf.index;
+      const inv = Math.hypot(rf.x, rf.z) || 1;
+      const x = r2(rf.x - (rf.x / inv) * 0.6 + Math.cos(a) * 0.45);
+      const z = r2(rf.z - (rf.z / inv) * 0.6 + Math.sin(a) * 0.45);
+      const spawnTick = tick + WAVE_RULES.spawnTelegraphTicks;
+      const unit = { etype: u.etype, x, z, spawnTick, wave: Math.max(0, waveIndex), rift: rf.index };
+      if (u.elite) unit.elite = true;
+      pending.push(unit);
+      rf.spawned += 1;
+      rf.nextSpawnTick = tick + (surge ? H.surgeCadenceTicks : H.cadenceTicks);
+      const ev = { etype: u.etype, x, z, spawnTick, wave: unit.wave, rift: rf.index };
+      if (u.elite) ev.elite = true;
+      events.emit(tick, 'spawn_telegraph', ev);
+      events.emit(tick, 'rift_pulse', { rift: rf.index, etype: u.etype, x: rf.x, z: rf.z });
     }
   }
 
@@ -625,6 +795,9 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
         events.emit(tick, 'champion_fall', { id: obj.champId, champion: obj.etype, x: obj.chest.x, z: obj.chest.z });
       }
     }
+    // ESCORT AND HOLD: the pilgrim's walk, the ring and the rifts.
+    if (mode === 'escort' && obj) stepEscort(tick);
+    if (mode === 'hold' && obj) stepHold(tick);
     let nestsAlive = 0;
     if (mode === 'purge' && obj) {
       stepNests(tick);
@@ -640,7 +813,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
 
     // Wave progression.
     const lastWave = waveIndex >= schedule.length - 1;
-    if (mode === 'kill_all' || mode === 'hunt' || mode === 'champion') {
+    if (mode === 'kill_all' || mode === 'hunt' || mode === 'champion' || mode === 'escort') {
       if (!lastWave && pending.length === 0 && fullySpawnedTick >= 0) {
         const timer =
           fullySpawnedTick + WAVE_RULES.killAll.graceTicks + (plan ? plan.intervalTicks : WAVE_RULES.killAll.intervalTicks);
@@ -660,7 +833,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       // every body must still go.
       if (!softFailed && nestsAlive === 0) doClear();
       else if (softFailed && nestsAlive === 0 && scheduleExhausted && alive === 0 && shots === 0 && partyUp) doClear();
-    } else if (mode === 'hunt' && !softFailed) {
+    } else if ((mode === 'hunt' || mode === 'escort' || mode === 'hold') && !softFailed) {
       if (obj && obj.won) doClear();
     } else if (mode === 'kill_all' || mode === 'champion' || softFailed) {
       if (scheduleExhausted && alive === 0 && shots === 0 && partyUp) doClear();
@@ -699,6 +872,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     const tick = getTick();
     if (waystoneId !== null && registry.byId(waystoneId)) registry.despawn(waystoneId);
     if (obj && obj.kind === 'purge') for (const id of obj.nests) if (registry.byId(id)) registry.despawn(id);
+    if (obj && obj.kind === 'escort' && obj.pilgrimId !== null && registry.byId(obj.pilgrimId)) registry.despawn(obj.pilgrimId);
     obj = null;
     const dropped = pending.length;
     mode = null;
@@ -721,6 +895,39 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     beginWave(waveIndex + 1);
     return waveIndex;
   };
+  // ESCORT AND HOLD probe hooks: ('road', f) sets the pilgrim f of the way
+  // along its road; ('clock', ticks) leaves the hold that many ticks.
+  function debugObjective(op, arg) {
+    if (!obj || !mode) return null;
+    const tick = getTick();
+    if (op === 'road' && obj.kind === 'escort') {
+      const p = obj.pilgrimId !== null ? registry.byId(obj.pilgrimId) : null;
+      if (!p || !p.escort) return null;
+      const route = p.escort.route;
+      let left = Math.max(0, Math.min(0.999, Number(arg) || 0)) * routeLength(route);
+      const walked = left;
+      for (let i = 1; i < route.length; i++) {
+        const [ax, az] = route[i - 1];
+        const [bx, bz] = route[i];
+        const L = Math.hypot(bx - ax, bz - az);
+        if (left <= L || i === route.length - 1) {
+          const u = L > 0 ? Math.min(1, left / L) : 0;
+          p.x = p.px = r2(ax + (bx - ax) * u);
+          p.z = p.pz = r2(az + (bz - az) * u);
+          p.escort.leg = i;
+          p.escort.walked = r2(walked);
+          return { x: p.x, z: p.z, leg: i };
+        }
+        left -= L;
+      }
+      return null;
+    }
+    if (op === 'clock' && obj.kind === 'hold' && obj.endTick !== null) {
+      obj.endTick = tick + Math.max(1, Math.floor(Number(arg) || 1));
+      return obj.endTick;
+    }
+    return null;
+  }
   const forceClear = () => {
     if (!mode || cleared) return null;
     doClear();
@@ -784,6 +991,45 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
         huntTicksLeft: obj.escapeTick !== null && !obj.escaped && !obj.won && !cleared ? Math.max(0, obj.escapeTick - tick) : null,
       };
     }
+    if (obj.kind === 'escort') {
+      const p = obj.pilgrimId !== null ? registry.byId(obj.pilgrimId) : null;
+      const st = p && p.escort;
+      return {
+        pilgrim: {
+          id: obj.pilgrimId,
+          hp: p && !obj.lost ? Math.max(0, p.hp) : 0,
+          maxHp: p ? p.maxHp : 0,
+          spawned: obj.pilgrimId !== null,
+          waiting: !!(st && st.waiting && !st.arrived),
+          walking: !!(st && !st.waiting && !st.arrived && tick >= st.setOff),
+          arrived: obj.arrived,
+          lost: obj.lost,
+          walked: st ? r2(st.walked) : 0,
+          length: obj.length,
+          progress: obj.arrived ? 1 : st && obj.length > 0 ? Math.min(1, r2(st.walked / obj.length)) : 0,
+          x: p ? r2(p.x) : null,
+          z: p ? r2(p.z) : null,
+        },
+      };
+    }
+    if (obj.kind === 'hold') {
+      const H = OBJECTIVE_RULES.hold;
+      return {
+        sigil: {
+          x: obj.x,
+          z: obj.z,
+          radius: H.radius,
+          lit: !obj.out,
+          empty: obj.empty && !obj.out,
+          fade: obj.out ? 1 : r2(Math.min(1, obj.fade / H.fadeTicks)),
+          out: obj.out,
+          surge: obj.surge,
+          won: obj.won,
+        },
+        rifts: obj.rifts.map((r) => ({ x: r.x, z: r.z })),
+        holdTicksLeft: obj.endTick !== null && !softFailed && !cleared && !obj.won ? Math.max(0, obj.endTick - tick) : null,
+      };
+    }
     const nests = obj.nests.map((id) => {
       const e = registry.byId(id);
       return { id, hp: e ? Math.max(0, e.hp) : 0, maxHp: e ? e.maxHp : 0, alive: !!(e && e.hp > 0) };
@@ -827,7 +1073,18 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
       waveIndex,
       pendingSpawns: pending.length,
       ...(obj && obj.kind === 'champion' ? { champion: obj.etype } : {}),
-      ...(obj && obj.kind !== 'champion' ? { objective: obj.kind, ...(obj.kind === 'hunt' ? { quarry: obj.etype } : { nestLists: obj.lists.map((l) => l.map((u) => u.etype)) }) } : {}),
+      ...(obj && obj.kind !== 'champion'
+        ? {
+            objective: obj.kind,
+            ...(obj.kind === 'hunt'
+              ? { quarry: obj.etype }
+              : obj.kind === 'escort'
+                ? { road: { dir: obj.dir, side: obj.side } }
+                : obj.kind === 'hold'
+                  ? { riftLists: obj.lists.map((l) => l.map((u) => u.etype)) }
+                  : { nestLists: obj.lists.map((l) => l.map((u) => u.etype)) }),
+          }
+        : {}),
     };
   }
 
@@ -875,6 +1132,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
     step,
     forceNextWave,
     forceClear,
+    debugObjective,
     roomState,
     pendingSpawnsList,
     planView,

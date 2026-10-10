@@ -242,8 +242,16 @@ function dropSlip(e) {
 // Signed clearance of a circle at (x, z) from the nearest static collider
 // (negative = penetrating). Probe helper; the step helpers use resolveStatics.
 export function staticClearance(x, z, radius) {
+  return clearanceOf(statics, x, z, radius);
+}
+// ESCORT AND HOLD: the same against the statics AND the entity-owned
+// blockers (barricades, bells, rubble) standing in the room right now.
+export function blockerClearance(x, z, radius) {
+  return Math.min(clearanceOf(statics, x, z, radius), clearanceOf(dynamics, x, z, radius));
+}
+function clearanceOf(list, x, z, radius) {
   let best = Infinity;
-  for (const c of statics) {
+  for (const c of list) {
     let d;
     if (c.kind === 'circle') {
       d = Math.hypot(x - c.x, z - c.z) - c.r - radius;

@@ -374,13 +374,19 @@ export function createAllySystem({
   }
 
   // §12: the room's live leash_anchor — the Waystone in a defend room until
-  // soft-fail flips it back to the party.
+  // soft-fail flips it back to the party. ESCORT AND HOLD: the walking
+  // pilgrim, and the sigil ring's centre, the same way.
   function leashAnchor() {
     const rs = getRoomState();
     if (rs && rs.mode === 'defend' && !rs.softFailed && rs.waystone) {
       const ws = registry.byId(rs.waystone.id);
       if (ws && ws.hp > 0) return ws;
     }
+    if (rs && rs.mode === 'escort' && !rs.softFailed && !rs.cleared && rs.pilgrim && rs.pilgrim.id !== null) {
+      const p = registry.byId(rs.pilgrim.id);
+      if (p && p.hp > 0) return p;
+    }
+    if (rs && rs.mode === 'hold' && !rs.softFailed && !rs.cleared && rs.sigil) return { id: null, x: rs.sigil.x, z: rs.sigil.z };
     return player;
   }
 

@@ -2642,5 +2642,20 @@
  "The smith reforges {old} into {name}. {text}": "Der Schmied schmiedet {old} zu {name} um. {text}",
  "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": "Pasch, {a} und {b}! Der Fremde zahlt ein Relikt: {name}. {text}",
  "You roll {a} and {b}: {n} Glint.": "Du würfelst {a} und {b}: {n} Glimmer.",
- "You roll {a} and {b}: the stranger keeps the stake.": "Du würfelst {a} und {b}: Der Fremde behält den Einsatz."
+ "You roll {a} and {b}: the stranger keeps the stake.": "Du würfelst {a} und {b}: Der Fremde behält den Einsatz.",
+ "{n}% OF THE ROAD": "{n}% DES WEGES",
+ "A lost pilgrim crosses the room with a lantern. It walks only while one of you stays near, and the beasts go for it. See it to the far side and the room is won; if it falls, the room pays no reward.": "Ein verirrter Pilger durchquert mit seiner Laterne den Raum. Er geht nur weiter, solange einer von euch in seiner Nähe bleibt, und die Bestien haben es auf ihn abgesehen. Bringt ihn sicher auf die andere Seite, und der Raum ist gewonnen; fällt er, gibt der Raum keine Belohnung.",
+ "A sigil ring burns on the floor while rifts send beasts at it. Keep someone standing in it until the timer runs out. Left empty, it fades and goes out in a few seconds, and the room pays no reward.": "Ein Siegelring brennt auf dem Boden, während Risse Bestien auf ihn hetzen. Lasst jemanden darin stehen, bis der Timer abläuft. Bleibt er leer, verblasst er und erlischt nach wenigen Sekunden, und der Raum gibt keine Belohnung.",
+ "ESCORT THE PILGRIM": "GELEITE DEN PILGER",
+ "HOLD THE SIGIL": "HALTE DAS SIEGEL",
+ "HOLD THE SIGIL · STAND IN THE RING": "HALTE DAS SIEGEL · TRITT IN DEN RING",
+ "HOLD THE SIGIL · SURGE": "HALTE DAS SIEGEL · ANSTURM",
+ "keep the sigil ring lit": "den Siegelring brennen lassen",
+ "see the pilgrim safely across": "den Pilger sicher hinübergeleiten",
+ "The escort": "Das Geleit",
+ "THE ESCORT": "DAS GELEIT",
+ "THE ESCORT · WAITING": "DAS GELEIT · WARTET",
+ "THE PILGRIM FELL · NO REWARD": "DER PILGER IST GEFALLEN · KEINE BELOHNUNG",
+ "The sigil ring": "Der Siegelring",
+ "THE SIGIL WENT OUT · NO REWARD": "DAS SIEGEL IST ERLOSCHEN · KEINE BELOHNUNG"
 }

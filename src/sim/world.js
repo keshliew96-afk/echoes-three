@@ -1421,6 +1421,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     allySystem: () => allySys,
     // Spawn telegraphs in flight (enemies block) — render-layer state sync.
     pendingSpawns: () => waves.pendingSpawnsList(),
+    // ESCORT AND HOLD: the live room view (the sigil ring's light) — read-only.
+    roomState: () => waves.roomState(),
     snapshotState,
     get tick() {
       return currentTick;

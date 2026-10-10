@@ -146,7 +146,7 @@ export const RUN = Object.freeze({
 });
 
 // §16 path doors carry ONLY these two glyph channels.
-export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹', champion: '♛', vault: '⚿' });
+export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹', escort: '⚑', hold: '◎', champion: '♛', vault: '⚿' });
 export const REWARD_GLYPH = Object.freeze({ skill: '✦', node: '◈' });
 
 export function createRunSystem({
@@ -212,6 +212,7 @@ export function createRunSystem({
     run: () => api,
     skills: skillSys,
     build: () => buildSys,
+    room: () => waves.roomState(),
   });
 
   // §2 "all run state wiped at run end" / §18 "Corruption never touches
@@ -455,7 +456,8 @@ export function createRunSystem({
         : {}),
     };
     // ROOM OBJECTIVES: campaigns (never the tutorial) turn one kill_all room
-    // of rooms 4-6 into a hunt or a purge (two on later levels). No draws.
+    // of rooms 4-6 into a hunt, a purge, an escort or a hold (two of
+    // different kinds on later levels). No draws.
     if (objectivesOn()) assignObjectives(frame.modes, frame.seed, campaign.index);
     // PARTY: every ally back to its starting loadout, empty build, purse 0;
     // the party stream seeded from the run SEED (no gameplay draw).
@@ -675,7 +677,7 @@ export function createRunSystem({
       dmgMul: combatRoom ? diff.dmgMul : null,
       budget: mode === 'kill_all' || mode === 'champion' || isObjectiveMode(mode) ? diff.budget : mode === 'defend' ? diff.defendBudget : null,
       eliteChance: combatRoom ? diff.eliteChance : null,
-      waveIntervalTicks: mode === 'kill_all' || mode === 'hunt' || mode === 'champion' ? diff.waveIntervalTicks : null,
+      waveIntervalTicks: mode === 'kill_all' || mode === 'hunt' || mode === 'escort' || mode === 'champion' ? diff.waveIntervalTicks : null,
       waystoneHp: mode === 'defend' ? diff.waystoneHp : null,
       bossHp: mode === 'boss' ? diff.bossHp : null,
       bossDmgMul: mode === 'boss' ? diff.bossDmgMul : null,
@@ -759,7 +761,7 @@ export function createRunSystem({
     roomsDone = Math.max(roomsDone, roomIndex);
     gainGlint(RUN.stipend, 'clear_stipend');
     if (allyOn()) pages.stipend('clear_stipend'); // PARTY: +12 per ally purse
-    // ROOM OBJECTIVES: a hunt or a purge won pays its bounty.
+    // ROOM OBJECTIVES: an objective room won pays its bounty.
     if (ev.objective && ev.won) gainGlint(OBJECTIVE_RULES.bounty, `${ev.objective}_bounty`);
     // RELICS: clear procs (Grave Coin, Hearthstone), the curse lifts, and a
     // relic pick is owed after room 1 and after a cursed room.
@@ -2782,7 +2784,7 @@ export function createRunSystem({
         return relics.view().curse;
       // ----------------------------------------------- ROOM OBJECTIVES --
       case 'objectiveRoom': {
-        // ('objectiveRoom', 'hunt'|'purge'|'kill_all', room) — a later combat
+        // ('objectiveRoom', 'hunt'|'purge'|'escort'|'hold'|'kill_all', room) — a later combat
         // room of this level becomes that room (probes, screenshots).
         const m = args[0];
         const n = Number(args[1]);
@@ -2791,6 +2793,11 @@ export function createRunSystem({
         frame.modes[n - 1] = m;
         return [...frame.modes];
       }
+      case 'objectiveDebug':
+        // ESCORT AND HOLD: ('objectiveDebug', 'road', 0.9) puts the pilgrim
+        // 90% along its road; ('objectiveDebug', 'clock', 600) leaves the
+        // hold 10 s (probes, screenshots).
+        return active ? waves.debugObjective(args[0], args[1]) : null;
       // ------------------------------------------------- CHAMPION ROOMS --
       case 'championRoom': {
         // ('championRoom', room) — a later combat room of this level becomes

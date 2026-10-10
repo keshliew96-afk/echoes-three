@@ -56,11 +56,16 @@ const LEADER_HEAL_BELOW = 0.9;
 // quarry down (the leashed party follows it), in a purge it walks from nest
 // to nest; within this distance it stops closing and shoots.
 const CHASE_U = 3.0;
+// ESCORT AND HOLD: the bot keeps within this of the walking pilgrim, and
+// inside this share of the sigil ring's radius, and shoots what comes
+// closest to them.
+const ESCORT_KEEP_U = 2.6;
+const HOLD_KEEP = 0.5;
 const DEFAULT_CFG = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto' });
 
 const d2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
 
-export function createAutopilot({ registry, player, run, skills, build }) {
+export function createAutopilot({ registry, player, run, skills, build, room = null }) {
   let cfg = null; // null = off
   let lastShopRoom = -1;
   const stats = { ticks: 0, dodges: 0, casts: 0, drafts: 0, doors: 0, buys: 0, sockets: 0 };
@@ -384,9 +389,31 @@ export function createAutopilot({ registry, player, run, skills, build }) {
     }
     if (goal && goal.d <= BASIC_RANGE && !(target && target.d < 1.6)) target = goal;
     else if (goal && !target) target = goal;
+    // ESCORT AND HOLD: what the room asks the bot to stand by.
+    const rs = room ? room() : null;
+    let guard = null;
+    if (rs && !rs.cleared && !rs.softFailed) {
+      if (rs.mode === 'escort' && rs.pilgrim && rs.pilgrim.x !== null && !rs.pilgrim.arrived) guard = { x: rs.pilgrim.x, z: rs.pilgrim.z, keep: ESCORT_KEEP_U, hold: false };
+      else if (rs.mode === 'hold' && rs.sigil && !rs.sigil.won) guard = { x: rs.sigil.x, z: rs.sigil.z, keep: rs.sigil.radius * HOLD_KEEP, hold: true };
+    }
+    if (guard) {
+      // The foe in reach closest to the pilgrim / the ring goes first.
+      let best = null;
+      for (const e of foes) {
+        const d = Math.hypot(e.x - player.x, e.z - player.z);
+        if (d > BASIC_RANGE + 1 || guardedAgainst(e, player.x, player.z)) continue;
+        const dg = Math.hypot(e.x - guard.x, e.z - guard.z);
+        if (!best || dg < best.dg - 1e-9) best = { e, d, dg };
+      }
+      if (best && !(target && target.d < 1.6)) target = { e: best.e, d: best.d };
+    }
+    const guardD = guard ? Math.hypot(guard.x - player.x, guard.z - player.z) : 0;
     if (inside) s.move = inside.esc;
     else if (goal && goal.d > CHASE_U) s.move = norm(goal.e.x - player.x, goal.e.z - player.z);
-    else if (flank) {
+    else if (guard && guardD > guard.keep) s.move = norm(guard.x - player.x, guard.z - player.z);
+    else if (guard) {
+      if (!guard.hold && nearFoe && nearFoe.d < 1.4) s.move = norm(player.x - nearFoe.e.x, player.z - nearFoe.e.z);
+    } else if (flank) {
       // Circle the guarded foe at ~1.6 u: tangential speed 2.4 u/s at that
       // radius (~86°/s) plus the slam's lock is enough to slip off its horns.
       const rx = player.x - flank.e.x;
