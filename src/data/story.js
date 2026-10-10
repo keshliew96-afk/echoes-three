@@ -77,6 +77,9 @@ export const NPCS = Object.freeze({
   firstbell: { id: 'firstbell', name: 'The First Bell', short: 'The First Bell', where: 'event', encounter: 'wandering_spirit' },
   voice: { id: 'voice', name: 'The Hollow Voice', short: 'The Hollow Voice', where: 'event', encounter: 'corrupted_altar' },
   chorus: { id: 'chorus', name: 'The Chorus', short: 'The Chorus', where: 'cards' },
+  // THE TIDECALLER (docs/TIDECALLER.md): a playable class who also talks at
+  // camp, from her spot on the sluice side of the fire.
+  rill: { id: 'rill', name: 'Rill, the Tidecaller', short: 'Rill', where: 'camp' },
 });
 
 // Who appears under "People" on the Story so far page, and when.
@@ -88,6 +91,7 @@ export const PEOPLE = Object.freeze([
   { id: 'firstbell', met: 'firstbell', lore: 'The Healer who carried the bell before you. Trades relics for better ones.' },
   { id: 'voice', met: 'voice', seenPrefix: 'voice:', lore: 'The singer under the Barrow. Speaks through altars, and before every boss.' },
   { id: 'chorus', always: true, lore: 'The gods. They watch, and they applaud.' },
+  { id: 'rill', feat: 'tidecaller', lore: 'A river otter from the Mill who sang the sluices shut. Freed with the Verse of Water, she fights with the tide.' },
 ]);
 
 // Who speaks on which event-room card.
@@ -117,6 +121,25 @@ export const KEEPER_LINES = Object.freeze({
     ],
   },
 });
+
+// THE TIDECALLER: Rill at her camp spot. `byVerses` follows the verses held
+// (she joins with Water, so the first line is for two verses or fewer);
+// `extra` rotates after it on further talks.
+export const RILL_LINES = Object.freeze({
+  byVerses: {
+    text: [
+      'I sang the sluices shut to keep the hollow song out. It came in with the river anyway. Thank you for bringing the water back.',
+      'Three verses home. I can hear Stone in the hearth now, low and slow, the way the millstones used to turn.',
+      'Four verses. The river still remembers the other three. Take me along and I will listen for them.',
+    ],
+  },
+  extra: {
+    text: ['Soak them first, then crash a wave through. Water always finds the gaps.'],
+  },
+});
+export const rillLineFor = (verses) => RILL_LINES.byVerses.text[Math.max(0, Math.min(RILL_LINES.byVerses.text.length - 1, verses - 2))];
+// Wick's one line about her, in his rotation once she has joined.
+export const KEEPER_RILL_LINE = Object.freeze({ text: 'Rill sits on the sluice side of the fire and wrings out her satchel every night. The hearth hisses at her, and she laughs at it.' });
 
 // Bramble at camp (her shelf opens in room 7, never at camp: BUILD_BRIEF §18).
 export const PEDDLER_LINES = Object.freeze({
@@ -208,6 +231,14 @@ export const BOSS_VOICE = Object.freeze({
   colossus: { text: 'I would not come out for you, so I grew a body that would.' },
   // A boss from another land standing in the Heart Chamber.
   heart: { text: 'You carried three verses all the way down. Sing them for me.' },
+});
+
+// THE TIDECALLER: the Hollow Voice the first time Rill stands in a Mill boss
+// room (either Level II boss), and her line on the Level II clear card.
+export const RILL_VOICE = Object.freeze({ text: 'The otter sang my river shut once. Sing for me now, little Tidecaller.' });
+export const RILL_CLEAR = Object.freeze({
+  freed: { text: 'On the riverbank an otter shakes off the hollow song. Rill follows the bell home.' },
+  along: { text: 'Rill sings the sluices open again. The Mill remembers her song.' },
 });
 
 // The level-clear card: the verse the bell catches.

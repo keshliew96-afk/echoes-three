@@ -3742,6 +3742,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     swordsman: vfxClassStyle('swordsman'),
     archer: vfxClassStyle('archer'),
     healer: vfxClassStyle('healer'),
+    tidecaller: vfxClassStyle('tidecaller'),
   };
   const GOLD = PALETTE.hearthAmber;
   bus.on('relic_proc', (ev) => {
@@ -3898,6 +3899,36 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         kit.ring({ x, z, r0: 0.4, r1: 3.6, width: 0.18, life: 1.0, core: PARCH, glow: GOLD, soft: 0.6, y: 0.06 });
         kit.flash({ x, y: 1.6, z, color: GOLD, size: 1.0, life: 0.6, hold: 0.2 });
         spray('spark', x, 0.3, z, N(16), { color: HEAL, speed: [0.1, 0.4], up: [0.6, 1.2], size: [0.05, 0.09], life: [1.2, 1.8], gravity: -0.15, drag: 1.6, jitter: 2.2, opacity: 0.85 });
+        break;
+      }
+      // THE TIDECALLER (docs/TIDECALLER.md): her two class relics.
+      case 'otters_pearl': {
+        // A crash pays her back: a pearl-white bead streaks from the crashed
+        // enemy to Rill, a cobalt ring closes on her, droplets rise.
+        mark('relic_otters_pearl');
+        const st = RELIC3.tidecaller;
+        const { x, z } = bodyAt(ev);
+        const from = ev.from !== undefined ? byId(ev.from) : null;
+        if (from) kit.streak({ a: { x: from.x, y: 0.6, z: from.z }, b: { x, y: 0.9, z }, width: 0.05, tailW: 0.01, core: PARCH, glow: st.second, life: 0.3, fall: 0.8 });
+        kit.ring({ x, z, r0: 0.9, r1: 0.3, width: 0.08, life: 0.38, core: st.second, glow: st.glow, soft: 0.5, y: 0.07 });
+        flare(x, 0.9, z, st.second, 0.5, { kind: 'star', life: 0.16 });
+        spray('spark', x, 0.4, z, N(5), { color: st.second, speed: [0.1, 0.3], up: [0.8, 1.4], size: [0.04, 0.07], life: [0.5, 0.8], gravity: -0.2, drag: 1.5, jitter: 0.3, opacity: 0.85 });
+        break;
+      }
+      case 'millrace_charm': {
+        // The soak spreads: a thin cobalt rivulet arcs to the next enemy and
+        // splashes a foam ring round it.
+        mark('relic_millrace_charm');
+        const st = RELIC3.tidecaller;
+        const { x, z } = bodyAt(ev);
+        const fx = ev.fx ?? x;
+        const fz = ev.fz ?? z;
+        kit.streak({ a: { x: fx, y: 0.5, z: fz }, b: { x: (fx + x) / 2, y: 0.85, z: (fz + z) / 2 }, width: 0.05, tailW: 0, core: st.second, glow: st.glow, life: 0.18, fall: 1.0 });
+        kit.streak({ a: { x: (fx + x) / 2, y: 0.85, z: (fz + z) / 2 }, b: { x, y: 0.45, z }, width: 0.05, tailW: 0, core: st.second, glow: st.glow, life: 0.18, delay: 0.07, fall: 1.0 });
+        after(0.12, () => {
+          kit.ring({ x, z, r0: 0.15, r1: 0.75, width: 0.07, life: 0.34, core: st.second, glow: st.glow, soft: 0.45, y: 0.06 });
+          spray('spark', x, 0.5, z, N(6), { color: st.second, speed: [0.5, 1.2], up: [0.6, 1.3], size: [0.03, 0.06], life: [0.3, 0.5], gravity: 2.2, drag: 1.2, jitter: 0.15, opacity: 0.9 });
+        });
         break;
       }
       default:

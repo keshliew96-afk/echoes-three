@@ -173,7 +173,7 @@ function castAt(W, seat, x, z) {
   check(HEALER_SKILL_IDS.length === 19 && NEW_HEALER.every((id) => HEALER_SKILL_IDS.includes(id) && !SKILLS[id].cls), `the Healer has 19 skills (${HEALER_SKILL_IDS.length}), Lantern Ward and Dawn Brand among them`);
   check(C.AI_PRIORITY.healer.length === 19, 'the AI ranks all 19 Healer skills');
   const all = [...Object.values(NEW_CLASS).flat(), ...NEW_HEALER];
-  check(all.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.CAMPAIGN_ONLY_SKILLS.length === 11, 'the eleven new skills are campaign-only');
+  check(all.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.CAMPAIGN_ONLY_SKILLS.filter((id) => SKILLS[id].cls !== 'tidecaller').length === 11, 'the eleven new skills are campaign-only (the Tidecaller’s own counted apart)');
   check(Object.values(NEW_NODES).flat().every((id) => C.CAMPAIGN_ONLY_NODES.includes(id)), 'the six new nodes are campaign-only');
   const abbrevs = new Map();
   for (const id of Object.keys(SKILLS)) {

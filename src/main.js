@@ -567,6 +567,7 @@ if (bootParams.slot && bootParams.menuSkip) {
 // whenever the profile changes, another tab's write included).
 import { createUnlocksScreen } from './ui/run/unlocks.js';
 import { setClassTints } from './data/vfx.js';
+import { setTidecallerUnlocked, forceTidecaller } from './data/lineup.js';
 registerScreen('unlocks', createUnlocksScreen);
 // CLASS SELECT (docs/CLASS_SELECT.md): the camp's class picker (C / the portal prompt's Class chip).
 import { createClassesScreen } from './ui/run/classpick.js';
@@ -596,6 +597,18 @@ if (PLAYABLE) createStory({ app, world, scene: activeScene, params: bootParams }
   }
   applyTints();
   saveSystem.onProfileChanged(applyTints);
+  // THE TIDECALLER (docs/TIDECALLER.md): Rill is a choice once this profile
+  // has freed the Verse of Water. ?rill=1 opens her on a harness boot.
+  if (bootParams.rill) forceTidecaller(true);
+  const applyRill = () => {
+    try {
+      setTidecallerUnlocked(saveSystem.tidecallerFreed());
+    } catch {
+      /* she stays locked */
+    }
+  };
+  applyRill();
+  saveSystem.onProfileChanged(applyRill);
 }
 // @gnt:UNLOCKS end
 

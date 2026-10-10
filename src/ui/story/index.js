@@ -13,7 +13,9 @@
 // Nothing here touches the sim.
 import { provide, service } from '../../app/registry.js';
 import { PALETTE as P } from '../../data/palette.js';
-import { BOSS_VOICE, NPCS, voiceKeyFor } from '../../data/story.js';
+import { BOSS_VOICE, NPCS, voiceKeyFor, RILL_VOICE } from '../../data/story.js';
+import { WATER_BOSSES } from '../../data/unlocks.js';
+import { activeLineup } from '../../data/lineup.js';
 import { t } from '../../i18n/index.js';
 
 const POLL_MS = 200;
@@ -113,6 +115,7 @@ export function createStory({ app, world, scene: campScene = null, params = null
   // ---------------------------------------------------------------- poll --
   let campSince = 0;
   let bossKey = null;
+  let rillDue = 0; // THE TIDECALLER: the Voice's line to Rill, queued
   setInterval(() => {
     const now = performance.now();
     if (voiceUntil && now > voiceUntil) {
@@ -145,8 +148,18 @@ export function createStory({ app, world, scene: campScene = null, params = null
     const key = boss ? `${v.frame ? v.frame.seed : ''}|${v.act}|${boss}` : null;
     if (key && key !== bossKey) {
       bossKey = key;
-      if (BOSS_VOICE[boss] && note(`voice:${boss}`)) voice(BOSS_VOICE[boss].text);
+      const first = BOSS_VOICE[boss] && note(`voice:${boss}`);
+      if (first) voice(BOSS_VOICE[boss].text);
+      // THE TIDECALLER (docs/TIDECALLER.md): the first time Rill stands in a
+      // Mill boss room, the Voice speaks to her (after its boss line, if any).
+      if (WATER_BOSSES.includes(met) && v.act === 2 && activeLineup().includes('tidecaller') && !seen('voice_rill')) {
+        rillDue = first ? now + VOICE_MS + 400 : now;
+      }
     } else if (!key) bossKey = null;
+    if (rillDue && now >= rillDue) {
+      rillDue = 0;
+      if (note('voice_rill')) voice(RILL_VOICE.text);
+    }
   }, POLL_MS);
 
   const api = {

@@ -42,7 +42,7 @@ const pc = () => page.evaluate(() => window.__echoes.playClass());
 const cards = () => page.evaluate(() => [...document.querySelectorAll('.cs-classes .cs-card')].map((b) => ({ cls: b.dataset.cls, on: b.dataset.on === 'true', disabled: b.disabled })));
 const title = () => page.evaluate(() => (document.querySelector('.cs-classes .cs-title') || {}).textContent || '');
 
-await page.goto(`${URL0}?seed=3`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+await page.goto(`${URL0}?seed=3&rill=1`, { waitUntil: 'domcontentloaded', timeout: 300000 });
 await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
 await settle(1500);
 

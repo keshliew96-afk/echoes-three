@@ -236,7 +236,7 @@ export function createDailyScreen(ctx) {
     } else {
       const me = b.me || null;
       const line = (e, isMe) =>
-        `<div class="dl-row${isMe ? ' dl-me' : ''}"><div class="dl-rank">${e.rank}</div><div class="dl-who" style="--cls:${(VFX_SIGNATURE[e.cls] && VFX_SIGNATURE[e.cls].glow) ?? P.bone}"><i class="dl-pip"></i><span>${esc(e.name)}</span></div><div class="dl-where">${esc(placeLine(e.depth, e.won))}</div><div class="dl-time">${clockOf(e.ticks)}</div></div>`;
+        `<div class="dl-row${isMe ? ' dl-me' : ''}"><div class="dl-rank">${e.rank}</div><div class="dl-who" style="--cls:${(VFX_SIGNATURE[e.cls] && VFX_SIGNATURE[e.cls].glow) ?? P.bone}"><i class="dl-pip" data-cls="${esc(e.cls || '')}" title="${esc(CLASS_NAME[e.cls] ? t(CLASS_NAME[e.cls]) : '')}"></i><span>${esc(e.name)}</span></div><div class="dl-where">${esc(placeLine(e.depth, e.won))}</div><div class="dl-time">${clockOf(e.ticks)}</div></div>`;
       const show = rows.slice(0, me && me.rank > 10 ? 9 : 10);
       let html = `<div class="dl-row dl-hd"><div class="dl-rank">#</div><div>${t('Name')}</div><div>${t('Depth')}</div><div class="dl-time">${t('Time')}</div></div>`;
       html += show.map((e) => line(e, !!me && e.rank === me.rank)).join('');

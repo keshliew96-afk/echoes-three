@@ -41,7 +41,7 @@
 // records reset keeps `meta`.
 import { PROFILE_KEY } from './storage.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, nextLevel } from '../data/campaign.js';
-import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet } from '../data/unlocks.js';
+import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet, FEATS, featsOf } from '../data/unlocks.js';
 
 export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5 });
 export const CHALLENGE_MUL = Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 });
@@ -519,6 +519,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       for (const d of a.deeds) if (!m.deeds.includes(d)) m.deeds.push(d);
       for (const k of a.bosses) m.bosses[k] = (m.bosses[k] ?? 0) + 1;
       for (const r of facts.relics) if (!m.relicsSeen.includes(r)) m.relicsSeen.push(r);
+      for (const f of a.feats || []) if (!m.feats.includes(f)) m.feats.push(f); // THE TIDECALLER
       const freed = grantFree(m, p.records);
       m.lastAward = { at: now(), result: facts.result, embers: a.embers, lines: a.lines, deeds: a.deeds, unlocked: freed };
       return { ...a, unlocked: freed, balance: m.embers };
@@ -530,8 +531,32 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   function grantFreeUnlocks() {
     sync();
     const probe = clone(profile);
-    if (grantFree(probe.meta, probe.records).length === 0) return [];
-    return commit((p) => grantFree(p.meta, p.records)).result;
+    // THE TIDECALLER: feats the records already prove are stored first (a
+    // Level II clear from before this build frees Rill on load).
+    const lift = (m, rec) => {
+      for (const f of featsOf(m, rec)) if (!m.feats.includes(f)) m.feats.push(f);
+    };
+    const before = probe.meta.feats.length;
+    lift(probe.meta, probe.records);
+    if (grantFree(probe.meta, probe.records).length === 0 && probe.meta.feats.length === before) return [];
+    return commit((p) => {
+      lift(p.meta, p.records);
+      return grantFree(p.meta, p.records);
+    }).result;
+  }
+  // THE TIDECALLER (docs/TIDECALLER.md): a feat earned mid-run (Rill joins on
+  // the first Level II clear). True only the first time, so the caller can
+  // toast it once. Free unlocks the feat opens are granted with it.
+  function noteFeat(id) {
+    if (!FEATS[id]) return false;
+    sync();
+    if (profile.meta.feats.includes(id)) return false;
+    return !!commit((p) => {
+      if (p.meta.feats.includes(id)) return false;
+      p.meta.feats.push(id);
+      grantFree(p.meta, p.records);
+      return true;
+    }).result;
   }
   // Buy an unlock: requirement met, enough Embers. Equipping is the
   // player's own pick, except a kit / heirloom / purse / tint bought now is
@@ -616,6 +641,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       return p.meta.embers;
     }).result,
     grantFreeUnlocks,
+    noteFeat, // THE TIDECALLER
     buyUnlock,
     equipUnlock,
     clearLoadout,

@@ -39,6 +39,8 @@ A run that is abandoned (Quit to Lobby) still pays for what it cleared. A whole 
 | Veteran | Finish 10 runs | 30 |
 | Into the Deep | Reach Depth 5 of the Endless Descent | 50 |
 | Abyss Walker | Reach Depth 8 of the Endless Descent | 100 |
+| Rill's Return | Clear a level with the Tidecaller in the party | 25 |
+| High Water | Crash 5 soaked enemies with one cast | 30 |
 
 ## The unlocks (34)
 
@@ -49,11 +51,16 @@ A run that is abandoned (Quit to Lobby) still pays for what it cleared. A whole 
 | Kit | Bulwark (Tank) | 80 | none | Heavy Slam, Shield Wall, Taunting Roar, Iron Stance |
 | Kit | Duelist (Swordsman) | 80 | Clear Level I | Flurry, Fox Step, Riposte, Crescent Finisher |
 | Kit | Warden (Archer) | 80 | Clear Level II | Piercing Shot, Pinning Arrow, Rain of Arrows, Kestrel Watch |
+| Kit | Millrace (Tidecaller) | 80 | Rill freed (the Verse of Water) | Riverbolt, Undertow, Torrent, Bubble Ward (the last two with her slice 3) |
 | Heirloom | One per relic (15) | 40 / 90 / 160 by rarity | Take that relic in a run once | Begin every run holding it |
 | Purse | Pilgrim's Purse I / II / III | 50 / 100 / 150 | the previous tier | Begin with 15 / 30 / 45 extra Glint |
 | Vow | Elite Tide / Crowded / Iron Hide / Sharp Fangs | free | Clear Level I / II / III / complete a campaign | That curse on every combat room; Embers +25% each |
 | Tint | Moonlit (Healer), Emberforge (Tank), Gravefrost (Swordsman), Thornbloom (Archer) | 30 | none | Recolours that class's effects |
 | Tint | Wyrmfire (Healer) / Heron Mist (Archer) / Abyssal (Swordsman) | free | Defeat the Barrow Wyrm / the Drowned Heron / reach Depth 6 | Same |
+| Tint | Brine (Tidecaller) | 30 | Rill freed | Same |
+| Tint | Heron Rain (Tidecaller) | free | Fell the Drowned Heron with the Tidecaller in the party | Same |
+
+**Feats** (docs/TIDECALLER.md): `meta.feats` holds one-off facts that pay nothing but open unlocks (`{ feat: id }` requirements): `tidecaller` (Rill freed: the first Level II clear, or a Level II boss felled) and `rill_heron`. Loadouts have a kit and a tint slot for every class that can join the team, the Tidecaller included.
 
 Kits use each class's skills outside its starting pool (CLASS_SKILLS in `src/data/classes.js`; the Healer's from its draft pool), so a kit changes how the opening rooms play without new skill data. Vows reuse the four room curses that reshape a room's numbers (Famine, which works through the relic system's healing factor, is left out). Only one kit per class, one heirloom and one purse tier are worn at a time; vows stack.
 
@@ -77,7 +84,7 @@ Kits use each class's skills outside its starting pool (CLASS_SKILLS in `src/dat
 
 ```
 meta = { mv, embers, earned, owned: { unlockId: embersPaid }, deeds: [id],
-         bosses: { kind: kills }, relicsSeen: [relicId],
+         bosses: { kind: kills }, relicsSeen: [relicId], feats: [featId],
          loadout: { kits: { classId: id|null }, heirloom, purse: 0..3, vows: [id], tints: { classId: id|null } },
          lastAward: { at, result, embers, lines: [{ label, embers }], deeds, unlocked } }
 ```

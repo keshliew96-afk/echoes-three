@@ -502,6 +502,19 @@ function nodeRoom(seed, ids, nodes) {
   check(missing.length === 0, `the AI casts every one of her ten actives (${missing.length ? `missing ${missing.join(',')}` : 'all ten'})`);
 }
 
+// --------------------------------------------- 5b. the Millrace kit --
+// (slice 4's Unlocks kit lists Torrent and Bubble Ward; with them in SKILLS
+// it carries all four and a campaign started with it puts them on her keys.)
+{
+  const U = await import(u('src/data/unlocks.js'));
+  const kit = U.UNLOCKS.kit_millrace;
+  check(same(kit.skills, ['riverbolt', 'undertow', 'torrent', 'bubble_ward']), `the Millrace kit carries all four (${kit.skills.join(',')})`);
+  const W4 = makeWorld(11);
+  W4.run.startCampaign({ level: 1, harness: true, lineup: RILL, boons: { kits: { tidecaller: kit.skills.slice() } } });
+  for (let i = 0; i < 4000 && W4.run.view().phase !== 'combat'; i++) W4.step();
+  check(same(cmd(W4, 'partyView', 3).slots, kit.skills), `a run with the kit starts her on them (${cmd(W4, 'partyView', 3).slots.join(',')})`);
+}
+
 // ------------------------------------------------------------- 6. save --
 {
   const W3 = campaign(9);

@@ -17,7 +17,8 @@ import { service } from '../../app/registry.js';
 import { bossFor, levelFor } from '../../data/levels.js';
 import { endlessBossIndex, beyondCampaign, CYCLE } from '../../data/endless.js';
 import { t, tn } from '../../i18n/index.js';
-import { chapterFor } from '../../data/story.js';
+import { chapterFor, RILL_CLEAR } from '../../data/story.js';
+import { activeLineup } from '../../data/lineup.js';
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 
 // THE HEARTH SONG (docs/STORY.md): the verse the bell catches on a level's
@@ -27,6 +28,14 @@ export function verseLine(level, depth = null) {
   if (!ch || !CAMPAIGN_LEVELS.includes(ch.level)) return '';
   if (depth !== null && depth > CAMPAIGN_LEVELS.length) return '';
   return t('The bell catches a verse: {verse}.', { verse: t(ch.name) });
+}
+
+// THE TIDECALLER (docs/TIDECALLER.md): the Level II clear card's line about
+// Rill: freed by this clear, or singing along when she is in the party.
+export function rillLine(level, depth = null) {
+  const ch = chapterFor(level);
+  if (!ch || ch.verse !== 'water' || (depth !== null && depth > CAMPAIGN_LEVELS.length)) return '';
+  return t(activeLineup().includes('tidecaller') ? RILL_CLEAR.along.text : RILL_CLEAR.freed.text);
 }
 
 const skillCount = (b) => (b.skills || []).filter(Boolean).length;
@@ -153,7 +162,7 @@ export function createTransitScreen({ run }) {
         depth === CYCLE + 1
           ? t('The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.')
           : boss ? boss() : t('The way ahead opens.');
-      verseEl.textContent = verseLine(card.from, depth !== null ? depth - 1 : null);
+      verseEl.textContent = [verseLine(card.from, depth !== null ? depth - 1 : null), rillLine(card.from, depth !== null ? depth - 1 : null)].filter(Boolean).join(' ');
       nextRow.style.display = '';
       const name = card.name ? t(card.name) : card.name;
       nextName.textContent =

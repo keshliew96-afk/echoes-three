@@ -6,6 +6,9 @@ const STROKE = 'fill="none" stroke="currentColor" stroke-width="2.2" stroke-line
 const FILL = 'fill="currentColor" stroke="none"';
 
 const RELIC_SVG = {
+  // THE TIDECALLER: a pearl in an open shell; a charm of three wave lines on a cord.
+  otters_pearl: `<path d="M5 20 Q16 30 27 20 Z" ${STROKE}/><path d="M5 20 Q7 8 16 7 Q25 8 27 20" ${STROKE}/><circle cx="16" cy="18" r="3.4" ${FILL}/>`,
+  millrace_charm: `<path d="M10 4 L16 10 L22 4" ${STROKE}/><circle cx="16" cy="19" r="9" ${STROKE}/><path d="M10 17 Q13 14 16 17 Q19 20 22 17 M10 22 Q13 19 16 22 Q19 25 22 22" ${STROKE}/>`,
   // A whetstone bar with a blade edge sliding across it.
   whetstone: `<rect x="6" y="17" width="20" height="8" rx="2" ${STROKE}/><path d="M9 13 L24 6" ${STROKE}/><path d="M11 12 L13 15" ${STROKE}/>`,
   // A curved fang with an ember at its tip.

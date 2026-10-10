@@ -18,12 +18,40 @@
 //   tint     a class's VFX colours (cosmetic, local to this player's screen)
 import { RELICS, RELIC_IDS, CURSES } from '../sim/relics.js';
 import { SKILLS } from '../sim/skills.js';
-import { CLASS_NAME, CLASS_OF_SEAT } from './classes.js';
+import { CLASS_NAME } from './classes.js';
+import { LINEUP_CLASSES } from './lineup.js';
 import { LEVELS, ACT_IDS, bossFor } from './levels.js';
 import { endlessBossIndex, CYCLE } from './endless.js';
 
 export const META_VERSION = 1;
 export const CURRENCY = 'Embers';
+
+// Every class a loadout can dress (kits, tints): the Healer and every class
+// that may join the team (data/lineup.js), the Tidecaller included.
+export const LOADOUT_CLASSES = Object.freeze(['healer', ...LINEUP_CLASSES]);
+
+// FEATS (docs/TIDECALLER.md): one-off facts a profile keeps in meta.feats
+// that are not deeds and pay nothing themselves.
+//   tidecaller   Rill has joined: the Verse of Water is free (the first
+//                Level II clear, or a Level II boss felled)
+//   rill_heron   the Drowned Heron felled with the Tidecaller in the party
+export const FEATS = Object.freeze({
+  tidecaller: { text: 'Free the Verse of Water: fell the Level II boss' },
+  rill_heron: { text: 'Fell the Drowned Heron with the Tidecaller in the party' },
+});
+// The Level II bosses: felling either frees the Verse of Water (and Rill).
+export const WATER_BOSSES = Object.freeze(['heron', 'millwheel']);
+// A profile's feats as they stand: the stored list plus any the records
+// already prove (a save from before feats existed, a Level II clear recorded
+// before this build).
+export function featsOf(meta, records = {}) {
+  const out = new Set(Array.isArray(meta && meta.feats) ? meta.feats.filter((f) => FEATS[f]) : []);
+  const bosses = (meta && meta.bosses) || {};
+  const clears = (records && records.levelClears) || {};
+  if ((clears[2] ?? 0) > 0 || WATER_BOSSES.some((k) => (bosses[k] ?? 0) > 0)) out.add('tidecaller');
+  return [...out];
+}
+export const tidecallerFreed = (meta, records) => featsOf(meta, records).includes('tidecaller');
 
 // -------------------------------------------------------------- earning --
 export const EMBER_RULES = Object.freeze({
@@ -64,6 +92,9 @@ export const DEEDS = Object.freeze(
     ['veteran', { name: 'Veteran', text: 'Finish 10 runs.', embers: 30, test: (r) => r.runs >= 10 }],
     ['deep_five', { name: 'Into the Deep', text: 'Reach Depth 5 of the Endless Descent.', embers: 50, test: (r) => r.depth >= 5 }],
     ['deep_eight', { name: 'Abyss Walker', text: 'Reach Depth 8 of the Endless Descent.', embers: 100, test: (r) => r.depth >= 8 }],
+    // THE TIDECALLER (docs/TIDECALLER.md).
+    ['rills_return', { name: "Rill's Return", text: 'Clear a level with the Tidecaller in the party.', embers: 25, test: (r) => r.cleared.length + (r.deep || []).length > 0 && (r.party || []).includes('tidecaller') }],
+    ['high_water', { name: 'High Water', text: 'Crash 5 soaked enemies with one cast.', embers: 30, test: (r) => (r.crashBest || 0) >= 5 }],
   ])
 );
 export const DEED_IDS = Object.freeze(Object.keys(DEEDS));
@@ -75,12 +106,16 @@ export const DEED_IDS = Object.freeze(Object.keys(DEEDS));
 //   { boss: kind }  that boss defeated once  { relic: id }      that relic taken in a run
 //   { unlock: id }  another unlock owned     { runs: N }        N runs finished
 //   { depth: N }    Depth N reached in the Endless Descent (records.endlessBestDepth)
+//   { feat: id }    that feat is on the profile (FEATS above: Rill has joined, ...)
 const KIT_ROWS = [
   ['kit_lanternbearer', 'healer', 'Lanternbearer', ['mending_bolt', 'lantern_flurry'], 60, null, 'Begin with Mending Bolt and Lantern Flurry: three lantern darts that hit back.'],
   ['kit_grovekeeper', 'healer', 'Grovekeeper', ['dewfall', 'mending_tide'], 90, { level: 1 }, 'Begin with Dewfall and Mending Tide: healing pools and a sweeping mend.'],
   ['kit_bulwark', 'tank', 'Bulwark', ['heavy_slam', 'shield_wall', 'taunting_roar', 'iron_stance'], 80, null, 'The Tank begins with Heavy Slam, Shield Wall, Taunting Roar and Iron Stance.'],
   ['kit_duelist', 'swordsman', 'Duelist', ['flurry', 'fox_step', 'riposte', 'crescent_finisher'], 80, { level: 1 }, 'The Swordsman begins with Flurry, Fox Step, Riposte and Crescent Finisher.'],
   ['kit_warden', 'archer', 'Warden', ['piercing_shot', 'pinning_arrow', 'rain_of_arrows', 'kestrel_watch'], 80, { level: 2 }, 'The Archer begins with Piercing Shot, Pinning Arrow, Rain of Arrows and Kestrel Watch.'],
+  // THE TIDECALLER: Torrent and Bubble Ward arrive with the rest of her kit
+  // (the plan's slice 3); a kit only ever carries skills that exist.
+  ['kit_millrace', 'tidecaller', 'Millrace', ['riverbolt', 'undertow', 'torrent', 'bubble_ward'], 80, { feat: 'tidecaller' }, 'The Tidecaller begins with Riverbolt, Undertow, Torrent and Bubble Ward.'],
 ];
 const HEIRLOOM_COST = Object.freeze({ common: 40, rare: 90, legendary: 160 });
 const PURSE_ROWS = [
@@ -107,12 +142,15 @@ const TINT_ROWS = [
   // Act IV's bosses (docs/ACT_IV_BOSSES.md).
   ['tint_hollowsong', 'tank', 'Hollow Song', { glow: '#B565F5', second: '#F4E8FF', debris: '#E3D2FF' }, 0, { boss: 'cantor' }],
   ['tint_geodeglass', 'archer', 'Geode Glass', { glow: '#C9B8FF', second: '#F2F4FF', debris: '#8C8794' }, 0, { boss: 'colossus' }],
+  // THE TIDECALLER (docs/TIDECALLER.md).
+  ['tint_brine', 'tidecaller', 'Brine', { glow: '#3FC9A8', second: '#F2EEE2', debris: '#9FB8AE' }, 30, { feat: 'tidecaller' }],
+  ['tint_heronrain', 'tidecaller', 'Heron Rain', { glow: '#8FB4D9', second: '#F4F8FC', debris: '#C7D3DD' }, 0, { feat: 'rill_heron' }],
 ];
 
 function build() {
   const out = {};
   for (const [id, cls, name, skills, cost, req, text] of KIT_ROWS) {
-    out[id] = Object.freeze({ id, kind: 'kit', cls, name, skills: Object.freeze(skills), cost, req, text });
+    out[id] = Object.freeze({ id, kind: 'kit', cls, name, skills: Object.freeze(skills.filter((s) => SKILLS[s])), cost, req, text });
   }
   for (const rid of RELIC_IDS) {
     const r = RELICS[rid];
@@ -139,15 +177,15 @@ export const KIND_LABEL = Object.freeze({ kit: 'Kits', heirloom: 'Heirlooms', pu
 // ------------------------------------------------------------ the meta --
 export function freshLoadout() {
   return {
-    kits: Object.fromEntries(CLASS_OF_SEAT.map((c) => [c, null])),
+    kits: Object.fromEntries(LOADOUT_CLASSES.map((c) => [c, null])),
     heirloom: null,
     purse: 0,
     vows: [],
-    tints: Object.fromEntries(CLASS_OF_SEAT.map((c) => [c, null])),
+    tints: Object.fromEntries(LOADOUT_CLASSES.map((c) => [c, null])),
   };
 }
 export function freshMeta() {
-  return { mv: META_VERSION, embers: 0, earned: 0, owned: {}, deeds: [], bosses: {}, relicsSeen: [], loadout: freshLoadout(), lastAward: null };
+  return { mv: META_VERSION, embers: 0, earned: 0, owned: {}, deeds: [], bosses: {}, relicsSeen: [], feats: [], loadout: freshLoadout(), lastAward: null };
 }
 
 const num = (v, d = 0) => (Number.isFinite(v) ? v : d);
@@ -169,9 +207,10 @@ export function saneMeta(m) {
   out.deeds = Array.isArray(m.deeds) ? [...new Set(m.deeds.filter((d) => DEEDS[d]))] : [];
   if (m.bosses && typeof m.bosses === 'object') for (const [k, n] of Object.entries(m.bosses)) if (Number.isFinite(n) && n > 0) out.bosses[k] = Math.round(n);
   out.relicsSeen = Array.isArray(m.relicsSeen) ? [...new Set(m.relicsSeen.filter((r) => RELICS[r]))] : [];
+  out.feats = Array.isArray(m.feats) ? [...new Set(m.feats.filter((f) => FEATS[f]))] : [];
   const l = m.loadout && typeof m.loadout === 'object' ? m.loadout : {};
   const has = (id, kind) => !!(id && out.owned[id] !== undefined && UNLOCKS[id] && UNLOCKS[id].kind === kind);
-  for (const c of CLASS_OF_SEAT) {
+  for (const c of LOADOUT_CLASSES) {
     const k = l.kits && l.kits[c];
     if (has(k, 'kit') && UNLOCKS[k].cls === c) out.loadout.kits[c] = k;
     const t = l.tints && l.tints[c];
@@ -197,6 +236,7 @@ export function reqMet(req, { meta, records }) {
   if (req.unlock) return meta.owned && meta.owned[req.unlock] !== undefined;
   if (req.runs) return (rec.runs || 0) >= req.runs;
   if (req.depth) return (rec.endlessBestDepth || 0) >= req.depth;
+  if (req.feat) return featsOf(meta, rec).includes(req.feat);
   return false;
 }
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
@@ -209,6 +249,7 @@ export function reqText(req) {
   if (req.unlock) return `Own ${UNLOCKS[req.unlock] ? UNLOCKS[req.unlock].name : req.unlock}`;
   if (req.runs) return `Finish ${req.runs} runs`;
   if (req.depth) return `Reach Depth ${req.depth} of the Endless Descent`;
+  if (req.feat) return FEATS[req.feat] ? FEATS[req.feat].text : req.feat;
   return '';
 }
 
@@ -261,6 +302,9 @@ export function runFacts(summary, records = {}) {
     .filter(Boolean);
   const boons = s.boons || null;
   const depth = camp && camp.endless ? Math.max(num(camp.depth), num(camp.index), ...camp.levels.map((l) => num(l.index))) : 0;
+  // THE TIDECALLER: who stood in the party (the run's four builds), and the
+  // most soaked enemies one cast crashed (save/index.js counts it).
+  const party = Array.isArray(s.builds) ? s.builds.map((b) => b && b.classId).filter((c) => typeof c === 'string') : [];
   return {
     result: s.result ?? (s.victory ? 'victory' : 'defeat'),
     rooms: Math.max(0, num(s.roomsCleared ?? s.rooms)),
@@ -274,6 +318,8 @@ export function runFacts(summary, records = {}) {
     relics: Array.isArray(s.relics) ? s.relics : [],
     curses: Math.max(0, num(s.curses)),
     runs: num(records.runs),
+    party,
+    crashBest: Math.max(0, num(s.crashBest)),
   };
 }
 
@@ -302,7 +348,12 @@ export function awardFor(facts, meta) {
       embers += DEEDS[id].embers;
     }
   }
-  return { embers, lines, deeds, bosses: facts.bosses.slice() };
+  // Feats this run earned (pay nothing; they open unlocks).
+  const feats = [];
+  const rill = (facts.party || []).includes('tidecaller');
+  if (rill && facts.bosses.includes('heron')) feats.push('rill_heron');
+  if (facts.cleared.includes(2) || facts.bosses.some((k) => WATER_BOSSES.includes(k))) feats.push('tidecaller');
+  return { embers, lines, deeds, bosses: facts.bosses.slice(), feats };
 }
 
 // ------------------------------------------------------------ the boons --
@@ -314,7 +365,7 @@ export function loadoutBoons(meta) {
   const own = (id) => !!id && meta.owned && meta.owned[id] !== undefined && !!UNLOCKS[id];
   const b = {};
   const kits = {};
-  for (const c of CLASS_OF_SEAT) if (own(l.kits && l.kits[c]) && UNLOCKS[l.kits[c]].cls === c) kits[c] = UNLOCKS[l.kits[c]].skills.slice();
+  for (const c of LOADOUT_CLASSES) if (own(l.kits && l.kits[c]) && UNLOCKS[l.kits[c]].cls === c && UNLOCKS[l.kits[c]].skills.length) kits[c] = UNLOCKS[l.kits[c]].skills.slice();
   if (Object.keys(kits).length) b.kits = kits;
   if (own(l.heirloom)) b.relic = UNLOCKS[l.heirloom].relic;
   const purse = l.purse > 0 && own(`purse_${l.purse}`) ? UNLOCKS[`purse_${l.purse}`].glint : 0;
@@ -331,7 +382,7 @@ export function sanitizeBoons(b) {
   const out = {};
   if (b.kits && typeof b.kits === 'object') {
     const kits = {};
-    for (const c of CLASS_OF_SEAT) {
+    for (const c of LOADOUT_CLASSES) {
       const ids = b.kits[c];
       if (!Array.isArray(ids)) continue;
       const max = c === 'healer' ? 4 : 4;
@@ -354,7 +405,7 @@ export function sanitizeBoons(b) {
 export function loadoutTints(meta) {
   const out = {};
   if (!meta || !meta.loadout) return out;
-  for (const c of CLASS_OF_SEAT) {
+  for (const c of LOADOUT_CLASSES) {
     const id = meta.loadout.tints && meta.loadout.tints[c];
     if (id && meta.owned[id] !== undefined && UNLOCKS[id]) out[c] = { ...UNLOCKS[id].colors };
   }

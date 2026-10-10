@@ -29,10 +29,25 @@ export const DEFAULT_LINEUP = CLASS_OF_SEAT;
 export const LINEUP_CLASSES = Object.freeze(['tank', 'swordsman', 'archer', 'tidecaller']);
 // Today's party: the joiners an unchosen team falls back on, in fill order.
 export const DEFAULT_TEAM = Object.freeze(['tank', 'swordsman', 'archer']);
-// THE TIDECALLER is free from the start in this slice. The Level II boss
-// unlock replaces this one flag (the plan's slice 4).
-export const TIDECALLER_FREE = true;
-export const tidecallerOpen = () => TIDECALLER_FREE;
+// THE TIDECALLER joins once the party frees the Verse of Water: the first
+// Level II boss kill on this player's profile (docs/TIDECALLER.md "Unlock";
+// save/index.js sets the flag from the profile's meta.feats). Until then she
+// is not a choice: the picker, the team view and the lobby leave her out.
+// The flag only gates CHOOSING her. A lineup that already holds her (a save,
+// a host's run seen by a guest who has not freed her yet) stays valid, so
+// normalizeLineup never reads it and the sim never depends on a profile.
+export const TIDECALLER_FREE = false;
+let tidecallerUnlocked = false;
+let tidecallerForced = false; // ?rill=1 harness boots and probes
+export const tidecallerOpen = () => TIDECALLER_FREE || tidecallerUnlocked || tidecallerForced;
+export function setTidecallerUnlocked(on) {
+  tidecallerUnlocked = !!on;
+  return tidecallerOpen();
+}
+export function forceTidecaller(on = true) {
+  tidecallerForced = !!on;
+  return tidecallerOpen();
+}
 const joinable = (c) => LINEUP_CLASSES.includes(c) && (c !== 'tidecaller' || tidecallerOpen());
 
 // The joiners a setting names ('tank,archer' or an array): known, open,
@@ -67,7 +82,6 @@ export function normalizeLineup(raw) {
   const allies = raw.slice(1);
   if (!allies.every((c) => LINEUP_CLASSES.includes(c))) return DEFAULT_LINEUP;
   if (new Set(allies).size !== 3) return DEFAULT_LINEUP;
-  if (allies.includes('tidecaller') && !tidecallerOpen()) return DEFAULT_LINEUP;
   if (isDefaultLineup(raw)) return DEFAULT_LINEUP;
   return Object.freeze([...raw]);
 }
