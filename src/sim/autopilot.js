@@ -447,9 +447,11 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
       // (70%, the leader seat 90%); an aimed heal (bolt, arc, zone) takes the aim for the
       // neediest ally it reaches, else the aim stays on the target.
       const distTo = (m) => Math.hypot(m.x - player.x, m.z - player.z);
-      const hurt = party
+      // The escort's pilgrim is healed too (it sorts after the seats on ties).
+      const pilgrim = registry.all().find((e) => e.kind === 'pilgrim');
+      const hurt = (pilgrim ? [...party, pilgrim] : party)
         .filter((m) => m.hp > 0 && m.hp / m.maxHp < healBelow)
-        .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || a.partyIndex - b.partyIndex);
+        .sort((a, b) => a.hp / a.maxHp - b.hp / b.maxHp || (a.partyIndex ?? 9) - (b.partyIndex ?? 9));
       const selfHurt = hurt.some((m) => m.id === player.id);
       const reach = (def) => (def.shape === 'ground_aoe' ? def.range + def.area * 0.6 : def.range ?? BASIC_RANGE);
       const ready = [];

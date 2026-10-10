@@ -87,7 +87,7 @@ function build(seed) {
   let rec = null;
   bus.on('*', (e) => {
     if (rec && e.type !== 'sound') rec.push(e);
-    if (['quarry_spawn', 'quarry_escape', 'nest_spawn', 'nest_brood', 'purge_start', 'purge_rooted', 'room_soft_fail', 'room_cleared', 'glint_gain', 'hit', 'death', 'pilgrim_spawn', 'pilgrim_wait', 'pilgrim_walk', 'pilgrim_arrive', 'pilgrim_lost', 'hold_start', 'hold_surge', 'sigil_fading', 'sigil_relit', 'sigil_out', 'sigil_sealed', 'rift_pulse', 'rift_brood'].includes(e.type)) log.push(e);
+    if (['quarry_spawn', 'quarry_escape', 'nest_spawn', 'nest_brood', 'purge_start', 'purge_rooted', 'room_soft_fail', 'room_cleared', 'glint_gain', 'hit', 'death', 'pilgrim_spawn', 'pilgrim_wait', 'pilgrim_walk', 'pilgrim_arrive', 'pilgrim_lost', 'hold_start', 'hold_surge', 'sigil_fading', 'sigil_relit', 'sigil_out', 'sigil_sealed', 'rift_pulse', 'rift_brood', 'heal'].includes(e.type)) log.push(e);
   });
   const step = () => clock.stepOnce((t) => world.step(t, ap.active() ? ap.intents(t, emptySnapshot()) : emptySnapshot()));
   function continuation(n, every = 60) {
@@ -361,6 +361,29 @@ let holdSave = null;
   const at = w.log.find((e) => e.type === 'pilgrim_arrive');
   check('escort', 'it reaches the far end: the room is won', arrived && !!at && Math.hypot(at.x - ex, at.z - ez) < 0.5 && c.objective === 'escort' && c.won === true && !c.softFailed, c);
   check('escort', `the escort's bounty (${R.bounty} Glint) is paid once`, bounties(w, 'escort').length === 1 && bounties(w, 'escort')[0].amount === R.bounty, bounties(w, 'escort'));
+}
+{
+  // The Healer's heals reach the pilgrim: the autopilot Healer, with Swift
+  // Mend (smart target) and Mending Bolt (aimed), mends a hurt pilgrim at
+  // its side (the allies off across the room, out of the bolt's path).
+  const w = into(SEED, 'escort', 4, 1, true);
+  w.world.cmd('giveSkill', 'swift_mend');
+  w.world.cmd('giveSkill', 'mending_bolt');
+  stepUntil(w, () => w.log.some((e) => e.type === 'pilgrim_spawn'), 60);
+  const sp = w.log.find((e) => e.type === 'pilgrim_spawn');
+  const p = sp && w.registry.byId(sp.id);
+  const healed = (src) => w.log.filter((e) => e.type === 'heal' && e.target === p.id && (!src || e.source === src));
+  for (let i = 0; i < 600 && p && p.hp > 0; i++) {
+    w.world.cmd('killAllEnemies');
+    standParty(w, p.x > 0 ? -9 : 9, p.z > 0 ? -5 : 5); // the allies off across the room
+    const hero = partyBodies(w).find((b) => b.kind === 'player');
+    hero.x = hero.px = p.x - 1.6;
+    hero.z = hero.pz = p.z;
+    if (i % 60 === 0) p.hp = p.maxHp * 0.4;
+    w.step();
+  }
+  const by = (src) => healed(src).reduce((s, e) => s + e.applied, 0);
+  check('escort', "the Healer's heals reach the pilgrim (Swift Mend and Mending Bolt)", !!p && healed('swift_mend').length > 0 && healed('mending_bolt').length > 0, p && { swiftMend: Math.round(by('swift_mend')), mendingBolt: Math.round(by('mending_bolt')), heals: healed().length });
 }
 {
   // Every act's layouts: the road runs clear of the blockers and is long.

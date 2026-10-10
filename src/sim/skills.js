@@ -52,6 +52,7 @@ import {
   isAreaDamageable,
   clampPlacement,
   createSkillBolts,
+  isHealable,
 } from './shapes.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -445,11 +446,12 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
   // Resonance technique; attached by the run block after both systems exist.
   let build = null;
 
+  // Heal recipients: the seats, plus the escort's pilgrim (after them).
   const party = () =>
     registry
       .all()
-      .filter((e) => e.partyIndex !== undefined)
-      .sort((a, b) => a.partyIndex - b.partyIndex);
+      .filter(isHealable)
+      .sort((a, b) => (a.partyIndex ?? 9) - (b.partyIndex ?? 9));
 
   const statusOf = () => combat.status ?? null;
   function applyStatus(t, st, tick) {

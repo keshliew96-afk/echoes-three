@@ -74,7 +74,13 @@ first-time tip, sounds and visuals.
 - The AI seats leash to it (as they leash to the Waystone), so with AI allies
   it rarely waits; the autopilot stays within 2.6 u of it and shoots what is
   closest to it.
-- The room's waves are a kill_all's count at 75% of the budget.
+- The Healer's heals reach it (src/sim/shapes.js isHealable): Swift Mend's
+  smart target, novas, arcs, heal zones, auras and heal bolts count it as a
+  party member, after the seats on ties, and the autopilot or AI Healer
+  heals it below the same line as the party. Heal-override keys still name
+  only the four seats; node techniques (bounce, split, detonate) do not
+  reach it.
+- The room's waves are a kill_all's count at 65% of the budget.
 - It reaches the waypost: the room is won and the waves still standing
   retreat. It falls: the room soft-fails and the rest of the waves must be
   cleared.
@@ -135,7 +141,7 @@ first-time tip, sounds and visuals.
 
 ## Probes
 
-- `node tools/objectives-probe.mjs` (headless, 56 checks): assignment rules
+- `node tools/objectives-probe.mjs` (headless, 57 checks): assignment rules
   over 40 seeds (all four kinds and all six pairs), hunt won / escaped, purge
   won / rooted, the pilgrim's road on every layout met, escort walk / wait /
   arrive / fall, hold lit / relit / sealed / out, child caps, bounties,
@@ -152,4 +158,3 @@ first-time tip, sounds and visuals.
 - Nests are not colliders for walking (enemies separate from them softly).
 - No row in the `?vfxlab=1` panel yet.
 - Numbers were tuned with autopilot campaigns, not human play.
-- The pilgrim is not healed by the Healer's heals (it is not a party seat).
