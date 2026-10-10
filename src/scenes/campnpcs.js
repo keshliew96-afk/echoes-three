@@ -11,6 +11,11 @@
 //                             opens the Story so far page.
 //   Freed wardens             a felled warden's spirit at the camp's edge
 //                             (profile meta.bosses), with one line.
+//   Rill, the Tidecaller      a playable class (docs/TIDECALLER.md), so her
+//                             body is her party rig, not an NPC model: once
+//                             freed, walk up to her at her spot on the sluice
+//                             side of the fire and E talks (lines by verses).
+//                             Wick gains a line about her.
 //
 // Presentation only: nothing here writes the sim except the peddler's
 // collider, which the camp hands the sim with its own (camp mode only, so a
@@ -20,9 +25,9 @@ import { Group } from 'three';
 import { PALETTE } from '../data/palette.js';
 import { t } from '../i18n/index.js';
 import { createNpc } from '../render/npcs/index.js';
-import { NPCS, KEEPER_LINES, PEDDLER_LINES, CHRONICLER_LINES, WARDENS, versesHeld } from '../data/story.js';
+import { NPCS, KEEPER_LINES, PEDDLER_LINES, CHRONICLER_LINES, WARDENS, versesHeld, RILL_LINES, rillLineFor, KEEPER_RILL_LINE } from '../data/story.js';
 import { CAMPAIGN_LEVELS } from '../data/campaign.js';
-import { HEARTH } from '../env/camp/spec.js';
+import { HEARTH, CAMP_SPOTS } from '../env/camp/spec.js';
 import { MAP_TABLE } from '../campaign/maptable.js';
 import { cap } from '../app/controls.js';
 
@@ -35,6 +40,10 @@ export const NPC_SPOTS = Object.freeze({
   chronicler: { x: MAP_TABLE.x - 0.28, z: MAP_TABLE.z - 0.12, perchY: 0.92, talk: 0, near: 2.6 },
 });
 const WARDEN_NEAR = 3.2;
+// THE TIDECALLER: Rill talks while she sits at her own spot.
+const RILL_TALK = 1.6;
+const RILL_NEAR = 2.4;
+const RILL_SEATED = 0.9; // her rig within this of her spot (not trailing the party)
 const TALK_MS = 1600;
 
 const BUBBLE_CSS = `
@@ -66,7 +75,7 @@ const BUBBLE_CSS = `
   }
 `;
 
-export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnlocks, openStory }) {
+export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnlocks, openStory, rillAt = () => null, rillOpen = () => false }) {
   const group = new Group();
   group.name = 'camp-npcs';
   root.add(group);
@@ -89,6 +98,8 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
     group.add(body.group);
     npcs[id] = { id, spot, body, yaw, bubble: makeBubble(), line: null, talkIdx: -1, talkUntil: 0, near: false, lastKey: '' };
   }
+  // THE TIDECALLER: Rill's bubble (her body is the camp's party rig).
+  const rill = { id: 'rill', bubble: makeBubble(), line: null, talkIdx: -1, near: false, lastKey: '', at: null };
   // Bramble's own collider (Wick and Quill sit on solid props).
   const colliders = [{ id: 'npc-peddler', x: NPC_SPOTS.peddler.x, z: NPC_SPOTS.peddler.z, r: 0.42 }];
 
@@ -143,11 +154,17 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
     if (n.id === 'keeper') {
       const base = KEEPER_LINES.byVerses.text[Math.min(verses, KEEPER_LINES.byVerses.text.length - 1)];
       if (n.talkIdx < 0) return base;
-      const all = [base, ...KEEPER_LINES.extra.text];
+      const all = [base, ...KEEPER_LINES.extra.text, ...(rillOpen() ? [KEEPER_RILL_LINE.text] : [])];
       return all[(n.talkIdx + 1) % all.length]; // each E moves on a line
     }
     if (n.id === 'peddler') {
       const all = PEDDLER_LINES.text;
+      return all[(n.talkIdx + 1) % all.length];
+    }
+    if (n.id === 'rill') {
+      const base = rillLineFor(verses);
+      if (n.talkIdx < 0) return base;
+      const all = [base, ...RILL_LINES.extra.text];
       return all[(n.talkIdx + 1) % all.length];
     }
     return CHRONICLER_LINES.byVerses.text[Math.min(verses, CHRONICLER_LINES.byVerses.text.length - 1)];
@@ -155,6 +172,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
   function keysFor(n) {
     if (n.id === 'keeper') return [['interact', t('Talk'), () => talk('keeper')], ['unlocks', t('Offerings to the hearth'), () => openUnlocks('npc')]];
     if (n.id === 'peddler') return [['interact', t('Talk'), () => talk('peddler')]];
+    if (n.id === 'rill') return [['interact', t('Talk'), () => talkRill()]];
     return [['story', t('Story so far'), () => openStory('npc')]];
   }
 
@@ -170,12 +188,28 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
     return true;
   }
 
-  // E near Wick or Bramble: the next line. Returns true when it was taken.
+  function talkRill() {
+    if (!rill.at) return false;
+    rill.talkIdx += 1;
+    rill.lastKey = '';
+    rill.line = lineFor(rill);
+    rill.bubble.querySelector('.nb-line').textContent = t(rill.line);
+    const s = svc('save');
+    try {
+      if (s && typeof s.meetNpc === 'function') s.meetNpc('rill');
+    } catch {
+      /* a profile this browser can't write still talks */
+    }
+    return true;
+  }
+
+  // E near Wick, Bramble or Rill: the next line. Returns true when it was taken.
   function interact(body) {
     for (const id of ['keeper', 'peddler']) {
       const n = npcs[id];
       if (n.spot.talk > 0 && dist(body, n.spot) <= n.spot.talk) return talk(id);
     }
+    if (rill.at && dist(body, rill.at) <= RILL_TALK) return talkRill();
     return false;
   }
   const dist = (b, s) => Math.hypot(b.x - s.x, b.z - s.z);
@@ -187,6 +221,8 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
     if (!on) {
       for (const n of Object.values(npcs)) n.bubble.classList.remove('nb-on');
       for (const w of Object.values(wardens)) w.bubble.classList.remove('nb-on');
+      rill.bubble.classList.remove('nb-on');
+      rill.near = false;
     }
   }
 
@@ -242,6 +278,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
       const h = n.body.metrics ? n.body.metrics.height : 1.2;
       placeBubble(n.bubble, n.spot.x, n.spot.perchY + h + 0.25, n.spot.z);
     }
+    updateRill(body, quiet);
     for (const w of Object.values(wardens)) {
       if (!w.body.group.visible) continue;
       w.body.update(dt, elapsedSec);
@@ -252,6 +289,44 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
       }
       if (near) placeBubble(w.bubble, w.w.x, (w.body.metrics ? w.body.metrics.height : 1.4) + 0.3, w.w.z);
     }
+  }
+
+  // Rill: near her while she sits at her spot -> her bubble.
+  function updateRill(body, quiet) {
+    const pos = rillAt();
+    const spot = CAMP_SPOTS.tidecaller;
+    rill.at = pos && Math.hypot(pos.x - spot.x, pos.z - spot.z) <= RILL_SEATED ? pos : null;
+    const near = !quiet && !!rill.at && dist(body, rill.at) <= RILL_NEAR;
+    if (near !== rill.near) {
+      rill.near = near;
+      rill.bubble.classList.toggle('nb-on', near);
+      if (!near) rill.talkIdx = -1;
+      rill.lastKey = '';
+    }
+    if (!near) return;
+    const line = lineFor(rill);
+    const key = `${line}|${cap('interact')}`;
+    if (key !== rill.lastKey) {
+      rill.lastKey = key;
+      rill.line = line;
+      rill.bubble.querySelector('.nb-name').textContent = t(NPCS.rill.name);
+      rill.bubble.querySelector('.nb-line').textContent = t(line);
+      const keys = rill.bubble.querySelector('.nb-keys');
+      keys.textContent = '';
+      for (const [action, label, fn] of keysFor(rill)) {
+        const span = document.createElement('span');
+        span.innerHTML = `<b></b><i></i>`;
+        span.querySelector('b').textContent = cap(action);
+        span.querySelector('i').textContent = label;
+        span.style.fontStyle = 'normal';
+        span.addEventListener('click', (e) => {
+          e.stopPropagation();
+          fn();
+        });
+        keys.appendChild(span);
+      }
+    }
+    placeBubble(rill.bubble, rill.at.x, (rill.at.height || 1.1) + 0.35, rill.at.z);
   }
 
   function debug() {
@@ -273,6 +348,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
         bubble: box(n.bubble),
       })),
       wardens: Object.values(wardens).map((w) => ({ kind: w.kind, visible: w.body.group.visible, near: w.near, bubble: box(w.bubble) })),
+      rill: { seated: !!rill.at, near: rill.near, talkIdx: rill.talkIdx, line: rill.near ? rill.line : null, text: rill.near ? rill.bubble.textContent.replace(/\s+/g, ' ').trim() : null, bubble: box(rill.bubble) },
     };
   }
 

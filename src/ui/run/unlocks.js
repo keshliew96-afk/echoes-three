@@ -50,6 +50,9 @@ function reqLabel(req) {
   if (req.unlock) return t('Own {unlock}', { unlock: UNLOCKS[req.unlock] ? t(UNLOCKS[req.unlock].name) : req.unlock });
   if (req.runs) return t('Finish {n} runs', { n: req.runs });
   if (req.depth) return t('Reach Depth {depth} of the Endless Descent', { depth: req.depth });
+  // THE TIDECALLER (docs/TIDECALLER.md): the feats.
+  if (req.feat === 'tidecaller') return t('Free Rill: fell the Level II boss');
+  if (req.feat === 'rill_heron') return t('Fell the Drowned Heron with the Tidecaller in the party');
   return '';
 }
 

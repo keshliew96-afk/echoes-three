@@ -40,10 +40,11 @@ import { PALETTE as P } from '../../data/palette.js';
 import { t } from '../../i18n/index.js';
 import { bindings, PAD, MOUSE_BUTTON_CODE } from '../../core/bindings.js';
 import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../../app/controls.js';
+import { tidecallerOpen } from '../../data/lineup.js';
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -113,7 +114,16 @@ function stepText(id) {
 function tipText(id) {
   switch (id) {
     case 'classes':
-      return { title: t('Choose who you play'), body: t('Each hero has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
+      // THE TIDECALLER: once Rill has joined, the tip names five heroes.
+      return tidecallerOpen()
+        ? { title: t('Choose who you play'), body: t('Five heroes now, Rill the Tidecaller among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') }
+        : { title: t('Choose who you play'), body: t('Each hero has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
+    // THE TIDECALLER (docs/TIDECALLER.md): the first time the team view opens.
+    case 'lineup':
+      return { title: t('Who joins the team'), body: t('Four seats, five friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.') };
+    // ... and mid-fight, the first time a soaked enemy is crashed.
+    case 'soaked':
+      return { title: t('Soak, then crash'), body: t('Rill\'s water soaks enemies: they drip and move slower. Her Crash skills hit a soaked enemy 60% harder and use the soak up, so soak a pack first, then crash a wave through it.') };
     case 'relic':
       return { title: t('Relics'), body: t('A relic helps the whole party for the rest of the run. Pick one of the three; there is no reroll.') };
     case 'curse':
@@ -471,6 +481,11 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     if (shown) openModal(shown.kind, shown.id);
   });
 
+  // THE TIDECALLER: the soaked tip waits for the first crash it sees.
+  let crashSeen = false;
+  bus.on('crash', () => {
+    crashSeen = true;
+  });
   bus.on('interact', (ev) => {
     if (step === 'use' && ev && ev.itype === 'dewfont') setStep('fight');
   });
@@ -526,7 +541,13 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
   // Which tip the screen in front of the player calls for right now.
   function tipContext() {
     if (app.state !== 'playing' || socketOpen()) return null;
-    if (app.screens && app.screens.top && app.screens.top() === 'classes') return 'classes';
+    if (app.screens && app.screens.top && app.screens.top() === 'classes') {
+      // THE TIDECALLER: the team view has its own tip (once the class tip is seen).
+      const cs = document.querySelector('.cs-classes .cs-title');
+      const teamView = !!(cs && cs.textContent === t('Who joins the team?'));
+      if (teamView && tidecallerOpen() && tipsSeen().includes('classes') && !(shown && shown.id === 'classes')) return 'lineup';
+      return 'classes';
+    }
     if (screensOpen()) return null;
     const v = view();
     if (!v || !v.active || v.tutorial) return null;
@@ -575,7 +596,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       return;
     }
     if (!tipsOn || step || shown) return;
-    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : null;
+    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : !tipsSeen().includes('soaked') && crashSeen ? 'soaked' : null;
     if (!id) return;
     floorTip = { id, until: performance.now() + FLOOR_TIP_MS };
     markTip(id);

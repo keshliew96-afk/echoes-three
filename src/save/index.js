@@ -45,7 +45,7 @@ import {
   metaOf,
 } from './slots.js';
 import { createProfileStore, scoreRun } from './profile.js';
-import { loadoutBoons, loadoutTints } from '../data/unlocks.js';
+import { loadoutBoons, loadoutTints, tidecallerFreed } from '../data/unlocks.js';
 import { JOURNAL_ALIAS, ENEMY_JOURNAL_IDS, BOSS_JOURNAL_IDS } from '../data/journal.js';
 import { createThumbnailer } from './thumbnail.js';
 import { createAutosave } from './autosave.js';
@@ -1075,6 +1075,8 @@ export function createSaveSystem({
   // ------------------------------------------------ records tracking --
   let lastRecord = null; // { runTick, result, ... } for the end card's "New best" line
   bus.on('run_start', (ev) => {
+    crashCasts.clear(); // THE TIDECALLER: High Water counts per run
+    crashBest = 0;
     if (probing) return;
     tracker.runKillBase = world.stats.kills;
     tracker.levelKillBase = world.stats.kills;
@@ -1092,6 +1094,30 @@ export function createSaveSystem({
     tracker.levelKillBase = world.stats.kills;
     if (probing) return;
     lastLevelClear = { tick: ev.tick, level: ev.level, ...profileStore.noteLevelClear(ev.level) };
+    // THE TIDECALLER (docs/TIDECALLER.md): the first Level II clear frees the
+    // Verse of Water, and Rill joins (this player's profile; a guest hears
+    // the host's clear and frees her on its own).
+    if (ev.level === 2 && ev.campaign && profileStore.noteFeat('tidecaller')) {
+      notify(profileListeners, 'feat');
+      if (app && typeof app.toast === 'function') {
+        try {
+          app.toast(t('The Tidecaller joins the party. Rill waits at the hearth.'), { tone: 'good', ms: 6000 });
+        } catch {
+          /* UI only */
+        }
+      }
+    }
+  });
+  // THE TIDECALLER: High Water (a deed) wants the most soaked enemies one
+  // cast crashed. A cast's crashes share its tick, seat and skill.
+  const crashCasts = new Map();
+  let crashBest = 0;
+  bus.on('crash', (ev) => {
+    const k = `${ev.tick}|${ev.seat}|${ev.skill}`;
+    const n = (crashCasts.get(k) ?? 0) + 1;
+    crashCasts.set(k, n);
+    if (crashCasts.size > 64) crashCasts.delete(crashCasts.keys().next().value);
+    if (n > crashBest) crashBest = n;
   });
   bus.on('level_start', (ev) => {
     tracker.levelKillBase = world.stats.kills;
@@ -1138,6 +1164,7 @@ export function createSaveSystem({
       relics: s && Array.isArray(s.relics) ? s.relics : [],
       curses: s && Number.isFinite(s.curses) ? s.curses : 0,
       boons: s && s.boons ? s.boons : null,
+      crashBest,
     });
     lastAward.runEndTick = ev.tick;
     notify(profileListeners, 'award');
@@ -1522,6 +1549,16 @@ export function createSaveSystem({
     equipUnlock: unlockCall(profileStore.equipUnlock),
     clearLoadout: unlockCall(profileStore.clearLoadout),
     grantFreeUnlocks: unlockCall(profileStore.grantFreeUnlocks),
+    // THE TIDECALLER: has this profile freed Rill (the Verse of Water)?
+    tidecallerFreed: () => {
+      const p = profileStore.get();
+      return tidecallerFreed(p.meta, p.records);
+    },
+    noteFeat: (id) => {
+      const ok = profileStore.noteFeat(id);
+      if (ok) notify(profileListeners, 'feat');
+      return ok;
+    },
     boons: () => loadoutBoons(profileStore.get().meta),
     // THE HEARTH SONG (docs/STORY.md): story beats seen and NPC meetings.
     story: () => profileStore.get().story,
@@ -1568,6 +1605,9 @@ export function createSaveSystem({
     buyUnlock: (id) => api.buyUnlock(id),
     equipUnlock: (id, on) => api.equipUnlock(id, on),
     boons: () => api.boons(),
+    // THE TIDECALLER probes: free Rill (what the first Level II clear does).
+    tidecallerFreed: () => api.tidecallerFreed(),
+    noteFeat: (id) => api.noteFeat(id),
     list,
     save: (slot, opts) => save(slot, opts),
     load: (slot) => (app && typeof app.loadSlot === 'function' ? app.loadSlot(slot) : load(slot)),

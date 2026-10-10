@@ -239,6 +239,12 @@ export function createCampScene(stage, toggles, ctx) {
     toScreen: (x, y, z) => toScreen(x, y, z),
     openUnlocks: (via) => openUnlocks(via),
     openStory: (via) => openStory(via),
+    // THE TIDECALLER: Rill talks from her rig when she sits at her spot.
+    rillAt: () => {
+      const a = allyRigs.find((r) => r.classId === 'tidecaller');
+      return a && a.rig.group.visible && tidecallerOpen() ? { x: a.rig.group.position.x, z: a.rig.group.position.z, height: a.rig.metrics ? a.rig.metrics.height : 1.1 } : null;
+    },
+    rillOpen: () => tidecallerOpen(),
   });
   const shadows = camp.shadows.concat(edge.shadows, [mapTable.shadow]);
   buildShadowInstances(root, shadows);
@@ -290,6 +296,7 @@ export function createCampScene(stage, toggles, ctx) {
     a.rig.group.position.set(CAMP_SPOTS[a.classId].x, 0, CAMP_SPOTS[a.classId].z);
     a.rig.setYaw(a.yaw);
     a.rig.setAnim('idle');
+    a.rig.group.visible = a.classId !== 'tidecaller' || tidecallerOpen();
     root.add(a.rig.group);
   }
   healerRig.setAnim('idle');
@@ -1038,6 +1045,8 @@ export function createCampScene(stage, toggles, ctx) {
     syncCampLineup();
     for (const a of allyRigs) {
       const e = a.partyIndex === null ? null : world.entities().find((x) => x.kind === 'ally' && x.partyIndex === a.partyIndex);
+      // THE TIDECALLER: Rill is not at camp until the profile frees her.
+      a.rig.group.visible = !!e || a.classId !== 'tidecaller' || tidecallerOpen();
       if (!e) {
         // At camp this run: stand by the fire at the class's own spot.
         const spot = CAMP_SPOTS[a.classId];
@@ -1232,6 +1241,7 @@ export function createCampScene(stage, toggles, ctx) {
           { classId: 'healer', x: r2(healerRig.group.position.x), z: r2(healerRig.group.position.z) },
           ...allyRigs.map((a) => ({
             classId: a.classId,
+            visible: a.rig.group.visible,
             anim: a.rig.getAnim(),
             x: r2(a.rig.group.position.x),
             z: r2(a.rig.group.position.z),

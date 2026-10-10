@@ -14,6 +14,9 @@
 // picking a class that was not in the team. The answer is the
 // `gameplay.team` setting; data/lineup.js plannedLineup turns the two
 // settings into the next campaign's lineup.
+// Until the profile frees the Verse of Water (the first Level II clear,
+// docs/TIDECALLER.md "Unlock") her card shows locked, with what frees her,
+// and the team view leaves her out: she is not a choice yet.
 // Blocking: the single-player sim pauses while it is open.
 import { px } from '../../app/style.js';
 import { PALETTE as P, CLASS_ACCENTS } from '../../data/palette.js';
@@ -71,6 +74,9 @@ function installStyle() {
   border-radius: ${px(7)}; border: max(1px, ${px(2)}) solid ${P.warmGrey}AA; background: ${P.voidCharcoal}; color: ${P.bone}; font-weight: 700; }
 .cs-classes .cs-card .cs-name { overflow-wrap: anywhere; }
 .cs-classes .cs-card[disabled] { opacity: 0.45; cursor: default; }
+.cs-classes .cs-card.cs-locked { opacity: 0.6; filter: saturate(0.35); }
+.cs-classes .cs-card.cs-locked .cs-foot { color: ${P.warmGrey}; }
+.cs-classes .cs-new.cs-lock { background: ${P.warmGrey}; }
 .cs-classes .cs-new { position: absolute; top: ${px(10)}; right: ${px(12)}; font-size: ${px(15)}; letter-spacing: 0.18em; font-weight: 800; color: ${P.voidCharcoal};
   background: ${P.hearthAmber}; border-radius: ${px(6)}; padding: ${px(2)} ${px(8)}; }
 .cs-classes .cs-lineup { align-self: center; font: inherit; font-size: ${px(20)}; font-weight: 700; color: ${P.parchment}; cursor: pointer;
@@ -159,7 +165,9 @@ export function createClassesScreen(ctx) {
     view = next;
     gridEl.innerHTML = '';
     noteEl.textContent = '';
-    const list = PLAY_CLASSES.filter(playable);
+    // The class view shows a locked class too (with what frees it); the team
+    // view only the ones that can join.
+    const list = view === 'team' ? PLAY_CLASSES.filter(playable) : PLAY_CLASSES;
     gridEl.style.setProperty('--cs-cols', String(list.length));
     if (view === 'team') draft = [...teamNow()];
     for (const cls of list) {
@@ -179,7 +187,9 @@ export function createClassesScreen(ctx) {
     el.setAttribute('aria-label', team0 ? t('Who joins the team?') : t('Choose your class'));
     el.querySelector('.cs-blurb').textContent = team0
       ? t('Four seats: the Healer always comes, you play your class, and you choose who fills the rest. The AI plays everyone you do not.')
-      : t('You play one of the five. The AI plays the rest of the party of four, so it is always whole.');
+      : PLAY_CLASSES.every(playable)
+        ? t('You play one of the five. The AI plays the rest of the party of four, so it is always whole.')
+        : t('You play one of the four. The AI plays the rest of the party, so it is always whole.');
     el.querySelector('.cs-k-move').textContent = team0 ? t('Choose') : t('Class');
     el.querySelector('.cs-k-pick').textContent = team0 ? t('Joins or stays') : t('Play this class');
     el.querySelector('.cs-k-back').textContent = team0 ? t('Done') : t('Back to camp');
@@ -193,8 +203,10 @@ export function createClassesScreen(ctx) {
     for (const b of gridEl.querySelectorAll('.cs-card')) {
       const cls = b.dataset.cls;
       const st = cls === 'healer' ? HEALER : ALLY_CLASSES[cls];
+      const locked = !playable(cls);
+      b.classList.toggle('cs-locked', locked);
       const head =
-        (cls === 'tidecaller' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
+        (locked ? `<span class="cs-new cs-lock">${esc(t('LOCKED'))}</span>` : cls === 'tidecaller' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
         `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(CLASS_CRITTER[cls]).toUpperCase() }))}</div>` +
         `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>`;
       if (team0) {
@@ -209,6 +221,15 @@ export function createClassesScreen(ctx) {
           `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +
           `<div class="cs-kit"></div>` +
           `<div class="cs-foot">${esc(you ? t('Playing') : joins ? t('✓ Joins') : t('Stays at camp'))}</div>`;
+      } else if (locked) {
+        b.dataset.on = 'false';
+        b.disabled = true;
+        b.innerHTML =
+          head +
+          `<div class="cs-role">${esc(ROLE[cls]())}</div>` +
+          `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +
+          `<div class="cs-kit"><h4>${esc(t('HOW TO FREE HER'))}</h4>${esc(t('Rill was singing the sluices shut when the hollow song took the Mill. Fell the Level II boss, the Drowned Heron or the Millwheel, and she joins the party.'))}</div>` +
+          `<div class="cs-foot">${esc(t('🔒 Locked'))}</div>`;
       } else {
         const kit = wornKit(cls);
         const skills = startSkills(cls, kit);
@@ -303,7 +324,7 @@ export function createClassesScreen(ctx) {
       draft: draft.slice(),
       lineup: [...plannedLineup(chosen(), teamSetting())],
       log: log.slice(),
-      cards: [...gridEl.querySelectorAll('.cs-card')].map((b) => ({ cls: b.dataset.cls, on: b.dataset.on === 'true', disabled: b.disabled, focused: b.classList.contains('ap-focus') })),
+      cards: [...gridEl.querySelectorAll('.cs-card')].map((b) => ({ cls: b.dataset.cls, on: b.dataset.on === 'true', disabled: b.disabled, locked: b.classList.contains('cs-locked'), focused: b.classList.contains('ap-focus') })),
     }),
   };
 }

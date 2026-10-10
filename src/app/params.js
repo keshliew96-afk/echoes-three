@@ -49,6 +49,7 @@ export function parseBootParams(search = typeof window !== 'undefined' ? window.
     layout: int('layout'),
     debug: flagOf(p, 'debug', false),
     fps: flagOf(p, 'fps', false), // INT: fps meter in player builds
+    rill: flagOf(p, 'rill', false), // THE TIDECALLER: open Rill without the Level II unlock (probes)
     fresh: flagOf(p, 'fresh', false), // wipe echoes.* storage at boot (clean-profile tests)
     freeze: flagOf(p, 'freeze', false), // sim frozen at tick 0 until __echoes.sim.thaw() (golden traces)
     slot: p.get('slot'), // M2: auto-load a save slot at boot

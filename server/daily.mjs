@@ -18,7 +18,7 @@ import { dailyKey, dayDiff, isDailyKey, compareEntries, betterEntry, cleanName, 
 
 const KEEP_DAYS = 30;
 const MAX_ENTRIES = 5000; // per day, in memory
-const CLASSES = new Set(['healer', 'tank', 'swordsman', 'archer']);
+const CLASSES = new Set(['healer', 'tank', 'swordsman', 'archer', 'tidecaller']);
 const RATE = { score: 30, board: 120, windowMs: 10 * 60 * 1000 };
 const MAX_TICKS = 60 * 60 * 60 * 6; // six hours of play
 const MAX_DEPTH = DAILY_RULES.roomsPerLevel * 8;
