@@ -337,6 +337,33 @@ export const BOSS_VFX = Object.freeze({
     burst: Object.freeze({ spikes: 14, shards: 18 }),
     camera: Object.freeze({ dolly: 0.1, kick: 0.08 }),
   }),
+  // Third bosses (docs/THIRD_BOSSES.md).
+  //   gloamwolf  grey fur, torn earth and moonlight: a pounce that craters
+  //              and claws the floor, a three-claw rend, a howl of rings
+  //   mireking   millpond water, silt and slime: a tongue down the lane, a
+  //              belly flop that throws a crown of water, a violet gulp
+  gloamwolf: Object.freeze({
+    id: 'gloamwolf',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'owlfeather',
+    second: 'dirt',
+    pounce: Object.freeze({ chunk: 14, dust: 6, fur: 12 }),
+    howl: Object.freeze({ rings: 4, leaves: 18 }),
+    camera: Object.freeze({ dolly: 0.08, kick: 0.06 }),
+  }),
+  mireking: Object.freeze({
+    id: 'mireking',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'slime',
+    second: 'water',
+    lash: Object.freeze({ speed: 26 }),
+    flop: Object.freeze({ ripples: 3, drops: 30, silt: 12 }),
+    camera: Object.freeze({ dolly: 0.1, kick: 0.07 }),
+  }),
 });
 export function isVfxBoss(kind) {
   return Object.prototype.hasOwnProperty.call(BOSS_VFX, kind);

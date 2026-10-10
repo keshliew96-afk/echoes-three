@@ -285,13 +285,17 @@ export function createRunSystem({
   // pure hash of the seed, nothing saved. `bossPick` is the harness override
   // (cmd('startRun', { act, boss })), saved only while it is set.
   let bossPick = null;
+  // THIRD BOSSES (docs/THIRD_BOSSES.md): the acts whose gated boss this run
+  // can meet (the save had felled the act's other bosses when it set out;
+  // never in the Daily). Saved only while non-empty.
+  let thirdOpen = [];
   // ENDLESS: past the first cycle each cycle meets the act's other boss in turn.
   const currentBoss = () => {
     if (!bossPick && beyondCampaign(endlessDepth())) {
       const lv = levelFor(act);
-      if (lv.bosses && lv.bosses.length) return lv.bosses[endlessBossIndex(endlessDepth(), frame ? frame.seed : null)];
+      if (lv.bosses && lv.bosses.length) return lv.bosses[endlessBossIndex(endlessDepth(), frame ? frame.seed : null, thirdOpen)];
     }
-    return bossFor(act, frame ? frame.seed : null, bossPick);
+    return bossFor(act, frame ? frame.seed : null, bossPick, thirdOpen);
   };
   // ENDLESS: the depth of a live endless campaign (= its level index), else 0.
   const endlessDepth = () => (campaign && campaign.endless ? campaign.index : 0);
@@ -401,6 +405,9 @@ export function createRunSystem({
       daily,
       lineup: o.lineup,
     });
+    // THIRD BOSSES: the Daily is the same run for everyone, so its gated
+    // bosses never join; a campaign or Endless takes the acts the camp passed.
+    thirdOpen = !daily && Array.isArray(o.thirdBosses) ? o.thirdBosses.map(Number).filter((a) => ACT_IDS.includes(a)) : [];
     if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
     if (o.depart) beginTransit('depart', null, act, getTick());
     else enterRoom(1);
@@ -414,6 +421,7 @@ export function createRunSystem({
     wipeState({ silent: true });
     autoReturnTick = null;
     bossPick = null;
+    thirdOpen = [];
     act = ACT_IDS.includes(Number(a)) ? Number(a) : 1;
     challenge = CHALLENGE[c] ? c : 'standard';
     // DAILY: the day's seed, whatever stream the session was on.
@@ -595,7 +603,10 @@ export function createRunSystem({
   // run keeps `legacyLayouts`, so the goldens roll the same rooms.
   function rollLayout(n, mode) {
     const level = levelFor(act);
-    if (mode === 'boss') return level.bossLayout;
+    // THIRD BOSSES (plan 3 slice 10): a boss row may name its own room (the
+    // Gloam Wolf hunts in the Thornwood Ring, the Mire King sits in the
+    // Millrace Basin); boss rooms carry no hazards, so only the dressing moves.
+    if (mode === 'boss') return currentBoss().layout ?? level.bossLayout;
     const table = campaign && campaign.mode !== 'campaign' && level.legacyLayouts ? level.legacyLayouts : level.layouts;
     // EVENT ROOMS: a "?" room stands in the last combat room's clearing, as
     // the shop does (no draw).
@@ -1577,6 +1588,8 @@ export function createRunSystem({
         rec.rooms = roomsDone;
         rec.cleared = true;
         rec.ticks = levelTicks;
+        // THIRD BOSSES: the boss this level met (unlock facts read it).
+        if (thirdOpen.length) rec.boss = currentBoss().kind ?? 'stag';
       }
       // ENDLESS: the final level's first clear wins the campaign; the
       // descent goes on.
@@ -2489,6 +2502,8 @@ export function createRunSystem({
       // Slice 2: the boss this run meets, from room 6 on (the shop's Advance
       // label, the boss banner); absent earlier so the hashed view of the
       // certified early rooms is unchanged.
+      // THIRD BOSSES: present only when a gated boss can join (hash-stable view).
+      ...(thirdOpen.length ? { thirdBosses: thirdOpen.slice() } : {}),
       ...(active && roomIndex >= 6 ? { actBoss: { kind: currentBoss().kind, name: currentBoss().name } } : {}),
       // ENDLESS: present only on an endless descent (hash-stable view).
       ...(endlessDepth() ? { endless: { depth: endlessDepth(), won: !!campaign.won } } : {}),
@@ -3069,6 +3084,7 @@ export function createRunSystem({
       // KEYS AND VAULTS: present only in a run with keys.
       ...(active && vaults.enabled() ? { vaults: vaults.saveState() } : {}),
       ...(bossPick ? { bossPick } : {}),
+      ...(thirdOpen.length ? { thirdBosses: thirdOpen.slice() } : {}),
     };
   }
   function loadState(d) {
@@ -3092,6 +3108,7 @@ export function createRunSystem({
     act = ENDLESS_ACTS.includes(d.act) ? d.act : 1;
     challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
     bossPick = typeof d.bossPick === 'string' ? d.bossPick : null;
+    thirdOpen = Array.isArray(d.thirdBosses) ? d.thirdBosses.filter((a) => ACT_IDS.includes(a)) : [];
     layout = d.layout ?? null;
     lastCombatLayout = d.lastCombatLayout ?? null;
     roomPlanView = d.roomPlan ?? null;

@@ -61,12 +61,14 @@ const ENEMIES = [
   ['Wood, new', 1, ['owl', 'lasher']],
   ['Mill, new', 2, ['leech', 'miller']],
 ];
-// Each act's two bosses: [label, act, boss kind].
+// Each act's bosses: [label, act, boss kind].
 const BOSSES = [
   ['Stag', 1, 'stag'],
   ['Thornmother', 1, 'thornmother'],
+  ['Gloam Wolf', 1, 'gloamwolf'],
   ['Heron', 2, 'heron'],
   ['Millwheel', 2, 'millwheel'],
+  ['Mire King', 2, 'mireking'],
   ['Wyrm', 3, 'wyrm'],
   ['Lich Ram', 3, 'lichram'],
   ['Cantor', 4, 'cantor'],
@@ -199,6 +201,33 @@ export function mountVfxLab() {
     if (b) X().cmd('teleport', b.x, b.z + 1.8);
     say('Colossus: stand close for a Geode Burst');
   }, 'stand next to it');
+
+  // Third bosses (docs/THIRD_BOSSES.md): the Wood's and the Mill's.
+  const third = section('Third bosses');
+  async function thirdBoss(kind, act) {
+    const b = run().boss;
+    if (!(run().active && run().room === 8 && b && b.kind === kind && b.active)) await room(act, 8, kind);
+  }
+  const standAt = async (kind, act, dist, msg) => {
+    await thirdBoss(kind, act);
+    const b = run().boss;
+    if (b) X().cmd('teleport', b.x, Math.min(6, b.z + dist));
+    say(msg);
+  };
+  button(third, 'Wolf pounce', () => standAt('gloamwolf', 1, 5, 'Gloam Wolf: stand off for a Pounce'), 'stand 5 u away');
+  button(third, 'rend', () => standAt('gloamwolf', 1, 1.8, 'Gloam Wolf: stand at its jaws for a Rend'), 'stand next to it');
+  button(third, 'howl', async () => {
+    await thirdBoss('gloamwolf', 1);
+    X().cmd('bossHp', 0.39);
+    say('Gloam Wolf: enraged; the Moon Howl and the Hunt come sooner');
+  }, 'cut to 39%');
+  button(third, 'Mire King lash', () => standAt('mireking', 2, 4, 'Mire King: stand off for a Tongue Lash'), 'stand 4 u away');
+  button(third, 'swallow', () => standAt('mireking', 2, 2.6, 'Mire King: stay in front of it when it gapes'), 'stand in front of it');
+  button(third, 'enrage', async () => {
+    await thirdBoss('mireking', 2);
+    X().cmd('bossHp', 0.39);
+    say('Mire King: enraged (wider mire, faster lashes)');
+  }, 'cut to 39%');
 
   // ---------------------------------------------------------------- party --
   function seatOf(cls) {

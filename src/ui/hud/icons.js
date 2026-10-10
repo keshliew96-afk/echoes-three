@@ -770,6 +770,19 @@ const ICONS = {
     ['path', { d: 'M6.4 11.6 L4.6 4.4 L9.4 9.8 Z M25.6 11.6 L27.4 4.4 L22.6 9.8 Z M11.4 9.4 L10.2 2.8 L13.6 7.6 Z M20.6 9.4 L21.8 2.8 L18.4 7.6 Z', fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M14.2 9.8 L15.2 10.4 M17.8 9.8 L16.8 10.4', 'stroke-width': 1.1 }],
   ],
+  // Third bosses (docs/THIRD_BOSSES.md). The Gloam Wolf: a wolf's head, ears
+  // up and muzzle long, slanted eyes cut out, a ruff of bramble at the cheeks.
+  boss_gloamwolf: [
+    ['path', { d: 'M7 2.6 L12.4 10 C14.6 9.2 17.4 9.2 19.6 10 L25 2.6 L25.8 13 C27.6 15.6 27.4 19 24.6 21.4 L19 27.6 C17.6 29.6 14.4 29.6 13 27.6 L7.4 21.4 C4.6 19 4.4 15.6 6.2 13 Z M10 15.4 L14.2 16.8 L13.2 18.2 Z M22 15.4 L17.8 16.8 L18.8 18.2 Z M14.4 24.2 H17.6 L16 26 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M5.8 14.4 L1.4 15.4 L5 17.8 L1.8 20.6 L6.8 21 M26.2 14.4 L30.6 15.4 L27 17.8 L30.2 20.6 L25.2 21', 'stroke-width': 1.6 }],
+  ],
+  // The Mire King: a toad's broad face, eyes bulging up either side of a
+  // crown of mill-grate bars, a wide mouth cut across it.
+  boss_mireking: [
+    ['path', { d: 'M3 21.6 C3 14.6 9 12 16 12 C23 12 29 14.6 29 21.6 C29 26.8 23.6 29.6 16 29.6 C8.4 29.6 3 26.8 3 21.6 Z M6.8 21 C11 24.2 21 24.2 25.2 21 C21.4 25.4 10.6 25.4 6.8 21 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M5.4 11.4 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0 Z M7.6 11.2 H10.8 V12.4 H7.6 Z M19 11.4 a3.8 3.8 0 1 0 7.6 0 a3.8 3.8 0 1 0 -7.6 0 Z M21.2 11.2 H24.4 V12.4 H21.2 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M12.2 10.4 L12.6 3.4 L14.4 6.8 L16 2.2 L17.6 6.8 L19.4 3.4 L19.8 10.4 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
   // Glint coin: rim, inner ring, a glint stroke.
   coin: [
     ['circle', { cx: 16, cy: 16, r: 12.5 }],

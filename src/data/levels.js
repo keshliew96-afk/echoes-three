@@ -38,7 +38,10 @@
 //                              'stag' | 'heron' | 'wyrm', docs/CONTENT_PLAN.md §2)
 //   bossAdds                   [[etype, count], ...] per boss add phase (§11: 3 phases)
 //   bosses                     every boss this act can end on: [{ kind, name,
-//                              adds }]. The first is the act's original boss
+//                              adds, layout?, gated? }] (layout: the boss's own room
+//                              dressing, else bossLayout; gated: met only once
+//                              the save has felled the act's other bosses, the
+//                              run's `thirdBosses` acts). The first is the act's original boss
 //                              (= boss / bossName / bossAdds). Which one a run
 //                              meets is bossFor(act, seed): a pure function of
 //                              the run seed — no RNG draw, nothing saved, so
@@ -77,6 +80,9 @@ export const LEVELS = Object.freeze({
     bosses: Object.freeze([
       Object.freeze({ kind: 'stag', name: 'The Hollow Stag', adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['mantis', 1])]) }),
       Object.freeze({ kind: 'thornmother', name: 'The Thornmother', adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['mantis', 1])]) }),
+      // THIRD BOSSES (content plan 3 slice 10, docs/THIRD_BOSSES.md): the
+      // wood's old hunter, met in the Thornwood Ring with its night hunters.
+      Object.freeze({ kind: 'gloamwolf', name: 'The Gloam Wolf', layout: 21, gated: true, adds: Object.freeze([Object.freeze(['boar', 2]), Object.freeze(['owl', 1])]) }),
     ]),
     unlock: null,
   }),
@@ -108,6 +114,9 @@ export const LEVELS = Object.freeze({
     bosses: Object.freeze([
       Object.freeze({ kind: 'heron', name: 'The Drowned Heron', adds: Object.freeze([Object.freeze(['toad', 1]), Object.freeze(['moth', 2])]) }),
       Object.freeze({ kind: 'millwheel', name: 'The Millwheel', adds: Object.freeze([Object.freeze(['crab', 1]), Object.freeze(['moth', 1])]) }),
+      // THIRD BOSSES: the millpond's crowned toad in the Millrace Basin, with
+      // its toads and a Mire Leech.
+      Object.freeze({ kind: 'mireking', name: 'The Mire King', layout: 23, gated: true, adds: Object.freeze([Object.freeze(['toad', 2]), Object.freeze(['leech', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 1 }),
   }),
@@ -231,38 +240,64 @@ export function campaignLevel(lv) {
 // Which of the act's bosses a run meets: a pure hash of (seed, act), so it
 // costs no RNG draw and needs no saved field — every seed meets the same boss
 // on every replay, and a campaign rolls each level on its own.
-export function bossIndexFor(act, seed) {
+export function bossIndexFor(act, seed, open = null) {
   const lv = levelFor(Number(act) || 1);
-  const n = lv.bosses ? lv.bosses.length : 1;
-  if (n <= 1 || seed === null || seed === undefined || !Number.isFinite(Number(seed))) return 0;
+  const pool = bossPool(lv, act, open);
+  const n = pool.length;
+  if (n <= 1 || seed === null || seed === undefined || !Number.isFinite(Number(seed))) return pool[0] ?? 0;
   let h = (Number(seed) >>> 0) ^ Math.imul((Number(act) || 1) >>> 0, 0x9e3779b1);
   h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
   h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
   h ^= h >>> 16;
-  return (h >>> 0) % n;
+  return pool[(h >>> 0) % n];
+}
+
+// THIRD BOSSES (docs/THIRD_BOSSES.md): the indices into the act's bosses a
+// run can meet. A `gated` boss joins only when `open` (the run's
+// thirdBosses: the acts whose other bosses the save has felled) names the
+// act; until then a seed rolls between the others exactly as before.
+export function bossPool(lv, act, open = null) {
+  const list = lv.bosses ?? [];
+  const on = Array.isArray(open) && open.includes(Number(act));
+  const pool = [];
+  for (let i = 0; i < list.length; i++) if (on || !list[i].gated) pool.push(i);
+  return pool.length ? pool : [0];
+}
+
+// The act's gated boss is open once every other boss of the act is felled
+// (`felled`: kind -> count, the profile's meta.bosses). -> [act]
+export function thirdBossActs(felled) {
+  const f = felled && typeof felled === 'object' ? felled : {};
+  const out = [];
+  for (const a of Object.keys(LEVELS).map(Number)) {
+    const list = LEVELS[a].bosses ?? [];
+    if (!list.some((b) => b.gated)) continue;
+    if (list.every((b) => b.gated || (f[b.kind] ?? 0) > 0)) out.push(a);
+  }
+  return out;
 }
 
 // { kind, name, adds } of the boss a run on `seed` meets in `act`. With no
 // seed (menus before a run), the act's original boss.
-export function bossFor(act, seed = null, forceKind = null) {
+export function bossFor(act, seed = null, forceKind = null, open = null) {
   const lv = levelFor(Number(act) || 1);
   const list = lv.bosses ?? [{ kind: lv.boss ?? 'stag', name: lv.bossName ?? 'The Hollow Stag', adds: lv.bossAdds }];
   if (forceKind) {
     const f = list.find((b) => b.kind === forceKind);
     if (f) return f;
   }
-  return list[bossIndexFor(act, seed)] ?? list[0];
+  return list[bossIndexFor(act, seed, open)] ?? list[0];
 }
 
 // The boss name a UI shows for a run view: the run's own roll when it has one.
 export function bossNameOfRun(view) {
   if (!view) return bossNameFor(1);
   if (view.actBoss && view.actBoss.name) return view.actBoss.name;
-  return bossNameFor(view.act, view.frame ? view.frame.seed : null);
+  return bossFor(view.act, view.frame ? view.frame.seed : null, null, view.thirdBosses ?? null).name ?? 'The Hollow Stag';
 }
 
 // The room-8 boss's display name for an act ('The Hollow Stag' by default);
 // pass the run seed for the boss this run actually meets.
-export function bossNameFor(act, seed = null, forceKind = null) {
-  return bossFor(act, seed, forceKind).name ?? 'The Hollow Stag';
+export function bossNameFor(act, seed = null, forceKind = null, open = null) {
+  return bossFor(act, seed, forceKind, open).name ?? 'The Hollow Stag';
 }

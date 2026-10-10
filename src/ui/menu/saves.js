@@ -123,7 +123,7 @@ export function whereLine(m) {
       : meta.actName
         ? t(meta.actName)
         : t('Act {act}', { act: meta.act || 1 });
-    const kind = meta.roomMode === 'boss' ? t(bossNameFor(meta.act ?? lv, meta.seed)) : ROOM_LABEL[meta.roomMode] || '';
+    const kind = meta.roomMode === 'boss' ? t(bossNameFor(meta.act ?? lv, meta.seed, null, meta.thirdBosses ?? null)) : ROOM_LABEL[meta.roomMode] || '';
     const phase = PHASE_LABEL[meta.phase] ? ` — ${PHASE_LABEL[meta.phase]}` : '';
     return `${t('{where} · Room {room} of 8', { where: act, room: meta.room })}${kind ? ` · ${kind}` : ''}${phase}`;
   }

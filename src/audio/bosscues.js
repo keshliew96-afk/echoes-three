@@ -25,8 +25,8 @@
 // payloads and entity kinds, so the goldens cannot move.
 import { midiHz } from './voices.js';
 
-export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus']);
-const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus']);
+export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking']);
+const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking']);
 
 // Measured design peaks (dBFS at unity gain) — tools/boss-identity-cuecal.mjs.
 export const BOSS_CUE_CAL = {
@@ -92,6 +92,21 @@ export const BOSS_CUE_CAL = {
   bx_colossus_fissure: 1.1,
   bx_colossus_rain: -5,
   bx_colossus_burst: 3.3,
+  bx_gloamwolf_sting: 6.1,
+  bx_gloamwolf_phase: 6.3,
+  bx_gloamwolf_fall: 7.2,
+  bx_mireking_sting: 4.5,
+  bx_mireking_phase: 5.3,
+  bx_mireking_fall: 4,
+  bx_gloamwolf_tell: -3.8,
+  bx_gloamwolf_pounce: 2.4,
+  bx_gloamwolf_rend: 1.5,
+  bx_gloamwolf_howl: -1.8,
+  bx_mireking_tell: -2.5,
+  bx_mireking_lash: 1.7,
+  bx_mireking_flop: 3.2,
+  bx_mireking_gape: -2.5,
+  bx_mireking_swallow: 2.2,
   // @cal end
 };
 
@@ -152,6 +167,8 @@ const VOICE = {
   lichram: { root: 52, lead: 'toll', drum: 'taiko' }, // the Barrow, E harmonic minor
   cantor: { root: 49, lead: 'choir', drum: 'heart' }, // the Heart, C# phrygian
   colossus: { root: 49, lead: 'glass', drum: 'heart' }, // the Heart, C# phrygian
+  gloamwolf: { root: 50, lead: 'horn', drum: 'hand' }, // Hollow Wood, D phrygian
+  mireking: { root: 57, lead: 'reed', drum: 'frame' }, // Sunken Mill, A phrygian
 };
 
 // Signatures (~1.6-2.4 s): a phrase in the boss's own act key.
@@ -173,6 +190,12 @@ const STINGS = {
   cantor: [[0, 0, 'heart', 1], [0, 25, 'low', 1, 2.0], [0.3, 61, 'choir', 0.5, 1.6], [0.45, 62, 'choir', 0.45, 1.5], [0.6, 64, 'choir', 0.45, 1.4], [0.75, 68, 'choir', 0.5, 1.3], [0.75, 85, 'glass', 0.4, 1.4], [1.2, 0, 'heart', 0.9], [1.2, 73, 'glass', 0.45, 1.2], [1.2, 37, 'low', 0.7, 1.0]],
   // Struck crystal falling C# G# D C#, under two heavy heartbeats.
   colossus: [[0, 0, 'heart', 1], [0, 25, 'low', 1, 1.6], [0, 73, 'glass', 0.85], [0.22, 68, 'glass', 0.8], [0.44, 62, 'glass', 0.8], [0.66, 61, 'glass', 0.9, 0.8], [0.66, 0, 'heart', 1], [0.66, 37, 'low', 0.9, 1.2], [0.66, 49, 'choir', 0.4, 1.0]],
+  // Third bosses (docs/THIRD_BOSSES.md). The Gloam Wolf: a howl on the horn
+  // that climbs D A D and bends down onto the flat second, over running hands.
+  gloamwolf: [[0, 0, 'hand', 0.8], [0.12, 0, 'hand', 0.7], [0.24, 0, 'hand', 0.9], [0, 38, 'low', 0.8, 1.6], [0.3, 50, 'horn', 0.8, 0.3], [0.62, 57, 'horn', 0.85, 0.28], [0.95, 62, 'horn', 1, 0.6], [1.5, 63, 'horn', 0.8, 0.5], [0.95, 0, 'taiko', 1], [0.95, 74, 'bell', 0.3, 1.2], [0.95, 50, 'choir', 0.4, 1.2]],
+  // The Mire King: two low croaks on the reed, A then B-flat, a frame-drum
+  // splash and drips falling back into the pond.
+  mireking: [[0, 0, 'frame', 1], [0, 33, 'low', 1, 1.4], [0, 45, 'reed', 0.95, 0.4], [0.5, 46, 'reed', 1, 0.6], [0.5, 0, 'frame', 0.9], [0.5, 21, 'low', 0.8, 1.2], [1.0, 76, 'drip', 0.6], [1.12, 72, 'drip', 0.55], [1.24, 69, 'drip', 0.5], [1.0, 57, 'choir', 0.35, 1.0]],
 };
 
 // Add phase / enrage: the boss's lead rises a half step over its drum.
@@ -415,6 +438,58 @@ Object.assign(CUES, {
       k.noise(d, t, { f0: P(p, 3000), q: 1.2, d: 0.12, gain: 0.7 }),
       ...[0, 0.03, 0.07, 0.11].map((dt, i) => k.bell(d, t + dt, { f: P(p, 1400 + i * 420), ratio: 5.04, index: 1.2, d: 0.5, gain: 0.35 }))
     ), { maxVoices: 1, cooldownMs: 200 }),
+  // --- The Gloam Wolf (Act I): breath, claws and the howl.
+  // Its tell is a growl drawn in through the teeth.
+  bx_gloamwolf_tell: sfx(-11, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 260), f1: P(p, 420), q: 2.2, a: 0.08, d: 0.35, gain: 0.9 }),
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 70), f1: P(p, 82), a: 0.08, hold: 0.15, d: 0.25, gain: 0.35, filter: { f0: 500, q: 1.4 } })
+    )),
+  bx_gloamwolf_pounce: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 120), f1: P(p, 42), d: 0.35, gain: 1 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 220), q: 0.8, d: 0.32, gain: 0.9 }),
+      k.noise(d, t, { f0: P(p, 2600), f1: P(p, 1200), q: 1.4, d: 0.08, gain: 0.45 })
+    ), { maxVoices: 1, cooldownMs: 150 }),
+  bx_gloamwolf_rend: sfx(-9, (k, t, d, p) =>
+    Math.max(...[0, 0.05, 0.1].map((dt, i) => k.noise(d, t + dt, { type: 'highpass', f0: P(p, 3200 - i * 400), f1: P(p, 1400), q: 1.1, a: 0.004, d: 0.09, gain: 0.85 - i * 0.12 })),
+      k.tone(d, t, { f0: P(p, 210), f1: P(p, 90), d: 0.12, gain: 0.45 })
+    ), { maxVoices: 2, cooldownMs: 100 }),
+  bx_gloamwolf_howl: sfx(-9, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 330), f1: P(p, 620), glide: 0.45, a: 0.12, hold: 0.55, d: 0.6, gain: 0.5, filter: { f0: 1400, f1: 900, q: 2.4, glide: 1.0 } }),
+      k.tone(d, t + 0.05, { type: 'sawtooth', f0: P(p, 495), f1: P(p, 930), glide: 0.45, a: 0.12, hold: 0.5, d: 0.6, gain: 0.25, filter: { f0: 1800, q: 2 } }),
+      k.tone(d, t + 0.75, { type: 'sawtooth', f0: P(p, 620), f1: P(p, 440), glide: 0.5, hold: 0.1, d: 0.5, gain: 0.3, filter: { f0: 1200, q: 2 } })
+    ), { maxVoices: 1, cooldownMs: 600 }),
+  // --- The Mire King (Act II): croaks, a wet tongue, a heavy splash.
+  bx_mireking_tell: sfx(-11, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'square', f0: P(p, 92), f1: P(p, 70), a: 0.02, hold: 0.08, d: 0.18, gain: 0.55, filter: { f0: 600, q: 3 } }),
+      k.tone(d, t + 0.16, { type: 'square', f0: P(p, 98), f1: P(p, 74), a: 0.02, hold: 0.06, d: 0.16, gain: 0.5, filter: { f0: 600, q: 3 } })
+    )),
+  bx_mireking_lash: sfx(-9, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'highpass', f0: P(p, 1800), f1: P(p, 4200), q: 0.9, a: 0.005, d: 0.1, gain: 0.8 }),
+      k.tone(d, t + 0.08, { f0: P(p, 380), f1: P(p, 140), d: 0.14, gain: 0.5 }),
+      k.noise(d, t + 0.1, { f0: P(p, 900), f1: P(p, 400), q: 2.2, d: 0.12, gain: 0.5 })
+    ), { maxVoices: 1, cooldownMs: 150 }),
+  bx_mireking_flop: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 85), f1: P(p, 34), d: 0.5, gain: 1 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 1100), f1: P(p, 260), q: 0.8, d: 0.5, gain: 1 }),
+      k.noise(d, t + 0.03, { f0: P(p, 2400), f1: P(p, 900), q: 1.1, a: 0.01, d: 0.55, gain: 0.5 })
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  bx_mireking_gape: sfx(-11, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 300), f1: P(p, 900), q: 1.2, a: 0.4, d: 0.5, gain: 0.8 }),
+      k.tone(d, t, { type: 'square', f0: P(p, 60), f1: P(p, 52), a: 0.3, hold: 0.4, d: 0.3, gain: 0.3, filter: { f0: 300, q: 2 } })
+    ), { maxVoices: 1, cooldownMs: 400 }),
+  bx_mireking_swallow: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 160), f1: P(p, 45), d: 0.3, gain: 1 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 700), f1: P(p, 180), q: 1, d: 0.3, gain: 0.9 }),
+      k.tone(d, t + 0.22, { type: 'square', f0: P(p, 86), f1: P(p, 66), a: 0.02, hold: 0.1, d: 0.25, gain: 0.45, filter: { f0: 600, q: 3 } })
+    ), { maxVoices: 1, cooldownMs: 200 }),
 });
 
 // --------------------------------------------- sim-event -> cue map --
@@ -434,9 +509,14 @@ const SPAWN_VOICE = {
   lichram: [{ cue: 'roar', pitch: 0.88 }, { cue: 'bx_lichram_call' }],
   cantor: [{ cue: 'bx_cantor_land' }, { cue: 'bx_cantor_tell', pitch: 0.75 }],
   colossus: [{ cue: 'roar', pitch: 0.62 }, { cue: 'bx_colossus_burst', gainDb: -4 }],
+  gloamwolf: [{ cue: 'bx_gloamwolf_howl' }, { cue: 'bx_gloamwolf_tell', pitch: 0.8 }],
+  mireking: [{ cue: 'bx_mireking_flop', gainDb: -3 }, { cue: 'bx_mireking_tell', pitch: 0.8 }],
 };
 // Per-attack tell pitch (boss_telegraph_start.attack).
-const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8 };
+const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1 };
+
+// An attack with a tell of its own (the Mire King's gape draws breath in).
+const TELL_CUE = { swallow: 'bx_mireking_gape' };
 
 export function createBossEventCues() {
   // The boss in the room (boss_adds carries no id; there is one boss a room).
@@ -466,7 +546,7 @@ export function createBossEventCues() {
     boss_telegraph_start: (ev, h) => {
       const k = kindOf(ev, h);
       if (!k || !KIT_BOSSES.has(k)) return null;
-      return [{ cue: `bx_${k}_tell`, ...at(ev, h, ev.id), pitch: TELL_PITCH[ev.attack] ?? 1 }];
+      return [{ cue: TELL_CUE[ev.attack] ?? `bx_${k}_tell`, ...at(ev, h, ev.id), pitch: TELL_PITCH[ev.attack] ?? 1 }];
     },
     telegraph_start: (ev, h) => {
       const k = ev.id != null ? h.kind(ev.id) : null;
@@ -501,6 +581,12 @@ export function createBossEventCues() {
     boss_fissure: beat('bx_colossus_fissure'),
     boss_geode_rain: beat('bx_colossus_rain'),
     boss_geode_burst: beat('bx_colossus_burst'),
+    boss_pounce: beat('bx_gloamwolf_pounce'),
+    boss_rend: beat('bx_gloamwolf_rend'),
+    boss_howl: beat('bx_gloamwolf_howl'),
+    boss_tongue_lash: beat('bx_mireking_lash'),
+    boss_belly_flop: beat('bx_mireking_flop'),
+    boss_swallow: beat('bx_mireking_swallow'),
   };
 }
 

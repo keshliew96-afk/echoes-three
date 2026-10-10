@@ -64,6 +64,9 @@ const BOSS_ROWS = {
   wyrm: ['An ash-scaled grave worm that swims through the burial mound.', 'Ash Breath: a warning cone for 14. It burrows, then bursts out of a warning ring for 16 and lies exposed afterwards. Breathes faster below half health.'],
   lichram: ['The skeleton of the first ram, walked out of its mound.', 'Its horns block arrows and bolts from the front. Grave Call cracks three graves around a hero and raises a Grave Mole. Bone Rush charges along its horns.'],
   cantor: ["Not a god but a god's echo, singing verses it stole from the lands above.", 'Hollow Note: a warning ring for 10 that later throws crystal shards. Sung Lance: a warning lane for 16. Each verse calls the beasts of one land above.'],
+  // Third bosses (docs/THIRD_BOSSES.md).
+  gloamwolf: ['The Hollow Wood\'s oldest hunter, grey with years and hollow with the song.', 'Pounce: crouches, then lands in a warning ring for 15. Rend: a warning cone at its jaws for 13. Moon Howl: a ring round it for 8 that slows, then it pounces twice in a row.'],
+  mireking: ['The millpond\'s old toad, grown vast on silt and crowned with the mill\'s grate.', 'Tongue Lash: a warning lane for 14 that drags you in. Belly Flop: lands in a warning ring for 16 and leaves mire. Swallow: its throat swells and pulls you close, then a ring round it snaps shut for 18.'],
   colossus: ['A giant of black rock and pale crystal that the Heart grew to sing through.', 'Fissure: a warning lane for 17 that leaves crystal behind. Geode Rain drops four warning rings. Too close, it bursts round itself for 20.'],
 };
 

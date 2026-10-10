@@ -39,8 +39,8 @@ export const FEATS = Object.freeze({
   tidecaller: { text: 'Free the Verse of Water: fell the Level II boss' },
   rill_heron: { text: 'Fell the Drowned Heron with the Tidecaller in the party' },
 });
-// The Level II bosses: felling either frees the Verse of Water (and Rill).
-export const WATER_BOSSES = Object.freeze(['heron', 'millwheel']);
+// The Level II bosses: felling any of them frees the Verse of Water (and Rill).
+export const WATER_BOSSES = Object.freeze(['heron', 'millwheel', 'mireking']);
 // A profile's feats as they stand: the stored list plus any the records
 // already prove (a save from before feats existed, a Level II clear recorded
 // before this build).
@@ -142,6 +142,9 @@ const TINT_ROWS = [
   // Act IV's bosses (docs/ACT_IV_BOSSES.md).
   ['tint_hollowsong', 'tank', 'Hollow Song', { glow: '#B565F5', second: '#F4E8FF', debris: '#E3D2FF' }, 0, { boss: 'cantor' }],
   ['tint_geodeglass', 'archer', 'Geode Glass', { glow: '#C9B8FF', second: '#F2F4FF', debris: '#8C8794' }, 0, { boss: 'colossus' }],
+  // Third bosses (docs/THIRD_BOSSES.md).
+  ['tint_gloamfang', 'swordsman', 'Gloamfang', { glow: '#C8D2E8', second: '#B79CF0', debris: '#5A6070' }, 0, { boss: 'gloamwolf' }],
+  ['tint_millpond', 'healer', 'Millpond', { glow: '#5FC2B0', second: '#E2F2EC', debris: '#3D4840' }, 0, { boss: 'mireking' }],
   // THE TIDECALLER (docs/TIDECALLER.md).
   ['tint_brine', 'tidecaller', 'Brine', { glow: '#3FC9A8', second: '#F2EEE2', debris: '#9FB8AE' }, 30, { feat: 'tidecaller' }],
   ['tint_heronrain', 'tidecaller', 'Heron Rain', { glow: '#8FB4D9', second: '#F4F8FC', debris: '#C7D3DD' }, 0, { feat: 'rill_heron' }],

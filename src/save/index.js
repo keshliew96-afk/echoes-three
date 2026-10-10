@@ -415,6 +415,7 @@ export function createSaveSystem({
       roomMode,
       phase: run.phase,
       seed: run.frame && Number.isFinite(run.frame.seed) ? run.frame.seed : tree.rng.seed,
+      ...(Array.isArray(run.thirdBosses) && run.thirdBosses.length ? { thirdBosses: run.thirdBosses.slice() } : {}),
       wallet: run.wallet ?? 0,
       party,
       skills: (tree.systems.skills.slots || []).map((s) => (s ? s.id : null)),

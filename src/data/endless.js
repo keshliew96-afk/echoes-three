@@ -22,7 +22,7 @@
 //
 // Pure data + helpers (sim-importable): no DOM, no three.
 import { difficulty } from './difficulty.js';
-import { LEVELS, ACT_IDS, ENDLESS_ACTS, levelFor, bossIndexFor, campaignLevel } from './levels.js';
+import { LEVELS, ACT_IDS, ENDLESS_ACTS, levelFor, bossIndexFor, bossPool, campaignLevel } from './levels.js';
 
 // The descent cycles every act's biome, Act IV included even when the
 // campaign keeps three levels (levels.js CAMPAIGN_ACTS).
@@ -111,11 +111,11 @@ export function endlessLevel(depth) {
 
 // Which boss a depth meets: the seed's own boss (bossIndexFor) on the first
 // cycle, the next one of the act's list on each later cycle.
-export function endlessBossIndex(depth, seed) {
+export function endlessBossIndex(depth, seed, open = null) {
   const act = levelOfDepth(depth);
-  const lv = levelFor(act);
-  const n = lv.bosses ? lv.bosses.length : 1;
-  return (bossIndexFor(act, seed) + cycleOfDepth(depth)) % n;
+  const pool = bossPool(levelFor(act), act, open);
+  const at = pool.indexOf(bossIndexFor(act, seed, open));
+  return pool[(Math.max(0, at) + cycleOfDepth(depth)) % pool.length];
 }
 
 // The next depth's level after clearing `level` (the cycle wraps).

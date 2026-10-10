@@ -69,7 +69,7 @@ import { buildCampColliders, campRoadsClear } from '../env/camp/colliders.js';
 // lobby's Level Select lives on a map table beside the portal.
 import { buildMapTable, createTablePrompt, withinTable, MAP_TABLE } from '../campaign/maptable.js';
 import { FIRST_LEVEL, isLevel, lockLine } from '../data/campaign.js';
-import { levelFor } from '../data/levels.js';
+import { levelFor, thirdBossActs } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
 import { CLASS_NAME } from '../data/classes.js';
 import { classOfSeat, seatOfClass, activeLineup, sameLineup, tidecallerOpen, normalizeLineup } from '../data/lineup.js';
@@ -855,6 +855,16 @@ export function createCampScene(stage, toggles, ctx) {
 
   // The boons a real Begin Run carries: what the player equipped (null =
   // nothing, a plain run). Developer starts (?level=N) never carry them.
+  function thirdBossesOpen() {
+    const save = svc('save');
+    try {
+      const meta = save && typeof save.meta === 'function' ? save.meta() : null;
+      return thirdBossActs(meta ? meta.bosses : null);
+    } catch {
+      return [];
+    }
+  }
+
   function equippedBoons(harness) {
     if (harness) return null;
     const save = svc('save');
@@ -918,6 +928,9 @@ export function createCampScene(stage, toggles, ctx) {
       ...(boons ? { boons } : {}),
       // THE TIDECALLER: the lineup the camp shows (the tutorial ignores it).
       ...(plannedCampLineup() ? { lineup: plannedCampLineup() } : {}),
+      // THIRD BOSSES (docs/THIRD_BOSSES.md): the acts whose other bosses this
+      // save has felled (the run ignores it for the Daily).
+      ...(thirdBossesOpen().length ? { thirdBosses: thirdBossesOpen() } : {}),
     });
     begin.started = true;
     begin.startedAt = performance.now();

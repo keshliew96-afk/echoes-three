@@ -56,6 +56,9 @@ const BOSS_FLAVOUR = {
   // Act IV (docs/ACT_IV_BOSSES.md).
   cantor: () => t('The Hollow Cantor’s last note fades. The Heart falls quiet.'),
   colossus: () => t('The Geode Colossus shatters. Below the Barrow, the old beat falters.'),
+  // Third bosses (docs/THIRD_BOSSES.md).
+  gloamwolf: () => t('The Gloam Wolf lies down at last. The wood’s long night is over.'),
+  mireking: () => t('The Mire King sinks into the silt. The millpond goes still.'),
 };
 
 export const TRANSIT_CSS = `
@@ -150,10 +153,10 @@ export function createTransitScreen({ run }) {
     const depth = Number.isFinite(card.depth) ? card.depth : null;
     if (card.kind === 'clear') {
       const rv = v && !v.__card ? v : null;
-      let met = rv && rv.frame ? bossFor(card.from, rv.frame.seed).kind : null;
+      let met = rv && rv.frame ? bossFor(card.from, rv.frame.seed, null, rv.thirdBosses ?? null).kind : null;
       if (depth !== null && beyondCampaign(depth - 1) && rv && rv.frame) {
         const lv = levelFor(card.from);
-        met = lv.bosses ? lv.bosses[endlessBossIndex(depth - 1, rv.frame.seed)].kind : met;
+        met = lv.bosses ? lv.bosses[endlessBossIndex(depth - 1, rv.frame.seed, rv.thirdBosses ?? null)].kind : met;
       }
       kicker.textContent = depth !== null ? t('DEPTH {depth} CLEARED', { depth: depth - 1 }) : t('LEVEL {level} CLEARED', { level: ROMAN[card.from] ?? card.from });
       headline.textContent = (card.fromName ? t(card.fromName) : '').toUpperCase();

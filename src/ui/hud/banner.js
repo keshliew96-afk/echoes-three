@@ -64,6 +64,8 @@ export const BOSS_MEDAL = Object.freeze({
   lichram: 'boss_lichram',
   cantor: 'boss_cantor',
   colossus: 'boss_colossus',
+  gloamwolf: 'boss_gloamwolf',
+  mireking: 'boss_mireking',
 });
 
 const el = (tag, cls, parent) => {
