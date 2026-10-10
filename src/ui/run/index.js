@@ -78,7 +78,13 @@ const SCREEN_FOR = {
   encounter: 'encounter', // EVENT ROOMS: Take or Leave
 };
 
+// EVENT ROOMS: how long the room stays in view after a Take (or the trapped
+// chest's pay-out) before the pages that follow it open.
+export const TAKE_HOLD_MS = 1500;
+const TAKE_HOLD_PHASES = ['path', 'relic', 'reward'];
+
 export function createRunUi({ bus, world, socket = null, autostart = false }) {
+  let takeHoldUntil = 0;
   const style = document.createElement('style');
   style.id = 'run-style';
   style.textContent = RUN_CSS + TRANSIT_CSS + PARTY_STRIP_CSS + END_CSS + RELIC_CSS + RELIC_STRIP_CSS + ENCOUNTER_CSS; // fix-INT-r5: + the end card
@@ -108,7 +114,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     end: createEndScreen({ run }),
     transit: createTransitScreen({ run }),
     relic: createRelicScreen({ run }),
-    encounter: createEncounterScreen({ run }),
+    encounter: createEncounterScreen({ run, onTake: () => (takeHoldUntil = performance.now() + TAKE_HOLD_MS) }),
   };
   const eventPlate = createEventPlate();
   const relicStrip = createRelicStrip();
@@ -749,7 +755,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const v = sys.view();
     relicStrip.update(v); // RELICS: the strip under the Glint plate
     eventPlate.update(v); // EVENT ROOMS: the plate over a "?" room
-    setScreen(SCREEN_FOR[v.phase] ?? 'none');
+    // EVENT ROOMS: after a Take the room stays in view a moment so the prop's
+    // reaction and its cue play before the next page opens (UI only: the sim
+    // is already at that page, so co-op, saves and the goldens are untouched).
+    const held = performance.now() < takeHoldUntil && TAKE_HOLD_PHASES.includes(v.phase);
+    setScreen(held ? 'none' : (SCREEN_FOR[v.phase] ?? 'none'));
     setVeilTone(v.phase);
     fade.classList.toggle('rn-on', v.phase === 'fade');
     if (!prepaintDone()) {
@@ -904,7 +914,11 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   });
   // EVENT ROOMS: what an encounter paid out when no page follows it, and
   // what it took (the spirit's relic, the altar's curse).
+  bus.on('event_chest', () => {
+    takeHoldUntil = performance.now() + TAKE_HOLD_MS;
+  });
   bus.on('event_take', (ev) => {
+    if (!ev.ambush) takeHoldUntil = performance.now() + TAKE_HOLD_MS;
     const a = service('app');
     if (!a || typeof a.toast !== 'function') return;
     const name = ENCOUNTERS[ev.encounter] ? t(ENCOUNTERS[ev.encounter].name) : '';

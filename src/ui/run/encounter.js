@@ -135,7 +135,7 @@ const REFUSED = {
   curses: () => t('You carry no major curse for it to feed on.'),
 };
 
-export function createEncounterScreen({ run }) {
+export function createEncounterScreen({ run, onTake = null }) {
   const el = document.createElement('div');
   el.className = 'rn-page rn-encounter';
   el.innerHTML = `
@@ -195,7 +195,9 @@ export function createEncounterScreen({ run }) {
   }
   function choose(choice) {
     const e = run().view().encounter;
-    run().chooseEncounter(choice);
+    const r = run().chooseEncounter(choice);
+    // The run UI holds the room in view before the next page (see TAKE_HOLD_MS).
+    if (r && r.took && typeof onTake === 'function') onTake();
     if (e) answer(choice, e.id);
   }
   const detail = el.querySelector('.ev-detail');

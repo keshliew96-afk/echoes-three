@@ -109,6 +109,9 @@ for (const batch of batches) {
     // the doors): walk the plain door and meet the forced one next.
     for (let g = 0; g < 3 && v.phase === 'path' && !v.path.options.some((o) => o.event); g++) {
       await settle();
+      // A crown or vault door can take the forced "?" door's place (champion
+      // rooms, keys and vaults): force it again for the next path screen.
+      await cmd('eventDoor', id, 1);
       const r = await cmd('pathChoose', 0);
       const w = await waitPhase(['combat'], 60000).catch(() => null);
       if (!w) {
@@ -118,9 +121,14 @@ for (const batch of batches) {
       }
       v = await toPath();
     }
+    // The doors page opens once the room has been held after a Take.
+    await page.waitForFunction(() => { const d = document.querySelector('.rn-path .rn-doorwrap'); return !!d && d.offsetParent !== null; }, { timeout: 60000, polling: 250 }).catch(() => null);
     // The forced "?" door goes right unless the right door is cursed.
     const evSide = v.phase === 'path' ? v.path.options.findIndex((o) => o.event) : -1;
-    if (!check(evSide >= 0, `${id}: the doors carry a "?" door`)) break;
+    if (!check(evSide >= 0, `${id}: the doors carry a "?" door`)) {
+      console.log('  at', v.phase, v.room, JSON.stringify(v.path && v.path.options));
+      break;
+    }
     await settle();
     if (first) {
       const door = await page.evaluate((side) => {
@@ -159,6 +167,29 @@ for (const batch of batches) {
     // Take (Enter on the focused Take) — the chest becomes a fight.
     await page.keyboard.press('Enter');
     await sleep(350);
+    // The room holds a moment after a Take: no page over the prop's reaction.
+    if (id !== 'trapped_chest') {
+      // (The page warm-up paints pages at opacity 0.002 while no page is up;
+      // only a page a player can see counts.)
+      // Checked as soon as the card has closed (a slow frame can hold the key).
+      const pageUp = await page
+        .waitForFunction(
+          () => {
+            // Wait for the card itself to close (one frame after the sim moves
+            // on, and a frame is about a second in software GL), then ask
+            // whether the next page is already on screen.
+            const root = document.getElementById('run-screen');
+            const pages = [...root.children].filter((c) => c.classList.contains('rn-page') && c.style.display !== 'none');
+            if (window.__echoes.cmd('runState').phase === 'encounter' || pages.some((c) => c.classList.contains('rn-encounter'))) return false;
+            return { up: root.classList.contains('rn-open') && Number(getComputedStyle(root).opacity) > 0.5 && pages.length > 0 };
+          },
+          { timeout: 30000, polling: 50 },
+        )
+        .then((h) => h.jsonValue())
+        .then((x) => x.up)
+        .catch(() => true);
+      check(!pageUp, `${id}: the room stays in view after Take`);
+    }
     if (CARD.has(id) || id === 'trapped_chest' || id === 'healing_spring') {
       await sleep(id === 'gamblers_dice' ? 1600 : 250);
       await page.screenshot({ path: `captures/event-take-${id}${sfx}.png` });

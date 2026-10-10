@@ -54,7 +54,10 @@ Ids are kept for later relics that react to events (content plan 3 slice 9):
 sources `sluice`, `crystal`, `smith` and `dice`; the fey's pick is owed as
 `fey`.
 
-Leave always goes straight on to the doors. When Take is refused (not enough
+After a Take the room stays in view for 1.5 s (`TAKE_HOLD_MS` in
+`src/ui/run/index.js`) so the prop's reaction and its cue play before the
+next page opens; the same after the trapped chest pays out. The hold is UI
+only: the sim is already at that page. Leave always goes straight on to the doors. When Take is refused (not enough
 Glint, say) the card opens on Leave and says why.
 
 ## Co-op, AI and autopilot
