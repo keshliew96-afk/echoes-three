@@ -111,6 +111,10 @@ function secondRoom(W, kit) {
   check(KIT.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.gatedPool(KIT, false).length === 0 && C.gatedPool(KIT, true).length === 4, 'all four are campaign-only');
   check(SKILLS.riverbolt.status.kind === 'soaked' && SKILLS.undertow.status.kind === 'soaked' && SKILLS.tidepool.status.kind === 'soaked' && SKILLS.breaker.crash === true && !SKILLS.breaker.status, 'Riverbolt, Undertow and Tidepool soak; Breaker crashes');
   check(same(L.DEFAULT_LINEUP, ['healer', 'tank', 'swordsman', 'archer']) && same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller']), 'the default lineup is the old four (Rill at camp)');
+  // Slice 4: she is locked until the profile frees the Verse of Water.
+  check(L.TIDECALLER_FREE === false && !L.tidecallerOpen() && L.plannedLineup('tidecaller', '') === L.DEFAULT_LINEUP && same(L.parseTeam('tank,tidecaller'), ['tank']), 'locked, she is not a choice (the default four)');
+  check(same(L.normalizeLineup(RILL), RILL), 'locked, a lineup that already holds her stays valid (saves, a host\'s run)');
+  L.setTidecallerUnlocked(true);
   check(same(L.plannedLineup('tidecaller', ''), RILL), 'playing her with no team chosen: she joins in the Archer\'s place');
   check(same(L.plannedLineup('healer', 'tank,archer,tidecaller'), ['healer', 'tank', 'archer', 'tidecaller']), 'the chosen three join, in seat order');
   check(same(L.plannedLineup('swordsman', 'tank,archer,tidecaller'), ['healer', 'tank', 'swordsman', 'archer']), 'the class you play always joins (in place of the last pick)');

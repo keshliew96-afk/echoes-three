@@ -16,6 +16,7 @@ import { PALETTE as P } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 import { CHAPTERS, PROLOGUE, TOTAL_VERSES, NPCS, PEOPLE, versesHeld } from '../../data/story.js';
+import { featsOf } from '../../data/unlocks.js';
 import { t, tn } from '../../i18n/index.js';
 import { journalInfo, createJournalPage, createDeedsPage, JOURNAL_TABS, TAB_LABEL, JOURNAL_CSS } from './journal.js';
 
@@ -100,7 +101,12 @@ export function storyInfo(p = profile()) {
   }));
   const people = PEOPLE.map((x) => ({
     id: x.id,
-    met: !!(x.always || (story.met && story.met[x.met] > 0) || (x.seenPrefix && (story.seen || []).some((s) => s.startsWith(x.seenPrefix)))),
+    met: !!(
+      x.always ||
+      (story.met && story.met[x.met] > 0) ||
+      (x.seenPrefix && (story.seen || []).some((s) => s.startsWith(x.seenPrefix))) ||
+      (x.feat && p && p.meta && featsOf(p.meta, p.records).includes(x.feat)) // THE TIDECALLER: Rill, once freed
+    ),
   }));
   return { verses: held.length, total: TOTAL_VERSES, chapters, people, prologueSeen: (story.seen || []).includes('prologue') };
 }

@@ -696,6 +696,9 @@ const RELIC_PROC_CUE = Object.freeze({
   bounty_writ: { cue: 'reward', pitch: 1.4 },
   huntsmans_horn: { cue: 'horn' },
   pilgrims_lamp: { cue: 'heal_crit', pitch: 0.9 },
+  // THE TIDECALLER: her class relics.
+  otters_pearl: { cue: 'sparkle', pitch: 1.5 },
+  millrace_charm: { cue: 'shimmer', pitch: 1.3 },
 });
 const HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'restorative_wave', 'guardian_bond']);
 // PARTY: the new class skills' own cues (BUILD_BRIEF §25.2 audio column).

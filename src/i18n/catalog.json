@@ -1443,6 +1443,11 @@
    "src/ui/run/draft.js"
   ]
  },
+ "🔒 Locked": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "3 zones · a spent bolt bursts.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1857,6 +1862,12 @@
   "files": [
    "src/ui/run/relic.js"
   ]
+ },
+ "A river otter from the Mill who sang the sluices shut. Freed with the Verse of Water, she fights with the tide.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "A roar: 6 to up to 6 nearby enemies, taunted 2.5 s (the Stag 1 s). Enemies prefer the Tank.": {
   "files": [
@@ -2842,6 +2853,12 @@
   ],
   "data": true
  },
+ "Begin every run holding Millrace Charm. Every fourth party hit on a soaked enemy spreads the soak to another enemy within 1.5 u.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Millstone. Party hits knock enemies back 75% farther.": {
   "files": [
    "src/data/unlocks.js"
@@ -2852,6 +2869,12 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Begin every run holding Otter's Pearl. The Tidecaller's crashes heal her for 2 HP for every enemy they hit.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Begin every run holding Peddler's Seal. Your shelf at the peddler is 25% cheaper.": {
   "files": [
@@ -3206,6 +3229,12 @@
  "Briar Wasp": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Brine tint": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -3689,6 +3718,12 @@
   ],
   "data": true
  },
+ "Clear a level with the Tidecaller in the party.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "clear every enemy": {
   "files": [
    "src/ui/run/path.js"
@@ -4090,6 +4125,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Crash 5 soaked enemies with one cast.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Crash. A breaking wave around the otter: 22 to up to 5 enemies, knocked back. +60% on a soaked enemy, which spends the soak.": {
   "files": [
@@ -5029,6 +5070,12 @@
    "src/ui/run/effects.js"
   ]
  },
+ "Every fourth party hit on a soaked enemy spreads the soak to another enemy within 1.5 u.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Every hero gives a quarter of their max HP (never below 1).": {
   "files": [
    "src/sim/encounters.js"
@@ -5220,6 +5267,13 @@
   ],
   "data": true
  },
+ "Fell the Drowned Heron with the Tidecaller in the party": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/ui/run/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Geode Colossus": {
   "files": [
    "src/data/unlocks.js"
@@ -5355,6 +5409,11 @@
   ],
   "data": true
  },
+ "Five heroes now, Rill the Tidecaller among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "FL": {
   "files": [
    "src/sim/allies.js"
@@ -5465,12 +5524,23 @@
   ],
   "data": true
  },
+ "Four seats, five friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Four seats: the Healer always comes, you play your class, and you choose who fills the rest. The AI plays everyone you do not.": {
   "files": [
    "src/ui/run/classpick.js"
   ]
  },
  "Four verses burn. Three are still missing, out where the map runs blank.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Four verses. The river still remembers the other three. Take me along and I will listen for them.": {
   "files": [
    "src/data/story.js"
   ],
@@ -5504,6 +5574,17 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Free Rill: fell the Level II boss": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Free the Verse of Water: fell the Level II boss": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Free.": {
   "files": [
@@ -6063,6 +6144,12 @@
   ],
   "data": true
  },
+ "Heron Rain tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Hidden and untouchable until it surfaces. Then it lunges down a warning lane for 12 and lies beached on the bank: the time to hit it.": {
   "files": [
    "src/data/journal.js"
@@ -6073,6 +6160,12 @@
   "files": [
    "src/ui/net/hud.js"
   ]
+ },
+ "High Water": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Hit feedback": {
   "files": [
@@ -6216,6 +6309,11 @@
    "src/ui/run/effects.js"
   ]
  },
+ "HOW TO FREE HER": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "HP": {
   "files": [
    "src/ui/menu/saves.js"
@@ -6264,6 +6362,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "I sang the sluices shut to keep the hollow song out. It came in with the river anyway. Thank you for bringing the water back.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -7108,6 +7212,11 @@
    "src/ui/run/levels.js"
   ]
  },
+ "LOCKED": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "Locks a warning lane up to 6 u long, then rolls down it for 12. A charge that hits a wall leaves it stunned for half a second.": {
   "files": [
    "src/data/journal.js"
@@ -7272,6 +7381,19 @@
  "Millpond": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Millrace": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Millrace Charm": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -7992,6 +8114,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "On the riverbank an otter shakes off the hollow song. Rill follows the bell home.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "ON THE ROAD": {
   "files": [
    "src/ui/hud/index.js"
@@ -8149,6 +8277,13 @@
  "Ossuary Row": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Otter's Pearl": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -9289,6 +9424,46 @@
    "src/app/controls.js"
   ]
  },
+ "Rill": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Rill sings the sluices open again. The Mill remembers her song.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Rill sits on the sluice side of the fire and wrings out her satchel every night. The hearth hisses at her, and she laughs at it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Rill was singing the sluices shut when the hollow song took the Mill. Fell the Level II boss, the Drowned Heron or the Millwheel, and she joins the party.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Rill, the Tidecaller": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Rill's Return": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Rill's water soaks enemies: they drip and move slower. Her Crash skills hit a soaked enemy 60% harder and use the soak up, so soak a pack first, then crash a wave through it.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Ring": {
   "files": [
    "src/sim/interactables.js"
@@ -10143,6 +10318,17 @@
    "src/sim/nodes.js"
   ],
   "data": true
+ },
+ "Soak them first, then crash a wave through. Water always finds the gaps.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Soak, then crash": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "Socket my new nodes": {
   "files": [
@@ -11732,6 +11918,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "The otter sang my river shut once. Sing for me now, little Tidecaller.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "THE PARTY": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -12049,6 +12241,23 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The Tidecaller begins with Riverbolt, Undertow, Torrent and Bubble Ward.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "The Tidecaller joins the party. Rill waits at the hearth.": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "The Tidecaller's crashes heal her for 2 HP for every enemy they hit.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "the vault": {
   "files": [
    "src/ui/run/path.js"
@@ -12339,6 +12548,12 @@
   ],
   "data": true
  },
+ "Three verses home. I can hear Stone in the hearth now, low and slow, the way the millstones used to turn.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Three verses home. Yet below the Barrow, something is still singing.": {
   "files": [
    "src/data/story.js"
@@ -12361,6 +12576,18 @@
    "src/data/classes.js",
    "src/ui/menu/saves.js",
    "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Tidecaller effects burn in Brine colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Tidecaller effects burn in Heron Rain colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -12995,9 +13222,15 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "Who joins the team": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Who joins the team?": {
   "files": [
-   "src/ui/run/classpick.js"
+   "src/ui/run/classpick.js",
+   "src/ui/tutorial/index.js"
   ]
  },
  "Wick": {
@@ -13233,6 +13466,11 @@
   ]
  },
  "You play one of the five. The AI plays the rest of the party of four, so it is always whole.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "You play one of the four. The AI plays the rest of the party, so it is always whole.": {
   "files": [
    "src/ui/run/classpick.js"
   ]

@@ -30,6 +30,7 @@
 import { createGameplayRng } from '../core/rng.js';
 import * as STATUS from './status.js';
 import { dailyPick } from '../data/daily.js';
+import { CLASS_TECH } from '../data/classes.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -68,6 +69,12 @@ export const RELICS = Object.freeze({
   bounty_writ: { name: 'Bounty Writ', rarity: 'common', text: 'Each elite the party kills pays 6 Glint, plus 4 for every affix it carried.', bounty: Object.freeze({ base: 6, perAffix: 4 }) },
   huntsmans_horn: { name: "Huntsman's Horn", rarity: 'rare', text: 'In Hunt and Purge rooms the party deals 25% more damage, and winning one pays 15 more Glint.', horn: Object.freeze({ dealt: 0.25, glint: 15 }) },
   pilgrims_lamp: { name: "Pilgrim's Lamp", rarity: 'common', text: 'Entering an event room heals the party for 30% of max HP and pays 10 Glint.', lamp: Object.freeze({ heal: 0.3, glint: 10 }) },
+  // THE TIDECALLER (docs/TIDECALLER.md): her two class relics, offered only
+  // while she stands in the party (so never to the default four).
+  otters_pearl: { name: "Otter's Pearl", rarity: 'common', cls: 'tidecaller', text: "The Tidecaller's crashes heal her for 2 HP for every enemy they hit.", pearl: Object.freeze({ heal: 2 }) },
+  // (No dice: every fourth qualifying hit spreads, so holding it never moves
+  // the relic stream.)
+  millrace_charm: { name: 'Millrace Charm', rarity: 'rare', cls: 'tidecaller', text: 'Every fourth party hit on a soaked enemy spreads the soak to another enemy within 1.5 u.', charm: Object.freeze({ every: 4, range: 1.5 }) },
 });
 // Batch 3: the class relics (a relic -> the class it needs in the party).
 export const CLASS_RELICS = Object.freeze(Object.fromEntries(Object.keys(RELICS).filter((id) => RELICS[id].cls).map((id) => [id, RELICS[id].cls])));
@@ -182,6 +189,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let oathAt = {}; // batch 3: Warden's Oath, enemy id -> the tick it last healed
   let oathTick = -1; // ... and how many taunts healed on that tick
   let oathCount = 0;
+  let charmHits = 0; // THE TIDECALLER: Millrace Charm's count of soaked hits
 
   const has = (id) => owned.includes(id);
   const sum = (key) => owned.reduce((s, id) => s + (RELICS[id][key] ?? 0), 0);
@@ -217,6 +225,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     oathAt = {};
     oathTick = -1;
     oathCount = 0;
+    charmHits = 0;
     if (combat && typeof combat.setMods === 'function') combat.setMods(on ? mods : null);
   }
 
@@ -296,6 +305,22 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     if (ev.crit && cls === 'swordsman' && has('fox_ribbon')) pending.push({ kind: 'ribbon', target: t.id, amount: ev.amount * RELICS.fox_ribbon.ribbon, dx: ev.dirX ?? 0, dz: ev.dirZ ?? 0 });
     if (cls === 'archer' && has('fletchers_knot') && STATUS.magnitude(t, 'exposed', getTick()) > 0) pending.push({ kind: 'knot', from: t.id, x: t.x, z: t.z, amount: ev.amount * RELICS.fletchers_knot.knot.frac });
     if (ev.crit && has('kindling_coal')) pending.push({ kind: 'kindle', from: t.id, x: t.x, z: t.z });
+    // THE TIDECALLER: Millrace Charm. (A crash spends the soak before its
+    // hit event, so a crash itself never spreads.)
+    if (has('millrace_charm') && STATUS.magnitude(t, 'soaked', getTick()) > 0) {
+      charmHits += 1;
+      if (charmHits >= RELICS.millrace_charm.charm.every) {
+        charmHits = 0;
+        pending.push({ kind: 'charm', from: t.id, x: t.x, z: t.z, src: atk ? atk.id : null });
+      }
+    }
+  });
+  // THE TIDECALLER: Otter's Pearl, one heal per soaked enemy her crash hit.
+  events.on('crash', (ev) => {
+    if (!on || !live() || !has('otters_pearl')) return;
+    const b = Number.isInteger(ev.seat) ? partyBodies().find((e) => e.partyIndex === ev.seat) : null;
+    if (!b || bodyCls(b.id) !== 'tidecaller') return;
+    pending.push({ kind: 'pearl', target: b.id, from: ev.target });
   });
   events.on('heal', (ev) => {
     if (!on || !live() || owned.length === 0) return;
@@ -439,6 +464,26 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         const n = B.base + B.perAffix * p.affixes;
         pay(n, 'relic_bounty_writ');
         events.emit(getTick(), 'relic_proc', { relic: 'bounty_writ', from: p.id, glint: n, affixes: p.affixes, x: r2(p.x), z: r2(p.z) });
+      } else if (p.kind === 'pearl') {
+        const t = registry.byId(p.target);
+        if (!t || !(t.hp > 0)) continue;
+        combat.applyHeal(t, RELICS.otters_pearl.pearl.heal, { healer: t.id, source: 'otters_pearl' });
+        events.emit(getTick(), 'relic_proc', { relic: 'otters_pearl', target: t.id, from: p.from, x: r2(t.x), z: r2(t.z) });
+      } else if (p.kind === 'charm') {
+        const C = RELICS.millrace_charm.charm;
+        const tick = getTick();
+        let best = null;
+        let bd = Infinity;
+        for (const e of registry.all()) {
+          if (e.id === p.from || !hostileLive(e) || STATUS.magnitude(e, 'soaked', tick) > 0) continue;
+          const d = Math.hypot(e.x - p.x, e.z - p.z);
+          if (d <= C.range + (e.radius ?? 0) && (d < bd || (d === bd && best && e.id < best.id))) {
+            best = e;
+            bd = d;
+          }
+        }
+        if (!best || !combat.status.apply(best, 'soaked', CLASS_TECH.soakMag, CLASS_TECH.soakTicks, tick, p.src)) continue;
+        events.emit(tick, 'relic_proc', { relic: 'millrace_charm', target: best.id, from: p.from, fx: r2(p.x), fz: r2(p.z), x: r2(best.x), z: r2(best.z) });
       } else if (p.kind === 'leech') {
         let best = null;
         for (const e of partyBodies()) if (e.hp > 0 && e.hp < e.maxHp && (!best || e.hp / e.maxHp < best.hp / best.maxHp)) best = e;
@@ -671,6 +716,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       savedThisRoom: [...savedThisRoom],
       ...(roomMode ? { roomMode } : {}),
       ...(Object.keys(oathAt).length ? { oathAt: { ...oathAt } } : {}),
+      ...(charmHits ? { charmHits } : {}),
       ...(pending.length ? { pending: pending.map((p) => ({ ...p })) } : {}),
     };
   }
@@ -693,6 +739,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     savedThisRoom = Array.isArray(d.savedThisRoom) ? [...d.savedThisRoom] : [];
     roomMode = typeof d.roomMode === 'string' ? d.roomMode : null;
     oathAt = d.oathAt && typeof d.oathAt === 'object' ? { ...d.oathAt } : {};
+    charmHits = Number.isFinite(d.charmHits) ? d.charmHits : 0;
     pending = Array.isArray(d.pending) ? d.pending.filter((p) => p && typeof p.kind === 'string').map((p) => ({ ...p })) : [];
   }
 
