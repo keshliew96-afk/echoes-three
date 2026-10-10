@@ -1,12 +1,24 @@
 # Third bosses: the Wood and the Mill (content plan 3, slice 10)
 
-The Hollow Wood and the Sunken Mill each get a third boss, rolled by seed like
-the others (`LEVELS[1].bosses` and `LEVELS[2].bosses` in `src/data/levels.js`).
-Seeds 1 to 60 meet the Stag 20 times, the Thornmother 23 and the Gloam Wolf
-17 on Level I, and the Heron 30, the Millwheel 16 and the Mire King 14 on
-Level II. Adding a third row changes which boss a given seed meets in those
-two acts (`bossIndexFor(act, seed) % n`); the Daily and Endless pick through
-the same tables. Cantor stays the final boss.
+The Hollow Wood and the Sunken Mill each get a third boss. Each one joins its
+act's seed roll only once the save has felled that act's other two bosses
+(the Stag and the Thornmother for the Gloam Wolf; the Heron and the
+Millwheel for the Mire King). Until then a seed rolls between the original
+two exactly as before, so old seeds meet the boss they always met.
+
+- **The gate.** Boss rows marked `gated: true` (`LEVELS[1].bosses`,
+  `LEVELS[2].bosses` in `src/data/levels.js`) join `bossPool` only for the
+  acts in the run's `thirdBosses`. The camp passes `thirdBossActs(meta.bosses)`
+  to `startCampaign`; the run keeps it (saved only while non-empty, and in
+  the run view) and each cleared level records the boss it met.
+- **The Daily** never meets a third boss, whatever the save: it stays the
+  same run for every player.
+- **Endless** follows the save, like a campaign: once open, the act's cycle
+  runs through all three bosses; until then it alternates the original two
+  as before.
+- Unlocked, seeds 1 to 60 meet the Stag 20 times, the Thornmother 23 and the
+  Gloam Wolf 17 on Level I, and the Heron 30, the Millwheel 16 and the Mire
+  King 14 on Level II. Cantor stays the final boss.
 
 | | The Gloam Wolf | The Mire King |
 |---|---|---|
@@ -66,7 +78,7 @@ section firing each attack.
 
 ## Checks
 
-`node tools/third-bosses-probe.mjs`: wiring, translations, every attack
+`node tools/third-bosses-probe.mjs`: the gate (old seeds unchanged while locked, the Daily never, Endless cycles, saves), wiring, translations, every attack
 landing, the yank, the Swallow's pull, the Hunt, the mire, the enrage, the
 governor (at most two player-targeted telegraphs, starts 72 ticks apart),
 level clears and save round trips. All numbers are first guesses until play.

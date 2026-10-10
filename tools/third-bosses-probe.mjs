@@ -38,7 +38,9 @@ const { emptySnapshot } = await import(u('src/core/intents.js'));
 const { hashState } = await import(u('src/core/hash.js'));
 const { createStateIO } = await import(u('src/save/capture.js'));
 const { clonePlain } = await import(u('src/save/codec.js'));
-const { LEVELS, bossFor } = await import(u('src/data/levels.js'));
+const { LEVELS, bossFor, thirdBossActs } = await import(u('src/data/levels.js'));
+const { endlessBossIndex } = await import(u('src/data/endless.js'));
+const { isDailyKey } = await import(u('src/data/daily.js'));
 const { BOSS_KITS } = await import(u('src/sim/boss.js'));
 const { DEEDS, UNLOCKS, WATER_BOSSES } = await import(u('src/data/unlocks.js'));
 const { BESTIARY } = await import(u('src/data/journal.js'));
@@ -126,11 +128,31 @@ const addKinds = (W, from) => W.log.slice(from).filter((e) => e.type === 'boss_a
   const k2 = (LEVELS[2].bosses || []).map((b) => b.kind);
   check(k1.join() === 'stag,thornmother,gloamwolf', `Level I's bosses: ${k1.join(', ')}`);
   check(k2.join() === 'heron,millwheel,mireking', `Level II's bosses: ${k2.join(', ')}`);
+  // The gate: until the save has felled an act's other two bosses, a seed
+  // rolls between them exactly as before this slice (the old two-boss hash).
+  const oldIndex = (act, seed) => {
+    let h = (seed >>> 0) ^ Math.imul(act >>> 0, 0x9e3779b1);
+    h = Math.imul(h ^ (h >>> 16), 0x85ebca6b);
+    h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+    h ^= h >>> 16;
+    return (h >>> 0) % 2;
+  };
   for (const [lv, kinds] of [[1, k1], [2, k2]]) {
+    let same = 0;
+    for (let s = 1; s <= 200; s++) if (bossFor(lv, s).kind === kinds[oldIndex(lv, s)]) same += 1;
+    check(same === 200, `locked, seeds 1-200 on Level ${lv} meet the boss they met before (${same}/200)`);
+    let deep = 0;
+    for (let s = 1; s <= 40; s++) for (let d = lv; d <= lv + 12; d += 4) if (LEVELS[lv].bosses[endlessBossIndex(d, s)].kind === kinds[(oldIndex(lv, s) + Math.floor((d - 1) / 4)) % 2]) deep += 1;
+    check(deep === 160, `locked, Endless cycles the original two as before (${deep}/160)`);
     const n = {};
-    for (let s = 1; s <= 60; s++) n[bossFor(lv, s).kind] = (n[bossFor(lv, s).kind] ?? 0) + 1;
-    check(kinds.every((k) => n[k] > 0), `seeds 1-60 on Level ${lv} meet all three (${kinds.map((k) => `${k} ${n[k] ?? 0}`).join(', ')})`);
+    for (let s = 1; s <= 60; s++) n[bossFor(lv, s, null, [lv]).kind] = (n[bossFor(lv, s, null, [lv]).kind] ?? 0) + 1;
+    check(kinds.every((k) => n[k] > 0), `unlocked, seeds 1-60 on Level ${lv} meet all three (${kinds.map((k) => `${k} ${n[k] ?? 0}`).join(', ')})`);
+    const ends = new Set();
+    for (let d = lv; d <= lv + 8; d += 4) ends.add(LEVELS[lv].bosses[endlessBossIndex(d, 3, [lv])].kind);
+    check(ends.size === 3, `unlocked, Endless cycles all three (${[...ends].join(', ')})`);
   }
+  check(thirdBossActs({}).length === 0 && thirdBossActs({ stag: 1 }).length === 0, 'a fresh save, or one boss felled, opens no third boss');
+  check(thirdBossActs({ stag: 1, thornmother: 2 }).join() === '1' && thirdBossActs({ stag: 1, thornmother: 1, heron: 1, millwheel: 1 }).join() === '1,2', 'felling an act\'s other two opens its third boss');
   check(!!BOSS_KITS.gloamwolf && !!BOSS_KITS.mireking, 'both boss kits are registered');
   check(bossFor(1, 1, 'gloamwolf').layout === 21 && bossFor(2, 1, 'mireking').layout === 23, 'the Wolf fights in the Thornwood Ring (21), the King in the Millrace Basin (23)');
   check(!!DEEDS.boss_gloamwolf && !!DEEDS.boss_mireking, `deeds: ${DEEDS.boss_gloamwolf?.name}, ${DEEDS.boss_mireking?.name}`);
@@ -321,6 +343,40 @@ for (const [kind, lv] of [['gloamwolf', 1], ['mireking', 2]]) {
     clear = W.log.find((e) => e.type === 'level_clear' && e.level === lv);
   }
   check(!!clear, `felling the ${kind} clears Level ${lv}`);
+}
+
+// ------------------------------------------------------- 7. the run gate --
+{
+  // A campaign told the Wood is open meets the Wolf on a seed that rolls it;
+  // the same start for the Daily ignores the gate.
+  let seed = 1;
+  while (bossFor(1, seed, null, [1]).kind !== 'gloamwolf') seed += 1;
+  const meet = (opts) => {
+    const W = makeWorld(seed);
+    W.run.startCampaign({ level: 1, harness: true, ...opts });
+    const fs = W.run.view().frame?.seed;
+    return { W, kind: bossFor(1, fs, null, W.run.view().thirdBosses ?? null).kind, open: W.run.view().thirdBosses ?? null };
+  };
+  const a = meet({ thirdBosses: [1] });
+  const fs = a.W.run.view().frame.seed;
+  const real = bossFor(1, fs, null, [1]).kind;
+  for (let i = 0; i < 4000 && a.W.run.view().phase !== 'combat'; i++) a.W.step();
+  a.W.world.cmd('skipToRoom', 8);
+  for (let i = 0; i < 600 && !(a.W.run.view().boss && a.W.run.view().boss.active); i++) a.W.step();
+  check(JSON.stringify(a.open) === '[1]' && bossOf(a.W)?.kind === real, `an unlocked campaign carries the gate and its boss room holds the seed's roll (${bossOf(a.W)?.kind} vs ${real})`);
+  const locked = meet({});
+  for (let i = 0; i < 4000 && locked.W.run.view().phase !== 'combat'; i++) locked.W.step();
+  locked.W.world.cmd('skipToRoom', 8);
+  for (let i = 0; i < 600 && !(locked.W.run.view().boss && locked.W.run.view().boss.active); i++) locked.W.step();
+  const lfs = locked.W.run.view().frame.seed;
+  check(locked.open === null && ['stag', 'thornmother'].includes(bossOf(locked.W)?.kind) && bossOf(locked.W)?.kind === bossFor(1, lfs).kind, `a locked campaign meets one of the original two (${bossOf(locked.W)?.kind})`);
+  const key = ['2026-10-10', '20261010'].find((k) => isDailyKey(k));
+  const d = meet({ daily: { key }, thirdBosses: [1, 2] });
+  check(!!key && d.W.run.view().daily && d.open === null, 'the Daily ignores the gate (never a third boss)');
+  const tree = clonePlain(a.W.io.capture());
+  const X = makeWorld(seed);
+  X.io.apply(clonePlain(tree));
+  check(JSON.stringify(X.run.view().thirdBosses) === '[1]', 'the gate survives a save round trip');
 }
 
 // ---------------------------------------------------------------- 6. saves --
