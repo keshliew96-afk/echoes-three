@@ -63,6 +63,26 @@ const RELIC_SVG = {
   huntsmans_horn: `<path d="M5 20 Q6 9 18 9 L24 6 L25 15 L19 14 Q11 14 9 22 Z" ${STROKE}/><path d="M5 20 Q4 25 9 24" ${STROKE}/><path d="M27 4 L29 2 M28 10 L31 10" ${STROKE}/>`,
   // A pilgrim's lamp on a staff head, with a hood over the flame.
   pilgrims_lamp: `<path d="M16 3 V7" ${STROKE}/><path d="M10 9 Q16 5 22 9 L22 20 Q16 24 10 20 Z" ${STROKE}/><path d="M16 12 Q19 15.5 16 19 Q13 15.5 16 12 Z" ${FILL}/><path d="M16 23 V29" ${STROKE}/>`,
+  // Batch 4. A shepherd's crook: a tall staff hooked over at the top.
+  shepherds_crook: `<path d="M13 29 V12 Q13 4 19 4 Q25 4 25 10 Q25 14 21 14" ${STROKE}/><circle cx="21" cy="14" r="1.8" ${FILL}/><path d="M9 29 H17" ${STROKE}/>`,
+  // A vigil candle in a dish, a tall steady flame, a small ward ring.
+  vigil_candle: `<rect x="12" y="13" width="8" height="12" rx="1" ${STROKE}/><path d="M7 26 H25" ${STROKE}/><path d="M16 3 Q20 8 16 11 Q12 8 16 3 Z" ${FILL}/><path d="M5 18 Q5 10 10 7 M27 18 Q27 10 22 7" ${STROKE}/>`,
+  // A stick of chalk drawing a ring.
+  warding_chalk: `<circle cx="14" cy="18" r="9" fill="none" stroke="currentColor" stroke-width="2.2" stroke-dasharray="4 2.4"/><path d="M19 13 L27 5 L29 7 L21 15 Z" ${FILL}/><circle cx="14" cy="18" r="2" ${FILL}/>`,
+  // A laurel wreath round a small crown.
+  champions_laurel: `<path d="M8 25 Q3 16 8 8 M24 25 Q29 16 24 8" ${STROKE}/><path d="M6 12 L9 11 M5 17 L8 17 M6 22 L9 22 M26 12 L23 11 M27 17 L24 17 M26 22 L23 22" ${STROKE}/><path d="M11 21 L12 13 L14 17 L16 11 L18 17 L20 13 L21 21 Z" ${FILL}/>`,
+  // A jailer's iron ring with two keys hanging from it.
+  jailers_ring: `<circle cx="16" cy="9" r="6" ${STROKE}/><path d="M12 14 L9 25 M9 25 H13 M10 21 H12" ${STROKE}/><path d="M20 14 L23 25 M23 25 H19 M22 21 H20" ${STROKE}/>`,
+  // A bound ledger with a coin stamped on its cover.
+  vault_ledger: `<path d="M7 5 H24 V27 H7 Z" ${STROKE}/><path d="M10 5 V27" ${STROKE}/><circle cx="17.5" cy="14" r="4" ${FILL}/><path d="M13 22 H22" ${STROKE}/>`,
+  // A swallow-tailed pennant on a short pole.
+  banner_pennant: `<path d="M8 3 V29" ${STROKE}/><path d="M8 5 H26 L21 11 L26 17 H8" ${STROKE}/><path d="M12 9 H18 M12 13 H18" ${STROKE}/>`,
+  // A pierced travel token on a cord, a compass star on its face.
+  wanderers_token: `<path d="M10 3 L16 8 L22 3" ${STROKE}/><circle cx="16" cy="18" r="10" ${STROKE}/><path d="M16 11 L18 18 L16 25 L14 18 Z" ${FILL}/><path d="M9 18 H23" ${STROKE}/>`,
+  // A split geode: rough shell, crystals growing in its heart.
+  geode_heart: `<path d="M5 17 Q5 6 16 5 Q27 6 27 17 Q27 27 16 28 Q5 27 5 17 Z" ${STROKE}/><path d="M11 21 L13 13 L15 21 Z M15 21 L17 10 L19 21 Z M19 21 L21 15 L22 21 Z" ${FILL}/>`,
+  // A small reliquary urn with ash rising out of it.
+  saints_ashes: `<path d="M10 15 H22 L20 27 H12 Z" ${STROKE}/><path d="M8 15 H24" ${STROKE}/><path d="M13 11 Q11 8 13 5 M16 11 Q18 7 16 3 M19 11 Q21 8 19 6" ${STROKE}/><circle cx="16" cy="21" r="1.8" ${FILL}/>`,
 };
 
 // The curse mark: a crescent moon cut by an eye slit.

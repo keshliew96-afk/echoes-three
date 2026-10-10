@@ -699,6 +699,16 @@ const RELIC_PROC_CUE = Object.freeze({
   // THE TIDECALLER: her class relics.
   otters_pearl: { cue: 'sparkle', pitch: 1.5 },
   millrace_charm: { cue: 'shimmer', pitch: 1.3 },
+  // Batch 4: the relics of the new rooms.
+  shepherds_crook: { cue: 'heal_crit', pitch: 1.15 },
+  vigil_candle: { cue: 'zone_spawn', pitch: 1.2 },
+  warding_chalk: { cue: 'sparkle', pitch: 0.9 },
+  champions_laurel: { cue: 'reward', pitch: 0.9 },
+  jailers_ring: { cue: 'reward', pitch: 1.6 },
+  vault_ledger: { cue: 'reward', pitch: 1.2 },
+  banner_pennant: { cue: 'heal_crit', pitch: 1.05 },
+  wanderers_token: { cue: 'reward', pitch: 1.3 },
+  geode_heart: { cue: 'shimmer', pitch: 0.7 },
 });
 const HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'restorative_wave', 'guardian_bond']);
 // PARTY: the new class skills' own cues (BUILD_BRIEF §25.2 audio column).
@@ -929,8 +939,11 @@ export const DEFAULT_EVENT_CUES = {
   // RELICS batch 3: each synergy relic's proc, voiced with existing cues.
   relic_proc: (ev, h) => {
     const c = RELIC_PROC_CUE[ev.relic];
+    if (ev.stage === 'mend') return null; // Warding Chalk's once-a-second mend stays visual
     return c ? one(c.cue, at(ev, h, ev.target), c.pitch ? { pitch: c.pitch } : undefined) : null;
   },
+  // RELICS batch 4: Kindred Blood, the fallen's kin drink its death.
+  curse_proc: (ev, h) => (ev.healed && ev.healed.length ? one('siphon_heal', at(ev, h, ev.from), { pitch: 0.6 }) : null),
   glint_gain: () => [{ cue: 'glint' }],
   node_socketed: () => [{ cue: 'socket' }],
   node_unsocketed: () => [{ cue: 'unsocket' }],

@@ -184,7 +184,7 @@ export function createCombat({
     const rolled = rng.chance(CRIT.chance + critBonus + (partyDeals ? M.critChance() : 0)); // strict roll < chance (§7)
     const crit = forceCrit ? true : rolled;
     let amount = base * dealt;
-    if (partyDeals) amount *= M.dealtMul();
+    if (partyDeals) amount *= M.dealtMul(target);
     if (crit) amount *= (critMul ?? CRIT.mult) + (partyDeals ? M.critMulAdd() : 0);
     amount *= STATUS.damageTakenMul(target, tick);
     if (partyHit) amount *= M.takenMul();
