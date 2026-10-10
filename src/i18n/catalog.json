@@ -5843,6 +5843,11 @@
   ],
   "data": true
  },
+ "FIGHT": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
  "Fight {n} of {total} · {boss} · {land}": {
   "files": [
    "src/ui/run/transit.js"
