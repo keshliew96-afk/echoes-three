@@ -17,6 +17,14 @@
 //   ev_cache   Forgotten Cache: coins rattling out of a box
 //   ev_spring  Healing Spring: water and a rising shimmer of bells
 //   ev_chest   the ambush beaten: the chest's coins pour out
+//   More event rooms (slice 6):
+//   ev_fey     Fey Ring: tiny high laughter-bells tumbling, a soft airy swell
+//   ev_sluice  Sluice Gate (the race pays): a creaking gate, rushing water, coins
+//   ev_flood   Sluice Gate (the flood): the gate bursts, a deep roar and crash
+//   ev_ossuary Barrow Ossuary: bones rattling, a hollow low choir note
+//   ev_crystal Heart Crystal: a glassy chime cluster growing upward over a hum
+//   ev_smith   Traveling Smith: three anvil strikes, the last one ringing
+//   ev_dice    Gambler's Dice: a cup rattle, then two dice clacking to rest
 // Room objectives (in the room: spatial on the SFX bus):
 //   ob_horn    the quarry breaks cover: a two-note hunting horn
 //   ob_winded  the quarry tires: two short pants
@@ -52,6 +60,13 @@ export const ENCOUNTER_CUE_CAL = {
   ev_cache: 0,
   ev_spring: 0,
   ev_chest: 0,
+  ev_fey: 0,
+  ev_sluice: 0,
+  ev_flood: 0,
+  ev_ossuary: 0,
+  ev_crystal: 0,
+  ev_smith: 0,
+  ev_dice: 0,
   ob_horn: -3.6,
   ob_winded: -11.9,
   ob_escape: -5.8,
@@ -137,6 +152,44 @@ const CUES = {
       ...[1568, 2093, 2637, 2349, 3136, 2794, 3520].map((f, i) => k.tone(d, t + i * 0.045, { f0: P(p, f), d: 0.09, gain: 0.26 })),
       k.noise(d, t, { type: 'highpass', f0: 6000, q: 0.7, hold: 0.3, d: 0.15, gain: 0.2 })
     ) },
+  ev_fey: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 3000), f1: P(p, 6000), q: 1.2, a: 0.25, d: 0.7, gain: 0.18 }),
+      ...[1567.98, 2093, 1760, 2637, 2349.3, 3136].map((f, i) => k.bell(d, t + i * 0.06 + (i % 2) * 0.02, { f: P(p, f), ratio: 3.01, index: 0.5, d: 0.45, gain: 0.22 })),
+      k.tone(d, t + 0.05, { type: 'triangle', f0: P(p, 523.3), f1: P(p, 784), a: 0.2, d: 0.6, gain: 0.16 })
+    ) },
+  ev_sluice: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 92), f1: P(p, 128), a: 0.03, d: 0.28, gain: 0.25, filter: { f0: 700, q: 3 } }),
+      k.noise(d, t + 0.18, { f0: P(p, 700), f1: P(p, 2200), q: 0.8, a: 0.12, d: 0.7, gain: 0.45 }),
+      ...[2093, 2637, 2349, 3136].map((f, i) => k.tone(d, t + 0.45 + i * 0.06, { f0: P(p, f), d: 0.08, gain: 0.22 }))
+    ) },
+  ev_flood: { ...ui, cooldownMs: 400, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 1100), q: 1.8, d: 0.08, gain: 0.7 }),
+      k.tone(d, t, { f0: P(p, 90), f1: P(p, 38), d: 0.5, gain: 0.9 }),
+      k.noise(d, t + 0.04, { src: 'brown', type: 'lowpass', f0: P(p, 1400), f1: P(p, 260), q: 0.7, a: 0.05, d: 0.9, gain: 0.75 })
+    ) },
+  ev_ossuary: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.05, 0.09, 0.16, 0.2, 0.27].map((o, i) => k.noise(d, t + o, { type: 'bandpass', f0: P(p, 1500 + (i % 3) * 600), q: 6, d: 0.04, gain: 0.45 })),
+      k.pad(d, t + 0.2, { notes: [P(p, 110), P(p, 130.8)], dur: 0.7, a: 0.25, r: 0.8, gain: 0.4, cutoff: 600, type: 'triangle' })
+    ) },
+  ev_crystal: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 98), a: 0.15, d: 0.9, gain: 0.35 }),
+      ...[880, 1108.7, 1318.5, 1760, 2217.5].map((f, i) => k.bell(d, t + 0.08 + i * 0.1, { f: P(p, f), ratio: 2.4, index: 1.2, d: 0.9, gain: 0.26 }))
+    ) },
+  ev_smith: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.22, 0.44].map((o, i) => k.bell(d, t + o, { f: P(p, 1244.5), ratio: 1.4, index: 3, d: i === 2 ? 1.1 : 0.22, gain: i === 2 ? 0.45 : 0.32 })),
+      ...[0, 0.22, 0.44].map((o) => k.noise(d, t + o, { type: 'highpass', f0: 3500, q: 0.7, d: 0.05, gain: 0.35 }))
+    ) },
+  ev_dice: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.05, 0.1, 0.15, 0.2].map((o) => k.noise(d, t + o, { src: 'brown', type: 'bandpass', f0: P(p, 900), q: 3, d: 0.04, gain: 0.5 })),
+      ...[0.42, 0.52, 0.6, 0.66, 0.7].map((o, i) => k.noise(d, t + o, { type: 'bandpass', f0: P(p, 2600 - i * 150), q: 5, d: 0.03, gain: 0.55 - i * 0.07 }))
+    ) },
   // ------------------------------------------------------- room objectives --
   ob_horn: { levelDb: -10, priority: 4, maxVoices: 1, cooldownMs: 400, fn: (k, t, d, p) =>
     Math.max(
@@ -213,6 +266,12 @@ const TAKE = {
   wandering_spirit: 'ev_spirit',
   forgotten_cache: 'ev_cache',
   healing_spring: 'ev_spring',
+  fey_ring: 'ev_fey',
+  sluice_gate: 'ev_sluice',
+  barrow_ossuary: 'ev_ossuary',
+  heart_crystal: 'ev_crystal',
+  traveling_smith: 'ev_smith',
+  gamblers_dice: 'ev_dice',
 };
 export const ENCOUNTER_TAKE_CUES = Object.freeze({ ...TAKE });
 
@@ -228,7 +287,7 @@ export function createEncounterEventCues() {
     event_enter: () => [{ cue: 'ev_enter' }],
     event_open: () => [{ cue: 'ev_open' }],
     event_leave: () => [{ cue: 'ev_leave' }],
-    event_take: (ev) => (TAKE[ev.encounter] ? [{ cue: TAKE[ev.encounter] }] : null),
+    event_take: (ev) => (ev.encounter === 'sluice_gate' && ev.flood ? [{ cue: 'ev_flood' }] : TAKE[ev.encounter] ? [{ cue: TAKE[ev.encounter] }] : null),
     event_chest: () => [{ cue: 'ev_chest' }],
     // The quarry's mark keeps its built-in ping under the new horn.
     quarry_spawn: (ev, h) => [...one('ob_horn', at({}, h)), ...one('mark', at(ev, h, ev.id), { pitch: 1.2 })],

@@ -916,10 +916,23 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     else if (ev.encounter === 'healing_spring') a.toast(t('{name}: the party is whole again.', { name }), { tone: 'info', ms: 4200 });
     else if (ev.encounter === 'trapped_chest') a.toast(t('Ambush! Win the fight to open the chest.'), { tone: 'info', ms: 4200 });
     else if (c) a.toast(t('Bound for the run: {name}. {text}', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 6000 });
+    // More event rooms (slice 6).
+    else if (ev.encounter === 'sluice_gate' && ev.flood) a.toast(t('The flood! Every hero loses a third of their max HP.'), { tone: 'info', ms: 4800 });
+    else if (ev.encounter === 'sluice_gate' && r) a.toast(t('The race carries down {n} Glint and a relic: {name}. {text}', { n: ev.glint ?? 0, name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 5600 });
+    else if (ev.encounter === 'sluice_gate') a.toast(t('The race carries down {n} Glint.', { n: ev.glint ?? 0 }), { tone: 'info', ms: 4200 });
+    else if (ev.encounter === 'heart_crystal' && Array.isArray(ev.relics) && ev.relics.length) a.toast(t('The crystal grows: {names}.', { names: ev.relics.map((id) => (RELICS[id] ? t(RELICS[id].name) : id)).join(', ') }), { tone: 'info', ms: 5600 });
+    else if (ev.encounter === 'traveling_smith' && r && ev.lost && RELICS[ev.lost]) a.toast(t('The smith reforges {old} into {name}. {text}', { old: t(RELICS[ev.lost].name), name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 6000 });
+    else if (ev.encounter === 'gamblers_dice' && Array.isArray(ev.dice)) {
+      const [d1, d2] = ev.dice;
+      if (r) a.toast(t('Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}', { a: d1, b: d2, name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 6000 });
+      else if (ev.glint) a.toast(t('You roll {a} and {b}: {n} Glint.', { a: d1, b: d2, n: ev.glint }), { tone: 'info', ms: 4800 });
+      else a.toast(t('You roll {a} and {b}: the stranger keeps the stake.', { a: d1, b: d2 }), { tone: 'info', ms: 4800 });
+    }
   });
   bus.on('relic_lose', (ev) => {
     const a = service('app');
     const r = RELICS[ev.relic];
+    if (ev.source === 'smith') return; // the reforge toast names it
     if (a && typeof a.toast === 'function' && r) a.toast(t('The spirit takes {name}.', { name: t(r.name) }), { tone: 'info', ms: 4200 });
   });
   // Slice 2: an elite's relic drop, a relic bought at the peddler.

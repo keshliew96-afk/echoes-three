@@ -1460,6 +1460,12 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "25 Glint and your newest relic.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "3 zones · a spent bolt bursts.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1699,6 +1705,12 @@
   ],
   "data": true
  },
+ "A geode taller than a door, humming. Violet threads run into it from you.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "A giant of black rock and pale crystal that the Heart grew to sing through.": {
   "files": [
    "src/data/journal.js"
@@ -1714,6 +1726,12 @@
   "files": [
    "src/ui/run/relic.js"
   ]
+ },
+ "A grinning stranger rattles two bone dice in a cup.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "A healer, three friends, and a world going wrong": {
   "files": [
@@ -1905,6 +1923,12 @@
    "src/ui/run/relic.js"
   ]
  },
+ "A ring of pale mushrooms. Laughter, very close, from nobody.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "A river otter from the Mill who sang the sluices shut. Freed with the Verse of Water, she fights with the tide.": {
   "files": [
    "src/data/story.js"
@@ -1914,6 +1938,12 @@
  "A roar: 6 to up to 6 nearby enemies, taunted 2.5 s (the Stag 1 s). Enemies prefer the Tank.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A rusted gate holds back the millrace. Something glints behind it.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -2305,6 +2335,12 @@
  "Ambusher": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "An anvil on a handcart, and a smith who never stops whistling.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -2752,6 +2788,12 @@
  "Barrow Gate": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Barrow Ossuary": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -4773,6 +4815,17 @@
    "src/ui/run/shop.js"
   ]
  },
+ "Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "Doubles: a rare or legendary relic. A total of 8 or more: 50 Glint. Anything else loses the stake.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Downloads your profile and every save slot as one file. Load it here on any device, even when the server has forgotten your cloud code.": {
   "files": [
    "src/ui/menu/cloud.js"
@@ -5214,6 +5267,12 @@
   ],
   "data": true
  },
+ "Every hero gives a fifth of their max HP (never below 1).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Every hero gives a quarter of their max HP (never below 1).": {
   "files": [
    "src/sim/encounters.js"
@@ -5458,6 +5517,12 @@
    "src/ui/menu/cloud.js"
   ]
  },
+ "Fey Ring": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "FF": {
   "files": [
    "src/sim/skills.js"
@@ -5656,6 +5721,11 @@
   ],
   "data": true
  },
+ "Found only in {land}.": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Four lands, and the edges are still blank. The road goes further than we have.": {
   "files": [
    "src/data/story.js"
@@ -5848,6 +5918,12 @@
  "Galvanize": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Gambler's Dice": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -6212,6 +6288,12 @@
  "Heart Chamber": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Heart Crystal": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -6663,6 +6745,18 @@
   "files": [
    "src/ui/menu/tabs/network.js"
   ]
+ },
+ "It feeds on the major curses you carry (they stay on you).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "It grows one relic for every major curse you carry.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "It guarded my door. Now it guards my song.": {
   "files": [
@@ -8397,6 +8491,12 @@
   ],
   "data": true
  },
+ "Open it. Half the time the flood hits every hero for a third of max HP (never below 1).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "OPEN THE CHEST": {
   "files": [
    "src/ui/hud/index.js"
@@ -8427,6 +8527,12 @@
  "Ossuary Row": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Otherwise the race carries down a relic and 30 Glint.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -9244,6 +9350,12 @@
    "src/ui/menu/tabs/gameplay.js",
    "src/ui/run/effects.js"
   ]
+ },
+ "Reforged one rarity higher (a legendary comes back as another legendary).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "REFRESH": {
   "files": [
@@ -10438,6 +10550,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Skulls stacked to the roof, each one a name nobody says any more.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Slams a warning ring for 14 that throws three crystal shards, each landing a second later for 8 and leaving slowing crystal.": {
   "files": [
    "src/data/journal.js"
@@ -10468,6 +10586,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Sluice Gate": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "Sluice Gates": {
   "files": [
@@ -10716,6 +10840,12 @@
   ],
   "data": true
  },
+ "Stake 20 Glint and roll two dice.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Standard": {
   "files": [
    "src/ui/menu/records.js",
@@ -10815,6 +10945,12 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "Step in: the fey take every Glint you carry (at least 20).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "Still joining {code}…": {
   "files": [
@@ -11490,6 +11626,11 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "The crystal grows: {names}.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "THE CURSE LIFTS": {
   "files": [
    "src/ui/run/relic.js"
@@ -11539,6 +11680,12 @@
  "The dead remember every song. Mine they remember best.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The dead remember: a Node draft for every hero.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -11662,6 +11809,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "The flood! Every hero loses a third of their max HP.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
  },
  "the fox dashes up to 1.2 u toward the target before an arc or burst · Fox Step dashes 1.0 u further.": {
   "files": [
@@ -12219,6 +12371,16 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "The race carries down {n} Glint and a relic: {name}. {text}": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The race carries down {n} Glint.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "The request was not understood.": {
   "files": [
    "src/net/protocol/messages.js"
@@ -12364,6 +12526,11 @@
    "src/sim/champions.js"
   ],
   "data": true
+ },
+ "The smith reforges {old} into {name}. {text}": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
  },
  "The song travels with water. The Drowned Heron kept the river; the Millwheel is the mill itself, turned. Felling either frees the Verse of Water.": {
   "files": [
@@ -12546,6 +12713,12 @@
  "The Wyrm sleeps at last. Its long watch is over.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "They leave a choice of three relics.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -12947,6 +13120,12 @@
  "Trapper": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Traveling Smith": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -13700,6 +13879,11 @@
   ],
   "data": true
  },
+ "You carry no major curse for it to feed on.": {
+  "files": [
+   "src/ui/run/encounter.js"
+  ]
+ },
  "You carry no relic to give.": {
   "files": [
    "src/ui/run/encounter.js"
@@ -13773,6 +13957,16 @@
  "You return to the title. Your single-player saves are untouched.": {
   "files": [
    "src/ui/menu/pause.js"
+  ]
+ },
+ "You roll {a} and {b}: {n} Glint.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "You roll {a} and {b}: the stranger keeps the stake.": {
+  "files": [
+   "src/ui/run/index.js"
   ]
  },
  "You were hosting — your party is waiting for you": {
