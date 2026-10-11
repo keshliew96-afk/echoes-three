@@ -120,7 +120,10 @@ try {
   await page.waitForFunction((t0) => window.__echoes.tick - t0 > 3 * 240 + 60, { timeout: 600000, polling: 500 }, runTick0);
   await cmd('endRun', 'defeat');
   v = await waitPhase(['defeat']);
-  await page.waitForFunction(() => /#\d+/.test(document.querySelector('.rn-end .rn-summary')?.textContent || ''), { timeout: 60000, polling: 250 });
+  await page.waitForFunction(() => {
+    const l = window.__echoes.daily().last();
+    return !!l && l.state !== 'posting';
+  }, { timeout: 60000, polling: 250 });
   await settle();
   const end = await page.evaluate(() => ({
     head: document.querySelector('.rn-end .rn-headline')?.textContent,
