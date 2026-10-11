@@ -10,12 +10,17 @@
 //   daily-3-hud.png     the day's run, room 1
 //   daily-4-end.png     the end card with the board's answer
 //   daily-5-board.png   the day's screen again, the run on the board
+//   daily-6-practice.png    the day's screen once the counted run is spent
+//   daily-7-practice-hud.png   a practice run's HUD
+//   daily-8-practice-end.png   its end card: practice, not on the board
 //
 //   node tools/daily-browser.mjs [--url http://127.0.0.1:7821/] [--lang de] [--dir captures]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
 // ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader".
 import { mkdirSync } from 'node:fs';
 import puppeteer from 'puppeteer';
+import { dailySeed } from '../src/data/daily.js';
+import { VERSION } from '../src/version.js';
 
 const argv = process.argv.slice(2);
 const opt = (k, d = null) => {
@@ -40,7 +45,7 @@ const others = [
   ['Corvo', 'archer', 4, 9000],
 ];
 for (const [i, [name, cls, depth, ticks]] of others.entries()) {
-  await fetch(new URL('/daily/score', URL0), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id: `browser-probe-other-${i}-000`, name, cls, depth, ticks, won: false }) });
+  await fetch(new URL('/daily/score', URL0), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id: `browser-probe-other-${i}-000`, name, cls, depth, ticks, won: false, seed: dailySeed(today), version: VERSION }) });
 }
 
 const extra = (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean);
@@ -80,9 +85,9 @@ try {
     const c = document.querySelector('.cg-levels .cg-card[data-level="daily"]');
     const cards = [...document.querySelectorAll('.cg-levels .cg-card')];
     const r = c.getBoundingClientRect();
-    return { n: cards.length, last: cards[cards.length - 1] === c, locked: c.getAttribute('aria-disabled') === 'true', text: c.textContent.replace(/\s+/g, ' ').trim(), inView: r.right <= innerWidth && r.bottom <= innerHeight };
+    return { n: cards.length, last: cards.indexOf(c) === 5, locked: c.getAttribute('aria-disabled') === 'true', text: c.textContent.replace(/\s+/g, ' ').trim(), inView: r.right <= innerWidth && r.bottom <= innerHeight };
   });
-  check(sel.n === 6 && sel.last && !sel.locked && sel.inView, `the Daily card is the sixth card, open, on screen (${sel.text.slice(0, 120)})`);
+  check(sel.n >= 6 && sel.last && !sel.locked && sel.inView, `the Daily card is the sixth card, open, on screen (${sel.text.slice(0, 120)})`);
   await shot('daily-1-select');
   await page.click('.cg-levels .cg-card[data-level="daily"]');
 
@@ -97,6 +102,7 @@ try {
 
   // 3. The run: the day's seed, its relic and curse, the HUD says DAILY.
   let v = await waitPhase(['combat']);
+  const runTick0 = await page.evaluate(() => window.__echoes.tick);
   const st = await page.evaluate(() => {
     const r = window.__echoes.cmd('runState');
     return { daily: r.daily, act: r.act, challenge: r.challenge };
@@ -109,7 +115,9 @@ try {
 
   // 4. A fall ends it: the end card names the board place.
   await cmd('skipToRoom', 4);
-  await settle(2000);
+  // SHOP AND DAILY FIXES: the board refuses a run faster than 4 s a room, so
+  // the run stays live long enough for its three skipped rooms.
+  await page.waitForFunction((t0) => window.__echoes.tick - t0 > 3 * 240 + 60, { timeout: 600000, polling: 500 }, runTick0);
   await cmd('endRun', 'defeat');
   v = await waitPhase(['defeat']);
   await page.waitForFunction(() => /#\d+/.test(document.querySelector('.rn-end .rn-summary')?.textContent || ''), { timeout: 60000, polling: 250 });
@@ -133,7 +141,26 @@ try {
   const me = await page.evaluate(() => ({ me: document.querySelector('.dl-daily .dl-row.dl-me')?.textContent.replace(/\s+/g, ' ').trim(), best: document.querySelector('.dl-daily .dl-best')?.textContent }));
   check(/Kesh/.test(me.me || ''), `the player's row is marked: ${JSON.stringify(me)}`);
   await shot('daily-5-board');
-  await page.keyboard.press('Escape');
+  // 6. SHOP AND DAILY FIXES: the counted run is spent, so the next is practice.
+  const ds = await page.evaluate(() => ({ go: document.querySelector('.dl-daily .dl-go')?.textContent, once: document.querySelector('.dl-daily .dl-once')?.textContent, practice: document.querySelector('.dl-daily')?.classList.contains('dl-practice'), counted: window.__echoes.daily().counted(window.__echoes.daily().today()) }));
+  check(ds.practice && ds.counted === 'done' && (LANG || (ds.go === 'Practice run' && /off the board/.test(ds.once || ''))), `the day's screen offers practice now: ${JSON.stringify(ds)}`);
+  await shot('daily-6-practice');
+  const totalBefore = (await page.evaluate((u) => fetch(u).then((r) => r.json()), new URL(`/daily/board/${today}`, URL0).href)).total;
+  await page.click('.dl-daily .dl-go');
+  await waitPhase(['combat']);
+  await settle(5000);
+  const pst = await page.evaluate(() => ({ daily: window.__echoes.cmd('runState').daily, sub: document.querySelector('.hud-loc-sub')?.textContent }));
+  check(pst.daily && pst.daily.practice === true && (LANG || /^DAILY PRACTICE · ROOM 1\/8/.test(pst.sub || '')), `a practice run is live and says so: ${JSON.stringify(pst)}`);
+  await shot('daily-7-practice-hud');
+  await cmd('skipToRoom', 6);
+  await settle(2000);
+  await cmd('endRun', 'defeat');
+  await waitPhase(['defeat']);
+  await settle(3000);
+  const pend = await page.evaluate(() => ({ summary: document.querySelector('.rn-end .rn-summary')?.textContent.replace(/\s+/g, ' ').trim(), last: window.__echoes.daily().last(), best: window.__echoes.daily().localBest(window.__echoes.daily().today()) }));
+  const totalAfter = (await page.evaluate((u) => fetch(u).then((r) => r.json()), new URL(`/daily/board/${today}?me=x`, URL0).href)).total;
+  check(pend.last && pend.last.state === 'practice' && pend.best && pend.best.depth === 3 && totalAfter === totalBefore && (LANG || /Practice run · not on the board/.test(pend.summary || '')), `the practice run stays off the board: ${JSON.stringify({ last: pend.last, best: pend.best, totalBefore, totalAfter, summary: (pend.summary || '').slice(0, 160) })}`);
+  await shot('daily-8-practice-end');
 } catch (err) {
   check(false, `probe error: ${err && err.message ? err.message : err}`);
 }

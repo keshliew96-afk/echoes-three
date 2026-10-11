@@ -2261,11 +2261,8 @@
   "other": "{n} salas"
  },
  "#{rank} of {total} today": "#{rank} de {total} hoy",
- "#{rank} of {total} today · Your best today!": "#{rank} de {total} hoy · ¡Tu mejor de hoy!",
  "A new descent in {h} h {m} min": "Nuevo descenso en {h} h {m} min",
- "Best today: {place}": "Mejor de hoy: {place}",
  "BOARD": "CLASIFICACIÓN",
- "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Play as often as you like: your best run counts.": "Reglas de campaña desde el Nivel I · Desafío Estándar · nada equipado de Desbloqueos · un jugador. Juega cuantas veces quieras: cuenta tu mejor partida.",
  "Couldn’t reach the server. The run still counts on this device; the board will have it when you post a run online.": "No se pudo conectar con el servidor. La partida queda guardada en este dispositivo; entrará en la clasificación cuando termines una partida en línea.",
  "Curse: {name}": "Maldición: {name}",
  "DAILY": "DIARIO",
@@ -2300,7 +2297,6 @@
  "Today's board": "Clasificación de hoy",
  "Today's omen": "El presagio de hoy",
  "You have not gone down today.": "Hoy aún no has bajado.",
- "Your best today: <b>{place}</b> in {time}": "Tu mejor de hoy: <b>{place}</b> en {time}",
  "A barrow lord in a rusted helm, still keeping a watch nobody asked for.": "Un señor del túmulo con yelmo oxidado, que aún monta una guardia que nadie le pidió.",
  "A beast emptied out, with the Heart beating violet in its veins.": "Una bestia vaciada, con el Corazón latiendo violeta en sus venas.",
  "A bloated grave spider, heavy with young.": "Una araña de tumba hinchada, cargada de crías.",
@@ -2880,5 +2876,17 @@
  "Hollow Tide tint": "Tinte marea hueca",
  "Tidecaller effects burn in Hollow Tide colours. Cosmetic.": "Los efectos de la Llamamareas arden en colores marea hueca. Cosmético.",
  "Crowned tint": "Tinte coronado",
- "Archer effects burn in Crowned colours. Cosmetic.": "Los efectos del Arquero arden con los colores Coronado. Cosmético."
+ "Archer effects burn in Crowned colours. Cosmetic.": "Los efectos del Arquero arden con los colores Coronado. Cosmético.",
+ "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Your first run of the day counts on the board; every run after it is practice.": "Reglas de campaña desde el Nivel I · Desafío Estándar · nada equipado de Desbloqueos · un jugador. La primera partida del día cuenta para el marcador; las siguientes son de práctica.",
+ "Counted run unfinished · practice open": "Partida oficial sin terminar · práctica abierta",
+ "Counted today: {place}": "Oficial de hoy: {place}",
+ "DAILY PRACTICE · {where}": "PRÁCTICA DIARIA · {where}",
+ "Not posted: the board refused this run": "No enviado: el marcador rechazó esta partida",
+ "Not posted: today's counted run is already on the board": "No enviado: la partida oficial de hoy ya está en el marcador",
+ "Only this first run reaches the board.": "Solo esta primera partida llega al marcador.",
+ "Practice run": "Practicar",
+ "Practice run · not on the board": "Partida de práctica · fuera del marcador",
+ "Practice runs stay off the board.": "Las partidas de práctica no llegan al marcador.",
+ "Your counted run today was not finished.": "Tu partida oficial de hoy no terminó.",
+ "Your counted run today: <b>{place}</b> in {time}": "Tu partida oficial de hoy: <b>{place}</b> en {time}"
 }

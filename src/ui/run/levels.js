@@ -238,6 +238,8 @@ export function dailyInfo() {
     relic: omen.relic && RELICS[omen.relic] ? t(RELICS[omen.relic].name) : '—',
     curse: omen.curse && CURSES[omen.curse] ? t(CURSES[omen.curse].name) : '—',
     best: d && key ? d.localBest(key) : null,
+    // SHOP AND DAILY FIXES: 'open' | 'started' | 'done' (one counted run a day).
+    counted: d && key && typeof d.counted === 'function' ? d.counted(key) : 'open',
     unlocked: !!d && !!key && solo,
     lockLine: t('Single player only'),
   };
@@ -435,8 +437,10 @@ export function createLevelsScreen(ctx) {
       card.querySelector('.cg-o-relic').textContent = t('Relic: {name}', { name: info.relic });
       card.querySelector('.cg-o-curse').textContent = t('Curse: {name}', { name: info.curse });
       card.querySelector('.cg-status').innerHTML = info.best
-        ? `<b>${t('Best today: {place}', { place: placeLine(info.best.depth, info.best.won) })}</b> · ${clockOf(info.best.ticks)}`
-        : t('Not played today');
+        ? `<b>${t('Counted today: {place}', { place: placeLine(info.best.depth, info.best.won) })}</b> · ${clockOf(info.best.ticks)}`
+        : info.counted === 'open'
+          ? t('Not played today')
+          : t('Counted run unfinished · practice open');
       card.querySelector('.cg-lock-t').textContent = info.lockLine;
       card.setAttribute('aria-label', info.unlocked ? t('The Daily Descent.') : t('The Daily Descent. Locked: {line}.', { line: info.lockLine }));
       card.addEventListener('click', () => {

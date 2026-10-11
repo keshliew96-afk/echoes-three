@@ -865,6 +865,13 @@ export const RUN_CSS = `
   #run-screen.rn-compact .rn-shop .rn-buttons { margin-top: 6px; }
   #run-screen.rn-compact .rn-shop .rn-lamp { top: -6px; height: 120px; }
 
+  /* SHOP AND DAILY FIXES (ui/run/shop.js rn-tight): a short window with the
+     relic rack up — the binding quote steps aside and the rumour keeps to one
+     line (its whole text on hover), so the docked page stays in the window. */
+  #run-screen .rn-shop.rn-tight .rn-bind { display: none; }
+  #run-screen .rn-shop.rn-tight .rn-rumour { margin-top: 2px; margin-bottom: 2px; }
+  #run-screen .rn-shop.rn-tight .rn-rumour span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
   #run-screen.rn-compact .rn-doors { gap: 34px; margin: 2px 0 0; }
   #run-screen.rn-compact .rn-legend { font-size: 16px; margin-top: 10px; gap: 18px; }
   #run-screen.rn-compact .rn-legend span b { font-size: 18px; }

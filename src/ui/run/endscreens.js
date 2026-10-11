@@ -288,14 +288,18 @@ export function createEndScreen({ run }) {
       const d = service('daily');
       const post = d ? d.last() : null;
       const mine = post && post.key === daily.key && post.ticks === s.ticks ? post : null;
-      const board = !mine
+      const board = daily.practice
+        ? t('Practice run · not on the board')
+        : !mine
         ? t('Not posted')
         : mine.state === 'posting'
         ? t('Posting to the board…')
         : mine.state === 'posted'
-        ? mine.best
-          ? t('#{rank} of {total} today · Your best today!', { rank: mine.rank, total: mine.total })
-          : t('#{rank} of {total} today', { rank: mine.rank, total: mine.total })
+        ? t('#{rank} of {total} today', { rank: mine.rank, total: mine.total })
+        : mine.error === 'counted'
+        ? t("Not posted: today's counted run is already on the board")
+        : mine.error === 'implausible' || mine.error === 'bad_seed' || mine.error === 'bad_version'
+        ? t('Not posted: the board refused this run')
         : t('Not posted: the server could not be reached');
       pairs.push([t('DAILY'), dayLabel(daily.key)], [t('BOARD'), board]);
       pairs.push([t('DEPTH REACHED'), `${placeLine(daily.depth, daily.won)} · ${clockOf(s.ticks)}`]);

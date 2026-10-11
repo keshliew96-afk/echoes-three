@@ -2286,11 +2286,8 @@
   "other": "{n} комнаты"
  },
  "#{rank} of {total} today": "№{rank} из {total} сегодня",
- "#{rank} of {total} today · Your best today!": "№{rank} из {total} сегодня · Твой лучший результат за день!",
  "A new descent in {h} h {m} min": "Новый спуск через {h} ч {m} мин",
- "Best today: {place}": "Лучший сегодня: {place}",
  "BOARD": "ТАБЛИЦА",
- "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Play as often as you like: your best run counts.": "Правила кампании с уровня I · стандартная сложность · ничего из «Открытий» · только одиночная игра. Играй сколько хочешь: засчитывается лучший забег.",
  "Couldn’t reach the server. The run still counts on this device; the board will have it when you post a run online.": "Не удалось связаться с сервером. Забег сохранён на этом устройстве; он попадёт в таблицу, когда ты завершишь забег онлайн.",
  "Curse: {name}": "Проклятие: {name}",
  "DAILY": "ЕЖЕДНЕВНЫЙ",
@@ -2325,7 +2322,6 @@
  "Today's board": "Таблица дня",
  "Today's omen": "Знамение дня",
  "You have not gone down today.": "Сегодня ты ещё не спускался.",
- "Your best today: <b>{place}</b> in {time}": "Твой лучший результат сегодня: <b>{place}</b> за {time}",
  "A barrow lord in a rusted helm, still keeping a watch nobody asked for.": "Курганный владыка в ржавом шлеме, всё ещё несущий стражу, о которой никто не просил.",
  "A beast emptied out, with the Heart beating violet in its veins.": "Опустошённый зверь, в чьих жилах лилово бьётся Сердце.",
  "A bloated grave spider, heavy with young.": "Раздутая могильная паучиха, тяжёлая от потомства.",
@@ -2910,5 +2906,17 @@
  "Hollow Tide tint": "Оттенок «Полый прилив»",
  "Tidecaller effects burn in Hollow Tide colours. Cosmetic.": "Эффекты заклинательницы приливов горят цветами «Полого прилива». Только внешний вид.",
  "Crowned tint": "Оттенок «Коронованный»",
- "Archer effects burn in Crowned colours. Cosmetic.": "Эффекты Лучника в цветах «Коронованный». Косметика."
+ "Archer effects burn in Crowned colours. Cosmetic.": "Эффекты Лучника в цветах «Коронованный». Косметика.",
+ "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Your first run of the day counts on the board; every run after it is practice.": "Правила кампании с уровня I · стандартная сложность · ничего из «Открытий» · только одиночная игра. В таблицу идёт первый забег дня; все следующие — тренировка.",
+ "Counted run unfinished · practice open": "Зачётный забег не закончен · можно тренироваться",
+ "Counted today: {place}": "Зачёт сегодня: {place}",
+ "DAILY PRACTICE · {where}": "ЕЖЕДНЕВНЫЙ · ТРЕНИРОВКА · {where}",
+ "Not posted: the board refused this run": "Не отправлено: таблица отклонила этот забег",
+ "Not posted: today's counted run is already on the board": "Не отправлено: сегодняшний зачётный забег уже в таблице",
+ "Only this first run reaches the board.": "В таблицу попадёт только этот первый забег.",
+ "Practice run": "Тренировка",
+ "Practice run · not on the board": "Тренировочный забег · не в таблице",
+ "Practice runs stay off the board.": "Тренировочные забеги не попадают в таблицу.",
+ "Your counted run today was not finished.": "Твой сегодняшний зачётный забег не закончен.",
+ "Your counted run today: <b>{place}</b> in {time}": "Твой зачётный забег сегодня: <b>{place}</b> за {time}"
 }

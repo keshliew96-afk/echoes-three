@@ -8,8 +8,13 @@
 //   rules    Standard challenge and no boons whatever is asked; the summary
 //            carries the day and the depth reached; a plain campaign carries
 //            no daily key
-//   board    the server store: best run per player, deeper then faster,
-//            today and yesterday only, bad input refused, Upstash commands
+//   practice a practice run (the day's counted run spent) is the same run,
+//            marked practice; a counted run carries no mark
+//   board    the server store: one counted run per player and day, deeper
+//            then faster, today and yesterday only, bad input refused,
+//            Upstash commands
+//   plausible version line, the day's seed, a won run's depth and the
+//            time per room are checked (content plan 3, slice 14)
 //   http     the session server's /daily/ routes end to end
 //
 //   node tools/daily-probe.mjs [--out captures/daily-probe.json]
@@ -28,7 +33,9 @@ const { createWorld } = await import(u('src/sim/world.js'));
 const { emptySnapshot } = await import(u('src/core/intents.js'));
 const { dailySeed, dailyLevelSeed, dailyDepth, depthPlace } = await import(u('src/data/daily.js'));
 const { dailyOmen, RELICS, CURSES } = await import(u('src/sim/relics.js'));
-const { createDailyStore } = await import(u('server/daily.mjs'));
+const { createDailyStore, MIN_ROOM_TICKS, versionOk } = await import(u('server/daily.mjs'));
+const { VERSION } = await import(u('src/version.js'));
+const bumpPatch = (v, d) => v.replace(/\d+$/, (n) => String(Number(n) + d));
 const { createEchoesServer } = await import(u('server/server.mjs'));
 
 const argv = process.argv.slice(2);
@@ -152,6 +159,26 @@ async function clearLevelOne(w, extraDraws) {
     q.step(2);
     return !('daily' in q.run().view());
   })());
+  // SHOP AND DAILY FIXES: a practice run carries the mark into its view and
+  // summary (the client never posts it); a counted run carries none.
+  {
+    const q = build(3);
+    q.world.cmd('startCampaign', { daily: { key: DAY, practice: true } });
+    q.step(3);
+    const qv = q.run().view();
+    q.world.cmd('abandonRun', 'probe');
+    q.step(2);
+    const qs = q.run().view().summary;
+    const qd = qs && qs.campaign && qs.campaign.daily;
+    const r = build(3);
+    r.world.cmd('startCampaign', { daily: { key: DAY } });
+    r.step(3);
+    const rv2 = r.run().view();
+    const rr = r.log.find((e) => e.type === 'run_start');
+    const qq = q.log.find((e) => e.type === 'run_start');
+    check('practice', 'a practice run is the same run, marked practice in view and summary', qv.daily && qv.daily.practice === true && qd && qd.practice === true && qd.seed === dailySeed(DAY) && rr && qq && rr.seed === qq.seed && JSON.stringify(rr.modes) === JSON.stringify(qq.modes), { view: qv.daily, summary: qd });
+    check('practice', 'a counted run carries no practice mark', rv2.daily && !('practice' in rv2.daily));
+  }
   check('rules', 'depth: a cleared run counts every room', dailyDepth({ index: 4, rooms: 8, won: true, levels: 4 }) === 32 && dailyDepth({ index: 1, rooms: 0 }) === 0 && dailyDepth({ index: 3, rooms: 5 }) === 21);
 }
 
@@ -160,29 +187,48 @@ async function clearLevelOne(w, extraDraws) {
   let now = Date.parse(`${DAY}T10:00:00Z`);
   const s = createDailyStore({ env: {}, now: () => now });
   const id = (n) => `player-${String(n).padStart(12, '0')}`;
-  const post = (n, depth, ticks, extra = {}) => s.score({ key: DAY, id: id(n), name: `P${n}`, cls: 'archer', depth, ticks, won: false, ...extra }, `10.0.0.${n}`);
+  const ok = { seed: dailySeed(DAY), version: VERSION };
+  const post = (n, depth, ticks, extra = {}) => s.score({ key: DAY, id: id(n), name: `P${n}`, cls: 'archer', depth, ticks, won: false, ...ok, ...extra }, `10.0.0.${n}`);
   await post(1, 10, 9000);
   await post(2, 12, 20000);
   await post(3, 10, 7000);
-  const r1 = await post(1, 8, 5000); // shallower: not kept
-  check('board', 'a worse run keeps the best', r1.status === 200 && r1.body.best === false && r1.body.entry.depth === 10, r1.body);
-  const r2 = await post(1, 10, 6000); // same depth, faster: kept
-  check('board', 'the same depth, faster, replaces it', r2.body.best === true && r2.body.rank === 2, { rank: r2.body.rank });
+  // SHOP AND DAILY FIXES: one counted run a day — the first post stands.
+  const r1 = await post(1, 11, 9500);
+  check('board', 'a second run the same day is refused (one counted run)', r1.status === 409 && r1.body.error === 'counted', r1.body);
+  const r2 = await post(1, 10, 9000); // the same run again (a retry)
+  check('board', 'the same run sent again is answered, not doubled', r2.status === 200 && r2.body.ok && r2.body.best === false && r2.body.rank === 3, r2.body);
   const b = await s.board(DAY, id(3), '10.0.0.9');
-  check('board', 'deeper first, then faster', b.body.entries.map((e) => e.name).join(',') === 'P2,P1,P3' && b.body.total === 3 && b.body.me && b.body.me.rank === 3, b.body.entries.map((e) => `${e.name}:${e.depth}:${e.ticks}`));
+  check('board', 'deeper first, then faster', b.body.entries.map((e) => e.name).join(',') === 'P2,P3,P1' && b.body.total === 3 && b.body.me && b.body.me.rank === 2, b.body.entries.map((e) => `${e.name}:${e.depth}:${e.ticks}`));
   check('board', 'the board never shows ids', !JSON.stringify(b.body).includes('player-'));
-  const old = await s.score({ key: '2026-10-06', id: id(4), name: 'X', depth: 3, ticks: 100 }, '10.0.0.4');
+  // Plausibility: version line, the day's seed, a won run's depth, time per room.
+  const pl = await Promise.all([
+    post(20, 5, 9000, { version: undefined }),
+    post(21, 5, 9000, { version: '0.4.273' }),
+    post(22, 5, 9000, { version: bumpPatch(VERSION, 1) }),
+    post(23, 5, 9000, { seed: dailySeed('2026-10-09') }),
+    post(24, 5, 9000, { seed: undefined }),
+    post(25, 10, 90000, { won: true }),
+    post(26, 32, 60 * 60, { won: true }),
+    post(27, 8, 8 * MIN_ROOM_TICKS - 1),
+  ]);
+  const want = ['bad_version', 'bad_version', 'bad_version', 'bad_seed', 'bad_seed', 'implausible', 'implausible', 'implausible'];
+  check('plausible', 'wrong version, seed, won depth and too fast a time are refused', pl.every((r, i) => r.status === 400 && r.body.error === want[i]), pl.map((r) => r.body.error));
+  const fine = await Promise.all([post(30, 32, 40000, { won: true }), post(31, 8, 8 * MIN_ROOM_TICKS), post(32, 0, 60), post(33, 5, 9000, { version: bumpPatch(VERSION, -1) })]);
+  check('plausible', 'a won run of every room, a fast but possible run, an older build of this line are taken', fine.every((r) => r.status === 200 && r.body.ok), fine.map((r) => r.body.error || r.body.rank));
+  check('plausible', 'versionOk keeps to the line and refuses newer builds', versionOk('0.5.1', '0.5.274') && versionOk('0.5.274', '0.5.274') && !versionOk('0.5.275', '0.5.274') && !versionOk('0.6.0', '0.5.274') && !versionOk('probe', '0.5.274'));
+  const old = await s.score({ key: '2026-10-06', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok }, '10.0.0.4');
   check('board', 'an old day is closed', old.status === 400 && old.body.error === 'closed_day');
-  const fut = await s.score({ key: '2026-10-09', id: id(4), name: 'X', depth: 3, ticks: 100 }, '10.0.0.4');
+  const fut = await s.score({ key: '2026-10-09', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok }, '10.0.0.4');
   check('board', 'a future day is closed', fut.status === 400 && fut.body.error === 'closed_day');
   now = Date.parse('2026-10-09T00:20:00Z');
-  const late = await s.score({ key: DAY, id: id(5), name: '<b>Late</b>  Owl', depth: 4, ticks: 100 }, '10.0.0.5');
+  const late = await s.score({ key: DAY, id: id(5), name: '<b>Late</b>  Owl', depth: 4, ticks: 1000, ...ok }, '10.0.0.5');
   check('board', 'yesterday still takes a run past midnight; names cleaned', late.status === 200 && late.body.entry.name === 'bLate/b Owl', late.body.entry);
   const bad = await Promise.all([
-    s.score({ key: DAY, id: 'short', depth: 3, ticks: 100 }, 'x'),
-    s.score({ key: DAY, id: id(6), depth: 999, ticks: 100 }, 'x'),
-    s.score({ key: DAY, id: id(6), depth: 3, ticks: 0 }, 'x'),
-    s.score({ key: 'yesterday', id: id(6), depth: 3, ticks: 10 }, 'x'),
+    s.score({ key: DAY, id: 'short', depth: 3, ticks: 1000, ...ok }, 'x'),
+    s.score({ key: DAY, id: id(6), depth: 999, ticks: 1000, ...ok }, 'x'),
+    s.score({ key: DAY, id: id(6), depth: 33, ticks: 99000, won: true, ...ok }, 'x'),
+    s.score({ key: DAY, id: id(6), depth: 3, ticks: 0, ...ok }, 'x'),
+    s.score({ key: 'yesterday', id: id(6), depth: 3, ticks: 1000, ...ok }, 'x'),
   ]);
   check('board', 'bad id, depth, time and day are refused', bad.every((r) => r.status === 400), bad.map((r) => r.body.error));
   // Upstash: the same store over the REST command API (a fake Redis).
@@ -201,8 +247,10 @@ async function clearLevelOne(w, extraDraws) {
     return { ok: true, json: async () => ({ result }) };
   };
   const rs = createDailyStore({ env: { ECHOES_CLOUD_REDIS_URL: 'https://fake.upstash.io/', ECHOES_CLOUD_REDIS_TOKEN: 't' }, fetchImpl: fakeFetch, now: () => Date.parse(`${DAY}T10:00:00Z`) });
-  await rs.score({ key: DAY, id: id(1), name: 'A', depth: 5, ticks: 500 }, 'r');
-  await rs.score({ key: DAY, id: id(2), name: 'B', depth: 7, ticks: 900 }, 'r');
+  await rs.score({ key: DAY, id: id(1), name: 'A', depth: 5, ticks: 5000, ...ok }, 'r');
+  await rs.score({ key: DAY, id: id(2), name: 'B', depth: 7, ticks: 9000, ...ok }, 'r');
+  const rd = await rs.score({ key: DAY, id: id(2), name: 'B', depth: 8, ticks: 9900, ...ok }, 'r');
+  check('board', 'Upstash: a second run the same day is refused too', rd.status === 409 && rd.body.error === 'counted');
   const rb = await rs.board(DAY, null, 'r');
   check('board', 'Upstash: kept under echoes:daily:<day>, durable, ranked', rs.durable && rs.kind === 'redis' && hashes.has(`echoes:daily:${DAY}`) && rb.body.entries.map((e) => e.name).join(',') === 'B,A' && cmds.includes('EXPIRE'), { cmds: [...new Set(cmds)] });
 }
@@ -214,7 +262,7 @@ async function clearLevelOne(w, extraDraws) {
   const base = `http://127.0.0.1:${info.port}`;
   const today = new Date().toISOString().slice(0, 10);
   const id = 'http-probe-000000000001';
-  const p = await fetch(`${base}/daily/score`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id, name: 'Probe', cls: 'tank', depth: 9, ticks: 3600, won: false, version: 'probe' }) });
+  const p = await fetch(`${base}/daily/score`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id, name: 'Probe', cls: 'tank', depth: 9, ticks: 9 * 600, won: false, seed: dailySeed(today), version: VERSION }) });
   const pj = await p.json();
   check('http', 'POST /daily/score', p.status === 200 && pj.ok && pj.rank === 1 && pj.store === 'memory' && pj.durable === false, pj);
   const g = await fetch(`${base}/daily/board/${today}?me=${id}`);

@@ -2,10 +2,15 @@
 // dependencies.
 //
 //   GET  /daily/board/<YYYY-MM-DD>[?me=<id>] -> { ok, key, today, entries: [...top], total, me?, store, durable }
-//   POST /daily/score { key, id, name, cls, depth, won, ticks, version }
+//   POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version }
 //                                          -> { ok, rank, total, best, entry }
 //
-// One entry per player per day: the player's best run (deeper, then faster).
+// One entry per player per day: the player's counted run, the day's first
+// (the game posts only that one; a second, different run for the same id and
+// day is refused with 'counted'). A score must also be plausible: the
+// game's version line, the day's own seed, a depth the campaign has, a won
+// run that cleared every room, and a time no shorter than MIN_ROOM_TICKS per
+// room cleared (SHOP AND DAILY FIXES, content plan 3 slice 14).
 // `id` is a random id the game keeps on the device (never shown); the board
 // shows the name. Only today's board and yesterday's (a run that finished
 // past midnight UTC) take scores; boards are kept for KEEP_DAYS.
@@ -14,14 +19,31 @@
 // (ECHOES_CLOUD_REDIS_URL + ECHOES_CLOUD_REDIS_TOKEN), one hash per day;
 // without it, in this process's memory (gone on a restart or redeploy, like
 // cloud saves on the free Render disk).
-import { dailyKey, dayDiff, isDailyKey, compareEntries, betterEntry, cleanName, DAILY_RULES } from '../src/data/daily.js';
+import { dailyKey, dayDiff, isDailyKey, compareEntries, cleanName, dailySeed, DAILY_RULES } from '../src/data/daily.js';
+import { CAMPAIGN_ACTS } from '../src/data/levels.js';
+import { VERSION } from '../src/version.js';
 
 const KEEP_DAYS = 30;
 const MAX_ENTRIES = 5000; // per day, in memory
 const CLASSES = new Set(['healer', 'tank', 'swordsman', 'archer', 'tidecaller']);
 const RATE = { score: 30, board: 120, windowMs: 10 * 60 * 1000 };
 const MAX_TICKS = 60 * 60 * 60 * 6; // six hours of play
-const MAX_DEPTH = DAILY_RULES.roomsPerLevel * 8;
+// Every room of every level (a won run).
+const MAX_DEPTH = DAILY_RULES.roomsPerLevel * CAMPAIGN_ACTS;
+// The fewest ticks a cleared room may average: 4 s. The autopilot's fastest
+// whole level over 64 seeds took 6046 ticks (756 a room, shop included), so a
+// real run sits far above this; a made-up post (depth 32 in a minute) does not.
+export const MIN_ROOM_TICKS = 240;
+const VERSION_RE = /^(\d+)\.(\d+)\.(\d+)$/;
+// The game's version must be this server's line (major.minor) and no newer
+// than the server: the day's relic and curse come from the version's relic
+// list, and a build the server does not know cannot be checked.
+export function versionOk(v, server = VERSION) {
+  const a = VERSION_RE.exec(typeof v === 'string' ? v : '');
+  const b = VERSION_RE.exec(server);
+  if (!a || !b) return false;
+  return a[1] === b[1] && a[2] === b[2] && Number(a[3]) <= Number(b[3]);
+}
 
 function memoryBackend() {
   const days = new Map(); // key -> Map(id -> entry)
@@ -88,7 +110,7 @@ function redisBackend(url, token, fetchImpl = globalThis.fetch) {
 }
 
 // A score as the game posts it: checked, cleaned, or a reason it is refused.
-export function checkScore(b, today) {
+export function checkScore(b, today, { version = VERSION } = {}) {
   if (!b || typeof b !== 'object' || Array.isArray(b)) return { error: 'bad_score' };
   if (!isDailyKey(b.key)) return { error: 'bad_day' };
   const age = dayDiff(b.key, today);
@@ -98,6 +120,10 @@ export function checkScore(b, today) {
   const ticks = Number(b.ticks);
   if (!Number.isInteger(depth) || depth < 0 || depth > MAX_DEPTH) return { error: 'bad_score' };
   if (!Number.isInteger(ticks) || ticks <= 0 || ticks > MAX_TICKS) return { error: 'bad_score' };
+  if (!versionOk(b.version, version)) return { error: 'bad_version' };
+  if (Number(b.seed) !== dailySeed(b.key)) return { error: 'bad_seed' };
+  if (b.won && depth !== MAX_DEPTH) return { error: 'implausible' };
+  if (ticks < depth * MIN_ROOM_TICKS) return { error: 'implausible' };
   return {
     entry: {
       name: cleanName(b.name),
@@ -105,7 +131,7 @@ export function checkScore(b, today) {
       depth,
       won: !!b.won,
       ticks,
-      version: typeof b.version === 'string' ? b.version.slice(0, 16) : null,
+      version: b.version,
     },
   };
 }
@@ -157,7 +183,12 @@ export function createDailyStore({ env = process.env, fetchImpl, now = () => Dat
     if (c.error) return { status: 400, body: { ok: false, error: c.error, today } };
     const entry = { ...c.entry, id: b.id, at: new Date(now()).toISOString() };
     const cur = await backend.get(b.key, b.id);
-    const best = betterEntry(entry, cur);
+    // One counted run a day: the first post stands. The same run sent again
+    // (a retry after a lost answer) is answered as before; another is refused.
+    if (cur && !(cur.depth === entry.depth && cur.ticks === entry.ticks && !!cur.won === entry.won)) {
+      return { status: 409, body: { ok: false, error: 'counted', today } };
+    }
+    const best = !cur;
     if (best) {
       const ok = await backend.put(b.key, b.id, entry);
       if (!ok) return { status: 503, body: { ok: false, error: 'full' } };

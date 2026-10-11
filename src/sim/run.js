@@ -406,7 +406,9 @@ export function createRunSystem({
     // ENDLESS: an endless descent always sets out from the first level.
     // DAILY DESCENT (docs/DAILY.md): the day's shared run — Level 1 on,
     // Standard, nothing equipped; never endless, never the tutorial.
-    const daily = o.daily && isDailyKey(o.daily.key) ? { key: o.daily.key } : null;
+    // SHOP AND DAILY FIXES: `practice` = the day's counted run is spent
+    // (src/daily/client.js), so this one never reaches the board.
+    const daily = o.daily && isDailyKey(o.daily.key) ? { key: o.daily.key, ...(o.daily.practice ? { practice: true } : {}) } : null;
     const endless = !!o.endless && !daily;
     // BOSS RUSH (docs/BOSS_RUSH.md): the bosses back to back from Level 1's;
     // never endless, never the Daily.
@@ -447,7 +449,7 @@ export function createRunSystem({
     act = ACT_IDS.includes(Number(a)) ? Number(a) : 1;
     challenge = CHALLENGE[c] ? c : 'standard';
     // DAILY: the day's seed, whatever stream the session was on.
-    const day = daily && mode === 'campaign' ? { key: daily.key, seed: dailySeed(daily.key) } : null;
+    const day = daily && mode === 'campaign' ? { key: daily.key, seed: dailySeed(daily.key), practice: !!daily.practice } : null;
     if (day) reseedTo(day.seed);
     frame = rollFrame();
     active = true;
@@ -485,7 +487,7 @@ export function createRunSystem({
       // DAILY: present only on the day's run (the day's relic and curse).
       ...(day
         ? {
-            daily: { key: day.key, seed: day.seed, ...dailyOmen(day.seed) },
+            daily: { key: day.key, seed: day.seed, ...dailyOmen(day.seed), ...(day.practice ? { practice: true } : {}) },
           }
         : {}),
     };
@@ -2406,6 +2408,8 @@ export function createRunSystem({
                     curse: campaign.daily.curse,
                     depth: dailyDepth({ index: campaign.index, rooms: roomsDone, won: result === 'victory', levels: campaign.index }),
                     won: result === 'victory',
+                    seed: campaign.daily.seed,
+                    ...(campaign.daily.practice ? { practice: true } : {}),
                   },
                 }
               : {}),
@@ -2636,7 +2640,7 @@ export function createRunSystem({
       // ENDLESS: present only on an endless descent (hash-stable view).
       ...(endlessDepth() ? { endless: { depth: endlessDepth(), won: !!campaign.won } } : {}),
       // DAILY: present only on the day's run (hash-stable view).
-      ...(active && campaign && campaign.daily ? { daily: { key: campaign.daily.key } } : {}),
+      ...(active && campaign && campaign.daily ? { daily: { key: campaign.daily.key, ...(campaign.daily.practice ? { practice: true } : {}) } } : {}),
       // BOSS RUSH: present only on a rush (hash-stable view).
       ...(active && campaign && campaign.rush ? { rush: { fight: campaign.index, fights: campaign.rush.fights } } : {}),
       // TUTORIAL: present only in the guided first room (hash-stable view).

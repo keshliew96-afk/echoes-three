@@ -2261,11 +2261,8 @@
   "other": "{n} salas"
  },
  "#{rank} of {total} today": "#{rank} de {total} hoje",
- "#{rank} of {total} today · Your best today!": "#{rank} de {total} hoje · Seu melhor de hoje!",
  "A new descent in {h} h {m} min": "Nova descida em {h} h {m} min",
- "Best today: {place}": "Melhor de hoje: {place}",
  "BOARD": "PLACAR",
- "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Play as often as you like: your best run counts.": "Regras de campanha a partir do Nível I · Desafio Padrão · nada equipado de Desbloqueios · um jogador. Jogue quantas vezes quiser: vale sua melhor partida.",
  "Couldn’t reach the server. The run still counts on this device; the board will have it when you post a run online.": "Não foi possível alcançar o servidor. A partida fica neste dispositivo; ela entra no placar quando você terminar uma partida online.",
  "Curse: {name}": "Maldição: {name}",
  "DAILY": "DIÁRIA",
@@ -2300,7 +2297,6 @@
  "Today's board": "Placar de hoje",
  "Today's omen": "O presságio de hoje",
  "You have not gone down today.": "Você ainda não desceu hoje.",
- "Your best today: <b>{place}</b> in {time}": "Seu melhor de hoje: <b>{place}</b> em {time}",
  "A barrow lord in a rusted helm, still keeping a watch nobody asked for.": "Um senhor do túmulo de elmo enferrujado, ainda montando uma guarda que ninguém pediu.",
  "A beast emptied out, with the Heart beating violet in its veins.": "Uma fera esvaziada, com o Coração pulsando violeta nas veias.",
  "A bloated grave spider, heavy with young.": "Uma aranha de cova inchada, pesada de filhotes.",
@@ -2880,5 +2876,17 @@
  "Hollow Tide tint": "Tom Maré Oca",
  "Tidecaller effects burn in Hollow Tide colours. Cosmetic.": "Os efeitos da Chama-marés brilham nas cores Maré Oca. Cosmético.",
  "Crowned tint": "Tom Coroado",
- "Archer effects burn in Crowned colours. Cosmetic.": "Os efeitos do Arqueiro ardem nas cores Coroado. Cosmético."
+ "Archer effects burn in Crowned colours. Cosmetic.": "Os efeitos do Arqueiro ardem nas cores Coroado. Cosmético.",
+ "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Your first run of the day counts on the board; every run after it is practice.": "Regras de campanha a partir do Nível I · Desafio Padrão · nada equipado de Desbloqueios · um jogador. A primeira partida do dia vale para o placar; as seguintes são treino.",
+ "Counted run unfinished · practice open": "Partida oficial inacabada · treino liberado",
+ "Counted today: {place}": "Oficial de hoje: {place}",
+ "DAILY PRACTICE · {where}": "TREINO DIÁRIO · {where}",
+ "Not posted: the board refused this run": "Não enviado: o placar recusou esta partida",
+ "Not posted: today's counted run is already on the board": "Não enviado: a partida oficial de hoje já está no placar",
+ "Only this first run reaches the board.": "Só esta primeira partida chega ao placar.",
+ "Practice run": "Treinar",
+ "Practice run · not on the board": "Partida de treino · fora do placar",
+ "Practice runs stay off the board.": "Partidas de treino não chegam ao placar.",
+ "Your counted run today was not finished.": "Sua partida oficial de hoje não terminou.",
+ "Your counted run today: <b>{place}</b> in {time}": "Sua partida oficial de hoje: <b>{place}</b> em {time}"
 }

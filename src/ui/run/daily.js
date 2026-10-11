@@ -84,6 +84,8 @@ function installStyle() {
 .dl-daily .dl-rules { font-size: ${px(18)}; color: ${P.warmGrey}; line-height: 1.4; }
 .dl-daily .dl-best { font-size: ${px(20)}; color: ${P.parchment}; }
 .dl-daily .dl-best b { color: ${P.hearthAmber}; }
+.dl-daily .dl-once { font-size: ${px(18)}; color: ${P.hearthAmber}; font-weight: 700; }
+.dl-daily.dl-practice .dl-once { color: ${P.warmGrey}; }
 .dl-daily .dl-board {
   border-radius: ${px(14)}; border: max(1px, ${px(2)}) solid ${P.warmGrey}55; background: #00000033;
   padding: ${px(8)} ${px(10)}; min-height: ${px(330)}; display: flex; flex-direction: column;
@@ -145,8 +147,9 @@ export function createDailyScreen(ctx) {
           <div class="dl-label">${t("Today's omen")}</div>
           <div class="dl-omen dl-relic"><div class="dl-icon"></div><div><div class="dl-kind"></div><div class="dl-name"></div><div class="dl-text"></div></div></div>
           <div class="dl-omen dl-curse"><div class="dl-icon"></div><div><div class="dl-kind"></div><div class="dl-name"></div><div class="dl-text"></div></div></div>
-          <div class="dl-rules">${t('Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Play as often as you like: your best run counts.')}</div>
+          <div class="dl-rules">${t('Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Your first run of the day counts on the board; every run after it is practice.')}</div>
           <div class="dl-best"></div>
+          <div class="dl-once"></div>
         </div>
         <div class="dl-col">
           <div class="dl-label">${t("Today's board")}</div>
@@ -159,7 +162,7 @@ export function createDailyScreen(ctx) {
         <button type="button" class="ap-btn dl-back" data-nav>${t('Back to camp')}</button>
       </div>
       <div class="dl-foot">
-        <span><b>E</b><b>Enter</b>${t('Set out')}</span>
+        <span><b>E</b><b>Enter</b><span class="dl-footgo">${t('Set out')}</span></span>
         <span><b>R</b>${t('Refresh the board')}</span>
         <span><b>Esc</b>${t('Back to camp')}</span>
       </div>
@@ -168,6 +171,7 @@ export function createDailyScreen(ctx) {
   const boardEl = el.querySelector('.dl-board');
   const boardNote = el.querySelector('.dl-boardnote');
   const bestEl = el.querySelector('.dl-best');
+  const practiceEl = el.querySelector('.dl-once');
   let p = null;
   let settled = false;
   let key = null;
@@ -214,11 +218,23 @@ export function createDailyScreen(ctx) {
     if (!d || !key) return;
     shown = d.rev();
     const mine = d.localBest(key);
+    const state = typeof d.counted === 'function' ? d.counted(key) : 'open';
     const { h, m } = untilNext();
     const next = t('A new descent in {h} h {m} min', { h, m });
+    // SHOP AND DAILY FIXES: one counted run a day, then practice.
     bestEl.innerHTML = mine
-      ? `${t('Your best today: <b>{place}</b> in {time}', { place: esc(placeLine(mine.depth, mine.won)), time: clockOf(mine.ticks) })} · ${esc(next)}`
-      : `${t('You have not gone down today.')} · ${esc(next)}`;
+      ? `${t('Your counted run today: <b>{place}</b> in {time}', { place: esc(placeLine(mine.depth, mine.won)), time: clockOf(mine.ticks) })} · ${esc(next)}`
+      : state === 'open'
+        ? `${t('You have not gone down today.')} · ${esc(next)}`
+        : `${t('Your counted run today was not finished.')} · ${esc(next)}`;
+    const practice = state !== 'open';
+    el.classList.toggle('dl-practice', practice);
+    const go = el.querySelector('.dl-go');
+    const goLabel = practice ? t('Practice run') : t('Set out');
+    if (go.textContent !== goLabel) go.textContent = goLabel;
+    const footGo = el.querySelector('.dl-footgo');
+    if (footGo.textContent !== goLabel) footGo.textContent = goLabel;
+    practiceEl.textContent = practice ? t('Practice runs stay off the board.') : t('Only this first run reaches the board.');
     const b = d.cached(key);
     if (!b) {
       boardEl.innerHTML = `<div class="dl-empty">${t('Reading the board…')}</div>`;
@@ -303,6 +319,9 @@ export function createDailyScreen(ctx) {
       relic: el.querySelector('.dl-relic .dl-name').textContent,
       curse: el.querySelector('.dl-curse .dl-name').textContent,
       best: bestEl.textContent,
+      practice: el.classList.contains('dl-practice'),
+      go: el.querySelector('.dl-go').textContent,
+      once: practiceEl.textContent,
       board: [...boardEl.querySelectorAll('.dl-row:not(.dl-hd)')].map((r) => r.textContent.replace(/\s+/g, ' ').trim()),
       note: boardNote.textContent,
       empty: (boardEl.querySelector('.dl-empty') || {}).textContent || null,
