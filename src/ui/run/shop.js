@@ -132,6 +132,9 @@ const RF_COIN_N = 6;
 const RF_COIN_MS = 420;
 const RF_TAIL_MS = 1100; // the rebuilt half runs at least this long
 
+// SHOP AND DAILY FIXES: windows under this height take the tight reflow
+// when the relic rack is up (see the twin shelf note below).
+const TIGHT_BELOW_H = 700;
 const clamp01 = (k) => Math.max(0, Math.min(1, k));
 // Hearth Amber #E8A23D warmed toward its lit tone by k, per channel — the
 // resting SOLD ribbon breathes with this instead of stepping between two
@@ -389,6 +392,14 @@ export function createShopScreen({ run, build, party = () => null }) {
   // Swordsman at 216 px: "SWORDSMAN" 135 + "✓ SUGGESTED" 126 px), the whole
   // visit stacks the ribbon under the band (rn-ribstack) — never under the
   // next card's band.
+  // SHOP AND DAILY FIXES (content plan 3, slice 14): with the relic rack up,
+  // a window under TIGHT_BELOW_H tall (1024x640, the §1 minimum) had the
+  // docked page reach past the window top (17 px in English, 63 px in
+  // German): the fixed frame takes the tallest class shelf (the Swordsman's
+  // Siphon card with its binding quote) and the rack adds a row of relics.
+  // There the page takes the tight reflow (rn-tight, ui/run/style.js): the
+  // binding quote steps aside (the card's own line still names the effect)
+  // and Bramble's rumour keeps to one line, its whole text on hover.
   const twin = document.createElement('div');
   twin.className = 'rn-shelf rn-shelftwin';
   twin.setAttribute('aria-hidden', 'true');
@@ -400,7 +411,7 @@ export function createShopScreen({ run, build, party = () => null }) {
   }
   function measureShelves(view) {
     const host = el.parentElement;
-    const size = `${window.innerWidth}x${window.innerHeight}|${host ? host.className : ''}`;
+    const size = `${window.innerWidth}x${window.innerHeight}|${host ? host.className : ''}|${el.classList.contains('rn-tight') ? 't' : ''}`;
     if (size !== shelfFrame.size) {
       shelfFrame.size = size;
       shelfFrame.key = '';
@@ -525,6 +536,7 @@ export function createShopScreen({ run, build, party = () => null }) {
       const lineEl = rumourEl.querySelector('.rn-rline');
       if (lineEl.textContent !== line) {
         lineEl.textContent = line;
+        rumourEl.title = `${rumourEl.querySelector('.rn-rwho').textContent} ${line}`;
         rumourEl.dataset.boss = isHeartLevel(view.act) && !HEART_BOSSES.includes(kind) ? 'heart' : kind;
         dirtyFlag = true;
       }
@@ -589,8 +601,15 @@ export function createShopScreen({ run, build, party = () => null }) {
     // and card copy until the first character switch re-measured it — the
     // frame then jumped (1280x720 -> 1024x640: top 59 -> 18 px on the first
     // Q / E). Now a resize re-measures the frame and rebuilds the shelf at once.
+    // SHOP AND DAILY FIXES: a short window with the relic rack up takes the
+    // tight reflow (rn-tight, below), decided before the frame is measured.
+    const tight = !!rackOf(view) && window.innerHeight < TIGHT_BELOW_H;
+    if (el.classList.contains('rn-tight') !== tight) {
+      el.classList.toggle('rn-tight', tight);
+      dirtyFlag = true; // the run UI re-fits the page on its next frame
+    }
     const sig =
-      `${window.innerWidth}x${window.innerHeight}|${viewSeat}#` +
+      `${window.innerWidth}x${window.innerHeight}|${viewSeat}|${tight ? 't' : ''}#` +
       (s.stock ?? [])
         .map(
           (i) =>

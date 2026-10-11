@@ -68,3 +68,18 @@ tab is refused locally.
 
 - `node tools/shop-refresh-browser.mjs [--class swordsman] [--lang de] [--size 1024x640]`
 - `node tools/shop-refresh-layout.mjs [--langs en,de,ja] [--sizes 1024x640,1280x720,1920x1080]`
+- `node tools/shop-fit-probe.mjs [--langs en,de] [--dir captures]` (content
+  plan 3, slice 14): the docked shop with the relic rack up stays inside the
+  window on every class tab at 1024x640 and 1280x720.
+
+## Short windows with relics for sale (content plan 3, slice 14)
+
+At 1024x640 with the relic rack up the docked page used to reach past the
+window top (17 px in English, 63 px in German): the fixed frame takes the
+tallest class shelf (the Swordsman's Siphon card and its binding quote) and the
+rack adds a row of relics. A window under 700 px tall with the rack up now
+takes the tight reflow (`rn-tight`): the binding quote steps aside and
+Bramble's rumour keeps to one line, its whole text on hover. The page then
+fits at about 0.75 to 0.84 scale. If an unmeasured stock still does not fit,
+the docked page may shrink to 0.6 rather than clip (`DOCK_MIN_SCALE` in
+`src/ui/run/index.js`).

@@ -145,6 +145,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   const RESERVE_FALLBACK = 120; // px, until the HUD bar exists to be measured
   const MIN_SCALE = 1; // §17 floors are REAL px: never scale the pages down
   const UNDER_MIN_SCALE = 0.75; // a window under 1024x640 only
+  const DOCK_MIN_SCALE = 0.6; // the docked shop's last resort (never clipped)
   let lastFit = { s: 1, compact: false, reserve: RESERVE_FALLBACK, fit: 1 };
 
   function reservePx() {
@@ -189,7 +190,10 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     // under the same rule when a window at / above the minimum is too short.
     const endCard = current === 'end' && !pageEl;
     if (!underMin && (rootEl.classList.contains('rn-dock') || endCard) && pg && h * s > window.innerHeight - reserve - 4) {
-      s = Math.max(UNDER_MIN_SCALE, (window.innerHeight - reserve - 4) / h);
+      // SHOP AND DAILY FIXES: the docked shop may go under the 0.75 floor
+      // rather than reach past the window top (its tight reflow, ui/run/
+      // shop.js, keeps that for stocks nobody has measured yet).
+      s = Math.max(endCard ? UNDER_MIN_SCALE : DOCK_MIN_SCALE, (window.innerHeight - reserve - 4) / h);
     }
     rootEl.style.setProperty('--rn-s', s.toFixed(4));
     // fix-INT-r5 (J5-F2): the end card also keeps clear of the HUD's corner

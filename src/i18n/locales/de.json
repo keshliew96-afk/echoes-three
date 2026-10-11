@@ -2236,11 +2236,8 @@
   "other": "{n} Räume"
  },
  "#{rank} of {total} today": "#{rank} von {total} heute",
- "#{rank} of {total} today · Your best today!": "#{rank} von {total} heute · Deine Bestleistung heute!",
  "A new descent in {h} h {m} min": "Neuer Abstieg in {h} Std. {m} Min.",
- "Best today: {place}": "Heute am besten: {place}",
  "BOARD": "RANGLISTE",
- "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Play as often as you like: your best run counts.": "Feldzugregeln ab Level I · Standard-Herausforderung · nichts aus Freischaltungen ausgerüstet · nur Einzelspieler. Spiel so oft du willst: Dein bester Lauf zählt.",
  "Couldn’t reach the server. The run still counts on this device; the board will have it when you post a run online.": "Server nicht erreichbar. Der Lauf bleibt auf diesem Gerät; er kommt in die Rangliste, sobald du einen Lauf online beendest.",
  "Curse: {name}": "Fluch: {name}",
  "DAILY": "TÄGLICH",
@@ -2275,7 +2272,6 @@
  "Today's board": "Rangliste von heute",
  "Today's omen": "Das Omen von heute",
  "You have not gone down today.": "Du bist heute noch nicht hinabgestiegen.",
- "Your best today: <b>{place}</b> in {time}": "Deine Bestleistung heute: <b>{place}</b> in {time}",
  "A barrow lord in a rusted helm, still keeping a watch nobody asked for.": "Ein Grabfürst im rostigen Helm, der noch immer Wache hält, um die niemand gebeten hat.",
  "A beast emptied out, with the Heart beating violet in its veins.": "Ein ausgehöhltes Tier, in dessen Adern das Herz violett schlägt.",
  "A bloated grave spider, heavy with young.": "Eine aufgedunsene Grabspinne, schwer von Brut.",
@@ -2850,5 +2846,17 @@
  "Hollow Tide tint": "Hohlflut-Farbton",
  "Tidecaller effects burn in Hollow Tide colours. Cosmetic.": "Gezeitenruferin-Effekte leuchten in Hohlflut-Farben. Kosmetisch.",
  "Crowned tint": "Gekrönt-Farbton",
- "Archer effects burn in Crowned colours. Cosmetic.": "Bogenschützen-Effekte leuchten in Gekrönt-Farben. Kosmetisch."
+ "Archer effects burn in Crowned colours. Cosmetic.": "Bogenschützen-Effekte leuchten in Gekrönt-Farben. Kosmetisch.",
+ "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Your first run of the day counts on the board; every run after it is practice.": "Feldzugregeln ab Level I · Standard-Herausforderung · nichts aus Freischaltungen ausgerüstet · nur Einzelspieler. Dein erster Lauf des Tages zählt für die Bestenliste; jeder weitere ist Übung.",
+ "Counted run unfinished · practice open": "Wertungslauf unvollendet · Übung offen",
+ "Counted today: {place}": "Heute gewertet: {place}",
+ "DAILY PRACTICE · {where}": "TÄGLICH · ÜBUNG · {where}",
+ "Not posted: the board refused this run": "Nicht gesendet: Die Bestenliste hat diesen Lauf abgelehnt",
+ "Not posted: today's counted run is already on the board": "Nicht gesendet: Dein heutiger Wertungslauf steht schon auf der Bestenliste",
+ "Only this first run reaches the board.": "Nur dieser erste Lauf kommt auf die Bestenliste.",
+ "Practice run": "Übungslauf",
+ "Practice run · not on the board": "Übungslauf · nicht auf der Bestenliste",
+ "Practice runs stay off the board.": "Übungsläufe kommen nicht auf die Bestenliste.",
+ "Your counted run today was not finished.": "Dein heutiger Wertungslauf wurde nicht beendet.",
+ "Your counted run today: <b>{place}</b> in {time}": "Dein heutiger Wertungslauf: <b>{place}</b> in {time}"
 }

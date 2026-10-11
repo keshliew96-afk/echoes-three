@@ -1033,11 +1033,6 @@
    "src/ui/run/endscreens.js"
   ]
  },
- "#{rank} of {total} today · Your best today!": {
-  "files": [
-   "src/ui/run/endscreens.js"
-  ]
- },
  "⇄ sidegrade": {
   "files": [
    "src/ui/socket/index.js"
@@ -3314,11 +3309,6 @@
    "src/ui/run/levels.js"
   ]
  },
- "Best today: {place}": {
-  "files": [
-   "src/ui/run/levels.js"
-  ]
- },
  "Bestiary": {
   "files": [
    "src/ui/story/journal.js"
@@ -3760,7 +3750,7 @@
    "src/ui/run/endscreens.js"
   ]
  },
- "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Play as often as you like: your best run counts.": {
+ "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Your first run of the day counts on the board; every run after it is practice.": {
   "files": [
    "src/ui/run/daily.js"
   ]
@@ -4513,6 +4503,16 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Counted run unfinished · practice open": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "Counted today: {place}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "Crash 5 soaked enemies with one cast.": {
   "files": [
    "src/data/unlocks.js"
@@ -4718,6 +4718,11 @@
   ]
  },
  "DAILY · {where}": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "DAILY PRACTICE · {where}": {
   "files": [
    "src/ui/hud/index.js"
   ]
@@ -8858,7 +8863,17 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Not posted: the board refused this run": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
  "Not posted: the server could not be reached": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Not posted: today's counted run is already on the board": {
   "files": [
    "src/ui/run/endscreens.js"
   ]
@@ -9117,6 +9132,11 @@
  "Only the host can save an online session": {
   "files": [
    "src/save/index.js"
+  ]
+ },
+ "Only this first run reaches the board.": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "Open": {
@@ -9595,6 +9615,21 @@
  "power": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "Practice run": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
+ "Practice run · not on the board": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Practice runs stay off the board.": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "Preparing {name}… {built}/{total}": {
@@ -15206,11 +15241,6 @@
    "src/ui/run/partysettings.js"
   ]
  },
- "Your best today: <b>{place}</b> in {time}": {
-  "files": [
-   "src/ui/run/daily.js"
-  ]
- },
  "Your browser keeps this tab open — close it whenever you like. Your progress is saved.": {
   "files": [
    "src/ui/menu/farewell.js"
@@ -15245,6 +15275,16 @@
  "Your code: {code}": {
   "files": [
    "src/ui/menu/cloud.js"
+  ]
+ },
+ "Your counted run today was not finished.": {
+  "files": [
+   "src/ui/run/daily.js"
+  ]
+ },
+ "Your counted run today: <b>{place}</b> in {time}": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "Your device renders about {fps} fps here — uncapped can't go faster than your GPU": {

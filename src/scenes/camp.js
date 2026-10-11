@@ -787,8 +787,12 @@ export function createCampScene(stage, toggles, ctx) {
       onChoose: (key) => {
         picking = false;
         if (!canBegin() || inSession()) return { ok: false, reason: 'busy' };
-        beginLevel(FIRST_LEVEL, { harness: false, via, daily: { key } });
-        return { ok: true, level: 'daily', key };
+        // SHOP AND DAILY FIXES: the day's first run is the counted one; the
+        // daily service marks it spent here, and later runs are practice.
+        const dsvc = svc('daily');
+        const practice = dsvc && typeof dsvc.attempt === 'function' ? !!dsvc.attempt(key).practice : false;
+        beginLevel(FIRST_LEVEL, { harness: false, via, daily: { key, ...(practice ? { practice: true } : {}) } });
+        return { ok: true, level: 'daily', key, practice };
       },
       onCancel: () => {
         picking = false;
@@ -948,7 +952,7 @@ export function createCampScene(stage, toggles, ctx) {
       harness: !!begin.harness,
       ...(begin.endless ? { endless: true } : {}),
       ...(begin.tutorial ? { tutorial: true } : {}),
-      ...(begin.daily ? { daily: { key: begin.daily.key } } : {}),
+      ...(begin.daily ? { daily: { key: begin.daily.key, ...(begin.daily.practice ? { practice: true } : {}) } } : {}),
       ...(begin.rush ? { rush: true } : {}),
       ...(boons ? { boons } : {}),
       // THE TIDECALLER: the lineup the camp shows (the tutorial ignores it).
@@ -970,7 +974,7 @@ export function createCampScene(stage, toggles, ctx) {
       endless: !!begin.endless,
       tutorial: !!begin.tutorial,
       ...(begin.rush ? { rush: true } : {}),
-      ...(begin.daily ? { daily: begin.daily.key } : {}),
+      ...(begin.daily ? { daily: begin.daily.key, ...(begin.daily.practice ? { dailyPractice: true } : {}) } : {}),
       challenge: begin.daily ? 'standard' : challenge,
       boons,
       pressedAt: Math.round(begin.pressedAt),

@@ -361,7 +361,7 @@ export function nodeCardHtml(
   return `
     ${head}
     <div class="rn-body">${esc(effect ? t(effect) : '')}</div>
-    ${extra ? `<div class="rn-body">“${esc(t(extra))}”</div>` : ''}
+    ${extra ? `<div class="rn-body rn-bind">“${esc(t(extra))}”</div>` : ''}
     ${
       upgrade
         ? `<div class="rn-verdict rn-upgrade">${esc(upgradeLine(upgrade))}</div>`

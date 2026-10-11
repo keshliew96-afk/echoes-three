@@ -18,9 +18,14 @@ leaderboard on the session server.
   plate reads `DAILY · ROOM n/8 · …`.
 - At the end (a fall, a win, or Quit to Lobby) the run is posted to the
   board, and the end card shows the day, the depth reached, the time and the
-  board's answer (`#3 of 41 today · Your best today!`).
-- Play as often as you like: the board keeps each player's best run of the
-  day. The day turns over at **00:00 UTC**.
+  board's answer (`#3 of 41 today`).
+- **One counted run a day** (content plan 3, slice 14). The first Set out of
+  the day is the counted run: the device marks it spent at that press, so a
+  closed tab spends it too. Every later run that day is **practice**: the
+  button reads **Practice run**, the HUD plate `DAILY PRACTICE · ROOM n/8`,
+  and the end card `Practice run · not on the board`; it is never posted. The
+  Level Select card shows the counted run (`Counted today: …`). The day
+  turns over at **00:00 UTC**.
 
 ## Rules (src/data/daily.js)
 
@@ -43,7 +48,7 @@ the nine goldens are byte-identical.
 
 ```
 GET  /daily/board/<YYYY-MM-DD>[?me=<id>]  -> { ok, key, today, total, entries[≤20], me?, store, durable }
-POST /daily/score { key, id, name, cls, depth, won, ticks, version } -> { ok, rank, total, best, entry }
+POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version } -> { ok, rank, total, best, entry }
 ```
 
 - `id` is a random id the game keeps in `localStorage['echoes.daily.v1']`
@@ -52,8 +57,20 @@ POST /daily/score { key, id, name, cls, depth, won, ticks, version } -> { ok, ra
   `Mouse123`), cleaned to 16 characters; `?netname=` overrides it for
   harnesses.
 - Only today's and yesterday's boards take scores (a run that ends after
-  midnight UTC still counts for its day). Depth 0 to 64, a time up to six
-  hours. 30 posts and 120 board reads per IP per 10 minutes.
+  midnight UTC still counts for its day). 30 posts and 120 board reads per IP
+  per 10 minutes.
+- **One entry per id and day, the first post.** A different run for the same
+  id and day is refused (`409 counted`); the same run sent again is answered
+  as before.
+- **Plausibility checks** (refused with `400`):
+  - `bad_version`: the version is not this server's line (major.minor) or is
+    newer than the server (the day's omen comes from the build's relic list);
+  - `bad_seed`: `seed` is not `dailySeed(key)`;
+  - `bad_score`: depth outside 0 to 32 (8 rooms x 4 levels), a time outside
+    1 tick to six hours;
+  - `implausible`: a won run that did not clear all 32 rooms, or a time under
+    `MIN_ROOM_TICKS` (240 ticks, 4 s) per room cleared. The autopilot's fastest
+    whole level over 64 seeds took 6046 ticks, 756 a room.
 - **Storage:** the cloud saves' Upstash Redis (`ECHOES_CLOUD_REDIS_URL` and
   `ECHOES_CLOUD_REDIS_TOKEN`), one hash `echoes:daily:<day>` per day kept 30
   days. Without it, the board is kept in memory and is gone after a restart
@@ -71,8 +88,10 @@ POST /daily/score { key, id, name, cls, depth, won, ticks, version } -> { ok, ra
 
 ## Known limits
 
-- The board trusts the game: a modified client could post any depth. The
-  server checks shape and bounds only.
+- The board still trusts the game within the checks above: a modified
+  client can post a plausible run it never played, and a cleared browser
+  storage (a new device id) gets a new counted run. A real fix would replay
+  the run's inputs on the server.
 - A day's omen comes from the relic list of the running version, so on the
   day a new relic batch ships, players on the old and new build can roll
   different relics.

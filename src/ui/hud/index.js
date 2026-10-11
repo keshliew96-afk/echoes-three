@@ -88,7 +88,7 @@ function locationCopy(scene, rv, short = false) {
   // DAILY DESCENT (docs/DAILY.md): the plate says it is the day's run.
   if (rv && rv.active && rv.room >= 1 && rv.daily) {
     const c = locationCopy(scene, { ...rv, daily: undefined }, true);
-    return { name: c.name, sub: t('DAILY · {where}', { where: c.sub }) };
+    return { name: c.name, sub: rv.daily.practice ? t('DAILY PRACTICE · {where}', { where: c.sub }) : t('DAILY · {where}', { where: c.sub }) };
   }
   if (rv && rv.active && rv.room >= 1) {
     const room = rv.room;

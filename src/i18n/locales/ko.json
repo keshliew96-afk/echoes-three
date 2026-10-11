@@ -2165,11 +2165,8 @@
   "other": "방 {n}개"
  },
  "#{rank} of {total} today": "오늘 {total}명 중 {rank}위",
- "#{rank} of {total} today · Your best today!": "오늘 {total}명 중 {rank}위 · 오늘의 최고 기록!",
  "A new descent in {h} h {m} min": "새 하강까지 {h}시간 {m}분",
- "Best today: {place}": "오늘 최고: {place}",
  "BOARD": "순위표",
- "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Play as often as you like: your best run counts.": "레벨 I부터 캠페인 규칙 · 표준 도전 · 해금 장비 없음 · 싱글 플레이 전용. 몇 번이든 도전할 수 있고, 최고 기록만 남습니다.",
  "Couldn’t reach the server. The run still counts on this device; the board will have it when you post a run online.": "서버에 연결할 수 없습니다. 기록은 이 기기에 남습니다. 온라인에서 판을 마치면 순위표에 오릅니다.",
  "Curse: {name}": "저주: {name}",
  "DAILY": "일일",
@@ -2204,7 +2201,6 @@
  "Today's board": "오늘의 순위표",
  "Today's omen": "오늘의 징조",
  "You have not gone down today.": "오늘은 아직 내려가지 않았습니다.",
- "Your best today: <b>{place}</b> in {time}": "오늘의 최고 기록: <b>{place}</b> · {time}",
  "A barrow lord in a rusted helm, still keeping a watch nobody asked for.": "녹슨 투구를 쓴 고분의 군주. 아무도 청하지 않은 파수를 아직도 서고 있다.",
  "A beast emptied out, with the Heart beating violet in its veins.": "속이 텅 빈 짐승. 핏줄 속에서 심장이 보랏빛으로 뛴다.",
  "A bloated grave spider, heavy with young.": "새끼를 잔뜩 품어 부풀어 오른 무덤 거미.",
@@ -2770,5 +2766,17 @@
  "Hollow Tide tint": "공허의 조수 색조",
  "Tidecaller effects burn in Hollow Tide colours. Cosmetic.": "타이드콜러 효과가 공허의 조수 색으로 빛납니다. 외형 전용.",
  "Crowned tint": "왕관 색조",
- "Archer effects burn in Crowned colours. Cosmetic.": "궁수 효과가 왕관 색으로 타오릅니다. 외형 전용."
+ "Archer effects burn in Crowned colours. Cosmetic.": "궁수 효과가 왕관 색으로 타오릅니다. 외형 전용.",
+ "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Your first run of the day counts on the board; every run after it is practice.": "레벨 I부터 캠페인 규칙 · 표준 도전 · 해금 장비 없음 · 싱글 플레이 전용. 하루의 첫 도전만 순위표에 오르고, 그 뒤의 도전은 모두 연습입니다.",
+ "Counted run unfinished · practice open": "기록 도전 미완료 · 연습 가능",
+ "Counted today: {place}": "오늘의 기록: {place}",
+ "DAILY PRACTICE · {where}": "일일 연습 · {where}",
+ "Not posted: the board refused this run": "등록 안 됨: 순위표가 이 도전을 거부했습니다",
+ "Not posted: today's counted run is already on the board": "등록 안 됨: 오늘의 기록 도전이 이미 순위표에 있습니다",
+ "Only this first run reaches the board.": "이 첫 도전만 순위표에 오릅니다.",
+ "Practice run": "연습하기",
+ "Practice run · not on the board": "연습 · 순위표 제외",
+ "Practice runs stay off the board.": "연습은 순위표에 오르지 않습니다.",
+ "Your counted run today was not finished.": "오늘의 기록 도전을 끝내지 못했습니다.",
+ "Your counted run today: <b>{place}</b> in {time}": "오늘의 기록 도전: <b>{place}</b> · {time}"
 }

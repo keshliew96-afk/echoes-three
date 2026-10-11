@@ -7,9 +7,14 @@
 //   omen(key)          { relic, curse } of that day (sim/relics.js dailyOmen)
 //   board(key, fresh?) Promise<{ ok, entries, total, me?, error? }> (cached)
 //   cached(key)        the last board fetched for the day, or null
-//   localBest(key)     this device's best run that day { depth, ticks, won } | null
+//   localBest(key)     this device's counted run that day { depth, ticks, won } | null
+//   counted(key)       'open' (the day's counted run is still to play) |
+//                      'started' (set out, not finished) | 'done'
+//   attempt(key)       at Set out: { practice } — the first run of the day is
+//                      the counted one (marked here, so a closed tab spends
+//                      it too); every later run is practice and never posted
 //   last()             the last daily run's posting: { key, depth, ticks, won,
-//                      state: 'posting' | 'posted' | 'failed', rank?, total?, best?, error? }
+//                      state: 'posting' | 'posted' | 'failed' | 'practice', rank?, total?, best?, error? }
 //   rev()              bumps whenever any of the above changes (UI repaint)
 import { dailyKey, isDailyKey, dailySeed, betterEntry, cleanName } from '../data/daily.js';
 import { dailyOmen } from '../sim/relics.js';
@@ -122,11 +127,31 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
     const d = store.days[key];
     return d && Number.isFinite(d.depth) ? d : null;
   }
-  function noteLocal(key, run) {
+  // SHOP AND DAILY FIXES: one counted run a day. A day with a result from
+  // before this rule (no `counted` mark) is done too.
+  function counted(key) {
+    const d = store.days[key];
+    if (!d) return 'open';
+    if (d.counted === 'started' && !Number.isFinite(d.depth)) return 'started';
+    return 'done';
+  }
+  function attempt(key) {
     store = readStore() || store;
-    if (betterEntry(run, localBest(key))) store.days[key] = { depth: run.depth, ticks: run.ticks, won: !!run.won };
+    if (!isDailyKey(key) || counted(key) !== 'open') return { practice: true };
+    store.days[key] = { counted: 'started' };
+    trimDays();
+    writeStore(store);
+    bump();
+    return { practice: false };
+  }
+  function trimDays() {
     const keys = Object.keys(store.days).sort();
     while (keys.length > KEEP_DAYS) delete store.days[keys.shift()];
+  }
+  function noteLocal(key, run) {
+    store = readStore() || store;
+    if (betterEntry(run, localBest(key))) store.days[key] = { depth: run.depth, ticks: run.ticks, won: !!run.won, counted: 'done' };
+    trimDays();
     writeStore(store);
   }
 
@@ -152,7 +177,7 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
     bump();
     const r = await call('/daily/score', {
       method: 'POST',
-      body: { key: run.key, id: store.id, name: playerName(), cls: classOf(), depth: run.depth, won: run.won, ticks: run.ticks, version: VERSION },
+      body: { key: run.key, id: store.id, name: playerName(), cls: classOf(), depth: run.depth, won: run.won, ticks: run.ticks, seed: dailySeed(run.key), version: VERSION },
     });
     if (lastPost && lastPost.key === run.key && lastPost.ticks === run.ticks) {
       lastPost = r.ok ? { ...lastPost, state: 'posted', rank: r.rank, total: r.total, best: !!r.best } : { ...lastPost, state: 'failed', error: r.error || 'server' };
@@ -177,6 +202,12 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
       // A network guest never runs a daily (the camp refuses it), so this is
       // the local player's own run.
       const run = { key: d.key, depth: d.depth | 0, ticks: Math.max(1, s.ticks | 0), won: !!d.won };
+      // A practice run (the day's counted run is spent) stays off the board.
+      if (d.practice) {
+        lastPost = { ...run, state: 'practice' };
+        bump();
+        return;
+      }
       noteLocal(d.key, run);
       post(run);
     });
@@ -188,6 +219,8 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
     board,
     cached,
     localBest,
+    counted,
+    attempt,
     last: () => lastPost,
     rev: () => revision,
     playerName,
