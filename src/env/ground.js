@@ -469,11 +469,18 @@ export function* paintGroundSteps(spec, cosmetic) {
   // highlights, wheel ruts, pebbles.
   const dirtH = g.dirtH ?? 28;
   const dirtL = g.dirtL ?? 0.2;
+  // Act V: a worn track across limestone is polished stone, not dirt — a
+  // biome may grey it (`dirtSMul`) and thin it (`dirtAMul`). Default 1 / 1.
+  const dirtSMul = g.dirtSMul ?? 1;
+  const dirtAMul = g.dirtAMul ?? 1;
+  // ...and may thin the cool under-stroke too (`pathLip`, default 1): on pale
+  // flagstones the shadow lip reads as a dark stream, not a sunken track.
+  const pathLip = g.pathLip ?? 1;
   for (const path of spec.paths) {
     const wPx = path.w * ppu;
     // Cool shadow lip so the track sits INTO the ground rather than on it.
     stampAlong(path.pts, 0.09, (wx, wz) => {
-      blob(ctx, cx(wx) + r(-6, 6), cz(wz) + r(-6, 6), wPx * 0.66, hsl(shH, 0.28, shL * 0.75, 0.2));
+      blob(ctx, cx(wx) + r(-6, 6), cz(wz) + r(-6, 6), wPx * 0.66, hsl(shH, 0.28, shL * 0.75, 0.2 * pathLip));
     });
     stampAlong(path.pts, 0.05, (wx, wz) => {
       blob(
@@ -489,11 +496,11 @@ export function* paintGroundSteps(spec, cosmetic) {
         // 1-2k px on a bad cosmetic roll in the hollow. The lower alpha also
         // lets the cool base lift show through, holding the track's blue
         // floor up.
-        hsl(dirtH + r(-2, 8), 0.27, dirtL + r(-0.045, 0.05), 0.56)
+        hsl(dirtH + r(-2, 8), 0.27 * dirtSMul, dirtL + r(-0.045, 0.05), 0.56 * dirtAMul)
       );
     });
     stampAlong(path.pts, 0.16, (wx, wz) => {
-      blob(ctx, cx(wx) + r(-8, 8), cz(wz) + r(-8, 8), wPx * 0.17, hsl(dirtH + 6, 0.25, dirtL + 0.1, 0.32));
+      blob(ctx, cx(wx) + r(-8, 8), cz(wz) + r(-8, 8), wPx * 0.17, hsl(dirtH + 6, 0.25 * dirtSMul, dirtL + 0.1, 0.32 * dirtAMul));
     });
     // Two wheel ruts: darker parallel scuffs offset either side of the centre.
     for (const side of [-1, 1]) {
@@ -511,7 +518,7 @@ export function* paintGroundSteps(spec, cosmetic) {
           // Ruts brightened (L x0.7, was x0.55) and greyed: near-black warm
           // scuffs in a vignette corner are exactly the L40-60 zone the grade
           // red-lifts into the reserved band.
-          hsl(dirtH - 4, 0.22, dirtL * 0.7, 0.22)
+          hsl(dirtH - 4, 0.22 * dirtSMul, dirtL * 0.7, 0.22 * dirtAMul)
         );
       });
     }
@@ -660,6 +667,14 @@ export function* paintGroundSteps(spec, cosmetic) {
     }
   }
 
+  // Act V (Still Spire): rime feathering out of the cracks, frost windrows
+  // along the parapets and the feathers the wind dropped. Its own stream, so
+  // no layout-stream draw moves.
+  if (g.rime) {
+    paintRime(ctx, spec, g.rime, W, H, ppu);
+    yield;
+  }
+
   // 8 — corruption blight: a desaturated cool stain under the monolith (part
   // of the §11/§19.3 "one corruption tell" — the violet itself stays on the
   // monolith so it remains the only violet in frame).
@@ -777,6 +792,128 @@ function paintVeins(ctx, segs, V, ppu, cx, cz) {
   pass(0.42, 0.9, hsl(V.coreH, V.coreS, V.coreL, 1));
 }
 
+// Act V rime (the Still Spire): three layers on the limestone, every one from
+// a per-layout mulberry32 (never the layout stream).
+//   drifts    soft pale frost windrows hugging the parapets, heaviest on the
+//             windward (north) side, each a cluster of wide low blobs
+//   cracks    a crack walk with a dark joint, a soft rime halo either side and
+//             a bright frost line down it, frost-fern ticks feathering off
+//   feathers  dropped pigeon / gull feathers: a quill line + a soft vane,
+//             dove-grey or slate, a few pale ones
+function paintRime(ctx, spec, Rm, W, H, ppu) {
+  const rnd = veinRng(0x2c1b3c6d ^ (((spec.id | 0) + 29) * 0x27d4eb2f));
+  const R = (a, b) => a + rnd() * (b - a);
+  const rh = Rm.h ?? 204;
+  const rs = Rm.s ?? 0.3;
+  const rl = Rm.l ?? 0.86;
+  // Drifts: a band 0-1.5 u off a wall; the north wall gets twice its share.
+  for (let i = 0; i < (Rm.drifts ?? 0); i++) {
+    const side = rnd() < 0.4 ? 0 : Math.floor(R(0, 4));
+    const d = Math.pow(rnd(), 1.6) * 1.5 * ppu;
+    let x;
+    let z;
+    if (side === 0) { x = R(0, W); z = d; }
+    else if (side === 1) { x = R(0, W); z = H - d; }
+    else if (side === 2) { x = d; z = R(0, H); }
+    else { x = W - d; z = R(0, H); }
+    const along = side < 2; // windrows run along their wall
+    const n = 3 + Math.floor(R(0, 4));
+    for (let b = 0; b < n; b++) {
+      const ox = along ? R(-90, 90) : R(-24, 24);
+      const oz = along ? R(-24, 24) : R(-90, 90);
+      ctx.save();
+      ctx.translate(x + ox, z + oz);
+      ctx.scale(along ? 1.9 : 0.6, along ? 0.6 : 1.9);
+      blob(ctx, 0, 0, R(26, 56), hsl(rh + R(-6, 6), rs * 0.8, rl - R(0, 0.08), R(0.12, 0.22)));
+      ctx.restore();
+    }
+  }
+  // Rime cracks.
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  for (let i = 0; i < (Rm.cracks ?? 0); i++) {
+    let x = R(0.04 * W, 0.96 * W);
+    let z = R(0.04 * H, 0.96 * H);
+    // Half of them start at a wall band (the frost creeps in from the edge).
+    if (rnd() < 0.5) {
+      const side = Math.floor(R(0, 4));
+      if (side === 0) z = R(0, 0.12 * H);
+      else if (side === 1) z = R(0.88 * H, H);
+      else if (side === 2) x = R(0, 0.08 * W);
+      else x = R(0.92 * W, W);
+    }
+    let ang = R(0, Math.PI * 2);
+    const steps = 6 + Math.floor(R(0, 9));
+    const pts = [[x, z]];
+    for (let st = 0; st < steps; st++) {
+      ang += R(-0.65, 0.65);
+      x += Math.cos(ang) * R(10, 22);
+      z += Math.sin(ang) * R(10, 22);
+      pts.push([x, z]);
+    }
+    const line = (style, w) => {
+      ctx.strokeStyle = style;
+      ctx.lineWidth = w;
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0], pts[0][1]);
+      for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k][0], pts[k][1]);
+      ctx.stroke();
+    };
+    line(hsl(rh, rs * 0.6, rl, 0.07), 12); // the soft rime halo
+    line(hsl(rh, rs * 0.7, rl * 0.94, 0.12), 5);
+    line(hsl(220, 0.18, 0.12, 0.6), 2.0); // the joint itself
+    line(hsl(rh - 4, rs, rl, 0.3), 0.9); // frost down it
+    // Frost-fern ticks feathering off both sides.
+    for (let k = 1; k < pts.length - 1; k++) {
+      const [ax, az] = pts[k];
+      const [bx, bz] = pts[k + 1];
+      const L = Math.hypot(bx - ax, bz - az) || 1;
+      const nx = -(bz - az) / L;
+      const nz = (bx - ax) / L;
+      for (const sd of [-1, 1]) {
+        if (rnd() < 0.35) continue;
+        const len = R(4, 11);
+        const tx = ax + (bx - ax) * R(0.2, 0.8);
+        const tz = az + (bz - az) * R(0.2, 0.8);
+        ctx.strokeStyle = hsl(rh, rs * 0.9, rl, R(0.14, 0.28));
+        ctx.lineWidth = R(0.6, 1.1);
+        ctx.beginPath();
+        ctx.moveTo(tx, tz);
+        ctx.lineTo(tx + (nx * sd + (bx - ax) / L * 0.5) * len, tz + (nz * sd + (bz - az) / L * 0.5) * len);
+        ctx.stroke();
+      }
+    }
+  }
+  // Feathers.
+  for (let i = 0; i < (Rm.feathers ?? 0); i++) {
+    const x = R(0.02 * W, 0.98 * W);
+    const z = R(0.02 * H, 0.98 * H);
+    const len = R(9, 20);
+    const pale = rnd();
+    const tone = pale < 0.45 ? hsl(214, 0.08, 0.84, 0.75) : pale < 0.85 ? hsl(218, 0.08, 0.58, 0.7) : hsl(224, 0.14, 0.26, 0.75);
+    ctx.save();
+    ctx.translate(x, z);
+    ctx.rotate(R(0, Math.PI * 2));
+    ctx.fillStyle = 'rgba(16,22,36,0.22)'; // a hair of contact shadow
+    ctx.beginPath();
+    ctx.ellipse(1.2, 1.6, len * 0.5, len * 0.17, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = tone;
+    ctx.beginPath();
+    ctx.moveTo(-len * 0.5, 0);
+    ctx.quadraticCurveTo(-len * 0.1, -len * 0.2, len * 0.5, -len * 0.02);
+    ctx.quadraticCurveTo(0, len * 0.16, -len * 0.5, 0);
+    ctx.fill();
+    ctx.strokeStyle = hsl(40, 0.06, 0.88, 0.7); // the quill
+    ctx.lineWidth = 0.8;
+    ctx.beginPath();
+    ctx.moveTo(-len * 0.62, 0.4);
+    ctx.lineTo(len * 0.48, -0.3);
+    ctx.stroke();
+    ctx.restore();
+  }
+}
+
 // Crystal flecks: little faceted violet chips in clusters, each with a dark
 // socket and a bright lit facet, kept out toward the walls.
 function paintFlecks(ctx, spec, F, W, H) {
@@ -839,8 +976,9 @@ function* flagstoneSteps(ctx, W, H, ppu, g, cosmetic) {
   for (let y = -size * 0.5; y < H + size; y += size * 0.62) {
     const off = (row % 2) * size * 0.5;
     for (let x = -size + off; x < W + size; x += size * r(0.8, 1.15)) {
-      const w = size * r(0.72, 1.05);
-      const h = size * r(0.5, 0.64);
+      // `fill` (Act V): big flags laid tight, joint to joint. Default 1.
+      const w = size * r(0.72, 1.05) * (F.fill ?? 1);
+      const h = size * r(0.5, 0.64) * (F.fill ?? 1);
       const cxp = x + r(-4, 4);
       const cyp = y + r(-4, 4);
       const a = r(-0.08, 0.08);
@@ -1005,6 +1143,29 @@ export function* paintApronSteps(spec, cosmetic) {
     blob(ctx, px, pz, R * 1.4, 'rgba(4,7,12,0.55)');
     blob(ctx, px - R * 0.22, pz - R * 0.28, R, hsl((A && A.crownH !== undefined ? A.crownH : 202) + r(-14, 18), A && A.crownS !== undefined ? A.crownS : 0.24, 0.055 + r(0, 0.045), 0.75));
     if (i % 350 === 349) yield;
+  }
+  // Act V: a sea of cloud far below the parapet (`apron.clouds`): billows
+  // with a dark underside and a lilac-lit crown, heaviest out in the open
+  // (the rim fade below eats the far edge). Own stream: no layout draw moves.
+  if (A && A.clouds) {
+    const C = A.clouds;
+    const rnd = veinRng(0x4f1bbcdc ^ (((spec.id | 0) + 41) * 0x165667b1));
+    const R = (a, b) => a + rnd() * (b - a);
+    for (let i = 0; i < (C.n ?? 100); i++) {
+      const px = R(0, W);
+      const pz = R(0, H);
+      const Rr = R(40, 120);
+      const n = 3 + Math.floor(R(0, 4));
+      blob(ctx, px, pz + Rr * 0.3, Rr * 1.5, 'rgba(6,9,18,0.35)');
+      for (let b = 0; b < n; b++) {
+        const bx = px + R(-1.1, 1.1) * Rr;
+        const bz = pz + R(-0.4, 0.4) * Rr;
+        const br = Rr * R(0.45, 0.8);
+        blob(ctx, bx, bz, br, hsl(C.h + R(-8, 8), C.s, C.l * R(0.55, 0.8), 0.5));
+        blob(ctx, bx - br * 0.18, bz - br * 0.3, br * 0.62, hsl(C.litH + R(-10, 10), C.litS, C.litL * R(0.7, 0.95), 0.32));
+      }
+    }
+    yield;
   }
   // A few large dark shapes (boulder fields / deep hollows) for macro contrast.
   for (let i = 0; i < 46; i++) {

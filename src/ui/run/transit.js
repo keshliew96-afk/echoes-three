@@ -47,6 +47,8 @@ const FLAVOUR = {
   3: () => t('The Barrow Wyrm is still. The long night lifts.'),
   // Act IV (docs/ACT_IV.md): whichever warden held the Heart, its line is the Heart's.
   4: () => t('The Heart\'s warden falls. Below the Barrow, the old beat falters.'),
+  // Act V preview (docs/ACT_V.md): the Spire's borrowed warden.
+  5: () => t('The Spire\'s warden falls. High above, the bells hang still.'),
 };
 // Slice 2: the second boss of each act has its own line.
 const BOSS_FLAVOUR = {
@@ -197,7 +199,7 @@ export function createTransitScreen({ run }) {
       }
       kicker.textContent = depth !== null ? t('DEPTH {depth} CLEARED', { depth: depth - 1 }) : t('LEVEL {level} CLEARED', { level: ROMAN[card.from] ?? card.from });
       headline.textContent = (card.fromName ? t(card.fromName) : '').toUpperCase();
-      const boss = (card.from === 4 ? null : BOSS_FLAVOUR[met]) ?? FLAVOUR[card.from];
+      const boss = (card.from >= 4 ? null : BOSS_FLAVOUR[met]) ?? FLAVOUR[card.from];
       flavour.textContent =
         depth === CYCLE + 1
           ? t('The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.')

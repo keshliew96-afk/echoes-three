@@ -66,6 +66,18 @@ function shardGeometry() {
   return mergeGeometries(parts);
 }
 
+// Act V (`spec.tuft: 'feather'`): fallen feathers lying on the limestone
+// instead of a grass tuft — a long flattened vane with a curled tip on a thin
+// quill, and a smaller down feather beside it, both tipped a little off the
+// floor so the toon ramp catches their edge.
+function featherGeometry() {
+  const vane = new IcosahedronGeometry(0.1, 1).scale(1, 0.05, 0.26);
+  vane.rotateY(0.15).rotateZ(0.09).translate(0, 0.025, 0);
+  const quill = new ConeGeometry(0.008, 0.26, 3, 1).rotateZ(Math.PI / 2 + 0.05).translate(0.01, 0.024, 0.002);
+  const down = new IcosahedronGeometry(0.05, 0).scale(1, 0.22, 0.6).rotateY(-0.9).translate(-0.06, 0.016, 0.09);
+  return mergeGeometries([vane, quill.toNonIndexed(), down]);
+}
+
 function blockedBy(footprints, x, z) {
   for (let i = 0; i < footprints.length; i++) {
     const f = footprints[i];
@@ -128,8 +140,9 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
 
   // --- Grass tufts.
   const shard = spec.tuft === 'shard';
+  const feather = spec.tuft === 'feather';
   const grass = new InstancedMesh(
-    shard ? shardGeometry() : tuftGeometry(),
+    shard ? shardGeometry() : feather ? featherGeometry() : tuftGeometry(),
     shard ? toonMaterial({ color: '#FFFFFF', emissive: hslColor(bl.h, 0.5, 0.3), emissiveIntensity: 0.16 }) : toonMaterial({ color: '#FFFFFF' }),
     spec.grass
   );

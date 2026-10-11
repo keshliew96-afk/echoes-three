@@ -12,11 +12,14 @@
 // lute + hand drum) · mill (A aeolian, 96 bpm, water-drip plucks, reeds,
 // frame drum) · barrow (E phrygian, 88 bpm, bell tolls, choir pad, taiko) ·
 // heart (Act IV, docs/ACT_IV.md: C# harmonic minor, 86 bpm, glass bells, a
-// low choir, and a lub-dub heartbeat drum under everything).
+// low choir, and a lub-dub heartbeat drum under everything) · spire (Act V,
+// the Still Spire, the gods' high belfry: F lydian, 92 bpm, a chime ostinato
+// of tuned bell partials, a high airy choir pad and lead, low toms answering
+// like far bells; the boss state turns F aeolian under a heavy bell toll).
 // Tempo table (bpm) — every state differs from every other by >= 18 % inside
 // a theme (G3.5 distinctness), boss = combat x 1.22:
-//   defeat 44 · menu 56 · lobby 64 · camp 72 · combat 104/96/88/86 ·
-//   boss 127/117/107/105 · victory 152
+//   defeat 44 · menu 56 · lobby 64 · camp 72 · combat 104/96/88/86/92 ·
+//   boss 127/117/107/105/112 · victory 152
 // Every state keeps a sustained pad/drone layer so the music tap never
 // drops out between notes (G3.5 "never below -50 dBFS for > 1 s").
 // Crossfades are equal-power (sin/cos gain curves). Intensity (0..1) opens
@@ -33,6 +36,7 @@ const SCALES = {
   ionian: [0, 2, 4, 5, 7, 9, 11],
   mixolydian: [0, 2, 4, 5, 7, 9, 10],
   harmonic: [0, 2, 3, 5, 7, 8, 11],
+  lydian: [0, 2, 4, 6, 7, 9, 11],
 };
 
 const THEMES = {
@@ -47,6 +51,20 @@ const THEMES = {
     drumHits: { 0: 1, 2: 0.7, 7: 0.3, 8: 0.95, 10: 0.65, 15: 0.3 },
     bossDrumHits: { 0: 1, 2: 0.7, 4: 0.45, 6: 0.6, 8: 1, 10: 0.7, 12: 0.5, 14: 0.75 },
   },
+  // Act V (the Still Spire): cold, high and airy. The chime ostinato rings
+  // an octave up, the pad is a high open choir (padOct 1, a bright formant),
+  // the lead is breath over the choir ('air'), and the drum is a low tom
+  // that answers the beat like a bell heard from the next tower. The boss
+  // state sinks to F aeolian and a heavy bronze toll (bossToll) strikes the
+  // bar's root on every other downbeat and its fifth halfway through the
+  // bar after.
+  spire: {
+    id: 'spire', root: 53, scale: 'lydian', combatBpm: 92, prog: [0, 1, 5, 4], bossScale: 'aeolian', bossProg: [0, 5, 6, 0],
+    ostinato: 'chime', drum: 'tom', lead: 'air', padType: 'sawtooth', padCut: 1600, formant: 1250, padOct: 1,
+    drumHits: { 0: 1, 6: 0.45, 8: 0.75, 11: 0.4, 14: 0.55 },
+    bossDrumHits: { 0: 1, 4: 0.55, 8: 0.9, 10: 0.45, 12: 0.6 },
+    bossToll: { 0: [0, 1], 24: [4, 0.75] },
+  },
 };
 
 // Per-state output trims (dB) that bring each state to about -18 dBFS RMS
@@ -56,11 +74,13 @@ export const MUSIC_TRIM = {
   'boss:barrow': -9.6,
   'boss:heart': -10.6,
   'boss:mill': -8.9,
+  'boss:spire': -9.7,
   'boss:wood': -9.5,
   'camp': -7.6,
   'combat:barrow': -9.1,
   'combat:heart': -10.3,
   'combat:mill': -7.8,
+  'combat:spire': -9.5,
   'combat:wood': -7.9,
   'defeat': -7,
   'lobby': -6.3,
@@ -142,6 +162,38 @@ const INSTR = {
   // Act IV: glass — a cold, inharmonic bell (crystal struck, not cast metal).
   glass: (k, d, t, f, v) => Math.max(k.bell(d, t, { f, ratio: 5.04, index: 0.9, d: 1.2, gain: v * 0.75 }), k.tone(d, t, { f0: f * 2, a: 0.003, d: 0.25, gain: v * 0.12 })),
   shaker: (k, d, t, f, v) => k.noise(d, t, { type: 'highpass', f0: 6500, q: 0.7, a: 0.004, d: 0.045, gain: v }),
+  // Act V: a chime — a cast bell's tuned partials (an FM strike on the
+  // octave-harmonic ratio, a minor-third "tierce" ringing above it and a
+  // quiet hum an octave under), short enough to run as an ostinato.
+  chime: (k, d, t, f, v) =>
+    Math.max(
+      k.bell(d, t, { f, ratio: 2, index: 0.8, d: 1.3, gain: v * 0.6 }),
+      k.tone(d, t, { f0: f * 2.4, a: 0.003, d: 0.55, gain: v * 0.12 }),
+      k.tone(d, t, { f0: f * 0.5, a: 0.01, d: 0.9, gain: v * 0.1 })
+    ),
+  // Act V: a low tom with a faint bell ring in its tail (a drum heard across
+  // the belfry, answering like a far bell).
+  tom: (k, d, t, f, v) =>
+    Math.max(
+      k.tone(d, t, { f0: 150, f1: 90, d: 0.34, gain: v }),
+      k.noise(d, t, { type: 'lowpass', f0: 700, q: 0.8, d: 0.08, gain: v * 0.4 }),
+      k.bell(d, t + 0.01, { f: 233, ratio: 2.76, index: 0.6, d: 0.7, gain: v * 0.08 })
+    ),
+  // Act V: breath over a high choir (a bright vowel and a whistle an octave up).
+  air: (k, d, t, f, v, len) =>
+    Math.max(
+      k.pad(d, t, { notes: [f], dur: Math.max(0.25, len), a: 0.22, r: 0.6, gain: v, formant: 1350, type: 'sawtooth' }),
+      k.tone(d, t, { f0: f * 2, a: 0.12, hold: Math.max(0, len - 0.12), d: 0.3, gain: v * 0.08 })
+    ),
+  // Act V boss: the heavy toll — a bronze bell struck hard (low inharmonic
+  // FM ratio, a long ring), its hum an octave under and a slightly sharp
+  // minor third beating against it.
+  knell: (k, d, t, f, v) =>
+    Math.max(
+      k.bell(d, t, { f, ratio: 1.4, index: 2.4, d: 2.4, gain: v * 0.8 }),
+      k.tone(d, t, { f0: f * 0.5, a: 0.01, d: 1.8, gain: v * 0.35 }),
+      k.tone(d, t, { f0: f * 1.195, a: 0.004, d: 1.1, gain: v * 0.12 })
+    ),
 };
 
 // ----------------------------------------------------------------- layers --
@@ -249,6 +301,21 @@ function leadLayer(gain, instr, motif, { min, oct = 1 } = {}) {
     },
   };
 }
+// Act V boss: a heavy toll on the bar's chord root (its hum an octave under).
+// hits = { stepInTwoBars: [degreeOffset, velocity] } over a 32-step cycle.
+function tollLayer(gain, instr, hits, { min } = {}) {
+  return {
+    id: 'toll',
+    gain,
+    min,
+    play(k, d, t, c) {
+      const h = hits[c.step % 32];
+      if (!h) return;
+      const deg = c.spec.prog[c.bar % c.spec.prog.length];
+      c.note(instr, k, d, t, midiHz(degMidi(c.spec, deg + h[0], 0)), h[1], 0);
+    },
+  };
+}
 function stabLayer(gain, steps, { min } = {}) {
   const set = new Set(steps);
   return {
@@ -280,6 +347,8 @@ const MOTIFS = {
   mill: [[0, 0, 6], [6, 2, 2], [8, 4, 6], [14, 3, 2], [16, 2, 8], [24, 1, 4], [28, 0, 4]],
   barrow: [[0, 4, 8], [8, 5, 4], [12, 4, 4], [16, 1, 8], [24, 0, 8]],
   heart: [[0, 0, 6], [6, 1, 2], [8, 0, 8], [16, 4, 4], [20, 3, 4], [24, -1, 8]],
+  // A climb to the lydian sharp fourth (from the I chord, degree 3) and a slow fall.
+  spire: [[0, 4, 4], [4, 3, 2], [6, 4, 2], [8, 7, 8], [16, 6, 4], [20, 4, 4], [24, 2, 8]],
 };
 
 // Boss identity: the second boss of each act plays its own variant of the
@@ -408,7 +477,7 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
       return {
         ...base, ...th, state, bpm: th.combatBpm, prog: th.prog,
         layers: [
-          padLayer(0.32, { oct: 0 }),
+          padLayer(0.32, { oct: th.padOct ?? 0 }),
           bassLayer(0.5, [0, 3, 6, 8, 11, 14], { lenSteps: 2 }),
           drumLayer('drum', 0.55, th.drum, th.drumHits ?? { 0: 1, 4: 0.5, 7: 0.6, 8: 0.85, 10: 0.4, 12: 0.55, 14: 0.45 }, { min: 0.12 }),
           arpLayer('ostinato', 0.45, ost, { every: 1, oct: 1, pattern: [0, 1, 2, 1, 3, 2, 1, 2], min: 0.32 }),
@@ -426,7 +495,8 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
             droneLayer(0.4),
             padLayer(0.25, { oct: 0, every: 32 }),
             drumLayer('taiko', 0.62, 'taiko', v.drum),
-            ...(th.bossDrumHits ? [drumLayer('heartbeat', 0.45, th.drum, th.bossDrumHits)] : []),
+            ...(th.bossDrumHits ? [drumLayer(th.drum, 0.45, th.drum, th.bossDrumHits)] : []),
+            ...(th.bossToll ? [tollLayer(0.5, 'knell', th.bossToll)] : []),
             bassLayer(0.45, [0, 2, 4, 6, 8, 10, 12, 14], { lenSteps: 1.6 }),
             arpLayer('ostinato', 0.4, v.arp.instr, { every: 1, oct: 1, pattern: v.arp.pattern, min: 0.25 }),
             ...(v.shaker ? [shakerLayer(0.16, { min: 0.4, every: 2 })] : []),
@@ -441,10 +511,12 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
           droneLayer(0.4),
           padLayer(0.25, { oct: 0, every: 32 }),
           drumLayer('taiko', 0.62, 'taiko', { 0: 1, 3: 0.55, 6: 0.7, 8: 0.9, 11: 0.5, 12: 0.6, 14: 0.75 }),
-          // Act IV: the heartbeat quickens under the boss.
-          ...(th.bossDrumHits ? [drumLayer('heartbeat', 0.5, th.drum, th.bossDrumHits)] : []),
+          // Act IV: the heartbeat quickens under the boss (Act V: the toms).
+          ...(th.bossDrumHits ? [drumLayer(th.drum, 0.5, th.drum, th.bossDrumHits)] : []),
+          // Act V: the heavy bronze toll.
+          ...(th.bossToll ? [tollLayer(0.5, 'knell', th.bossToll)] : []),
           bassLayer(0.45, [0, 2, 4, 6, 8, 10, 12, 14], { lenSteps: 1.6 }),
-          arpLayer('ostinato', 0.4, th.ostinato === 'bell' || th.ostinato === 'glass' ? th.ostinato : 'lute', { every: 1, oct: 1, pattern: [0, 1, 0, 2, 0, 1, 3, 2], min: 0.25 }),
+          arpLayer('ostinato', 0.4, th.ostinato === 'bell' || th.ostinato === 'glass' || th.ostinato === 'chime' ? th.ostinato : 'lute', { every: 1, oct: 1, pattern: [0, 1, 0, 2, 0, 1, 3, 2], min: 0.25 }),
           stabLayer(0.4, [0, 6, 12], { min: 0.5 }),
           leadLayer(0.38, th.lead, MOTIFS[th.id], { min: 0.75, oct: 1 }),
         ],
@@ -505,14 +577,14 @@ const noteStats = { baked: 0, live: 0 };
 export const musicNoteStats = () => ({ ...noteStats });
 
 // Instruments whose sound depends on the note length (the rest ignore it).
-const LEN_INSTR = new Set(['lute', 'flute', 'reed', 'choir', 'bass']);
+const LEN_INSTR = new Set(['lute', 'flute', 'reed', 'choir', 'bass', 'air']);
 // Notes played as baked samples (G3.10): the percussion everywhere (a few
 // velocity keys per state), and EVERY one-shot note of the busy states —
 // combat and boss play 150-200 notes per 4-bar cycle from only 32-48 distinct
 // pitch x velocity x length keys (~2.5-3 MB of samples per state). The calm
 // states (menu, camp, lobby, stingers: 5-56 notes per cycle, long harp/bell
 // tails) stay live; pads and drones always do (long, rare).
-const BAKED_INSTR = new Set(['hand', 'frame', 'taiko', 'shaker', 'heartbeat']);
+const BAKED_INSTR = new Set(['hand', 'frame', 'taiko', 'shaker', 'heartbeat', 'tom']);
 const BAKED_STATES = new Set(['combat', 'boss']);
 const bakesNote = (state, instr) => BAKED_INSTR.has(instr) || BAKED_STATES.has(state);
 const noteKey = (instr, f, v, len) => `n:${instr}:${Math.round(f * 100)}:${Math.round(v * 100)}:${LEN_INSTR.has(instr) ? Math.round(len * 1000) : 0}`;

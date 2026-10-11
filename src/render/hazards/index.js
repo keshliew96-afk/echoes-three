@@ -30,6 +30,14 @@
 //              (frost) or drip rings (wet); and spray kicked up by every
 //              body sliding on it (droplets / ice dust) with a skid streak
 //              when a dodge crosses it
+//   gust       a gust vent (Act V, the Still Spire): a limestone-and-bronze
+//              floor grate breathing faint slate wisps (biome palette); the
+//              telegraph is the shared Ember lane over the full lane with
+//              Ember streaks rushing along it, faster and denser as it
+//              closes, while the vent inhales; the 36-tick blast is the white-
+//              blue air (VFX_MATTER.gust): a torrent of wind lines, a pressure
+//              front run down the lane, dust, feathers and leaves blown along;
+//              then calm (see buildGust)
 import {
   AdditiveBlending,
   BoxGeometry,
@@ -50,9 +58,17 @@ import {
   SRGBColorSpace,
   LinearSRGBColorSpace,
   TorusGeometry,
+  DoubleSide,
+  DynamicDrawUsage,
+  Euler,
+  InstancedMesh,
+  Matrix4,
+  Quaternion,
+  Vector3,
 } from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { PALETTE } from '../../data/palette.js';
+import { PALETTE, VFX_BIOME, VFX_MATTER } from '../../data/palette.js';
+import { CAMERA } from '../../core/constants.js';
 import { toonMaterial } from '../toon.js';
 import { makeGlowSprite } from '../glow.js';
 import { sharedGeo, markShared, releaseTree } from '../geocache.js';
@@ -907,7 +923,531 @@ function buildSlip(h) {
   };
 }
 
-const BUILD = { slip: buildSlip, bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire };
+// Gust vent (Act V, the Still Spire). Read-only on the sim's gust entity:
+// lane {x0,z0,x1,z1,w} blowing from the vent (x0, z0), phase idle |
+// telegraph (60 t) | active (36 t), telegraphStartTick / resolveTick /
+// phaseUntilTick. Layers, in the vent's frame (local +x = downwind):
+//   grate     a limestone frame round a tarnished bronze grate over a dark
+//             throat, sunk in the floor (biome palette, never Ember)
+//   breath    idle: pale slate wisps rising off the grate on a slow breath
+//             and drifting a little downwind; through the telegraph the
+//             breath turns and is DRAWN IN (the vent inhales), the bars
+//             rattle as it closes
+//   lane      one additive decal over the whole lane: a faint scoured streak
+//             pattern at idle; Ember streaks rushing downwind, faster and
+//             denser as the telegraph closes (over the shared Ember lane
+//             shape, which carries the progress sweep); the blast's white-
+//             blue wash, torn streaks and the pressure front
+//   streaks   instanced wind lines at body height: a few Ember ones building
+//             through the telegraph, a torrent of white-blue ones in the blast
+//   front     the pressure wave: a bright band on the floor and a sheet of
+//             air standing on it, run down the lane in the blast's first 0.3 s
+//   debris    feathers and dry leaves torn off the floor and tumbled down the
+//             lane; dust kicked up at the vent and thrown off the lane's end
+// Then calm: the wash fades, the last feathers settle, the breath resumes.
+const GUST_AIR = new Color(VFX_MATTER.gust);
+const GUST_SLATE = new Color(VFX_BIOME[5]);
+const GUST_STREAKS = 30;
+const GUST_FEATHERS = 16;
+
+function streakTex() {
+  return tex('gust-streak', 128, (ctx, S) => {
+    // A tapered wind line: faint tail, bright head near the front.
+    const g = ctx.createLinearGradient(0, 0, S, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0)');
+    g.addColorStop(0.55, 'rgba(255,255,255,0.55)');
+    g.addColorStop(0.86, 'rgba(255,255,255,1)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    const h = S * 0.18;
+    ctx.beginPath();
+    ctx.moveTo(0, S / 2);
+    ctx.quadraticCurveTo(S * 0.6, S / 2 - h, S, S / 2);
+    ctx.quadraticCurveTo(S * 0.6, S / 2 + h, 0, S / 2);
+    ctx.fill();
+  });
+}
+function frontTex() {
+  return tex('gust-front', 64, (ctx, S) => {
+    // A soft vertical sheet: bright at the floor, gone by the top, soft sides.
+    const g = ctx.createLinearGradient(0, S, 0, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0.9)');
+    g.addColorStop(0.35, 'rgba(255,255,255,0.45)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, S, S);
+    ctx.globalCompositeOperation = 'destination-in';
+    const s = ctx.createLinearGradient(0, 0, S, 0);
+    s.addColorStop(0, 'rgba(255,255,255,0)');
+    s.addColorStop(0.2, 'rgba(255,255,255,1)');
+    s.addColorStop(0.8, 'rgba(255,255,255,1)');
+    s.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = s;
+    ctx.fillRect(0, 0, S, S);
+  });
+}
+
+function makeGustLaneMaterial(len) {
+  return new ShaderMaterial({
+    uniforms: {
+      uT: { value: 0 },
+      uLen: { value: len },
+      uIdle: { value: 1 },
+      uTele: { value: 0 },
+      uBlast: { value: 0 },
+      uWave: { value: -1 },
+      uAir: { value: GUST_AIR.clone() },
+      uEmber: { value: EMBER_EXACT.clone() },
+      uScour: { value: GUST_SLATE.clone().lerp(GUST_AIR, 0.5) },
+    },
+    transparent: true,
+    depthWrite: false,
+    blending: AdditiveBlending,
+    toneMapped: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform float uT;
+      uniform float uLen;
+      uniform float uIdle;
+      uniform float uTele;
+      uniform float uBlast;
+      uniform float uWave;
+      uniform vec3 uAir;
+      uniform vec3 uEmber;
+      uniform vec3 uScour;
+      varying vec2 vUv;
+      float hash( vec2 p ) { return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 ); }
+      float noise( vec2 p ) {
+        vec2 i = floor( p ); vec2 f = fract( p );
+        vec2 u = f * f * ( 3.0 - 2.0 * f );
+        return mix( mix( hash( i ), hash( i + vec2( 1, 0 ) ), u.x ), mix( hash( i + vec2( 0, 1 ) ), hash( i + vec2( 1, 1 ) ), u.x ), u.y );
+      }
+      void main() {
+        float along = vUv.x * uLen;
+        float across = abs( vUv.y - 0.5 ) * 2.0;
+        float edge = 1.0 - smoothstep( 0.62, 1.0, across );
+        float ends = smoothstep( 0.0, 0.45, along ) * ( 1.0 - 0.7 * smoothstep( uLen - 1.2, uLen, along ) );
+        // Idle: the floor scoured into faint streaks by every past gust.
+        float sc = noise( vec2( along * 1.4, vUv.y * 16.0 ) );
+        float scour = smoothstep( 0.6, 0.9, sc ) * 0.05 * uIdle;
+        // Telegraph: Ember streaks rushing downwind, building with progress.
+        float sp = mix( 2.5, 11.0, uTele * uTele );
+        float n1 = noise( vec2( ( along - uT * sp ) * 0.8, vUv.y * 9.0 ) );
+        float n1b = noise( vec2( ( along - uT * sp * 1.4 ) * 1.6, vUv.y * 17.0 + 7.0 ) );
+        float tele = ( smoothstep( mix( 0.86, 0.66, uTele ), 0.95, n1 ) * 0.42 + smoothstep( 0.8, 0.95, n1b ) * 0.22 ) * uTele;
+        // Blast: a white-blue wash torn with fast streaks.
+        float n2 = noise( vec2( ( along - uT * 15.0 ) * 0.55, vUv.y * 11.0 ) );
+        float n3 = noise( vec2( ( along - uT * 23.0 ) * 1.3, vUv.y * 21.0 + 3.0 ) );
+        float blast = ( 0.1 + smoothstep( 0.55, 0.85, n2 ) * 0.42 + smoothstep( 0.72, 0.92, n3 ) * 0.36 ) * uBlast;
+        // The pressure front: a bright band with a short wake behind it.
+        float wave = 0.0;
+        if ( uWave >= 0.0 ) {
+          float d = along - uWave * uLen;
+          wave = exp( -d * d * 7.0 ) * 0.75 + ( d < 0.0 ? exp( d * 1.6 ) * 0.18 : 0.0 );
+        }
+        vec3 col = uScour * scour + uEmber * tele + uAir * ( blast + wave );
+        gl_FragColor = vec4( col * edge * ends, 1.0 );
+      }
+    `,
+  });
+}
+
+function featherGeoGust() {
+  return mergeGeometries([
+    new IcosahedronGeometry(1, 1).scale(0.11, 0.01, 0.032),
+    new ConeGeometry(0.006, 0.26, 3).rotateZ(Math.PI / 2).translate(0.01, 0, 0).toNonIndexed(),
+  ]);
+}
+
+function buildGust(h) {
+  const g = new Group();
+  const lane = h.lane;
+  const len = h.len ?? Math.hypot(lane.x1 - lane.x0, lane.z1 - lane.z0);
+  const W = lane.w ?? 1.6;
+  // The vent's frame: origin at the vent, local +x downwind.
+  const spin = new Group();
+  spin.position.set(lane.x0, 0, lane.z0);
+  spin.rotation.y = Math.atan2(h.dirX, h.dirZ) - Math.PI / 2;
+  g.add(spin);
+  const cosA = Math.cos(spin.rotation.y);
+  const sinA = Math.sin(spin.rotation.y);
+  const toWorld = (lx, lz) => ({ x: lane.x0 + cosA * lx + sinA * lz, z: lane.z0 - sinA * lx + cosA * lz });
+
+  // --- Grate: a limestone frame, a dark throat, tarnished bronze bars.
+  const GW = W * 0.86; // across the lane
+  const GD = 0.66; // along it
+  const frameG = sharedGeo('hz-gust-frame', () =>
+    mergeGeometries([
+      new BoxGeometry(0.2, 0.07, 1).translate(-0.5 * 0.66 - 0.1, 0.035, 0),
+      new BoxGeometry(0.2, 0.07, 1).translate(0.5 * 0.66 + 0.1, 0.035, 0),
+    ])
+  );
+  const frameMat = toonMaterial({ color: hslColor(40, 0.07, 0.56) });
+  const frame = new Mesh(frameG, frameMat);
+  frame.scale.set(1, 1, GW + 0.4);
+  addInk(frame);
+  spin.add(frame);
+  const ends = new Mesh(
+    sharedGeo(`hz-gust-ends-${GW.toFixed(2)}`, () =>
+      mergeGeometries([new BoxGeometry(GD, 0.07, 0.2).translate(0, 0.035, -(GW / 2 + 0.1)), new BoxGeometry(GD, 0.07, 0.2).translate(0, 0.035, GW / 2 + 0.1)])
+    ),
+    frameMat
+  );
+  addInk(ends);
+  spin.add(ends);
+  const throat = new Mesh(sharedGeo('hz-gust-throat', () => new PlaneGeometry(1, 1).rotateX(-Math.PI / 2)), new MeshBasicMaterial({ color: hslColor(224, 0.3, 0.04) }));
+  throat.scale.set(GD, 1, GW);
+  throat.position.y = 0.006;
+  spin.add(throat);
+  const barsMat = toonMaterial({ color: hslColor(40, 0.32, 0.34) });
+  const bars = new Mesh(
+    sharedGeo(`hz-gust-bars-${GW.toFixed(2)}`, () =>
+      mergeGeometries([
+        ...[-0.24, -0.08, 0.08, 0.24].map((bx) => new BoxGeometry(0.05, 0.05, GW).translate(bx, 0.03, 0)),
+        ...[-0.33, 0, 0.33].map((bz) => new BoxGeometry(GD, 0.04, 0.045).translate(0, 0.045, bz * GW)),
+      ])
+    ),
+    barsMat
+  );
+  addInk(bars, 1.15);
+  spin.add(bars);
+  const rimeMat = toonMaterial({ color: hslColor(204, 0.3, 0.84) });
+  const rime = new Mesh(sharedGeo(`hz-gust-rime-${GW.toFixed(2)}`, () => mergeGeometries([new BoxGeometry(0.16, 0.02, GW * 0.7).translate(GD / 2 + 0.1, 0.072, 0.05), new BoxGeometry(0.4, 0.02, 0.12).translate(0.05, 0.072, -(GW / 2 + 0.1))])), rimeMat);
+  spin.add(rime);
+  // The throat breathes a faint cold light (biome slate, never Ember).
+  const breathGlow = makeGlowSprite({ color: GUST_SLATE, size: 1.1, opacity: 0.1 });
+  breathGlow.material.color.copy(GUST_SLATE).lerp(GUST_AIR, 0.4);
+  breathGlow.position.set(0, 0.12, 0);
+  spin.add(breathGlow);
+
+  // --- Lane decal.
+  const laneMat = makeGustLaneMaterial(len);
+  const laneQuad = new Mesh(sharedGeo('hz-water-quad', () => new PlaneGeometry(1, 1)), laneMat);
+  laneQuad.rotation.x = -Math.PI / 2;
+  laneQuad.scale.set(len + 0.6, W * 1.08, 1);
+  laneQuad.position.set((len + 0.6) / 2 - 0.3, 0.014, 0);
+  laneQuad.renderOrder = -5;
+  spin.add(laneQuad);
+
+  // --- Wisps (the breath): pooled glow sprites.
+  const wisps = [];
+  for (let i = 0; i < 7; i++) {
+    const s = makeGlowSprite({ color: GUST_AIR, size: 0.5, opacity: 0 });
+    s.material.color.copy(GUST_SLATE).lerp(GUST_AIR, 0.65);
+    s.visible = false;
+    spin.add(s);
+    wisps.push({ s, age: 99, life: 1, x: 0, y: 0, z: 0, vx: 0, vy: 0, size: 0.5 });
+  }
+  let wispDebt = 0;
+
+  // --- Wind streaks at body height: one instanced mesh, the instance colour
+  // is the streak's brightness (additive).
+  const streakMat = new MeshBasicMaterial({ map: streakTex(), transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, side: DoubleSide });
+  // Each streak lies along the lane, rolled about it to face the fixed
+  // camera as squarely as it can (a north-south lane's streaks lie flat, an
+  // east-west lane's stand up toward the camera).
+  const EL = (CAMERA.elevationDeg * Math.PI) / 180;
+  const camL = { x: Math.cos(EL) * -sinA, y: Math.sin(EL), z: Math.cos(EL) * cosA }; // world (0, sin, cos) into the vent frame
+  const roll = Math.round(Math.atan2(-camL.y, camL.z) * 20) / 20;
+  const streakGeo = sharedGeo(`hz-gust-streak-${roll}`, () => new PlaneGeometry(1, 0.09).rotateX(roll));
+  const streaks = new InstancedMesh(streakGeo, streakMat, GUST_STREAKS);
+  streaks.frustumCulled = false;
+  streaks.renderOrder = 6;
+  streaks.instanceMatrix.setUsage(DynamicDrawUsage);
+  const sCol = new Color(0, 0, 0);
+  const st = [];
+  for (let i = 0; i < GUST_STREAKS; i++) {
+    st.push({ on: false, x: 0, y: 0, z: 0, v: 0, l: 1, a: 0, k: 0 });
+    streaks.setColorAt(i, sCol);
+  }
+  spin.add(streaks);
+
+  // --- The pressure front: a wall of air standing across the lane — a row
+  // of tall soft billboards (camera-facing whatever the lane's heading).
+  const front = new Group();
+  const frontSprites = [];
+  for (let i = 0; i < 3; i++) {
+    const sp = new Sprite(new SpriteMaterial({ map: frontTex(), color: GUST_AIR.clone(), transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, opacity: 0 }));
+    sp.center.set(0.5, 0);
+    sp.position.set(0, 0.02, (i - 1) * W * 0.36);
+    sp.renderOrder = 6;
+    front.add(sp);
+    frontSprites.push(sp);
+  }
+  front.visible = false;
+  spin.add(front);
+  const pop = makeGlowSprite({ color: GUST_AIR, size: 1.6, opacity: 0 });
+  pop.material.color.copy(GUST_AIR);
+  pop.position.set(0.2, 0.3, 0);
+  spin.add(pop);
+
+  // --- Feathers and leaves tumbling down the lane.
+  const fMat = toonMaterial({ color: '#FFFFFF' });
+  const feathers = new InstancedMesh(sharedGeo('hz-gust-feather', featherGeoGust), fMat, GUST_FEATHERS);
+  feathers.frustumCulled = false;
+  feathers.instanceMatrix.setUsage(DynamicDrawUsage);
+  const ft = [];
+  const fc = new Color();
+  for (let i = 0; i < GUST_FEATHERS; i++) {
+    const kind = i % 4;
+    fc.copy(kind === 0 ? hslColor(222, 0.12, 0.28) : kind === 1 ? hslColor(38, 0.3, 0.4) : hslColor(210, 0.06, 0.84));
+    feathers.setColorAt(i, fc);
+    ft.push({ on: false, x: 0, y: 0, z: 0, v: 0, spin: 0, ph: i * 1.3 });
+  }
+  spin.add(feathers);
+
+  const M = new Matrix4();
+  const Q = new Quaternion();
+  const E = new Euler();
+  const P = new Vector3();
+  const S = new Vector3();
+  const hide = new Matrix4().makeScale(0, 0, 0);
+  for (let i = 0; i < GUST_STREAKS; i++) streaks.setMatrixAt(i, hide);
+  for (let i = 0; i < GUST_FEATHERS; i++) feathers.setMatrixAt(i, hide);
+
+  let tele = null;
+  let was = 'idle';
+  let blast = 0; // eased wash
+  let blastAge = 99; // seconds since the gust fired
+  let calm = 0; // seconds since it stopped
+  let streakDebt = 0;
+  let featherDebt = 0;
+  let dustDebt = 0;
+  const rnd = (a, b, ctx) => ctx.cosmetic.range(a, b);
+
+  function spawnStreak(ctx, color, opacity, speed, lenMul) {
+    const s = st.find((q) => !q.on);
+    if (!s) return;
+    s.on = true;
+    s.x = rnd(-0.2, len * 0.35, ctx);
+    s.z = rnd(-W * 0.45, W * 0.45, ctx);
+    s.y = rnd(0.12, 1.25, ctx);
+    s.v = speed * rnd(0.8, 1.25, ctx);
+    s.l = lenMul * rnd(0.6, 1.3, ctx);
+    s.a = opacity * rnd(0.6, 1.0, ctx);
+    s.k = color;
+  }
+  function spawnFeather(ctx) {
+    const f = ft.find((q) => !q.on);
+    if (!f) return;
+    f.on = true;
+    f.x = rnd(-0.1, 0.4, ctx);
+    f.z = rnd(-W * 0.4, W * 0.4, ctx);
+    f.y = rnd(0.05, 0.3, ctx);
+    f.v = rnd(6.5, 10, ctx);
+    f.spin = rnd(8, 16, ctx) * (ctx.cosmetic.chance(0.5) ? 1 : -1);
+  }
+
+  return {
+    group: g,
+    update(e, tSec, ctx, dt) {
+      const tick = ctx.tick;
+      const ph = e.phase;
+      laneMat.uniforms.uT.value = tSec;
+      // ---- phase edges
+      if (ph === 'active' && was !== 'active') {
+        blastAge = 0;
+        // The vent's cough: dust thrown up and out, a pop of air.
+        const v = toWorld(0.3, 0);
+        const dir = { x: h.dirX, z: h.dirZ };
+        impactFx.spray('smoke', v.x, 0.15, v.z, 7, { color: GUST_SLATE, speed: [2.5, 5.5], up: [0.2, 0.9], size: [0.35, 0.65], grow: 1.2, life: [0.5, 0.9], opacity: 0.4, dir, dirBias: 0.85, jitter: 0.25 });
+        impactFx.spray('spark', v.x, 0.1, v.z, 8, { color: GUST_AIR, speed: [4, 8], up: [0.2, 1.0], size: [0.03, 0.06], life: [0.3, 0.6], opacity: 0.9, dir, dirBias: 0.9, jitter: 0.2 });
+        for (let i = 0; i < 7; i++) spawnFeather(ctx);
+      }
+      if (ph !== 'active' && was === 'active') calm = 0;
+      was = ph;
+      blastAge += dt;
+      calm += dt;
+
+      // ---- telegraph progress (0..1), the shared Ember lane
+      let prog = 0;
+      if (ph === 'telegraph') {
+        if (!tele) tele = ctx.shapes.acquire('lane');
+        const span = Math.max(1, (e.resolveTick ?? tick) - (e.telegraphStartTick ?? (e.resolveTick ?? tick) - 60));
+        prog = Math.min(1, Math.max(0, (tick - ((e.resolveTick ?? tick) - span)) / span));
+        tele.set({ fromX: lane.x0, fromZ: lane.z0, x: lane.x1, z: lane.z1, width: W * 0.94 }, tSec, prog);
+        tele.showColumn(false);
+        ctx.live.push({ x: e.x, z: e.z });
+      } else if (tele) {
+        ctx.shapes.release(tele);
+        tele = null;
+      }
+      const active = ph === 'active';
+      blast += ((active ? 1 : 0) - blast) * Math.min(1, dt * (active ? 18 : 3.2));
+      const u = laneMat.uniforms;
+      u.uTele.value = ph === 'telegraph' ? prog : Math.max(0, u.uTele.value - dt * 6);
+      u.uBlast.value = blast;
+      u.uIdle.value += ((active || ph === 'telegraph' ? 0.3 : 1) - u.uIdle.value) * Math.min(1, dt * 3);
+      // The front runs the lane in the blast's first 0.32 s.
+      const frontT = blastAge / 0.32;
+      if (frontT <= 1.15) {
+        u.uWave.value = Math.min(1.05, frontT);
+        front.visible = true;
+        front.position.x = Math.min(1.05, frontT) * len;
+        const fo = 0.2 * (1 - Math.max(0, frontT - 0.75) / 0.4);
+        for (const sp of frontSprites) {
+          sp.material.opacity = fo;
+          sp.scale.set(W * 0.5, 0.8 + 0.5 * Math.min(1, frontT), 1);
+        }
+      } else {
+        u.uWave.value = -1;
+        front.visible = false;
+      }
+      pop.material.opacity = blastAge < 0.25 ? 0.3 * (1 - blastAge / 0.25) : 0;
+      pop.scale.setScalar(1.0 + blastAge * 3);
+
+      // ---- breath / wisps
+      const breathe = 0.5 + 0.5 * Math.sin(tSec * 1.9 + (h.id ?? 0));
+      breathGlow.material.opacity = active ? 0.32 : ph === 'telegraph' ? 0.1 + 0.18 * prog : 0.04 + 0.04 * breathe;
+      wispDebt += dt * (active ? 0 : ph === 'telegraph' ? 6 : 1.2 + breathe * 1.4);
+      while (wispDebt >= 1) {
+        wispDebt -= 1;
+        const w = wisps.find((q) => q.age >= q.life);
+        if (!w) break;
+        w.age = 0;
+        if (ph === 'telegraph') {
+          // Inhale: wisps start out round the grate and are drawn into it.
+          const a = rnd(0, Math.PI * 2, ctx);
+          const r0 = rnd(0.7, 1.3, ctx);
+          w.x = Math.cos(a) * r0;
+          w.z = Math.sin(a) * r0 * 0.8;
+          w.y = rnd(0.25, 0.6, ctx);
+          w.vx = -w.x * 1.6;
+          w.vz = -w.z * 1.6;
+          w.vy = -w.y * 1.2;
+          w.life = 0.6;
+          w.size = rnd(0.35, 0.55, ctx);
+        } else {
+          w.x = rnd(-0.2, 0.2, ctx);
+          w.z = rnd(-W * 0.32, W * 0.32, ctx);
+          w.y = 0.08;
+          w.vx = rnd(0.2, 0.55, ctx);
+          w.vz = 0;
+          w.vy = rnd(0.3, 0.55, ctx);
+          w.life = rnd(1.8, 2.6, ctx);
+          w.size = rnd(0.3, 0.5, ctx);
+        }
+      }
+      for (const w of wisps) {
+        if (w.age >= w.life) {
+          w.s.visible = false;
+          continue;
+        }
+        w.age += dt;
+        w.x += w.vx * dt;
+        w.y += w.vy * dt;
+        w.z += (w.vz ?? 0) * dt;
+        const f = w.age / w.life;
+        w.s.visible = true;
+        w.s.position.set(w.x, w.y, w.z);
+        const env = Math.sin(Math.PI * Math.min(1, f));
+        w.s.material.opacity = (ph === 'telegraph' ? 0.16 : 0.13) * env;
+        w.s.scale.setScalar(w.size * (ph === 'telegraph' ? 1.2 - 0.6 * f : 0.7 + 0.9 * f));
+      }
+      // Bars rattle as the inhale closes.
+      bars.position.y = ph === 'telegraph' && prog > 0.6 ? 0.006 * Math.sin(tSec * 70) * (prog - 0.6) * 2.5 : 0;
+
+      // ---- streaks
+      if (ph === 'telegraph') streakDebt += dt * (4 + 26 * prog * prog);
+      else if (active) streakDebt += dt * 70;
+      while (streakDebt >= 1) {
+        streakDebt -= 1;
+        if (active) spawnStreak(ctx, 1, 0.75, rnd(13, 18, ctx), rnd(1.1, 2.0, ctx));
+        else spawnStreak(ctx, 0, 0.32 + 0.3 * prog, 3 + 9 * prog, 0.5 + 0.8 * prog);
+      }
+      for (let i = 0; i < GUST_STREAKS; i++) {
+        const s = st[i];
+        if (!s.on) continue;
+        s.x += s.v * dt;
+        const L = s.l;
+        if (s.x - L > len + 0.3) {
+          s.on = false;
+          streaks.setMatrixAt(i, hide);
+          continue;
+        }
+        const fade = Math.min(1, (len + 0.3 - (s.x - L * 0.5)) / 1.2);
+        P.set(s.x - L / 2, s.y, s.z);
+        S.set(L, 1, 1);
+        Q.identity();
+        M.compose(P, Q, S);
+        streaks.setMatrixAt(i, M);
+        const a = Math.max(0, s.a * fade) * (active || ph === 'telegraph' ? 1 : Math.max(0, 1 - calm * 4));
+        if (s.k === 1) sCol.copy(GUST_AIR).multiplyScalar(a);
+        else sCol.copy(EMBER_EXACT).multiplyScalar(a);
+        streaks.setColorAt(i, sCol);
+      }
+      streaks.instanceMatrix.needsUpdate = true;
+      if (streaks.instanceColor) streaks.instanceColor.needsUpdate = true;
+
+      // ---- feathers + dust in the blast
+      if (active) {
+        featherDebt += dt * 12;
+        dustDebt += dt * 10;
+      }
+      while (featherDebt >= 1) {
+        featherDebt -= 1;
+        spawnFeather(ctx);
+      }
+      while (dustDebt >= 1) {
+        dustDebt -= 1;
+        const p = toWorld(rnd(0.2, len * 0.8, ctx), rnd(-W * 0.4, W * 0.4, ctx));
+        impactFx.spray('smoke', p.x, 0.08, p.z, 1, { color: GUST_SLATE, speed: [3, 6], up: [0.05, 0.35], size: [0.25, 0.45], grow: 1.4, life: [0.4, 0.7], opacity: 0.26, dir: { x: h.dirX, z: h.dirZ }, dirBias: 0.92, jitter: 0.15 });
+      }
+      for (let i = 0; i < GUST_FEATHERS; i++) {
+        const f = ft[i];
+        if (!f.on) continue;
+        // In the blast they ride the wind; after it they glide down and stop.
+        const drive = active ? 1 : Math.max(0, 1 - calm * 2.2);
+        f.x += f.v * drive * dt;
+        f.y = Math.max(0.02, f.y + (active ? Math.sin(tSec * 7 + f.ph) * 0.9 : -0.9) * dt);
+        f.z += Math.sin(tSec * 5 + f.ph) * 0.6 * dt * drive;
+        if (f.x > len + 0.8 || (!active && drive <= 0 && f.y <= 0.021)) {
+          if (!active && f.x <= len + 0.8 && calm < 2.5) {
+            // settled on the floor: hold until calm ends
+          } else {
+            f.on = false;
+            feathers.setMatrixAt(i, hide);
+            continue;
+          }
+        }
+        E.set(f.ph + tSec * f.spin * drive, tSec * 3 * drive + f.ph, 0.4 * Math.sin(tSec * 9 + f.ph) * drive);
+        Q.setFromEuler(E);
+        P.set(f.x, f.y + 0.02, f.z);
+        S.set(1.4, 1.4, 1.4);
+        M.compose(P, Q, S);
+        feathers.setMatrixAt(i, M);
+      }
+      if (!active && calm > 2.5) {
+        for (let i = 0; i < GUST_FEATHERS; i++) {
+          if (ft[i].on) {
+            ft[i].on = false;
+            feathers.setMatrixAt(i, hide);
+          }
+        }
+      }
+      feathers.instanceMatrix.needsUpdate = true;
+      // Dust off the lane's far end where the blast spends itself.
+      if (active && blastAge > 0.2 && blastAge - dt <= 0.2) {
+        const p = toWorld(len, 0);
+        impactFx.spray('smoke', p.x, 0.2, p.z, 6, { color: GUST_SLATE, speed: [1.5, 3.5], up: [0.3, 1.0], size: [0.4, 0.7], grow: 1.3, life: [0.6, 1.0], opacity: 0.32, dir: { x: h.dirX, z: h.dirZ }, dirBias: 0.6, jitter: 0.5 });
+      }
+    },
+    dispose(ctx) {
+      if (tele) ctx.shapes.release(tele);
+    },
+  };
+}
+
+const BUILD = { slip: buildSlip, bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire, gust: buildGust };
 
 // ------------------------------------------------------------------ layer --
 export function createHazardLayer({ stage, world, bus, cosmetic, slide = null }) {
@@ -975,7 +1515,7 @@ export function createHazardLayer({ stage, world, bus, cosmetic, slide = null })
       if (!r) {
         r = e.kind === 'rubble' ? buildRubble(e) : BUILD[e.htype] ? BUILD[e.htype](e) : null;
         if (!r) continue;
-        if (e.kind === 'hazard' && e.htype !== 'millrace' && e.htype !== 'rockfall' && e.htype !== 'gravefire') r.group.position.set(e.x, 0, e.z);
+        if (e.kind === 'hazard' && e.htype !== 'millrace' && e.htype !== 'rockfall' && e.htype !== 'gravefire' && e.htype !== 'gust') r.group.position.set(e.x, 0, e.z);
         rigs.set(e.id, r);
         root.add(r.group);
       }
@@ -1018,6 +1558,7 @@ export function createHazardLayer({ stage, world, bus, cosmetic, slide = null })
       slipFrost: { id: 2, radius: 1.4, skin: 'frost' },
       slipGlass: { id: 3, radius: 1.4, skin: 'glass' },
       gravefireVein: { id: 1, vents: [{ x: 0, z: 0 }], skin: 'vein' },
+      gust: { id: 1, x: 0, z: 0, len: 4, dirX: 1, dirZ: 0, lane: { x0: -2, z0: 0, x1: 2, z1: 0, w: 1.6 } },
     };
     const kindOf = (k) => (k.startsWith('slip') ? 'slip' : k.startsWith('gravefire') ? 'gravefire' : k);
     for (const [k, f] of Object.entries(fake)) warmPark(root, BUILD[kindOf(k)](f).group);

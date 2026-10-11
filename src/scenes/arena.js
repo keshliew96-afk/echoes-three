@@ -57,6 +57,7 @@ import { ARENA, CAMERA, DODGE, DUMMY, TICK_HZ } from '../core/constants.js';
 import { createCritter, setInkViewport } from '../render/critters/index.js';
 import { PALETTE } from '../data/palette.js';
 import { LAYOUTS } from '../data/layouts.js';
+import { ACT_IDS } from '../data/levels.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createGrayboxScene } from './graybox.js';
 import { layoutSpec, biomeInfo, biomeOfLayout, LAYOUT_SPEC_IDS } from '../env/biomes/index.js';
@@ -856,7 +857,10 @@ export function createArenaScene(stage, toggles, ctx) {
       // the reserved Ember band — the older red-heavier halo painted the
       // monolith's own key-lit face maroon in vignette-dim frames.
       const HALO_VIOLET = [0.66, 0.5, 1.95];
-      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: 1.9, opacity: 0.6 });
+      // Act V's cracked bells ride a tighter, dimmer halo (`em.size`,
+      // `em.halo`, `em.pool`): the crack is the tell, the halo only frames it.
+      // Unset = the monolith's own numbers.
+      const glow = makeGlowSprite({ color: PALETTE.godstuffViolet, size: em.size ?? 1.9, opacity: em.halo ?? 0.6 });
       glow.renderOrder = HALO_ORDER;
       glow.material.toneMapped = false;
       // Same pre-compensated violet family as the veins so the HALO carries the
@@ -877,12 +881,12 @@ export function createArenaScene(stage, toggles, ctx) {
       // over vignette-dark ground the grade crushes the addition's blue and the
       // old pool measured a maroon slick around the plinth; the vein cores and
       // halo carry the violet tell, the pool only has to read as underglow.
-      const pool = groundPool(PALETTE.godstuffViolet, 1.2, 0.34, poolY());
+      const pool = groundPool(PALETTE.godstuffViolet, em.pool ?? 1.2, 0.34, poolY());
       pool.material.color.setRGB(HALO_VIOLET[0] * 0.62, HALO_VIOLET[1], HALO_VIOLET[2], LinearSRGBColorSpace);
       pool.position.x = em.x;
       pool.position.z = em.z;
       dRoot.add(pool);
-      pulses.push({ glow, base: 0.6, rate: 0.9, amp: 0.12, jitter: 0, phase: cosmetic.range(0, Math.PI * 2), spark });
+      pulses.push({ glow, base: em.halo ?? 0.6, rate: 0.9, amp: 0.12, jitter: 0, phase: cosmetic.range(0, Math.PI * 2), spark });
     } else if (em.kind === 'crystal') {
       // Act IV (env/biomes/heart.js): a violet crystal glow — the Hollow
       // Heart's light sources in place of fire. Halo + a broad cold pool on
@@ -936,7 +940,11 @@ export function createArenaScene(stage, toggles, ctx) {
     );
     light.position.set(em.x, em.y + 0.3, em.z);
     dRoot.add(light);
-    torchLights.push({ light, phase: cosmetic.range(0, Math.PI * 2) });
+    // Act V: a biome on pale limestone may trim its torch lights
+    // (`mood.torchLightGain`) — a full-strength light a stride off a pale wall
+    // blooms to a white veil. Unset = 1 (every older biome).
+    light.intensity *= spec.mood?.torchLightGain ?? 1;
+    torchLights.push({ light, phase: cosmetic.range(0, Math.PI * 2), gain: spec.mood?.torchLightGain ?? 1 });
   }
   // Act IV: the heart has no torches — its two real lights ride crystal
   // glows (`spec.crystalLightIdx`), cold violet-white, so every dressing
@@ -1037,8 +1045,11 @@ export function createArenaScene(stage, toggles, ctx) {
     });
     queue.length = 0;
     // CAMPAIGN residency (PLAN §12.5): only the resident level's layouts are
-    // ever built in the background.
-    for (const id of order) if (wantedId(id) && !dressings.has(id) && !buildStats.failed[id] && (!job || job.id !== id)) queue.push(id);
+    // ever built in the background. Act V (the Still Spire) is only played
+    // behind ?act5=1 (data/levels.js ACT_IDS): without it its six dressings
+    // are never pre-built (a ?layout=29 boot still builds its own).
+    const played = (id) => ACT_IDS.includes(actOf(id) ?? 1);
+    for (const id of order) if (wantedId(id) && played(id) && !dressings.has(id) && !buildStats.failed[id] && (!job || job.id !== id)) queue.push(id);
   }
   function finishGpu(d) {
     for (const t of d.textures) {
@@ -1502,7 +1513,7 @@ export function createArenaScene(stage, toggles, ctx) {
     let bootAct = null;
     try {
       const a = Number(new URLSearchParams(window.location.search).get('act'));
-      if (a >= 1 && a <= 4) bootAct = a;
+      if (a >= 1 && a <= 5) bootAct = a;
     } catch {
       /* no location (tests) */
     }
@@ -1769,6 +1780,7 @@ export function createArenaScene(stage, toggles, ctx) {
     for (const tl of torchLights) {
       tl.light.intensity =
         TORCH_LIGHT.intensity *
+        (tl.gain ?? 1) *
         torchDim *
         (1 + 0.13 * Math.sin(tSec * 11 + tl.phase) + 0.07 * Math.sin(tSec * 23));
     }

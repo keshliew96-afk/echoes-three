@@ -43,7 +43,7 @@ import { PROFILE_KEY } from './storage.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, nextLevel } from '../data/campaign.js';
 import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet, FEATS, featsOf, marksAfter } from '../data/unlocks.js';
 
-export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5 });
+export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5, 5: 3.0 });
 export const CHALLENGE_MUL = Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 });
 const MAX_SCORES = 10;
 

@@ -187,6 +187,9 @@ export function createCombat({
     if (partyDeals) amount *= M.dealtMul(target);
     if (crit) amount *= (critMul ?? CRIT.mult) + (partyDeals ? M.critMulAdd() : 0);
     amount *= STATUS.damageTakenMul(target, tick);
+    // Act V (docs/ACT_V.md): a body's own damage-taken factor (a grounded
+    // Gust Kite takes more). Absent on every other body, so nothing changes.
+    if (target.takenMul !== undefined) amount *= target.takenMul;
     if (partyHit) amount *= M.takenMul();
     let absorbed = 0;
     let shieldSrc = null;

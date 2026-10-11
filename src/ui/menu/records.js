@@ -14,6 +14,7 @@ const ACT_NAME = {
   get 2() { return t('The Sunken Mill'); },
   get 3() { return t('The Ashen Barrow'); },
   get 4() { return t('The Hollow Heart'); },
+  get 5() { return t('The Still Spire'); },
 };
 const CHALLENGE_NAME = {
   get relaxed() { return t('Relaxed'); },

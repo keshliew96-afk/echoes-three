@@ -31,12 +31,14 @@ const segDist = (px, pz, ax, az, bx, bz) => {
 function shapesOf(p) {
   // -> [{ kind: 'pt', x, z, r } | { kind: 'seg', ax, az, bx, bz, r }]
   if (p.type === 'millrace') return [{ kind: 'seg', ax: p.x0, az: p.z0, bx: p.x1, bz: p.z1, r: 0 }];
+  // Act V gust vents: the lane's half-width counts (the push reaches it).
+  if (p.type === 'gust') return [{ kind: 'seg', ax: p.x0, az: p.z0, bx: p.x1, bz: p.z1, r: (p.w ?? 1.6) / 2 }];
   if (p.type === 'gravefire') return p.vents.map(([x, z]) => ({ kind: 'pt', x, z, r: FOOT.gravefire }));
   if (p.type === 'rockfall') return [];
   const r = p.type === 'bramble' || p.type === 'slip' ? p.r : FOOT[p.type] ?? 0.4;
   return [{ kind: 'pt', x: p.x, z: p.z, r }];
 }
-const distTo = (s, x, z) => (s.kind === 'pt' ? Math.hypot(s.x - x, s.z - z) - s.r : segDist(x, z, s.ax, s.az, s.bx, s.bz));
+const distTo = (s, x, z) => (s.kind === 'pt' ? Math.hypot(s.x - x, s.z - z) - s.r : segDist(x, z, s.ax, s.az, s.bx, s.bz) - s.r);
 
 let fails = 0;
 const note = (lid, p, msg) => {

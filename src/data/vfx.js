@@ -188,6 +188,13 @@ export const ENEMY_VFX = Object.freeze({
   sexton: Object.freeze({ matter: 'earth', family: 'support', shard: null, chunk: 5, dust: 4 }),
   bloom: Object.freeze({ matter: 'heartcrystal', family: 'brute', shard: 'needle', chunk: 4, dust: 1, heart: true }),
   siphon: Object.freeze({ matter: 'heartflesh', family: 'flyer', shard: 'drop', chunk: 2, dust: 0, heart: true }),
+  // Act V, the Still Spire (docs/ACT_V.md). Their beats (the dive, landing
+  // and climb; the toll and the choke; the crack, wake, slam and settle; the
+  // swing and the landing) are director recipes keyed by the sim event.
+  kite: Object.freeze({ matter: 'kitecloth', family: 'flyer', shard: 'feather', chunk: 0, dust: 2, feathers: 6 }),
+  chime: Object.freeze({ matter: 'bellbronze', family: 'flyer', shard: null, chunk: 4, dust: 2 }),
+  gargoyle: Object.freeze({ matter: 'spirestone', family: 'brute', shard: null, chunk: 8, dust: 4 }),
+  hanger: Object.freeze({ matter: 'hemp', family: 'charger', shard: null, chunk: 2, dust: 3 }),
   // CHAMPIONS (docs/CHAMPIONS.md): the four lords. Their move beats and
   // deaths are director recipes keyed by champion_* events.
   briar_knight: Object.freeze({ matter: 'bramble', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),

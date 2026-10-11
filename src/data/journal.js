@@ -45,6 +45,19 @@ const ENEMY_ROWS = [
   ['bloom', 'Heart Bloom', 'Pulse', 'A flower of violet crystal that grows wherever the Heart beats closest to the floor.', 'Creeps in on its roots, then takes root and never moves again. On every second heartbeat it opens in a warning ring round itself and snaps shut for 12. Every bloom in the room beats together.'],
   ['siphon', 'Vein Siphon', 'Drinker', 'A sac of the Heart\'s blood that never has enough of it.', 'Lashes a tendril down a warning lane for 5 and latches onto the first hero it finds, then drinks 2 every half second and heals by as much. Walk well away from it to snap the tether, or kill it.'],
 ];
+// Act V, the Still Spire (docs/ACT_V.md): listed only while Level V is
+// played (the ?act5=1 preview until slice 3 opens it), so the Journal never
+// shows pages a player cannot fill.
+const SPIRE_ROWS = [
+  ['kite', 'Gust Kite', 'Diver', 'Cane and old sailcloth that the Spire\'s wind will not let fall.', 'Circles high, then hangs and marks a warning lane through a hero. It dives down it for 9 to every hero it crosses and lands in a heap: hit it then, it takes half again as much on the floor.'],
+  ['chime', 'Chime Wraith', 'Toller', 'A shroud with a cracked bell where its heart should be. It still rings the hours nobody keeps.', 'Drifts in close, then lifts its bell in a warning ring round itself. The toll hits for 6 and slows every hero inside by 40% for 2 s. Step out of the ring; a stun chokes the bell.'],
+  ['gargoyle', 'Gargoyle', 'Sleeper', 'It watched the gods sit down. It has been waiting for someone to stand up.', 'Stone until a hero comes close or strikes it. Then it cracks free in a warning ring for 12, stalks you and slams a ring in front of it for 13. Leave it alone long enough and it turns back to stone.'],
+  ['hanger', 'Rope Hanger', 'Swinger', 'A bell-ringer who never let go of the rope.', 'Grips its rope and marks a long warning lane through a hero, then swings down it over everything in the way. Every hero it passes takes 8 and is thrown aside.'],
+];
+const ROWS = ACT_IDS.includes(5) ? [...ENEMY_ROWS, ...SPIRE_ROWS] : ENEMY_ROWS;
+// The same pages as display data, exported so tools/i18n-extract.mjs collects
+// their text with or without the flag.
+export const SPIRE_PAGES = Object.freeze(SPIRE_ROWS.map(([id, name, role, lore, text]) => Object.freeze({ id, name, role, lore, text })));
 
 // CHAMPION ROOMS (docs/CHAMPIONS.md): one row per champion, keyed by kind;
 // its land is its act. They are counted like enemies (met, felled).
@@ -78,17 +91,19 @@ export const JOURNAL_LANDS = Object.freeze(ACT_IDS.map((a) => Object.freeze({ le
 const landsOf = (etype) => ACT_IDS.filter((a) => (campaignLevel(LEVELS[a]).roster ?? {})[etype] > 0);
 
 export const BESTIARY = Object.freeze([
-  ...ENEMY_ROWS.map(([id, name, role, lore, text]) => Object.freeze({ id, boss: false, name, role, lore, text, lands: Object.freeze(landsOf(id)) })),
+  ...ROWS.map(([id, name, role, lore, text]) => Object.freeze({ id, boss: false, name, role, lore, text, lands: Object.freeze(landsOf(id)) })),
   ...Object.values(CHAMPIONS).map((c) => {
     const row = CHAMPION_ROWS[c.id] ?? ['', ''];
     return Object.freeze({ id: c.id, boss: false, champion: true, name: c.name, role: 'Champion', lore: row[0], text: row[1], lands: Object.freeze([c.act]) });
   }),
+  // (Level V's stand-in bosses, behind the Act V preview, keep their own
+  // land's page: each boss is listed once, at its first level.)
   ...ACT_IDS.flatMap((a) =>
     (LEVELS[a].bosses ?? []).map((b) => {
       const row = BOSS_ROWS[b.kind] ?? ['', ''];
       return Object.freeze({ id: b.kind, boss: true, name: b.name, role: 'Boss', lore: row[0], text: row[1], lands: Object.freeze([a]) });
     })
-  ),
+  ).filter((b, i, all) => all.findIndex((o) => o.id === b.id) === i),
 ]);
 export const BESTIARY_IDS = Object.freeze(BESTIARY.map((b) => b.id));
 export const ENEMY_JOURNAL_IDS = Object.freeze(BESTIARY.filter((b) => !b.boss).map((b) => b.id));

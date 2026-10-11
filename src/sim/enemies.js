@@ -105,6 +105,13 @@ import keener from './enemies/keener.js';
 import sexton from './enemies/sexton.js';
 import bloom from './enemies/bloom.js';
 import siphon from './enemies/siphon.js';
+// Act V (docs/ACT_V.md): the Still Spire's Gust Kite, Chime Wraith, Gargoyle
+// and Rope Hanger. Same module contract; they live only in Level V's roster,
+// which plays only behind the ?act5=1 preview until slice 3.
+import kite from './enemies/kite.js';
+import chime from './enemies/chime.js';
+import gargoyle from './enemies/gargoyle.js';
+import hanger from './enemies/hanger.js';
 // CHAMPIONS (docs/CHAMPIONS.md): the four named mini-bosses behind the crown
 // door, on the same module contract (never in a roster; waves.js spawns them).
 import { CHAMPION_KITS } from './enemies/champions.js';
@@ -171,7 +178,7 @@ function circleContactT(px, pz, dx, dz, cx, cz, R) {
 }
 
 // Gauntlet archetypes (M4b): etype -> plain-data module (PLAN §3.6).
-export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight, husk, lancer, geode, censer, owl, lasher, leech, miller, ...CHAMPION_KITS, keener, sexton, bloom, siphon });
+export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight, husk, lancer, geode, censer, owl, lasher, leech, miller, ...CHAMPION_KITS, keener, sexton, bloom, siphon, kite, chime, gargoyle, hanger });
 // Every hostile enemy kind this system owns (the boss is sim/boss.js's).
 export const ENEMY_KINDS = Object.freeze(new Set(['boar', 'mantis', ...Object.keys(ARCHETYPES)]));
 // §23.5 Elite modifier (any non-boss).
