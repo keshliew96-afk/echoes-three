@@ -6,8 +6,8 @@
 // The spine: the gods sang the world and fell silent; the Hollow Heart under
 // the Barrow sings a hollow copy in their place; each Act's boss frees one
 // VERSE of the true song, which the Healer's bell carries home to the
-// Hearth-Fire. The song has SEVEN verses and the starting story recovers four
-// (Levels I to IV), so a future Act adds a chapter, a verse and its two
+// Hearth-Fire. The song has SEVEN verses and the story so far recovers five
+// (Levels I to V; the Sky verse since the Spire's bosses), so a future Act adds a chapter, a verse and its two
 // bosses here without rewriting what came before (docs/STORY.md "Hooks").
 
 // The number of verses the whole song has. Verses beyond the levels that
@@ -49,6 +49,15 @@ export const CHAPTERS = Object.freeze([
     title: 'Chapter IV · The Hollow Heart',
     summary:
       'The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding. Deeper still, past the end of the song, the Vein Weaver spins the Heart’s veins through the dark.',
+  },
+  // ACT V (docs/ACT_V_BOSSES.md): the Still Spire, the gods' own belfry.
+  {
+    level: 5,
+    verse: 'sky',
+    name: 'Sky@@verse',
+    title: 'Chapter V · The Still Spire',
+    summary:
+      'Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Felling either frees the Verse of Sky, and the bell rings where the gods can hear it.',
   },
 ]);
 
@@ -111,6 +120,7 @@ export const KEEPER_LINES = Object.freeze({
       'Root and Water. The Mill runs clear again, and the hearth is warmer for it.',
       'Three verses home. Yet below the Barrow, something is still singing.',
       'Four verses burn. Three are still missing, out where the map runs blank.',
+      'Five verses. Sky came home ringing, and the fire leaned up to meet it. Two are still missing.',
     ],
   },
   extra: {
@@ -131,6 +141,7 @@ export const RILL_LINES = Object.freeze({
       'I sang the sluices shut to keep the hollow song out. It came in with the river anyway. Thank you for bringing the water back.',
       'Three verses home. I can hear Stone in the hearth now, low and slow, the way the millstones used to turn.',
       'Four verses. The river still remembers the other three. Take me along and I will listen for them.',
+      'Five verses. The rain off the Spire runs clear again. I can hear the sky in the river now.',
     ],
   },
   extra: {
@@ -160,6 +171,7 @@ export const CHRONICLER_LINES = Object.freeze({
       'Two lands inked. The Mill’s ink is still wet.',
       'Three lands. Below the Barrow there is no map at all. Yet.',
       'Four lands, and the edges are still blank. The road goes further than we have.',
+      'Five lands. I inked the Spire at the very top of the page, and there is still paper above it.',
     ],
   },
 });
@@ -181,6 +193,9 @@ export const RUMOURS = Object.freeze({
   // Level IV's own bosses (docs/ACT_IV_BOSSES.md).
   cantor: { text: 'The Hollow Cantor itself waits in the Heart Chamber. It sings the verses it stole from every land, and their beasts come with each one. Crowd it and it steps away.' },
   colossus: { text: 'The singer won’t come out today. The Heart has grown a Geode Colossus to guard its chamber. Step off the line when it raises a fist.' },
+  // Level V's own bosses (docs/ACT_V_BOSSES.md).
+  hush: { text: 'The Hush waits in the Belfry Crown, where the gods sat down. When the air goes still round it, walk to the walls, then hit it while it sinks.' },
+  skyhorn: { text: 'The Skyhorn guards the belfry ahead. When it paws the floor, step out of its line and let it meet the wall.' },
   other: { text: 'Something old waits beyond the next door. I haven’t seen its like before.' },
 });
 // Level IV (the Hollow Heart): the peddler names its own two bosses; a boss
@@ -238,6 +253,9 @@ export const BOSS_VOICE = Object.freeze({
   // Level IV: the singer itself, and the body it grows to sing through.
   cantor: { text: 'You carried three verses all the way down. Sing them for me.' },
   colossus: { text: 'I would not come out for you, so I grew a body that would.' },
+  // Level V: the silence the song was sung into, and the Spire's warden.
+  hush: { text: 'You silenced my song. Now hear what I was singing into.' },
+  skyhorn: { text: 'It kept the stair to the gods. I taught it to keep you off it.' },
   // A boss from another land standing in the Heart Chamber.
   heart: { text: 'You carried three verses all the way down. Sing them for me.' },
 });
@@ -253,12 +271,15 @@ export const RILL_CLEAR = Object.freeze({
 // The level-clear card: the verse the bell catches.
 export const VERSE_LINE = 'The bell catches a verse: {verse}.';
 
-// The campaign's last line, by how many levels the campaign has: until Act
-// IV exists it ends at the Barrow; with it, the Heart falls quiet.
+// The campaign's last line, by how many levels the campaign has: three end
+// at the Barrow, four with the Heart falling quiet, five (since the Spire's
+// bosses) with the bell ringing in the gods' own belfry.
 export const ENDING = Object.freeze({
   barrow: { text: 'Wick, at the hearth: “Below the Barrow, something is still singing.”' },
   heart: { text: 'The Heart is quiet. Four verses burn in the hearth. Three are still missing, and somewhere above the world, the gods have stopped clapping.' },
+  spire: { text: 'The bell rings in the gods’ own belfry, and the silence breaks. Five verses burn in the hearth. Two are still missing, and above the Spire, for the first time, the gods stand up.' },
 });
+export const endingFor = (levels) => (levels >= 5 ? ENDING.spire : levels >= 4 ? ENDING.heart : ENDING.barrow);
 
 // The Chorus on a defeat card: the gods are an audience. Picked by how the
 // party fell; the seed picks among the general lines so a re-render is stable.
@@ -293,6 +314,8 @@ export const WARDENS = Object.freeze({
   stag: { model: 'warden_stag', also: ['thornmother', 'gloamwolf'], x: -10.0, z: -3.9, yaw: 1.2, text: 'The Stag rests at the edge of the wood, free of the hollow song.' },
   heron: { model: 'warden_heron', also: ['millwheel', 'mireking'], x: 10.1, z: 4.6, yaw: -2.2, text: 'The Heron stands quietly, listening to clear water.' },
   wyrm: { model: 'warden_wyrm', also: ['lichram', 'ashraven'], x: 9.9, z: -4.1, yaw: -0.9, text: 'The Wyrm sleeps at last. Its long watch is over.' },
+  // ACT V: the Spire's warden, freed by the Skyhorn or the Hush.
+  skyhorn: { model: 'warden_ibex', also: ['hush'], x: -9.8, z: 4.4, yaw: 2.3, text: 'The Skyhorn stands where it can see the most sky. Its bronze horns are quiet at last.' },
 });
 
 // How many verses a profile holds: one per campaign level cleared at least once.

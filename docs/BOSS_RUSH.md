@@ -5,13 +5,14 @@ back, with no rooms or doors between them.
 
 ## How a rush plays
 
-- **Eight fights in two laps.** Lap one meets one boss per land in campaign
-  order (the Wood, the Mill, the Barrow, the Heart). Lap two goes around
+- **Ten fights in two laps** (eight before Act V opened). Lap one meets one
+  boss per land in campaign order (the Wood, the Mill, the Barrow, the Heart,
+  the Spire). Lap two goes around
   again and meets each land's other boss on harder numbers.
 - **The line is seeded.** Lap one meets the boss the run's seed rolls for each
   land (`bossFor`). Lap two meets the next boss in that land's list
   (`endlessBossIndex` at Endless depths 5 to 8). The setting-out card lists
-  all eight before the first fight.
+  all ten before the first fight.
 - **Third bosses follow the save.** A locked third boss never appears. Once the
   save has felled a land's other two bosses, its third can come up, as in a
   campaign. The Vein Weaver is Endless-only, so it appears only on lap two,
@@ -21,8 +22,8 @@ back, with no rooms or doors between them.
 - **Between fights.** Each boss pays the clear stipend plus a bounty of 40
   Glint for every seat. Then come the war chest (skills, nodes, legendaries
   and ally skill draws, `RUSH_RULES.supply`) and the fight's draft (a Skill
-  after odd fights, a node after even ones). Fights 1, 3, 5 and 7 also give a
-  relic pick. The level-clear card follows ("FIGHT n OF 8 WON"), and the next
+  after odd fights, a node after even ones). Fights 1, 3, 5, 7 and 9 also give a
+  relic pick. The level-clear card follows ("FIGHT n OF 10 WON"), and the next
   fight opens at the Peddler (room 7) before walking into the boss room
   (room 8). The last fight ends the run won, with no draft.
 - **Numbers.** Lap one plays each land's own boss-room numbers (`difficulty(act,
@@ -35,14 +36,16 @@ back, with no rooms or doors between them.
 
 ## Records, deeds and Embers
 
-- The profile keeps `rushRuns`, `rushMostFelled` and `rushBestSec` (the fastest
-  full rush). A rush never counts as a level clear, never unlocks a level,
+- The profile keeps `rushRuns`, `rushMostFelled`, `rushBestSec` (the fastest
+  full rush) and `rushBestFights` (how many fights that best had: an
+  eight-fight best from before Act V stays but is never compared with a
+  ten-fight time, and the Level Select shows no best until a ten-fight one). A rush never counts as a level clear, never unlocks a level,
   never wins the game and never goes on the campaign score table. Its bosses
   do count as felled: they pay their boss deeds and count toward the third-boss
   unlocks.
 - Embers: 15 for each boss felled and 60 for a won rush.
-- Deeds: **Once Around** (fell the first four, 30), **Back to Back** (win a
-  rush, 60) and **Against the Clock** (win one in under 10 minutes, 80).
+- Deeds: **Once Around** (fell the first five, 30), **Back to Back** (win a
+  rush, 60) and **Against the Clock** (win one in under 12 minutes, 80).
 - There is no server board for the rush. Its time stays in the profile.
 
 ## Code
@@ -57,7 +60,7 @@ back, with no rooms or doors between them.
   `src/save/profile.js`. The deeds and Embers are in `src/data/unlocks.js`.
 - The goldens never start a rush, so the nine traces are unchanged.
 
-## Measured (autopilot, `node tools/endless-run.mjs --rush 1 --seeds 1-48 --max-depth 8`)
+## Measured before Act V (eight fights; autopilot, `node tools/endless-run.mjs --rush 1 --seeds 1-48 --max-depth 8`)
 
 | fight | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 |
 |---|---|---|---|---|---|---|---|---|

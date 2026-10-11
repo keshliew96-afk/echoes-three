@@ -27,7 +27,7 @@ import { buildWarden } from './wardens.js';
 
 export { setInkViewport };
 
-export const NPC_IDS = ['keeper', 'peddler', 'chronicler', 'warden_stag', 'warden_heron', 'warden_wyrm'];
+export const NPC_IDS = ['keeper', 'peddler', 'chronicler', 'warden_stag', 'warden_heron', 'warden_wyrm', 'warden_ibex'];
 
 const BUILDERS = {
   keeper: buildKeeper,
@@ -36,6 +36,7 @@ const BUILDERS = {
   warden_stag: (rig) => buildWarden('stag', rig),
   warden_heron: (rig) => buildWarden('heron', rig),
   warden_wyrm: (rig) => buildWarden('wyrm', rig),
+  warden_ibex: (rig) => buildWarden('ibex', rig),
 };
 
 const TALK_RATE = 8; // 1/s ease of the speaking envelope

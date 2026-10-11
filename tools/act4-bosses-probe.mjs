@@ -20,8 +20,8 @@
 //      burst shards.
 //   4. Governor: a long fight with each boss keeps at most two
 //      player-targeted telegraphs live, starts >= 72 ticks apart.
-//   5. The final boss: killing the Cantor clears Level IV and wins the
-//      campaign.
+//   5. Killing the Cantor clears Level IV (Level V follows since Act V's
+//      bosses).
 //   6. Saves: a world mid-fight (each boss, Cantor in its Second Verse)
 //      continues bit-identically after a capture round trip.
 // Exit code 1 on any failure.
@@ -283,8 +283,9 @@ for (const kind of ['cantor', 'colossus']) {
     W.step();
     won = W.log.find((e) => e.type === 'level_clear' && e.level === 4);
   }
-  for (let i = 0; i < 3000 && W.run.view().phase !== 'victory'; i++) W.step();
-  check(!!won && won.final === true && W.run.view().phase === 'victory', `felling the Hollow Cantor clears Level IV and wins the campaign (phase ${W.run.view().phase})`);
+  // Act V bosses (docs/ACT_V_BOSSES.md): Level V now follows, so Level IV
+  // is no longer the campaign's last.
+  check(!!won && won.final === false, `felling the Hollow Cantor clears Level IV and leads on to Level V (final ${won?.final})`);
 }
 
 // ---------------------------------------------------------------- 6. saves --

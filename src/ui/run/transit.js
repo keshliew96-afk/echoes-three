@@ -58,6 +58,9 @@ const BOSS_FLAVOUR = {
   // Act IV (docs/ACT_IV_BOSSES.md).
   cantor: () => t('The Hollow Cantor’s last note fades. The Heart falls quiet.'),
   colossus: () => t('The Geode Colossus shatters. Below the Barrow, the old beat falters.'),
+  // Act V (docs/ACT_V_BOSSES.md).
+  hush: () => t('The Hush breaks. In the gods’ belfry, a bell rings again.'),
+  skyhorn: () => t('The Skyhorn falls. The stair to the gods’ belfry stands open.'),
   // Third bosses (docs/THIRD_BOSSES.md).
   gloamwolf: () => t('The Gloam Wolf lies down at last. The wood’s long night is over.'),
   mireking: () => t('The Mire King sinks into the silt. The millpond goes still.'),

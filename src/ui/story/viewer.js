@@ -29,6 +29,7 @@ import { buildWyrm } from '../../render/boss/wyrm.js';
 import { buildThornmother, buildMillwheel, buildLichram } from '../../render/boss/slice2.js';
 import { buildCantor, buildColossus } from '../../render/boss/heart.js';
 import { buildGloamWolf, buildMireKing, buildAshRaven, buildVeinWeaver } from '../../render/boss/third.js';
+import { buildHush, buildSkyhorn } from '../../render/boss/spire.js';
 import { setInkViewport } from '../../render/critters/index.js';
 import { EXPOSURE } from '../../render/stage.js';
 import { PALETTE } from '../../data/palette.js';
@@ -49,6 +50,8 @@ const BUILDERS = {
   mireking: buildMireKing,
   ashraven: buildAshRaven,
   veinweaver: buildVeinWeaver,
+  hush: buildHush,
+  skyhorn: buildSkyhorn,
 };
 export const VIEWER_KINDS = Object.freeze(Object.keys(BUILDERS));
 

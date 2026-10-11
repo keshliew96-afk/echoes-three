@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // BOSS RUSH probe (docs/BOSS_RUSH.md), headless, no browser:
-//   line     the seeded line: eight fights, one per land in order then a
+//   line     the seeded line: ten fights (eight before Act V), one per land
+//            in order then a
 //            second lap that meets each land's other boss; the same seed
 //            gives the same line; locked third bosses never appear, an
 //            unlocked one can, and the Vein Weaver only on the second lap
@@ -29,7 +30,7 @@ const { createEventBus } = await import(u('src/core/events.js'));
 const { createClock } = await import(u('src/core/clock.js'));
 const { createWorld } = await import(u('src/sim/world.js'));
 const { emptySnapshot } = await import(u('src/core/intents.js'));
-const { RUSH_RULES, rushLine, rushDifficulty, rushAct } = await import(u('src/data/rush.js'));
+const { RUSH_RULES, LAP, rushLine, rushDifficulty, rushAct } = await import(u('src/data/rush.js'));
 const { LEVELS } = await import(u('src/data/levels.js'));
 const { difficulty } = await import(u('src/data/difficulty.js'));
 const { runFacts, awardFor, DEEDS } = await import(u('src/data/unlocks.js'));
@@ -81,8 +82,8 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
 // ------------------------------------------------------------------ line --
 {
   const a = rushLine(12345, []);
-  check('line', 'eight fights', a.length === RUSH_RULES.fights && RUSH_RULES.fights === 8, { n: a.length });
-  check('line', 'lands in order, twice', a.map((b) => b.act).join() === '1,2,3,4,1,2,3,4', a.map((b) => b.act));
+  check('line', 'ten fights', a.length === RUSH_RULES.fights && RUSH_RULES.fights === 10 && LAP === 5, { n: a.length });
+  check('line', 'lands in order, twice', a.map((b) => b.act).join() === '1,2,3,4,5,1,2,3,4,5', a.map((b) => b.act));
   check('line', 'same seed, same line', kindsOf(rushLine(12345, [])).join() === kindsOf(a).join());
   let differ = 0;
   let lapOther = 0;
@@ -93,14 +94,14 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
   for (let s = 1; s <= 200; s++) {
     const l = rushLine(s * 7919, []);
     if (kindsOf(l).join() !== kindsOf(a).join()) differ += 1;
-    for (let i = 0; i < 4; i++) if (l[i].kind !== l[i + 4].kind) lapOther += 1;
+    for (let i = 0; i < LAP; i++) if (l[i].kind !== l[i + LAP].kind) lapOther += 1;
     for (const b of l) if (gated(b.act).includes(b.kind)) thirdLocked += 1;
     const o = rushLine(s * 7919, [1, 2, 3, 4]);
     for (const b of o) if (gated(b.act).includes(b.kind)) thirdOpenSeen += 1;
     for (const b of o) if (b.kind === 'veinweaver') (b.lap === 1 ? (weaverLap1 += 1) : (weaverSeen += 1));
   }
   check('line', 'other seeds give other lines', differ > 100, { differ });
-  check('line', 'the second lap meets each land\'s other boss', lapOther === 800, { lapOther });
+  check('line', 'the second lap meets each land\'s other boss', lapOther === 200 * LAP, { lapOther });
   check('line', 'locked third bosses never appear', thirdLocked === 0, { thirdLocked });
   check('line', 'unlocked third bosses can appear', thirdOpenSeen > 0, { thirdOpenSeen });
   check('line', 'the Vein Weaver only on the second lap, once open', weaverLap1 === 0 && weaverSeen > 0, { weaverLap1, weaverSeen });
@@ -119,7 +120,7 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
   const v = g.run.view();
   const c = g.run.campaign();
   check('start', 'opens in the boss room of Level I', v.phase === 'combat' && v.room === 8 && v.act === 1 && v.mode === 'boss', { phase: v.phase, room: v.room, act: v.act, mode: v.mode });
-  check('start', 'the view and campaign carry the rush', v.rush && v.rush.fight === 1 && c.rush && c.rush.line.length === 8, { rush: v.rush });
+  check('start', 'the view and campaign carry the rush', v.rush && v.rush.fight === 1 && c.rush && c.rush.line.length === RUSH_RULES.fights, { rush: v.rush });
   check('start', 'the boss is the line\'s first', v.actBoss && c.rush && v.actBoss.kind === c.rush.line[0].kind, { boss: v.actBoss && v.actBoss.kind, line: c.rush && c.rush.line[0].kind });
   const grant = g.log.find((e) => e.type === 'starter_grant');
   const sup = g.log.find((e) => e.type === 'rush_supply');
@@ -173,8 +174,8 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
   while (g.run.view().phase !== 'combat' && guard++ < 120) g.step(1);
   const v3 = g.run.view();
   check('flow', 'then the boss room, the line\'s second boss', v3.room === 8 && v3.mode === 'boss' && v3.actBoss.kind === g.run.campaign().rush.line[1].kind, { room: v3.room, boss: v3.actBoss && v3.actBoss.kind });
-  // Jump to fight 5: harder numbers.
-  g.world.cmd('rushJump', [5]);
+  // Jump to the second lap's first fight: harder numbers.
+  g.world.cmd('rushJump', [LAP + 1]);
   guard = 0;
   while (g.run.view().phase === 'transit' && guard++ < 60 * 30) {
     g.run.campaignAdvance('probe');
@@ -185,14 +186,14 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
   while (g.run.view().phase !== 'combat' && guard++ < 120) g.step(1);
   const plan = g.world.cmd('roomPlan') ?? g.run.roomPlan?.() ?? null;
   const v5 = g.run.view();
-  check('flow', 'fight 5 is the Wood\'s other boss', v5.act === 1 && v5.rush.fight === 5 && v5.actBoss.kind === g.run.campaign().rush.line[4].kind && v5.actBoss.kind !== g.run.campaign().rush.line[0].kind, { act: v5.act, boss: v5.actBoss && v5.actBoss.kind });
+  check('flow', `fight ${LAP + 1} is the Wood's other boss`, v5.act === 1 && v5.rush.fight === LAP + 1 && v5.actBoss.kind === g.run.campaign().rush.line[LAP].kind && v5.actBoss.kind !== g.run.campaign().rush.line[0].kind, { act: v5.act, boss: v5.actBoss && v5.actBoss.kind });
   const bossHp = (() => {
     const b = g.registry.all().find((e) => e.kind === 'boss' || e.boss);
     return b ? b.maxHp : null;
   })();
-  check('flow', 'on lap-two numbers', bossHp === null || bossHp >= rushDifficulty(5).bossHp * 0.99, { bossHp, want: rushDifficulty(5).bossHp, plan: plan ? plan.bossHp ?? null : null });
+  check('flow', 'on lap-two numbers', bossHp === null || bossHp >= rushDifficulty(LAP + 1).bossHp * 0.99, { bossHp, want: rushDifficulty(LAP + 1).bossHp, plan: plan ? plan.bossHp ?? null : null });
   // Jump to the last fight and win it.
-  g.world.cmd('rushJump', [8]);
+  g.world.cmd('rushJump', [RUSH_RULES.fights]);
   guard = 0;
   while (g.run.view().phase === 'transit' && guard++ < 60 * 30) {
     g.run.campaignAdvance('probe');
@@ -201,16 +202,16 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
   g.run.advanceFromShop({ force: true });
   guard = 0;
   while (g.run.view().phase !== 'combat' && guard++ < 120) g.step(1);
-  check('flow', 'fight 8 is the Heart', g.run.view().act === 4 && g.run.view().rush.fight === 8, { act: g.run.view().act });
+  check('flow', `fight ${RUSH_RULES.fights} is the Spire`, g.run.view().act === 5 && g.run.view().rush.fight === RUSH_RULES.fights, { act: g.run.view().act });
   guard = 0;
   while (g.run.view().phase === 'combat' && guard++ < 60 * 600) g.step(1, ap);
   const end = g.log.find((e) => e.type === 'run_end');
   if (end && end.result === 'victory') {
     const s = g.run.view().summary;
-    check('flow', 'the last fight ends the run won, with no draft after it', !g.log.some((e) => e.type === 'reward_offer' && e.tick > (g.log.find((x) => x.type === 'rush_felled' && x.fight === 8) || { tick: 1e9 }).tick), {});
+    check('flow', 'the last fight ends the run won, with no draft after it', !g.log.some((e) => e.type === 'reward_offer' && e.tick > (g.log.find((x) => x.type === 'rush_felled' && x.fight === RUSH_RULES.fights) || { tick: 1e9 }).tick), {});
     check('flow', 'the summary carries the rush, never a complete campaign', s.campaign.rush && s.campaign.rush.won && !s.campaign.complete, { rush: s.campaign.rush && { felled: s.campaign.rush.felled, won: s.campaign.rush.won } });
   } else {
-    // A fall at the Heart is a fair outcome; the summary still carries the rush.
+    // A fall at the Spire is a fair outcome; the summary still carries the rush.
     const s = g.run.view().summary;
     check('flow', 'the run ends with the rush in its summary', end && s && s.campaign.rush && !s.campaign.complete, { result: end && end.result });
   }
@@ -218,15 +219,15 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
 
 // --------------------------------------------------------------- records --
 {
-  const won = { result: 'victory', timeSec: 480, ticks: 480 * 60, seed: 1, challenge: 'standard', campaign: { mode: 'campaign', levels: rushLine(1, []).map((b) => ({ level: b.act, index: b.fight, cleared: true, boss: b.kind, rooms: 2 })), rush: { felled: 8, fights: 8, won: true, line: rushLine(1, []) }, complete: false } };
+  const won = { result: 'victory', timeSec: 480, ticks: 480 * 60, seed: 1, challenge: 'standard', campaign: { mode: 'campaign', levels: rushLine(1, []).map((b) => ({ level: b.act, index: b.fight, cleared: true, boss: b.kind, rooms: 2 })), rush: { felled: 10, fights: 10, won: true, line: rushLine(1, []) }, complete: false } };
   const f = runFacts(won, { runs: 3 });
   check('records', 'a rush clears no level and wins no campaign', f.cleared.length === 0 && !f.complete && f.rooms === 0, { cleared: f.cleared, complete: f.complete });
-  check('records', 'its bosses count as felled', f.bosses.length === 8, { bosses: f.bosses });
+  check('records', 'its bosses count as felled', f.bosses.length === 10, { bosses: f.bosses });
   const a = awardFor(f, { deeds: [] });
   check('records', 'the rush deeds and Embers', a.deeds.includes('rush_lap') && a.deeds.includes('rush_won') && a.deeds.includes('rush_swift') && a.lines.some((l) => l.label === 'Boss Rush won'), { deeds: a.deeds });
   const slow = awardFor(runFacts({ ...won, timeSec: 1200, ticks: 1200 * 60 }, { runs: 3 }), { deeds: [] });
-  check('records', 'Against the Clock wants under ten minutes', !slow.deeds.includes('rush_swift') && slow.deeds.includes('rush_won'));
-  const lost = { ...won, result: 'defeat', campaign: { ...won.campaign, levels: won.campaign.levels.slice(0, 3), rush: { felled: 3, fights: 8, won: false, line: rushLine(1, []) } } };
+  check('records', 'Against the Clock wants under twelve minutes', !slow.deeds.includes('rush_swift') && slow.deeds.includes('rush_won'));
+  const lost = { ...won, result: 'defeat', campaign: { ...won.campaign, levels: won.campaign.levels.slice(0, 3), rush: { felled: 3, fights: 10, won: false, line: rushLine(1, []) } } };
   const la = awardFor(runFacts(lost, {}), { deeds: [] });
   check('records', 'a short rush pays per boss and no rush deed', !la.deeds.some((d) => d.startsWith('rush_')) && la.lines.some((l) => /3 bosses felled in the rush/.test(l.label)), { deeds: la.deeds });
   check('records', 'three new deeds', ['rush_lap', 'rush_won', 'rush_swift'].every((d) => DEEDS[d]));
@@ -241,7 +242,7 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
     const r2 = store.recordRun({ act: 2, victory: false, result: 'defeat', timeSec: 200, seed: 2, campaign: { ...lost.campaign } });
     const r3 = store.recordRun({ act: 4, victory: true, result: 'victory', timeSec: 450, seed: 3, campaign: { ...won.campaign } });
     const p = store.get();
-    check('records', 'rushes, most felled, best time', p.records.rushRuns === 3 && p.records.rushMostFelled === 8 && p.records.rushBestSec === 450 && r3.rush.newBest && !r2.rush.newBest && r1.rush.newBest, { runs: p.records.rushRuns, most: p.records.rushMostFelled, best: p.records.rushBestSec });
+    check('records', 'rushes, most felled, best time', p.records.rushRuns === 3 && p.records.rushMostFelled === 10 && p.records.rushBestSec === 450 && r3.rush.newBest && !r2.rush.newBest && r1.rush.newBest, { runs: p.records.rushRuns, most: p.records.rushMostFelled, best: p.records.rushBestSec });
     check('records', 'never a won game, a level clear or a score', !p.records.gameWon && !(p.records.levelClears[1] > 0) && p.highScores.length === 0 && (p.records.campaigns ?? 0) === 0, { gameWon: p.records.gameWon, scores: p.highScores.length });
   } catch (err) {
     check('records', 'profile store', false, { error: String(err && err.message) });

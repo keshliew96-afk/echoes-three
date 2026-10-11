@@ -1473,6 +1473,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (byId(ev.id)?.kind === 'mireking') return mirekingEnrage(ev);
     if (byId(ev.id)?.kind === 'ashraven') return ravenEnrage(ev);
     if (byId(ev.id)?.kind === 'veinweaver') return weaverEnrage(ev);
+    if (byId(ev.id)?.kind === 'skyhorn') return skyhornEnrage(ev);
     mark('wyrm_enrage');
     const { x, z } = ev;
     kit.pillar({ x, z, radius: 0.5, height: 2.6, color: WYRM.corruption, life: 0.7, opacity: 0.5 });
@@ -2782,6 +2783,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       for (const s of [-1, 1]) flare(b.x + d.x * 0.7 - d.z * 0.35 * s, 1.0, b.z + d.z * 0.7 + d.x * 0.35 * s, LICH.corruption, 0.8, { life: 0.4, core: LICH.peak });
     } else if (b.kind === 'gloamwolf' || b.kind === 'mireking') thirdBossWindup(b, ev);
     else if (b.kind === 'ashraven' || b.kind === 'veinweaver') slice11Windup(b, ev);
+    else if (b.kind === 'hush' || b.kind === 'skyhorn') spireWindup(b, ev);
   });
   bus.on('boss_charge', (ev) => {
     mark('thorn_charge');
@@ -3279,6 +3281,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (e.kind === 'cantor' || e.kind === 'colossus') return heartBossFrame(e, rec);
     if (e.kind === 'gloamwolf' || e.kind === 'mireking') return thirdBossFrame(e, rec);
     if (e.kind === 'ashraven' || e.kind === 'veinweaver') return slice11Frame(e, rec);
+    if (e.kind === 'hush' || e.kind === 'skyhorn') return spireFrame(e, rec);
     if (e.kind === 'keener' || e.kind === 'sexton' || e.kind === 'bloom' || e.kind === 'siphon') return barrowHeartFrame(e, rec);
     if (e.kind === 'thornmother') {
       if (e.mode !== 'charge' || rec.clock < THORN.charge.every) return;
@@ -4196,13 +4199,307 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
   }
 
-  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath, gloamwolf: gloamwolfDeath, mireking: mirekingDeath, ashraven: ashravenDeath, veinweaver: veinweaverDeath };
+  // ---------------------------------------------- Act V bosses --
+  // (docs/ACT_V_BOSSES.md) The Hush is silence: what it touches is drained
+  // of colour, so its light is a cold lavender-white over grey with the
+  // God-stuff violet only at the rim, and its signature pulls light, dust and
+  // sound IN before it lands. The Skyhorn is bell bronze and pale limestone
+  // over the hollow song's violet. Ember stays on the frame that hurts.
+  const HUSHS = vfxBossStyle('hush');
+  const HORN = vfxBossStyle('skyhorn');
+  const HVEIL = vfxMatterColor('hushveil');
+  const HPALE = vfxMatterColor('hushpale');
+  const LIMESTONE = vfxMatterColor('spirestone');
+  const IBEX = vfxMatterColor('ibexfur');
+  // The Still Note: the Ember ring bursts, then the note does not ring out
+  // but falls IN: pale rings closing on the centre, grey dust settling, and
+  // (from the Second Stillness) a patch of silence left on the floor.
+  bus.on('boss_still_note', (ev) => {
+    mark('hush_note');
+    const r = ev.radius ?? 1.8;
+    const C = HUSHS.note;
+    flare(ev.x, 0.5, ev.z, EMBER, 1.5, { kind: 'burst', life: 0.2, core: HUSHS.peak });
+    kit.flash({ x: ev.x, y: 0.5, z: ev.z, color: HUSHS.peak, size: 1.0, life: 0.12 });
+    shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.24, width: 0.1 });
+    for (let i = 0; i < C.rings; i++) kit.ring({ x: ev.x, z: ev.z, r0: r * (1.5 + i * 0.4), r1: 0.1, width: 0.08, life: 0.45 + i * 0.1, core: HUSHS.peak, glow: HUSHS.corruption, soft: 0.5, y: 0.08 + i * 0.3, delay: 0.04 + i * 0.08, opacity: 0.8 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.25, kind: 'sigil', stain: HVEIL, glow: HUSHS.corruption, glowOpacity: 0.4, cool: 1.2, life: 2.8, opacity: 0.3 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: HUSHS.corruption, opacity: 0.4, life: 0.5, attack: 0.02 });
+    spray('spark', ev.x, 1.4, ev.z, C.motes, { color: HPALE, speed: [0.05, 0.3], up: [-0.8, -0.3], size: [0.05, 0.09], life: [0.8, 1.3], gravity: 0.25, drag: 1.6, jitter: r * 0.8, opacity: 0.8 });
+    spray('smoke', ev.x, 0.15, ev.z, 3, { color: HVEIL, speed: [0.3, 0.7], up: [0.0, 0.2], size: [0.4, 0.55], grow: 1.3, life: [0.8, 1.1], opacity: 0.26, gravity: 0, drag: 2.6, jitter: r * 0.4 });
+    if (ev.patch != null) kit.ring({ x: ev.x, z: ev.z, r0: 0.3, r1: r * 0.8, width: 0.05, life: 0.7, core: HUSHS.peak, glow: HVEIL, soft: 0.8, y: 0.03, opacity: 0.5 });
+  });
+  // The Unringing: a lane of sound unmade — a grey wedge of stillness runs
+  // from its body with a pale core, the Ember edge flashing the full width.
+  bus.on('boss_unring', (ev) => {
+    mark('hush_unring');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.len ?? 6;
+    const ang = Math.atan2(d.z, d.x);
+    const ex = ev.x + d.x * len;
+    const ez = ev.z + d.z * len;
+    const SPEED = 24;
+    const sweep = len / SPEED;
+    flare(ev.x + d.x * 0.7, 1.9, ev.z + d.z * 0.7, HUSHS.corruption, 1.6, { life: 0.22, core: HUSHS.peak, angle: ang });
+    kit.streak({ a: { x: ev.x, y: 0.12, z: ev.z }, b: { x: ex, y: 0.12, z: ez }, width: 1.3, tailW: 1.1, core: EMBER, glow: EMBER, life: 0.24, fall: 2.2, opacity: 0.55 });
+    kit.streak({ a: { x: ev.x + d.x * 0.5, y: 1.4, z: ev.z + d.z * 0.5 }, b: { x: ex, y: 0.45, z: ez }, width: 0.42, tailW: 0.3, core: HUSHS.peak, glow: HVEIL, life: sweep + 0.5, fall: 1.0, opacity: 0.85 });
+    kit.streak({ a: { x: ev.x, y: 1.3, z: ev.z }, b: { x: ev.x + d.x, y: 1.2, z: ev.z + d.z }, width: 0.16, tailW: 0.5, core: PARCH, glow: HUSHS.corruption, life: sweep, travel: { x: d.x * SPEED, y: -2, z: d.z * SPEED }, fall: 0.3 });
+    after(sweep, () => {
+      flare(ex, 0.5, ez, HUSHS.corruption, 1.2, { kind: 'burst', life: 0.22, core: HUSHS.peak });
+      kit.ring({ x: ex, z: ez, r0: 1.3, r1: 0.1, width: 0.08, life: 0.35, core: HUSHS.peak, glow: HUSHS.corruption, soft: 0.5, y: 0.08 });
+    });
+    const marks = Math.max(2, Math.min(5, Math.round(len / 1.8)));
+    for (let i = 1; i <= marks; i++) {
+      const k = (i - 0.5) / marks;
+      const px = ev.x + d.x * len * k;
+      const pz = ev.z + d.z * len * k;
+      kit.mark({ x: px, z: pz, radius: (len / marks) * 0.6, kind: 'gouge', angle: ang, stretch: 2.2, stain: HVEIL, glow: HUSHS.corruption, glowOpacity: 0.35, cool: 0.8, life: 2.6, opacity: 0.35, delay: sweep * k });
+      after(sweep * k, () => spray('smoke', px, 0.3, pz, 1, { color: HVEIL, speed: [0.2, 0.5], up: [0.1, 0.3], size: [0.36, 0.5], grow: 1.2, life: [0.6, 0.9], opacity: 0.24, gravity: 0, drag: 2.4 }));
+    }
+    kit.light({ x: (ev.x + ex) / 2, z: (ev.z + ez) / 2, radius: Math.min(2.8, len * 0.4), color: HUSHS.corruption, opacity: 0.35, life: 0.35, attack: 0.02 });
+    camfx.kick(d.x, d.z, HUSHS.camera.kick * 0.5, 0.12);
+  });
+  // A Stillness: one of its little bells stops; a column of pale light, the
+  // violet rim flaring once behind it, and the room's colour dips.
+  bus.on('boss_stillness', (ev) => {
+    mark('hush_stillness');
+    anticipate(ev.x, ev.z, 2.4, HUSHS.corruption, { y: 1.8, lines: 10, core: HUSHS.peak });
+    after(ANTICIP, () => {
+      kit.pillar({ x: ev.x, z: ev.z, radius: 0.8, height: 4.4, color: HUSHS.corruption, life: 1.0, opacity: 0.55 });
+      flare(ev.x, 2.2, ev.z, HUSHS.rim, 2.4, { kind: 'burst', life: 0.35, core: HUSHS.peak, spin: 0.4 });
+      kit.ring({ x: ev.x, z: ev.z, r0: 4.4, r1: 0.4, width: 0.22, life: 0.9, core: HUSHS.peak, glow: HUSHS.corruption, soft: 0.5, y: 0.06 });
+      kit.mark({ x: ev.x, z: ev.z, radius: 3.0, kind: 'sigil', stain: HVEIL, glow: HUSHS.rim, glowOpacity: 0.35, cool: 1.6, life: 3.4, opacity: 0.26 });
+      spray('shard', ev.x, 2.0, ev.z, 3, { color: BRONZE, tile: SHARD_TILE.needle, speed: [0.3, 0.8], up: [0.3, 0.8], size: [0.1, 0.14], life: [0.8, 1.1], gravity: 5, spin: [-6, 6], jitter: 0.6 });
+      kit.light({ x: ev.x, z: ev.z, radius: 4.0, color: HUSHS.corruption, opacity: 0.5, life: 0.9, attack: 0.05 });
+      camfx.dolly(ev.x, ev.z, HUSHS.camera.dolly * 0.6, 0.4);
+    });
+  });
+  // The Great Hush lands: the Ember ring flashes its full radius (the hit),
+  // then the silence goes out in a heavy pale wave that leaves the floor
+  // grey, every mote in the room dropping still; the camera leans in.
+  bus.on('boss_great_hush', (ev) => {
+    mark('hush_great');
+    const r = ev.radius ?? 4.6;
+    const G = HUSHS.great;
+    flare(ev.x, 1.6, ev.z, HUSHS.corruption, 3.4, { kind: 'burst', life: 0.4, core: HUSHS.peak, spin: 0.5 });
+    kit.flash({ x: ev.x, y: 1.0, z: ev.z, color: HUSHS.peak, size: 2.4, life: 0.18 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.32, width: 0.16 });
+    for (let i = 0; i < G.rings; i++) shock(ev.x, ev.z, r * (1.1 + i * 0.22), i % 2 ? HVEIL : HUSHS.corruption, { life: 0.6 + i * 0.12, width: 0.3 - i * 0.05, core: HUSHS.peak, delay: 0.03 + i * 0.07, y: 0.06 + i * 0.2 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.05, kind: 'sigil', stain: HVEIL, glow: HUSHS.corruption, glowOpacity: 0.4, cool: 2.4, life: 5, opacity: 0.4 });
+    kit.crack({ x: ev.x, z: ev.z, radius: r * 0.55, glow: HUSHS.corruption, life: 2.4, cool: 1.0 });
+    spray('spark', ev.x, 2.4, ev.z, G.motes, { color: HPALE, speed: [0.2, 1.4], up: [-1.2, -0.2], size: [0.05, 0.1], life: [1.0, 1.6], gravity: 0.6, drag: 1.4, jitter: r * 0.7, opacity: 0.85 });
+    spray('smoke', ev.x, 0.2, ev.z, 10, { color: HVEIL, speed: [1.6, 3.2], up: [0.0, 0.3], size: [0.5, 0.7], grow: 1.6, life: [0.9, 1.3], opacity: 0.3, gravity: 0, drag: 2.0, jitter: 0.6 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.3, color: HUSHS.corruption, opacity: 0.7, life: 0.8, attack: 0.02 });
+    camfx.dolly(ev.x, ev.z, HUSHS.camera.dolly * 1.2, 0.45);
+  });
+  bus.on('boss_hush_wake', (ev) => {
+    mark('hush_wake');
+    flare(ev.x, 2.4, ev.z, HUSHS.corruption, 1.4, { kind: 'star', life: 0.3, core: HUSHS.peak });
+    kit.ring({ x: ev.x, z: ev.z, r0: 0.4, r1: 1.8, width: 0.08, life: 0.5, core: HUSHS.peak, glow: HUSHS.corruption, soft: 0.5, y: 0.05, opacity: 0.6 });
+  });
+  function hushDeath(x, z) {
+    // The silence breaks: its bell-head splits along the crack and RINGS for
+    // the first time — warm parchment light (sound returning) bursts out of
+    // the grey, the five little bells fly free, and colour floods back in.
+    mark('hush_death');
+    kit.pillar({ x, z, radius: 1.3, height: 5.4, color: HUSHS.corruption, life: 1.8, opacity: 0.75 });
+    flare(x, 2.6, z, PARCH, 4.6, { kind: 'burst', life: 0.6, core: HUSHS.peak, spin: 0.8 });
+    kit.flash({ x, y: 2.0, z, color: PARCH, size: 2.8, life: 0.28 });
+    for (let i = 0; i < 4; i++) kit.ring({ x, z, r0: 0.5, r1: 4 + i * 1.6, width: 0.3, life: 1.0 + i * 0.3, core: PARCH, glow: i % 2 ? HUSHS.rim : HUSHS.corruption, soft: 0.5, y: 0.06 + i * 0.5, delay: i * 0.14 });
+    kit.mark({ x, z, radius: 3.8, kind: 'sigil', stain: INK, glow: HUSHS.corruption, glowOpacity: 0.5, cool: 2.4, life: 7, opacity: 0.32 });
+    for (let i = 0; i < N(5); i++) {
+      const a = (i / 5) * TAU;
+      kit.streak({ a: { x, y: 1.8, z }, b: { x: x + Math.cos(a) * 0.3, y: 1.8, z: z + Math.sin(a) * 0.3 }, width: 0.12, tailW: 0, core: PARCH, glow: BRONZE, life: 0.7, travel: { x: Math.cos(a) * 5, y: 2.4, z: Math.sin(a) * 5 }, fall: 0.2 });
+    }
+    spray('shard', x, 2.6, z, 18, { color: BRONZE, tile: SHARD_TILE.needle, speed: [1.0, 2.8], up: [1.4, 3.2], size: [0.1, 0.17], life: [0.9, 1.3], gravity: 5, spin: [-10, 10], jitter: 0.5 });
+    spray('spark', x, 0.6, z, 50, { color: PARCH, speed: [0.3, 1.6], up: [1.0, 3.0], size: [0.06, 0.13], life: [1.6, 2.6], gravity: -0.3, drag: 1.2, jitter: 1.4 });
+    spray('spark', x, 0.6, z, 24, { color: HUSHS.rim, speed: [0.3, 1.2], up: [1.0, 2.4], size: [0.05, 0.11], life: [1.2, 2.0], gravity: -0.3, drag: 1.2, jitter: 1.0 });
+    spray('smoke', x, 0.5, z, 10, { color: HVEIL, speed: [0.6, 1.6], up: [0.4, 1.0], size: [0.5, 0.7], grow: 1.6, life: [1.4, 2.0], opacity: 0.34, gravity: -0.25, drag: 2.0, jitter: 1.2 });
+    kit.light({ x, z, radius: 5.5, color: PARCH, opacity: 0.75, life: 1.8 });
+    camfx.dolly(x, z, HUSHS.camera.dolly * 1.3, 0.65);
+  }
+
+  // The Skyhorn. The Horn Rush: grit and bronze sparks thrown off the horns
+  // down the lane at its gallop, an Ember edge flashing the lane (the hit).
+  bus.on('boss_horn_rush', (ev) => {
+    mark('skyhorn_rush');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.len ?? 6;
+    kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ev.x + d.x * len, y: 0.1, z: ev.z + d.z * len }, width: 1.3, tailW: 1.0, core: EMBER, glow: EMBER, life: len / 12 + 0.1, fall: 2.0, opacity: 0.5 });
+    laneDrive(ev.x, ev.z, d, len, 12, { wake: LIMESTONE, wakeW: 0.6, head: HORN.corruption, peak: HORN.peak, stain: LIMESTONE, glow: BRONZE, marks: 3, markKind: 'gouge' });
+    spray('smoke', ev.x, 0.15, ev.z, 4, { color: LIMESTONE, speed: [0.8, 1.6], up: [0.1, 0.3], size: [0.4, 0.55], grow: 1.4, life: [0.6, 0.9], opacity: 0.3, gravity: -0.1, drag: 2.4, dir: { x: -d.x, z: -d.z }, dirBias: 0.7 });
+    camfx.kick(d.x, d.z, HORN.camera.kick * 0.6, 0.14);
+  });
+  // The rush ends: into a wall it is a horn-clang (bronze rings, a starburst
+  // of sparks, limestone chips, a crack in the floor) and it stands dazed.
+  bus.on('boss_horn_rush_end', (ev) => {
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    if (!ev.wall) {
+      mark('skyhorn_rush_stop');
+      spray('chunk', ev.x, 0.15, ev.z, 5, { color: LIMESTONE, speed: [0.6, 1.4], up: [0.8, 1.6], size: [0.05, 0.1], life: [0.4, 0.7], dir: d, dirBias: 0.6 });
+      return;
+    }
+    mark('skyhorn_wall');
+    const hx = ev.x + d.x * 0.9;
+    const hz = ev.z + d.z * 0.9;
+    flare(hx, 1.6, hz, BRONZE, 2.4, { kind: 'star', life: 0.3, core: PARCH, angle: Math.atan2(d.z, d.x) });
+    kit.flash({ x: hx, y: 1.4, z: hz, color: PARCH, size: 1.4, life: 0.14 });
+    for (let i = 0; i < 3; i++) kit.ring({ x: hx, z: hz, r0: 0.2, r1: 1.4 + i * 0.7, width: 0.08, life: 0.4 + i * 0.12, core: PARCH, glow: BRONZE, soft: 0.5, y: 1.2 + i * 0.15, delay: i * 0.08 });
+    spray('spark', hx, 1.6, hz, 22, { color: BRONZE, speed: [1.4, 3.2], up: [0.6, 1.8], size: [0.03, 0.06], life: [0.25, 0.5], gravity: 3, drag: 0.6, dir: { x: -d.x, z: -d.z }, dirBias: 0.4 });
+    spray('chunk', hx, 1.2, hz, 12, { color: LIMESTONE, speed: [1.0, 2.6], up: [1.0, 2.4], size: [0.07, 0.14], life: [0.6, 1.0], dir: { x: -d.x, z: -d.z }, dirBias: 0.5, jitter: 0.4 });
+    spray('smoke', hx, 0.4, hz, 5, { color: LIMESTONE, speed: [0.6, 1.4], up: [0.2, 0.6], size: [0.45, 0.6], grow: 1.5, life: [0.9, 1.3], opacity: 0.32, gravity: -0.1, drag: 2.2, jitter: 0.5 });
+    kit.crack({ x: hx, z: hz, radius: 1.0, glow: HORN.corruption, life: 1.8, cool: 0.7 });
+    kit.light({ x: hx, z: hz, radius: 2.4, color: BRONZE, opacity: 0.5, life: 0.45, attack: 0.02 });
+    camfx.dolly(hx, hz, HORN.camera.dolly, 0.3);
+  });
+  bus.on('boss_horn_recover', (ev) => {
+    mark('skyhorn_recover');
+    spray('chunk', ev.x, 0.2, ev.z, 4, { color: LIMESTONE, speed: [0.3, 0.8], up: [0.6, 1.2], size: [0.05, 0.09], life: [0.4, 0.6], jitter: 0.6 });
+  });
+  // The Bell Toll: its horns clash and the bell at its throat rings — an
+  // Ember ring (the hit), bronze sound rings going out at head height, a
+  // violet glint in the horns.
+  bus.on('boss_horn_toll', (ev) => {
+    mark('skyhorn_toll');
+    const r = ev.radius ?? 2.9;
+    flare(ev.x, 2.2, ev.z, BRONZE, 2.2, { kind: 'star', life: 0.26, core: PARCH });
+    kit.flash({ x: ev.x, y: 2.0, z: ev.z, color: PARCH, size: 1.1, life: 0.12 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.28, width: 0.14 });
+    for (let i = 0; i < HORN.toll.rings; i++) kit.ring({ x: ev.x, z: ev.z, r0: 0.6, r1: r * (1.05 + i * 0.25), width: 0.07, life: 0.5 + i * 0.12, core: PARCH, glow: i % 2 ? HORN.corruption : BRONZE, soft: 0.6, y: 1.8 - i * 0.4, delay: i * 0.07 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 0.9, kind: 'crater', stain: LIMESTONE, glow: BRONZE, glowOpacity: 0.35, cool: 1.0, life: 3, opacity: 0.35 });
+    spray('spark', ev.x, 2.0, ev.z, 14, { color: BRONZE, speed: [1.0, 2.4], up: [0.2, 0.8], size: [0.03, 0.06], life: [0.3, 0.55], gravity: 2, drag: 0.8 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.2, color: BRONZE, opacity: 0.45, life: 0.45, attack: 0.02 });
+    camfx.kick(0, 1, HORN.camera.kick * 0.5, 0.1);
+  });
+  // The Sky Leap lands: a cratering stamp, limestone thrown up, the stone
+  // shards it kicks out, dust rolling out flat.
+  bus.on('boss_sky_leap', (ev) => {
+    mark('skyhorn_leap');
+    const r = ev.radius ?? 2.0;
+    const L = HORN.leap;
+    flare(ev.x, 0.5, ev.z, EMBER, 2.4, { kind: 'burst', life: 0.26, core: PARCH });
+    kit.flash({ x: ev.x, y: 0.6, z: ev.z, color: PARCH, size: 1.4, life: 0.14 });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.3, width: 0.16, jag: 0.6 });
+    shock(ev.x, ev.z, r * 1.5, LIMESTONE, { life: 0.55, width: 0.28, core: PARCH, delay: 0.03, jag: 0.9 });
+    kit.crack({ x: ev.x, z: ev.z, radius: r * 0.9, glow: HORN.corruption, life: 2.2, cool: 0.8 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.2, kind: 'crater', stain: LIMESTONE, glow: HORN.corruption, glowOpacity: 0.35, cool: 1.4, life: 4.2, opacity: 0.55 });
+    spray('chunk', ev.x, 0.3, ev.z, L.chunk, { color: LIMESTONE, speed: [1.2, 3.0], up: [1.6, 3.4], size: [0.08, 0.16], life: [0.6, 1.0], jitter: 0.5 });
+    spray('smoke', ev.x, 0.2, ev.z, L.dust, { color: LIMESTONE, speed: [1.4, 2.6], up: [0.0, 0.3], size: [0.45, 0.65], grow: 1.6, life: [0.9, 1.3], opacity: 0.32, gravity: 0, drag: 2.2, jitter: 0.6 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.5, color: BRONZE, opacity: 0.5, life: 0.5, attack: 0.02 });
+    camfx.dolly(ev.x, ev.z, HORN.camera.dolly, 0.35);
+  });
+  bus.on('boss_skyhorn_phase', (ev) => {
+    mark('skyhorn_phase');
+    anticipate(ev.x, ev.z, 1.8, HORN.corruption, { y: 2.2, lines: 8, core: HORN.peak });
+    after(ANTICIP, () => {
+      flare(ev.x, 2.4, ev.z, HORN.corruption, 2.0, { kind: 'burst', life: 0.32, core: HORN.peak });
+      kit.ring({ x: ev.x, z: ev.z, r0: 0.4, r1: 3.6, width: 0.16, life: 0.8, core: PARCH, glow: BRONZE, soft: 0.5, y: 0.06 });
+    });
+  });
+  function skyhornEnrage(ev) {
+    mark('skyhorn_enrage');
+    const { x, z } = ev;
+    kit.pillar({ x, z, radius: 0.6, height: 3.2, color: HORN.corruption, life: 0.8, opacity: 0.5 });
+    flare(x, 2.2, z, HORN.corruption, 2.4, { kind: 'burst', life: 0.3, core: HORN.peak });
+    for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.5, r1: 2.6 + i * 0.8, width: 0.12, life: 0.6 + i * 0.12, core: PARCH, glow: i % 2 ? HORN.corruption : BRONZE, soft: 0.5, y: 0.06 + i * 0.6, delay: i * 0.08 });
+    kit.crack({ x, z, radius: 1.8, glow: HORN.corruption, life: 2.2, cool: 0.9 });
+    kit.light({ x, z, radius: 3, color: HORN.corruption, opacity: 0.5, life: 0.8 });
+  }
+  function skyhornDeath(x, z) {
+    // The warden kneels: its horns ring one clean note (bronze and parchment
+    // rings), the violet goes out of them in a last spiral, pale fur and
+    // limestone dust settle.
+    mark('skyhorn_death');
+    kit.pillar({ x, z, radius: 1.0, height: 4.2, color: HORN.corruption, life: 1.4, opacity: 0.65 });
+    flare(x, 2.2, z, BRONZE, 3.6, { kind: 'burst', life: 0.5, core: PARCH, spin: 0.8 });
+    for (let i = 0; i < 4; i++) kit.ring({ x, z, r0: 0.5, r1: 3.6 + i * 1.3, width: 0.24, life: 0.9 + i * 0.25, core: PARCH, glow: i % 2 ? HORN.corruption : BRONZE, soft: 0.5, y: 0.06 + i * 0.6, delay: i * 0.1 });
+    kit.mark({ x, z, radius: 3.2, kind: 'crater', stain: LIMESTONE, glow: BRONZE, glowOpacity: 0.45, cool: 2.0, life: 6, opacity: 0.5 });
+    for (let i = 0; i < N(8); i++) {
+      const a = (i / 8) * TAU;
+      kit.streak({ a: { x: x + Math.cos(a) * 0.4, y: 2.2, z: z + Math.sin(a) * 0.4 }, b: { x: x + Math.cos(a) * 0.6, y: 2.4, z: z + Math.sin(a) * 0.6 }, width: 0.08, tailW: 0, core: HORN.peak, glow: HORN.corruption, life: 0.8, travel: { x: Math.cos(a + 1.2) * 2.4, y: 2.2, z: Math.sin(a + 1.2) * 2.4 }, fall: 0.2 });
+    }
+    spray('spark', x, 0.6, z, 36, { color: HORN.corruption, speed: [0.3, 1.2], up: [0.8, 2.4], size: [0.06, 0.12], life: [1.4, 2.2], gravity: -0.3, drag: 1.2, jitter: 1.0 });
+    spray('shard', x, 1.2, z, 16, { color: IBEX, tile: SHARD_TILE.feather, speed: [0.4, 1.2], up: [0.6, 1.4], size: [0.12, 0.18], life: [1.2, 1.8], gravity: 0.6, drag: 1.4, spin: [-5, 5], jitter: 0.8 });
+    spray('smoke', x, 0.4, z, 8, { color: LIMESTONE, speed: [0.4, 1.2], up: [0.3, 0.8], size: [0.5, 0.7], grow: 1.6, life: [1.3, 1.9], opacity: 0.34, gravity: -0.2, drag: 2.0, jitter: 1.0 });
+    kit.light({ x, z, radius: 4.2, color: BRONZE, opacity: 0.6, life: 1.4 });
+    camfx.dolly(x, z, HORN.camera.dolly, 0.55);
+  }
+  // Wind-ups: the Hush's Great Hush draws the room in (handled per frame for
+  // its whole warning); its note gathers at the raised finger. The Skyhorn
+  // paws grit up before a rush and its horns glint before a toll.
+  function spireWindup(b, ev) {
+    if (b.kind === 'hush') {
+      if (ev.attack === 'great') {
+        mark('hush_great_windup');
+        anticipate(b.x, b.z, 4.6, HUSHS.corruption, { y: 0.4, lines: 16, core: HUSHS.peak });
+        flare(b.x, 2.8, b.z, HUSHS.rim, 1.6, { life: 0.5, core: HUSHS.peak });
+      } else if (ev.attack === 'note') {
+        mark('hush_note_windup');
+        const f = faceOf(b);
+        anticipate(b.x + f.x * 0.6, b.z + f.z * 0.6, 0.6, HUSHS.corruption, { y: 2.4, lines: 6, core: HUSHS.peak });
+      }
+    } else if (b.kind === 'skyhorn') {
+      if (ev.attack === 'rush') {
+        mark('skyhorn_paw');
+        const f = faceOf(b);
+        spray('chunk', b.x + f.x * 0.6, 0.1, b.z + f.z * 0.6, 5, { color: LIMESTONE, speed: [0.4, 1.0], up: [0.8, 1.6], size: [0.05, 0.1], life: [0.4, 0.6], dir: { x: -f.x, z: -f.z }, dirBias: 0.6 });
+        for (const sd of [-1, 1]) flare(b.x + f.x * 0.9 - f.z * 0.4 * sd, 2.2, b.z + f.z * 0.9 + f.x * 0.4 * sd, HORN.corruption, 0.7, { life: 0.4, core: HORN.peak });
+      } else if (ev.attack === 'toll') {
+        mark('skyhorn_toll_windup');
+        anticipate(b.x, b.z, 2.9, BRONZE, { y: 2.0, lines: 10, core: PARCH });
+      } else if (ev.attack === 'leap') {
+        mark('skyhorn_crouch');
+        spray('smoke', b.x, 0.15, b.z, 5, { color: LIMESTONE, speed: [1.0, 1.8], up: [0.1, 0.3], size: [0.4, 0.55], grow: 1.4, life: [0.6, 0.9], opacity: 0.3, gravity: -0.1, drag: 2.4, jitter: 0.5 });
+      }
+    }
+  }
+  // Per frame: during the Great Hush's warning, light and motes stream in
+  // from the ring's edge to the Hush (the sound being drawn out of the
+  // room); drained, grey dust sifts off its veil; it sheds a slow pale mist.
+  // The Skyhorn throws grit off its hooves at the gallop, and dazed it
+  // shakes off bronze sparks and chips.
+  function spireFrame(e, rec) {
+    if (e.kind === 'hush') {
+      const t = e.telegraph;
+      if (t && t.attack === 'great' && rec.clock >= 0.035) {
+        rec.clock = 0;
+        const a = rnd(0, TAU);
+        const r0 = (t.radius ?? 4.6) * rnd(0.9, 1.15);
+        const sx = e.x + Math.cos(a) * r0;
+        const sz = e.z + Math.sin(a) * r0;
+        const tt = 0.5;
+        kit.streak({ a: { x: sx, y: rnd(0.3, 1.6), z: sz }, b: { x: sx - Math.cos(a) * 0.4, y: 1.0, z: sz - Math.sin(a) * 0.4 }, width: 0.05, tailW: 0, core: HUSHS.peak, glow: HUSHS.corruption, life: tt, travel: { x: (e.x - sx) / tt, y: 1.2, z: (e.z - sz) / tt }, fall: 0.6, opacity: 0.85 });
+        if (rnd(0, 1) < 0.5) spray('smoke', sx, 0.15, sz, 1, { color: HVEIL, speed: [0.0, 0.05], up: [0.0, 0.1], size: [0.36, 0.5], grow: 0.4, life: [0.5, 0.7], opacity: 0.2, gravity: 0, drag: 2 });
+      } else if (e.mode === 'drained' && rec.clock >= 0.08) {
+        rec.clock = 0;
+        spray('spark', e.x, 2.4, e.z, 1, { color: HVEIL, speed: [0.02, 0.15], up: [-0.6, -0.2], size: [0.05, 0.09], life: [0.8, 1.2], gravity: 0.4, drag: 1.4, jitter: 0.6, opacity: 0.8 });
+      } else if (rec.clock >= 0.3) {
+        rec.clock = 0;
+        spray('smoke', e.x, 0.2, e.z, 1, { color: HPALE, speed: [0.05, 0.2], up: [0.0, 0.1], size: [0.45, 0.6], grow: 0.8, life: [1.0, 1.4], opacity: 0.12, gravity: 0, drag: 2.0, jitter: 0.6 });
+      }
+    } else if (e.kind === 'skyhorn') {
+      if (e.mode === 'rush' && rec.clock >= 0.04) {
+        rec.clock = 0;
+        const f = unit2(e.faceX ?? 0, e.faceZ ?? 1);
+        spray('chunk', e.x - f.x * 0.6, 0.12, e.z - f.z * 0.6, 1, { color: LIMESTONE, speed: [0.6, 1.4], up: [0.8, 1.6], size: [0.05, 0.09], life: [0.35, 0.55], dir: { x: -f.x, z: -f.z }, dirBias: 0.6, jitter: 0.3 });
+        if (rnd(0, 1) < 0.5) spray('smoke', e.x, 0.15, e.z, 1, { color: LIMESTONE, speed: [0.2, 0.5], up: [0.05, 0.2], size: [0.34, 0.48], grow: 1.2, life: [0.5, 0.7], opacity: 0.26, gravity: -0.1, drag: 2.4 });
+      } else if (e.mode === 'dazed' && rec.clock >= 0.18) {
+        rec.clock = 0;
+        const a = rnd(0, TAU);
+        spray('spark', e.x + Math.cos(a) * 0.4, 2.6, e.z + Math.sin(a) * 0.4, 1, { color: BRONZE, speed: [0.2, 0.5], up: [0.2, 0.5], size: [0.05, 0.08], life: [0.4, 0.6], gravity: 1.0, drag: 1.2, opacity: 0.9 });
+      } else if (e.enraged && rec.clock >= 0.25) {
+        rec.clock = 0;
+        spray('spark', e.x, 2.2, e.z, 1, { color: HORN.corruption, speed: [0.05, 0.2], up: [0.4, 0.8], size: [0.05, 0.08], life: [0.6, 0.9], gravity: -0.3, drag: 1.4, jitter: 0.6, opacity: 0.85 });
+      }
+    }
+  }
+
+  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath, gloamwolf: gloamwolfDeath, mireking: mirekingDeath, ashraven: ashravenDeath, veinweaver: veinweaverDeath, hush: hushDeath, skyhorn: skyhornDeath };
 
   // Per frame: the Heron's drive throws spray off its legs and stops in a
   // splash; the burrowed Wyrm leaves a trail of turned earth so the party can
   // read where it is tunnelling.
   const bossMode = new Map(); // boss id -> { mode, clock }
-  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus', 'keener', 'sexton', 'bloom', 'siphon', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver']);
+  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus', 'keener', 'sexton', 'bloom', 'siphon', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn']);
   function bossFrame(dt) {
     for (const e of world.entities()) {
       if (S2_FRAME.has(e.kind)) {

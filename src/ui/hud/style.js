@@ -820,6 +820,9 @@ ${Object.entries({
   // Slice 11: the raven in pyre ash and bone, the weaver in lit vein.
   ashraven: mix(VFX_MATTER.cinder, VFX_MATTER.boneplate, 0.35),
   veinweaver: mix(VFX_MATTER.heartflesh, VFX_MATTER.heartvein, 0.45),
+  // Act V: the Hush drains to grey stillness, the Skyhorn to bronze.
+  hush: mix(VFX_MATTER.hushveil, VFX_MATTER.hushpale, 0.35),
+  skyhorn: mix(VFX_MATTER.bellbronze, VFX_MATTER.spirestone, 0.35),
 })
   .map(
     ([k, tint]) => `.hud-bn-medal[data-boss="${k}"] {

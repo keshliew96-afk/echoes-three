@@ -179,7 +179,7 @@ async function clearLevelOne(w, extraDraws) {
     check('practice', 'a practice run is the same run, marked practice in view and summary', qv.daily && qv.daily.practice === true && qd && qd.practice === true && qd.seed === dailySeed(DAY) && rr && qq && rr.seed === qq.seed && JSON.stringify(rr.modes) === JSON.stringify(qq.modes), { view: qv.daily, summary: qd });
     check('practice', 'a counted run carries no practice mark', rv2.daily && !('practice' in rv2.daily));
   }
-  check('rules', 'depth: a cleared run counts every room', dailyDepth({ index: 4, rooms: 8, won: true, levels: 4 }) === 32 && dailyDepth({ index: 1, rooms: 0 }) === 0 && dailyDepth({ index: 3, rooms: 5 }) === 21);
+  check('rules', 'depth: a cleared run counts every room', dailyDepth({ index: 5, rooms: 8, won: true, levels: 5 }) === 40 && dailyDepth({ index: 1, rooms: 0 }) === 0 && dailyDepth({ index: 3, rooms: 5 }) === 21);
 }
 
 // ----------------------------------------------------------------- board --
@@ -208,12 +208,12 @@ async function clearLevelOne(w, extraDraws) {
     post(23, 5, 9000, { seed: dailySeed('2026-10-09') }),
     post(24, 5, 9000, { seed: undefined }),
     post(25, 10, 90000, { won: true }),
-    post(26, 32, 60 * 60, { won: true }),
+    post(26, 40, 60 * 60, { won: true }),
     post(27, 8, 8 * MIN_ROOM_TICKS - 1),
   ]);
   const want = ['bad_version', 'bad_version', 'bad_version', 'bad_seed', 'bad_seed', 'implausible', 'implausible', 'implausible'];
   check('plausible', 'wrong version, seed, won depth and too fast a time are refused', pl.every((r, i) => r.status === 400 && r.body.error === want[i]), pl.map((r) => r.body.error));
-  const fine = await Promise.all([post(30, 32, 40000, { won: true }), post(31, 8, 8 * MIN_ROOM_TICKS), post(32, 0, 60), post(33, 5, 9000, { version: bumpPatch(VERSION, -1) })]);
+  const fine = await Promise.all([post(30, 40, 40000, { won: true }), post(31, 8, 8 * MIN_ROOM_TICKS), post(32, 0, 60), post(33, 5, 9000, { version: bumpPatch(VERSION, -1) })]);
   check('plausible', 'a won run of every room, a fast but possible run, an older build of this line are taken', fine.every((r) => r.status === 200 && r.body.ok), fine.map((r) => r.body.error || r.body.rank));
   check('plausible', 'versionOk keeps to the line and refuses newer builds', versionOk('0.5.1', '0.5.274') && versionOk('0.5.274', '0.5.274') && !versionOk('0.5.275', '0.5.274') && !versionOk('0.6.0', '0.5.274') && !versionOk('probe', '0.5.274'));
   const old = await s.score({ key: '2026-10-06', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok }, '10.0.0.4');

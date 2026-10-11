@@ -9,7 +9,7 @@ import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save service's run record
 import { levelFor, bossNameOfRun } from '../../data/levels.js';
-import { chorusLine, ENDING } from '../../data/story.js';
+import { chorusLine, endingFor } from '../../data/story.js';
 import { verseLine } from './transit.js';
 import { t } from '../../i18n/index.js';
 
@@ -29,6 +29,9 @@ const BOSS_WIN_FLAVOUR = {
   // Act IV (docs/ACT_IV_BOSSES.md).
   cantor: () => t('The Hollow Cantor’s last note fades. The Heart falls quiet.'),
   colossus: () => t('The Geode Colossus shatters. Below the Barrow, the old beat falters.'),
+  // Act V (docs/ACT_V_BOSSES.md).
+  hush: () => t('The Hush breaks. In the gods’ belfry, a bell rings again.'),
+  skyhorn: () => t('The Skyhorn falls. The stair to the gods’ belfry stands open.'),
   // Third bosses (docs/THIRD_BOSSES.md).
   gloamwolf: () => t('The Gloam Wolf lies down at last. The wood’s long night is over.'),
   mireking: () => t('The Mire King sinks into the silt. The millpond goes still.'),
@@ -254,7 +257,7 @@ export function createEndScreen({ run }) {
       : chorus(view, s);
     // THE HEARTH SONG (docs/STORY.md): a won level hands the bell its verse;
     // a complete campaign closes on the story's ending for its length.
-    verseEl.textContent = rush || deep || !win ? '' : complete ? `${verseLine(view.act)} ${t(CAMPAIGN_LEVELS.length >= 4 ? ENDING.heart.text : ENDING.barrow.text)}` : verseLine(view.act);
+    verseEl.textContent = rush || deep || !win ? '' : complete ? `${verseLine(view.act)} ${t(endingFor(CAMPAIGN_LEVELS.length).text)}` : verseLine(view.act);
     {
       const c = run().campaign ? run().campaign() : null;
       const secs = c && c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? Math.ceil(c.autoReturnInTicks / 60) : null;

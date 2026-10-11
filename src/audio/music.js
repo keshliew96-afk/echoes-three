@@ -444,6 +444,28 @@ export const BOSS_MUSIC = Object.freeze({
     lead: 'choir',
     motif: [[0, 0, 2], [2, 1, 2], [4, 2, 2], [6, 3, 2], [8, 4, 6], [16, 3, 2], [18, 1, 2], [20, 0, 4], [24, -1, 8]],
   },
+  // Act V (docs/ACT_V_BOSSES.md): both keep the spire theme's key, tempo,
+  // toms and heavy bronze toll. The Hush's groove thins out: a sparse chime
+  // ostinato with rests where notes should be, a drum on the downbeats only,
+  // a breath lead that rises and stops short (the silence answering). The
+  // Skyhorn's gallops: the chime on every step, toms in a hoof rhythm, a
+  // brass horn call climbing the ledges.
+  hush: {
+    theme: 'spire',
+    prog: [0, 5, 6, 0],
+    arp: { instr: 'chime', pattern: [0, 4, 0, 2, 0, 4, 0, 1] },
+    drum: { 0: 1, 8: 0.8 },
+    lead: 'air',
+    motif: [[0, 0, 4], [6, 2, 2], [8, 4, 4], [16, 3, 4], [22, 1, 2], [24, 0, 6]],
+  },
+  skyhorn: {
+    theme: 'spire',
+    prog: [0, 6, 5, 0],
+    arp: { instr: 'chime', pattern: [0, 2, 4, 2, 0, 2, 5, 4] },
+    drum: { 0: 1, 3: 0.6, 4: 0.8, 7: 0.55, 8: 1, 11: 0.6, 12: 0.8, 15: 0.55 },
+    lead: 'brass',
+    motif: [[0, 0, 2], [2, 4, 2], [4, 7, 4], [8, 6, 2], [10, 4, 2], [12, 5, 4], [16, 7, 2], [18, 9, 2], [20, 7, 4], [24, 4, 8]],
+  },
 });
 export const bossMusicKey = (kind) => (kind && BOSS_MUSIC[kind] ? kind : null);
 

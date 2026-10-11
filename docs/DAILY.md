@@ -66,9 +66,9 @@ POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version } -> { 
   - `bad_version`: the version is not this server's line (major.minor) or is
     newer than the server (the day's omen comes from the build's relic list);
   - `bad_seed`: `seed` is not `dailySeed(key)`;
-  - `bad_score`: depth outside 0 to 32 (8 rooms x 4 levels), a time outside
+  - `bad_score`: depth outside 0 to 40 (8 rooms x 5 levels; `MAX_DEPTH` follows `CAMPAIGN_ACTS`), a time outside
     1 tick to six hours;
-  - `implausible`: a won run that did not clear all 32 rooms, or a time under
+  - `implausible`: a won run that did not clear all 40 rooms, or a time under
     `MIN_ROOM_TICKS` (240 ticks, 4 s) per room cleared. The autopilot's fastest
     whole level over 64 seeds took 6046 ticks, 756 a room.
 - **Storage:** the cloud saves' Upstash Redis (`ECHOES_CLOUD_REDIS_URL` and

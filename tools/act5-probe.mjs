@@ -172,14 +172,16 @@ function runThrough(W, opts, maxLevels = 6) {
   const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], { env, encoding: 'utf8' });
   let o = null;
   try { o = JSON.parse(r.stdout.trim().split('\n').pop()); } catch { o = null; }
-  check(!!o && o.flag === false && o.acts.join() === '1,2,3,4' && o.levels.join() === '1,2,3,4' && o.campaign === 4, `without the flag the campaign stays four acts (${o ? o.acts.join(', ') : r.stderr.slice(0, 200)})`);
-  check(!!o && o.endless.join() === '1,2,3,4' && o.cycle === 4 && o.lap === 4, `without the flag Endless cycles four and Boss Rush laps four (${o ? `${o.cycle}, ${o.lap}` : '-'})`);
-  check(!!o && o.spire === 0 && o.best === 45, `without the flag the Journal holds no Spire rows (${o ? o.best : '-'} entries)`);
+  // Slice 3 (docs/ACT_V_BOSSES.md) opened Level V for everyone: the flag no
+  // longer changes anything.
+  check(!!o && o.acts.join() === '1,2,3,4,5' && o.levels.join() === '1,2,3,4,5' && o.campaign === 5, `without the flag the campaign has five acts too (${o ? o.acts.join(', ') : r.stderr.slice(0, 200)})`);
+  check(!!o && o.endless.join() === '1,2,3,4,5' && o.cycle === 5 && o.lap === 5, `without the flag Endless cycles five and Boss Rush laps five (${o ? `${o.cycle}, ${o.lap}` : '-'})`);
+  check(!!o && o.spire === 4 && o.best === 51, `without the flag the Journal holds the Spire rows (${o ? o.best : '-'} entries)`);
 }
 
 // ---------------------------------------------------------------- 1. wiring --
 {
-  check(CAMPAIGN_ACTS === 4 && ACT_IDS.join() === '1,2,3,4,5' && CAMPAIGN_LEVELS.join() === '1,2,3,4,5', `with ?act5=1 the campaign runs five levels (${ACT_IDS.join(', ')}; CAMPAIGN_ACTS still ${CAMPAIGN_ACTS})`);
+  check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5' && CAMPAIGN_LEVELS.join() === '1,2,3,4,5', `the campaign runs five levels (${ACT_IDS.join(', ')}; CAMPAIGN_ACTS ${CAMPAIGN_ACTS})`);
   check(nextLevel(4) === 5 && nextLevel(5) === null, 'Level V follows the Hollow Heart and is the final level');
   const lv = LEVELS[5];
   check(lv && lv.name === 'The Still Spire' && lv.biome === 'spire' && lv.unlock && lv.unlock.afterVictory === 4, 'Level V is the Still Spire in the spire biome, unlocked by clearing Level IV');
@@ -191,7 +193,7 @@ function runThrough(W, opts, maxLevels = 6) {
   for (let r = 1; r <= 6; r++) for (const k of ['hpMul', 'dmgMul', 'budget']) if (!(difficulty(5, r)[k] >= difficulty(4, r)[k])) up = false;
   check(up, `Act V numbers sit at or above Act IV's in every room (room 6 hp ${difficulty(4, 6).hpMul} -> ${difficulty(5, 6).hpMul})`);
   check(ENDLESS_ACTS.join() === '1,2,3,4,5' && E.CYCLE === 5 && E.levelOfDepth(5) === 5 && E.endlessNextLevel(5) === 1, `the Endless Descent cycles five biomes under the flag (cycle ${E.CYCLE})`);
-  check(RUSH.LAP === 4, `Boss Rush keeps its four-act lap (${RUSH.LAP})`);
+  check(RUSH.LAP === 5, `Boss Rush laps all five acts (${RUSH.LAP})`);
   check(['kite', 'chime', 'gargoyle', 'hanger'].every((k) => BESTIARY.some((b) => b.id === k)) && new Set(BESTIARY.map((b) => b.id)).size === BESTIARY.length, `the Journal adds four Spire rows, no duplicates (${BESTIARY.length} entries)`);
   check(affixCountFor({ act: 5, room: 2 }) >= 2, `Level V elites carry at least two powers (${affixCountFor({ act: 5, room: 2 })})`);
 }
@@ -479,7 +481,7 @@ function runThrough(W, opts, maxLevels = 6) {
   }
   for (let i = 0; i < 3000 && W.run.view().phase !== 'victory'; i++) W.step();
   check(!!won && won.final === true && W.run.view().phase === 'victory', `clearing Level V ends the campaign in victory (final ${won ? won.final : '-'}, phase ${W.run.view().phase})`);
-  // Level IV is no longer final under the flag; the Daily still ends at IV.
+  // Level IV is no longer final; the Daily runs on to Level V too.
   const X = makeWorld(6);
   X.run.startCampaign({ level: 4, harness: true });
   for (let i = 0; i < 4000 && X.run.view().phase !== 'combat'; i++) X.step();
@@ -497,7 +499,7 @@ function runThrough(W, opts, maxLevels = 6) {
   check(!!c4 && c4.final === false, `under the flag clearing Level IV leads on to the Spire (final ${c4 ? c4.final : '-'})`);
   const D = makeWorld(7);
   const dc = runThrough(D, { daily: { key: '2026-10-11', practice: true } });
-  check(dc.length === 4 && dc[3].final === true && dc.every((c) => c.level <= 4), `the Daily still ends after four levels (${dc.map((c) => `${c.level}${c.final ? '!' : ''}`).join(' ')})`);
+  check(dc.length === 5 && dc[4].final === true && dc[4].level === 5, `the Daily runs all five levels (${dc.map((c) => `${c.level}${c.final ? '!' : ''}`).join(' ')})`);
 }
 
 // ---------------------------------------------------- 10. saves and co-op --

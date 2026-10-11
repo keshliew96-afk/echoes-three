@@ -85,7 +85,7 @@ Deeds and Ember sinks for what landed after round one: event rooms, elite affixe
 | Treasure Seeker | Open 3 vaults in one run | 50 | one run |
 | Ringwalker | Fight in all four arenas (layouts 21, 23, 25, 27) | 40 | across runs |
 | Hoarder | Hold 8 relics at once | 40 | one run |
-| Kingslayer | Fell every boss at least once (all twelve, the Vein Weaver included) | 120 | across runs |
+| Kingslayer | Fell every boss at least once (all fourteen, the Vein Weaver included) | 120 | across runs |
 | Down the River | Complete a campaign with the Tidecaller in the party | 60 | one run |
 | Three Dawns | Play the Daily Descent three days in a row | 30 | across runs |
 | Seven Dawns | Play the Daily Descent seven days in a row | 80 | across runs |
@@ -111,9 +111,10 @@ meta.marks = { event: [encounterId], affix: [affixId], champion: [championId], a
 | Kit | Huntmaster (Archer) | 100 | Clear Level III | Hunter's Mark, Barbed Trap, Feather Fan, Vault Shot |
 | Kit | Stormwater (Tidecaller) | 100 | Clear Level IV | Crashing Wave, Rain Squall, Maelstrom, Whirlpool |
 | Vow | Restless | free | Clear Level IV | Waves in every combat room arrive 35% sooner; Embers +25% |
-| Vow | Short Fuse | free | The deed Once Around (four Boss Rush bosses) | Enemy warnings in every combat room 20% shorter (never under 0.6 s); Embers +25% |
+| Vow | Short Fuse | free | The deed Once Around (five Boss Rush bosses) | Enemy warnings in every combat room 20% shorter (never under 0.6 s); Embers +25% |
 | Tint | Heartlight (Healer), Censer Smoke (Tank), Hollow Tide (Tidecaller) | 40 | Clear Level IV | Act IV colours |
 | Tint | Crowned (Archer) | free | The deed Four Crowns | Gold |
+| Tint | Hush Veil (Healer), Sky Bronze (Tank) | free | Fell the Hush, fell the Skyhorn (docs/ACT_V_BOSSES.md) | Act V boss colours |
 
 Kits draw on the newer skills of each class's eleven-skill pool. A new requirement form `{ deed: id }` opens an unlock once that deed is done. Short Fuse is the first vow with no wave numbers: the run reads it live from its boons (`vowFuse()` in `src/sim/run.js`) and shortens every enemy telegraph in a combat room, never in the boss room. Heirlooms for relic batch four arrive on their own (one per relic).
 

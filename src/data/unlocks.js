@@ -22,7 +22,7 @@ import { CLASS_NAME } from './classes.js';
 import { LINEUP_CLASSES } from './lineup.js';
 import { LEVELS, ACT_IDS, bossFor } from './levels.js';
 import { endlessBossIndex, CYCLE } from './endless.js';
-import { RUSH_RULES } from './rush.js';
+import { RUSH_RULES, LAP as RUSH_LAP } from './rush.js';
 import { ENCOUNTER_IDS } from '../sim/encounters.js';
 import { AFFIX_IDS } from '../sim/affixes.js';
 import { CHAMPION_IDS } from '../sim/champions.js';
@@ -149,7 +149,7 @@ export const DEEDS = Object.freeze(
   Object.fromEntries([
     ['first_light', { name: 'First Light', text: 'Clear Level I.', embers: 20, test: (r) => r.cleared.includes(1) }],
     ...bossDeeds,
-    ['long_road', { name: 'The Long Road', text: ACT_IDS.length >= 4 ? 'Complete a campaign (Levels I to IV).' : 'Complete a campaign (Levels I to III).', embers: 60, test: (r) => r.complete }],
+    ['long_road', { name: 'The Long Road', text: ACT_IDS.length >= 5 ? 'Complete a campaign (Levels I to V).' : ACT_IDS.length >= 4 ? 'Complete a campaign (Levels I to IV).' : 'Complete a campaign (Levels I to III).', embers: 60, test: (r) => r.complete }],
     // Act IV (docs/ACT_IV.md): the first clear of the Hollow Heart.
     ...(ACT_IDS.includes(4) ? [['heart_cleared', { name: 'Heartbreaker', text: 'Clear Level IV, the Hollow Heart.', embers: 50, test: (r) => r.cleared.includes(4) }]] : []),
     ['harrowed', { name: 'Harrowed', text: 'Clear a level on the Harrowing challenge.', embers: 40, test: (r) => r.cleared.length > 0 && r.challenge === 'harrowing' }],
@@ -163,9 +163,9 @@ export const DEEDS = Object.freeze(
     ['rills_return', { name: "Rill's Return", text: 'Clear a level with the Tidecaller in the party.', embers: 25, test: (r) => r.cleared.length + (r.deep || []).length > 0 && (r.party || []).includes('tidecaller') }],
     ['high_water', { name: 'High Water', text: 'Crash 5 soaked enemies with one cast.', embers: 30, test: (r) => (r.crashBest || 0) >= 5 }],
     // BOSS RUSH (docs/BOSS_RUSH.md).
-    ['rush_lap', { name: 'Once Around', text: 'Fell the first four bosses of a Boss Rush.', embers: 30, test: (r) => !!r.rush && r.rush.felled >= 4 }],
-    ['rush_won', { name: 'Back to Back', text: 'Win a Boss Rush: all eight bosses.', embers: 60, test: (r) => !!r.rush && r.rush.won }],
-    ['rush_swift', { name: 'Against the Clock', text: 'Win a Boss Rush in under 10 minutes.', embers: 80, test: (r) => !!r.rush && r.rush.won && r.rush.sec > 0 && r.rush.sec < RUSH_RULES.swiftSec }],
+    ['rush_lap', { name: 'Once Around', text: 'Fell the first five bosses of a Boss Rush.', embers: 30, test: (r) => !!r.rush && r.rush.felled >= RUSH_LAP }],
+    ['rush_won', { name: 'Back to Back', text: 'Win a Boss Rush: all ten bosses.', embers: 60, test: (r) => !!r.rush && r.rush.won }],
+    ['rush_swift', { name: 'Against the Clock', text: 'Win a Boss Rush in under 12 minutes.', embers: 80, test: (r) => !!r.rush && r.rush.won && r.rush.sec > 0 && r.rush.sec < RUSH_RULES.swiftSec }],
     // ROUND TWO (docs/UNLOCKS.md): the event rooms, affixes, objectives,
     // champions, vaults, arenas, relics, bosses, Rill and the Daily.
     ['wayfarer', { name: 'Wayfarer', text: 'Enter every kind of event room.', embers: 60, test: (r, l) => markCount(l, 'event') >= ENCOUNTER_IDS.length, goal: (l) => [markCount(l, 'event'), ENCOUNTER_IDS.length] }],
@@ -179,7 +179,7 @@ export const DEEDS = Object.freeze(
     ['four_crowns', { name: 'Four Crowns', text: 'Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.', embers: 60, test: (r, l) => markCount(l, 'champion') >= CHAMPION_IDS.length, goal: (l) => [markCount(l, 'champion'), CHAMPION_IDS.length] }],
     ['keyholder', { name: 'Keyholder', text: 'Open a vault.', embers: 20, test: (r) => (r.vaults || 0) >= 1 }],
     ['treasure_seeker', { name: 'Treasure Seeker', text: 'Open 3 vaults in one run.', embers: 50, test: (r) => (r.vaults || 0) >= 3 }],
-    ['ringwalker', { name: 'Ringwalker', text: 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre and the Hollow Nave.', embers: 40, test: (r, l) => markCount(l, 'arena') >= ARENA_IDS.length, goal: (l) => [markCount(l, 'arena'), ARENA_IDS.length] }],
+    ['ringwalker', { name: 'Ringwalker', text: ACT_IDS.includes(5) ? 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre, the Hollow Nave and Windward Court.' : 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre and the Hollow Nave.', embers: 40, test: (r, l) => markCount(l, 'arena') >= ARENA_IDS.length, goal: (l) => [markCount(l, 'arena'), ARENA_IDS.length] }],
     ['hoarder', { name: 'Hoarder', text: 'Hold 8 relics at once.', embers: 40, test: (r) => r.relics.length >= 8 }],
     ['kingslayer', { name: 'Kingslayer', text: 'Fell every boss at least once, the Vein Weaver included.', embers: 120, test: (r, l) => allFelled(l), goal: (l) => [BOSSES.filter((b) => ((l && l.bosses) || []).includes(b.kind)).length, BOSSES.length] }],
     ['down_the_river', { name: 'Down the River', text: 'Complete a campaign with the Tidecaller in the party.', embers: 60, test: (r) => r.complete && (r.party || []).includes('tidecaller') }],
@@ -248,6 +248,9 @@ const TINT_ROWS = [
   ['tint_millpond', 'healer', 'Millpond', { glow: '#5FC2B0', second: '#E2F2EC', debris: '#3D4840' }, 0, { boss: 'mireking' }],
   ['tint_ashfeather', 'tank', 'Ashfeather', { glow: '#9AA0AE', second: '#C79BFF', debris: '#2E2C34' }, 0, { boss: 'ashraven' }],
   ['tint_veinsilk', 'swordsman', 'Veinsilk', { glow: '#D06BFF', second: '#F6E6FF', debris: '#6A4A86' }, 0, { boss: 'veinweaver' }],
+  // Act V's bosses (docs/ACT_V_BOSSES.md).
+  ['tint_hushveil', 'healer', 'Hush Veil', { glow: '#C3CBE0', second: '#F6F7FF', debris: '#7F8799' }, 0, { boss: 'hush' }],
+  ['tint_skybronze', 'tank', 'Sky Bronze', { glow: '#E0A85A', second: '#FFE6B8', debris: '#B7AE9E' }, 0, { boss: 'skyhorn' }],
   // THE TIDECALLER (docs/TIDECALLER.md).
   ['tint_brine', 'tidecaller', 'Brine', { glow: '#3FC9A8', second: '#F2EEE2', debris: '#9FB8AE' }, 30, { feat: 'tidecaller' }],
   ['tint_heronrain', 'tidecaller', 'Heron Rain', { glow: '#8FB4D9', second: '#F4F8FC', debris: '#C7D3DD' }, 0, { feat: 'rill_heron' }],

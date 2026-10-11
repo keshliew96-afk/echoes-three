@@ -207,10 +207,10 @@ export const LEVELS = Object.freeze({
   }),
   // Act V (docs/ACT_V.md, content plan 4 slice 2): the Still Spire, the gods'
   // high belfry where they sat down to watch. Its own land, hazard (gust
-  // vents) and four creatures, but no bosses of its own yet: it plays only
-  // behind the ?act5=1 preview flag (ACT5_PREVIEW below) and the Heart's
-  // Geode Colossus and the Barrow's Lich Ram stand in until slice 3 gives it
-  // the Hush and opens Level V for everyone.
+  // vents) and four creatures. Its bosses (slice 3, docs/ACT_V_BOSSES.md):
+  // the Hush, the silence that stopped the gods and the campaign's final
+  // boss, whose three Stillnesses call the Spire's creatures in turn, or the
+  // Skyhorn, the Spire's own warden, rolled by seed like every act.
   5: Object.freeze({
     id: 'still_spire',
     act: 5,
@@ -228,15 +228,29 @@ export const LEVELS = Object.freeze({
     introduce: Object.freeze({ kite: 1, gargoyle: 1, husk: 1, crow: 1, chime: 2, hanger: 2, moth: 2, lancer: 3, knight: 4 }),
     hazards: Object.freeze(['gust', 'rockfall', 'slip']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'bell']),
-    boss: 'colossus',
-    bossName: 'The Geode Colossus',
+    boss: 'hush',
+    bossName: 'The Hush',
     bossAdds: Object.freeze([
       ['kite', 2],
       ['gargoyle', 1],
     ]),
     bosses: Object.freeze([
-      Object.freeze({ kind: 'colossus', name: 'The Geode Colossus', adds: Object.freeze([Object.freeze(['kite', 2]), Object.freeze(['gargoyle', 1])]) }),
-      Object.freeze({ kind: 'lichram', name: 'The Lich Ram', adds: Object.freeze([Object.freeze(['chime', 1]), Object.freeze(['hanger', 1])]) }),
+      Object.freeze({
+        kind: 'hush',
+        name: 'The Hush',
+        adds: Object.freeze([Object.freeze(['kite', 2]), Object.freeze(['gargoyle', 1])]),
+        // One Stillness a phase, each a bell going quiet and its creatures
+        // coming: the kites, then a chime and a gargoyle, then a hanger and
+        // a chime with a kite.
+        addsByPhase: Object.freeze([
+          Object.freeze([Object.freeze(['kite', 2]), Object.freeze(['gargoyle', 1])]),
+          Object.freeze([Object.freeze(['chime', 1]), Object.freeze(['gargoyle', 1])]),
+          Object.freeze([Object.freeze(['hanger', 1]), Object.freeze(['chime', 1]), Object.freeze(['kite', 1])]),
+        ]),
+      }),
+      // The Spire's own warden: an ibex of the high ledges with bell-bronze
+      // horns, with its kites and a gargoyle.
+      Object.freeze({ kind: 'skyhorn', name: 'The Skyhorn', adds: Object.freeze([Object.freeze(['kite', 2]), Object.freeze(['gargoyle', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 4 }),
   }),
@@ -250,16 +264,14 @@ export const LEVELS = Object.freeze({
 export const CAMPAIGN_ONLY_ENEMIES = Object.freeze(['keener', 'sexton', 'bloom', 'siphon']);
 
 // The campaign's levels, in order. CAMPAIGN_ACTS decides how many of them a
-// campaign plays: four since Act IV (docs/ACT_IV.md). Setting it to 3 keeps
-// the campaign at three levels and leaves Act IV to the Endless Descent only
-// (data/endless.js reads ENDLESS_ACTS).
-export const CAMPAIGN_ACTS = 4;
+// campaign plays: five since the Spire's bosses (docs/ACT_V_BOSSES.md), so
+// the campaign, the Endless Descent, the Daily and Boss Rush all meet Level V.
+// Setting it to 4 keeps the campaign at four levels (the Spire then plays
+// only with the ?act5=1 preview below).
+export const CAMPAIGN_ACTS = 5;
 // ACT V PREVIEW (docs/ACT_V.md): `?act5=1` in the page address (or
-// ECHOES_ACT5=1 for a Node probe) adds Level V, the Still Spire, after the
-// Heart: the campaign runs five levels and the Endless Descent cycles five
-// lands. Without it nothing changes: CAMPAIGN_ACTS stays 4 and the Spire is
-// never met (the Daily server and Boss Rush read CAMPAIGN_ACTS, so neither
-// ever sees it). Slice 3 (the Spire's bosses) sets CAMPAIGN_ACTS to 5.
+// ECHOES_ACT5=1 for a Node probe) added Level V before it opened for
+// everyone; with CAMPAIGN_ACTS at 5 it changes nothing.
 export const ACT5_PREVIEW = (() => {
   try {
     if (typeof location !== 'undefined' && location && typeof location.search === 'string' && /[?&]act5=1(&|$)/.test(location.search)) return true;

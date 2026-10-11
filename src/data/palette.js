@@ -112,6 +112,10 @@ export const VFX_MATTER = Object.freeze({
   spirestone: '#A7A39A', // Gargoyle, the Spire's masonry: pale weathered limestone
   hemp: '#8C7A58', // Rope Hanger: old belfry rope
   gust: '#DCE6EE', // the gust vents' air: a pale cold white-blue (never Bright Heal)
+  // Act V's bosses (docs/ACT_V_BOSSES.md).
+  hushveil: '#7F8799', // the Hush's veil: grey stillness with a cold slate cast
+  hushpale: '#C3CBE0', // its silence: a cold lavender-white, drained of colour (never Bright Heal)
+  ibexfur: '#B7AE9E', // the Skyhorn's coat: pale high-ledge goat hair
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

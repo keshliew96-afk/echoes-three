@@ -75,7 +75,7 @@ const NEW_VOWS = { vow_restless: 'restless', vow_short_fuse: 'short_fuse' };
   check('catalogue', 'four tints with colours', NEW_TINTS.every((id) => U.UNLOCKS[id] && U.UNLOCKS[id].kind === 'tint' && /^#[0-9A-F]{6}$/i.test(U.UNLOCKS[id].colors.glow)));
   const vb = U.sanitizeBoons({ vows: Object.values(NEW_VOWS) });
   check('catalogue', 'two vows the run accepts', Object.keys(NEW_VOWS).every((id) => U.UNLOCKS[id] && U.UNLOCKS[id].kind === 'vow') && vb && vb.vows.length === 2, vb);
-  check('catalogue', 'four arenas', U.ARENA_IDS.join() === '21,23,25,27', U.ARENA_IDS);
+  check('catalogue', 'five arenas (Windward Court since Act V)', U.ARENA_IDS.join() === '21,23,25,27,34', U.ARENA_IDS);
   // Every new line in every language.
   const keys = new Set(['{have} of {need}', 'Earn the deed {deed}']);
   for (const d of NEW_DEEDS) keys.add(U.DEEDS[d].name).add(U.DEEDS[d].text);
@@ -110,7 +110,7 @@ const paid = (o, meta = U.freshMeta()) => U.awardFor(U.runFacts(summaryOf(o)), m
     ['wayfarer', { deedRun: { events: ENCOUNTER_IDS.slice() } }],
     ['signbreaker', { deedRun: { affixes: AFFIX_IDS.slice() } }],
     ['four_crowns', { deedRun: { champions: CHAMPION_IDS.slice() } }],
-    ['ringwalker', { deedRun: { arenas: [21, 23, 25, 27] } }],
+    ['ringwalker', { deedRun: { arenas: [21, 23, 25, 27, 34] } }],
     ['down_the_river', { complete: true, result: 'victory', levels: [1, 2, 3, 4].map((l) => ({ level: l, index: l, cleared: true })), party: ['healer', 'tank', 'archer', 'tidecaller'] }],
   ];
   for (const [deed, o] of cases) check('deeds', `${deed} is paid when met`, paid(o).includes(deed), paid(o));
@@ -121,7 +121,7 @@ const paid = (o, meta = U.freshMeta()) => U.awardFor(U.runFacts(summaryOf(o)), m
     ['wayfarer', { deedRun: { events: ENCOUNTER_IDS.slice(1) } }],
     ['down_the_river', { complete: true, result: 'victory', levels: [1, 2, 3, 4].map((l) => ({ level: l, index: l, cleared: true })), party: ['healer', 'tank', 'archer', 'swordsman'] }],
     ['run_to_ground', { deedRun: { objectives: ['bogus'] } }],
-    ['ringwalker', { deedRun: { arenas: [21, 23, 25, 22] } }],
+    ['ringwalker', { deedRun: { arenas: [21, 23, 25, 27, 22] } }],
   ];
   for (const [deed, o] of near) check('deeds', `${deed} is not paid one short`, !paid(o).includes(deed));
   // A deed already done is never paid twice.

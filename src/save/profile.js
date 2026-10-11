@@ -98,6 +98,10 @@ export function freshProfile() {
       rushRuns: 0,
       rushMostFelled: 0,
       rushBestSec: null,
+      // How many fights the rush had when that best was set: a ten-fight
+      // rush (since the Spire, docs/ACT_V_BOSSES.md) never compares against
+      // an eight-fight time, so the old best stays on the record unbeaten.
+      rushBestFights: null,
     },
     unlocks: { acts: [1] },
     lastAct: null,
@@ -159,6 +163,9 @@ function sane(p) {
   out.records.levelClears = { ...f.records.levelClears, ...((p.records && p.records.levelClears) || {}) };
   // ENDLESS: a profile from before the flag that completed a campaign has won.
   out.records.gameWon = !!(out.records.gameWon || out.records.campaignsCompleted > 0);
+  // BOSS RUSH: a best from before the record kept its fight count was set
+  // on the eight-fight rush.
+  if (out.records.rushBestSec != null && !Number.isFinite(out.records.rushBestFights)) out.records.rushBestFights = 8;
   out.unlocks = { acts: Array.isArray(p.unlocks && p.unlocks.acts) ? [...new Set([1, ...p.unlocks.acts])].sort((a, b) => a - b) : [1] };
   out.playtimeSec = Number.isFinite(p.playtimeSec) ? p.playtimeSec : 0;
   out.meta = saneMeta(p.meta);
@@ -524,7 +531,8 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     if (Array.isArray(builds) && builds.length) entry.party = builds.map((b) => ({ classId: b.classId, skills: (b.skills || []).slice(0, 4), filled: b.filled | 0 }));
     const { result: out, w } = commit((p) => {
       const r = p.records;
-      const prevBestSec = r.rushBestSec ?? null;
+      const fights = rush.fights | 0;
+      const prevBestSec = r.rushBestFights === fights ? r.rushBestSec ?? null : null;
       r.runs += 1;
       if (res === 'victory') r.victories += 1;
       else if (res === 'abandoned') r.abandoned = (r.abandoned ?? 0) + 1;
@@ -532,8 +540,11 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       r.rushRuns = (r.rushRuns ?? 0) + 1;
       if (felled > (r.rushMostFelled ?? 0)) r.rushMostFelled = felled;
       const newBest = won && sec > 0 && (prevBestSec === null || sec < prevBestSec);
-      if (newBest) r.rushBestSec = sec;
-      return { prevBestSec, newBest, bestSec: r.rushBestSec ?? null };
+      if (newBest) {
+        r.rushBestSec = sec;
+        r.rushBestFights = fights;
+      }
+      return { prevBestSec, newBest, bestSec: r.rushBestFights === fights ? r.rushBestSec ?? null : null };
     });
     return {
       score: 0,
