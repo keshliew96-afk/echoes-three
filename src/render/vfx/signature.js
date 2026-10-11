@@ -32,6 +32,7 @@ import { SHARD_TILE } from './particles.js';
 import { createVfxKit } from './kit.js';
 import { createCameraFx } from './camerafx.js';
 import { createTideFx } from './tidefx.js';
+import { createTonicFx } from './tonicfx.js';
 
 const EMBER = PALETTE.emberDanger;
 const PARCH = PALETTE.parchment;
@@ -833,6 +834,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // THE TIDECALLER's own beats (slice 3) live in tidefx.js; it borrows these
   // helpers and rides the per-frame loop below for trails, zones and bubbles.
   const tide = createTideFx({ kit, bus, byId, spray, flare, shock, after, anticipate, camfx, N, rnd, mark });
+  // TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot's beats.
+  const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark });
   bus.on('ally_cast', (ev) => {
     const fn = SKILL_SIG[ev.skill];
     if (!fn || ev.x == null) return;
@@ -4187,6 +4190,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (shotKind.size > 64) shotKind.clear();
     if (globKind.size > 64) globKind.clear();
     tide.frame(dt, world.entities());
+    tonicFx.frame(dt, world.entities());
     kit.update(dt);
   }
 

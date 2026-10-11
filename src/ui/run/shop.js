@@ -70,6 +70,8 @@ import { viewerSeat } from '../../app/viewerseat.js';
 import { usingPad } from '../../app/controls.js';
 import { refreshPrice } from '../../sim/draft.js';
 import { RELICS } from '../../sim/relics.js';
+import { CONSUMABLES } from '../../sim/consumables.js';
+import { TONIC_COLORS } from '../../data/palette.js';
 
 // 'Advance to the Drowned Heron' — the act's own room-8 boss.
 const advanceLabel = (view) => t('Advance to {boss}', { boss: t(bossNameOfRun(view)).replace(/^The /, 'the ') });
@@ -639,15 +641,46 @@ export function createShopScreen({ run, build, party = () => null }) {
   // 5 / 6, or pad focus past the last card then A.
   let rackSig = '';
   const rackTiles = [];
-  const rackOf = (view) => (view && view.relics && Array.isArray(view.relics.shelf) && view.relics.shelf.length ? view.relics.shelf : null);
+  const relicsOf = (view) => (view && view.relics && Array.isArray(view.relics.shelf) && view.relics.shelf.length ? view.relics.shelf : null);
+  // TONICS AND BOMBS (docs/CONSUMABLES.md): the Peddler's tonic stand rides
+  // the rack as its last tile (key 7, pad focus after the relics). It sells
+  // one kind a visit; each character buys one into an empty carry slot.
+  const standOf = (view) => (view && view.shop && view.shop.stand ? view.shop.stand : null);
+  const rackOf = (view) => relicsOf(view) || (standOf(view) ? [] : null);
+  let rackRelics = 0; // relic tiles in the rack (the stand's tile follows)
   const buyRelic = (i) => {
     const r = run();
     if (r && typeof r.buyRelic === 'function' && canBuyOn(viewSeat)) r.buyRelic(viewSeat, i);
   };
+  const buyTonic = () => {
+    const r = run();
+    if (r && typeof r.buyTonic === 'function' && canBuyOn(viewSeat)) r.buyTonic(viewSeat);
+  };
+  const buyRack = (k) => (k < rackRelics ? buyRelic(k) : buyTonic());
+  function standHtml(view, purse) {
+    const st = standOf(view);
+    if (!st) return '';
+    const row = CONSUMABLES[st.item];
+    const c = TONIC_COLORS[st.item];
+    const kind = row.type === 'bomb' ? t('BOMB') : row.type === 'charm' ? t('CHARM') : t('TONIC');
+    const slot = view.tonics && view.tonics.slots ? view.tonics.slots[viewSeat] : null;
+    const stamp = st.bought[viewSeat] ? t('TAKEN') : slot ? t('SLOT FULL') : null;
+    return `
+        <div class="rl-ritem rl-stand${stamp ? ' rl-rsold' : ''}" data-i="${rackRelics}" style="--rar:${c.glow}" title="${esc(`${t(row.name)} — ${t(row.text)}`)}">
+          <div class="rl-ricon">${iconHtml(st.item, { size: 30 })}</div>
+          <div class="rl-rtext"><div class="rl-rname">${esc(t(row.name))} <span class="rl-rrar">${esc(kind)}</span></div><div class="rl-rbody">${esc(t(row.text))}</div></div>
+          ${stamp ? `<div class="rl-rstamp">${esc(stamp)}</div>` : `<div class="rn-plaque rl-rplaque${purse < st.price ? ' rn-short' : ''}"><span class="rn-plaque-coin">${iconHtml('coin', { size: 16 })}</span><span class="rn-price">${st.price}</span></div>`}
+        </div>`;
+  }
   function renderRack(view) {
+    const relicItems = relicsOf(view);
     const items = rackOf(view);
+    const st = standOf(view);
     const purse = items ? shelfOf(view, viewSeat).wallet : 0;
-    const sig = items ? `${viewSeat}|${purse}|${items.map((r) => `${r.id}:${r.price}:${r.sold ? 1 : 0}`).join(',')}` : 'off';
+    const slotNow = view && view.tonics && view.tonics.slots ? view.tonics.slots[viewSeat] : null;
+    const sig = items
+      ? `${viewSeat}|${purse}|${(relicItems || []).map((r) => `${r.id}:${r.price}:${r.sold ? 1 : 0}`).join(',')}|${st ? `${st.item}:${st.price}:${st.bought.map((b) => (b ? 1 : 0)).join('')}:${slotNow ?? '-'}` : '-'}`
+      : 'off';
     if (sig === rackSig) return;
     const was = rackSig;
     rackSig = sig;
@@ -659,10 +692,17 @@ export function createShopScreen({ run, build, party = () => null }) {
       return;
     }
     const who = CLASS_NAME[classOfSeat(viewSeat)] ?? 'Healer';
+    rackRelics = relicItems ? relicItems.length : 0;
     rackEl.style.display = '';
+    rackEl.classList.toggle('rl-rack-stand', !!st);
+    const lab = relicItems
+      ? st
+        ? t("relics for the whole party · a tonic into your own slot · paid from the {cls}'s purse · <b>5</b>/<b>6</b>/<b>7</b>", { cls: esc(t(who)) })
+        : t("for the whole party · paid from the {cls}'s purse · <b>5</b>/<b>6</b>", { cls: esc(t(who)) })
+      : t("a tonic into your own slot · paid from the {cls}'s purse · <b>7</b>", { cls: esc(t(who)) });
     rackEl.innerHTML =
-      `<div class="rl-racklab"><b>${esc(t('RELICS'))}</b><span>${t("for the whole party · paid from the {cls}'s purse · <b>5</b>/<b>6</b>", { cls: esc(t(who)) })}</span></div>` +
-      `<div class="rl-rackrow">${items
+      `<div class="rl-racklab"><b>${esc(relicItems ? t('RELICS') : t('TONICS'))}</b><span>${lab}</span></div>` +
+      `<div class="rl-rackrow">${(relicItems || [])
         .map(
           (r, i) => `
         <div class="rl-ritem${r.sold ? ' rl-rsold' : ''}" data-i="${i}" style="--rar:${RARITY_COLOR[r.rarity] ?? RARITY_COLOR.common}" title="${esc(`${t(r.name)} — ${t(r.text)}`)}">
@@ -675,11 +715,11 @@ export function createShopScreen({ run, build, party = () => null }) {
           }
         </div>`
         )
-        .join('')}</div>`;
+        .join('')}${standHtml(view, purse)}</div>`;
     rackEl.querySelectorAll('.rl-ritem').forEach((t) => {
       const i = Number(t.dataset.i);
       rackTiles[i] = t;
-      t.addEventListener('click', () => buyRelic(i));
+      t.addEventListener('click', () => buyRack(i));
       t.addEventListener('mouseenter', () => t.classList.add('rl-rhover'));
       t.addEventListener('mouseleave', () => t.classList.remove('rl-rhover'));
     });
@@ -694,6 +734,19 @@ export function createShopScreen({ run, build, party = () => null }) {
   let pendingFlare = null;
   function onRelicPurchase(ev) {
     pendingFlare = ev.index ?? null;
+  }
+  // TONICS AND BOMBS: a bought tonic flares its tile; a denied one shakes.
+  function onTonicBuy(ev) {
+    if ((ev.seat ?? 0) === viewSeat) pendingFlare = rackRelics;
+  }
+  function onTonicDenied(ev) {
+    if ((ev.seat ?? 0) !== viewSeat) return;
+    const tile = rackTiles[rackRelics];
+    const pl = tile && tile.querySelector('.rl-rplaque');
+    if (!pl) return;
+    pl.classList.remove('rl-rdeny');
+    void pl.offsetWidth;
+    pl.classList.add('rl-rdeny');
   }
   function onRelicDenied(ev) {
     if ((ev.seat ?? 0) !== viewSeat) return;
@@ -1340,6 +1393,10 @@ export function createShopScreen({ run, build, party = () => null }) {
       if (fresh) buyRelic(Number(code.slice(5)) - 5);
       return true;
     }
+    if (code === 'Digit7') {
+      if (fresh) buyTonic();
+      return true;
+    }
     if (code === 'Digit1' || code === 'Digit2' || code === 'Digit3' || code === 'Digit4') {
       const i = Number(code.slice(5)) - 1;
       if (!(e && e.shiftKey)) buyOn(i);
@@ -1426,7 +1483,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     const nc = cards.length;
     if (padFocus < 0) run().advanceFromShop();
     else if (padFocus < nc) buyOn(padFocus);
-    else buyRelic(padFocus - nc);
+    else buyRack(padFocus - nc);
   }
   function paintPadFocus() {
     cards.forEach((c, k) => c && c.classList.toggle('rn-hover', k === padFocus));
@@ -1460,7 +1517,7 @@ export function createShopScreen({ run, build, party = () => null }) {
     if ((ev.seat ?? 0) === viewSeat) denyShake(ev.index ?? 0);
   };
 
-  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, onRelicPurchase, onRelicDenied, onRefresh, onRefreshDenied, animState, pin, probe, sel, setView, resetView, dirty, name: 'shop' };
+  return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, onRelicPurchase, onRelicDenied, onTonicBuy, onTonicDenied, onRefresh, onRefreshDenied, animState, pin, probe, sel, setView, resetView, dirty, name: 'shop' };
 }
 
 export { PALETTE as _shopPalette };

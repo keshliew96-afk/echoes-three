@@ -36,6 +36,8 @@ function actionLabel(id) {
       return t('Dodge');
     case 'interact':
       return t('Interact · Revive (hold)');
+    case 'useItem':
+      return t('Use tonic or bomb');
     case 'rally':
       return t('Rally the party');
     case 'markEnemy':
@@ -289,6 +291,7 @@ export function buildControlsTab(ctx) {
     pl.appendChild(refRow(t('Dodge'), [PAD_LABEL.dodge], true));
     pl.appendChild(refRow(tn(4, 'Skills ({n} slot)', 'Skills ({n} slots)'), [PAD_LABEL.skill1, PAD_LABEL.skill2, PAD_LABEL.skill3, PAD_LABEL.skill4], true));
     pl.appendChild(refRow(t('Interact · Revive (hold)'), [PAD_LABEL.interact], true));
+    pl.appendChild(refRow(t('Use tonic or bomb'), [PAD_LABEL.useItem], true));
     pl.appendChild(refRow(t('Rally the party'), [PAD_LABEL.rally], true));
     pl.appendChild(refRow(t('Mark the next enemy'), [PAD_LABEL.markEnemy], true));
     pl.appendChild(refRow(t('Heal target: previous · next ally'), [PAD_LABEL.allyCycle], true));

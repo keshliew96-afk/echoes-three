@@ -71,12 +71,14 @@ function seatControlCopy(ev, nameOf = () => null) {
 const now = () => performance.now();
 // A seat plays at most 4 skills (keys 1-4; the user's correction — the
 // guest seats' class kits are 4 skills too). Keys 5-8 are unbound.
-const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'interact']);
+// TONICS AND BOMBS: a guest's slot press rides bit 10; the host resolves it
+// (no local prediction: the slot and the throw are the host's).
+const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'interact', 'use_item']);
 const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
 // campaign — the host drives every level transition.)
-const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'refreshShop', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'openEncounter', 'focusEncounter', 'chooseEncounter', 'openVault', 'buyRelic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'refreshShop', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'openEncounter', 'focusEncounter', 'chooseEncounter', 'openVault', 'buyRelic', 'buyTonic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
@@ -92,6 +94,8 @@ const GUEST_PARTY_RUN = {
   partyBuy: (seat, index) => ({ op: 'buy', seat, index }),
   // RELICS slice 2: a guest buys a relic off the relic shelf from its OWN purse.
   buyRelic: (seat, index) => ({ op: 'relic', seat, index }),
+  // TONICS AND BOMBS: a guest buys the stand's tonic into its OWN slot.
+  buyTonic: (seat) => ({ op: 'tonic', seat }),
   partyShopMark: (seat, index, on) => ({ op: 'mark', seat, index, on: on === undefined ? null : !!on }),
   partyShopDone: (seat) => ({ op: 'done', seat }),
   // SHOP REFRESH: a guest redraws its OWN shelf from its OWN purse.
@@ -100,7 +104,7 @@ const GUEST_PARTY_RUN = {
 };
 const PARTY_SYS_MUTATORS = new Set(['swap', 'reorder', 'aiSort', 'grantNode', 'autoFill', 'gainPurse', 'setPurse', 'spend', 'pulse', 'applyGrant', 'stress', 'setMode', 'setAutoSocketOwn', 'resetForRun', 'resetLevelState']);
 const SEAT_BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'releaseSkill', 'echoArm', 'setResonance', 'attachSkills']);
-const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'relic', 'refresh', 'mark', 'done', 'reorder', 'socket', 'unsocket', 'autofill', 'pref', 'screen']);
+const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'relic', 'tonic', 'refresh', 'mark', 'done', 'reorder', 'socket', 'unsocket', 'autofill', 'pref', 'screen']);
 // fix-DEPLOY-r6 (DEP6-F2): a guest's refused press on a SHARED decision says
 // whose it is — the doors and the level flow are the host's seat's (w = the
 // chooser's class); anything else is the Healer's own build, which belongs to
@@ -547,6 +551,9 @@ export function createNetSession(ctx) {
         break;
       case 'relic':
         r = typeof R.buyRelic === 'function' ? R.buyRelic(seat, Number(cmd.index)) : null;
+        break;
+      case 'tonic':
+        r = typeof R.buyTonic === 'function' ? R.buyTonic(seat) : null;
         break;
       case 'refresh':
         r = typeof R.refreshShop === 'function' ? R.refreshShop(seat) : null;
@@ -1031,11 +1038,12 @@ export function createNetSession(ctx) {
       pending: body ? !!body.pendingSkill : false,
       keyAt: g.keyAt[KEY_OF[kind]],
     });
-    const order = (k) => (k === 'dodge' ? 0 : k === 'interact' ? 9 : Number(k.slice(6)) || 5);
+    const order = (k) => (k === 'dodge' ? 0 : k === 'interact' ? 9 : k === 'use_item' ? 10 : Number(k.slice(6)) || 5);
     const presses = s.presses.filter((p) => GUEST_PRESSES.has(p.kind)).sort((a, b) => order(a.kind) - order(b.kind));
     for (const p of presses) {
       g.pendingPresses.push(p);
       if (!g.own.ready) continue;
+      if (p.kind === 'use_item') continue;
       if (p.kind === 'interact') {
         const target = localInteractTarget(body);
         if (target) g.shadow.interact({ ...ctxFor('interact'), target });

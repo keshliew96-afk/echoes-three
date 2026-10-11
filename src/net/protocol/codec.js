@@ -239,9 +239,10 @@ export function readHash(r) {
 //     bit2 u8 moveHeld · bit3 vari dAimX · bit4 vari dAimZ · bit5 varu press
 //   moveHeld: bits 0-3 move 0 none / 1..8 = E,NE,N,NW,W,SW,S,SE; bit 4 basic
 //     held, bit 5 revive held, bit 6 away
-//   press bits: 0 dodge, 1..8 skill_1..skill_8, 9 interact (PLAN: skill_1..4
+//   press bits: 0 dodge, 1..8 skill_1..skill_8, 9 interact, 10 use_item (the
+//     carry slot, docs/CONSUMABLES.md) (PLAN: skill_1..4
 //     of the class kit today; 8 slots reserved for the 8-slot kit)
-export const PRESS = Object.freeze({ dodge: 0, skill_1: 1, skill_2: 2, skill_3: 3, skill_4: 4, skill_5: 5, skill_6: 6, skill_7: 7, skill_8: 8, interact: 9 });
+export const PRESS = Object.freeze({ dodge: 0, skill_1: 1, skill_2: 2, skill_3: 3, skill_4: 4, skill_5: 5, skill_6: 6, skill_7: 7, skill_8: 8, interact: 9, use_item: 10 });
 export const AIM_Q = 64;
 const AIM_LIM = 0x7fffffff;
 

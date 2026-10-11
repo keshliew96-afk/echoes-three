@@ -40,6 +40,7 @@ player reads Z on the key the game calls KeyW).
 | Skills 1–4 | 1 2 3 4 | X Y B RB |
 | Interact · Revive (hold) | E | A |
 | Rally the party | R | LB |
+| Use your tonic or bomb (bombs land at your aim) | Q | RS (click the right stick) |
 | Mark the next enemy | Tab | D-pad ▲ |
 | Heal target: ally 1–4 | F1–F4 | D-pad ◀ ▶ cycle, ▼ again to clear |
 | Build workbench (between rooms) | B | View |

@@ -95,6 +95,7 @@ import { crownFor, crownSide, championFor, CHAMPION_RULES, isChampionKind } from
 // KEYS AND VAULTS (docs/VAULTS.md): keys from elites and champions, the vault
 // door and its treasure room.
 import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES, VAULT_SPOTS, VAULT_CHEST } from './vaults.js';
+import { createConsumableSystem, eliteDropsTonic, chestTonic, standKind, CONSUMABLES } from './consumables.js';
 import { staticClearance } from './movement.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
 import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
@@ -345,6 +346,18 @@ export function createRunSystem({
     if (eliteDropsKey(frame.seed, campaign.index, roomIndex, e.id)) vaults.drop('elite', e.kind, ev.x, ev.z, roomIndex);
   });
   events.on('vault_touch', () => openVault());
+  // TONICS AND BOMBS (docs/CONSUMABLES.md): one carry slot per hero, on with
+  // the keys (campaign, Endless, the Daily and Boss Rush; never the tutorial
+  // or the legacy single-level run, so the goldens never see one). Elites
+  // drop them by a hash roll; the champion's and the vault's chests pay one.
+  const tonics = createConsumableSystem({ registry, events, getTick, combat, isChampion: isChampionKind });
+  events.on('death', (ev) => {
+    if (!active || !tonics.enabled() || phase !== 'combat' || !frame || !campaign) return;
+    const e = registry.byId(ev.id);
+    if (!e || !e.elite || e.faction !== 'hostile' || isChampionKind(e.kind)) return;
+    const id = eliteDropsTonic(frame.seed, campaign.index, roomIndex, e.id);
+    if (id) tonics.drop(id, 'elite', ev.x ?? e.x, ev.z ?? e.z);
+  });
   // The quarry is marked for the whole party the moment it breaks cover.
   events.on('quarry_spawn', (ev) => {
     if (active && allySys && typeof allySys.cmd === 'function') allySys.cmd('mark', [ev.id]);
@@ -522,6 +535,7 @@ export function createRunSystem({
     relics.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
     encounters.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
     vaults.reset(championsOn());
+    tonics.reset(championsOn());
     if (campaign.daily) relics.grantDaily(campaign.daily.relic, campaign.daily.curse);
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
@@ -672,6 +686,8 @@ export function createRunSystem({
     layout = null;
     // KEYS AND VAULTS: the vault's piles and platter stay in their room.
     for (const e of registry.all()) if (e.kind === 'vault_pile' || e.kind === 'vault_platter') registry.despawn(e.id);
+    // TONICS AND BOMBS: what lies on the floor, flies or burns stays here.
+    tonics.clearRoom();
   }
 
   function positionParty() {
@@ -801,6 +817,8 @@ export function createRunSystem({
     const tick = getTick();
     // KEYS AND VAULTS: a key still on the floor flies to the party.
     vaults.sweep();
+    // TONICS AND BOMBS: loose ones fly to the empty slots.
+    tonics.sweep();
     // EVENT ROOMS: the trapped chest's ambush is won — the chest pays.
     const enc = encounters.live();
     if (enc && enc.state === 'ambush' && enc.room === roomIndex) {
@@ -836,6 +854,8 @@ export function createRunSystem({
     if (ev.champion && !ev.softFailed && relics.owe(roomIndex, CHAMPION_RULES.chestSource)) {
       const at = ev.chest ?? { x: 0, z: 0 };
       events.emit(tick, 'champion_chest', { room: roomIndex, champion: ev.champion, x: at.x, z: at.z });
+      // TONICS AND BOMBS: the chest pays one into the first empty slot.
+      if (tonics.enabled() && frame) tonics.grant(chestTonic(frame.seed, campaign.index, roomIndex, 'champion'), 'champion', null, at.x, at.z);
     }
 
     if (roomIndex === RUN.bossRoom && rushFight()) {
@@ -1627,6 +1647,8 @@ export function createRunSystem({
     }
     vaults.finishRoom();
     roomsDone = Math.max(roomsDone, roomIndex);
+    // TONICS AND BOMBS: the chest pays one into the first empty slot.
+    if (tonics.enabled() && frame && campaign) tonics.grant(chestTonic(frame.seed, campaign.index, roomIndex, 'vault'), 'vault', null, chest ? chest.x : undefined, chest ? chest.z : undefined);
     const owed = relics.owe(roomIndex, VAULT_RULES.chestSource);
     events.emit(tick, 'vault_open', {
       room: roomIndex,
@@ -2084,6 +2106,13 @@ export function createRunSystem({
     // RELICS (Peddler's Seal): the Healer's shelf prices (identity when off).
     const stock = draft.shopStock().map((s) => ({ ...s, price: relics.shopPrice(s.price), sold: false }));
     shop = { stock, visited: true };
+    // TONICS AND BOMBS: the Peddler's tonic stand sells one kind a visit (a
+    // hash of the level and the room); each hero may buy one into an empty
+    // slot, from its own purse.
+    if (tonics.enabled() && frame && campaign) {
+      const item = standKind(frame.seed, campaign.index, roomIndex);
+      shop.stand = { item, price: relics.shopPrice(CONSUMABLES[item].price), bought: [false, false, false, false] };
+    }
     events.emit(getTick(), 'shop_open', {
       room: roomIndex,
       wallet,
@@ -2257,6 +2286,44 @@ export function createRunSystem({
     return { node: card.node, price: card.price, wallet, owned };
   }
 
+  // TONICS AND BOMBS: `seat` buys the stand's tonic into its empty slot,
+  // from its own purse (the Healer's is the run wallet).
+  function buyTonic(seat, { by = 'human' } = {}) {
+    if (phase !== 'shop' || !shop || !shop.stand || !tonics.enabled()) return null;
+    const s = Number(seat) | 0;
+    if (!(s >= 0 && s <= 3)) return null;
+    if (s !== 0 && !(allyOn() && party && party.purse(s) !== null)) return null;
+    const st = shop.stand;
+    const tick = getTick();
+    const purse = s === 0 ? wallet : party.purse(s);
+    const deny = (reason) => {
+      events.emit(tick, 'tonic_denied', { seat: s, reason, item: st.item, price: st.price, wallet: purse });
+      return { denied: reason, price: st.price, purse };
+    };
+    if (st.bought[s]) return deny('bought');
+    if (tonics.slot(s) !== null) return deny('full');
+    if (purse < st.price) return deny('insufficient_funds');
+    if (s === 0) wallet -= st.price;
+    else party.spend(s, st.price);
+    st.bought[s] = true;
+    const left = s === 0 ? wallet : party.purse(s);
+    tonics.grant(st.item, 'shop', s);
+    events.emit(tick, 'tonic_buy', { seat: s, item: st.item, price: st.price, purse: left, by });
+    return { item: st.item, price: st.price, purse: left, seat: s };
+  }
+  // TONICS AND BOMBS: this tick's slot presses (the world calls it after the
+  // content pass): `list` = [{ seat, aim }] from the Healer's own snapshot and
+  // the human seats' input frames, resolved in seat order; then the AI-held
+  // seats (and the Healer under the autopilot) look at theirs.
+  function useTonics(list) {
+    if (!active || !tonics.enabled()) return;
+    const live = phase === 'combat';
+    for (const u of [...list].sort((a, b) => a.seat - b.seat)) tonics.use(u.seat, u.aim ?? null, live);
+    const c = controllers();
+    const ai = [0, 1, 2, 3].filter((s) => (s === 0 ? autopilot.active() : c[s] !== 'human'));
+    tonics.aiStep(ai, live);
+  }
+
   // SHOP REFRESH (v0.5.248): the price `seat`'s next refresh costs this
   // visit (the Peddler's Seal discount applies, like the cards).
   function refreshCost(seat) {
@@ -2321,6 +2388,15 @@ export function createRunSystem({
     }
     if (healerAiShops() && party.mode() !== 'manual') buildSys.autoFill();
     if (pages && pages.shopOpen()) pages.closeShop();
+    // TONICS AND BOMBS: an AI-held hero with an empty slot buys at the stand
+    // with what its purse has left (none under Ally builds Manual).
+    if (shop && shop.stand && (!party || party.mode() !== 'manual')) {
+      const c = controllers();
+      for (const s of [0, 1, 2, 3]) {
+        if (s === 0 ? !healerAiShops() : c[s] === 'human' || !allyOn()) continue;
+        if (tonics.slot(s) === null && !shop.stand.bought[s] && (s === 0 ? wallet : party.purse(s) ?? 0) >= shop.stand.price) buyTonic(s, { by: 'ai' });
+      }
+    }
     // The shop room is a room the player leaves behind, so it counts toward
     // the §18 summary row (it pays no stipend — `clearedRooms` is untouched).
     roomsDone = Math.max(roomsDone, RUN.shopRoom);
@@ -2422,6 +2498,7 @@ export function createRunSystem({
     if (!active) return null;
     const tick = getTick();
     summary = buildSummary(result);
+    tonics.clearRoom();
     events.emit(tick, 'run_end', {
       result,
       rooms: summary.rooms,
@@ -2553,6 +2630,9 @@ export function createRunSystem({
     if (active) relics.endOfTick();
     // KEYS AND VAULTS: a fallen key lands; a hero walking over one takes it;
     // in the vault, over a pile or the platter.
+    // TONICS AND BOMBS: drops land, heroes walk over them, bombs land, fire
+    // burns.
+    if (active && tonics.enabled()) tonics.step(controllers());
     if (active && vaults.enabled()) {
       vaults.step();
       if (phase === 'vault') stepVault();
@@ -2721,6 +2801,8 @@ export function createRunSystem({
             // SHOP REFRESH: how often the Healer's shelf was redrawn this
             // visit (present only after one — hash-stable).
             ...(shop.refreshes ? { refreshes: shop.refreshes } : {}),
+            // TONICS AND BOMBS: the tonic stand (present only with tonics on).
+            ...(shop.stand ? { stand: { item: shop.stand.item, price: shop.stand.price, bought: [...shop.stand.bought] } } : {}),
           }
         : null,
       boss: active && roomIndex === RUN.bossRoom ? boss.view() : null,
@@ -2736,6 +2818,8 @@ export function createRunSystem({
       ...(active && encounters.view(encCtx()) ? { encounter: encounters.view(encCtx()) } : {}),
       // KEYS AND VAULTS: present only in a run with keys (hash-stable).
       ...(active && vaults.enabled() ? { vaults: vaults.view() } : {}),
+      // TONICS AND BOMBS: present only in a run with tonics (hash-stable).
+      ...(active && tonics.enabled() ? { tonics: tonics.view() } : {}),
       // UNLOCKS: the run's boons (present only when the player picked some).
       ...(active && campaign && campaign.boons ? { boons: cloneData(campaign.boons) } : {}),
       summary,
@@ -3005,6 +3089,24 @@ export function createRunSystem({
         // The crown this level rolled: { room, side }.
         return active && frame && championsOn() ? crownFor(frame.seed, campaign.index) : null;
       // ------------------------------------------------ KEYS AND VAULTS --
+      case 'tonicGive': {
+        // ('tonicGive', seat, id) — fill a hero's slot (probes, screenshots).
+        if (!active || !tonics.enabled()) return null;
+        tonics.setSlot(Number(args[0] ?? 0), args.length > 1 ? args[1] : 'mend_tonic');
+        return tonics.view();
+      }
+      case 'tonicDrop': {
+        // ('tonicDrop', id[, x, z]) — one falls in the live room.
+        if (!active || !tonics.enabled()) return null;
+        return tonics.drop(args[0] ?? 'mend_tonic', 'probe', Number(args[1] ?? 0), Number(args[2] ?? -2));
+      }
+      case 'tonicUse': {
+        // ('tonicUse', seat[, x, z]) — the seat presses its slot now.
+        if (!active || !tonics.enabled()) return null;
+        return tonics.use(Number(args[0] ?? 0), args[1] !== undefined ? { x: Number(args[1]), z: Number(args[2] ?? 0) } : null, phase === 'combat');
+      }
+      case 'tonicState':
+        return tonics.enabled() ? { ...tonics.view(), stand: shop && shop.stand ? { ...shop.stand, bought: [...shop.stand.bought] } : null } : null;
       case 'keyGive': {
         // The party holds a key (probes, screenshots).
         if (!active || !vaults.enabled()) return null;
@@ -3234,6 +3336,7 @@ export function createRunSystem({
       ...(active && encounters.enabled() ? { encounters: encounters.saveState() } : {}),
       // KEYS AND VAULTS: present only in a run with keys.
       ...(active && vaults.enabled() ? { vaults: vaults.saveState() } : {}),
+      ...(active && tonics.enabled() ? { tonics: tonics.saveState() } : {}),
       ...(bossPick ? { bossPick } : {}),
       ...(thirdOpen.length ? { thirdBosses: thirdOpen.slice() } : {}),
     };
@@ -3292,6 +3395,7 @@ export function createRunSystem({
     relics.loadState(d.relics ?? null);
     encounters.loadState(d.encounters ?? null);
     vaults.loadState(d.vaults ?? null);
+    tonics.loadState(d.tonics ?? null);
   }
 
   const api = {
@@ -3374,6 +3478,10 @@ export function createRunSystem({
     chooseEncounter,
     // KEYS AND VAULTS: the chest (E does the same through the interactables).
     openVault,
+    // TONICS AND BOMBS: the stand, the slot presses and the system (probes).
+    buyTonic,
+    useTonics,
+    tonics: () => (tonics.enabled() ? tonics.view() : null),
     relics: () => (relics.enabled() ? relics.view() : null),
     buy,
     refreshShop,

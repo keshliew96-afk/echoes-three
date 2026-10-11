@@ -48,6 +48,9 @@ import { t } from '../../i18n/index.js';
 import { skillAbbrev } from '../run/cards.js';
 import { bindings } from '../../core/bindings.js';
 import { cap, keyCap, onHintsChange } from '../../app/controls.js';
+import { viewerSeat } from '../../app/viewerseat.js';
+import { CONSUMABLES } from '../../sim/consumables.js';
+import { TONIC_COLORS } from '../../data/palette.js';
 
 // Cooldown ring geometry (40-box viewBox over the medallion): r 16.5 -> the
 // Parchment arc that grows clockwise from 12 as the skill recharges.
@@ -423,6 +426,37 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   // double chevron reads as "dash" at 20 px and carries no floor.
   setIcon(dodge, 'dodge', 'DASH');
   dodgeGroup.appendChild(dodge.slot);
+  // TONICS AND BOMBS (docs/CONSUMABLES.md): the viewer's carry slot, right of
+  // the dodge, shown only in a run with tonics. Its rim takes the item's
+  // colour; a find pops it, a use flashes it empty.
+  const tonicSep = el('div', 'hud-sep hud-sep-tonic', bar);
+  const tonicGroup = el('div', 'hud-group hud-group-tonic', bar);
+  const tonic = makeSlot('Q');
+  tonic.slot.classList.add('hud-slot-tonic');
+  tonicGroup.appendChild(tonic.slot);
+  let tonicShown = null; // null = hidden, '' = empty, else the item id
+  function paintTonic() {
+    const R = typeof world.runSystem === 'function' ? world.runSystem() : null;
+    const v = R && typeof R.tonics === 'function' && R.isActive() ? R.tonics() : null;
+    const slots = v ? v.slots : null;
+    const id = slots ? slots[viewerSeat()] ?? '' : null;
+    if (id === tonicShown) return;
+    const was = tonicShown;
+    tonicShown = id;
+    const on = id !== null;
+    tonicGroup.style.display = on ? '' : 'none';
+    tonicSep.style.display = on ? '' : 'none';
+    if (!on) return;
+    tonic.slot.classList.toggle('is-empty', !id);
+    tonic.slot.style.setProperty('--tonic', id ? TONIC_COLORS[id].glow : 'transparent');
+    setIcon(tonic, id || null, '·');
+    const row = id ? CONSUMABLES[id] : null;
+    tonic.slot.title = row ? `${t(row.name)} — ${t(row.text)}` : t('Carry slot: empty. Elites, chests and the Peddler give tonics and bombs.');
+    tonic.slot.classList.remove('tonic-pop', 'tonic-spent');
+    void tonic.slot.offsetWidth;
+    if (id) tonic.slot.classList.add('tonic-pop');
+    else if (was) tonic.slot.classList.add('tonic-spent');
+  }
 
   // Controls slice: the key caps follow Settings ▸ Controls and turn into pad
   // buttons while a gamepad is in use (Space keeps its short "SPC" cap). The
@@ -434,6 +468,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
       s.keyEl.textContent = shortCap(cap(`skill${i + 1}`));
     });
     dodge.keyEl.textContent = shortCap(cap('dodge'));
+    tonic.keyEl.textContent = shortCap(cap('useItem'));
     ports.forEach((p) => {
       const c = keyCap(bindings.code(`ally${p.i + 1}`));
       const m = /^F(\d+)$/.exec(c);
@@ -678,6 +713,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     const channels = ctx.channels;
     tickNow = ctx.tick ?? 0;
     updatePortraits(now, members, channels);
+    paintTonic();
 
     paintCooldown(
       dodge,

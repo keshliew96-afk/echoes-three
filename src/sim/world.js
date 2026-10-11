@@ -633,6 +633,15 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     layoutSys.discrete(snapshot);
     drainContinuations();
     // @gnt:M4b CONTENT-DISCRETE end
+    // TONICS AND BOMBS (docs/CONSUMABLES.md): the slot presses, the Healer's
+    // and the human seats', then the AI seats' (a run without tonics: no-op).
+    {
+      const own = snapshot && Array.isArray(snapshot.presses) && snapshot.presses.some((p) => p.kind === 'use_item');
+      const list = own ? [{ seat: 0, aim: snapshot.aim ?? player.aim ?? null }] : [];
+      if (seatsActive) for (const u of allySys.humanUses()) list.push(u);
+      runSys.useTonics(list);
+      drainContinuations();
+    }
 
     // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
     // the Warding Aura cadence (skills block). Zone/aura heals can carry

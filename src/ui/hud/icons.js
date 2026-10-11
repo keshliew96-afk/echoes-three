@@ -831,6 +831,39 @@ const ICONS = {
     ['path', { d: 'M16 25 V29 M11 29 H21', 'stroke-width': 1.8 }],
     ['circle', { cx: 16, cy: 14, r: 2, fill: 'currentColor', stroke: 'none' }],
   ],
+  // TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot's six kinds.
+  // A round flask with a cross (Mending Tonic), a flask with speed lines
+  // (Haste Draught), a flask on a shield (Ward Flask), a bomb with a flame
+  // (Fire Bomb), a bomb with a snow star (Frost Bomb), a hand-bell (Bell Charm).
+  mend_tonic: [
+    ['path', { d: 'M13 4 H19 M14 4 V10 C8 12 6 16 6 20 A10 9 0 0 0 26 20 C26 16 24 12 18 10 V4' }],
+    ['path', { d: 'M16 15 V25 M11 20 H21', 'stroke-width': 3 }],
+  ],
+  haste_draught: [
+    ['path', { d: 'M17 4 H23 M18 4 V10 C13 12 11 16 11 20 A9 8.5 0 0 0 29 20 C29 16 27 12 22 10 V4' }],
+    ['path', { d: 'M3 14 H8 M2 20 H7 M3 26 H9' }],
+    ['path', { d: 'M15 21 L20 16 L19 20 L24 19 L19 25', fill: 'currentColor', stroke: 'none' }],
+  ],
+  ward_flask: [
+    ['path', { d: 'M16 3 L27 7 V15 C27 22 22 27 16 29 C10 27 5 22 5 15 V7 Z' }],
+    ['path', { d: 'M14 9 H18 M14.6 9 V13 C11.5 14 10.5 16.5 10.5 18.5 A5.5 5 0 0 0 21.5 18.5 C21.5 16.5 20.5 14 17.4 13 V9', fill: 'currentColor', stroke: 'none' }],
+  ],
+  fire_bomb: [
+    ['circle', { cx: 14, cy: 19, r: 9, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M19 11 L22 8' }],
+    ['path', { d: 'M25 2 C28 5 28 8 25 10 C22 8 22 5 25 2 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  frost_bomb: [
+    ['circle', { cx: 14, cy: 19, r: 9 }],
+    ['path', { d: 'M14 13 V25 M9 16 L19 22 M9 22 L19 16', 'stroke-width': 1.8 }],
+    ['path', { d: 'M19 11 L22 8' }],
+    ['path', { d: 'M25 2 V10 M21.5 4 L28.5 8 M21.5 8 L28.5 4', 'stroke-width': 1.6 }],
+  ],
+  bell_charm: [
+    ['path', { d: 'M16 4 C10 4 9 10 9 15 C9 19 7 21 5 23 H27 C25 21 23 19 23 15 C23 10 22 4 16 4 Z', fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 16, cy: 26.5, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M2 10 C3 7 4.5 5.5 6 4.5 M30 10 C29 7 27.5 5.5 26 4.5', 'stroke-width': 1.8 }],
+  ],
   // Dodge: double chevron dash (unchanged from the old drawn glyph).
   dodge: [
     ['path', { d: 'M4 6 L13 16 L4 26 L8.5 26 L17.5 16 L8.5 6 Z', fill: 'currentColor', stroke: 'none' }],

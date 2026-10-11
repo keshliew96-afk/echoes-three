@@ -21,6 +21,18 @@ export const PALETTE = Object.freeze({
 // brief's ranges, not invented.
 export const ACT1_GROUND = '#548C38';
 
+// TONICS AND BOMBS (docs/CONSUMABLES.md): each carry-slot kind's colour, clear
+// of the reserved hues (Ember is the enemy's threat, Violet the gods'): Bright
+// Heal for the tonic that heals, Hearth Amber flame for the party's Fire Bomb.
+export const TONIC_COLORS = Object.freeze({
+  mend_tonic: Object.freeze({ glow: '#5FE873', core: '#E9FFE9' }),
+  haste_draught: Object.freeze({ glow: '#C9EC5A', core: '#F6FFD6' }),
+  ward_flask: Object.freeze({ glow: '#8DB6F2', core: '#EEF5FF' }),
+  fire_bomb: Object.freeze({ glow: '#E8A23D', core: '#FFF1C9', deep: '#B4621E' }),
+  frost_bomb: Object.freeze({ glow: '#7FE0F2', core: '#F2FDFF', deep: '#2E7C93' }),
+  bell_charm: Object.freeze({ glow: '#D9B872', core: '#F7E7C0' }),
+});
+
 // Class accents (BUILD_BRIEF §19.1) — rings, HP bars, cloak trim.
 export const CLASS_ACCENTS = Object.freeze({
   healer: '#33513C',
