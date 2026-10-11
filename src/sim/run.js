@@ -75,7 +75,7 @@ import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS, HEALER_SKILL_IDS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR, refreshPrice } from './draft.js';
 import { NODES } from './nodes.js';
-import { levelFor, ACT_IDS, ENDLESS_ACTS, bossFor, campaignLevel } from '../data/levels.js';
+import { levelFor, ACT_IDS, ENDLESS_ACTS, CAMPAIGN_ACTS, bossFor, campaignLevel } from '../data/levels.js';
 // ENDLESS (docs/ENDLESS.md): the descent past Act III.
 import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, endlessRules, levelOfDepth, beyondCampaign } from '../data/endless.js';
 import { LAYOUTS, arenaOf } from '../data/layouts.js';
@@ -315,7 +315,11 @@ export function createRunSystem({
   const rushFight = () => (campaign && campaign.rush ? campaign.index : 0);
   // The level after `level` in this campaign: the endless cycle wraps; the
   // rush's line runs on into its second lap and ends after its last fight.
-  const nextOf = (c, level) => (c && c.mode === 'campaign' ? (c.rush ? rushNextLevel(c.index) : c.endless ? endlessNextLevel(level) : nextLevel(level)) : null);
+  // ACT V PREVIEW (docs/ACT_V.md): the Daily stays the campaign's own
+  // CAMPAIGN_ACTS levels even when ?act5=1 adds Level V, so its board and the
+  // server's depth check never meet the Spire.
+  const nextOf = (c, level) =>
+    c && c.mode === 'campaign' ? (c.rush ? rushNextLevel(c.index) : c.endless ? endlessNextLevel(level) : c.daily && level >= CAMPAIGN_ACTS ? null : nextLevel(level)) : null;
   // The room a level opens in: room 1, or in the rush the boss room for the
   // first fight and the Peddler's clearing (then the boss) for the others.
   const firstRoom = () => (campaign && campaign.rush ? (campaign.index === 1 ? RUN.bossRoom : RUN.shopRoom) : 1);

@@ -49,7 +49,9 @@ export const CHAMPIONS = Object.freeze({
 });
 export const CHAMPION_IDS = Object.freeze(Object.values(CHAMPIONS).map((c) => c.id));
 export const isChampionKind = (k) => CHAMPION_IDS.includes(k);
-export const championFor = (act) => CHAMPIONS[act] ?? CHAMPIONS[1];
+// (Act V preview, docs/ACT_V.md: the Spire's champion comes with slice 7;
+// until then its crown door holds the Heart's Hollow Choir.)
+export const championFor = (act) => CHAMPIONS[act] ?? (act > 4 ? CHAMPIONS[4] : CHAMPIONS[1]);
 export const championById = (id) => Object.values(CHAMPIONS).find((c) => c.id === id) ?? null;
 
 const hash32 = (s) => parseInt(fnv1a64Hex(s).slice(0, 8), 16) >>> 0;

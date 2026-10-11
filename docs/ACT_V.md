@@ -1,0 +1,72 @@
+# Act V: The Still Spire
+
+Content plan 4, slice 2 (the plan lives in the project files as CONTENT_PLAN_4.md). The Still Spire is the gods' high belfry, where they sat down to watch and never rose. It is a fifth land with its own biome, music, ambience, six room layouts, a new hazard and four new enemies.
+
+## Behind a flag
+
+The Spire plays only with `?act5=1` in the address (in Node, `ECHOES_ACT5=1`). Without it, nothing changes: the campaign, Endless, the Daily, Boss Rush, the Journal, the unlocks and the nine goldens are exactly as before.
+
+`ACT5_PREVIEW` in `src/data/levels.js` reads the flag. `CAMPAIGN_ACTS` stays 4. `PLAYED_ACTS` is 5 under the flag, and `ACT_IDS` and `ENDLESS_ACTS` follow it.
+
+| With `?act5=1` | |
+| --- | --- |
+| Campaign | Five levels. Level V unlocks after Level IV is cleared, and clearing Level V wins the campaign (Level IV leads on to it). |
+| Endless | The descent cycles five biomes, so the Spire is every fifth depth. |
+| Daily | Still four levels (`nextOf` in src/sim/run.js stops it at `CAMPAIGN_ACTS`), so its board and the server's depth check never meet the Spire. |
+| Boss Rush | Still a lap of four acts (`ORDER` in src/data/rush.js keeps to `CAMPAIGN_ACTS`). |
+| Journal | Four more Bestiary rows (49 instead of 45). |
+| Deeds | The Ringwalker arena deed still counts the four arenas of Acts I-IV only when the flag is off; with it, Windward Court joins. |
+
+Slice 3 (the Act V bosses) decides whether Level V joins the campaign for everyone or stays post-win. Opening it for everyone means:
+
+1. Set `CAMPAIGN_ACTS` to 5 and drop the `ACT5_PREVIEW` gate (or leave it as a no-op).
+2. Give Level V its own bosses in place of the borrowed Geode Colossus and Lich Ram (`bosses` in `LEVELS[5]`), with `STAG_DMG_LEVEL[5]` tuned for them.
+3. Decide whether the Daily stays four levels (keep the `nextOf` line) or grows to five (drop it, and teach server/daily.mjs the new depth).
+4. Give Boss Rush a fifth act (`ORDER`), give the Spire its own champion (`championFor` falls back to the Hollow Choir), and re-record the goldens if any of this touches Acts I-IV.
+
+## The level
+
+| | |
+| --- | --- |
+| Name | The Still Spire |
+| Biome | `spire`: pale weathered stone, bell bronze, old kite cloth and hemp rope under a cold grey sky |
+| Layouts | 29 Bell Stair, 30 Rope Walk, 31 Chime Gallery, 32 Belfry Crown (boss room), 33 Gargoyle Ledge, 34 Windward Court (arena) |
+| Hazards | gust vents (new), rockfall, slip patches |
+| Interactables | dewfont, barricade, keg, bell |
+| Roster | kite 20 %, chime 14 %, gargoyle 14 %, hanger 14 %, plus husks, lancers, crows, moths and knights from the acts above |
+| Difficulty | tier 4.1 (Act IV is 3.6), elite chance 26 % rising 3 % a room, two elite powers from the first affix room |
+| Boss room | the Belfry Crown meets the Geode Colossus (adds: two kites and a gargoyle) or the Lich Ram (adds: a chime and a hanger), borrowed until slice 3 |
+| Starter kit (starting at Level V) | +2 skills, 48 nodes, 4 legendaries, 96 Glint (allies: 4 swaps, 32 nodes, 4 legendaries, 68 Glint) |
+| Other | a Hunt room's quarry is a husk; the champion room meets the Hollow Choir; Embers per clear 100, score multiplier 3.0 |
+
+Tier 4.1 is a first guess, half a step above Act IV as Act IV was above Act III. A headless check with the autopilot carrying a fresh start at each level with its starter kit (seeds 1-8, 90000 ticks): from Level V the parties cleared 1-3 rooms before falling, from Level IV 0-4 rooms with one clear. So a cold start on the Spire is about as hard as one on the Heart. It needs tuning after real play.
+
+## Enemies
+
+All four are plain entity data with no RNG of their own, so saves, co-op snapshots and replays carry them unchanged. Every player-targeted attack goes through the §11 telegraph governor (at most two live, starts at least 72 ticks apart).
+
+| Enemy | Role | What it does |
+| --- | --- | --- |
+| **Gust Kite** (`kite`) | diver | A flier that circles 3.6-5.6 u out. It marks a 0.8 u lane up to 6.2 u long through its target for 50 ticks, then drops down it at 12 u/s, striking each hero it crosses once for 9. It lands **grounded** for 80 ticks and takes 50 % more damage there (the punish window), then rises again. hp 14, every 250 ticks. |
+| **Chime Wraith** (`chime`) | toller | A floater that drifts 1.4-2.4 u from its target. It marks a ring r 2.8 round itself for 60 ticks, then tolls for 6 and a 40 % slow for 2 s. A stun mid-swing chokes the toll. hp 22, every 300 ticks. |
+| **Gargoyle** (`gargoyle`) | sleeper | Arrives as **stone**: it cannot move, attack or be knocked back. A hero within 2.6 u or any hit wakes it: it cracks for 48 ticks behind a ring r 1.7, then bursts free for 12. Awake it stalks and slams a ring r 1.3 in front of itself (54 ticks, 13 damage). With no hero within 5 u for 6 s it settles back into stone. Takes half knockback awake. hp 48. |
+| **Rope Hanger** (`hanger`) | battering ram | Creeps 3-6 u from its target, then marks a 1.1 u lane up to 8.5 u long for 66 ticks and swings down it on its rope at 10 u/s, over barricades and hazards. Each hero it passes takes 8 and is thrown 2 u sideways out of the lane. It dangles for 45 ticks at the end. hp 30, every 280 ticks. |
+
+AI allies step sideways out of the kite's and the hanger's lanes (both carry `lance: true`, read by `laneGoal` in src/sim/allies.js). Elite powers apply, except that a gargoyle is never Frozen and the kite, the gargoyle and the hanger never Blink.
+
+## Gust vents
+
+A new hazard, `gust` in src/sim/hazards.js. A grate in the floor blows along a 1.6 u lane from the vent. Every 420 ticks it shows a 60-tick Ember lane telegraph, then gusts for 36 ticks, pushing every body in the lane along it at 5.2 u/s: heroes, enemies and fliers alike, never bosses. It does no damage itself. It carries you into whatever lies down the lane. Gust resolutions take a slot on the shared hazard clock like every other hazard. Each of the six layouts has two vents, set half a cycle (or near it) apart.
+
+## Look and sound
+
+- **Visuals.** Biome dressing in `src/env/biomes/spire.js`; enemy rigs in `src/render/enemies/spire.js`; the gust vent's grate, streamers and telegraph in the hazard renderer; impact effects on the AAA bar, with a vfx lab row for the four enemies and the vent (`?vfxlab=1`).
+- **Music.** A `spire` theme (src/audio/music.js), with a boss state.
+- **Ambience.** A wind bed with distant bells (src/audio/ambient.js).
+- **Cues.** `src/audio/spirecues.js`: kite dive and landing, the chime toll and choke, the gargoyle crack, wake, slam and settle, the hanger swing and landing, and the gust.
+
+## Verification
+
+- `node tools/act5-probe.mjs` (headless; sets `ECHOES_ACT5=1` itself, and checks the flag-off state in a child process): the four enemies' behaviours, the gust push, governor holds, AI lane evasion, Level V wiring and runs, the campaign won after Level V, the Daily still four levels, Boss Rush still four acts, save and snapshot round trip.
+- `node tools/gntM4b-layoutcheck.mjs`: the six layouts' placements are clear (the gust lane is checked as a segment).
+- The nine goldens (`node tools/gntM2-goldens.mjs`) match: nothing in Acts I-IV changed.

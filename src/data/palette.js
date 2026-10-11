@@ -63,6 +63,7 @@ export const VFX_BIOME = Object.freeze({
   2: '#4F6672',
   3: '#5E5450',
   4: '#4E4458', // Act IV, the Hollow Heart: bruised violet dusk
+  5: '#6A7488', // Act V, the Still Spire: cold slate-blue high air
 });
 
 // Enemy debris materials (design-VFX.md §5). The threat colour is always
@@ -105,6 +106,12 @@ export const VFX_MATTER = Object.freeze({
   owlfeather: '#B8B3A8', // Shriek Owl: pale barred down
   leech: '#2E3832', // Mire Leech: black-green hide
   flour: '#D6D0C0', // Drowned Miller: wet flour paste (a grey-cream, never Bright Heal)
+  // Act V, the Still Spire (docs/ACT_V.md).
+  kitecloth: '#C8BFA8', // Gust Kite: weathered sailcloth and cane
+  bellbronze: '#B08A4C', // Chime Wraith's bell, the Spire's bells: old tarnished bronze
+  spirestone: '#A7A39A', // Gargoyle, the Spire's masonry: pale weathered limestone
+  hemp: '#8C7A58', // Rope Hanger: old belfry rope
+  gust: '#DCE6EE', // the gust vents' air: a pale cold white-blue (never Bright Heal)
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

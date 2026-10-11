@@ -19,6 +19,8 @@ const WIN_FLAVOUR = {
   2: () => t('The Drowned Heron sinks. The water runs clear again.'),
   3: () => t('The Barrow Wyrm is still. The long night lifts.'),
   4: () => t('The Heart\'s warden falls. Below the Barrow, the old beat falters.'),
+  // Act V preview (docs/ACT_V.md): the Spire's borrowed warden.
+  5: () => t('The Spire\'s warden falls. High above, the bells hang still.'),
 };
 const BOSS_WIN_FLAVOUR = {
   thornmother: () => t('The Thornmother falls. The briars let the wood go.'),
@@ -248,7 +250,7 @@ export function createEndScreen({ run }) {
       : win
       ? complete
         ? t('The last of the old beasts falls. Every level is clear — the long night is over.')
-        : ((view.act === 4 ? null : BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind]) ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1])()
+        : ((view.act >= 4 ? null : BOSS_WIN_FLAVOUR[view.actBoss && view.actBoss.kind]) ?? WIN_FLAVOUR[view.act] ?? WIN_FLAVOUR[1])()
       : chorus(view, s);
     // THE HEARTH SONG (docs/STORY.md): a won level hands the bell its verse;
     // a complete campaign closes on the story's ending for its length.

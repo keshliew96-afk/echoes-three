@@ -205,6 +205,41 @@ export const LEVELS = Object.freeze({
     ]),
     unlock: Object.freeze({ afterVictory: 3 }),
   }),
+  // Act V (docs/ACT_V.md, content plan 4 slice 2): the Still Spire, the gods'
+  // high belfry where they sat down to watch. Its own land, hazard (gust
+  // vents) and four creatures, but no bosses of its own yet: it plays only
+  // behind the ?act5=1 preview flag (ACT5_PREVIEW below) and the Heart's
+  // Geode Colossus and the Barrow's Lich Ram stand in until slice 3 gives it
+  // the Hush and opens Level V for everyone.
+  5: Object.freeze({
+    id: 'still_spire',
+    act: 5,
+    name: 'The Still Spire',
+    blurb: 'The gods\' high belfry, where they sat down to watch and never rose.',
+    tier: 5,
+    biome: 'spire',
+    layouts: Object.freeze([29, 30, 31, 32, 33, 34]),
+    legacyLayouts: Object.freeze([29, 30, 31]),
+    bossLayout: 32,
+    music: 'spire',
+    // The Spire's four creatures from room 1, with a few of the Heart's and
+    // the Barrow's climbing after the party.
+    roster: Object.freeze({ kite: 0.2, chime: 0.14, gargoyle: 0.14, hanger: 0.14, crow: 0.08, moth: 0.06, knight: 0.05, lancer: 0.09, husk: 0.1 }),
+    introduce: Object.freeze({ kite: 1, gargoyle: 1, husk: 1, crow: 1, chime: 2, hanger: 2, moth: 2, lancer: 3, knight: 4 }),
+    hazards: Object.freeze(['gust', 'rockfall', 'slip']),
+    interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'bell']),
+    boss: 'colossus',
+    bossName: 'The Geode Colossus',
+    bossAdds: Object.freeze([
+      ['kite', 2],
+      ['gargoyle', 1],
+    ]),
+    bosses: Object.freeze([
+      Object.freeze({ kind: 'colossus', name: 'The Geode Colossus', adds: Object.freeze([Object.freeze(['kite', 2]), Object.freeze(['gargoyle', 1])]) }),
+      Object.freeze({ kind: 'lichram', name: 'The Lich Ram', adds: Object.freeze([Object.freeze(['chime', 1]), Object.freeze(['hanger', 1])]) }),
+    ]),
+    unlock: Object.freeze({ afterVictory: 4 }),
+  }),
 });
 
 // NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): kinds that roll only in a
@@ -219,8 +254,27 @@ export const CAMPAIGN_ONLY_ENEMIES = Object.freeze(['keener', 'sexton', 'bloom',
 // the campaign at three levels and leaves Act IV to the Endless Descent only
 // (data/endless.js reads ENDLESS_ACTS).
 export const CAMPAIGN_ACTS = 4;
-export const ENDLESS_ACTS = Object.freeze([1, 2, 3, 4]);
-export const ACT_IDS = Object.freeze([1, 2, 3, 4].slice(0, CAMPAIGN_ACTS));
+// ACT V PREVIEW (docs/ACT_V.md): `?act5=1` in the page address (or
+// ECHOES_ACT5=1 for a Node probe) adds Level V, the Still Spire, after the
+// Heart: the campaign runs five levels and the Endless Descent cycles five
+// lands. Without it nothing changes: CAMPAIGN_ACTS stays 4 and the Spire is
+// never met (the Daily server and Boss Rush read CAMPAIGN_ACTS, so neither
+// ever sees it). Slice 3 (the Spire's bosses) sets CAMPAIGN_ACTS to 5.
+export const ACT5_PREVIEW = (() => {
+  try {
+    if (typeof location !== 'undefined' && location && typeof location.search === 'string' && /[?&]act5=1(&|$)/.test(location.search)) return true;
+  } catch {
+    /* no location */
+  }
+  try {
+    return typeof process !== 'undefined' && !!process.env && process.env.ECHOES_ACT5 === '1';
+  } catch {
+    return false;
+  }
+})();
+const PLAYED_ACTS = Math.max(CAMPAIGN_ACTS, ACT5_PREVIEW ? 5 : 0);
+export const ENDLESS_ACTS = Object.freeze([1, 2, 3, 4, 5].slice(0, Math.max(4, PLAYED_ACTS)));
+export const ACT_IDS = Object.freeze([1, 2, 3, 4, 5].slice(0, PLAYED_ACTS));
 
 export function levelFor(act) {
   return LEVELS[act] ?? LEVELS[1];

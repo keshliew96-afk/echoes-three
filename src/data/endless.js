@@ -49,7 +49,7 @@ export const ELITE_CAP = 0.55;
 // Act IV, data/difficulty.js STAG_DMG_LEVEL), so past the first cycle its
 // hits land at this share of them. Act IV's own bosses (docs/ACT_IV_BOSSES.md)
 // are tuned on Act IV numbers.
-export const BOSS_HOME_DMG = Object.freeze({ 1: 0.7, 2: 0.9, 3: 1, 4: 1 });
+export const BOSS_HOME_DMG = Object.freeze({ 1: 0.7, 2: 0.9, 3: 1, 4: 1, 5: 1 });
 export const GUEST_WEIGHT = 0.35;
 export const MIX_FROM_DEPTH = CYCLE + 1;
 

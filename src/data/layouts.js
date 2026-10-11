@@ -22,7 +22,8 @@
 //     millrace     x0 z0 x1 z1 (flow from 0 -> 1), w (1.4), offset (ticks toward the first surge)
 //     rockfall     (no position — targets the party)
 //     gravefire    vents [[x, z] x3], offset (ticks into its 420-tick cycle)
-//     slip         r (1.1-1.9), skin ('wet' Mill | 'frost' Barrow)  slick floor:
+//     gust         x0 z0 x1 z1 (blows from the vent at 0 toward 1), w (1.6), offset (ticks into its 420-tick cycle)
+//     slip         r (1.1-1.9), skin ('wet' Mill | 'frost' Barrow, Spire)  slick floor:
 //                  bodies keep sliding (Acts II and III only, never Level 1)
 //   interactables:  { type, x, z, yaw?, ...params }
 //     dewfont · barricade (yaw, skin) · keg · sluice (lanes: millrace indices) · bell
@@ -710,9 +711,148 @@ export const LAYOUTS = Object.freeze({
       { type: 'keg', x: 9.4, z: 5.6 },
     ]),
   }),
+
+  // ------------------------------------ Act V, the Still Spire (ACT_V.md)
+  // Content plan 4 slice 2. The gods' high belfry: pale stone floors open to
+  // the wind, bell frames and rope hanging from the rafters. Its hazard is
+  // the GUST VENT (sim/hazards.js 'gust'): a grate that blows a lane clear
+  // on a beat. Rime patches (slip, 'frost' skin) where the wind has iced the
+  // stone, falling masonry (rockfall), and the Barrow's bell. Played only on
+  // Level V, so only behind the ?act5=1 preview until slice 3 opens it;
+  // never in legacyLayouts, so the goldens never see them.
+
+  // Act V · 29 — the stair head where the climb comes out: two vents blow
+  // down the west and east walks in turn, the bell hangs in the north arch.
+  29: Object.freeze({
+    id: 29,
+    act: 5,
+    biome: 'spire',
+    name: 'Bell Stair',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gust', x0: -7.0, z0: -4.4, x1: -7.0, z1: 4.4, offset: 0 },
+      { type: 'gust', x0: 7.0, z0: 4.4, x1: 7.0, z1: -4.4, offset: 210 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'bell', x: 0.0, z: -5.6 },
+      { type: 'barricade', x: -3.6, z: -3.4, yaw: 0.4, skin: 'cairn' },
+      { type: 'barricade', x: 3.6, z: -3.4, yaw: -0.4, skin: 'cairn' },
+      { type: 'dewfont', x: -4.2, z: 4.6 },
+      { type: 'keg', x: 4.4, z: 4.4 },
+    ]),
+  }),
+  // Act V · 30 — a long bridge of rafters under the hanging ropes: the vents
+  // blow along the north and south walks, rime ices both ends.
+  30: Object.freeze({
+    id: 30,
+    act: 5,
+    biome: 'spire',
+    name: 'Rope Walk',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gust', x0: -3.0, z0: -4.8, x1: 3.0, z1: -4.8, offset: 0 },
+      { type: 'gust', x0: 3.0, z0: 5.0, x1: -3.0, z1: 5.0, offset: 210 },
+      { type: 'slip', x: -9.6, z: 0.0, r: 1.3, skin: 'frost' },
+      { type: 'slip', x: 9.6, z: 0.0, r: 1.3, skin: 'frost' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -4.4, z: -2.0, yaw: 1.2, skin: 'cairn' },
+      { type: 'barricade', x: 4.4, z: -2.0, yaw: -1.2, skin: 'cairn' },
+      { type: 'dewfont', x: -7.0, z: 4.6 },
+      { type: 'keg', x: 7.0, z: -4.6 },
+      { type: 'bell', x: 6.8, z: 4.6 },
+    ]),
+  }),
+  // Act V · 31 — a gallery of small chimes: one vent across the north, one
+  // down the east wall, rime in the south-west, a bell on the west wall.
+  31: Object.freeze({
+    id: 31,
+    act: 5,
+    biome: 'spire',
+    name: 'Chime Gallery',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gust', x0: 3.0, z0: -4.8, x1: -3.0, z1: -4.8, offset: 60 },
+      { type: 'gust', x0: 7.0, z0: -4.4, x1: 7.0, z1: 4.4, offset: 270 },
+      { type: 'slip', x: -6.8, z: 3.6, r: 1.3, skin: 'frost' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'bell', x: -7.0, z: -1.0 },
+      { type: 'barricade', x: -3.8, z: -2.8, yaw: 0.6, skin: 'cairn' },
+      { type: 'dewfont', x: 3.6, z: 5.0 },
+      { type: 'keg', x: -4.0, z: 4.4 },
+    ]),
+  }),
+  // Act V · 32 — the belfry's crown under the great bell (also Level V's
+  // boss room dressing): vents down both side walks, rime at the north.
+  32: Object.freeze({
+    id: 32,
+    act: 5,
+    biome: 'spire',
+    name: 'Belfry Crown',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gust', x0: -7.0, z0: 4.4, x1: -7.0, z1: -4.4, offset: 0 },
+      { type: 'gust', x0: 7.0, z0: -4.4, x1: 7.0, z1: 4.4, offset: 210 },
+      { type: 'slip', x: 0.0, z: -5.8, r: 1.2, skin: 'frost' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 0.0, z: 5.4 },
+      { type: 'barricade', x: -3.6, z: 2.6, yaw: 0.5, skin: 'cairn' },
+      { type: 'barricade', x: 3.6, z: 2.6, yaw: -0.5, skin: 'cairn' },
+      { type: 'keg', x: -9.4, z: 0.0 },
+      { type: 'keg', x: 9.4, z: 0.0 },
+    ]),
+  }),
+  // Act V · 33 — a ledge of perched grotesques: vents along the north and
+  // south walks, rime on both flanks, a bell at the north rail.
+  33: Object.freeze({
+    id: 33,
+    act: 5,
+    biome: 'spire',
+    name: 'Gargoyle Ledge',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gust', x0: 3.0, z0: -4.8, x1: -3.0, z1: -4.8, offset: 0 },
+      { type: 'gust', x0: -3.0, z0: 5.0, x1: 3.0, z1: 5.0, offset: 210 },
+      { type: 'slip', x: -7.0, z: -1.0, r: 1.4, skin: 'frost' },
+      { type: 'slip', x: 7.0, z: 1.0, r: 1.4, skin: 'frost' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'bell', x: 0.0, z: -6.2 },
+      { type: 'barricade', x: -5.6, z: 2.4, yaw: 0.3, skin: 'cairn' },
+      { type: 'barricade', x: 5.6, z: -2.4, yaw: 0.3, skin: 'cairn' },
+      { type: 'keg', x: -3.0, z: -2.8 },
+      { type: 'dewfont', x: 6.8, z: 4.8 },
+    ]),
+  }),
+  // Act V · 34 — ARENA. An open court on the Spire's windward face: two
+  // vents blow in from the side walls, rime in the north quarters, the floor
+  // between is clear.
+  34: Object.freeze({
+    id: 34,
+    act: 5,
+    biome: 'spire',
+    name: 'Windward Court',
+    arena: true,
+    spawns: Object.freeze([[-6.0, -7.0], [6.0, -7.0], [-10.8, -4.4], [10.8, -4.4], [-10.8, 4.4], [10.8, 4.4], [-6.0, 7.0], [6.0, 7.0]]),
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gust', x0: -9.6, z0: 0.0, x1: -4.6, z1: 0.0, offset: 0 },
+      { type: 'gust', x0: 9.6, z0: 0.0, x1: 4.6, z1: 0.0, offset: 210 },
+      { type: 'slip', x: -6.0, z: -4.0, r: 1.2, skin: 'frost' },
+      { type: 'slip', x: 6.0, z: -4.0, r: 1.2, skin: 'frost' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 0.0, z: 5.8 },
+      { type: 'bell', x: 0.0, z: -6.0 },
+      { type: 'keg', x: -6.4, z: 3.6 },
+      { type: 'keg', x: 6.4, z: 3.6 },
+    ]),
+  }),
 });
 
-export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28]);
+export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]);
 
 // Plan 3 slice 8: the act's arena (the layout flagged `arena`), or null.
 export function arenaOf(table) {
@@ -729,7 +869,7 @@ export function actOfLayout(id) {
   return LAYOUTS[id] ? LAYOUTS[id].act : 1;
 }
 
-export const BIOME_OF_ACT = Object.freeze({ 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart' });
+export const BIOME_OF_ACT = Object.freeze({ 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart', 5: 'spire' });
 
 // §11 spawn ring + the constraints tools/gntM4b-layoutcheck.mjs audits.
 export const PLACEMENT_RULES = Object.freeze({

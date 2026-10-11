@@ -30,6 +30,15 @@
 //              Fliers, burrowers and bosses never slip. No damage, no phases:
 //              the surface itself is the telegraph
 //
+//   gust       a gust vent (Act V, docs/ACT_V.md): a grate in the floor that
+//              blows along a lane 1.6 u wide from the vent (x0, z0) toward
+//              (x1, z1). Every 420 ticks a 60-tick Ember lane telegraph, then
+//              a 36-tick GUST that shoves every body inside along the lane at
+//              5.2 u/s, fliers too (it is wind), the party and the enemies
+//              alike; bosses never. No damage: the gust carries you into
+//              whatever lies down the lane (a rockfall, another hero's
+//              telegraph, the wall). Idle, the vent only breathes
+//
 // Telegraph discipline (§23.6): every hazard telegraph is Ember and >= 42
 // ticks; idle states are drawn in the biome palette. No two SCHEDULED hazard
 // resolutions land within 0.6 s (36 ticks) of each other: every resolution is
@@ -84,6 +93,14 @@ export const HAZARD_TYPES = Object.freeze({
     rubbleTicks: 480,
     maxRubble: 2,
     playerTargeted: true,
+    affects: 'all',
+  }),
+  gust: Object.freeze({
+    width: 1.6,
+    cycleTicks: 420,
+    telegraphTicks: 60,
+    gustTicks: 36,
+    pushSpeed: 5.2, // u/s
     affects: 'all',
   }),
   gravefire: Object.freeze({
@@ -244,6 +261,28 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         resolveTick: null,
         surges: 0,
       });
+    } else if (htype === 'gust') {
+      const x0 = params.x0 ?? x;
+      const z0 = params.z0 ?? z - 2.5;
+      const x1 = params.x1 ?? x;
+      const z1 = params.z1 ?? z + 2.5;
+      const len = Math.hypot(x1 - x0, z1 - z0) || 1;
+      const off = Math.max(0, Math.min(T.cycleTicks - T.telegraphTicks, params.offset ?? 0));
+      h = registry.spawn({
+        ...base,
+        x: (x0 + x1) / 2,
+        z: (z0 + z1) / 2,
+        px: (x0 + x1) / 2,
+        pz: (z0 + z1) / 2,
+        lane: { x0, z0, x1, z1, w: params.w ?? T.width },
+        dirX: (x1 - x0) / len,
+        dirZ: (z1 - z0) / len,
+        len,
+        radius: len / 2,
+        nextGustTick: tick + T.cycleTicks - off,
+        resolveTick: null,
+        gusts: 0,
+      });
     } else if (htype === 'rockfall') {
       const seed = hash(getSeed() >>> 0, 0x70ccf011 ^ ((params.room ?? 0) * 977) ^ ((params.layoutId ?? 0) * 131));
       const schedule = [];
@@ -354,6 +393,14 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
           if (!laneLocal(h, e.x, e.z).inside) continue;
           walkStep(e, h.dirX * step, h.dirZ * step, e.radius);
         }
+      } else if (h.htype === 'gust') {
+        if (h.phase !== 'active') continue;
+        const step = HAZARD_TYPES.gust.pushSpeed * TICK_DT;
+        for (const e of all) {
+          if (!isMobile(e) || e.burrowed || e.kind === 'stag' || e.boss === true) continue;
+          if (!laneLocal(h, e.x, e.z).inside) continue;
+          walkStep(e, h.dirX * step, h.dirZ * step, e.radius);
+        }
       }
     }
     for (const r of all) {
@@ -403,6 +450,43 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
       else if (h.htype === 'millrace') stepMillrace(h, tick);
       else if (h.htype === 'rockfall') stepRockfall(h, tick);
       else if (h.htype === 'gravefire') stepGravefire(h, tick);
+      else if (h.htype === 'gust') stepGust(h, tick);
+    }
+  }
+
+  // Gust vent: idle -> 60-tick Ember lane -> 36-tick gust (the push lives in
+  // continuous()) -> idle. The gust's start is reserved on the shared clock.
+  function stepGust(h, tick) {
+    const T = HAZARD_TYPES.gust;
+    if (h.phase === 'idle' && tick >= h.nextGustTick - T.telegraphTicks) {
+      const r = reserve(tick, Math.max(h.nextGustTick, tick + T.telegraphTicks));
+      h.phase = 'telegraph';
+      h.resolveTick = r;
+      h.phaseUntilTick = r;
+      h.telegraphStartTick = tick;
+      emitTelegraph(h, tick, h.x, h.z, h.radius, r, { lane: { ...h.lane } });
+    } else if (h.phase === 'telegraph' && tick >= h.resolveTick) {
+      h.phase = 'active';
+      h.phaseUntilTick = tick + T.gustTicks;
+      h.gusts += 1;
+      let caught = 0;
+      for (const e of registry.all()) if (isMobile(e) && !e.burrowed && e.boss !== true && laneLocal(h, e.x, e.z).inside) caught += 1;
+      events.emit(tick, 'hazard_resolve', {
+        id: h.id,
+        htype: h.htype,
+        x: r2(h.x),
+        z: r2(h.z),
+        radius: h.radius,
+        telegraphTicks: tick - (h.telegraphStartTick ?? tick),
+        gust: true,
+        caught,
+        lane: { ...h.lane },
+      });
+      h.nextGustTick = tick + T.cycleTicks;
+    } else if (h.phase === 'active' && tick >= h.phaseUntilTick) {
+      h.phase = 'idle';
+      h.resolveTick = null;
+      events.emit(tick, 'gust_calm', { id: h.id });
     }
   }
 
@@ -704,6 +788,22 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         h.phase = 'idle';
         h.nextSurgeTick = tick + T.surgeEvery;
       }
+    } else if (h.htype === 'gust') {
+      const T = HAZARD_TYPES.gust;
+      if (phase === 'telegraph') {
+        h.phase = 'idle';
+        h.nextGustTick = tick + T.telegraphTicks;
+        stepGust(h, tick);
+      } else if (phase === 'active') {
+        h.phase = 'telegraph';
+        h.resolveTick = tick;
+        h.telegraphStartTick = tick;
+        stepGust(h, tick);
+      } else {
+        h.phase = 'idle';
+        h.resolveTick = null;
+        h.nextGustTick = tick + T.cycleTicks;
+      }
     } else if (h.htype === 'rockfall') {
       if (phase === 'telegraph' || phase === 'active') {
         h.telegraph = null;
@@ -756,7 +856,8 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         phase: h.phase ?? 'active',
         phaseUntilTick: h.phaseUntilTick ?? null,
         resolveTick: h.resolveTick ?? null,
-        ...(h.lane ? { lane: { ...h.lane }, stopped: tick < h.stoppedUntilTick, stoppedUntilTick: h.stoppedUntilTick, nextSurgeTick: h.nextSurgeTick } : {}),
+        ...(h.lane && h.htype !== 'gust' ? { lane: { ...h.lane }, stopped: tick < h.stoppedUntilTick, stoppedUntilTick: h.stoppedUntilTick, nextSurgeTick: h.nextSurgeTick } : {}),
+        ...(h.htype === 'gust' ? { lane: { ...h.lane }, nextGustTick: h.nextGustTick, gusts: h.gusts } : {}),
         ...(h.vents ? { vents: h.vents.map((v) => ({ x: v.x, z: v.z, phase: v.phase })), cycleStart: h.cycleStart } : {}),
         ...(h.htype === 'rockfall' ? { next: h.schedule[h.next] ?? null, drops: h.drops, telegraph: h.telegraph ? { ...h.telegraph } : null } : {}),
         ...(h.kind === 'rubble' ? { untilTick: h.untilTick } : {}),

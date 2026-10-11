@@ -1594,6 +1594,12 @@
   ],
   "data": true
  },
+ "A bell-ringer who never let go of the rope.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "A bloated grave spider, heavy with young.": {
   "files": [
    "src/data/journal.js"
@@ -2053,6 +2059,12 @@
  "a short parry after the cast.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A shroud with a cracked bell where its heart should be. It still rings the hours nobody keeps.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -3270,9 +3282,21 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Belfry Crown": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Bell Charm": {
   "files": [
    "src/sim/consumables.js"
+  ],
+  "data": true
+ },
+ "Bell Stair": {
+  "files": [
+   "src/data/layouts.js"
   ],
   "data": true
  },
@@ -3809,6 +3833,12 @@
    "src/ui/menu/settings.js"
   ]
  },
+ "Cane and old sailcloth that the Spire's wind will not let fall.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Caps how many frames the game renders per second. The game simulation always runs at 60 steps per second, whatever this is set to.": {
   "files": [
    "src/ui/menu/tabs/display.js"
@@ -3972,6 +4002,18 @@
    "src/ui/menu/tabs/network.js"
   ]
  },
+ "Chime Gallery": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Chime Wraith": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Choose": {
   "files": [
    "src/ui/menu/lobby.js",
@@ -4071,6 +4113,12 @@
   "data": true
  },
  "Circles a hero, then swoops down a long warning lane for 9 to every hero it crosses. Flies over hazards and blockers.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Circles high, then hangs and marks a warning lane through a hero. It dives down it for 9 to every hero it crosses and lands in a heap: hit it then, it takes half again as much on the floor.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -5117,6 +5165,12 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "Diver": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Dodge": {
   "files": [
    "src/ui/menu/tabs/controls.js",
@@ -5189,6 +5243,12 @@
   "data": true
  },
  "Drawn to the party lanterns, and to whatever holds them.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Drifts in close, then lifts its bell in a warning ring round itself. The toll hits for 6 and slows every hero inside by 40% for 2 s. Step out of the ring; a stun chokes the bell.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -6453,6 +6513,18 @@
   ],
   "data": true
  },
+ "Gargoyle": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Gargoyle Ledge": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "GB": {
   "files": [
    "src/sim/skills.js"
@@ -6602,6 +6674,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Grips its rope and marks a long warning lane through a hero, then swings down it over everything in the way. Every hero it passes takes 8 and is thrown aside.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Ground Crack": {
   "files": [
    "src/sim/allies.js"
@@ -6629,6 +6707,12 @@
  "Guardian Bond": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Gust Kite": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -7450,6 +7534,12 @@
   "data": true
  },
  "It walks where its horns point, and its horns point at you.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "It watched the gods sit down. It has been waiting for someone to stand up.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -10692,6 +10782,18 @@
   ],
   "data": true
  },
+ "Rope Hanger": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Rope Walk": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Rotcap": {
   "files": [
    "src/data/journal.js"
@@ -11429,6 +11531,12 @@
   ],
   "data": true
  },
+ "Sleeper": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Slick floor": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -11829,6 +11937,12 @@
    "src/ui/net/hud.js"
   ]
  },
+ "Stone until a hero comes close or strikes it. Then it cracks free in a warning ring for 12, stalks you and slams a ring in front of it for 13. Leave it alone long enough and it turns back to stone.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Stone@@verse": {
   "files": [
    "src/data/story.js"
@@ -11911,6 +12025,12 @@
  "Swift Mend": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Swinger": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -12952,6 +13072,12 @@
   ],
   "data": true
  },
+ "The gods' high belfry, where they sat down to watch and never rose.": {
+  "files": [
+   "src/data/levels.js"
+  ],
+  "data": true
+ },
  "The ground seizes up to 6 enemies within 2.3 u: 12, dragged toward the Tank and slowed 30%.": {
   "files": [
    "src/ui/run/cards.js"
@@ -13648,6 +13774,12 @@
   ],
   "data": true
  },
+ "The Spire's warden falls. High above, the bells hang still.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
  "The spirit takes {name}.": {
   "files": [
    "src/ui/run/index.js"
@@ -13663,6 +13795,13 @@
   "files": [
    "src/ui/run/transit.js"
   ]
+ },
+ "The Still Spire": {
+  "files": [
+   "src/data/levels.js",
+   "src/ui/menu/records.js"
+  ],
+  "data": true
  },
  "The Sunken Mill": {
   "files": [
@@ -14254,6 +14393,12 @@
   "files": [
    "src/ui/run/daily.js"
   ]
+ },
+ "Toller": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Tongue Lash: a warning lane for 14 that drags you in. Belly Flop: lands in a warning ring for 16 and leaves mire. Swallow: its throat swells and pulls you close, then a ring round it snaps shut for 18.": {
   "files": [
@@ -15060,6 +15205,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Windward Court": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
  },
  "Winning a Hunt, Purge, Escort or Hold room heals the party for 25% of max HP.": {
   "files": [

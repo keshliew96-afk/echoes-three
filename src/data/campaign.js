@@ -104,6 +104,8 @@ export const STARTER_GRANT = Object.freeze({
   // Act IV (docs/ACT_IV.md): a Level-4 start gets a full Level-3 build plus
   // one Level's worth more (the carried build is 32/32 by then).
   4: Object.freeze({ skills: 2, nodes: 40, legendaries: 3, glint: 80, allies: Object.freeze({ swaps: 4, nodes: 26, legendaries: 3, glint: 56 }) }),
+  // Act V preview (docs/ACT_V.md): one more Level's worth on top of Level IV's.
+  5: Object.freeze({ skills: 2, nodes: 48, legendaries: 4, glint: 96, allies: Object.freeze({ swaps: 4, nodes: 32, legendaries: 4, glint: 68 }) }),
 });
 
 export function grantFor(level) {

@@ -18,11 +18,13 @@
 // Pure data + helpers (sim- and UI-importable): no DOM, no three. The plain
 // campaign, Endless, the Daily and the tutorial never read it, so the nine
 // goldens are untouched.
-import { LEVELS, ENDLESS_ACTS, bossFor } from './levels.js';
+import { LEVELS, ENDLESS_ACTS, CAMPAIGN_ACTS, bossFor } from './levels.js';
 import { difficulty } from './difficulty.js';
 import { endlessBossIndex, endlessUnlockedFrom } from './endless.js';
 
-const ORDER = Object.freeze([...ENDLESS_ACTS].sort((a, b) => a - b));
+// ACT V PREVIEW: the Spire has no bosses of its own yet, so the rush keeps
+// the campaign's own lands (CAMPAIGN_ACTS) even when ?act5=1 adds Level V.
+const ORDER = Object.freeze([...ENDLESS_ACTS].filter((a) => a <= CAMPAIGN_ACTS).sort((a, b) => a - b));
 export const LAP = ORDER.length; // 4 fights a lap
 
 export const RUSH_RULES = Object.freeze({
