@@ -147,6 +147,9 @@ if (!only || only === 'music') {
     // Act IV (docs/ACT_IV.md): the Hollow Heart's theme.
     ['combat', 'heart', 0.6],
     ['boss', 'heart', 0.7],
+    // Act V: the Still Spire's theme.
+    ['combat', 'spire', 0.6],
+    ['boss', 'spire', 0.7],
   ].filter(([st, th]) => !keys || keys.includes(st === 'combat' || st === 'boss' ? `${st}:${th}` : st));
   for (const [st, th, inten] of plan) {
     const secs = st === 'victory' || st === 'defeat' ? 3 : 7;
@@ -179,7 +182,7 @@ if (only === 'post') {
 }
 
 if (!only || only === 'beds') {
-  for (const bed of ['camp', 'wood', 'mill', 'barrow', 'heart'].filter((b) => !keys || keys.includes(b))) {
+  for (const bed of ['camp', 'wood', 'mill', 'barrow', 'heart', 'spire'].filter((b) => !keys || keys.includes(b))) {
     await setup();
     const r = await ev(
       page,

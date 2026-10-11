@@ -1457,6 +1457,226 @@ function propTypes(mats, spec) {
     }
   }
 
+  // ---------------------------------------------------------------------
+  // Act V — The Still Spire (env/biomes/spire.js): gargoyle on its perch,
+  // timber bell-cage, balustrade run, fallen limestone block, column drum,
+  // fallen cracked bell, rope coil, feather litter, wind-torn banner. Pale
+  // weathered limestone with rime on every top face, tarnished bronze, old
+  // hemp and sailcloth. All under the ~1.05 u Tank height.
+  // ---------------------------------------------------------------------
+  if (mats.lime) {
+    // --- Gargoyle: a winged grotesque crouched on a plinth, head thrust out
+    // over the floor, horns back, wings folded up behind; rime on its head.
+    {
+      const plinth = mergeGeometries([
+        new BoxGeometry(0.5, 0.26, 0.44).translate(0, 0.13, 0),
+        new BoxGeometry(0.58, 0.06, 0.52).translate(0, 0.29, 0),
+      ]);
+      const body = mergeMixed([
+        new IcosahedronGeometry(0.17, 1).scale(1, 1.15, 0.9).rotateX(0.38).translate(0, 0.5, -0.03),
+        new IcosahedronGeometry(0.09, 0).translate(0.12, 0.39, 0.02),
+        new IcosahedronGeometry(0.09, 0).translate(-0.12, 0.39, 0.02),
+        new IcosahedronGeometry(0.105, 1).scale(1, 0.9, 1.15).translate(0, 0.66, 0.14),
+        new BoxGeometry(0.09, 0.07, 0.11).translate(0, 0.63, 0.25),
+        new BoxGeometry(0.05, 0.19, 0.05).translate(0.075, 0.4, 0.17),
+        new BoxGeometry(0.05, 0.19, 0.05).translate(-0.075, 0.4, 0.17),
+      ]);
+      const horns = mergeGeometries([
+        new ConeGeometry(0.026, 0.15, 4).rotateX(-0.7).rotateZ(0.42).translate(0.065, 0.77, 0.08),
+        new ConeGeometry(0.026, 0.15, 4).rotateX(-0.7).rotateZ(-0.42).translate(-0.065, 0.77, 0.08),
+      ]);
+      const wings = mergeGeometries([
+        new BoxGeometry(0.045, 0.42, 0.26).rotateZ(-0.45).rotateX(-0.25).translate(0.18, 0.63, -0.12),
+        new BoxGeometry(0.045, 0.42, 0.26).rotateZ(0.45).rotateX(-0.25).translate(-0.18, 0.63, -0.12),
+        new ConeGeometry(0.055, 0.18, 4).rotateZ(-0.5).translate(0.3, 0.86, -0.16),
+        new ConeGeometry(0.055, 0.18, 4).rotateZ(0.5).translate(-0.3, 0.86, -0.16),
+      ]);
+      const rime = mergeMixed([
+        new IcosahedronGeometry(0.07, 0).scale(1.2, 0.32, 1.2).translate(0, 0.75, 0.13),
+        new IcosahedronGeometry(0.06, 0).scale(1, 0.32, 1.4).translate(0.29, 0.95, -0.16),
+        new IcosahedronGeometry(0.06, 0).scale(1, 0.32, 1.4).translate(-0.29, 0.95, -0.16),
+        new BoxGeometry(0.52, 0.02, 0.1).translate(0, 0.325, 0.2),
+      ]);
+      T.gargoyle = {
+        layers: [
+          { geo: plinth, mat: mats.limeDark, ink: PROP_INK_PX },
+          { geo: body, mat: mats.lime, ink: PROP_INK_PX },
+          { geo: wings, mat: mats.limeShade, ink: DETAIL_INK_PX },
+          { geo: horns, mat: mats.limeDark, ink: 1.15 },
+          { geo: rime, mat: mats.rime },
+        ],
+        foot: 0.36,
+        rz: 0.32,
+      };
+    }
+    // --- Bell-cage: a timber frame (four posts, braces, a headstock) with a
+    // small tarnished bronze bell and its rope.
+    {
+      const frame = mergeGeometries([
+        ...[-1, 1].flatMap((sx) => [-1, 1].map((sz) => new BoxGeometry(0.06, 0.92, 0.06).translate(sx * 0.32, 0.46, sz * 0.21))),
+        new BoxGeometry(0.78, 0.07, 0.07).translate(0, 0.93, 0.21),
+        new BoxGeometry(0.78, 0.07, 0.07).translate(0, 0.93, -0.21),
+        new BoxGeometry(0.08, 0.08, 0.52).translate(0, 0.97, 0),
+        new BoxGeometry(0.04, 0.4, 0.04).rotateZ(0.7).translate(0.19, 0.76, 0.21),
+        new BoxGeometry(0.04, 0.4, 0.04).rotateZ(-0.7).translate(-0.19, 0.76, 0.21),
+      ]);
+      const sill = new BoxGeometry(0.82, 0.07, 0.56).translate(0, 0.035, 0);
+      const bell = mergeGeometries([bellLathe(0.18, 0.34, 12).translate(0, 0.52, 0), new BoxGeometry(0.06, 0.08, 0.06).translate(0, 0.9, 0)]);
+      const lip = new TorusGeometry(0.17, 0.016, 5, 14).rotateX(Math.PI / 2).translate(0, 0.53, 0);
+      const rope = mergeGeometries([
+        new CylinderGeometry(0.011, 0.011, 0.5, 4).rotateZ(0.08).translate(0.2, 0.68, 0.0),
+        new CylinderGeometry(0.02, 0.02, 0.1, 5).translate(0.22, 0.42, 0.0),
+      ]);
+      T.bellcage = {
+        layers: [
+          { geo: frame, mat: mats.timber, ink: PROP_INK_PX },
+          { geo: sill, mat: mats.timberDark, ink: DETAIL_INK_PX },
+          { geo: bell, mat: mats.bronze, ink: PROP_INK_PX },
+          { geo: lip, mat: mats.bronzeLit },
+          { geo: rope, mat: mats.hemp },
+        ],
+        foot: 0.44,
+        rz: 0.32,
+      };
+    }
+    // --- Balustrade run: a plinth, five vase balusters, a rail with rime
+    // along it and an end pedestal.
+    {
+      const plinth = new BoxGeometry(1.12, 0.1, 0.26).translate(0, 0.05, 0);
+      const bal = [];
+      for (let k = 0; k < 5; k++) bal.push(balusterLathe().translate(-0.42 + k * 0.2, 0.1, 0));
+      const rail = new BoxGeometry(1.06, 0.07, 0.28).translate(-0.06, 0.55, 0);
+      const post = mergeGeometries([new BoxGeometry(0.2, 0.6, 0.24).translate(0.6, 0.3, 0), new BoxGeometry(0.26, 0.06, 0.3).translate(0.6, 0.63, 0)]);
+      const rime = mergeGeometries([new BoxGeometry(0.9, 0.018, 0.14).translate(-0.12, 0.59, 0), new BoxGeometry(0.2, 0.02, 0.2).translate(0.6, 0.67, 0)]);
+      T.balustrade = {
+        layers: [
+          { geo: plinth, mat: mats.limeDark, ink: DETAIL_INK_PX },
+          { geo: mergeGeometries(bal), mat: mats.lime, ink: 1.15 },
+          { geo: rail, mat: mats.limeLit, ink: PROP_INK_PX },
+          { geo: post, mat: mats.lime, ink: PROP_INK_PX },
+          { geo: rime, mat: mats.rime },
+        ],
+        foot: 0.62,
+        rz: 0.2,
+      };
+    }
+    // --- Fallen limestone block: two cut stones tumbled together, a chip,
+    // rime caught on the top faces.
+    {
+      const a = new BoxGeometry(0.52, 0.32, 0.38).rotateZ(0.08).rotateY(0.3).translate(0, 0.16, 0);
+      const b = new BoxGeometry(0.34, 0.24, 0.3).rotateZ(0.5).rotateY(-0.4).translate(0.36, 0.13, 0.14);
+      const chip = mergeGeometries([new IcosahedronGeometry(0.08, 0).scale(1, 0.6, 1).translate(-0.32, 0.04, 0.16), new IcosahedronGeometry(0.06, 0).scale(1, 0.6, 1).translate(0.12, 0.03, 0.3)]);
+      const rime = mergeGeometries([new BoxGeometry(0.42, 0.02, 0.26).rotateZ(0.08).rotateY(0.3).translate(-0.02, 0.33, 0)]);
+      T.limeblock = {
+        layers: [
+          { geo: a, mat: mats.lime, ink: PROP_INK_PX },
+          { geo: b, mat: mats.limeShade, ink: PROP_INK_PX },
+          { geo: chip, mat: mats.limeDark, ink: 1.15 },
+          { geo: rime, mat: mats.rime },
+        ],
+        foot: 0.42,
+      };
+    }
+    // --- Column drum: a fluted drum fallen on its side and a short one still
+    // standing, a capital chunk.
+    {
+      const lying = new CylinderGeometry(0.2, 0.2, 0.46, 10).rotateZ(Math.PI / 2).translate(0, 0.2, 0);
+      const standing = new CylinderGeometry(0.18, 0.19, 0.24, 10).translate(0.38, 0.12, 0.2);
+      const cap = new BoxGeometry(0.3, 0.1, 0.3).rotateY(0.4).rotateX(0.2).translate(-0.34, 0.06, 0.18);
+      const rime = new CylinderGeometry(0.17, 0.17, 0.02, 10).translate(0.38, 0.25, 0.2);
+      T.drum = {
+        layers: [
+          { geo: lying, mat: mats.lime, ink: PROP_INK_PX },
+          { geo: mergeGeometries([0, 1, 2, 3, 4, 5].map((k) => new BoxGeometry(0.47, 0.03, 0.03).translate(0, 0.2, 0).rotateX((k / 6) * Math.PI * 2).translate(0, 0.2, 0))), mat: mats.limeShade },
+          { geo: standing, mat: mats.limeLit, ink: PROP_INK_PX },
+          { geo: cap, mat: mats.limeDark, ink: DETAIL_INK_PX },
+          { geo: rime, mat: mats.rime },
+        ],
+        foot: 0.44,
+        rz: 0.3,
+      };
+    }
+    // --- Fallen bell: a small cracked bronze bell lying tipped on its
+    // shoulder, its dark mouth turned up, beside the broken yoke beam.
+    {
+      const bell = bellLathe(0.26, 0.46, 12).rotateZ(1.25).translate(0.06, 0.24, 0);
+      const mouth = new CircleGeometry(0.22, 14).rotateY(-Math.PI / 2).rotateZ(1.25 - Math.PI / 2).translate(0.32, 0.36, 0);
+      const crack = mergeGeometries([
+        new BoxGeometry(0.03, 0.22, 0.018).rotateZ(1.25 + 0.3).translate(0.0, 0.33, 0.2),
+        new BoxGeometry(0.025, 0.12, 0.018).rotateZ(0.4).translate(-0.1, 0.3, 0.21),
+      ]);
+      const yoke = mergeGeometries([
+        new BoxGeometry(0.62, 0.09, 0.1).rotateY(0.5).rotateZ(0.06).translate(-0.24, 0.05, -0.24),
+        new BoxGeometry(0.08, 0.2, 0.08).rotateZ(1.0).translate(-0.48, 0.05, -0.08),
+      ]);
+      T.fallenbell = {
+        layers: [
+          { geo: bell, mat: mats.bronze, ink: PROP_INK_PX },
+          { geo: mouth, mat: mats.bronzeDeep },
+          { geo: crack, mat: mats.bronzeDeep },
+          { geo: yoke, mat: mats.timber, ink: DETAIL_INK_PX },
+        ],
+        foot: 0.36,
+      };
+    }
+    // --- Rope coil: old belfry rope coiled on the floor, a frayed tail.
+    {
+      const coil = mergeGeometries([
+        new TorusGeometry(0.14, 0.034, 5, 14).rotateX(Math.PI / 2).translate(0, 0.034, 0),
+        new TorusGeometry(0.115, 0.032, 5, 14).rotateX(Math.PI / 2).translate(0.01, 0.09, 0),
+        new TorusGeometry(0.09, 0.03, 5, 12).rotateX(Math.PI / 2).translate(0.0, 0.14, 0.01),
+      ]);
+      const tail = mergeGeometries([
+        new CylinderGeometry(0.026, 0.03, 0.42, 5).rotateZ(Math.PI / 2 - 0.05).rotateY(0.6).translate(0.24, 0.03, 0.14),
+        new ConeGeometry(0.045, 0.08, 5).rotateZ(-Math.PI / 2).rotateY(0.6).translate(0.43, 0.03, 0.27),
+      ]);
+      T.ropecoil = {
+        layers: [
+          { geo: coil, mat: mats.hemp, ink: DETAIL_INK_PX },
+          { geo: tail, mat: mats.hempDark, ink: 1.15 },
+        ],
+        foot: 0.24,
+      };
+    }
+    // --- Feather litter: a drift of fallen feathers round a tuft of down.
+    {
+      const fth = (len, x, z, ry, tilt) =>
+        new IcosahedronGeometry(1, 1).scale(len * 0.5, 0.012, len * 0.13).rotateZ(tilt).rotateY(ry).translate(x, 0.02 + Math.abs(tilt) * len * 0.3, z);
+      const pale = mergeGeometries([fth(0.26, 0, 0, 0.3, 0.12), fth(0.22, 0.12, 0.1, 1.9, -0.08), fth(0.2, -0.14, 0.06, 2.6, 0.1), fth(0.18, 0.04, -0.14, 4.1, 0.06)]);
+      const dark = mergeGeometries([fth(0.24, -0.06, -0.08, 5.2, -0.1), fth(0.16, 0.16, -0.04, 0.9, 0.14)]);
+      const down = new IcosahedronGeometry(0.05, 1).scale(1, 0.5, 1).translate(0.02, 0.03, 0.02);
+      T.featherpile = {
+        layers: [
+          { geo: pale, mat: mats.feather, ink: 1.0 },
+          { geo: dark, mat: mats.featherDark, ink: 1.0 },
+          { geo: down, mat: mats.feather },
+        ],
+        foot: 0.24,
+      };
+    }
+    // --- Wind-torn banner: pole on a limestone foot, a cross-arm and a
+    // sailcloth banner torn to streamers, every one blown the same way.
+    {
+      const pole = new CylinderGeometry(0.03, 0.045, 1.0, 7).translate(0, 0.5, 0);
+      const foot = new BoxGeometry(0.24, 0.1, 0.24).translate(0, 0.05, 0);
+      const arm = new BoxGeometry(0.06, 0.04, 0.4).translate(0, 0.95, 0);
+      const strips = [];
+      [[0.5, 0.92, 0.12, 0.06], [0.42, 0.8, 0.02, -0.12], [0.32, 0.68, -0.1, 0.14], [0.24, 0.58, 0.14, -0.04]].forEach(([len, y, z, tilt]) => {
+        strips.push(new BoxGeometry(len, 0.11, 0.016).rotateY(0.3).rotateZ(-0.16 + tilt).translate(len / 2 + 0.03, y - len * 0.1, z));
+      });
+      const trim = new BoxGeometry(0.035, 0.36, 0.03).translate(0.04, 0.78, 0.02);
+      T.spirebanner = {
+        layers: [
+          { geo: pole, mat: mats.timber, ink: PROP_INK_PX },
+          { geo: foot, mat: mats.lime, ink: DETAIL_INK_PX },
+          { geo: arm, mat: mats.timber, ink: DETAIL_INK_PX },
+          { geo: mergeGeometries(strips), mat: mats.slateCloth, ink: DETAIL_INK_PX },
+          { geo: trim, mat: mats.sail },
+        ],
+        foot: 0.26,
+      };
+    }
+  }
   void spec;
   return T;
 }
@@ -1801,6 +2021,7 @@ function meshInk(root, geo, mat, x, z, yaw, ink = PROP_INK_PX) {
 }
 
 function buildLandmark(root, [x, z, rad = 1, kind = 'heart', yaw = 0], shadows, emitters, footprints, mats, cosmetic) {
+  if (mats.lime) return buildSpireLandmark(root, [x, z, rad, kind, yaw], shadows, emitters, footprints, mats);
   if (!mats.crystal) return null;
   const S = rad;
   if (kind === 'heart' || kind === 'heartnode') {
@@ -2045,6 +2266,303 @@ function buildLandmark(root, [x, z, rad = 1, kind = 'heart', yaw = 0], shadows, 
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// Act V — The Still Spire: bells, the tell's indigo crack, belfry ropes and
+// the built landmarks ('greatbell', 'bellframe', 'stair').
+// ---------------------------------------------------------------------------
+// A bell's lathe profile (lip radius R at y 0, crown at y H): flared lip, a
+// waist, a rounded shoulder and crown. BELL_PROFILE is in units of (R, H).
+const BELL_PROFILE = [[1, 0], [0.95, 0.04], [0.82, 0.14], [0.67, 0.36], [0.6, 0.6], [0.56, 0.8], [0.44, 0.93], [0.22, 1.0], [0.001, 1.0]];
+// mergeGeometries refuses a mix of indexed (box, cone, lathe) and
+// non-indexed (icosahedron) parts: drop every index first when they mix.
+function mergeMixed(list) {
+  const mixed = list.some((g) => g.index) && list.some((g) => !g.index);
+  return mergeGeometries(mixed ? list.map((g) => (g.index ? g.toNonIndexed() : g)) : list);
+}
+function bellLathe(R, H, seg = 16) {
+  return new LatheGeometry(BELL_PROFILE.map(([x, y]) => new Vector2(x * R, y * H)), seg);
+}
+function bellRadiusAt(R, t) {
+  for (let i = 0; i < BELL_PROFILE.length - 1; i++) {
+    const [r0, y0] = BELL_PROFILE[i];
+    const [r1, y1] = BELL_PROFILE[i + 1];
+    if (t <= y1 || i === BELL_PROFILE.length - 2) {
+      const f = y1 > y0 ? Math.min(1, Math.max(0, (t - y0) / (y1 - y0))) : 0;
+      return (r0 + (r1 - r0) * f) * R;
+    }
+  }
+  return R;
+}
+function balusterLathe() {
+  const p = [[0.001, 0], [0.06, 0], [0.06, 0.05], [0.04, 0.08], [0.066, 0.22], [0.044, 0.38], [0.034, 0.42], [0.06, 0.44], [0.001, 0.44]];
+  return new LatheGeometry(p.map(([x, y]) => new Vector2(x, y)), 7);
+}
+
+// The tell: a crack down a bell's face, glowing TELL indigo (render/enemies/
+// style.js TELL_INDIGO, h228) — pre-compensated linear like the monolith's
+// veins so the core survives ACES as saturated indigo, cores just over the
+// bloom threshold. A jagged run from the shoulder to the lip with forks, as
+// geometry bars laid on the lathe surface (the monolith rule: a canvas map
+// at gameplay zoom would land at half a pixel). `bodyR/H/y0`: the bell.
+export const CRACK_INDIGO = [0.3, 0.44, 1.9];
+function bellCrackGeo(R, H, y0, seed, width, branches = 3) {
+  let s = seed >>> 0;
+  const rnd = () => {
+    s = (Math.imul(s ^ (s >>> 15), 2246822519) + 0x9e3779b9) >>> 0;
+    return s / 4294967296;
+  };
+  const bars = [];
+  const at = (th, t, lift) => {
+    const r = bellRadiusAt(R, t) + lift;
+    return new Vector3(Math.sin(th) * r, y0 + t * H, Math.cos(th) * r);
+  };
+  const bar = (a, b, w) => {
+    const d = new Vector3().subVectors(b, a);
+    const len = d.length();
+    if (len < 1e-4) return;
+    const g = new BoxGeometry(w, len + w * 0.6, w * 0.7);
+    const q = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), d.normalize());
+    g.applyMatrix4(new Matrix4().compose(new Vector3().addVectors(a, b).multiplyScalar(0.5), q, new Vector3(1, 1, 1)));
+    bars.push(g);
+  };
+  const run = (th0, t0, t1, w, lift, depth) => {
+    let th = th0;
+    let t = t0;
+    let p = at(th, t, lift);
+    const n = Math.max(3, Math.round(Math.abs(t1 - t0) / 0.07));
+    for (let i = 0; i < n; i++) {
+      t += (t1 - t0) / n;
+      th += (rnd() - 0.5) * 0.34;
+      const q = at(th, t, lift);
+      const taper = depth === 0 ? 0.55 + 0.45 * Math.sin(Math.PI * Math.min(1, (i + 1) / n) * 0.9 + 0.15) : 1 - i / n;
+      bar(p, q, Math.max(width * 0.35, w * taper));
+      if (depth < 1 && i > 0 && i < n - 1 && rnd() < branches / n) {
+        run(th, t, t - (0.12 + rnd() * 0.22) * Math.sign(t1 - t0) * -1, w * 0.55, lift, depth + 1);
+      }
+      p = q;
+    }
+  };
+  run((rnd() - 0.5) * 0.3, 0.86, 0.0, width, 0.012, 0);
+  return mergeGeometries(bars);
+}
+function crackMaterial(gain) {
+  const m = new MeshBasicMaterial({ toneMapped: false });
+  m.color.setRGB(CRACK_INDIGO[0] * gain, CRACK_INDIGO[1] * gain, CRACK_INDIGO[2] * gain, LinearSRGBColorSpace);
+  return m;
+}
+
+// Belfry ropes hanging out of the dark overhead to a striped sally a hand
+// above the floor; each sways on its own slow clock (pivot at the top).
+function buildRopes(root, ropes, mats, footprints) {
+  const TOP = 7.2;
+  const ropeGeo = new CylinderGeometry(0.02, 0.022, TOP - 1.0, 5).translate(0, -(TOP - 1.0) / 2, 0);
+  const tailGeo = mergeGeometries([
+    new CylinderGeometry(0.02, 0.02, 0.36, 5).translate(0, -(TOP - 0.62), 0),
+    new TorusGeometry(0.06, 0.016, 4, 10, Math.PI * 1.6).translate(0.04, -(TOP - 0.42), 0),
+  ]);
+  const sallyGeo = mergeGeometries([0, 1, 2, 3, 4].map((k) => new CylinderGeometry(0.046, 0.046, 0.07, 7).translate(0, -(TOP - 1.0) - 0.04 - k * 0.075, 0)));
+  const sallyAlt = mergeGeometries([0, 1, 2, 3].map((k) => new CylinderGeometry(0.048, 0.048, 0.035, 7).translate(0, -(TOP - 1.0) - 0.0775 - k * 0.075, 0)));
+  ropes.forEach(([x, z], i) => {
+    const g = new Group();
+    g.position.set(x, TOP, z);
+    const rope = new Mesh(ropeGeo, mats.hemp);
+    addPropInk(rope, 1.15);
+    g.add(rope);
+    const tail = new Mesh(tailGeo, mats.hemp);
+    g.add(tail);
+    const sally = new Mesh(sallyGeo, mats.slateCloth);
+    addPropInk(sally, 1.15);
+    g.add(sally);
+    g.add(new Mesh(sallyAlt, mats.sail));
+    const ph = i * 1.7 + x * 0.3;
+    rope.onBeforeRender = () => {
+      const t = nowSec();
+      g.rotation.z = 0.012 * Math.sin(t * 0.7 + ph) + 0.004 * Math.sin(t * 1.9 + ph * 2);
+      g.rotation.x = 0.008 * Math.sin(t * 0.55 + ph * 1.3);
+    };
+    root.add(g);
+    footprints.push({ x, z, r: 0.18 });
+  });
+}
+
+function buildSpireLandmark(root, [x, z, rad = 1, kind = 'bellframe', yaw = 0], shadows, emitters, footprints, mats) {
+  const put = (geo, mat, ink = PROP_INK_PX) => meshInk(root, geo, mat, x, z, yaw, ink);
+  const crackGroup = (geo, gain, under) => {
+    const m = crackMaterial(gain);
+    const mesh = new Mesh(geo, m);
+    mesh.position.set(x, 0, z);
+    mesh.rotation.y = yaw;
+    mesh.renderOrder = 2;
+    root.add(mesh);
+    if (under) {
+      // A soft wider seam under the bright core (the crack's own bleed).
+      const u = new Mesh(under, crackMaterial(gain * 0.32));
+      u.position.copy(mesh.position);
+      u.rotation.copy(mesh.rotation);
+      u.renderOrder = 1;
+      root.add(u);
+    }
+    const base = m.color.clone();
+    mesh.onBeforeRender = () => {
+      // Still, not beating: a slow swell, as if the bell were still humming.
+      const t = nowSec();
+      m.color.copy(base).multiplyScalar(0.84 + 0.16 * Math.sin(t * 0.8 + x) + 0.05 * Math.sin(t * 2.3));
+    };
+    return m;
+  };
+  // Local -> world for emitters / shadows.
+  const wx = (lx, lz) => x + Math.cos(yaw) * lx + Math.sin(yaw) * lz;
+  const wz = (lx, lz) => z - Math.sin(yaw) * lx + Math.cos(yaw) * lz;
+
+  if (kind === 'greatbell' || kind === 'bellframe') {
+    const great = kind === 'greatbell';
+    const k = great ? rad / 0.8 : rad / 0.8;
+    const PX = (great ? 1.62 : 0.86) * k; // pier half-spacing
+    const PH = (great ? 2.9 : 2.0) * k; // pier height
+    const BR = (great ? 0.95 : 0.5) * k; // bell lip radius
+    const BH = (great ? 1.6 : 0.84) * k; // bell height
+    const LIP = 1.02; // clear of the parapet's capstones
+    // Piers: stepped bases, coursed shafts (a dark course every so often),
+    // capitals; the frame straddles the parapet wall.
+    const pw = (great ? 0.62 : 0.38) * k;
+    const pd = (great ? 0.86 : 0.56) * k;
+    const piers = [];
+    const courses = [];
+    const rimes = [];
+    for (const sx of [-1, 1]) {
+      piers.push(new BoxGeometry(pw * 1.4, 0.2 * k, pd * 1.25).translate(sx * PX, 0.1 * k, 0));
+      piers.push(new BoxGeometry(pw, PH, pd).translate(sx * PX, PH / 2, 0));
+      piers.push(new BoxGeometry(pw * 1.3, 0.14 * k, pd * 1.15).translate(sx * PX, PH + 0.07 * k, 0));
+      for (let c = 1; c < 6; c++) courses.push(new BoxGeometry(pw * 1.03, 0.035, pd * 1.03).translate(sx * PX, (PH * c) / 6, 0));
+      rimes.push(new BoxGeometry(pw * 1.2, 0.03, pd * 0.9).translate(sx * PX, PH + 0.155 * k, 0));
+    }
+    put(mergeGeometries(piers), mats.lime);
+    put(mergeGeometries(courses), mats.limeShade, false);
+    // Headstock: a heavy timber across the piers with iron straps.
+    const HS = PH - 0.18 * k;
+    put(new BoxGeometry(PX * 2 + pw * 0.6, 0.2 * k, 0.24 * k).translate(0, HS, 0), mats.timber);
+    put(mergeGeometries([-0.5, 0.5].map((f) => new BoxGeometry(0.05 * k, 0.24 * k, 0.28 * k).translate(f * PX, HS, 0))), mats.iron, false);
+    if (great) {
+      // The arch over the great bell, a keystone, rime along its crown.
+      put(new TorusGeometry(PX, 0.26 * k, 6, 22, Math.PI).scale(1, 0.92, 1.6).translate(0, PH + 0.14 * k, 0), mats.lime);
+      put(new BoxGeometry(0.34 * k, 0.46 * k, 0.6 * k).translate(0, PH + PX * 0.92 + 0.14 * k, 0), mats.limeLit);
+      rimes.push(new TorusGeometry(PX, 0.05 * k, 3, 18, Math.PI * 0.7).rotateZ(Math.PI * 0.15).scale(1, 0.92, 1.6).translate(0, PH + 0.34 * k, 0));
+      // Belfry ropes rising from the headstock into the dark above.
+      put(
+        mergeGeometries([-0.62, 0.0, 0.7].map((f, i) => new CylinderGeometry(0.03, 0.03, 6.0, 5).rotateZ((i - 1) * 0.03).translate(f * PX, HS + 3.0, 0.14 * k))),
+        mats.hemp,
+        1.15
+      );
+    } else {
+      put(new BoxGeometry(PX * 2 + pw * 1.5, 0.26 * k, pd * 0.9).translate(0, PH + 0.27 * k, 0), mats.limeLit);
+      rimes.push(new BoxGeometry(PX * 2 + pw * 1.3, 0.03, pd * 0.6).translate(0, PH + 0.415 * k, 0));
+    }
+    put(mergeGeometries(rimes), mats.rime, false);
+    // The bell: tarnished bronze, a darker verdigris band at the shoulder, a
+    // bright worn lip; the yoke into the headstock. It hangs dead still.
+    const tilt = great ? 0.05 : 0.0;
+    const bellGroup = (geo, mat, ink) => {
+      const m = new Mesh(geo, mat);
+      m.position.set(x, 0, z);
+      m.rotation.set(0, yaw, 0);
+      if (ink) addPropInk(m, ink);
+      root.add(m);
+      return m;
+    };
+    const bellGeo = bellLathe(BR, BH, great ? 22 : 16).translate(0, LIP, 0).rotateZ(tilt);
+    bellGroup(bellGeo, mats.bronze, PROP_INK_PX);
+    bellGroup(new TorusGeometry(BR * 0.97, 0.035 * k, 5, great ? 30 : 20).rotateX(Math.PI / 2).translate(0, LIP + 0.03 * k, 0).rotateZ(tilt), mats.bronzeLit, false);
+    bellGroup(
+      mergeGeometries([
+        new TorusGeometry(bellRadiusAt(BR, 0.62) * 1.01, 0.03 * k, 4, great ? 28 : 18).rotateX(Math.PI / 2).translate(0, LIP + BH * 0.62, 0),
+        new TorusGeometry(bellRadiusAt(BR, 0.3) * 1.01, 0.022 * k, 4, great ? 28 : 18).rotateX(Math.PI / 2).translate(0, LIP + BH * 0.3, 0),
+      ]).rotateZ(tilt),
+      mats.verdigris,
+      false
+    );
+    bellGroup(new BoxGeometry(0.26 * BR, HS - (LIP + BH) + 0.04, 0.26 * BR).translate(0, (LIP + BH + HS) / 2, 0), mats.iron, DETAIL_INK_PX);
+    if (great) {
+      // Icicles off the lip (the bell has not rung in an age).
+      const ic = [];
+      for (let i = 0; i < 9; i++) {
+        const a = -0.9 + i * 0.22 + Math.sin(i * 7.3) * 0.05;
+        const h = 0.12 + ((i * 5) % 4) * 0.05;
+        ic.push(new ConeGeometry(0.03 * k, h * k, 4).rotateX(Math.PI).translate(Math.sin(a) * BR * 0.94, LIP - (h * k) / 2 + 0.01, Math.cos(a) * BR * 0.94));
+      }
+      put(mergeGeometries(ic).rotateZ(tilt), mats.rime, false);
+    }
+    // THE TELL: the crack down the bell's face.
+    const w = (great ? 0.05 : 0.034) * k;
+    const seed = great ? 0x6b1d : 0x3a7 + Math.round(x * 13 + z * 7);
+    const core = bellCrackGeo(BR, BH, LIP, seed, w, great ? 4 : 2).rotateZ(tilt);
+    const under = bellCrackGeo(BR, BH, LIP, seed, w * 2.6, great ? 4 : 2).rotateZ(tilt);
+    const m = crackGroup(core, great ? 1.0 : 0.9, under);
+    shadows.push({ x, z, rx: PX + pw, rz: pd * 0.9, yaw });
+    footprints.push({ x: wx(-PX, 0), z: wz(-PX, 0), r: pw });
+    footprints.push({ x: wx(PX, 0), z: wz(PX, 0), r: pw });
+    // The indigo halo + underglow (the arena's monolith emitter) in front of
+    // the crack; a great bell also lights its frost.
+    emitters.push({ kind: 'monolith', x: wx(0, BR * 1.05), y: LIP + BH * 0.3, z: wz(0, BR * 1.05), size: great ? 1.3 : 0.85, halo: great ? 0.34 : 0.28, pool: great ? 1.6 : 1.0 });
+    return m;
+  }
+
+  if (kind === 'stair') {
+    // A flight of worn limestone steps climbing the north parapet to a
+    // landing and a doorway that opens onto nothing but sky.
+    const k = rad / 0.9;
+    const SW = 2.1 * k;
+    const steps = [];
+    const noses = [];
+    const N = 5;
+    const RISE = 0.17;
+    const RUN = 0.34;
+    for (let i = 0; i < N; i++) {
+      const h = RISE * (i + 1);
+      const zc = 0.78 - i * RUN;
+      steps.push(new BoxGeometry(SW, h, RUN + 0.02).translate(0, h / 2, zc));
+      // Rime on each tread's nose, a chipped corner on two of them.
+      noses.push(new BoxGeometry(SW * (0.6 + (i % 2) * 0.25), 0.02, 0.07).translate((i % 2 ? -0.1 : 0.12) * k, h + 0.012, zc + RUN / 2 - 0.05));
+    }
+    const LH = RISE * N;
+    steps.push(new BoxGeometry(SW + 0.3, LH, 0.9).translate(0, LH / 2, 0.78 - N * RUN - 0.28));
+    put(mergeGeometries(steps), mats.lime);
+    put(mergeGeometries([
+      new BoxGeometry(0.22, 0.14, 0.2).rotateY(0.4).translate(SW / 2 - 0.1, RISE * 2 + 0.02, 0.78 - RUN + 0.1),
+      new BoxGeometry(0.18, 0.12, 0.16).rotateY(-0.3).translate(SW / 2 + 0.18, 0.06, 0.95),
+    ]), mats.limeShade, DETAIL_INK_PX);
+    // Cheek walls with balusters climbing either side.
+    const cheeks = [];
+    const bals = [];
+    for (const sx of [-1, 1]) {
+      const cx = sx * (SW / 2 + 0.12);
+      const g = new BoxGeometry(0.24, 0.22, N * RUN + 0.5).rotateX(Math.atan2(LH, N * RUN)).translate(cx, LH / 2 + 0.06, 0.78 - (N * RUN) / 2 + 0.1);
+      cheeks.push(g);
+      for (let i = 0; i < N; i += 1) {
+        const zc = 0.78 - i * RUN;
+        bals.push(balusterLathe().scale(1.2, 1.1, 1.2).translate(cx, RISE * (i + 1) + 0.04, zc));
+      }
+      cheeks.push(new BoxGeometry(0.3, 0.86, 0.3).translate(cx, 0.43, 1.0));
+    }
+    put(mergeGeometries(cheeks), mats.limeLit);
+    put(mergeGeometries(bals), mats.lime, 1.15);
+    put(mergeGeometries(noses), mats.rime, false);
+    // The doorway on the landing.
+    const zl = 0.78 - N * RUN - 0.36;
+    const door = mergeGeometries([
+      new BoxGeometry(0.3, 1.8, 0.42).translate(-0.82 * k, LH + 0.9, zl),
+      new BoxGeometry(0.3, 1.8, 0.42).translate(0.82 * k, LH + 0.9, zl),
+      new TorusGeometry(0.82 * k, 0.17, 5, 16, Math.PI).scale(1, 1, 1.3).translate(0, LH + 1.8, zl),
+    ]);
+    put(door, mats.lime);
+    put(new BoxGeometry(0.24, 0.3, 0.46).translate(0, LH + 1.8 + 0.82 * k + 0.05, zl), mats.limeLit, DETAIL_INK_PX);
+    put(new BoxGeometry(0.34, 0.03, 0.36).translate(-0.82 * k, LH + 1.81, zl), mats.rime, false);
+    shadows.push({ x, z, rx: SW * 0.7, rz: 0.9, yaw });
+    footprints.push({ x, z, r: 1.1 * k });
+    return null;
+  }
+  return null;
+}
+
 // A flat ring lying on the floor (the well's slow sheen).
 function RingGeometryLite(r0, r1) {
   const segs = 28;
@@ -2236,6 +2754,25 @@ export function buildProps(root, spec, cosmetic) {
     mats.bone = toonMaterial({ color: shade(mix(PALETTE.bone, COOL.mist, 0.22), 0.66) });
     mats.vein = veinMaterial(0.72);
   }
+  if (spec.propFamily === 'spire') {
+    mats.lime = toonMaterial({ color: hslColor(40, 0.07, 0.47) });
+    mats.limeLit = toonMaterial({ color: hslColor(42, 0.08, 0.56) });
+    mats.limeShade = toonMaterial({ color: hslColor(214, 0.06, 0.38) });
+    mats.limeDark = toonMaterial({ color: hslColor(220, 0.08, 0.32) });
+    mats.rime = toonMaterial({ color: hslColor(204, 0.3, 0.8), emissive: hslColor(204, 0.4, 0.5), emissiveIntensity: 0.04 });
+    mats.bronze = toonMaterial({ color: hslColor(40, 0.36, 0.4) });
+    mats.bronzeLit = toonMaterial({ color: hslColor(44, 0.4, 0.58) });
+    mats.bronzeDeep = toonMaterial({ color: hslColor(36, 0.3, 0.12) });
+    mats.verdigris = toonMaterial({ color: hslColor(176, 0.2, 0.42) });
+    mats.timber = toonMaterial({ color: hslColor(30, 0.1, 0.26) });
+    mats.timberDark = toonMaterial({ color: hslColor(222, 0.1, 0.17) });
+    mats.hemp = toonMaterial({ color: hslColor(40, 0.22, 0.46) });
+    mats.hempDark = toonMaterial({ color: hslColor(38, 0.18, 0.3) });
+    mats.sail = toonMaterial({ color: hslColor(42, 0.16, 0.72) });
+    mats.slateCloth = toonMaterial({ color: hslColor(224, 0.24, 0.32) });
+    mats.feather = toonMaterial({ color: hslColor(210, 0.06, 0.82) });
+    mats.featherDark = toonMaterial({ color: hslColor(222, 0.1, 0.28) });
+  }
   if (spec.propFamily === 'barrow') {
     mats.boneStone = toonMaterial({ color: shade(mix(PALETTE.bone, COOL.mist, 0.18), 0.62) });
     mats.boneStoneLit = toonMaterial({ color: shade(mix(PALETTE.bone, PALETTE.parchment, 0.2), 0.72) });
@@ -2300,6 +2837,8 @@ export function buildProps(root, spec, cosmetic) {
   }
   if (spec.millwheel) seedDiscs.push({ x: spec.millwheel[0], z: spec.millwheel[1], r: 1.15 });
   if (spec.veinStones) seedDiscs.push({ x: spec.veinStones[0], z: spec.veinStones[1], r: 1.3 });
+  // Act V belfry ropes keep their authored spots too.
+  if (mats.lime) for (const [x, z] of spec.ropes ?? []) seedDiscs.push({ x, z, r: 0.25 });
 
   const { byType: placed, placedDiscs } = expandClusters(spec, cosmetic, types, seedDiscs);
   placed.set('torch', torchT);
@@ -2356,6 +2895,7 @@ export function buildProps(root, spec, cosmetic) {
     typeCount += 1;
   }
   if (spec.veinNet) buildVeinGlow(root, spec);
+  if (mats.lime && spec.ropes) buildRopes(root, spec.ropes, mats, footprints);
 
   // Per-room dressing (boss ring, shop stall) -- hidden groups the run's
   // `room_enter` events reveal; see env/dressing.js. Placement continues the

@@ -10,6 +10,9 @@
 //   barrow — Act III: cold low wind, a thin whistle, a distant tolling bell
 //   heart  — Act IV: a deep throb under the rock, a glassy crystal shimmer,
 //            and a slow, far heartbeat (lub-dub) every few seconds
+//   spire  — Act V: high wind round the belfry (band-passed noise that
+//            swells and gusts), a cold open-fifth drone, and a faint far
+//            bell every 5-9 s
 // Crossfades between beds are equal-power over 2.5 s. BED_TRIM levels each
 // bed to about -18 dBFS RMS pre-bus (decision D18, docs/gauntlet/build-M3.md:
 // PLAN §3.5 says -24; the beds carry part of the combat master level G3.4
@@ -21,6 +24,7 @@ export const BED_TRIM = {
   camp: -0.3,
   heart: -3.4,
   mill: 0.5,
+  spire: 3.0,
   wood: 3.1,
   // @trim end
 };
@@ -158,6 +162,46 @@ const BEDS = {
       details: {
         every: [4, 7],
         play: (t) => [0, 0.28].map((o, i) => kit.tone(out, t + o, { f0: 60 - i * 6, f1: 36, d: 0.32, gain: 0.16 - i * 0.05 })),
+      },
+    };
+  },
+  spire(ctx, kit, out) {
+    const srcs = [];
+    // The high wind: white noise through a resonant band that wanders, with
+    // a slow swell and a faster, uneven gust (two LFOs on the gain beating).
+    const wind = loop(ctx, kit.buffers.white, 1);
+    const wf = filt(ctx, 'bandpass', 1500, 2.2);
+    const wg = gainN(ctx, 0.28);
+    wind.connect(wf).connect(wg).connect(out);
+    srcs.push(wind, lfo(ctx, wf.frequency, 0.053, 600), lfo(ctx, wf.frequency, 0.19, 220), lfo(ctx, wg.gain, 0.067, 0.12), lfo(ctx, wg.gain, 0.23, 0.07));
+    // Its body: a lower brown-noise roar under the whistle, breathing slower.
+    const body = loop(ctx, kit.buffers.brown, 1.2);
+    const bf = filt(ctx, 'bandpass', 520, 0.9);
+    const bg = gainN(ctx, 0.5);
+    body.connect(bf).connect(bg).connect(out);
+    srcs.push(body, lfo(ctx, bg.gain, 0.041, 0.2), lfo(ctx, bf.frequency, 0.029, 160));
+    // A cold drone: an open fifth on F, high and thin (triangles), barely there.
+    for (const [f, v] of [[87.31, 0.05], [130.81, 0.03], [349.23, 0.012]]) {
+      const o = ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      const g = gainN(ctx, v);
+      o.connect(g).connect(out);
+      o.start();
+      srcs.push(o, lfo(ctx, g.gain, 0.025 + f / 5000, v * 0.4));
+    }
+    return {
+      srcs,
+      details: {
+        every: [5, 9],
+        // A faint far bell: one of the belfry's notes (F, C, A), its hum under it.
+        play: (t) => {
+          const f = [698.46, 523.25, 880][Math.floor(Math.random() * 3)];
+          return Math.max(
+            kit.bell(out, t, { f, ratio: 2, index: 0.9, d: 3.0, gain: 0.045 }),
+            kit.tone(out, t, { f0: f * 0.5, a: 0.02, d: 2.4, gain: 0.02 })
+          );
+        },
       },
     };
   },

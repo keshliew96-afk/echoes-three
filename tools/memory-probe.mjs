@@ -19,6 +19,7 @@
 //
 //   node tools/memory-probe.mjs [--url http://127.0.0.1:7800/] [--rooms 14]
 //        [--out captures/memory.json] [--budget 400] [--w 1600 --h 900 --dpr 1] [--shots dir]
+//        [--level 5 --query act5=1&lang=de]  (start the run at another level; extra URL flags)
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
 // ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader".
 import { readFileSync, writeFileSync, mkdirSync, readdirSync } from 'node:fs';
@@ -37,6 +38,8 @@ const BUDGET = opt('budget', null) != null ? Number(opt('budget')) : null;
 const W = Number(opt('w', '1600'));
 const H = Number(opt('h', '900'));
 const DPR = Number(opt('dpr', '1'));
+const LEVEL = Number(opt('level', '1'));
+const QUERY = opt('query', null);
 const SHOTS = opt('shots', null); // a frame per stage (the floors still draw once their canvases are gone)
 if (SHOTS) mkdirSync(SHOTS, { recursive: true });
 mkdirSync(dirname(OUT), { recursive: true });
@@ -227,7 +230,7 @@ async function nextRoom() {
   return runView();
 }
 
-await page.goto(`${URL0}?seed=3&story=0&tutorial=0`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+await page.goto(`${URL0}?seed=3&story=0&tutorial=0${QUERY ? `&${QUERY}` : ''}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
 await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
 await sleep(8000);
 await sample('boot');
@@ -235,7 +238,7 @@ await page.evaluate(() => window.__echoes.app.press && window.__echoes.app.press
 await sleep(4000);
 await sample('camp');
 
-await cmd('startCampaign', { level: 1, depart: false });
+await cmd('startCampaign', { level: LEVEL, depart: false });
 await page.waitForFunction(() => window.__echoes.cmd('runState').phase === 'combat', { timeout: 240000, polling: 250 });
 await cmd('startWave');
 await sleep(8000);
@@ -301,7 +304,7 @@ await sample('title');
 // A lost and restored WebGL context (driver reset, GPU memory pressure):
 // the floors, whose paint canvases are gone after upload, are rebuilt, and
 // the room still draws them.
-await cmd('startCampaign', { level: 1, depart: false });
+await cmd('startCampaign', { level: LEVEL, depart: false });
 await page.waitForFunction(() => window.__echoes.cmd('runState').phase === 'combat', { timeout: 240000, polling: 250 }).catch(() => null);
 await sleep(4000);
 const lost = await page.evaluate(async () => {

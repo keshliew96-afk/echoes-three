@@ -21,8 +21,14 @@
 //   Sound    each boss's sting, phase and fall stings and its boss groove;
 //            each event room, room objective and slide cue
 //   Hit      a light / heavy / over-time / downed hit on your character
+//   Gust     an Act V gust vent laid across the party, its wind-up and gust
+//            forced, with a kite in the lane so a flier is shoved too
 //
-// Off unless the URL asks for it; touches nothing else in the UI.
+// Off unless the URL asks for it; touches nothing else in the UI. The Act V
+// rows play in a Level V room with ?act5=1, and in an Act IV room without
+// it (the Spire's creatures and hazards exist either way).
+import { ACT_IDS } from '../data/levels.js';
+
 const HEALER_SETS = [
   ['spirit_bolt', 'mending_bolt', 'nova_bloom', 'sanctuary'],
   ['bell_toll', 'pale_lance', 'rootsnare', 'mending_tide'],
@@ -60,7 +66,11 @@ const ENEMIES = [
   // New enemies, Wood and Mill (docs/WOOD_MILL_ENEMIES.md).
   ['Wood, new', 1, ['owl', 'lasher']],
   ['Mill, new', 2, ['leech', 'miller']],
+  // Act V, the Still Spire (docs/ACT_V.md).
+  ['Act V', 5, ['kite', 'chime', 'gargoyle', 'hanger']],
 ];
+// The room an act's row plays in: Level V only exists behind ?act5=1.
+const roomAct = (act) => (ACT_IDS.includes(act) ? act : 4);
 // Each act's bosses: [label, act, boss kind].
 const BOSSES = [
   ['Stag', 1, 'stag'],
@@ -346,13 +356,35 @@ export function mountVfxLab() {
   HEALER_SETS.forEach((set, i) => button(party, `Healer ${'ABCD'[i]}`, () => healerReel(set), set.join(', ')));
 
   // -------------------------------------------------------------- enemies --
-  for (const [title, act, kinds] of ENEMIES) {
+  for (const [title, act0, kinds] of ENEMIES) {
     const row = section(`Enemies, ${title}`);
+    const act = roomAct(act0);
     for (const k of kinds)
       button(row, k, async () => {
         if (run().act !== act || run().room === 8 || run().phase !== 'combat') await room(act, 3);
         X().cmd('killAllEnemies');
         const f = front();
+        // Act V (docs/ACT_V.md): each spawned where its beat reads best.
+        if (k === 'kite') {
+          X().cmd('spawn', 'kite', f.x - 1.6, f.z - 2.0);
+          X().cmd('spawn', 'kite', f.x + 1.6, f.z - 2.6);
+          return say('kite x2: they hang and fold, then dive down the lane; hit one while it is grounded (it takes x1.5)');
+        }
+        if (k === 'chime') {
+          X().cmd('spawn', 'chime', f.x - 1.0, f.z - 1.4);
+          X().cmd('spawn', 'chime', f.x + 1.2, f.z - 2.4);
+          return say('chime x2: they drift in and toll; step out of the ring, or stun one mid-swing to choke it');
+        }
+        if (k === 'gargoyle') {
+          X().cmd('spawn', 'gargoyle', f.x - 1.3, f.z - 2.6);
+          X().cmd('spawn', 'gargoyle', f.x + 1.3, f.z - 2.6);
+          return say('gargoyle x2: statues; walk within 2.6 u or hit one to wake it; stay 5 u off for 6 s and it settles back to stone');
+        }
+        if (k === 'hanger') {
+          X().cmd('spawn', 'hanger', f.x - 1.4, f.z - 3.0);
+          X().cmd('spawn', 'hanger', f.x + 1.4, f.z - 3.6);
+          return say('hanger x2: it grips the rope and leans back, swings down the lane (throws you aside), then dangles at the end');
+        }
         // Husks surge on one shared heartbeat: show a pack of four.
         if (k === 'husk') {
           for (const dx of [-1.8, -0.6, 0.6, 1.8]) X().cmd('spawn', 'husk', f.x + dx, f.z - 2.4);
@@ -656,6 +688,35 @@ export function mountVfxLab() {
       say(`${label}: the room's own slick floor`);
     }, `layout ${id} placed in this room`);
 
+  // Gust vent (docs/ACT_V.md): a vent laid across the party, blowing from
+  // its left to its right, with a kite in the lane (fliers are shoved too).
+  // Its wind-up (the Ember lane) and the gust itself can be forced.
+  const gustRow = section('Gust vent');
+  let gustId = null;
+  async function gustHere() {
+    await ensureCombat(roomAct(5));
+    const p = X().content.world().player;
+    const x = p ? p.x : 0;
+    const z = p ? p.z : 0;
+    gustId = X().cmd('spawnHazard', 'gust', x - 3.6, z, { x0: x - 3.6, z0: z, x1: x + 3.6, z1: z });
+    X().cmd('spawn', 'kite', x - 1.6, z - 0.2);
+    return gustId;
+  }
+  button(gustRow, 'Vent', async () => {
+    await gustHere();
+    say(gustId == null ? 'no gust vent (hazard missing)' : 'gust vent across the party: idle, breathing faint wisps');
+  }, 'a gust vent across the party, idle');
+  button(gustRow, 'Wind-up', async () => {
+    if (gustId == null || !X().content.world().entities().some((e) => e.id === gustId)) await gustHere();
+    X().cmd('hazardPhase', gustId, 'telegraph');
+    say('gust vent: the Ember lane (60 ticks), then the gust shoves everything in it');
+  }, 'force its telegraph');
+  button(gustRow, 'Gust', async () => {
+    if (gustId == null || !X().content.world().entities().some((e) => e.id === gustId)) await gustHere();
+    X().cmd('hazardPhase', gustId, 'active');
+    say('gust vent: the gust itself (36 ticks)');
+  }, 'force the gust');
+
   // ----------------------------------------------------------------- boss --
   const boss = section('Boss');
   button(boss, 'Add phase / enrage', () => {
@@ -671,7 +732,7 @@ export function mountVfxLab() {
   // Each boss's own stings and groove, without fighting it (the boss room
   // buttons above show its medal on the live banner and play its beats).
   const audio = () => X().app.service('audio');
-  const THEME = { 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart' };
+  const THEME = { 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart', 5: 'spire' };
   for (const [label, a, kind] of BOSSES) {
     const row = section(`Sound, ${label}`);
     for (const [part, name] of [['sting', 'Sting'], ['phase', 'Phase'], ['fall', 'Fall']]) {

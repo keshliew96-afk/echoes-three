@@ -298,6 +298,9 @@ registerTideCues(service('audio'));
 // and Siphon voices.
 import { registerBarrowHeartCues } from './audio/barrowheartcues.js';
 registerBarrowHeartCues(service('audio'));
+// ACT V (the Still Spire): the belfry's creatures and its gust vents.
+import { registerSpireCues } from './audio/spirecues.js';
+registerSpireCues(service('audio'));
 // Hit feedback: the heavy / soft / downed hit sounds on your own character
 // (src/audio/hitcues.js).
 import { registerHitCues } from './audio/hitcues.js';

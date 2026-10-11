@@ -2437,6 +2437,294 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     },
   });
 
+  // ------------------------------------------ Act V, the Still Spire --
+  // (docs/ACT_V.md) The Spire's four in the same three movements: a gather
+  // or a snap of wind before, a white-hot landing frame with the Ember edge
+  // ONLY on what hurts (the dive's lane, the toll's ring, the wake and slam
+  // rings, the swing's lane), then what is left: cloth, bronze motes, stone
+  // dust, rope fibre. The body's own matter on what breaks, the indigo where
+  // the corruption leaves, no camera on rank-and-file enemies.
+  const KCLOTH = vfxMatterColor('kitecloth');
+  const BRONZE = vfxMatterColor('bellbronze');
+  const SSTONE = vfxMatterColor('spirestone');
+  const HEMP = vfxMatterColor('hemp');
+  const GUST = vfxMatterColor('gust');
+  const KITE_Y = 1.7;
+  const BELL_Y = 0.85; // the Chime's bell, lifted for the toll
+
+  // Gust Kite — "the drop". The snap of the folded sails (a white gust flash
+  // and lines drawn in), then a pale wind streak laid down the lane as it
+  // falls, a white-hot head riding the kite, an Ember edge over the lane's
+  // full width for the length of the drop (the hit), torn sailcloth shed
+  // along the way and wind-scoured gouges where it passed low.
+  bus.on('kite_dive', (ev) => {
+    mark('kite_dive');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = Math.max(0.5, ev.length ?? 5);
+    const ang = Math.atan2(d.z, d.x);
+    const SPEED = 12;
+    const sweep = len / SPEED;
+    const ex = ev.x + d.x * len;
+    const ez = ev.z + d.z * len;
+    const nx = -d.z;
+    const nz = d.x;
+    anticipate(ev.x, ev.z, 0.55, GUST, { y: KITE_Y, lines: 5 });
+    kit.flash({ x: ev.x, y: KITE_Y, z: ev.z, color: GUST, size: 0.7, life: 0.16 });
+    // The Ember edge: the lane's width, live for the drop.
+    kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ex, y: 0.1, z: ez }, width: 0.8, tailW: 0.7, core: EMBER, glow: EMBER, life: sweep + 0.16, fall: 2.0, opacity: 0.42 });
+    // The wind streak: aloft down to the lane's end, with two thin side
+    // lines riding beside it.
+    kit.streak({ a: { x: ev.x, y: KITE_Y, z: ev.z }, b: { x: ex, y: 0.3, z: ez }, width: 0.24, tailW: 0.06, core: PARCH, glow: GUST, life: sweep + 0.4, fall: 1.3, opacity: 0.7 });
+    for (const side of [-1, 1]) {
+      const ox = nx * side * 0.32;
+      const oz = nz * side * 0.32;
+      kit.streak({ a: { x: ev.x + ox, y: KITE_Y + 0.1, z: ev.z + oz }, b: { x: ev.x + ox + d.x * 1.1, y: KITE_Y - 0.15, z: ev.z + oz + d.z * 1.1 }, width: 0.05, tailW: 0, core: PARCH, glow: GUST, life: sweep + 0.1, delay: 0.02, travel: { x: d.x * SPEED * 0.95, y: -(KITE_Y - 0.4) / sweep, z: d.z * SPEED * 0.95 }, fall: 0.8, opacity: 0.75 });
+    }
+    // The head: a white-hot dart riding down with the kite.
+    kit.streak({ a: { x: ev.x, y: KITE_Y, z: ev.z }, b: { x: ev.x + d.x * 0.8, y: KITE_Y - 0.15, z: ev.z + d.z * 0.8 }, width: 0.11, tailW: 0.4, core: PARCH, glow: EMBER, life: sweep, travel: { x: d.x * SPEED, y: -(KITE_Y - 0.35) / sweep, z: d.z * SPEED }, fall: 0.3 });
+    // Torn sailcloth shed down the drop.
+    const steps = Math.max(2, Math.round(len / 1.5));
+    for (let i = 0; i < steps; i++) {
+      const k = (i + 0.5) / steps;
+      const px = ev.x + d.x * len * k;
+      const pz = ev.z + d.z * len * k;
+      const py = KITE_Y - (KITE_Y - 0.35) * k;
+      after(sweep * k, () => spray('shard', px, py, pz, 2, { color: KCLOTH, tile: SHARD_TILE.feather, speed: [0.3, 0.9], up: [0.1, 0.5], size: [0.1, 0.16], life: [1.0, 1.5], gravity: 0.5, drag: 1.7, spin: [-5, 5], flutter: 0.75, dir: { x: -d.x, z: -d.z }, dirBias: 0.4, jitter: 0.15 }));
+    }
+    // Where it skimmed low: wind-scoured gouges, the last ones hot.
+    for (let i = 1; i <= 2; i++) {
+      const k = 0.55 + i * 0.2;
+      kit.mark({ x: ev.x + d.x * len * k, z: ev.z + d.z * len * k, radius: 0.7, kind: 'gouge', angle: ang, stretch: 2.0, stain: SSTONE, glow: EMBER, glowOpacity: 0.3, cool: 0.4, life: 2.4, opacity: 0.32, delay: sweep * k });
+    }
+  });
+  // It comes down: a thump of dust, a pale ring, cloth flapping loose. The
+  // landing does not hurt, so no Ember here.
+  bus.on('kite_land', (ev) => {
+    mark('kite_land');
+    const { x, z } = ev;
+    flare(x, 0.25, z, KCLOTH, 0.8, { kind: 'burst', life: 0.18, core: PARCH });
+    shock(x, z, 1.0, KCLOTH, { life: 0.35, width: 0.1, core: BONE });
+    spray('smoke', x, 0.15, z, 4, { color: SSTONE, speed: [0.6, 1.3], up: [0.1, 0.4], size: [0.3, 0.44], grow: 1.4, life: [0.6, 0.95], opacity: 0.32, gravity: -0.1, drag: 2.4, jitter: 0.2 });
+    spray('chunk', x, 0.15, z, 3, { color: SSTONE, speed: [0.5, 1.2], up: [0.8, 1.6], size: [0.04, 0.08], life: [0.35, 0.6] });
+    spray('shard', x, 0.35, z, 5, { color: KCLOTH, tile: SHARD_TILE.feather, speed: [0.3, 0.9], up: [0.6, 1.2], size: [0.1, 0.15], life: [1.0, 1.5], gravity: 0.6, drag: 1.8, spin: [-6, 6], flutter: 0.8 });
+    kit.mark({ x, z, radius: 0.8, kind: 'scorch', stain: SSTONE, glow: null, life: 2.6, opacity: 0.3 });
+  });
+  // It climbs back up: the wind catches it from below — a pale ring pushed
+  // out across the floor, lines of air rising round it, dust lifted.
+  bus.on('kite_rise', (ev) => {
+    mark('kite_rise');
+    const { x, z } = ev;
+    kit.ring({ x, z, r0: 0.2, r1: 1.3, width: 0.08, life: 0.45, core: PARCH, glow: GUST, soft: 0.6, y: 0.05, opacity: 0.6, gain: 0.6 });
+    for (let i = 0; i < N(5); i++) {
+      const a = (i / 5) * TAU + rnd(-0.3, 0.3);
+      const r = rnd(0.25, 0.55);
+      const px = x + Math.cos(a) * r;
+      const pz = z + Math.sin(a) * r;
+      kit.streak({ a: { x: px, y: 0.15, z: pz }, b: { x: px, y: 0.65, z: pz }, width: 0.05, tailW: 0, core: PARCH, glow: GUST, life: 0.4, delay: i * 0.03, travel: { x: Math.cos(a) * 0.4, y: 2.8, z: Math.sin(a) * 0.4 }, fall: 1.0, opacity: 0.7 });
+    }
+    spray('smoke', x, 0.1, z, 3, { color: SSTONE, speed: [0.4, 0.9], up: [0.4, 0.9], size: [0.26, 0.38], grow: 1.3, life: [0.5, 0.8], opacity: 0.26, gravity: -0.3, drag: 2.2, jitter: 0.25 });
+    spray('shard', x, 0.3, z, 3, { color: KCLOTH, tile: SHARD_TILE.feather, speed: [0.2, 0.6], up: [0.8, 1.4], size: [0.09, 0.13], life: [0.9, 1.3], gravity: 0.4, drag: 1.8, spin: [-5, 5], flutter: 0.8 });
+  });
+
+  // Chime Wraith — "the toll". The clapper strikes: a bronze flash and a
+  // white-hot star at the bell, an Ember edge thrown out to the ring's
+  // radius (what hurts), and over it the sound itself — bronze rings rolling
+  // out in a stack, some at the bell's height and some along the floor —
+  // then bronze motes hanging in the air where the note died.
+  bus.on('chime_toll', (ev) => {
+    mark('chime_toll');
+    const r = ev.radius ?? 2.8;
+    const c = byId(ev.id);
+    const bx = c ? c.x : ev.x;
+    const bz = c ? c.z : ev.z;
+    anticipate(bx, bz, 0.5, BRONZE, { y: BELL_Y, lines: 4 });
+    after(ANTICIP, () => {
+      flare(bx, BELL_Y, bz, BRONZE, 1.3, { kind: 'burst', life: 0.28 });
+      kit.flash({ x: bx, y: BELL_Y, z: bz, color: PARCH, size: 0.9, life: 0.12 });
+      kit.flash({ x: bx, y: BELL_Y, z: bz, color: BRONZE, size: 1.5, life: 0.4, hold: 0.05, opacity: 0.6 });
+      // The hit: the Ember edge out to the radius, and its rim.
+      shock(ev.x, ev.z, r, EMBER, { life: 0.26, width: 0.12 });
+      kit.ring({ x: ev.x, z: ev.z, r0: r * 0.96, r1: r * 1.02, width: 0.1, life: 0.32, core: EMBER, glow: EMBER, soft: 0.5, y: 0.05, opacity: 0.8, delay: 0.18 });
+      // The sound: concentric bronze rings, two in the air, three on the floor.
+      for (let i = 0; i < 2; i++) kit.ring({ x: bx, z: bz, r0: 0.3, r1: r * (0.8 + 0.25 * i), width: 0.06, life: 0.6, core: i === 0 ? PARCH : BRONZE, glow: BRONZE, soft: 0.6, y: BELL_Y - 0.1 * i, delay: 0.02 + i * 0.12, opacity: 0.75 - i * 0.2, thin: 0.5 });
+      for (let i = 0; i < 3; i++) kit.ring({ x: ev.x, z: ev.z, r0: 0.25, r1: r * (0.55 + 0.2 * i), width: 0.07 - i * 0.012, life: 0.5 + i * 0.1, core: BRONZE, glow: BRONZE, soft: 0.65, y: 0.07, delay: 0.06 + i * 0.1, opacity: 0.7 - i * 0.15, gain: 0.7 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r * 1.02, kind: 'sigil', stain: INK, glow: EMBER, glowOpacity: 0.3, cool: 0.5, life: 2.2, opacity: 0.15 });
+      kit.light({ x: bx, z: bz, radius: r * 0.7, color: BRONZE, opacity: 0.35, life: 0.45, attack: 0.02 });
+      spray('spark', bx, BELL_Y, bz, 6, { color: PARCH, speed: [1.2, 2.4], up: [0.2, 0.8], size: [0.03, 0.06], life: [0.15, 0.3] });
+      // The note dying: bronze motes hanging round the ring.
+      spray('spark', ev.x, 0.5, ev.z, 12, { color: BRONZE, speed: [0.05, 0.25], up: [0.2, 0.6], size: [0.04, 0.07], life: [1.0, 1.6], gravity: -0.12, drag: 1.6, jitter: r * 0.7, opacity: 0.75 });
+    });
+  });
+  // A stun chokes the toll: a dull bronze spark puff, the clapper caught —
+  // no ring, nothing thrown out.
+  bus.on('chime_choke', (ev) => {
+    mark('chime_choke');
+    const c = byId(ev.id);
+    const bx = c ? c.x : ev.x;
+    const bz = c ? c.z : ev.z;
+    kit.flash({ x: bx, y: BELL_Y, z: bz, color: BRONZE, size: 0.5, life: 0.14, opacity: 0.6 });
+    spray('spark', bx, BELL_Y - 0.2, bz, 7, { color: BRONZE, speed: [0.4, 1.0], up: [0.1, 0.5], size: [0.03, 0.05], life: [0.3, 0.55], gravity: 3.5, drag: 0.8 });
+    spray('smoke', bx, BELL_Y - 0.3, bz, 2, { color: SSTONE, speed: [0.2, 0.4], up: [-0.1, 0.2], size: [0.24, 0.34], grow: 1.2, life: [0.5, 0.8], opacity: 0.26, gravity: 0.1, drag: 2.4 });
+    kit.ring({ x: bx, z: bz, r0: 0.2, r1: 0.6, width: 0.05, life: 0.25, core: BRONZE, glow: BRONZE, soft: 0.7, y: BELL_Y - 0.35, opacity: 0.4, gain: 0.4 });
+  });
+
+  // Gargoyle — "the statue wakes". The crack: stone chips and dust shaken
+  // off, a seam opening at its feet with the indigo showing through. The
+  // wake: the stone shell bursts outward in chunks of the Spire's limestone
+  // over an Ember ring (when the burst is live; a held wake breaks the shell
+  // without the ring). The slam: fists into the floor — Ember ring, crater,
+  // chips, dust. The settle: the dust sinks back and a grey ripple goes out.
+  bus.on('gargoyle_crack', (ev) => {
+    mark('gargoyle_crack');
+    const { x, z } = ev;
+    kit.crack({ x, z, radius: 0.75, glow: TELL_INDIGO_GLOW, life: 1.6, cool: 1.0 });
+    spray('chunk', x, 0.7, z, 5, { color: SSTONE, speed: [0.3, 0.9], up: [0.2, 0.8], size: [0.04, 0.09], life: [0.4, 0.7], jitter: 0.3 });
+    spray('smoke', x, 0.5, z, 3, { color: SSTONE, speed: [0.2, 0.5], up: [-0.2, 0.2], size: [0.3, 0.44], grow: 1.3, life: [0.8, 1.2], opacity: 0.28, gravity: 0.15, drag: 2.4, jitter: 0.3 });
+    spray('spark', x, 0.6, z, 3, { color: TELL_INDIGO_GLOW, speed: [0.05, 0.2], up: [0.3, 0.6], size: [0.04, 0.06], life: [0.6, 0.9], gravity: -0.2, drag: 1.5, jitter: 0.3, opacity: 0.8 });
+    if (ev.hit) flare(x, 0.6, z, BONE, 0.6, { kind: 'star', life: 0.14 });
+  });
+  bus.on('gargoyle_wake', (ev) => {
+    mark('gargoyle_wake');
+    const r = ev.radius ?? 0;
+    const { x, z } = ev;
+    flare(x, 0.7, z, r > 0 ? EMBER : SSTONE, 1.3, { kind: 'burst', life: 0.26 });
+    kit.flash({ x, y: 0.7, z, color: PARCH, size: 0.8, life: 0.12 });
+    kit.flash({ x, y: 0.7, z, color: TELL_INDIGO_GLOW, size: 0.9, life: 0.3, delay: 0.04, opacity: 0.6 });
+    if (r > 0) {
+      shock(x, z, r, EMBER, { life: 0.3, width: 0.12, jag: 0.5 });
+      kit.mark({ x, z, radius: r * 1.1, kind: 'crater', stain: SSTONE, glow: EMBER, glowOpacity: 0.35, cool: 0.6, life: 3.0, opacity: 0.45 });
+      kit.light({ x, z, radius: r * 1.2, color: EMBER, opacity: 0.25, life: 0.3, attack: 0.02 });
+    }
+    // The shell: limestone chunks and plates flung out, a dust ring.
+    shock(x, z, Math.max(1.4, r * 1.3), SSTONE, { life: 0.5, width: 0.22, core: BONE, delay: 0.03, jag: 0.9 });
+    spray('chunk', x, 0.7, z, 10, { color: SSTONE, speed: [1.6, 3.2], up: [1.4, 2.8], size: [0.08, 0.18], life: [0.55, 0.9], jitter: 0.3 });
+    spray('shard', x, 0.8, z, 6, { color: SSTONE, tile: SHARD_TILE.needle, speed: [1.4, 2.8], up: [1.0, 2.2], size: [0.1, 0.16], life: [0.5, 0.8], gravity: 6, spin: [-10, 10] });
+    spray('smoke', x, 0.4, z, 5, { color: SSTONE, speed: [0.8, 1.6], up: [0.2, 0.6], size: [0.38, 0.54], grow: 1.5, life: [0.8, 1.2], opacity: 0.32, gravity: -0.1, drag: 2.2, jitter: 0.3 });
+  });
+  bus.on('gargoyle_slam', (ev) => {
+    mark('gargoyle_slam');
+    const r = ev.radius ?? 1.3;
+    const g = byId(ev.id);
+    const d = faceOf(g);
+    const sx = g ? g.x : ev.x - d.x * 0.9;
+    const sz = g ? g.z : ev.z - d.z * 0.9;
+    kit.streak({ a: { x: sx + d.x * 0.3, y: 1.7, z: sz + d.z * 0.3 }, b: { x: ev.x, y: 0.1, z: ev.z }, width: 0.18, tailW: 0.45, core: PARCH, glow: EMBER, life: 0.16, fall: 2.2 });
+    flare(ev.x, 0.35, ev.z, EMBER, 1.4, { kind: 'burst', life: 0.24 });
+    kit.flash({ x: ev.x, y: 0.4, z: ev.z, color: PARCH, size: 0.8, life: 0.13 });
+    shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.3, width: 0.12, jag: 0.7 });
+    shock(ev.x, ev.z, r * 1.4, SSTONE, { life: 0.5, width: 0.24, core: BONE, delay: 0.04, jag: 0.9 });
+    kit.crack({ x: ev.x, z: ev.z, radius: r * 0.85, glow: EMBER, life: 1.4, cool: 0.4 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 1.3, kind: 'crater', stain: SSTONE, glow: EMBER, glowOpacity: 0.4, cool: 0.8, life: 3.4, opacity: 0.55 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.3, color: EMBER, opacity: 0.28, life: 0.35, attack: 0.02 });
+    spray('chunk', ev.x, 0.3, ev.z, 8, { color: SSTONE, speed: [1.0, 2.4], up: [1.6, 3.0], size: [0.07, 0.15], life: [0.5, 0.85], jitter: 0.3 });
+    spray('spark', ev.x, 0.4, ev.z, 6, { color: PARCH, speed: [1.6, 3.0], up: [0.6, 1.6], size: [0.04, 0.08], life: [0.15, 0.3] });
+    spray('smoke', ev.x, 0.2, ev.z, 4, { color: SSTONE, speed: [0.6, 1.3], up: [0.1, 0.4], size: [0.38, 0.52], grow: 1.4, life: [0.7, 1.05], opacity: 0.32, gravity: -0.15, drag: 2.4, jitter: 0.4 });
+  });
+  bus.on('gargoyle_settle', (ev) => {
+    mark('gargoyle_settle');
+    const { x, z } = ev;
+    kit.ring({ x, z, r0: 0.3, r1: 1.8, width: 0.1, life: 1.1, core: SSTONE, glow: SSTONE, soft: 0.8, y: 0.04, opacity: 0.45, gain: 0.4 });
+    spray('smoke', x, 1.2, z, 5, { color: SSTONE, speed: [0.1, 0.35], up: [-0.5, -0.2], size: [0.34, 0.5], grow: 1.5, life: [1.2, 1.7], opacity: 0.26, gravity: 0.35, drag: 2.0, jitter: 0.45 });
+    spray('spark', x, 0.9, z, 4, { color: TELL_INDIGO_GLOW, speed: [0.02, 0.1], up: [-0.4, -0.15], size: [0.03, 0.05], life: [0.8, 1.2], gravity: 0.2, drag: 1.6, jitter: 0.3, opacity: 0.6 });
+    kit.mark({ x, z, radius: 0.9, kind: 'scorch', stain: SSTONE, glow: null, life: 3.0, opacity: 0.28 });
+  });
+
+  // Rope Hanger — "the pendulum". The swing lays a hemp-coloured arc that
+  // follows the body down the lane — lifting off the floor and riding high
+  // through the middle —
+  // over an Ember edge on the lane (what hits you), dust kicked off where its
+  // feet leave the floor, and fibres and grit shaken out of the rope overhead
+  // as it takes the weight (the creak). The landing is a puff of dust.
+  bus.on('hanger_swing', (ev) => {
+    mark('hanger_swing');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = Math.max(0.5, ev.length ?? 6);
+    const SPEED = 10;
+    const sweep = len / SPEED;
+    const ex = ev.x + d.x * len;
+    const ez = ev.z + d.z * len;
+    kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ex, y: 0.1, z: ez }, width: 1.1, tailW: 0.85, core: EMBER, glow: EMBER, life: sweep + 0.12, fall: 2.2, opacity: 0.38 });
+    // The arc: short hemp segments laid behind the body as it passes.
+    const segs = Math.max(4, Math.round(len / 0.7));
+    const yAt = (k) => 1.05 + 0.38 * Math.sin(Math.PI * k); // the body's own lift (render/enemies/spire.js)
+    for (let i = 0; i < segs; i++) {
+      const k0 = i / segs;
+      const k1 = (i + 1) / segs;
+      kit.streak({
+        a: { x: ev.x + d.x * len * k0, y: yAt(k0), z: ev.z + d.z * len * k0 },
+        b: { x: ev.x + d.x * len * k1, y: yAt(k1), z: ev.z + d.z * len * k1 },
+        width: 0.2,
+        tailW: 0.7,
+        core: i === segs - 1 ? PARCH : BONE,
+        glow: HEMP,
+        life: 0.42,
+        delay: sweep * k0,
+        fall: 1.0,
+        opacity: 0.8,
+      });
+    }
+    // The head riding with it: white-hot, an Ember glow.
+    kit.streak({ a: { x: ev.x, y: 1.0, z: ev.z }, b: { x: ev.x + d.x * 0.6, y: 0.95, z: ev.z + d.z * 0.6 }, width: 0.1, tailW: 0.35, core: PARCH, glow: EMBER, life: sweep, travel: { x: d.x * SPEED, y: 0, z: d.z * SPEED }, fall: 0.3, opacity: 0.85 });
+    // The push-off: dust behind the feet.
+    spray('smoke', ev.x - d.x * 0.2, 0.1, ev.z - d.z * 0.2, 3, { color: SSTONE, speed: [0.4, 0.9], up: [0.1, 0.3], size: [0.28, 0.4], grow: 1.3, life: [0.5, 0.8], opacity: 0.3, gravity: -0.1, drag: 2.4, dir: { x: -d.x, z: -d.z }, dirBias: 0.7 });
+    // The rope creaks: fibres and grit shaken loose high on the rope.
+    const mx = ev.x + d.x * len * 0.5;
+    const mz = ev.z + d.z * len * 0.5;
+    spray('spark', mx, 3.2, mz, 8, { color: HEMP, speed: [0.05, 0.3], up: [-0.6, -0.2], size: [0.03, 0.05], life: [1.0, 1.5], gravity: 0.5, drag: 1.4, jitter: 0.6, opacity: 0.8 });
+    spray('smoke', mx, 3.4, mz, 2, { color: SSTONE, speed: [0.1, 0.3], up: [-0.3, -0.1], size: [0.26, 0.36], grow: 1.3, life: [1.0, 1.4], opacity: 0.18, gravity: 0.3, drag: 2.0, jitter: 0.4 });
+  });
+  bus.on('hanger_land', (ev) => {
+    mark('hanger_land');
+    const { x, z } = ev;
+    shock(x, z, 0.8, SSTONE, { life: 0.32, width: 0.09, core: BONE });
+    spray('smoke', x, 0.12, z, 4, { color: SSTONE, speed: [0.5, 1.1], up: [0.1, 0.35], size: [0.28, 0.42], grow: 1.4, life: [0.6, 0.9], opacity: 0.3, gravity: -0.1, drag: 2.4, jitter: 0.2 });
+    spray('spark', x, 1.6, z, 4, { color: HEMP, speed: [0.05, 0.2], up: [-0.4, -0.1], size: [0.03, 0.05], life: [0.8, 1.2], gravity: 0.5, drag: 1.4, jitter: 0.3, opacity: 0.7 });
+  });
+
+  // Their deaths, on top of enemyDeath's shared break.
+  Object.assign(CREATURE_DEATH, {
+    kite: (es, matter, x, z) => {
+      // The sails tear apart: cloth drifting down, cane splinters snapping.
+      mark('kite_death');
+      flare(x, 1.0, z, KCLOTH, 0.9, { kind: 'burst', life: 0.22 });
+      spray('shard', x, 1.1, z, 12, { color: KCLOTH, tile: SHARD_TILE.feather, speed: [0.5, 1.4], up: [0.3, 1.0], size: [0.12, 0.2], life: [1.4, 2.2], gravity: 0.45, drag: 1.6, spin: [-5, 5], flutter: 0.85 });
+      spray('shard', x, 1.0, z, 5, { color: HEMP, tile: SHARD_TILE.needle, speed: [1.0, 2.2], up: [0.6, 1.4], size: [0.1, 0.15], life: [0.5, 0.8], gravity: 5, spin: [-10, 10] });
+      spray('smoke', x, 1.0, z, 2, { color: GUST, speed: [0.3, 0.7], up: [0.1, 0.4], size: [0.3, 0.42], grow: 1.4, life: [0.6, 0.9], opacity: 0.22, gravity: -0.1, drag: 2.2 });
+    },
+    chime: (es, matter, x, z) => {
+      // The shroud empties and the bell drops: a last cracked clang on the
+      // floor, bronze shards, the indigo going out.
+      mark('chime_death');
+      kit.flash({ x, y: BELL_Y, z, color: TELL_INDIGO_GLOW, size: 0.8, life: 0.24 });
+      spray('shard', x, 1.4, z, 6, { color: SSTONE, tile: SHARD_TILE.petal, speed: [0.3, 0.9], up: [0.2, 0.7], size: [0.1, 0.15], life: [0.9, 1.3], gravity: 0.7, drag: 1.8, spin: [-4, 4], flutter: 0.6, opacity: 0.8 });
+      after(0.3, () => {
+        flare(x, 0.3, z, BRONZE, 1.0, { kind: 'burst', life: 0.22 });
+        kit.ring({ x, z, r0: 0.2, r1: 1.4, width: 0.07, life: 0.5, core: BRONZE, glow: BRONZE, soft: 0.6, y: 0.06, opacity: 0.6 });
+        spray('chunk', x, 0.3, z, 5, { color: BRONZE, speed: [0.8, 1.8], up: [1.0, 1.8], size: [0.05, 0.1], life: [0.5, 0.8] });
+        spray('spark', x, 0.4, z, 8, { color: BRONZE, speed: [0.05, 0.3], up: [0.3, 0.7], size: [0.04, 0.06], life: [0.9, 1.4], gravity: -0.15, drag: 1.6, jitter: 0.5, opacity: 0.75 });
+      });
+    },
+    gargoyle: (es, matter, x, z) => {
+      // It crumbles to rubble where it stands.
+      mark('gargoyle_death');
+      kit.crack({ x, z, radius: 0.9, glow: TELL_INDIGO_GLOW, life: 1.4, cool: 0.5 });
+      shock(x, z, 1.4, SSTONE, { life: 0.45, width: 0.18, core: BONE, jag: 0.9 });
+      spray('chunk', x, 0.8, z, 12, { color: SSTONE, speed: [0.8, 2.2], up: [0.8, 2.2], size: [0.09, 0.2], life: [0.6, 1.0], jitter: 0.35 });
+      spray('smoke', x, 0.6, z, 5, { color: SSTONE, speed: [0.4, 1.0], up: [0.2, 0.6], size: [0.42, 0.6], grow: 1.5, life: [1.0, 1.5], opacity: 0.34, gravity: -0.1, drag: 2.0, jitter: 0.4 });
+      kit.mark({ x, z, radius: 1.2, kind: 'crater', stain: SSTONE, glow: null, life: 3.6, opacity: 0.45 });
+    },
+    hanger: (es, matter, x, z) => {
+      // The rope lets go: it falls out of the dark onto the body in a heap.
+      mark('hanger_death');
+      kit.streak({ a: { x, y: 4.2, z }, b: { x, y: 2.4, z }, width: 0.06, tailW: 0.8, core: BONE, glow: HEMP, life: 0.45, travel: { x: 0, y: -5, z: 0 }, fall: 0.6, opacity: 0.85 });
+      after(0.35, () => {
+        shock(x, z, 0.9, HEMP, { life: 0.35, width: 0.1, core: BONE });
+        spray('smoke', x, 0.2, z, 3, { color: SSTONE, speed: [0.4, 0.9], up: [0.1, 0.3], size: [0.3, 0.42], grow: 1.3, life: [0.6, 0.9], opacity: 0.3, gravity: -0.1, drag: 2.4 });
+      });
+      spray('spark', x, 1.5, z, 6, { color: HEMP, speed: [0.1, 0.4], up: [-0.2, 0.3], size: [0.03, 0.05], life: [0.9, 1.3], gravity: 0.4, drag: 1.4, jitter: 0.3, opacity: 0.75 });
+    },
+  });
+
   // ------------------------------------------------- the Thornmother --
   // "She fights the floor." Style: bramble over violet rot. Shapes: thorn
   // spikes punching up where her seed pods root, a torn-earth charge lane,

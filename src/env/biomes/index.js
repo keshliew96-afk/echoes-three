@@ -6,11 +6,12 @@ import * as wood from './wood.js';
 import * as mill from './mill.js';
 import * as barrow from './barrow.js';
 import * as heart from './heart.js';
+import * as spire from './spire.js';
 import { LAYOUTS } from '../../data/layouts.js';
 
-export const BIOMES = Object.freeze({ wood: wood.BIOME, mill: mill.BIOME, barrow: barrow.BIOME, heart: heart.BIOME });
+export const BIOMES = Object.freeze({ wood: wood.BIOME, mill: mill.BIOME, barrow: barrow.BIOME, heart: heart.BIOME, spire: spire.BIOME });
 
-const SPECS = Object.freeze({ ...wood.LAYOUT_SPECS, ...mill.LAYOUT_SPECS, ...barrow.LAYOUT_SPECS, ...heart.LAYOUT_SPECS });
+const SPECS = Object.freeze({ ...wood.LAYOUT_SPECS, ...mill.LAYOUT_SPECS, ...barrow.LAYOUT_SPECS, ...heart.LAYOUT_SPECS, ...spire.LAYOUT_SPECS });
 
 export const LAYOUT_SPEC_IDS = Object.freeze(Object.keys(SPECS).map(Number).sort((a, b) => a - b));
 
@@ -21,6 +22,7 @@ export function layoutSpec(id) {
 export function biomeOfLayout(id) {
   // Slice-2 ids (10-15) interleave the acts, so the layout data decides.
   if (LAYOUTS[id]) return LAYOUTS[id].biome;
+  if (id >= 29) return 'spire';
   if (id >= 16) return 'heart';
   if (id >= 7) return 'barrow';
   if (id >= 4) return 'mill';

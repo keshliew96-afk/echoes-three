@@ -60,10 +60,12 @@ A new hazard, `gust` in src/sim/hazards.js. A grate in the floor blows along a 1
 
 ## Look and sound
 
-- **Visuals.** Biome dressing in `src/env/biomes/spire.js`; enemy rigs in `src/render/enemies/spire.js`; the gust vent's grate, streamers and telegraph in the hazard renderer; impact effects on the AAA bar, with a vfx lab row for the four enemies and the vent (`?vfxlab=1`).
-- **Music.** A `spire` theme (src/audio/music.js), with a boss state.
-- **Ambience.** A wind bed with distant bells (src/audio/ambient.js).
-- **Cues.** `src/audio/spirecues.js`: kite dive and landing, the chime toll and choke, the gargoyle crack, wake, slam and settle, the hanger swing and landing, and the gust.
+- **Biome.** `src/env/biomes/spire.js`: pale limestone flagstones with rime in the cracks, a slate-blue dusk, an open balustrade edge with clouds and lesser spires below, belfry ropes hanging from above, and firelight only from torches and braziers (`torchLightGain` 0.55 keeps the pale stone from blooming). Landmarks: a bell stair with its doorway arch, and the great bell in its frame with icicles and an indigo crack (centred in the Belfry Crown). The edge (src/env/treeline.js) has broken balustrade runs, gargoyles, bell cages and torn banners. The map table shows a fifth point, V, only when five acts are played.
+- **Gust vent.** `src/render/hazards/index.js`: a stone and bronze grate breathing faint wisps when idle; the shared Ember lane with wisps drawn in during the telegraph; a white-blue blast with streaks, a pressure front, dust and tumbling feathers while it blows.
+- **Enemies.** `src/render/enemies/spire.js`: a cane-and-sailcloth kite that folds, dives and lies splayed when grounded; a hooded shroud over a cracked bronze bell that rears and strikes; a limestone gargoyle that is flat statue grey as stone, glows through its cracks as it wakes and lumbers when awake; a dead bell-ringer on a rope rising out of frame that leans back and pendulums down the lane. Recipes in `src/render/vfx/signature.js` ("Act V, the Still Spire"); Ember only on the parts that hurt. The lab (`?vfxlab=1&act5=1`) has an Act V row and a gust vent section.
+- **Music.** A `spire` theme in src/audio/music.js: F lydian at 92 BPM with a bell ostinato, a high choir and a breath lead over low toms; the boss state goes to F aeolian at 112 BPM and adds a heavy bronze knell. Trims combat -9.5 and boss -9.7, from two noisy calibration runs against the other acts.
+- **Ambience.** A high wind bed with uneven gusts, an open-fifth drone on F and a far bell every 5-9 s (src/audio/ambient.js, trim 3.0).
+- **Cues.** `src/audio/spirecues.js`: 14 cues for the kite's dive, landing and rise, the chime's toll and choke, the gargoyle's crack, wake, slam and settle, the hanger's swing and landing, and the vent's intake, gust and calm. Their levels are offline estimates (the sandbox's live measurement mostly returned silence); `node tools/smallfixes2-cuecal.mjs --only spirecues --write` replaces them with live measurements.
 
 ## Verification
 
