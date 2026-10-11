@@ -1,5 +1,6 @@
-// THE WARDENS — the cleansed spirits of the three bosses (the Hollow Stag,
-// the Drowned Heron, the Barrow Wyrm), resting at the camp's edge.
+// THE WARDENS — the cleansed spirits of the land bosses (the Hollow Stag,
+// the Drowned Heron, the Barrow Wyrm, the Spire's Skyhorn), resting at the
+// camp's edge.
 //
 // They keep their boss silhouettes (render/boss/stag.js, heron.js, wyrm.js)
 // so the player recognises who they were, but everything that made them
@@ -75,7 +76,11 @@ export function buildWarden(kind, rig) {
     return e;
   };
 
-  const built = kind === 'stag' ? buildStag(body, g, closedEye) : kind === 'heron' ? buildHeron(body, g, closedEye) : buildWyrm(body, g, closedEye);
+  const built =
+    kind === 'stag' ? buildStag(body, g, closedEye)
+    : kind === 'heron' ? buildHeron(body, g, closedEye)
+    : kind === 'ibex' ? buildIbex(body, g, closedEye)
+    : buildWyrm(body, g, closedEye);
 
   // Ground: faint shadow + a cold moon pool, both on the floor (not on the
   // float), so the hover reads as a gap.
@@ -414,6 +419,104 @@ function buildWyrm(body, g, closedEye) {
       coil.scale.set(1 + 0.012 * b, 1 + 0.035 * b, 1 + 0.012 * b);
       head.rotation.x = 0.03 * Math.sin(t * 0.8);
       head.position.y = 0.3 + 0.015 * Math.sin(t * 0.8);
+    },
+  };
+}
+
+// --- The Skyhorn: an ibex on a high ledge, chin up, the great horns swept
+// back over its shoulders and the neck bell hanging still. Stockier than the
+// stag (short sure legs, deep chest) so the two read apart at a glance.
+function buildIbex(body, g, closedEye) {
+  const sph = new SphereGeometry(1, 16, 11);
+  const barrel = g(sph);
+  barrel.scale.set(0.4, 0.42, 0.72);
+  barrel.position.set(0, 1.12, -0.18);
+  body.add(barrel);
+  const chest = g(sph);
+  chest.scale.set(0.42, 0.48, 0.42);
+  chest.position.set(0, 1.22, 0.34);
+  body.add(chest);
+  const legGeo = new CylinderGeometry(0.09, 0.06, 0.95, 10);
+  for (const [x, z] of [[-0.22, 0.4], [0.22, 0.4], [-0.21, -0.66], [0.21, -0.66]]) {
+    const l = g(legGeo);
+    l.position.set(x, 0.5, z);
+    body.add(l);
+  }
+  const neck = g(new CylinderGeometry(0.16, 0.24, 0.62, 12));
+  neck.position.set(0, 1.62, 0.56);
+  neck.rotation.x = 0.5;
+  body.add(neck);
+  const head = new Group();
+  head.position.set(0, 1.95, 0.76);
+  body.add(head);
+  const skull = g(new SphereGeometry(1, 16, 12));
+  skull.scale.set(0.19, 0.2, 0.25);
+  head.add(skull);
+  const muzzle = g(new ConeGeometry(0.13, 0.4, 12));
+  muzzle.rotation.x = Math.PI / 2 + 0.75;
+  muzzle.position.set(0, -0.15, 0.24);
+  head.add(muzzle);
+  const beard = g(new ConeGeometry(0.06, 0.26, 8));
+  beard.rotation.x = Math.PI;
+  beard.position.set(0, -0.36, 0.22);
+  head.add(beard);
+  const earGeo = new ConeGeometry(0.05, 0.2, 8);
+  for (const side of [-1, 1]) {
+    const ear = g(earGeo);
+    ear.position.set(side * 0.2, 0.02, -0.06);
+    ear.rotation.set(-0.2, 0, side * -1.4);
+    head.add(ear);
+  }
+  // The horns: long scimitar arcs up and back, thick at the root, with the
+  // ibex's knobbed ridges along the front edge.
+  const ridgeGeo = new TorusGeometry(0.075, 0.02, 5, 10);
+  for (const side of [-1, 1]) {
+    const pts = [];
+    for (let i = 0; i <= 8; i++) {
+      const u = i / 8;
+      const a = u * 2.25; // sweep angle, up then back
+      pts.push(new Vector3(side * (0.08 + 0.1 * u), 0.12 + Math.sin(a) * 0.62, -0.02 - (1 - Math.cos(a)) * 0.55));
+    }
+    const curve = new CatmullRomCurve3(pts);
+    const horn = g(new TubeGeometry(curve, 24, 0.07, 8, false));
+    horn.scale.set(1, 1, 1);
+    head.add(horn);
+    for (let i = 1; i <= 6; i++) {
+      const u = i / 7.5;
+      const r = g(ridgeGeo);
+      const p = curve.getPointAt(u);
+      const tan = curve.getTangentAt(u);
+      r.position.copy(p);
+      r.lookAt(p.clone().add(tan));
+      r.scale.setScalar(1 - u * 0.55);
+      head.add(r);
+    }
+  }
+  // The neck bell, silent: a cup and its strap.
+  const strap = g(new TorusGeometry(0.2, 0.025, 6, 16));
+  strap.position.set(0, 1.5, 0.66);
+  strap.rotation.x = Math.PI / 2 - 0.5;
+  body.add(strap);
+  const bell = g(new CylinderGeometry(0.06, 0.13, 0.18, 12, 1, true));
+  bell.position.set(0, 1.28, 0.8);
+  body.add(bell);
+  const tail = g(new ConeGeometry(0.07, 0.18, 8));
+  tail.rotation.x = -Math.PI / 2 - 1.0;
+  tail.position.set(0, 1.36, -0.92);
+  body.add(tail);
+  for (const side of [-1, 1]) closedEye(head, side * 0.15, 0.03, 0.15, side * 0.6, 0.8);
+
+  return {
+    topY: 1.95 + 0.75,
+    hover: 0.07,
+    footR: 0.95,
+    footWide: 0.85,
+    footDeep: 1.25,
+    update(t) {
+      head.rotation.x = -0.08 + 0.04 * Math.sin(t * 0.37);
+      head.rotation.y = 0.1 * Math.sin(t * 0.21);
+      bell.rotation.z = 0.06 * Math.sin(t * 0.8);
+      barrel.scale.y = 0.42 * (1 + 0.025 * Math.sin(t * 0.85));
     },
   };
 }

@@ -34,6 +34,7 @@ import { buildHeron } from './heron.js';
 import { buildWyrm } from './wyrm.js';
 import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
 import { buildCantor, buildColossus } from './heart.js';
+import { buildHush, buildSkyhorn } from './spire.js';
 import { buildGloamWolf, buildMireKing, buildAshRaven, buildVeinWeaver } from './third.js';
 import { createTelegraphShapes } from '../enemies/shapes.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
@@ -44,7 +45,7 @@ import { impactFx } from '../vfx/hub.js';
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
-const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver };
+const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
@@ -105,7 +106,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   // and one burst are built and COMPILED a few frames after boot, parked far
   // under the floor, and then pooled for reuse.
   const spareRigs = []; // Stag rigs
-  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [], cantor: [], colossus: [], gloamwolf: [], mireking: [], ashraven: [], veinweaver: [] };
+  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [], cantor: [], colossus: [], gloamwolf: [], mireking: [], ashraven: [], veinweaver: [], hush: [], skyhorn: [] };
   // Lane / cone telegraphs (the Heron's spear, the Wyrm's breath) reuse the
   // enemy layer's pooled Ember shapes; rings stay the Stag's quake ring.
   const shapes = createTelegraphShapes(root);
@@ -198,6 +199,11 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   bus.on('boss_note', burstAt);
   bus.on('boss_heart_pulse', burstAt);
   bus.on('boss_geode_burst', burstAt);
+  // Act V: the Hush's note and Great Hush, the Skyhorn's toll and landing.
+  bus.on('boss_still_note', burstAt);
+  bus.on('boss_great_hush', burstAt);
+  bus.on('boss_horn_toll', burstAt);
+  bus.on('boss_sky_leap', burstAt);
   // Third bosses: the Gloam Wolf's pounce and howl, the Mire King's flop.
   bus.on('boss_pounce', burstAt);
   bus.on('boss_howl', burstAt);

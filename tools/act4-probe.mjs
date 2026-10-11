@@ -120,8 +120,9 @@ const spawn = (W, kind, x, z, o = { hpMul: 30 }) => W.registry.byId(W.world.cmd(
 
 // ---------------------------------------------------------------- 1. wiring --
 {
-  check(CAMPAIGN_ACTS === 4 && ACT_IDS.join() === '1,2,3,4' && CAMPAIGN_LEVELS.length === 4, `the campaign is four levels (${ACT_IDS.join(', ')})`);
-  check(nextLevel(3) === 4 && nextLevel(4) === null, 'Level IV follows the Barrow and is the final level');
+  // Act V bosses (docs/ACT_V_BOSSES.md): Level V follows the Heart now.
+  check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5' && CAMPAIGN_LEVELS.length === 5, `the campaign is five levels (${ACT_IDS.join(', ')})`);
+  check(nextLevel(3) === 4 && nextLevel(4) === 5, 'Level IV follows the Barrow and leads on to the Spire');
   const lv = LEVELS[4];
   check(lv && lv.name === 'The Hollow Heart' && lv.biome === 'heart' && lv.unlock && lv.unlock.afterVictory === 3, `Level IV is the Hollow Heart in the heart biome, unlocked by clearing Level III`);
   const lays = [16, 17, 18, 19, 20].map((id) => LAYOUTS[id]);
@@ -130,7 +131,7 @@ const spawn = (W, kind, x, z, o = { hpMul: 30 }) => W.registry.byId(W.world.cmd(
   let up = true;
   for (let r = 1; r <= 6; r++) for (const k of ['hpMul', 'dmgMul', 'budget']) if (!(difficulty(4, r)[k] >= difficulty(3, r)[k])) up = false;
   check(up, `Act IV numbers sit at or above Act III's in every room (room 6 hp ${difficulty(3, 6).hpMul} -> ${difficulty(4, 6).hpMul})`);
-  check(E.CYCLE === 4 && ENDLESS_ACTS.join() === '1,2,3,4' && E.levelOfDepth(4) === 4 && E.levelOfDepth(8) === 4 && E.endlessNextLevel(4) === 1, 'the Endless Descent cycles four biomes, the Heart every fourth depth');
+  check(E.CYCLE === 5 && ENDLESS_ACTS.join() === '1,2,3,4,5' && E.levelOfDepth(4) === 4 && E.levelOfDepth(9) === 4 && E.endlessNextLevel(4) === 5, 'the Endless Descent cycles five biomes, the Heart every fifth depth');
   check(affixCountFor({ act: 4, room: 2 }) === 2, `Level IV elites carry two powers (${affixCountFor({ act: 4, room: 2 })})`);
 }
 
@@ -342,7 +343,7 @@ function inLaneOf(t, p) {
     W.run.startCampaign({ level: 4, harness: true });
     for (let i = 0; i < 4000 && W.run.view().phase !== 'combat'; i++) W.step();
     const lay = W.run.view().layout?.layoutId;
-    check(lay >= 16 && lay <= 20, `seed ${seed}: Level IV room 1 is a heart layout (${lay})`);
+    check(LAYOUTS[lay]?.biome === 'heart', `seed ${seed}: Level IV room 1 is a heart layout (${lay})`);
     for (let w = 0; w < 6; w++) {
       W.world.cmd('startWave');
       steps(W, 90);
@@ -370,7 +371,7 @@ function inLaneOf(t, p) {
     won = W.log.find((e) => e.type === 'level_clear' && e.level === 4);
   }
   for (let i = 0; i < 3000 && W.run.view().phase !== 'victory'; i++) W.step();
-  check(!!won && won.final === true && W.run.view().phase === 'victory', `clearing Level IV ends the campaign in victory (final ${won ? won.final : '-'}, phase ${W.run.view().phase})`);
+  check(!!won && won.final === false, `clearing Level IV leads on to Level V (final ${won ? won.final : '-'})`);
 }
 
 // ----------------------------------------------------- 9. saves and co-op --

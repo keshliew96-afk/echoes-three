@@ -1,8 +1,9 @@
 // BOSS RUSH (docs/BOSS_RUSH.md, content plan 3 slice 12). Owner: RUSH.
 //
 // The bosses back to back: one per land in campaign order (the Wood, the
-// Mill, the Barrow, the Heart), then a second lap that meets each land's
-// OTHER boss on harder numbers. Eight fights in all. Between two fights the
+// Mill, the Barrow, the Heart, the Spire), then a second lap that meets each
+// land's OTHER boss on harder numbers. Ten fights in all since the Spire
+// joined the campaign (docs/ACT_V_BOSSES.md; eight before). Between two fights the
 // party takes a draft (the fight's reward), a supply of nodes and Glint (the
 // war chest, in place of the six rooms a level would have given), now and
 // then a relic, and a short visit to the Peddler. A run is timed from the
@@ -22,14 +23,13 @@ import { LEVELS, ENDLESS_ACTS, CAMPAIGN_ACTS, bossFor } from './levels.js';
 import { difficulty } from './difficulty.js';
 import { endlessBossIndex, endlessUnlockedFrom } from './endless.js';
 
-// ACT V PREVIEW: the Spire has no bosses of its own yet, so the rush keeps
-// the campaign's own lands (CAMPAIGN_ACTS) even when ?act5=1 adds Level V.
+// The campaign's own lands (CAMPAIGN_ACTS).
 const ORDER = Object.freeze([...ENDLESS_ACTS].filter((a) => a <= CAMPAIGN_ACTS).sort((a, b) => a - b));
-export const LAP = ORDER.length; // 4 fights a lap
+export const LAP = ORDER.length; // 5 fights a lap
 
 export const RUSH_RULES = Object.freeze({
   laps: 2,
-  fights: LAP * 2, // 8
+  fights: LAP * 2, // 10
   // The kit the rush sets out with: the Level II starter grant (a party
   // that has just cleared Level I).
   grantLevel: 2,
@@ -40,29 +40,33 @@ export const RUSH_RULES = Object.freeze({
   // shared auto-fill; a node only lands where a skill has room) and
   // legendaries, and each ally's skill draws, nodes and legendaries. The
   // first lap tops the party up to what a campaign party carries into that
-  // land's boss room (the Level III and Level IV starter grants, data/
+  // land's boss room (the Level III, IV and V starter grants, data/
   // campaign.js); the second lap adds a little each fight.
   supply: Object.freeze([
     Object.freeze({ skills: 0, nodes: 6, legendaries: 0, allies: Object.freeze({ swaps: 1, nodes: 12, legendaries: 0 }) }),
     Object.freeze({ skills: 1, nodes: 12, legendaries: 1, allies: Object.freeze({ swaps: 2, nodes: 16, legendaries: 2 }) }),
     Object.freeze({ skills: 1, nodes: 10, legendaries: 1, allies: Object.freeze({ swaps: 2, nodes: 8, legendaries: 1 }) }),
     Object.freeze({ skills: 0, nodes: 8, legendaries: 1, allies: Object.freeze({ swaps: 1, nodes: 8, legendaries: 1 }) }),
+    // Into the Spire: what a Level V start adds over a Level IV one.
+    Object.freeze({ skills: 0, nodes: 8, legendaries: 1, allies: Object.freeze({ swaps: 1, nodes: 8, legendaries: 1 }) }),
+    Object.freeze({ skills: 0, nodes: 6, legendaries: 0, allies: Object.freeze({ swaps: 1, nodes: 6, legendaries: 0 }) }),
     Object.freeze({ skills: 0, nodes: 6, legendaries: 0, allies: Object.freeze({ swaps: 1, nodes: 6, legendaries: 0 }) }),
     Object.freeze({ skills: 0, nodes: 6, legendaries: 0, allies: Object.freeze({ swaps: 1, nodes: 6, legendaries: 0 }) }),
     Object.freeze({ skills: 0, nodes: 6, legendaries: 0, allies: Object.freeze({ swaps: 1, nodes: 6, legendaries: 0 }) }),
     Object.freeze({ skills: 0, nodes: 6, legendaries: 0, allies: Object.freeze({ swaps: 1, nodes: 6, legendaries: 0 }) }),
   ]),
   // A relic pick is owed after these fights (before the Peddler).
-  relicAfter: Object.freeze([1, 3, 5, 7]),
+  relicAfter: Object.freeze([1, 3, 5, 7, 9]),
   // The second lap's numbers: each land's own boss-room numbers, then this
   // much more HP and damage (bosses and their adds).
   lap2: Object.freeze({ hp: 1.8, dmg: 1.4 }),
-  // Deeds (data/unlocks.js): a full clear under this many seconds.
-  swiftSec: 600,
+  // Deeds (data/unlocks.js): a full clear under this many seconds (ten
+  // minutes for eight fights, so twelve for ten).
+  swiftSec: 720,
 });
 
 export const isRushFight = (n) => Number.isInteger(n) && n >= 1 && n <= RUSH_RULES.fights;
-// The land of fight `n` (1..8) and its lap (1 | 2).
+// The land of fight `n` (1..10) and its lap (1 | 2).
 export const rushAct = (n) => ORDER[(Math.max(1, n | 0) - 1) % LAP];
 export const rushLap = (n) => (Math.max(1, n | 0) > LAP ? 2 : 1);
 // The land after fight n's (the line wraps into the second lap), null after

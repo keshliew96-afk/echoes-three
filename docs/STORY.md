@@ -29,14 +29,14 @@ a warden and lines, and nothing else has to change.
 | **Quill**, the Chronicler | camp, at the map table | J (or his chip) opens **The story so far**: verse pips, one card per chapter (locked until its level is cleared), and the people met. |
 | **Sedge**, the Lost Pilgrim | the Lost Pilgrim event room | Speaks on the card; a new line each time she is met (four). |
 | **The First Bell** | the Wandering Spirit event room | Speaks on the card; four lines across meetings. |
-| **The Hollow Voice** | the corrupted altar; each boss's first meeting | A violet line under the screen title: once per boss per profile (the Hollow Cantor and the Geode Colossus each have their own line), and when the altar is taken or left. |
+| **The Hollow Voice** | the corrupted altar; each boss's first meeting | A violet line under the screen title: once per boss per profile (the Hollow Cantor, the Geode Colossus, the Hush and the Skyhorn each have their own line), and when the altar is taken or left. |
 | **The Chorus** (the gods) | run end cards | The defeat card's flavour line: a boss-room line, an early-fall line, a cursed-run line, or one of five general lines (seeded). |
-| **Freed wardens** | camp edge | The Stag, the Heron and the Wyrm stand at the camp's edge as pale spirits once their level's boss (either one) has been felled, each with one line. |
+| **Freed wardens** | camp edge | The Stag, the Heron, the Wyrm and the Skyhorn stand at the camp's edge as pale spirits once their level's boss (either one) has been felled, each with one line. |
 
 Level-clear cards add "The bell catches a verse: Root." (Water, Stone,
-Heart), and the victory card adds the verse plus an ending line: the Barrow
-ending while the campaign has three levels, the Heart ending once it has
-four. The hearth itself burns a step brighter (5% per verse) for each verse
+Heart, Sky), and the victory card adds the verse plus an ending line: the Barrow
+ending while the campaign has three levels, the Heart ending with
+four, the Spire ending with five (`endingFor`). The hearth itself burns a step brighter (5% per verse) for each verse
 held.
 
 ## When things appear

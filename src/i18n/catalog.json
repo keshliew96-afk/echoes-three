@@ -2198,6 +2198,12 @@
    "src/ui/menu/records.js"
   ]
  },
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Felling either frees the Verse of Sky, and the bell rings where the gods can hear it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Abyss Walker": {
   "files": [
    "src/data/unlocks.js"
@@ -3965,6 +3971,12 @@
   ],
   "data": true
  },
+ "Chapter V · The Still Spire": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "CHAPTERS": {
   "files": [
    "src/ui/story/page.js"
@@ -4329,7 +4341,7 @@
    "src/ui/run/unlocks.js"
   ]
  },
- "Complete a campaign (Levels I to IV).": {
+ "Complete a campaign (Levels I to V).": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -4987,6 +4999,12 @@
   ],
   "data": true
  },
+ "Defeat the Hush.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Defeat the Lich Ram.": {
   "files": [
    "src/data/unlocks.js"
@@ -5000,6 +5018,12 @@
   "data": true
  },
  "Defeat the Mire King.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Skyhorn.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5970,7 +5994,7 @@
   ],
   "data": true
  },
- "Fell the first four bosses of a Boss Rush.": {
+ "Fell the first five bosses of a Boss Rush.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6000,6 +6024,12 @@
   ],
   "data": true
  },
+ "Fell the Hush": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Lich Ram": {
   "files": [
    "src/data/unlocks.js"
@@ -6013,6 +6043,12 @@
   "data": true
  },
  "Fell the Mire King": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Skyhorn": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6067,7 +6103,7 @@
    "src/ui/run/transit.js"
   ]
  },
- "Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre and the Hollow Nave.": {
+ "Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre, the Hollow Nave and Windward Court.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6166,6 +6202,24 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "Five lands. I inked the Spire at the very top of the page, and there is still paper above it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Five verses. Sky came home ringing, and the fire leaned up to meet it. Two are still missing.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Five verses. The rain off the Spire runs clear again. I can hear the sky in the river now.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "FL": {
   "files": [
@@ -6827,6 +6881,12 @@
   ],
   "data": true
  },
+ "Healer effects burn in Hush Veil colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Healer effects burn in Millpond colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
@@ -7165,6 +7225,12 @@
   ],
   "data": true
  },
+ "Horn Rush: paws, then charges down a warning lane for 12 and throws you aside. Into a wall it stands dazed. Bell Toll: a ring round it for 12. From half health it leaps onto the farthest hero.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Host": {
   "files": [
    "src/ui/menu/lobby.js"
@@ -7269,6 +7335,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Hush Veil tint": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -7478,6 +7550,12 @@
  "It hunted mice in the Hollow Wood. Now it hunts whatever still has a heartbeat.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "It kept the stair to the gods. I taught it to keep you off it.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -11525,6 +11603,18 @@
   ],
   "data": true
  },
+ "Sky Bronze tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Sky@@verse": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Slams a warning ring for 14 that throws three crystal shards, each landing a second later for 8 and leaving slowing crystal.": {
   "files": [
    "src/data/journal.js"
@@ -11937,6 +12027,12 @@
    "src/ui/net/hud.js"
   ]
  },
+ "Still Note: a warning ring for 11 that slows. Unringing: a warning lane for 15. At each Stillness it calls the Spire's creatures, then the Great Hush: a huge ring round it for 20. Walk to the walls, then hit it while it sinks.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Stone until a hero comes close or strikes it. Then it cracks free in a warning ring for 12, stalks you and slams a ring in front of it for 13. Leave it alone long enough and it turns back to stone.": {
   "files": [
    "src/data/journal.js"
@@ -12189,6 +12285,12 @@
   "data": true
  },
  "Tank effects burn in Hollow Song colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Tank effects burn in Sky Bronze colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -12595,6 +12697,12 @@
   "files": [
    "src/ui/run/transit.js"
   ]
+ },
+ "The bell rings in the gods’ own belfry, and the silence breaks. Five verses burn in the hearth. Two are still missing, and above the Spire, for the first time, the gods stand up.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "The bell still rings true. Take it into the Hollow Wood, and listen for the warden.": {
   "files": [
@@ -13324,6 +13432,32 @@
    "src/ui/hud/banner.js"
   ]
  },
+ "The Hush": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE HUSH": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Hush breaks. In the gods’ belfry, a bell rings again.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Hush waits in the Belfry Crown, where the gods sat down. When the air goes still round it, walk to the walls, then hit it while it sinks.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "the impact hops once more per copy, within 2.2 u — a ricochet on damage, a chain-heal on a heal.": {
   "files": [
    "src/ui/run/cards.js"
@@ -13732,6 +13866,12 @@
    "src/ui/hud/banner.js"
   ]
  },
+ "The silence that stopped the gods: the quiet the Hollow Cantor sang into, sitting in their belfry beside them.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The singer at the bottom is the Hollow Cantor: not a god but a god’s echo, left behind when the gods fell silent. When it will not come out, the Heart grows a Geode Colossus to sing through. Silencing either frees the Verse of Heart, and for the first time the gods stop applauding. Deeper still, past the end of the song, the Vein Weaver spins the Heart’s veins through the dark.": {
   "files": [
    "src/data/story.js"
@@ -13753,6 +13893,38 @@
  "The skeleton of the first ram, walked out of its mound.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "The Skyhorn": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE SKYHORN": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Skyhorn falls. The stair to the gods’ belfry stands open.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Skyhorn guards the belfry ahead. When it paws the floor, step out of its line and let it meet the wall.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Skyhorn stands where it can see the most sky. Its bronze horns are quiet at last.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -13780,6 +13952,12 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The Spire's warden, an ibex of the high ledges with horns cast in bell bronze.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The spirit takes {name}.": {
   "files": [
    "src/ui/run/index.js"
@@ -13798,6 +13976,7 @@
  },
  "The Still Spire": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -15143,13 +15322,13 @@
    "src/ui/run/expedition.js"
   ]
  },
- "Win a Boss Rush in under 10 minutes.": {
+ "Win a Boss Rush in under 12 minutes.": {
   "files": [
    "src/data/unlocks.js"
   ],
   "data": true
  },
- "Win a Boss Rush: all eight bosses.": {
+ "Win a Boss Rush: all ten bosses.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -15466,6 +15645,12 @@
   "files": [
    "src/ui/run/index.js"
   ]
+ },
+ "You silenced my song. Now hear what I was singing into.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "You were hosting — your party is waiting for you": {
   "files": [

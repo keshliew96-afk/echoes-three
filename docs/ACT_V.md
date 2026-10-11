@@ -2,27 +2,9 @@
 
 Content plan 4, slice 2 (the plan lives in the project files as CONTENT_PLAN_4.md). The Still Spire is the gods' high belfry, where they sat down to watch and never rose. It is a fifth land with its own biome, music, ambience, six room layouts, a new hazard and four new enemies.
 
-## Behind a flag
+## Open to everyone
 
-The Spire plays only with `?act5=1` in the address (in Node, `ECHOES_ACT5=1`). Without it, nothing changes: the campaign, Endless, the Daily, Boss Rush, the Journal, the unlocks and the nine goldens are exactly as before.
-
-`ACT5_PREVIEW` in `src/data/levels.js` reads the flag. `CAMPAIGN_ACTS` stays 4. `PLAYED_ACTS` is 5 under the flag, and `ACT_IDS` and `ENDLESS_ACTS` follow it.
-
-| With `?act5=1` | |
-| --- | --- |
-| Campaign | Five levels. Level V unlocks after Level IV is cleared, and clearing Level V wins the campaign (Level IV leads on to it). |
-| Endless | The descent cycles five biomes, so the Spire is every fifth depth. |
-| Daily | Still four levels (`nextOf` in src/sim/run.js stops it at `CAMPAIGN_ACTS`), so its board and the server's depth check never meet the Spire. |
-| Boss Rush | Still a lap of four acts (`ORDER` in src/data/rush.js keeps to `CAMPAIGN_ACTS`). |
-| Journal | Four more Bestiary rows (49 instead of 45). |
-| Deeds | The Ringwalker arena deed still counts the four arenas of Acts I-IV only when the flag is off; with it, Windward Court joins. |
-
-Slice 3 (the Act V bosses) decides whether Level V joins the campaign for everyone or stays post-win. Opening it for everyone means:
-
-1. Set `CAMPAIGN_ACTS` to 5 and drop the `ACT5_PREVIEW` gate (or leave it as a no-op).
-2. Give Level V its own bosses in place of the borrowed Geode Colossus and Lich Ram (`bosses` in `LEVELS[5]`), with `STAG_DMG_LEVEL[5]` tuned for them.
-3. Decide whether the Daily stays four levels (keep the `nextOf` line) or grows to five (drop it, and teach server/daily.mjs the new depth).
-4. Give Boss Rush a fifth act (`ORDER`), give the Spire its own champion (`championFor` falls back to the Hollow Choir), and re-record the goldens if any of this touches Acts I-IV.
+Slice 3 (docs/ACT_V_BOSSES.md) opened Level V for everyone: `CAMPAIGN_ACTS` is 5, `ACT5_PREVIEW` is kept only as a no-op, the Spire has its own bosses, the Daily runs five levels (40 rooms, and the server's depth check follows), Boss Rush runs two laps of five, and Endless cycles five lands. The Spire's own champion is still to come (slice 7); until then its champion room meets the Hollow Choir.
 
 ## The level
 
@@ -35,7 +17,7 @@ Slice 3 (the Act V bosses) decides whether Level V joins the campaign for everyo
 | Interactables | dewfont, barricade, keg, bell |
 | Roster | kite 20 %, chime 14 %, gargoyle 14 %, hanger 14 %, plus husks, lancers, crows, moths and knights from the acts above |
 | Difficulty | tier 4.1 (Act IV is 3.6), elite chance 26 % rising 3 % a room, two elite powers from the first affix room |
-| Boss room | the Belfry Crown meets the Geode Colossus (adds: two kites and a gargoyle) or the Lich Ram (adds: a chime and a hanger), borrowed until slice 3 |
+| Boss room | the Belfry Crown meets the Hush or the Skyhorn (docs/ACT_V_BOSSES.md) |
 | Starter kit (starting at Level V) | +2 skills, 48 nodes, 4 legendaries, 96 Glint (allies: 4 swaps, 32 nodes, 4 legendaries, 68 Glint) |
 | Other | a Hunt room's quarry is a husk; the champion room meets the Hollow Choir; Embers per clear 100, score multiplier 3.0 |
 
@@ -60,9 +42,9 @@ A new hazard, `gust` in src/sim/hazards.js. A grate in the floor blows along a 1
 
 ## Look and sound
 
-- **Biome.** `src/env/biomes/spire.js`: pale limestone flagstones with rime in the cracks, a slate-blue dusk, an open balustrade edge with clouds and lesser spires below, belfry ropes hanging from above, and firelight only from torches and braziers (`torchLightGain` 0.55 keeps the pale stone from blooming). Landmarks: a bell stair with its doorway arch, and the great bell in its frame with icicles and an indigo crack (centred in the Belfry Crown). The edge (src/env/treeline.js) has broken balustrade runs, gargoyles, bell cages and torn banners. The map table shows a fifth point, V, only when five acts are played.
+- **Biome.** `src/env/biomes/spire.js`: pale limestone flagstones with rime in the cracks, a slate-blue dusk, an open balustrade edge with clouds and lesser spires below, belfry ropes hanging from above, and firelight only from torches and braziers (`torchLightGain` 0.55 keeps the pale stone from blooming). Landmarks: a bell stair with its doorway arch, and the great bell in its frame with icicles and an indigo crack (centred in the Belfry Crown). The edge (src/env/treeline.js) has broken balustrade runs, gargoyles, bell cages and torn banners. The map table shows a fifth point, V.
 - **Gust vent.** `src/render/hazards/index.js`: a stone and bronze grate breathing faint wisps when idle; the shared Ember lane with wisps drawn in during the telegraph; a white-blue blast with streaks, a pressure front, dust and tumbling feathers while it blows.
-- **Enemies.** `src/render/enemies/spire.js`: a cane-and-sailcloth kite that folds, dives and lies splayed when grounded; a hooded shroud over a cracked bronze bell that rears and strikes; a limestone gargoyle that is flat statue grey as stone, glows through its cracks as it wakes and lumbers when awake; a dead bell-ringer on a rope rising out of frame that leans back and pendulums down the lane. Recipes in `src/render/vfx/signature.js` ("Act V, the Still Spire"); Ember only on the parts that hurt. The lab (`?vfxlab=1&act5=1`) has an Act V row and a gust vent section.
+- **Enemies.** `src/render/enemies/spire.js`: a cane-and-sailcloth kite that folds, dives and lies splayed when grounded; a hooded shroud over a cracked bronze bell that rears and strikes; a limestone gargoyle that is flat statue grey as stone, glows through its cracks as it wakes and lumbers when awake; a dead bell-ringer on a rope rising out of frame that leans back and pendulums down the lane. Recipes in `src/render/vfx/signature.js` ("Act V, the Still Spire"); Ember only on the parts that hurt. The lab (`?vfxlab=1`) has an Act V row and a gust vent section.
 - **Music.** A `spire` theme in src/audio/music.js: F lydian at 92 BPM with a bell ostinato, a high choir and a breath lead over low toms; the boss state goes to F aeolian at 112 BPM and adds a heavy bronze knell. Trims combat -9.5 and boss -9.7, from two noisy calibration runs against the other acts.
 - **Ambience.** A high wind bed with uneven gusts, an open-fifth drone on F and a far bell every 5-9 s (src/audio/ambient.js, trim 3.0).
 - **Cues.** `src/audio/spirecues.js`: 14 cues for the kite's dive, landing and rise, the chime's toll and choke, the gargoyle's crack, wake, slam and settle, the hanger's swing and landing, and the vent's intake, gust and calm. Their levels are offline estimates (the sandbox's live measurement mostly returned silence); `node tools/smallfixes2-cuecal.mjs --only spirecues --write` replaces them with live measurements.

@@ -32,7 +32,7 @@ const MAX_TICKS = 60 * 60 * 60 * 6; // six hours of play
 const MAX_DEPTH = DAILY_RULES.roomsPerLevel * CAMPAIGN_ACTS;
 // The fewest ticks a cleared room may average: 4 s. The autopilot's fastest
 // whole level over 64 seeds took 6046 ticks (756 a room, shop included), so a
-// real run sits far above this; a made-up post (depth 32 in a minute) does not.
+// real run sits far above this; a made-up post (depth 40 in a minute) does not.
 export const MIN_ROOM_TICKS = 240;
 const VERSION_RE = /^(\d+)\.(\d+)\.(\d+)$/;
 // The game's version must be this server's line (major.minor) and no newer

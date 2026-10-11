@@ -85,6 +85,8 @@ const BOSSES = [
   ['Cantor', 4, 'cantor'],
   ['Colossus', 4, 'colossus'],
   ['Vein Weaver', 4, 'veinweaver'],
+  ['The Hush', 5, 'hush'],
+  ['Skyhorn', 5, 'skyhorn'],
 ];
 
 export function mountVfxLab() {
@@ -182,7 +184,7 @@ export function mountVfxLab() {
     return f;
   }
   const rooms = section('Rooms');
-  for (const a of [1, 2, 3, 4]) button(rooms, `Act ${['I', 'II', 'III', 'IV'][a - 1]} room`, () => room(a, 3));
+  for (const a of [1, 2, 3, 4, 5]) button(rooms, `Act ${['I', 'II', 'III', 'IV', 'V'][a - 1]} room`, () => room(a, 3));
   for (const [label, a, kind] of BOSSES) button(rooms, label, () => room(a, 8, kind), `Act ${a} boss room: ${label}`);
 
   // Act IV bosses (docs/ACT_IV_BOSSES.md): jump the fight to a beat. The HP
@@ -254,6 +256,28 @@ export function mountVfxLab() {
     await thirdBoss('veinweaver', 4);
     X().cmd('bossHp', 0.39);
     say('Vein Weaver: enraged (a shorter thread, faster binds)');
+  }, 'cut to 39%');
+
+  // Act V bosses (docs/ACT_V_BOSSES.md): the Hush and the Skyhorn.
+  const act5 = section('Act V bosses');
+  button(act5, 'Hush note', () => standAt('hush', 5, 3, 'The Hush: stand off for a Still Note (it leaves a hush patch from the second stillness)'), 'stand 3 u away');
+  button(act5, 'unring', () => standAt('hush', 5, 5, 'The Hush: stand far off for an Unring lane'), 'stand 5 u away');
+  button(act5, 'stillness', async () => {
+    await thirdBoss('hush', 5);
+    X().cmd('bossHp', 0.74);
+    say('The Hush: a bell dies; the Great Hush follows (get out of the ring, then hit it while drained)');
+  }, 'cut to 74%');
+  button(act5, 'Skyhorn rush', () => standAt('skyhorn', 5, 5, 'Skyhorn: stand off with a wall behind you, then step aside'), 'stand 5 u away');
+  button(act5, 'toll', () => standAt('skyhorn', 5, 2.0, 'Skyhorn: crowd it for a Horn Toll'), 'stand next to it');
+  button(act5, 'leap', async () => {
+    await thirdBoss('skyhorn', 5);
+    X().cmd('bossHp', 0.49);
+    say('Skyhorn: phase two, the Sky Leap (watch the ring)');
+  }, 'cut to 49%');
+  button(act5, 'enrage', async () => {
+    await thirdBoss('skyhorn', 5);
+    X().cmd('bossHp', 0.39);
+    say('Skyhorn: enraged (a second rush chains after a miss)');
   }, 'cut to 39%');
 
   // ---------------------------------------------------------------- party --

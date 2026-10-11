@@ -311,13 +311,13 @@ export function createRunSystem({
   };
   // ENDLESS: the depth of a live endless campaign (= its level index), else 0.
   const endlessDepth = () => (campaign && campaign.endless ? campaign.index : 0);
-  // BOSS RUSH: the fight of a live rush (= its level index, 1..8), else 0.
+  // BOSS RUSH: the fight of a live rush (= its level index, 1..10), else 0.
   const rushFight = () => (campaign && campaign.rush ? campaign.index : 0);
   // The level after `level` in this campaign: the endless cycle wraps; the
   // rush's line runs on into its second lap and ends after its last fight.
-  // ACT V PREVIEW (docs/ACT_V.md): the Daily stays the campaign's own
-  // CAMPAIGN_ACTS levels even when ?act5=1 adds Level V, so its board and the
-  // server's depth check never meet the Spire.
+  // The Daily plays the campaign's own CAMPAIGN_ACTS levels (five since the
+  // Spire's bosses, docs/ACT_V_BOSSES.md), the same count the server's depth
+  // check reads, so a won Daily is Depth 40.
   const nextOf = (c, level) =>
     c && c.mode === 'campaign' ? (c.rush ? rushNextLevel(c.index) : c.endless ? endlessNextLevel(level) : c.daily && level >= CAMPAIGN_ACTS ? null : nextLevel(level)) : null;
   // The room a level opens in: room 1, or in the rush the boss room for the

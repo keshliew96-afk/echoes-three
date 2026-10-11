@@ -414,6 +414,8 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           // cinder bed; the Vein Weaver's veins and webs, lit violet that
           // pulses on the Heart's beat (additive, it lights the floor).
           if (e.variant === 'ash') m.material.color.set(VFX_MATTER.cinder).multiplyScalar(0.9);
+          // ACT V: the Hush's silence, a pale cold grey with no shine.
+          if (e.variant === 'hush') m.material.color.set(VFX_MATTER.hushveil).multiplyScalar(1.1);
           if (e.variant === 'vein') {
             m.material.color.set(VFX_MATTER.heartvein).multiplyScalar(0.7);
             m.material.blending = AdditiveBlending;

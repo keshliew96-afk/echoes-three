@@ -400,6 +400,38 @@ export const BOSS_VFX = Object.freeze({
     bind: Object.freeze({ beads: 8 }),
     camera: Object.freeze({ dolly: 0.1, kick: 0.07 }),
   }),
+  // Act V's two bosses (docs/ACT_V_BOSSES.md).
+  //   hush     the silence itself: colour drains out of what it touches, so
+  //            its light is a cold lavender-white over grey, with the
+  //            God-stuff violet only at the rim; the Great Hush pulls sound
+  //            (motes, dust, light) inward before it lands (the final boss)
+  //   skyhorn  bell bronze and pale limestone over the hollow song's violet:
+  //            a rush that throws grit and sparks off its horns, a toll of
+  //            bronze rings, a leap that cracks the floor
+  hush: Object.freeze({
+    id: 'hush',
+    corruption: VFX_MATTER.hushpale,
+    peak: '#F6F7FF',
+    rim: PALETTE.godstuffViolet,
+    threat: PALETTE.emberDanger,
+    matter: 'hushveil',
+    second: 'hushpale',
+    note: Object.freeze({ rings: 3, motes: 16 }),
+    great: Object.freeze({ motes: 40, rings: 4 }),
+    camera: Object.freeze({ dolly: 0.1, kick: 0.07 }),
+  }),
+  skyhorn: Object.freeze({
+    id: 'skyhorn',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'bellbronze',
+    second: 'spirestone',
+    rush: Object.freeze({ grit: 3, sparks: 4 }),
+    toll: Object.freeze({ rings: 4 }),
+    leap: Object.freeze({ chunk: 16, dust: 6 }),
+    camera: Object.freeze({ dolly: 0.1, kick: 0.08 }),
+  }),
 });
 export function isVfxBoss(kind) {
   return Object.prototype.hasOwnProperty.call(BOSS_VFX, kind);

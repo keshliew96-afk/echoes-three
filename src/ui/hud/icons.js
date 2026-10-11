@@ -797,6 +797,22 @@ const ICONS = {
     ['circle', { cx: 16, cy: 10.4, r: 3.2, fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M13.4 9.6 L8 5.4 L5.6 9.4 M13 11.6 L6.6 10.6 L3 15.4 M13.4 13.6 L7.8 16.4 L5.8 22.4 M14 15.4 L10.4 21.4 L10.8 27.6 M18.6 9.6 L24 5.4 L26.4 9.4 M19 11.6 L25.4 10.6 L29 15.4 M18.6 13.6 L24.2 16.4 L26.2 22.4 M18 15.4 L21.6 21.4 L21.2 27.6 M16 2 V7.2', 'stroke-width': 1.5 }],
   ],
+  // Act V (docs/ACT_V_BOSSES.md). The Hush: a tall veil with a cracked bell
+  // for a head, no clapper in the dark mouth of it, one finger raised.
+  boss_hush: [
+    ['path', { d: 'M10.6 4.6 C10.6 2.6 21.4 2.6 21.4 4.6 C21.4 8.4 23.6 11 25 12.6 H7 C8.4 11 10.6 8.4 10.6 4.6 Z M15.4 5 L16.6 5 L17.6 8.6 L15.6 11 L16.4 8.4 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M8.6 14.2 H23.4 C23.6 19.4 25.6 25.6 28 30.5 H4 C6.4 25.6 8.4 19.4 8.6 14.2 Z M12.6 15.8 C12.4 17.8 14 19.2 16 19.2 C18 19.2 19.6 17.8 19.4 15.8 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M24.8 22.4 L27.4 17.4 L27.6 11.6', 'stroke-width': 1.6 }],
+  ],
+  // The Skyhorn: an ibex's long face between two great ridged horns that
+  // sweep back and curl, a bell hung under the chin.
+  boss_skyhorn: [
+    ['path', { d: 'M13 12.6 C9.4 7.4 9.6 2.8 13.6 1.6 C10.8 4.6 12.2 8.4 15 11.2 Z M19 12.6 C22.6 7.4 22.4 2.8 18.4 1.6 C21.2 4.6 19.8 8.4 17 11.2 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M11 9.6 L9.6 11.2 M12.8 6.6 L11 7.8 M21 9.6 L22.4 11.2 M19.2 6.6 L21 7.8', 'stroke-width': 1.1 }],
+    ['path', { d: 'M11.4 13 C12.6 11.4 19.4 11.4 20.6 13 L19.6 21.4 C19 24.6 17.6 26 16 26 C14.4 26 13 24.6 12.4 21.4 Z M13.2 15.4 L15 16 L14.4 17.4 Z M18.8 15.4 L17 16 L17.6 17.4 Z', fill: 'currentColor', stroke: 'none', 'fill-rule': 'evenodd' }],
+    ['path', { d: 'M11.4 13.6 L6.4 12.4 L9.4 15.6 Z M20.6 13.6 L25.6 12.4 L22.6 15.6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M13.8 27 C13.8 25.6 18.2 25.6 18.2 27 L19 30.5 H13 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
   // Glint coin: rim, inner ring, a glint stroke.
   coin: [
     ['circle', { cx: 16, cy: 16, r: 12.5 }],

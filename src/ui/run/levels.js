@@ -271,7 +271,8 @@ export function rushInfo() {
     name: t('The Boss Rush'),
     blurb: t('No rooms, no doors: the bosses one after another, a land at a time and then around again. A draft and the Peddler between fights.'),
     unlocked: open && solo,
-    bestSec: rec.rushBestSec ?? null,
+    // Only a best set on today's rush length (ten fights since the Spire).
+    bestSec: rec.rushBestFights === RUSH_RULES.fights ? rec.rushBestSec ?? null : null,
     mostFelled: rec.rushMostFelled || 0,
     runs: rec.rushRuns || 0,
     fights: RUSH_RULES.fights,

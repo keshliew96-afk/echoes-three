@@ -25,8 +25,8 @@
 // payloads and entity kinds, so the goldens cannot move.
 import { midiHz } from './voices.js';
 
-export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver']);
-const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver']);
+export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn']);
+const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn']);
 
 // Measured design peaks (dBFS at unity gain) — tools/boss-identity-cuecal.mjs.
 export const BOSS_CUE_CAL = {
@@ -121,6 +121,25 @@ export const BOSS_CUE_CAL = {
   bx_veinweaver_bind: 1.4,
   bx_veinweaver_slam: 3.2,
   bx_veinweaver_brood: -1.5,
+  // Act V (docs/ACT_V_BOSSES.md): offline estimates from the nearest kin
+  // (the Cantor's and the Colossus' cues); tools/boss-identity-cuecal.mjs
+  // --only hush (and skyhorn) re-measures them live.
+  bx_hush_sting: 3.5,
+  bx_hush_phase: 6,
+  bx_hush_fall: 4.5,
+  bx_skyhorn_sting: 6.5,
+  bx_skyhorn_phase: 6.3,
+  bx_skyhorn_fall: 5.5,
+  bx_hush_tell: -6,
+  bx_hush_note: 0.5,
+  bx_hush_unring: -1.5,
+  bx_hush_still: -2,
+  bx_hush_great: 3,
+  bx_skyhorn_tell: -3,
+  bx_skyhorn_rush: 1,
+  bx_skyhorn_wall: 3,
+  bx_skyhorn_toll: 2,
+  bx_skyhorn_leap: 3,
   // @cal end
 };
 
@@ -161,6 +180,19 @@ const I = {
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 200, q: 0.8, d: 0.16, gain: v * 0.75 }),
       k.tone(d, t + 0.2, { f0: 58, f1: 34, d: 0.3, gain: v * 0.7 })
     ),
+  // Act V (the spire theme's own): the heavy bronze knell and an airy
+  // breath tone (a filtered noise band with a faint sine under it).
+  knell: (k, d, t, f, v) =>
+    Math.max(
+      k.bell(d, t, { f: Math.max(f, 98), ratio: 1.41, index: 2.6, d: 2.2, gain: v * 0.8 }),
+      k.tone(d, t, { f0: 66, f1: 44, d: 0.5, gain: v * 0.7 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 260, q: 0.8, d: 0.2, gain: v * 0.5 })
+    ),
+  breath: (k, d, t, f, v, len) =>
+    Math.max(
+      k.noise(d, t, { f0: f * 2, q: 6, a: 0.12, hold: Math.max(0, len), d: 0.4, gain: v * 0.55 }),
+      k.tone(d, t, { f0: f, a: 0.1, hold: Math.max(0, len), d: 0.4, gain: v * 0.25 })
+    ),
 };
 
 // notes: [dt, midi, instr, velocity, len]; pitch scales every note (bake).
@@ -185,6 +217,8 @@ const VOICE = {
   mireking: { root: 57, lead: 'reed', drum: 'frame' }, // Sunken Mill, A phrygian
   ashraven: { root: 52, lead: 'toll', drum: 'taiko' }, // the Barrow, E harmonic minor
   veinweaver: { root: 49, lead: 'choir', drum: 'heart' }, // the Heart, C# phrygian
+  hush: { root: 53, lead: 'breath', drum: 'knell' }, // the Spire, F aeolian
+  skyhorn: { root: 53, lead: 'horn', drum: 'knell' }, // the Spire, F aeolian
 };
 
 // Signatures (~1.6-2.4 s): a phrase in the boss's own act key.
@@ -218,6 +252,13 @@ const STINGS = {
   // The Vein Weaver: glass picking up a web, C# D E F#, a heartbeat, then
   // the thread snaps back down to the tonic under the choir.
   veinweaver: [[0, 0, 'heart', 1], [0, 25, 'low', 1, 1.8], [0.1, 61, 'glass', 0.7], [0.22, 62, 'glass', 0.7], [0.34, 64, 'glass', 0.75], [0.46, 66, 'glass', 0.8], [0.7, 0, 'heart', 0.9], [0.7, 73, 'glass', 0.85, 0.8], [0.7, 49, 'choir', 0.45, 1.2], [0.7, 50, 'choir', 0.4, 1.2], [1.1, 61, 'glass', 0.6, 1.0]],
+  // Act V (docs/ACT_V_BOSSES.md). The Hush, the final boss: one knell, then a
+  // high choir chord (F A-flat C) that is cut off mid-breath, and in the
+  // silence a single bell, far off, a minor second too low.
+  hush: [[0, 0, 'knell', 1], [0, 29, 'low', 1, 1.6], [0.35, 65, 'choir', 0.45, 0.7], [0.35, 68, 'choir', 0.4, 0.7], [0.35, 72, 'choir', 0.4, 0.7], [0.35, 77, 'breath', 0.6, 0.7], [1.3, 76, 'bell', 0.35, 1.4], [1.3, 41, 'low', 0.5, 1.0]],
+  // The Skyhorn: hooves on stone (three knocks), a horn call F C F rising
+  // to the flat sixth, and the bronze knell under the last note.
+  skyhorn: [[0, 0, 'hand', 0.9], [0.1, 0, 'hand', 0.8], [0.2, 0, 'hand', 1], [0, 29, 'low', 0.9, 1.6], [0.3, 53, 'horn', 0.85, 0.28], [0.6, 60, 'horn', 0.9, 0.26], [0.92, 65, 'horn', 1, 0.3], [1.25, 61, 'horn', 0.9, 0.7], [1.25, 0, 'knell', 1], [1.25, 77, 'bell', 0.3, 1.2]],
 };
 
 // Add phase / enrage: the boss's lead rises a half step over its drum.
@@ -559,6 +600,70 @@ Object.assign(CUES, {
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 800), f1: P(p, 200), q: 0.8, d: 0.4, gain: 0.8 }),
       ...[0, 0.05].map((dt, i) => k.bell(d, t + 0.22 + dt, { f: P(p, 1300 + i * 500), ratio: 5.04, index: 1.1, d: 0.5, gain: 0.3 }))
     ), { maxVoices: 1, cooldownMs: 200 }),
+  // --- The Hush (Act V): breath, a cut-off choir, the knell.
+  // Its tell: breath drawn in, a high whisper rising.
+  bx_hush_tell: sfx(-12, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { f0: P(p, 2400), f1: P(p, 4200), q: 5, a: 0.2, d: 0.2, gain: 0.8 }),
+      k.tone(d, t, { f0: P(p, midiHz(77)), f1: P(p, midiHz(79)), glide: 0.3, a: 0.15, d: 0.2, gain: 0.2 })
+    )),
+  // The Still Note: a bell struck and choked at once, then the air goes dead.
+  bx_hush_note: sfx(-9, (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, midiHz(77)), ratio: 1.41, index: 1.6, d: 0.18, gain: 0.7 }),
+      k.tone(d, t, { f0: P(p, 140), f1: P(p, 60), d: 0.3, gain: 0.7 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 600), f1: P(p, 150), q: 0.8, d: 0.25, gain: 0.5 })
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // The Unringing: a reversed swell (a bell played backwards) down the lane.
+  bx_hush_unring: sfx(-9, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { f0: P(p, 900), f1: P(p, 3200), q: 1.5, a: 0.22, d: 0.08, gain: 0.8 }),
+      k.tone(d, t, { f0: P(p, midiHz(53)), f1: P(p, midiHz(65)), glide: 0.25, a: 0.22, d: 0.1, gain: 0.5 })
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // A Stillness: one small bell rings, then is gripped silent.
+  bx_hush_still: sfx(-10, (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, midiHz(84)), ratio: 3.5, index: 1.2, d: 0.35, gain: 0.6 }),
+      k.pad(d, t + 0.1, { notes: [P(p, midiHz(65)), P(p, midiHz(68))], dur: 0.4, a: 0.05, r: 0.3, gain: 0.35, formant: 700, type: 'sawtooth' })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // The Great Hush: the room's sound sucked away into one deep knell.
+  bx_hush_great: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 74), f1: P(p, 30), d: 0.9, gain: 1 }),
+      k.bell(d, t, { f: P(p, midiHz(41)), ratio: 1.41, index: 2.8, d: 2.0, gain: 0.8 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 500), f1: P(p, 90), q: 0.8, d: 0.6, gain: 0.9 })
+    ), { maxVoices: 1, cooldownMs: 400 }),
+  // --- The Skyhorn (Act V): hooves, bronze horns, stone.
+  bx_skyhorn_tell: sfx(-10, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 700), q: 1, d: 0.08, gain: 0.8 }),
+      k.noise(d, t + 0.14, { src: 'brown', type: 'lowpass', f0: P(p, 700), q: 1, d: 0.08, gain: 0.7 }),
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 90), f1: P(p, 110), a: 0.06, hold: 0.12, d: 0.2, gain: 0.3, filter: { f0: 500, q: 1.2 } })
+    )),
+  // The rush: a galloping run of hoofbeats.
+  bx_skyhorn_rush: sfx(-9, (k, t, d, p) =>
+    Math.max(...[0, 0.09, 0.18, 0.27, 0.36, 0.45].map((dt, i) => k.tone(d, t + dt, { f0: P(p, 150 - i * 6), f1: P(p, 70), d: 0.09, gain: 0.7 }))), { maxVoices: 1, cooldownMs: 200 }),
+  // Into the wall: a horn-clang (bronze), stone cracking.
+  bx_skyhorn_wall: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, midiHz(65)), ratio: 1.41, index: 2.4, d: 1.4, gain: 0.8 }),
+      k.tone(d, t, { f0: P(p, 110), f1: P(p, 40), d: 0.4, gain: 0.9 }),
+      k.noise(d, t, { f0: P(p, 2600), q: 1.2, d: 0.1, gain: 0.6 })
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // The Bell Toll: its horns clash, and the bell at its throat rings.
+  bx_skyhorn_toll: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, midiHz(53)), ratio: 1.41, index: 2.2, d: 1.6, gain: 0.8 }),
+      k.bell(d, t + 0.04, { f: P(p, midiHz(72)), ratio: 3.5, index: 1.2, d: 0.9, gain: 0.45 }),
+      k.noise(d, t, { f0: P(p, 3400), q: 2, d: 0.05, gain: 0.5 })
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // The Sky Leap lands: a heavy stamp and stone thrown up.
+  bx_skyhorn_leap: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 90), f1: P(p, 32), d: 0.55, gain: 1 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 200), q: 0.8, d: 0.45, gain: 0.9 }),
+      ...[0.06, 0.13, 0.22].map((dt, i) => k.noise(d, t + dt, { f0: P(p, 1800 + i * 500), q: 2, d: 0.04, gain: 0.35 }))
+    ), { maxVoices: 1, cooldownMs: 200 }),
   // The sacs: soft wet lobs.
   bx_veinweaver_brood: sfx(-11, (k, t, d, p) =>
     Math.max(...[0, 0.08, 0.16].map((dt, i) => k.tone(d, t + dt, { f0: P(p, 260 + i * 40), f1: P(p, 120), d: 0.12, gain: 0.5 }))), { maxVoices: 1, cooldownMs: 200 }),
@@ -585,9 +690,11 @@ const SPAWN_VOICE = {
   mireking: [{ cue: 'bx_mireking_flop', gainDb: -3 }, { cue: 'bx_mireking_tell', pitch: 0.8 }],
   ashraven: [{ cue: 'bx_ashraven_gust' }, { cue: 'bx_ashraven_tell', pitch: 0.85 }],
   veinweaver: [{ cue: 'bx_veinweaver_slam', gainDb: -3 }, { cue: 'bx_veinweaver_tell', pitch: 0.8 }],
+  hush: [{ cue: 'bx_hush_still' }, { cue: 'bx_hush_tell', pitch: 0.75 }],
+  skyhorn: [{ cue: 'bx_skyhorn_toll', gainDb: -4 }, { cue: 'bx_skyhorn_tell', pitch: 0.8 }],
 };
 // Per-attack tell pitch (boss_telegraph_start.attack).
-const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1, dive: 1, gust: 0.85, omen: 1.2, bind: 1.1, slam: 0.8 };
+const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1, dive: 1, gust: 0.85, omen: 1.2, bind: 1.1, slam: 0.8, unring: 1.1, great: 0.7, toll: 0.85, leap: 1.15 };
 
 // An attack with a tell of its own (the Mire King's gape draws breath in).
 const TELL_CUE = { swallow: 'bx_mireking_gape' };
@@ -667,6 +774,14 @@ export function createBossEventCues() {
     boss_bind: beat('bx_veinweaver_bind'),
     boss_vein_slam: beat('bx_veinweaver_slam'),
     boss_brood_sacs: beat('bx_veinweaver_brood'),
+    boss_still_note: beat('bx_hush_note'),
+    boss_unring: beat('bx_hush_unring'),
+    boss_stillness: beat('bx_hush_still'),
+    boss_great_hush: beat('bx_hush_great'),
+    boss_horn_rush: beat('bx_skyhorn_rush'),
+    boss_horn_rush_end: (ev, h) => (ev.wall ? [{ cue: 'bx_skyhorn_wall', ...at(ev, h, ev.id) }] : null),
+    boss_horn_toll: beat('bx_skyhorn_toll'),
+    boss_sky_leap: beat('bx_skyhorn_leap'),
   };
 }
 

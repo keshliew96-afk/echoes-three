@@ -83,6 +83,9 @@ const BOSS_ROWS = {
   ashraven: ['The barrow\'s carrion bird, grown huge on the ash of the pyres and masked in bone.', 'Carrion Dive: rises, then dives down a warning lane for 15. Wing Gust: a warning cone at its beak for 10 that blows you away. Omen: a warning ring that follows you, then locks and calls the crows down for 14.'],
   veinweaver: ['The Heart\'s own spider, met only in the deep descent, spinning violet veins through the dark.', 'Bind: a warning lane for 9 that ties you to it for a few seconds. Heartbeat Slam: a ring round it for 18; at the end of the thread you are out of reach. Brood Sacs: three warning rings for 10 that leave webs.'],
   colossus: ['A giant of black rock and pale crystal that the Heart grew to sing through.', 'Fissure: a warning lane for 17 that leaves crystal behind. Geode Rain drops four warning rings. Too close, it bursts round itself for 20.'],
+  // Act V (docs/ACT_V_BOSSES.md).
+  hush: ['The silence that stopped the gods: the quiet the Hollow Cantor sang into, sitting in their belfry beside them.', 'Still Note: a warning ring for 11 that slows. Unringing: a warning lane for 15. At each Stillness it calls the Spire\'s creatures, then the Great Hush: a huge ring round it for 20. Walk to the walls, then hit it while it sinks.'],
+  skyhorn: ['The Spire\'s warden, an ibex of the high ledges with horns cast in bell bronze.', 'Horn Rush: paws, then charges down a warning lane for 12 and throws you aside. Into a wall it stands dazed. Bell Toll: a ring round it for 12. From half health it leaps onto the farthest hero.'],
 };
 
 // The lands, in campaign order, and which of them each enemy lives in (its
@@ -96,8 +99,7 @@ export const BESTIARY = Object.freeze([
     const row = CHAMPION_ROWS[c.id] ?? ['', ''];
     return Object.freeze({ id: c.id, boss: false, champion: true, name: c.name, role: 'Champion', lore: row[0], text: row[1], lands: Object.freeze([c.act]) });
   }),
-  // (Level V's stand-in bosses, behind the Act V preview, keep their own
-  // land's page: each boss is listed once, at its first level.)
+  // (Each boss is listed once, at its first level.)
   ...ACT_IDS.flatMap((a) =>
     (LEVELS[a].bosses ?? []).map((b) => {
       const row = BOSS_ROWS[b.kind] ?? ['', ''];

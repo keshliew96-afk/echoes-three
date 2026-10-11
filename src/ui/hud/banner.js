@@ -68,6 +68,9 @@ export const BOSS_MEDAL = Object.freeze({
   mireking: 'boss_mireking',
   ashraven: 'boss_ashraven',
   veinweaver: 'boss_veinweaver',
+  // Act V (docs/ACT_V_BOSSES.md).
+  hush: 'boss_hush',
+  skyhorn: 'boss_skyhorn',
 });
 
 const el = (tag, cls, parent) => {

@@ -45,6 +45,9 @@ import mireking from './bosses/mireking.js';
 // Endless-only one (docs/THIRD_BOSSES.md).
 import ashraven from './bosses/ashraven.js';
 import veinweaver from './bosses/veinweaver.js';
+// Content plan 4, slice 3: Act V's two bosses (docs/ACT_V_BOSSES.md).
+import hush from './bosses/hush.js';
+import skyhorn from './bosses/skyhorn.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -89,7 +92,7 @@ export const STAG = Object.freeze({
 // and view shapes are hashed by the golden traces); every other boss is a
 // plain-data kit module (src/sim/bosses/<id>.js) driven through `kctx`, and
 // its body carries `boss: true` (status.isBoss) instead of kind 'stag'.
-export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram, cantor, colossus, gloamwolf, mireking, ashraven, veinweaver });
+export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram, cantor, colossus, gloamwolf, mireking, ashraven, veinweaver, hush, skyhorn });
 export const BOSS_KINDS = Object.freeze(['stag', ...Object.keys(BOSS_KITS)]);
 export const isBossKind = (k) => k === 'stag' || !!BOSS_KITS[k];
 // Display names per boss kind (HUD banner, end screens, path text).
