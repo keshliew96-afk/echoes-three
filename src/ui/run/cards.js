@@ -269,6 +269,11 @@ export const SKILL_BODY = {
   undertow: 'An undertow at the target for 4 s: 6 per second, soaks, and drags enemies inside toward its centre.',
   breaker: 'Crash. A breaking wave around the otter: 22 to up to 5 enemies, knocked back. +60% on a soaked enemy, which spends the soak.',
   tidepool: 'A passive pool: every second, the 2 nearest enemies within 2.5 u take 5 and are soaked.',
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md).
+  hang_bell: 'Hang a bell at the target for 8 s: it tolls every second for 7 to enemies in its ring, slowing them 20% for a moment. Three bells at most; a fourth replaces the oldest.',
+  peal: 'Ring every bell you have hung at once: 16 to up to 6 enemies round each bell and a 0.4 s daze (not the bosses). With no bell hung, it rings round the beetle.',
+  clapper: 'A thrown clapper: 12, and +50% on an enemy standing in one of your bells\' rings.',
+  hum: 'A passive hum: every second, the 3 nearest enemies within 2.2 u take 4.',
   // THE TIDECALLER, the rest of her kit (slice 3).
   torrent: 'Crash. A jet of water: 18 to every enemy along a 5.5 u line. +60% on a soaked enemy, which spends the soak.',
   whirlpool: 'A whirlpool at the target for 5 s: 4 per second, soaks, slows 30% and drags enemies inside toward its centre.',

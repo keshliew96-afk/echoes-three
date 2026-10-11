@@ -24,7 +24,7 @@ import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
 import { installMpStyle, mkBtn, setCaption, inviteLine } from './mpmenu.js';
 import { seatLabel, seatClass, CLASS_LABEL, CLASS_CRITTER } from '../../net/seats.js';
-import { LINEUP_CLASSES, tidecallerOpen } from '../../data/lineup.js';
+import { LINEUP_CLASSES, classOpen } from '../../data/lineup.js';
 import { ROSTER } from '../../net/protocol/messages.js';
 import { PLAY_CLASS_KEY } from '../../app/playclass.js';
 import { QUICK_MATCH_ALONE_MS } from '../../net/protocol/constants.js';
@@ -65,7 +65,7 @@ function installLobbyStyle() {
   s.textContent = CSS;
   document.head.appendChild(s);
 }
-const CLASS_TINT = { healer: '#33513C', tank: '#6B6157', swordsman: '#6B2E3A', archer: '#6E7A3F', tidecaller: '#2F5F8F' };
+const CLASS_TINT = { healer: '#33513C', tank: '#6B6157', swordsman: '#6B2E3A', archer: '#6E7A3F', tidecaller: '#2F5F8F', bellwright: '#7A5530' };
 
 // fix-DEPLOY-r6 (DEP6-F2): who plays and who builds what, told to THIS
 // viewer. PER-CHARACTER BUILDS (PLAN §16, BUILD_BRIEF §25.7): every human
@@ -158,7 +158,7 @@ export function createLobbyScreen(ctx) {
   // THE TIDECALLER (docs/LINEUP.md): every player picks their own character
   // from the whole roster; once every guest is ready, the host picks who
   // joins as AI for the empty seats (the Healer always comes).
-  const roster = () => ROSTER.filter((c) => c !== 'tidecaller' || tidecallerOpen());
+  const roster = () => ROSTER.filter((c) => classOpen(c));
   const meRow = el.querySelector('.nt-row-me');
   const teamRow = el.querySelector('.nt-row-team');
   const teamPick = el.querySelector('.nt-pick-team');

@@ -392,6 +392,34 @@ export const SKILLS = Object.freeze({
     delaySec: 1.0, // then the burst, where she cast it
     crash: true,
   }),
+
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): the beetle's four base skills. Her
+  // rhythm is hang, then ring: `bell` makes a placement one of her bells (it
+  // tolls on the zone beat, 1 s; at most CLASS_TECH.bellCap of them, a fourth
+  // takes her oldest one's place), `peal` rings every bell she has hung at
+  // once (round herself when none hang), and `ringBonus` hits harder on an
+  // enemy standing inside one of her bells' rings (sim/allycast.js).
+  hang_bell: Object.freeze({
+    id: 'hang_bell', name: 'Hang Bell', abbrev: 'HB', cls: 'bellwright', archetype: 'damage', shape: 'ground_aoe',
+    power: 7, cd: 5, range: 4.0, area: 1.3, durationSec: 8,
+    bell: true, // a bell that tolls once a second for 8 s
+    status: Object.freeze({ kind: 'slow', mag: 0.2, ticks: 36 }), // each toll shudders: 20% slower for 0.6 s
+  }),
+  peal: Object.freeze({
+    id: 'peal', name: 'Peal', abbrev: 'PE', cls: 'bellwright', archetype: 'damage', shape: 'nova',
+    power: 16, cd: 9, area: 1.5, count: 6,
+    peal: true, // every hung bell rings at once: up to 6 enemies round each bell, each struck once
+    status: Object.freeze({ kind: 'stun', mag: 1, ticks: 24 }), // a 0.4 s daze (not the bosses)
+  }),
+  clapper: Object.freeze({
+    id: 'clapper', name: 'Clapper', abbrev: 'CL', cls: 'bellwright', archetype: 'damage', shape: 'projectile',
+    power: 12, cd: 2.5, range: 4.8, speed: 6.5, count: 1, area: 0,
+    ringBonus: true, // +50% on an enemy inside one of her bells' rings
+  }),
+  hum: Object.freeze({
+    id: 'hum', name: 'Hum', abbrev: 'HU', cls: 'bellwright', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
+    power: 4, area: 2.2, count: 3, cadenceSec: 1.0, knockback: 0, // each second the 3 nearest enemies within 2.2 u, never pushed
+  }),
 });
 
 // A skill's class (Healer rows carry no `cls`).

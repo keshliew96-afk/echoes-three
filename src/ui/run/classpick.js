@@ -17,6 +17,8 @@
 // Until the profile frees the Verse of Water (the first Level II clear,
 // docs/TIDECALLER.md "Unlock") her card shows locked, with what frees her,
 // and the team view leaves her out: she is not a choice yet.
+// THE BELLWRIGHT (docs/BELLWRIGHT.md): a sixth card, Tolly the beetle, free
+// from the start (content plan 4, slice 4), marked NEW.
 // Blocking: the single-player sim pauses while it is open.
 import { px } from '../../app/style.js';
 import { PALETTE as P, CLASS_ACCENTS } from '../../data/palette.js';
@@ -38,6 +40,7 @@ const ROLE = Object.freeze({
   swordsman: () => t('Fast blade in the thick of it: quick strikes, dashes and burst damage.'),
   archer: () => t('Damage from range: arrows, volleys and traps. Keep your distance.'),
   tidecaller: () => t('Bends the fight with water: soak enemies, drag them together, then crash a wave into the soaked.'),
+  bellwright: () => t('Holds ground with bells: hang up to three that toll on the beat, then ring them all at once.'),
 });
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -187,9 +190,10 @@ export function createClassesScreen(ctx) {
     el.setAttribute('aria-label', team0 ? t('Who joins the team?') : t('Choose your class'));
     el.querySelector('.cs-blurb').textContent = team0
       ? t('Four seats: the Healer always comes, you play your class, and you choose who fills the rest. The AI plays everyone you do not.')
-      : PLAY_CLASSES.every(playable)
-        ? t('You play one of the five. The AI plays the rest of the party of four, so it is always whole.')
-        : t('You play one of the four. The AI plays the rest of the party, so it is always whole.');
+      : {
+          6: () => t('You play one of the six. The AI plays the rest of the party of four, so it is always whole.'),
+          5: () => t('You play one of the five. The AI plays the rest of the party of four, so it is always whole.'),
+        }[PLAY_CLASSES.filter(playable).length]?.() ?? t('You play one of the four. The AI plays the rest of the party, so it is always whole.');
     el.querySelector('.cs-k-move').textContent = team0 ? t('Choose') : t('Class');
     el.querySelector('.cs-k-pick').textContent = team0 ? t('Joins or stays') : t('Play this class');
     el.querySelector('.cs-k-back').textContent = team0 ? t('Done') : t('Back to camp');
@@ -206,7 +210,7 @@ export function createClassesScreen(ctx) {
       const locked = !playable(cls);
       b.classList.toggle('cs-locked', locked);
       const head =
-        (locked ? `<span class="cs-new cs-lock">${esc(t('LOCKED'))}</span>` : cls === 'tidecaller' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
+        (locked ? `<span class="cs-new cs-lock">${esc(t('LOCKED'))}</span>` : cls === 'bellwright' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
         `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(CLASS_CRITTER[cls]).toUpperCase() }))}</div>` +
         `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>`;
       if (team0) {

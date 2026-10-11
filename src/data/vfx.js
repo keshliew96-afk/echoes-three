@@ -96,6 +96,23 @@ export const CLASS_VFX = Object.freeze({
     bolt: Object.freeze({ look: 'orb', trail: 0.36, width: 0.12 }),
     camera: Object.freeze({ kick: 0.02, dolly: 0.02 }),
   }),
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): sound made visible. Round rings in
+  // Bell Brass with a Verdigris edge, Old Bronze grit; her bells and the
+  // Peal's waves are render/vfx/bellfx.js.
+  bellwright: Object.freeze({
+    id: 'bellwright',
+    shape: 'round',
+    core: PALETTE.parchment,
+    glow: VFX_SIGNATURE.bellwright.glow,
+    second: VFX_SIGNATURE.bellwright.second,
+    debrisColor: VFX_SIGNATURE.bellwright.debris,
+    slash: Object.freeze({ width: 0.2, sweep: 0.1, life: 0.34, arcs: 1, soft: 0.4 }),
+    ring: Object.freeze({ width: 0.14, life: 0.5, jag: 0, soft: 0.35 }),
+    light: Object.freeze({ scale: 1.0, opacity: 0.4, life: 0.3 }),
+    debris: Object.freeze({ chunk: 0, dust: 0, spark: 6, shard: 2, shardKind: 'needle', rise: true }),
+    bolt: Object.freeze({ look: 'orb', trail: 0.3, width: 0.1 }),
+    camera: Object.freeze({ kick: 0.025, dolly: 0.01 }),
+  }),
 });
 
 // Unknown class ids (a future fifth character) borrow the Healer's soft look
@@ -127,7 +144,7 @@ const SKILL_OWNER = new Map();
 for (const cls of Object.keys(CLASS_SKILLS)) for (const id of CLASS_SKILLS[cls]) SKILL_OWNER.set(id, cls);
 export function vfxSkillClass(skillId) {
   if (!skillId) return null;
-  const m = /^(tank|swordsman|archer|healer|tidecaller)_basic$/.exec(skillId);
+  const m = /^(tank|swordsman|archer|healer|tidecaller|bellwright)_basic$/.exec(skillId);
   if (m) return m[1];
   return SKILL_OWNER.get(skillId) ?? 'healer';
 }

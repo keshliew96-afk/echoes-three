@@ -40,7 +40,7 @@ import { PALETTE as P } from '../../data/palette.js';
 import { t } from '../../i18n/index.js';
 import { bindings, PAD, MOUSE_BUTTON_CODE } from '../../core/bindings.js';
 import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../../app/controls.js';
-import { tidecallerOpen } from '../../data/lineup.js';
+import { tidecallerOpen, bellwrightOpen, rosterGrown } from '../../data/lineup.js';
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
@@ -115,12 +115,19 @@ function tipText(id) {
   switch (id) {
     case 'classes':
       // THE TIDECALLER: once Rill has joined, the tip names five heroes.
+      // THE BELLWRIGHT: Tolly makes five, or six with Rill.
+      if (tidecallerOpen() && bellwrightOpen())
+        return { title: t('Choose who you play'), body: t('Six heroes now, Rill the Tidecaller and Tolly the Bellwright among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
+      if (bellwrightOpen())
+        return { title: t('Choose who you play'), body: t('Five heroes now, Tolly the Bellwright among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
       return tidecallerOpen()
         ? { title: t('Choose who you play'), body: t('Five heroes now, Rill the Tidecaller among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') }
         : { title: t('Choose who you play'), body: t('Each hero has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
     // THE TIDECALLER (docs/TIDECALLER.md): the first time the team view opens.
     case 'lineup':
-      return { title: t('Who joins the team'), body: t('Four seats, five friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.') };
+      return tidecallerOpen() && bellwrightOpen()
+        ? { title: t('Who joins the team'), body: t('Four seats, six friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.') }
+        : { title: t('Who joins the team'), body: t('Four seats, five friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.') };
     // ... and mid-fight, the first time a soaked enemy is crashed.
     case 'soaked':
       return { title: t('Soak, then crash'), body: t('Rill\'s water soaks enemies: they drip and move slower. Her Crash skills hit a soaked enemy 60% harder and use the soak up, so soak a pack first, then crash a wave through it.') };
@@ -556,7 +563,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       // THE TIDECALLER: the team view has its own tip (once the class tip is seen).
       const cs = document.querySelector('.cs-classes .cs-title');
       const teamView = !!(cs && cs.textContent === t('Who joins the team?'));
-      if (teamView && tidecallerOpen() && tipsSeen().includes('classes') && !(shown && shown.id === 'classes')) return 'lineup';
+      if (teamView && rosterGrown() && tipsSeen().includes('classes') && !(shown && shown.id === 'classes')) return 'lineup';
       return 'classes';
     }
     if (screensOpen()) return null;

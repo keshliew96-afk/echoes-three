@@ -1952,6 +1952,12 @@
    "src/ui/run/cards.js"
   ]
  },
+ "A passive hum: every second, the 3 nearest enemies within 2.2 u take 4.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A passive kestrel: every second, the nearest enemy within 4 u takes 6.": {
   "files": [
    "src/ui/run/cards.js"
@@ -2111,6 +2117,12 @@
   "files": [
    "src/save/index.js"
   ]
+ },
+ "A thrown clapper: 12, and +50% on an enemy standing in one of your bells' rings.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "A toadstool that learned to walk. It bursts like any mushroom, only angrier.": {
   "files": [
@@ -3318,6 +3330,14 @@
   ],
   "data": true
  },
+ "Bellwright": {
+  "files": [
+   "src/data/classes.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
  "BENCH": {
   "files": [
    "src/ui/run/transit.js",
@@ -4133,6 +4153,18 @@
  "Circles high, then hangs and marks a warning lane through a hero. It dives down it for 9 to every hero it crosses and lands in a heap: hit it then, it takes half again as much on the floor.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "CL": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Clapper": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -6203,6 +6235,11 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Five heroes now, Tolly the Bellwright among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Five lands. I inked the Spire at the very top of the page, and there is still paper above it.": {
   "files": [
    "src/data/story.js"
@@ -6343,6 +6380,11 @@
   "data": true
  },
  "Four seats, five friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Four seats, six friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -6786,6 +6828,18 @@
    "src/ui/menu/tabs/gameplay.js"
   ]
  },
+ "Hang a bell at the target for 8 s: it tolls every second for 7 to enemies in its ring, slowing them 20% for a moment. Three bells at most; a fourth replaces the oldest.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Hang Bell": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
  "Hare": {
   "files": [
    "src/net/seats.js"
@@ -6826,6 +6880,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "HB": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -7184,6 +7244,11 @@
   ],
   "data": true
  },
+ "Holds ground with bells: hang up to three that toll on the beat, then ring them all at once.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "Holds the front: heavy blows, taunts and the most health. Slow on its feet.": {
   "files": [
    "src/ui/run/classpick.js"
@@ -7297,6 +7362,18 @@
   "files": [
    "src/ui/run/cards.js"
   ]
+ },
+ "HU": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Hum": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
  },
  "Hunt": {
   "files": [
@@ -9613,6 +9690,18 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "PE": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Peal": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
  "Peddler's Seal": {
   "files": [
    "src/data/unlocks.js",
@@ -10708,6 +10797,12 @@
   ],
   "data": true
  },
+ "Ring every bell you have hung at once: 16 to up to 6 enemies round each bell and a 0.4 s daze (not the bosses). With no bell hung, it rings round the beetle.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Ring it for me when you reach the bottom.": {
   "files": [
    "src/data/story.js"
@@ -11526,6 +11621,11 @@
    "src/sim/nodes.js"
   ],
   "data": true
+ },
+ "Six heroes now, Rill the Tidecaller and Tolly the Bellwright among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "Skewer": {
   "files": [
@@ -15602,6 +15702,11 @@
   ]
  },
  "You play one of the four. The AI plays the rest of the party, so it is always whole.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "You play one of the six. The AI plays the rest of the party of four, so it is always whole.": {
   "files": [
    "src/ui/run/classpick.js"
   ]

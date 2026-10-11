@@ -50,6 +50,8 @@ export function telegraphCovers(registry, x, z, tick) {
 // THE TIDECALLER: a live soak on an enemy (sim/status.js).
 const CHAMPIONS = new Set(['briar_knight', 'sluice_warden', 'bone_reeve', 'hollow_choir']);
 const soakedNow = (e, tick) => !!(e && e.status && e.status.soaked && e.status.soaked.untilTick > tick);
+// THE BELLWRIGHT: the bells a seat has hung (its azones flagged `bell`).
+const bellsOf = (registry, id) => registry.all().filter((z) => z.kind === 'azone' && z.bell && z.sourceId === id);
 
 // castChoice(a, tick, ctx) -> { slot, def, target } | null
 //   ctx: { registry, slots (ids ×4), resolve(def), baseDef(id), cds (a.cds),
@@ -350,6 +352,53 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
       const drawn = near(a.x, a.z, def.drawArea ?? def.area);
       if (drawn.length >= 4 || drawn.filter((e) => soakedNow(e, tick)).length >= 2) return target ?? drawn[0];
       return null;
+    }
+    // ---------------------------------------------------- Bellwright --
+    // THE BELLWRIGHT (docs/BELLWRIGHT.md §AI): hang, then ring.
+    case 'hang_bell': {
+      // The densest pack in reach that no bell of hers already covers, a pack
+      // by the Tank or the Waystone first; else the target.
+      const bells = bellsOf(ctx.registry, a.id);
+      const tank = ctx.party().find((m) => m.classId === 'tank' && m.hp > 0) ?? null;
+      const w = ctx.waystone ? ctx.waystone() : null;
+      let best = null;
+      let bestScore = 0;
+      for (const e of hostiles) {
+        if (dist(e) > def.range) continue;
+        if (bells.some((z) => d2(e.x, e.z, z.x, z.z) <= z.radius * z.radius * 0.6)) continue;
+        const n = near(e.x, e.z, def.area + 0.4).length;
+        const fed = (tank && d2(e.x, e.z, tank.x, tank.z) <= 4) || (w && d2(e.x, e.z, w.x, w.z) <= 4) ? 0.5 : 0;
+        const score = n + fed;
+        if (score > bestScore || (score === bestScore && best && e.id < best.id)) {
+          bestScore = score;
+          best = e;
+        }
+      }
+      if (best) return best;
+      return inRange && !bells.some((z) => d2(target.x, target.z, z.x, z.z) <= z.radius * z.radius * 0.6) ? target : null;
+    }
+    case 'peal': {
+      // The Peal waits for its payoff: two enemies inside her bells' rings,
+      // or one elite, champion or boss. With no bell hung it rings round her
+      // (two in the burst, or one on top of her).
+      const bells = bellsOf(ctx.registry, a.id);
+      if (bells.length) {
+        const rung = hostiles.filter((e) => bells.some((z) => d2(e.x, e.z, z.x, z.z) <= def.area * def.area));
+        if (rung.length >= 2 || rung.some((e) => e.elite || CHAMPIONS.has(e.kind) || e.boss === true || e.kind === 'stag')) return rung[0];
+        return null;
+      }
+      const around = near(a.x, a.z, def.area);
+      if (around.length >= 2) return around[0];
+      const rush = near(a.x, a.z, 0.9).filter((e) => e.targetId === a.id);
+      return rush[0] ?? null;
+    }
+    case 'clapper': {
+      // An enemy standing in one of her rings first (the Clapper's +50%).
+      const bells = bellsOf(ctx.registry, a.id);
+      const rung = hostiles
+        .filter((e) => dist(e) <= def.range && bells.some((z) => d2(e.x, e.z, z.x, z.z) <= z.radius * z.radius))
+        .sort((p, q) => dist(p) - dist(q) || p.id - q.id)[0];
+      return rung ?? (inRange ? target : null);
     }
     default:
       // The 12 starting skills: §7 — target in shape range.

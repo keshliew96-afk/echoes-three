@@ -123,6 +123,8 @@ const ALLY_SPOTS = [
   // THE TIDECALLER: the fifth critter. Only the classes in the run's lineup
   // show (render/allies hides the one at camp).
   ['tidecaller', 0.9, -2.4],
+  // THE BELLWRIGHT: the sixth.
+  ['bellwright', -1.2, -2.6],
 ];
 // Healer clip arbitration (downed > hurt > cast > walk/idle):
 const CAST_PHASE = 0.45; // s into the cast clip = the release pop (§6 instant cast)

@@ -57,6 +57,9 @@ const CLASS_SETS = {
     ['whirlpool', 'crashing_wave', 'bubble_ward', 'ripple_step'],
     ['rain_squall', 'maelstrom', 'riverbolt', 'tidepool'],
   ],
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): her four base skills — three bells
+  // hung, the Clapper into a ring, the Peal, then the Hum.
+  bellwright: [['hang_bell', 'clapper', 'peal', 'hum']],
 };
 const ENEMIES = [
   ['Act I', 1, ['boar', 'mantis', 'quillback', 'toad', 'moth', 'ram', 'mole', 'wasp', 'thornling']],
@@ -322,18 +325,19 @@ export function mountVfxLab() {
   // between rooms: start a Level 1 campaign with her on seat 3 (if she is
   // not in the party), clear the room, put the set on her keys, walk into
   // the next room, then play it at the training targets.
-  async function tideReel(set) {
-    if (seatOf('tidecaller') == null) {
-      say('starting a campaign with Rill on the team...');
+  // THE BELLWRIGHT joins the same way (Tolly on seat 3).
+  async function tideReel(set, cls = 'tidecaller') {
+    if (seatOf(cls) == null) {
+      say(`starting a campaign with the ${cls} on the team...`);
       if (run().active) {
         X().cmd('abandonRun', 'quit');
         await wait(300);
       }
-      X().cmd('startCampaign', { level: 1, lineup: ['healer', 'tank', 'swordsman', 'tidecaller'] });
+      X().cmd('startCampaign', { level: 1, lineup: ['healer', 'tank', 'swordsman', cls] });
       for (let i = 0; i < 150 && run().phase !== 'combat'; i++) await wait(100);
     }
-    const seat = seatOf('tidecaller');
-    if (seat == null) return say('Rill could not join (no campaign lineup)');
+    const seat = seatOf(cls);
+    if (seat == null) return say(`the ${cls} could not join (no campaign lineup)`);
     X().cmd('partyMode', 'manual');
     for (let i = 0; i < 900 && run().phase === 'combat'; i++) {
       X().cmd('killAllEnemies');
@@ -345,7 +349,7 @@ export function mountVfxLab() {
       if (s[k] === id) return;
       // A skill already on another key moves off it first (a key holds one).
       const j = s.indexOf(id);
-      const spare = CLASS_SETS.tidecaller.flat().find((x) => !s.includes(x) && !set.includes(x));
+      const spare = CLASS_SETS[cls].flat().find((x) => !s.includes(x) && !set.includes(x));
       if (j >= 0 && spare) X().cmd('partySwap', seat, spare, j);
       X().cmd('partySwap', seat, id, k);
     });
@@ -354,11 +358,24 @@ export function mountVfxLab() {
     for (let i = 0; i < 100 && !(run().phase === 'combat' && run().room === next); i++) await wait(100);
     await wait(600);
     for (let k = 0; k < set.length; k++) {
-      if (set[k] === 'tidepool') {
+      if (set[k] === 'tidepool' || set[k] === 'hum') {
         const me = X().content.world().entities().find((e) => e.partyIndex === seat);
         if (me) for (const dx of [-1, 1]) X().cmd('spawn', 'dummy', me.x + dx, me.z - 1);
-        say('tidecaller: tidepool (passive, pulses on its own)');
+        say(`${cls}: ${set[k]} (passive, pulses on its own)`);
         await wait(3000);
+        continue;
+      }
+      if (set[k] === 'hang_bell') {
+        // Three bells in a row in front of her, a dummy under each.
+        const me = X().content.world().entities().find((e) => e.partyIndex === seat);
+        const f = me ? { x: me.x, z: me.z - 2.4 } : front();
+        say(`${cls}: hang bell x3`);
+        for (const dx of [-1.6, 0, 1.6]) {
+          X().cmd('spawn', 'dummy', f.x + dx, f.z);
+          X().cmd('partyCast', seat, k, { x: f.x + dx, z: f.z });
+          await wait(700);
+        }
+        await wait(1200);
         continue;
       }
       // The targets stand 2.2 u in front of Rill herself (her zones reach
@@ -367,15 +384,16 @@ export function mountVfxLab() {
       const f = me ? { x: me.x, z: me.z - 2.2 } : front();
       for (const [dx, dz] of [[-0.9, 0], [0, -0.5], [0.9, 0]]) X().cmd('spawn', 'dummy', f.x + dx, f.z + dz);
       if (set[k] === 'ripple_step' && me) X().cmd('spawn', 'dummy', me.x + 0.4, me.z);
-      say(`tidecaller: ${set[k].replace(/_/g, ' ')}`);
+      say(`${cls}: ${set[k].replace(/_/g, ' ')}`);
       await wait(250);
       X().cmd('partyCast', seat, k, { x: f.x, z: f.z });
       await wait(set[k] === 'maelstrom' || set[k] === 'rain_squall' ? 2600 : 1600);
     }
-    say('tidecaller reel done');
+    say(`${cls} reel done`);
   }
   const party = section('Party skills (reels)');
   CLASS_SETS.tidecaller.forEach((set, i) => button(party, `Tidecaller ${'ABC'[i]}`, () => tideReel(set), set.join(', ')));
+  CLASS_SETS.bellwright.forEach((set, i) => button(party, `Bellwright ${'ABC'[i]}`, () => tideReel(set, 'bellwright'), set.join(', ')));
   for (const cls of ['tank', 'swordsman', 'archer']) CLASS_SETS[cls].forEach((set, i) => button(party, `${cls[0].toUpperCase()}${cls.slice(1)} ${'ABC'[i]}`, () => classReel(cls, set), set.join(', ')));
   HEALER_SETS.forEach((set, i) => button(party, `Healer ${'ABCD'[i]}`, () => healerReel(set), set.join(', ')));
 
