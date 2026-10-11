@@ -20,8 +20,8 @@
 import { moveOf, moveIndex } from './remote.js';
 
 // Press bits of the INPUT frame (codec.js PRESS): 0 dodge, 1..8 skill_1..8,
-// 9 interact.
-export const PRESS_BITS = Object.freeze({ dodge: 0, skill_1: 1, skill_2: 2, skill_3: 3, skill_4: 4, skill_5: 5, skill_6: 6, skill_7: 7, skill_8: 8, interact: 9 });
+// 9 interact, 10 use_item (TONICS AND BOMBS).
+export const PRESS_BITS = Object.freeze({ dodge: 0, skill_1: 1, skill_2: 2, skill_3: 3, skill_4: 4, skill_5: 5, skill_6: 6, skill_7: 7, skill_8: 8, interact: 9, use_item: 10 });
 const BIT_KINDS = Object.entries(PRESS_BITS).sort((a, b) => a[1] - b[1]);
 
 export const SEAT_REASONS = Object.freeze(['join', 'drop', 'away', 'return', 'migrate']);

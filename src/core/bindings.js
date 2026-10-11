@@ -30,6 +30,8 @@ export const ACTIONS = Object.freeze([
   { id: 'skill3', def: 'Digit3', group: 'play' },
   { id: 'skill4', def: 'Digit4', group: 'play' },
   { id: 'interact', def: 'KeyE', group: 'play' },
+  // TONICS AND BOMBS (docs/CONSUMABLES.md): the hero's carry slot.
+  { id: 'useItem', def: 'KeyQ', group: 'play' },
   { id: 'rally', def: 'KeyR', group: 'play' },
   { id: 'markEnemy', def: 'Tab', group: 'play' },
   { id: 'ally1', def: 'F1', group: 'play' },
@@ -74,6 +76,7 @@ export const PAD_PLAY = Object.freeze({
   [PAD.LEFT]: 'allyPrev',
   [PAD.RIGHT]: 'allyNext',
   [PAD.DOWN]: 'allyAgain',
+  [PAD.RS]: 'useItem',
 });
 // The button each action reads as on a gamepad (hint text; English on purpose,
 // docs/I18N.md "Left in English").
@@ -87,6 +90,7 @@ export const PAD_LABEL = Object.freeze({
   skill3: 'B',
   skill4: 'RB',
   interact: 'A',
+  useItem: 'RS',
   rally: 'LB',
   markEnemy: 'D-pad ▲',
   allyCycle: 'D-pad ◀ ▶',

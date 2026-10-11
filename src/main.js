@@ -285,6 +285,9 @@ registerChampionCues(service('audio'));
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the vault and its hoard.
 import { registerVaultCues } from './audio/vaultcues.js';
 registerVaultCues(service('audio'));
+// TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot's sounds.
+import { registerTonicCues } from './audio/tonicues.js';
+registerTonicCues(service('audio'));
 // NEW ENEMIES (docs/WOOD_MILL_ENEMIES.md): the Wood's and the Mill's new creatures.
 import { registerWoodMillCues } from './audio/woodmillcues.js';
 registerWoodMillCues(service('audio'));

@@ -31,6 +31,7 @@ const FILES = [
   { file: 'src/audio/woodmillcues.js', match: (id) => id.startsWith('wm_') },
   { file: 'src/audio/barrowheartcues.js', match: (id) => id.startsWith('bh_') },
   { file: 'src/audio/tidecues.js', match: (id) => id.startsWith('td_') },
+  { file: 'src/audio/tonicues.js', match: (id) => id.startsWith('tn_') },
 ].filter((f) => !argv.includes('--only') || f.file.includes(argv[argv.indexOf('--only') + 1]));
 const { browser, page, errors } = await openAudio(`${BASE}?menu=0&seed=7`);
 try {

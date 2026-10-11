@@ -576,6 +576,48 @@ export function mountVfxLab() {
     say('two elites with two powers each');
   }, 'Molten + Hasted crab, Frozen + Warded boar');
 
+  // ------------------------------------------------------ tonics and bombs --
+  // TONICS AND BOMBS (docs/CONSUMABLES.md): a campaign room (the slot is
+  // campaign-only), training dummies in front, then each kind used from the
+  // Healer's slot, a loose one dropped, the charm against live shots.
+  const tonicRow = section('Tonics and bombs');
+  async function tonicRoom() {
+    const tv = () => X().cmd('tonicState');
+    if (!(run().active && run().phase === 'combat' && tv())) {
+      if (run().active) {
+        X().cmd('abandonRun', 'quit');
+        await wait(300);
+      }
+      X().cmd('startCampaign', { level: 1 });
+      for (let i = 0; i < 150 && run().phase !== 'combat'; i++) await wait(100);
+      await wait(400);
+    }
+    X().cmd('killAllEnemies');
+    return !!tv();
+  }
+  for (const [id, label] of [['mend_tonic', 'Mending Tonic'], ['haste_draught', 'Haste Draught'], ['ward_flask', 'Ward Flask'], ['fire_bomb', 'Fire Bomb'], ['frost_bomb', 'Frost Bomb'], ['bell_charm', 'Bell Charm']]) {
+    button(tonicRow, label, async () => {
+      if (!(await tonicRoom())) return say('no tonics here (campaign only)');
+      const f = targets();
+      if (id === 'bell_charm') {
+        // Two mantises a few steps off so there are shots to shatter.
+        X().cmd('spawn', 'mantis', f.x - 2.5, f.z - 2.5);
+        X().cmd('spawn', 'mantis', f.x + 2.5, f.z - 2.5);
+        await wait(2600);
+      }
+      X().cmd('tonicGive', 0, id);
+      X().cmd('tonicUse', 0, f.x, f.z);
+      say(`${label} used from the Healer's slot`);
+    }, `use a ${label} in a campaign room`);
+  }
+  button(tonicRow, 'Drop one', async () => {
+    if (!(await tonicRoom())) return say('no tonics here (campaign only)');
+    const f = front();
+    const ids = ['mend_tonic', 'haste_draught', 'ward_flask', 'fire_bomb', 'frost_bomb', 'bell_charm'];
+    X().cmd('tonicDrop', ids[Math.floor(Math.random() * ids.length)], f.x, f.z);
+    say('a loose one lands in front of the party (walk over it)');
+  }, 'a loose tonic falls in front of the party');
+
   // ------------------------------------------------------------ champions --
   // CHAMPION ROOMS (docs/CHAMPIONS.md): each act's champion spawned in front
   // of the party in its own land (crown, sigil, both moves, the rage below

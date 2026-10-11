@@ -32,6 +32,9 @@ export const DISCRETE_INTENTS = Object.freeze([
   // until the interactables system resolves it (after revive arbitration: a
   // press next to a Downed ally is a revive, never an interaction).
   'interact',
+  // TONICS AND BOMBS (docs/CONSUMABLES.md): use the hero's carry slot (Q /
+  // pad RS). Press bit 10 on the wire (net/protocol/codec.js PRESS).
+  'use_item',
   'rally', // player-only
   'target_cycle', // player-only
   'target_select', // player-only, carries index 0-3

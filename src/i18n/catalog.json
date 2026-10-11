@@ -2112,6 +2112,11 @@
   ],
   "data": true
  },
+ "a tonic into your own slot · paid from the {cls}'s purse · <b>7</b>": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
  "A trap at the target for 3 s: 16 per second, and it snaps shut with a 0.7 s stun (not the bosses).": {
   "files": [
    "src/ui/run/cards.js"
@@ -3265,6 +3270,12 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Bell Charm": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
+ },
  "Bell Toll": {
   "files": [
    "src/sim/skills.js"
@@ -3434,6 +3445,11 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "BOMB": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
  },
  "Bone Knight": {
   "files": [
@@ -3804,6 +3820,11 @@
   ],
   "data": true
  },
+ "Carry slot: empty. Elites, chests and the Peddler give tonics and bombs.": {
+  "files": [
+   "src/ui/hud/commandbar.js"
+  ]
+ },
  "catchup": {
   "files": [
    "src/ui/socket/index.js"
@@ -3929,6 +3950,11 @@
    "src/data/journal.js"
   ],
   "data": true
+ },
+ "CHARM": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
  },
  "Check": {
   "files": [
@@ -5174,6 +5200,24 @@
   ],
   "data": true
  },
+ "Drink: +35% move speed and +15% damage for 8 s.": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
+ },
+ "Drink: a shield of 40% of max HP for 10 s.": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
+ },
+ "Drink: heal 50% of max HP at once.": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
+ },
  "Drinker": {
   "files": [
    "src/data/journal.js"
@@ -6016,6 +6060,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Fire Bomb": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
+ },
  "first hit per enemy crits.": {
   "files": [
    "src/ui/run/cards.js"
@@ -6302,6 +6352,12 @@
   "files": [
    "src/ui/menu/lobby.js"
   ]
+ },
+ "Frost Bomb": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
  },
  "Frozen": {
   "files": [
@@ -6615,6 +6671,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Haste Draught": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
  },
  "Hasted": {
   "files": [
@@ -8197,6 +8259,12 @@
  "Mending Tide": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Mending Tonic": {
+  "files": [
+   "src/sim/consumables.js"
   ],
   "data": true
  },
@@ -10145,6 +10213,11 @@
    "src/ui/run/shop.js"
   ]
  },
+ "relics for the whole party · a tonic into your own slot · paid from the {cls}'s purse · <b>5</b>/<b>6</b>/<b>7</b>": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
  "Relics last the whole run. Choose one.": {
   "files": [
    "src/ui/run/relic.js"
@@ -10470,6 +10543,12 @@
  "Ring it for me when you reach the bottom.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Ring: shatters every enemy shot within 8 u and wards the heroes near you (-30% damage taken for 4 s).": {
+  "files": [
+   "src/sim/consumables.js"
   ],
   "data": true
  },
@@ -11358,6 +11437,11 @@
  "Slot {n}": {
   "files": [
    "src/save/describe.js"
+  ]
+ },
+ "SLOT FULL": {
+  "files": [
+   "src/ui/run/shop.js"
   ]
  },
  "slot order = keys 1–4": {
@@ -14048,6 +14132,18 @@
    "src/ui/run/transit.js"
   ]
  },
+ "Throw: bursts at the aim and leaves fire burning for 3 s.": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
+ },
+ "Throw: bursts at the aim, freezes foes for 1 s and slows them 50% for 4 s.": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
+ },
  "Tidecaller": {
   "files": [
    "src/data/classes.js",
@@ -14164,6 +14260,16 @@
    "src/data/journal.js"
   ],
   "data": true
+ },
+ "TONIC": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
+ },
+ "TONICS": {
+  "files": [
+   "src/ui/run/shop.js"
+  ]
  },
  "Too late — that choice already closed": {
   "files": [
@@ -14354,6 +14460,11 @@
  "Use this site’s server": {
   "files": [
    "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Use tonic or bomb": {
+  "files": [
+   "src/ui/menu/tabs/controls.js"
   ]
  },
  "Uses {site} instead of the custom address": {
@@ -14644,6 +14755,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Ward Flask": {
+  "files": [
+   "src/sim/consumables.js"
+  ],
+  "data": true
  },
  "Warded": {
   "files": [

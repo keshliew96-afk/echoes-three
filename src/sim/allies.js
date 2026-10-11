@@ -1221,6 +1221,9 @@ export function createAllySystem({
   // the AI hand-back and the HUD. Replicated (saved) with the seat block.
   const humanTimers = [null, null, null, null]; // { cds: [seq x4], basic: seq, dodge: seq }
   const humanInteractList = [];
+  // TONICS AND BOMBS: the human seats' slot presses this tick ({ seat, aim }),
+  // resolved by the run system after the content pass.
+  const humanUseList = [];
   // Host-side lag-compensation counters (debug / net stats only, never sim state).
   const lagStats = { selections: 0, rewound: 0, rewindTicks: 0, hits: 0, compHits: 0, aimAssists: 0, enabled: true };
   const isHuman = (a) => !!a && a.partyIndex > 0 && seatFrames[a.partyIndex] !== null;
@@ -1305,6 +1308,7 @@ export function createAllySystem({
     }
     seatFrames = next;
     humanInteractList.length = 0;
+    humanUseList.length = 0;
   }
 
   // Lag compensation (host): run `select` with every hostile the rewind map
@@ -1435,6 +1439,7 @@ export function createAllySystem({
     const pseq = (kind) => (f.pressSeq && Number.isInteger(f.pressSeq[kind]) ? f.pressSeq[kind] : f.seq);
     const tagOf = (kind) => ({ seat: i, inputSeq: pseq(kind) });
     const kinds = new Set(f.presses.map((p) => p.kind));
+    if (kinds.has('use_item')) humanUseList.push({ seat: i, aim: f.aim ? { x: f.aim.x, z: f.aim.z } : null });
     const S = ALLY_CLASSES[a.classId];
     const loadout = loadoutOf(a);
     const moving = f.moves.some((m) => m.x !== 0 || m.z !== 0);
@@ -2404,6 +2409,7 @@ export function createAllySystem({
     }
     seatFrames = [null, null, null, null];
     humanInteractList.length = 0;
+    humanUseList.length = 0;
   }
 
   return {
@@ -2439,6 +2445,7 @@ export function createAllySystem({
     // the seat controllers and the lag-compensation counters.
     setSeatInputs,
     humanInteracts: () => humanInteractList,
+    humanUses: () => humanUseList,
     controllers: () => [...controllers],
     isHumanSeat: (i) => seatFrames[i] != null,
     lagStats: () => ({ ...lagStats }),

@@ -48,6 +48,7 @@ import { HITFLASH } from '../../core/constants.js';
 import { buildEncounter, ENCOUNTER_KINDS } from './encounters.js';
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the hoard and the vault.
 import { buildVaultRig, VAULT_KINDS } from './vaults.js';
+import { buildTonicRig, TONIC_KINDS } from './tonics.js';
 
 const HEAL = exactColor(PALETTE.brightHeal);
 const BONE_STONE = new Color(PALETTE.bone).multiplyScalar(0.8);
@@ -512,6 +513,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
       case 'encounter':
         return buildEncounter(e);
       default:
+        if (TONIC_KINDS.includes(e.kind)) return buildTonicRig(e);
         return VAULT_KINDS.includes(e.kind) ? buildVaultRig(e) : null;
     }
   }
@@ -568,7 +570,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     const ctx = { tick: world.tick, cosmetic, camQuat: stage.camera.quaternion };
     const seen = new Set();
     for (const e of world.entities()) {
-      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter' && !VAULT_KINDS.includes(e.kind)) continue;
+      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter' && !VAULT_KINDS.includes(e.kind) && !TONIC_KINDS.includes(e.kind)) continue;
       seen.add(e.id);
       let rec = rigs.get(e.id);
       if (!rec) {
@@ -583,6 +585,8 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
         if (e.kind === 'encounter' && r.restore) r.restore(e.uses === 0 && encounterSpent());
         root.add(r.group);
       }
+      // TONICS AND BOMBS: a thrown bomb's rig follows its body.
+      if (rec.r.follow) rec.r.group.position.set(e.x, 0, e.z);
       rec.r.update(e, tSec, ctx, dt);
       if (e.kind === 'kegfuse') {
         let sh = fuseTele.get(e.id);
@@ -631,6 +635,9 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     warmPark(root, buildBell().group);
     for (const encounter of ENCOUNTER_KINDS) warmPark(root, buildEncounter({ encounter, uses: 1 }).group);
     for (const kind of VAULT_KINDS) warmPark(root, buildVaultRig({ kind, uses: 1 }).group);
+    for (const item of ['mend_tonic', 'fire_bomb', 'bell_charm']) warmPark(root, buildTonicRig({ kind: 'tonic_item', item }).group);
+    warmPark(root, buildTonicRig({ kind: 'tonic_bomb', item: 'frost_bomb', launchTick: 0, landTick: 27 }).group);
+    warmPark(root, buildTonicRig({ kind: 'tonic_fire', radius: 2.1, untilTick: 0 }).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);
   }

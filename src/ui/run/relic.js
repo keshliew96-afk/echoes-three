@@ -64,6 +64,12 @@ export const RELIC_CSS = `
     border: 2px solid var(--rar, ${PALETTE.bone}); box-shadow: 0 0 14px #00000088, inset 0 0 12px #00000066;
     transition: top 110ms ease, box-shadow 110ms ease; top: 0;
   }
+  /* TONICS AND BOMBS: with the tonic stand the rack carries three tiles, so
+     each narrows; the stand's tile wears its item's colour (--rar). */
+  #run-screen .rn-shop .rl-rack-stand .rl-rackrow { gap: 10px; flex-wrap: nowrap; }
+  #run-screen .rn-shop .rl-rack-stand .rl-ritem { width: 300px; max-width: 31vw; }
+  #run-screen .rn-shop .rl-rack-stand .rl-rbody { font-size: 13px; }
+  #run-screen .rn-shop .rl-stand .rl-ricon { background: radial-gradient(circle at 40% 32%, #3A3A30 0%, #1C2230 100%); }
   #run-screen .rn-shop .rl-ritem.rl-rhover { top: -4px; box-shadow: 0 0 0 2px ${PALETTE.voidCharcoal}, 0 0 0 4px ${PALETTE.parchment}, 0 0 22px var(--rar, ${PALETTE.bone}); }
   #run-screen .rn-shop .rl-ricon {
     flex: none; width: 44px; height: 44px; border-radius: 10px; display: flex; align-items: center; justify-content: center;

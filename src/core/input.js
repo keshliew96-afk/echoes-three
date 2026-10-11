@@ -27,6 +27,8 @@ const ACTION_TO_PRESS = Object.freeze({
   // The interact key is ALSO the held revive channel (sample() reads it as
   // reviveHeld); the discrete press feeds interactables (PLAN §4.6).
   interact: { kind: 'interact' },
+  // TONICS AND BOMBS: the carry slot (bombs fly to the aim point).
+  useItem: { kind: 'use_item' },
   rally: { kind: 'rally' },
   markEnemy: { kind: 'target_cycle' },
   ally1: { kind: 'target_select', index: 0 },

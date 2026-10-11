@@ -529,6 +529,17 @@ export function hudCss() {
 .hud-slot.is-empty .hud-slot-abbrev { color: ${CHROME.rimHot}; background: ${CHROME.plate}; box-shadow: none; }
 .hud-slot.is-empty .hud-slot-ring .rr { stroke: ${CHROME.rimDim}; stroke-dasharray: 3 4; }
 .hud-slot-key { background: ${CHROME.plateHi}; z-index: 4; }
+/* TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot takes its item's
+   colour on the rim and the icon (--tonic), pops on a find and flashes out on
+   a use. Empty, it is the dashed empty-slot grammar. */
+.hud-slot.hud-slot-tonic:not(.is-empty) { border-color: var(--tonic); box-shadow: inset 0 -2px 0 0 ${CHROME.plateSunk}, 0 0 10px var(--tonic); }
+.hud-slot.hud-slot-tonic:not(.is-empty) .hud-slot-abbrev { color: var(--tonic); }
+.hud-slot.hud-slot-tonic:not(.is-empty) .hud-slot-ico svg { filter: drop-shadow(0 0 4px var(--tonic)); }
+.hud-slot.hud-slot-tonic .hud-slot-ring { display: none; }
+.hud-slot.hud-slot-tonic.tonic-pop { animation: hud-tonic-pop 0.6s cubic-bezier(.2,1.6,.4,1); }
+.hud-slot.hud-slot-tonic.tonic-spent { animation: hud-tonic-spent 0.5s ease-out; }
+@keyframes hud-tonic-pop { 0% { transform: scale(0.5); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
+@keyframes hud-tonic-spent { 0% { box-shadow: 0 0 0 4px ${PALETTE.parchment}, 0 0 26px ${PALETTE.parchment}; } 100% { box-shadow: inset 0 -2px 0 0 ${CHROME.plateSunk}; } }
 /* GLYPH BAND = the MEDALLION (check 9: icons + cooldown radials). A ${MED}px
    sunk charcoal disc centred in the band below the key chip; the conic veil is
    clipped INSIDE it (a clock face, not a corner wedge), the drawn icon sits

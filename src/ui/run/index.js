@@ -359,6 +359,8 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       s ? s.stock.map((i) => `${i.node}${i.price}${i.sold ? 'x' : ''}${i.owned}`).join('|') : '-',
       // SHOP REFRESH: the Refresh button's price moves with each refresh.
       s ? `r${s.refreshes || 0}:${v.partyShop && v.partyShop.refreshes ? v.partyShop.refreshes.join(',') : ''}` : '-',
+      // TONICS AND BOMBS: the stand's buys and the carry slots it reads.
+      s && s.stand ? `t${s.stand.bought.map((b) => (b ? 1 : 0)).join('')}:${v.tonics ? v.tonics.slots.join(',') : ''}` : '-',
       v.summary ? `${v.summary.result}:${v.summary.rooms}:${v.summary.glint}` : '-',
       campaignSig(v),
     ].join('/');
@@ -863,6 +865,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   });
   bus.on('relic_purchase', (ev) => {
     if (current === 'shop') screens.shop.onRelicPurchase(ev);
+  });
+  bus.on('tonic_buy', (ev) => {
+    if (current === 'shop') screens.shop.onTonicBuy(ev);
+  });
+  bus.on('tonic_denied', (ev) => {
+    if (current === 'shop' && ev.price !== undefined) screens.shop.onTonicDenied(ev);
   });
   bus.on('relic_denied', (ev) => {
     if (current === 'shop') screens.shop.onRelicDenied(ev);
