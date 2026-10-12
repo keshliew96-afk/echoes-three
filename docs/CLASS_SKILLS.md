@@ -85,3 +85,10 @@ Numbers are first guesses, not tuned by play.
 Rill's eleven skills and eight class nodes (all campaign-only) are listed in
 docs/TIDECALLER.md, with her AI rules, VFX and sounds;
 `node tools/tidecaller-kit-probe.mjs` checks them.
+
+## The Bellwright
+
+Tolly's four base skills (Hang Bell, Peal, Clapper, Hum; all campaign-only)
+and her AI rules are in docs/BELLWRIGHT.md; `node tools/bellwright-probe.mjs`
+checks them. Her other seven skills and her eight class nodes come with the
+next slice.

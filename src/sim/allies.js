@@ -165,6 +165,21 @@ export const ALLY_CLASSES = Object.freeze({
     basicSpeed: 6.0,
     standRange: 4.5 * 0.8,
   }),
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md, not a §7 row): the beetle. Ding is a
+  // small thrown chime, a touch slower and shorter than an arrow; the shell
+  // makes her sturdier than the other casters and slower on her feet.
+  bellwright: Object.freeze({
+    classId: 'bellwright',
+    partyIndex: 3, // the seat she takes by default (the Archer stays at camp)
+    maxHp: 95,
+    moveSpeed: 2.35,
+    attackIntervalTicks: secTicks(0.4),
+    basicPower: 7,
+    basicShape: 'projectile',
+    basicRange: 4.2,
+    basicSpeed: 5.4,
+    standRange: 4.2 * 0.8,
+  }),
 });
 
 const BOLT_RADIUS = 0.05; // same swept-vs-wall scaffold radius as every other bolt
@@ -182,6 +197,7 @@ export const ALLY_KITS = Object.freeze({
   swordsman: Object.freeze(CLASS_BASE_KIT.swordsman.map((id) => SKILLS[id])),
   archer: Object.freeze(CLASS_BASE_KIT.archer.map((id) => SKILLS[id])),
   tidecaller: Object.freeze(CLASS_BASE_KIT.tidecaller.map((id) => SKILLS[id])),
+  bellwright: Object.freeze(CLASS_BASE_KIT.bellwright.map((id) => SKILLS[id])),
 });
 
 // The v0.5.150 kit table, verbatim (reference only — the SKILLS rows above

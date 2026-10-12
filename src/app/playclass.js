@@ -19,15 +19,16 @@ import { emptySnapshot } from '../core/intents.js';
 import { frameFromSnapshot, seatInputOf } from '../sim/netseats.js';
 import { SKILLS } from '../sim/skills.js';
 import { SEAT_CLASSES } from '../net/seats.js';
-import { seatOfClass as lineupSeatOf, classOfSeat, tidecallerOpen, plannedLineup, parseTeam } from '../data/lineup.js';
+import { seatOfClass as lineupSeatOf, classOfSeat, classOpen, plannedLineup, parseTeam } from '../data/lineup.js';
 import { dodgeCooldownTicks } from '../sim/relics.js';
 
 export const PLAY_CLASS_KEY = 'gameplay.playClass';
 // THE TIDECALLER (docs/TIDECALLER.md): five classes for four seats. Who
 // joins the Healer is `gameplay.team` (comma list; '' = today's party).
 export const TEAM_KEY = 'gameplay.team';
-export const PLAY_CLASSES = Object.freeze([...SEAT_CLASSES, 'tidecaller']);
-export const playable = (c) => SEAT_CLASSES.includes(c) || (c === 'tidecaller' && tidecallerOpen());
+// THE BELLWRIGHT (docs/BELLWRIGHT.md) makes it six.
+export const PLAY_CLASSES = Object.freeze([...SEAT_CLASSES, 'tidecaller', 'bellwright']);
+export const playable = (c) => PLAY_CLASSES.includes(c) && classOpen(c);
 // The lineup the next campaign takes from the two settings.
 export const lineupFromSettings = (settings) => plannedLineup(settings.get(PLAY_CLASS_KEY), settings.get(TEAM_KEY));
 // PARTY LINEUP (docs/LINEUP.md): the seat the class holds in the run's

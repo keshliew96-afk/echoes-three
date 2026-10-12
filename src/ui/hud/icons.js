@@ -532,6 +532,31 @@ const ICONS = {
     ['ellipse', { cx: 16, cy: 18, rx: 3.6, ry: 2.4, fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M16 3 C18.5 6.5 19.5 8.5 17.8 10.2 C16.8 11 15.2 11 14.2 10.2 C12.5 8.5 13.5 6.5 16 3 Z', fill: 'currentColor', stroke: 'none' }],
   ],
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md).
+  // Hang Bell: a bell hung from a hook, with a ring on the ground beneath.
+  hang_bell: [
+    ['path', { d: 'M16 2 V6', 'stroke-width': 2 }],
+    ['path', { d: 'M16 6 C11.5 6 10.5 10 10.5 14 C10.5 17 9.5 18.5 8 20 H24 C22.5 18.5 21.5 17 21.5 14 C21.5 10 20.5 6 16 6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['ellipse', { cx: 16, cy: 26, rx: 12, ry: 3.6, 'stroke-width': 1.6, 'stroke-dasharray': '3 2.5' }],
+  ],
+  // Peal: three small bells ringing at once, sound arcs over them.
+  peal: [
+    ...[[7, 19], [16, 13], [25, 19]].map(([x, y]) => ['path', { d: `M${x} ${y - 6} C${x - 3.5} ${y - 6} ${x - 4} ${y - 2} ${x - 4} ${y + 1} L${x - 5} ${y + 3} H${x + 5} L${x + 4} ${y + 1} C${x + 4} ${y - 2} ${x + 3.5} ${y - 6} ${x} ${y - 6} Z`, fill: 'currentColor', stroke: 'none' }]),
+    ['path', { d: 'M5 6 Q16 -1 27 6', 'stroke-width': 1.6 }],
+    ['path', { d: 'M3 28 Q16 31 29 28', 'stroke-width': 1.4 }],
+  ],
+  // Clapper: a bell's clapper flying, with speed lines.
+  clapper: [
+    ['path', { d: 'M8 24 L20 12', 'stroke-width': 2.4 }],
+    ['circle', { cx: 23, cy: 9, r: 4.5, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M3 20 H9 M5 26 H11 M2 14 H7', 'stroke-width': 1.4 }],
+  ],
+  // Hum: a beetle shell with sound waves rising off it.
+  hum: [
+    ['path', { d: 'M7 26 C7 16 11 12 16 12 C21 12 25 16 25 26 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 12 V26', 'stroke-width': 1.2, stroke: 'black', 'stroke-opacity': 0.5 }],
+    ['path', { d: 'M9 8 Q16 3 23 8 M5 5 Q16 -2 27 5', 'stroke-width': 1.6 }],
+  ],
   // Rampart (node): a tower wall with crenels.
   rampart: [
     ['path', { d: 'M6 28 V10 H10 V6 H14 V10 H18 V6 H22 V10 H26 V28 Z' }],
@@ -684,6 +709,12 @@ const ICONS = {
     ['path', { d: 'M9 3 C23 9 23 23 9 29', 'stroke-width': 2.6 }],
     ['path', { d: 'M9 3 V29', 'stroke-width': 1.4 }],
     ['path', { d: 'M3 16 H27 M23 12 L28 16 L23 20', 'stroke-width': 2 }],
+  ],
+  // The Bellwright: a handbell with its clapper and a ring of sound.
+  cls_bellwright: [
+    ['path', { d: 'M16 4 C10.5 4 9 9 9 14 C9 18 7.5 20 6 22 H26 C24.5 20 23 18 23 14 C23 9 21.5 4 16 4 Z', fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 16, cy: 25.5, r: 2.4, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M3 10 Q1.5 14 3 18 M29 10 Q30.5 14 29 18', 'stroke-width': 1.6 }],
   ],
   // The Tidecaller: her reed staff with the shell cup and a water drop.
   cls_tidecaller: [

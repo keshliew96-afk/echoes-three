@@ -73,13 +73,15 @@ export function createCharTestScene(stage, toggles, { cosmetic }) {
         [0.46, 0.06],
         [0.84, 0.4],
         [0.0, -0.5],
+        [-0.5, -0.9],
       ]
     : [
-        [-3.4, 0],
-        [-1.7, 0],
-        [0, 0],
-        [1.7, 0],
-        [3.4, 0],
+        [-3.75, 0],
+        [-2.25, 0],
+        [-0.75, 0],
+        [0.75, 0],
+        [2.25, 0],
+        [3.75, 0],
       ];
   const critters = CRITTER_CLASSES.map((classId, i) => {
     const c = createCritter(classId, { cosmetic });

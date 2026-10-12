@@ -294,6 +294,9 @@ registerWoodMillCues(service('audio'));
 // THE TIDECALLER (docs/TIDECALLER.md): Rill's own water voices.
 import { registerTideCues } from './audio/tidecues.js';
 registerTideCues(service('audio'));
+// THE BELLWRIGHT (docs/BELLWRIGHT.md): Tolly's bells.
+import { registerBellCues } from './audio/bellcues.js';
+registerBellCues(service('audio'));
 // NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): the Keener, Sexton, Bloom
 // and Siphon voices.
 import { registerBarrowHeartCues } from './audio/barrowheartcues.js';

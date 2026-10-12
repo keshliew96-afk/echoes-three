@@ -80,6 +80,19 @@ are unchanged.
   follows it to its seat. The host's camp and run take the room's lineup;
   guests mirror the bodies as before. The team is fixed once the game starts.
 
+## The Bellwright (v0.5.278)
+
+The sixth character, Tolly the Bellwright (docs/BELLWRIGHT.md), joins
+`LINEUP_CLASSES` after the Tidecaller and is free from the start
+(`BELLWRIGHT_FREE`). Nothing else about the rules changes: still four seats,
+the Healer on seat 0, the class you play always joins, and the picker
+chooses who joins the team, never who stays at camp. `classOpen(cls)` says
+whether a class may be chosen right now and `rosterGrown()` whether the team
+view has a choice to offer (more open joiners than the three ally seats);
+the camp's Team chip, the lineup tip and the lobby roster read them. In
+co-op each human picks their own character from the roster first, then the
+host fills the empty seats with AI.
+
 ## Checks
 
 - `node tools/lineup-probe.mjs` (headless, 33 checks):

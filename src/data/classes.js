@@ -21,7 +21,7 @@
 // Seat = party index = class (fixed).
 export const CLASS_OF_SEAT = Object.freeze(['healer', 'tank', 'swordsman', 'archer']);
 export const SEAT_OF_CLASS = Object.freeze({ healer: 0, tank: 1, swordsman: 2, archer: 3 });
-export const CLASS_NAME = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer', tidecaller: 'Tidecaller' });
+export const CLASS_NAME = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer', tidecaller: 'Tidecaller', bellwright: 'Bellwright' });
 export const ALLY_CLASS_IDS = Object.freeze(['tank', 'swordsman', 'archer']);
 
 // §25.2 class skill pools, in the §25.2 table order (the 4 starting rows
@@ -35,6 +35,9 @@ export const CLASS_SKILLS = Object.freeze({
   // THE TIDECALLER (docs/TIDECALLER.md): the otter's four base skills, then
   // the seven of her whole kit (Tidecaller slice 3).
   tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool', 'torrent', 'whirlpool', 'ripple_step', 'bubble_ward', 'crashing_wave', 'rain_squall', 'maelstrom']),
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): the beetle's four base skills. The
+  // other seven join with the rest of her kit (content plan 4, slice 5).
+  bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum']),
 });
 
 // MORE CLASS SKILLS: what joined the pools on 2026-10-08 — nine class skills,
@@ -51,6 +54,8 @@ export const CAMPAIGN_ONLY_SKILLS = Object.freeze([
   // campaign (her seat exists only through a campaign lineup anyway).
   'riverbolt', 'undertow', 'breaker', 'tidepool',
   'torrent', 'whirlpool', 'ripple_step', 'bubble_ward', 'crashing_wave', 'rain_squall', 'maelstrom',
+  // THE BELLWRIGHT: hers too.
+  'hang_bell', 'peal', 'clapper', 'hum',
 ]);
 export const CAMPAIGN_ONLY_NODES = Object.freeze([
   'rampart', 'crush', 'gale_step', 'duel', 'longshot', 'prey',
@@ -72,13 +77,14 @@ export const CLASS_BASE_KIT = Object.freeze({
   swordsman: Object.freeze(['flurry', 'lunge_strike', 'blade_storm', 'caltrops']),
   archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova']),
   tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool']),
+  bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum']),
 });
 
 // Every class starts a run with its four skill slots EMPTY (v0.5.227): skills
 // come only from wave rewards (or an equipped Unlocks kit). The basic attack
 // and the dodge are not skills and stay.
 const EMPTY_KIT = Object.freeze([null, null, null, null]);
-export const STARTING_LOADOUT = Object.freeze({ tank: EMPTY_KIT, swordsman: EMPTY_KIT, archer: EMPTY_KIT, tidecaller: EMPTY_KIT });
+export const STARTING_LOADOUT = Object.freeze({ tank: EMPTY_KIT, swordsman: EMPTY_KIT, archer: EMPTY_KIT, tidecaller: EMPTY_KIT, bellwright: EMPTY_KIT });
 
 // §25.3 class nodes (6 per class, all techniques) — the rows live in
 // sim/nodes.js NODES (cls-tagged).
@@ -88,6 +94,8 @@ export const CLASS_NODES = Object.freeze({
   archer: Object.freeze(['skewer', 'concussive', 'steady_aim', 'disengage', 'scatter', 'heartseeker', 'longshot', 'prey']),
   // THE TIDECALLER (Tidecaller slice 3): six common, two rare.
   tidecaller: Object.freeze(['wellspring', 'deluge', 'current', 'ebb', 'spring_tide', 'undercurrent', 'riptide', 'confluence']),
+  // THE BELLWRIGHT: her eight class nodes come with the rest of her kit.
+  bellwright: Object.freeze([]),
 });
 
 // §25.3 shared-node access per class (the Healer: all 17, unchanged).
@@ -96,6 +104,7 @@ export const SHARED_ACCESS = Object.freeze({
   swordsman: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'keen', 'siphon', 'echo', 'detonate', 'galvanize', 'resonance']),
   archer: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'reach', 'linger', 'keen', 'bounce', 'split', 'snare', 'detonate', 'echo', 'resonance']),
   tidecaller: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'linger', 'bounce', 'split', 'snare', 'echo', 'resonance', 'siphon']),
+  bellwright: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'linger', 'bounce', 'snare', 'echo', 'resonance', 'siphon']),
 });
 
 // A class's node pool, sorted ascending id (the §16 draw order).
@@ -131,6 +140,9 @@ export const AI_PRIORITY = Object.freeze({
     'riverbolt', 'whirlpool', 'torrent', 'undertow', 'crashing_wave', 'maelstrom',
     'breaker', 'bubble_ward', 'rain_squall', 'ripple_step', 'tidepool',
   ]),
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): bells first, the Peal that rings
+  // them, then the Clapper and the Hum.
+  bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum']),
 });
 
 const rankOf = (list, id) => {
@@ -308,6 +320,10 @@ export const CLASS_TECH = Object.freeze({
   riptideTicks: 24, // Riptide: a Crash also stuns 0.4 s (not the bosses)
   confluenceCutSec: 0.1, // Confluence: an ally's hit on a soaked enemy, this skill -0.1 s
   confluenceGapTicks: 30, // at most once per 0.5 s
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): her hung bells and the ring they
+  // toll in.
+  bellCap: 3, // bells per Bellwright; a fourth replaces her oldest
+  ringMul: 1.5, // the Clapper: +50% on an enemy inside one of her bells' rings
 });
 
 // §25.10 MAX-STRESS build (GP.10 / GP.15 precondition; `?partygrant=max`,

@@ -73,7 +73,7 @@ import { levelFor, thirdBossActs } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
 import { rushUnlockedFrom } from '../data/rush.js';
 import { CLASS_NAME } from '../data/classes.js';
-import { classOfSeat, seatOfClass, activeLineup, sameLineup, tidecallerOpen, normalizeLineup } from '../data/lineup.js';
+import { classOfSeat, seatOfClass, activeLineup, sameLineup, tidecallerOpen, classOpen, rosterGrown, normalizeLineup } from '../data/lineup.js';
 import { lineupFromSettings } from '../app/playclass.js';
 import { bindings, PAD } from '../core/bindings.js';
 import { createCampNpcs } from './campnpcs.js';
@@ -284,7 +284,8 @@ export function createCampScene(stage, toggles, ctx) {
   // THE TIDECALLER (docs/TIDECALLER.md): four critters for three ally seats.
   // A rig follows the seat its class holds in the lineup (`partyIndex` is
   // read live); the class at camp stands at its own spot by the fire.
-  const allyRigs = ['tank', 'swordsman', 'archer', 'tidecaller'].map((classId) => ({
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md) makes it five critters.
+  const allyRigs = ['tank', 'swordsman', 'archer', 'tidecaller', 'bellwright'].map((classId) => ({
     classId,
     get partyIndex() {
       const i = seatOfClass(classId);
@@ -297,7 +298,7 @@ export function createCampScene(stage, toggles, ctx) {
     a.rig.group.position.set(CAMP_SPOTS[a.classId].x, 0, CAMP_SPOTS[a.classId].z);
     a.rig.setYaw(a.yaw);
     a.rig.setAnim('idle');
-    a.rig.group.visible = a.classId !== 'tidecaller' || tidecallerOpen();
+    a.rig.group.visible = classOpen(a.classId);
     root.add(a.rig.group);
   }
   healerRig.setAnim('idle');
@@ -1089,7 +1090,7 @@ export function createCampScene(stage, toggles, ctx) {
     for (const a of allyRigs) {
       const e = a.partyIndex === null ? null : world.entities().find((x) => x.kind === 'ally' && x.partyIndex === a.partyIndex);
       // THE TIDECALLER: Rill is not at camp until the profile frees her.
-      a.rig.group.visible = !!e || a.classId !== 'tidecaller' || tidecallerOpen();
+      a.rig.group.visible = !!e || classOpen(a.classId);
       if (!e) {
         // At camp this run: stand by the fire at the class's own spot.
         const spot = CAMP_SPOTS[a.classId];
@@ -1153,7 +1154,7 @@ export function createCampScene(stage, toggles, ctx) {
       // a session the lobby decides the team).
       const lchip = prompt.querySelector('.cp-lineup');
       if (lchip) {
-        const lhide = hide || !tidecallerOpen();
+        const lhide = hide || !rosterGrown();
         if (lchip.style.display !== (lhide ? 'none' : '')) {
           lchip.style.display = lhide ? 'none' : '';
           if (lchip.previousElementSibling) lchip.previousElementSibling.style.display = lhide ? 'none' : '';

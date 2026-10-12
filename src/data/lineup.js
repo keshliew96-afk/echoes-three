@@ -26,7 +26,8 @@ export const DEFAULT_LINEUP = CLASS_OF_SEAT;
 // joins here. THE TIDECALLER (docs/TIDECALLER.md) is the fifth: the player
 // composes the team by choosing who JOINS (the Healer always does), so the
 // roster can keep growing.
-export const LINEUP_CLASSES = Object.freeze(['tank', 'swordsman', 'archer', 'tidecaller']);
+// THE BELLWRIGHT (docs/BELLWRIGHT.md) is the sixth.
+export const LINEUP_CLASSES = Object.freeze(['tank', 'swordsman', 'archer', 'tidecaller', 'bellwright']);
 // Today's party: the joiners an unchosen team falls back on, in fill order.
 export const DEFAULT_TEAM = Object.freeze(['tank', 'swordsman', 'archer']);
 // THE TIDECALLER joins once the party frees the Verse of Water: the first
@@ -48,7 +49,15 @@ export function forceTidecaller(on = true) {
   tidecallerForced = !!on;
   return tidecallerOpen();
 }
-const joinable = (c) => LINEUP_CLASSES.includes(c) && (c !== 'tidecaller' || tidecallerOpen());
+// THE BELLWRIGHT is free from the start in this slice (content plan 4,
+// slice 4). The first Level III clear replaces this one flag (slice 6).
+export const BELLWRIGHT_FREE = true;
+export const bellwrightOpen = () => BELLWRIGHT_FREE;
+// Whether a class may be chosen right now (the four first classes always).
+export const classOpen = (c) => (c === 'tidecaller' ? tidecallerOpen() : c === 'bellwright' ? bellwrightOpen() : true);
+// More open joiners than ally seats: the team view has a choice to offer.
+export const rosterGrown = () => LINEUP_CLASSES.filter(classOpen).length > 3;
+const joinable = (c) => LINEUP_CLASSES.includes(c) && classOpen(c);
 
 // The joiners a setting names ('tank,archer' or an array): known, open,
 // distinct, at most three, in the order given.
@@ -88,7 +97,8 @@ export function normalizeLineup(raw) {
 
 export const isDefaultLineup = (l) => Array.isArray(l) && l.length === 4 && l.every((c, i) => c === DEFAULT_LINEUP[i]);
 export const sameLineup = (a, b) => Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((c, i) => c === b[i]);
-// The classes a lineup leaves at camp (the Tidecaller for the default four).
+// The classes a lineup leaves at camp (the Tidecaller and the Bellwright for
+// the default four).
 export const benchOf = (l) => LINEUP_CLASSES.filter((c) => !normalizeLineup(l).includes(c));
 // The three who join the Healer in a lineup.
 export const teamOf = (l) => normalizeLineup(l).slice(1);

@@ -325,7 +325,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   if (adopted) {
     for (const c of scene.allies) critters.set(c.classId, c);
   } else {
-    for (const classId of ['tank', 'swordsman', 'archer', 'tidecaller']) {
+    for (const classId of ['tank', 'swordsman', 'archer', 'tidecaller', 'bellwright']) {
       const c = createCritter(classId, { cosmetic });
       root.add(c.group);
       critters.set(classId, c);

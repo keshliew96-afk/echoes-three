@@ -536,6 +536,35 @@ export function createAllyCaster(ctx) {
     return rows.slice(0, Math.max(1, Math.floor(count ?? 1))).map((r) => r.m);
   }
 
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): the bells a Bellwright has hung
+  // (her azones flagged `bell`), oldest first; the bell whose ring holds an
+  // enemy (the nearest, when rings overlap); and the cap, which retires her
+  // oldest bells past CLASS_TECH.bellCap.
+  function bellsOf(sourceId) {
+    const out = [];
+    for (const z of registry.all()) if (z.kind === 'azone' && z.bell && z.sourceId === sourceId) out.push(z);
+    return out.sort((p, q) => p.id - q.id);
+  }
+  function ringOf(sourceId, t) {
+    let best = null;
+    let bd = Infinity;
+    for (const z of bellsOf(sourceId)) {
+      const d2v = (t.x - z.x) ** 2 + (t.z - z.z) ** 2;
+      if (d2v <= z.radius * z.radius && d2v < bd) {
+        bd = d2v;
+        best = z;
+      }
+    }
+    return best;
+  }
+  function capBells(sourceId, tick) {
+    const bells = bellsOf(sourceId);
+    for (let i = 0; i < bells.length - CLASS_TECH.bellCap; i++) {
+      events.emit(tick, 'azone_expire', { id: bells[i].id, skill: bells[i].skill, replaced: true });
+      registry.despawn(bells[i].id);
+    }
+  }
+
   // Crush: a stunned or taunted enemy takes x1.5.
   function crushable(t) {
     const S = combat.status;
@@ -684,6 +713,37 @@ export function createAllyCaster(ctx) {
       return cast;
     }
 
+    // THE BELLWRIGHT: the Peal rings every bell she has hung at once (round
+    // herself when none hang). Each enemy is struck once, by its nearest
+    // bell; each bell strikes at most `count`.
+    if (def.shape === 'nova' && def.peal) {
+      const bells = bellsOf(a.id);
+      const centres = bells.length ? bells.map((z) => ({ id: z.id, x: z.x, z: z.z })) : [{ id: null, x: a.x, z: a.z }];
+      const R2 = def.area * def.area;
+      const owner = new Map(); // enemy id -> [centre index, d2]
+      const hs = [...hostiles()].sort((p, q) => p.id - q.id);
+      for (const e of hs) {
+        centres.forEach((c, i) => {
+          const d2v = (e.x - c.x) ** 2 + (e.z - c.z) ** 2;
+          if (d2v > R2) return;
+          const cur = owner.get(e.id);
+          if (!cur || d2v < cur[1]) owner.set(e.id, [i, d2v]);
+        });
+      }
+      const targets = [];
+      centres.forEach((c, i) => {
+        const mine = hs.filter((e) => owner.get(e.id)?.[0] === i).sort((p, q) => owner.get(p.id)[1] - owner.get(q.id)[1] || p.id - q.id);
+        targets.push(...mine.slice(0, Math.max(1, Math.floor(def.count ?? 6))));
+      });
+      cast.radius = def.area;
+      cast.bells = centres.map((c) => ({ id: c.id, x: r2(c.x), z: r2(c.z) }));
+      cast.targets = targets.map((t) => t.id);
+      Object.assign(cast, extra);
+      events.emit(tick, 'ally_cast', cast);
+      hitList(a, def, power, targets, def.shape, M, castId, !!echo);
+      return cast;
+    }
+
     if (def.shape === 'nova') {
       const targets = sel(() => enemiesInNova(a, def.area, def.count));
       cast.radius = def.area;
@@ -761,6 +821,7 @@ export function createAllyCaster(ctx) {
       // (Undercurrent: 40% farther); Whirlpool and Rain Squall also slow.
       if (def.drag) spec.drag = def.drag * (M && M.dragMul ? M.dragMul : 1);
       if (def.also) spec.also = { kind: def.also.kind, mag: def.also.mag, ticks: def.also.ticks };
+      if (def.bell) spec.bell = true; // THE BELLWRIGHT: a hung bell
       zones.push(registry.spawn(spec));
     }
     const z0 = zones[0];
@@ -780,9 +841,11 @@ export function createAllyCaster(ctx) {
         z: r2(z.z),
         radius: z.radius,
         totalTicks: z.totalTicks,
+        ...(z.bell ? { bell: true } : {}),
         ...(tag || {}),
       });
     }
+    if (def.bell) capBells(a.id, tick); // THE BELLWRIGHT: at most three bells, her oldest goes
     return cast;
   }
 
@@ -822,6 +885,7 @@ export function createAllyCaster(ctx) {
     }
     if (def.critBonus) put('critBonus', def.critBonus);
     if (def.crash && def.shape === 'projectile') put('crash', true); // THE TIDECALLER: a crashing bolt
+    if (def.ringBonus && def.shape === 'projectile') put('ring', true); // THE BELLWRIGHT: the Clapper
     if (!any) return null;
     put('castId', castId);
     if (echoFlag) put('echo', true);
@@ -856,7 +920,11 @@ export function createAllyCaster(ctx) {
     if (m.heartseeker && T && T.firstHit(m.castId, t.id)) opts.forceCrit = true;
     const crashed = m.crash ? crashOn(t) : false;
     if (crashed) p *= CLASS_TECH.crashMul;
+    // THE BELLWRIGHT: the Clapper lands harder inside one of her bells' rings.
+    const rung = m.ring ? ringOf(bolt.sourceId, t) : null;
+    if (rung) p *= CLASS_TECH.ringMul;
     const r = T ? T.instance({ seat, castId: m.castId ?? -1, echo: !!m.echo, skill: bolt.skill }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
+    if (rung) events.emit(tick, 'bell_ring_hit', { seat, skill: bolt.skill, target: t.id, bell: rung.id, x: r2(t.x), z: r2(t.z) });
     if (crashed) spendSoak(bolt.sourceId, t, bolt.skill, m.castId ?? null, !!m.riptide);
     if (m.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) soakApply(t, m.applies, tick, bolt.sourceId);
     // Deluge: the bolt leaves a puddle where it first lands.

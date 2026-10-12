@@ -58,6 +58,9 @@ export const CAMP_SPOTS = Object.freeze({
   // THE TIDECALLER: the east bench's end, the Archer's mirror — the sluice
   // side of the fire.
   tidecaller: Object.freeze({ x: 2.4, z: -2.35, yaw: -0.7 }),
+  // THE BELLWRIGHT: the west side between the Tank and the Archer, facing
+  // the fire (clear of the bench colliders).
+  bellwright: Object.freeze({ x: -2.75, z: -1.05, yaw: 1.25 }),
 });
 
 export const CAMP_SPEC = Object.freeze({

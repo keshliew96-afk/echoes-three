@@ -33,9 +33,10 @@ import { buildTank } from './tank.js';
 import { buildSwordsman } from './swordsman.js';
 import { buildArcher } from './archer.js';
 import { buildTidecaller } from './tidecaller.js';
+import { buildBellwright } from './bellwright.js';
 
 export { CLIPS, setInkViewport };
-export const CRITTER_CLASSES = ['healer', 'tank', 'swordsman', 'archer', 'tidecaller'];
+export const CRITTER_CLASSES = ['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright'];
 
 const BUILDERS = {
   healer: buildHealer,
@@ -43,6 +44,7 @@ const BUILDERS = {
   swordsman: buildSwordsman,
   archer: buildArcher,
   tidecaller: buildTidecaller,
+  bellwright: buildBellwright,
 };
 
 export const FALL_ANGLE = 1.36; // rad (~78°) — §10 "collapses horizontal"
