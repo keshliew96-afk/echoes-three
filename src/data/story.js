@@ -89,6 +89,9 @@ export const NPCS = Object.freeze({
   // THE TIDECALLER (docs/TIDECALLER.md): a playable class who also talks at
   // camp, from her spot on the sluice side of the fire.
   rill: { id: 'rill', name: 'Rill, the Tidecaller', short: 'Rill', where: 'camp' },
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md "Tolly in the world"): the same, from
+  // her spot on the west side of the fire.
+  tolly: { id: 'tolly', name: 'Tolly, the Bellwright', short: 'Tolly', where: 'camp' },
 });
 
 // Who appears under "People" on the Story so far page, and when.
@@ -101,6 +104,7 @@ export const PEOPLE = Object.freeze([
   { id: 'voice', met: 'voice', seenPrefix: 'voice:', lore: 'The singer under the Barrow. Speaks through altars, and before every boss.' },
   { id: 'chorus', always: true, lore: 'The gods. They watch, and they applaud.' },
   { id: 'rill', feat: 'tidecaller', lore: 'A river otter from the Mill who sang the sluices shut. Freed with the Verse of Water, she fights with the tide.' },
+  { id: 'tolly', feat: 'bellwright', lore: 'A bell beetle who rang the hours over the Barrow until the hollow song cracked every bell but hers. Freed with the Verse of Stone, she hangs her bells where the fight will be.' },
 ]);
 
 // Who speaks on which event-room card.
@@ -151,6 +155,24 @@ export const RILL_LINES = Object.freeze({
 export const rillLineFor = (verses) => RILL_LINES.byVerses.text[Math.max(0, Math.min(RILL_LINES.byVerses.text.length - 1, verses - 2))];
 // Wick's one line about her, in his rotation once she has joined.
 export const KEEPER_RILL_LINE = Object.freeze({ text: 'Rill sits on the sluice side of the fire and wrings out her satchel every night. The hearth hisses at her, and she laughs at it.' });
+
+// THE BELLWRIGHT: Tolly at her camp spot. She joins with Stone, so the first
+// line is for three verses or fewer; `extra` rotates after it.
+export const TOLLY_LINES = Object.freeze({
+  byVerses: {
+    text: [
+      'Every bell in the Barrow rang the hollow song but mine. I stuffed it with moss and kept it quiet. You can take the moss out now.',
+      'Four verses. Under the Barrow the Heart beats out of time. I can hear it from here. A bell keeps better time than a heart.',
+      'Five verses. The Spire is all belfries and no ringers. When this is over I mean to tune every one of them.',
+    ],
+  },
+  extra: {
+    text: ['Hang the bells first, where they will walk. Then ring them all at once. A peal is just patience, said loudly.'],
+  },
+});
+export const tollyLineFor = (verses) => TOLLY_LINES.byVerses.text[Math.max(0, Math.min(TOLLY_LINES.byVerses.text.length - 1, verses - 3))];
+// Wick's one line about her, in his rotation once she has joined.
+export const KEEPER_TOLLY_LINE = Object.freeze({ text: 'Tolly polishes her bell before she sleeps, every night. Says a bell that is not loved goes flat. I believe her.' });
 
 // Bramble at camp (her shelf opens in room 7, never at camp: BUILD_BRIEF §18).
 export const PEDDLER_LINES = Object.freeze({
@@ -266,6 +288,14 @@ export const RILL_VOICE = Object.freeze({ text: 'The otter sang my river shut on
 export const RILL_CLEAR = Object.freeze({
   freed: { text: 'On the riverbank an otter shakes off the hollow song. Rill follows the bell home.' },
   along: { text: 'Rill sings the sluices open again. The Mill remembers her song.' },
+});
+
+// THE BELLWRIGHT: the Hollow Voice the first time Tolly stands in a Barrow
+// boss room (any Level III boss), and her line on the Level III clear card.
+export const TOLLY_VOICE = Object.freeze({ text: 'Every bell in the Barrow sang for me but one. Ring it, little Bellwright. Let me hear what I missed.' });
+export const TOLLY_CLEAR = Object.freeze({
+  freed: { text: 'In the barrow dust a beetle digs out her bell and pulls the moss from it. Tolly follows the bell home.' },
+  along: { text: 'Tolly rings the Barrow\'s hours again. The old stones remember the time.' },
 });
 
 // The level-clear card: the verse the bell catches.

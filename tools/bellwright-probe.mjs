@@ -113,7 +113,11 @@ function secondRoom(W, kit) {
   check(KIT.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.gatedPool(KIT, false).length === 0 && C.gatedPool(KIT, true).length === 4, 'all four are campaign-only');
   check(SKILLS.hang_bell.bell === true && SKILLS.peal.peal === true && SKILLS.clapper.ringBonus === true && SKILLS.hum.shape === 'aura', 'Hang Bell hangs a bell, Peal rings them, the Clapper reads the ring, Hum is a passive');
   check(same(L.DEFAULT_LINEUP, ['healer', 'tank', 'swordsman', 'archer']) && same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller', 'bellwright']), 'the default lineup is the old four (Rill and Tolly at camp)');
-  check(L.BELLWRIGHT_FREE === true && L.bellwrightOpen() && L.classOpen('bellwright'), 'she is free from the start in this slice');
+  // Slice 6 locks her until the first Level III clear (tools/bellwright-world-probe.mjs);
+  // this probe opens her the way ?tolly=1 does.
+  check(L.BELLWRIGHT_FREE === false && !L.bellwrightOpen(), 'a fresh page: she is locked (slice 6)');
+  L.forceBellwright(true);
+  check(L.bellwrightOpen() && L.classOpen('bellwright'), '?tolly=1 opens her');
   check(!L.tidecallerOpen() && same(L.parseTeam('tank,tidecaller,bellwright'), ['tank', 'bellwright']), 'Rill stays locked on a fresh profile; Tolly may join');
   check(L.rosterGrown(), 'five open classes for three ally seats: the team view has a choice');
   check(same(L.plannedLineup('bellwright', ''), TOLLY), 'playing her with no team chosen: she joins in the Archer\'s place');

@@ -576,7 +576,7 @@ if (bootParams.slot && bootParams.menuSkip) {
 // whenever the profile changes, another tab's write included).
 import { createUnlocksScreen } from './ui/run/unlocks.js';
 import { setClassTints } from './data/vfx.js';
-import { setTidecallerUnlocked, forceTidecaller } from './data/lineup.js';
+import { setTidecallerUnlocked, forceTidecaller, setBellwrightUnlocked, forceBellwright } from './data/lineup.js';
 registerScreen('unlocks', createUnlocksScreen);
 // CLASS SELECT (docs/CLASS_SELECT.md): the camp's class picker (C / the portal prompt's Class chip).
 import { createClassesScreen } from './ui/run/classpick.js';
@@ -618,6 +618,18 @@ if (PLAYABLE) createStory({ app, world, scene: activeScene, params: bootParams }
   };
   applyRill();
   saveSystem.onProfileChanged(applyRill);
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md "Unlock"): Tolly is a choice once this
+  // profile has freed the Verse of Stone. ?tolly=1 opens her on a harness boot.
+  if (bootParams.tolly) forceBellwright(true);
+  const applyTolly = () => {
+    try {
+      setBellwrightUnlocked(saveSystem.bellwrightFreed());
+    } catch {
+      /* she stays locked */
+    }
+  };
+  applyTolly();
+  saveSystem.onProfileChanged(applyTolly);
 }
 // @gnt:UNLOCKS end
 

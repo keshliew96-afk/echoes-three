@@ -73,7 +73,7 @@ import { levelFor, thirdBossActs } from '../data/levels.js';
 import { endlessUnlockedFrom } from '../data/endless.js';
 import { rushUnlockedFrom } from '../data/rush.js';
 import { CLASS_NAME } from '../data/classes.js';
-import { classOfSeat, seatOfClass, activeLineup, sameLineup, tidecallerOpen, classOpen, rosterGrown, normalizeLineup } from '../data/lineup.js';
+import { classOfSeat, seatOfClass, activeLineup, sameLineup, classOpen, rosterGrown, normalizeLineup } from '../data/lineup.js';
 import { lineupFromSettings } from '../app/playclass.js';
 import { bindings, PAD } from '../core/bindings.js';
 import { createCampNpcs } from './campnpcs.js';
@@ -240,12 +240,13 @@ export function createCampScene(stage, toggles, ctx) {
     toScreen: (x, y, z) => toScreen(x, y, z),
     openUnlocks: (via) => openUnlocks(via),
     openStory: (via) => openStory(via),
-    // THE TIDECALLER: Rill talks from her rig when she sits at her spot.
-    rillAt: () => {
-      const a = allyRigs.find((r) => r.classId === 'tidecaller');
-      return a && a.rig.group.visible && tidecallerOpen() ? { x: a.rig.group.position.x, z: a.rig.group.position.z, height: a.rig.metrics ? a.rig.metrics.height : 1.1 } : null;
+    // THE TIDECALLER: Rill talks from her rig when she sits at her spot;
+    // THE BELLWRIGHT's Tolly too.
+    heroAt: (cls) => {
+      const a = allyRigs.find((r) => r.classId === cls);
+      return a && a.rig.group.visible && classOpen(cls) ? { x: a.rig.group.position.x, z: a.rig.group.position.z, height: a.rig.metrics ? a.rig.metrics.height : 1.1 } : null;
     },
-    rillOpen: () => tidecallerOpen(),
+    heroOpen: (cls) => classOpen(cls),
   });
   const shadows = camp.shadows.concat(edge.shadows, [mapTable.shadow]);
   buildShadowInstances(root, shadows);

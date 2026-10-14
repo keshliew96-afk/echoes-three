@@ -13,8 +13,8 @@
 // Nothing here touches the sim.
 import { provide, service } from '../../app/registry.js';
 import { PALETTE as P } from '../../data/palette.js';
-import { BOSS_VOICE, NPCS, voiceKeyFor, RILL_VOICE } from '../../data/story.js';
-import { WATER_BOSSES } from '../../data/unlocks.js';
+import { BOSS_VOICE, NPCS, voiceKeyFor, RILL_VOICE, TOLLY_VOICE } from '../../data/story.js';
+import { WATER_BOSSES, STONE_BOSSES } from '../../data/unlocks.js';
 import { activeLineup } from '../../data/lineup.js';
 import { t } from '../../i18n/index.js';
 
@@ -116,6 +116,7 @@ export function createStory({ app, world, scene: campScene = null, params = null
   let campSince = 0;
   let bossKey = null;
   let rillDue = 0; // THE TIDECALLER: the Voice's line to Rill, queued
+  let tollyDue = 0; // THE BELLWRIGHT: and to Tolly
   setInterval(() => {
     const now = performance.now();
     if (voiceUntil && now > voiceUntil) {
@@ -155,10 +156,19 @@ export function createStory({ app, world, scene: campScene = null, params = null
       if (WATER_BOSSES.includes(met) && v.act === 2 && activeLineup().includes('tidecaller') && !seen('voice_rill')) {
         rillDue = first ? now + VOICE_MS + 400 : now;
       }
+      // THE BELLWRIGHT (docs/BELLWRIGHT.md): the first time Tolly stands in
+      // a Barrow boss room, the same.
+      if (STONE_BOSSES.includes(met) && v.act === 3 && activeLineup().includes('bellwright') && !seen('voice_tolly')) {
+        tollyDue = first ? now + VOICE_MS + 400 : now;
+      }
     } else if (!key) bossKey = null;
     if (rillDue && now >= rillDue) {
       rillDue = 0;
       if (note('voice_rill')) voice(RILL_VOICE.text);
+    }
+    if (tollyDue && now >= tollyDue) {
+      tollyDue = 0;
+      if (note('voice_tolly')) voice(TOLLY_VOICE.text);
     }
   }, POLL_MS);
 

@@ -699,6 +699,9 @@ const RELIC_PROC_CUE = Object.freeze({
   // THE TIDECALLER: her class relics.
   otters_pearl: { cue: 'sparkle', pitch: 1.5 },
   millrace_charm: { cue: 'shimmer', pitch: 1.3 },
+  // THE BELLWRIGHT: hers.
+  bell_rope: { cue: 'sparkle', pitch: 1.15 },
+  verdigris_clapper: { cue: 'bw_ring', pitch: 0.85 },
   // Batch 4: the relics of the new rooms.
   shepherds_crook: { cue: 'heal_crit', pitch: 1.15 },
   vigil_candle: { cue: 'zone_spawn', pitch: 1.2 },

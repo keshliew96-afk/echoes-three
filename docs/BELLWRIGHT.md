@@ -1,6 +1,7 @@
 # The Bellwright (Tolly)
 
-v0.5.278, her whole kit v0.5.279. Content plan 4, slices 4 and 5
+v0.5.278, her whole kit v0.5.279, in the world v0.5.281. Content plan 4,
+slices 4, 5 and 6
 (`/mnt/project-files/plan/CONTENT_PLAN_4.md`, "Bellwright playable" and
 "Bellwright kit, VFX and sounds"). Tolly is a beetle bell-ringer from the
 Barrow and a **zone caster**: she hangs bells that toll on a beat, then rings
@@ -31,9 +32,9 @@ All numbers are first guesses, in the units of the skill table
 
 ## Who gets her
 
-- **Free from the start** in this slice (`BELLWRIGHT_FREE` in
-  `src/data/lineup.js`). Slice 6 replaces that one flag with the first
-  Level III clear.
+- **Freed with the Verse of Stone** since slice 6: the first Level III clear
+  on this player's profile, or any Level III boss felled (see "Unlock"
+  below). Slices 4 and 5 had her free from the start.
 - Campaigns only (Endless, Daily and Boss Rush included). The tutorial, the
   legacy single-level run and `?room=` stay the default four.
 - Four seats, now up to six classes (docs/LINEUP.md). The picker chooses who
@@ -216,6 +217,64 @@ her cues.
 B (Great Bell, Knell, Carillon, Bell Swing) and C (Hang Bell x3, Vesper
 Chime, Tuning Fork, Wing Hop).
 
+## Unlock (slice 6)
+
+- `BELLWRIGHT_FREE` in `src/data/lineup.js` is now `false`. She is a choice
+  once the profile holds the `bellwright` feat (`meta.feats`, FEATS in
+  `src/data/unlocks.js`): the first campaign Level III clear stores it
+  mid-run (`save/index.js`, with a toast: "The Bellwright joins the party.
+  Tolly hangs her bell by the hearth."), and `featsOf` also counts a
+  recorded Level III clear or any Level III boss felled (the Barrow Wyrm,
+  the Lich Ram, the Ash Raven), so a save from before this build frees her
+  on load. `main.js` sets the gate from the profile (`setBellwrightUnlocked`);
+  `?tolly=1` opens her on a harness boot (`forceBellwright`), the way
+  `?rill=1` opens Rill.
+- Exactly Rill's rules: the flag gates only CHOOSING her (the class picker,
+  the team view, the lobby roster). A lineup that already holds her stays
+  valid, so `normalizeLineup` never reads it and the sim never depends on a
+  profile. Locked, her card shows LOCKED with "How to free her"; the team
+  view and the lobby leave her out; at camp her rig is hidden.
+- Co-op: each player frees her on their own profile (a guest hears the
+  host's Level III clear and frees her too).
+
+## Tolly in the world (slice 6)
+
+All of it is profile data, presentation, or campaign-only relics, so the
+nine goldens are untouched.
+
+- **Camp talk.** Once freed, walk up to her at her spot on the west side of
+  the fire (while she does not join the run) and E talks
+  (`src/scenes/campnpcs.js`, the same hero-talk path as Rill). Her first line
+  is for three verses or fewer (she joins with Stone), then one each for four
+  and five verses (`TOLLY_LINES` in `src/data/story.js`), with a tip line on
+  further talks. Wick gains a line about her.
+- **Story.** The Hollow Voice speaks to her the first time she stands in a
+  Barrow boss room (after its boss line); the Level III clear card adds her
+  line (freed, or ringing along when she is in the party); she joins the
+  People list on the Journal's Story page once freed.
+- **Kit.** Belltower, 80 Embers once she is freed: Hang Bell, Peal, Clapper
+  and Tuning Fork.
+- **Tints.** Silver Peal (30 Embers once freed: moonlit silver with a pale
+  blue edge) and Wyrm Bronze (free for felling the Barrow Wyrm with her in
+  the party: furnace bronze). Feat `tolly_wyrm`.
+- **Deeds.** Tolly's Toll (25): clear a level with the Bellwright in the
+  party. Full Peal (30): one Peal or Carillon that rings three bells or more
+  and strikes 6 enemies (`pealBest`, counted from her `ally_cast` events by
+  `src/save/deedrun.js`).
+- **Class relics** (offered only while she stands in the party, so never to
+  the default four; no dice, so holding them never moves the relic stream):
+  - Bell-Rope (common): her Peals and Carillons heal her 3 HP for every bell
+    they ring.
+  - Verdigris Clapper (rare): every fourth toll of her bells that strikes an
+    enemy rings again for 6 to every enemy in that bell's ring (`tollHits`
+    saved with the run).
+  Both have heirlooms. Effects in `src/render/vfx/signature.js`: Bell-Rope
+  drops a thin brass column onto her and closes one verdigris ring per bell
+  rung, a beat apart; Verdigris Clapper flashes green at the bell's mouth,
+  throws a double verdigris shock ring to the rim and cracks green light to
+  each enemy struck. Sounds reuse `sparkle` and her own `bw_ring`.
+- **Tip.** The first bell she hangs in a fight opens a "Hang, then ring" tip.
+
 ## Checks
 
 - `node tools/bellwright-probe.mjs` (headless, 45 checks): data and gate,
@@ -234,4 +293,13 @@ Chime, Tuning Fork, Wing Hop).
   it works on, the AI casting all ten actives in real fights, and a
   mid-fight save with bells hung and nodes socketed continuing
   bit-identically.
+- `node tools/bellwright-world-probe.mjs` (headless, 47 checks, slice 6):
+  the unlock (locked fresh, the first Level III clear frees her once, old
+  saves and the Level III bosses free her, Rill's gate untouched), her kit
+  and tints, her deeds and the peal tracker, her two relics in a real fight
+  (and never offered to the default four) with a mid-fight save continuing
+  bit-identically, and the story data.
+- `node tools/bellwright-world-browser.mjs` (needs Vite on 5199) takes the
+  slice 6 screenshots under `/mnt/project-files/bellwright-world/`.
+- The older Bellwright browser probes boot with `?tolly=1` since slice 6.
 - `node tools/gntM2-goldens.mjs` stays 9/9.

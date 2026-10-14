@@ -53,6 +53,9 @@ function reqLabel(req) {
   // THE TIDECALLER (docs/TIDECALLER.md): the feats.
   if (req.feat === 'tidecaller') return t('Free Rill: fell the Level II boss');
   if (req.feat === 'rill_heron') return t('Fell the Drowned Heron with the Tidecaller in the party');
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md).
+  if (req.feat === 'bellwright') return t('Free Tolly: fell the Level III boss');
+  if (req.feat === 'tolly_wyrm') return t('Fell the Barrow Wyrm with the Bellwright in the party');
   // ROUND TWO: an unlock a deed opens.
   if (req.deed) return t('Earn the deed {deed}', { deed: DEEDS[req.deed] ? t(DEEDS[req.deed].name) : req.deed });
   return '';

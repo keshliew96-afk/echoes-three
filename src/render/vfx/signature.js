@@ -5090,6 +5090,49 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         });
         break;
       }
+      // THE BELLWRIGHT (docs/BELLWRIGHT.md "Tolly in the world"): her two
+      // class relics.
+      case 'bell_rope': {
+        // The rope pays her back: a thin brass column drops onto Tolly, then
+        // one verdigris ring closes on her for every bell the Peal rang, a
+        // beat apart like a peal, and warm motes rise off her shell.
+        mark('relic_bell_rope');
+        const st = RELIC3.bellwright;
+        const { x, z } = bodyAt(ev);
+        const n = Math.max(1, Math.min(4, ev.bells ?? 1));
+        kit.pillar({ x, z, radius: 0.22, height: 2.6, color: st.glow, life: 0.42, opacity: 0.5 });
+        flare(x, 1.25, z, st.glow, 0.6, { kind: 'star', life: 0.18 });
+        for (let i = 0; i < n; i++) {
+          after(0.09 * i, () => {
+            kit.ring({ x, z, r0: 0.95 - i * 0.08, r1: 0.25, width: 0.07, life: 0.34, core: st.glow, glow: st.second, soft: 0.5, y: 0.07 + i * 0.01 });
+          });
+        }
+        kit.light({ x, z, radius: 1.4, color: st.glow, opacity: 0.35, life: 0.4 });
+        spray('spark', x, 0.45, z, N(4 + 2 * n), { color: st.glow, speed: [0.1, 0.35], up: [0.7, 1.3], size: [0.04, 0.07], life: [0.6, 0.9], gravity: -0.25, drag: 1.5, jitter: 0.35, opacity: 0.85 });
+        break;
+      }
+      case 'verdigris_clapper': {
+        // The bell rings again in green: a struck flash at its mouth, a
+        // double verdigris shock ring out to its rim, a crack of green light
+        // to every enemy it caught and green-bronze chips off each.
+        mark('relic_verdigris_clapper');
+        const st = RELIC3.bellwright;
+        const { x, z } = ev;
+        const r = ev.radius ?? 1.3;
+        flare(x, 1.0, z, st.second, 1.0, { kind: 'burst', life: 0.18 });
+        kit.ring({ x, z, r0: 0.2, r1: r, width: 0.12, life: 0.3, core: PARCH, glow: st.second, soft: 0.45, y: 0.08, gain: 1.15 });
+        after(0.08, () => kit.ring({ x, z, r0: 0.15, r1: r * 0.8, width: 0.06, life: 0.3, core: st.second, glow: st.glow, soft: 0.5, y: 0.09 }));
+        kit.light({ x, z, radius: r + 0.5, color: st.second, opacity: 0.45, life: 0.32 });
+        for (const id of ev.hit ?? []) {
+          const b = byId(id);
+          if (!b) continue;
+          kit.streak({ a: { x, y: 0.9, z }, b: { x: b.x, y: 0.55, z: b.z }, width: 0.06, tailW: 0.015, core: PARCH, glow: st.second, life: 0.15, fall: 1.2 });
+          flare(b.x, 0.6, b.z, st.glow, 0.45, { kind: 'star', life: 0.12 });
+          spray('spark', b.x, 0.5, b.z, N(4), { color: st.second, speed: [0.4, 1.0], up: [0.5, 1.2], size: [0.03, 0.06], life: [0.3, 0.5], gravity: 1.6, drag: 1.2, jitter: 0.15, opacity: 0.95 });
+        }
+        spray('spark', x, 0.9, z, N(8), { color: st.glow, speed: [0.8, 1.8], up: [0.3, 1.2], size: [0.03, 0.06], life: [0.3, 0.55], gravity: 1.4, drag: 1.2, jitter: 0.2, opacity: 0.9 });
+        break;
+      }
       // Batch 4 (docs/RELICS.md "Batch 4"): the relics of the new rooms.
       case 'shepherds_crook': {
         mark('relic_shepherds_crook');

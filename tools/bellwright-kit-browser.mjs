@@ -43,7 +43,7 @@ const tag = LANG ? `-${LANG}` : '';
 const shot = (name) => page.screenshot({ path: `${OUT}/bellwright-kit-${name}${tag}.png` });
 const seen = () => page.evaluate(() => window.__kitSeen);
 
-await page.goto(`${URL0}?seed=3&menu=0${LANG ? `&lang=${LANG}` : ''}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+await page.goto(`${URL0}?seed=3&menu=0&tolly=1${LANG ? `&lang=${LANG}` : ''}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
 await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
 await settle(1500);
 await page.evaluate(() => {

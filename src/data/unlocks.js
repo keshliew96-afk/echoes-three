@@ -41,12 +41,21 @@ export const LOADOUT_CLASSES = Object.freeze(['healer', ...LINEUP_CLASSES]);
 //   tidecaller   Rill has joined: the Verse of Water is free (the first
 //                Level II clear, or a Level II boss felled)
 //   rill_heron   the Drowned Heron felled with the Tidecaller in the party
+//   bellwright   Tolly has joined: the Verse of Stone is free (the first
+//                Level III clear, or a Level III boss felled;
+//                docs/BELLWRIGHT.md "Unlock")
+//   tolly_wyrm   the Barrow Wyrm felled with the Bellwright in the party
 export const FEATS = Object.freeze({
   tidecaller: { text: 'Free the Verse of Water: fell the Level II boss' },
   rill_heron: { text: 'Fell the Drowned Heron with the Tidecaller in the party' },
+  bellwright: { text: 'Free the Verse of Stone: fell the Level III boss' },
+  tolly_wyrm: { text: 'Fell the Barrow Wyrm with the Bellwright in the party' },
 });
 // The Level II bosses: felling any of them frees the Verse of Water (and Rill).
 export const WATER_BOSSES = Object.freeze(['heron', 'millwheel', 'mireking']);
+// THE BELLWRIGHT: the Level III bosses; felling any of them frees the Verse
+// of Stone (and Tolly).
+export const STONE_BOSSES = Object.freeze(['wyrm', 'lichram', 'ashraven']);
 // A profile's feats as they stand: the stored list plus any the records
 // already prove (a save from before feats existed, a Level II clear recorded
 // before this build).
@@ -55,9 +64,11 @@ export function featsOf(meta, records = {}) {
   const bosses = (meta && meta.bosses) || {};
   const clears = (records && records.levelClears) || {};
   if ((clears[2] ?? 0) > 0 || WATER_BOSSES.some((k) => (bosses[k] ?? 0) > 0)) out.add('tidecaller');
+  if ((clears[3] ?? 0) > 0 || STONE_BOSSES.some((k) => (bosses[k] ?? 0) > 0)) out.add('bellwright');
   return [...out];
 }
 export const tidecallerFreed = (meta, records) => featsOf(meta, records).includes('tidecaller');
+export const bellwrightFreed = (meta, records) => featsOf(meta, records).includes('bellwright');
 
 // -------------------------------------------------------------- earning --
 export const EMBER_RULES = Object.freeze({
@@ -162,6 +173,9 @@ export const DEEDS = Object.freeze(
     // THE TIDECALLER (docs/TIDECALLER.md).
     ['rills_return', { name: "Rill's Return", text: 'Clear a level with the Tidecaller in the party.', embers: 25, test: (r) => r.cleared.length + (r.deep || []).length > 0 && (r.party || []).includes('tidecaller') }],
     ['high_water', { name: 'High Water', text: 'Crash 5 soaked enemies with one cast.', embers: 30, test: (r) => (r.crashBest || 0) >= 5 }],
+    // THE BELLWRIGHT (docs/BELLWRIGHT.md "Tolly in the world").
+    ['tollys_toll', { name: "Tolly's Toll", text: 'Clear a level with the Bellwright in the party.', embers: 25, test: (r) => r.cleared.length + (r.deep || []).length > 0 && (r.party || []).includes('bellwright') }],
+    ['full_peal', { name: 'Full Peal', text: 'Ring three bells with one Peal or Carillon and strike 6 enemies.', embers: 30, test: (r) => (r.pealBest || 0) >= 6 }],
     // BOSS RUSH (docs/BOSS_RUSH.md).
     ['rush_lap', { name: 'Once Around', text: 'Fell the first five bosses of a Boss Rush.', embers: 30, test: (r) => !!r.rush && r.rush.felled >= RUSH_LAP }],
     ['rush_won', { name: 'Back to Back', text: 'Win a Boss Rush: all ten bosses.', embers: 60, test: (r) => !!r.rush && r.rush.won }],
@@ -212,6 +226,9 @@ const KIT_ROWS = [
   ['kit_earthwarden', 'tank', 'Earthwarden', ['earthshatter', 'rallying_cry', 'earthen_grasp', 'shield_wall'], 100, { level: 3 }, 'The Tank begins with Earthshatter, Rallying Cry, Earthen Grasp and Shield Wall.'],
   ['kit_moonblade', 'swordsman', 'Moonblade', ['moonfang', 'blade_dance', 'crimson_edge', 'razor_wake'], 100, { level: 3 }, 'The Swordsman begins with Moonfang, Blade Dance, Crimson Edge and Razor Wake.'],
   ['kit_huntmaster', 'archer', 'Huntmaster', ['hunters_mark', 'barbed_trap', 'feather_fan', 'vault_shot'], 100, { level: 3 }, "The Archer begins with Hunter's Mark, Barbed Trap, Feather Fan and Vault Shot."],
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): her bell and peal, the Clapper, and
+  // the Tuning Fork for the party.
+  ['kit_belltower', 'bellwright', 'Belltower', ['hang_bell', 'peal', 'clapper', 'tuning_fork'], 80, { feat: 'bellwright' }, 'The Bellwright begins with Hang Bell, Peal, Clapper and Tuning Fork.'],
   ['kit_stormwater', 'tidecaller', 'Stormwater', ['crashing_wave', 'rain_squall', 'maelstrom', 'whirlpool'], 100, { level: 4 }, 'The Tidecaller begins with Crashing Wave, Rain Squall, Maelstrom and Whirlpool.'],
 ];
 const HEIRLOOM_COST = Object.freeze({ common: 40, rare: 90, legendary: 160 });
@@ -254,6 +271,10 @@ const TINT_ROWS = [
   // THE TIDECALLER (docs/TIDECALLER.md).
   ['tint_brine', 'tidecaller', 'Brine', { glow: '#3FC9A8', second: '#F2EEE2', debris: '#9FB8AE' }, 30, { feat: 'tidecaller' }],
   ['tint_heronrain', 'tidecaller', 'Heron Rain', { glow: '#8FB4D9', second: '#F4F8FC', debris: '#C7D3DD' }, 0, { feat: 'rill_heron' }],
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): a moonlit silver bell and the
+  // Wyrm's own furnace bronze.
+  ['tint_silverpeal', 'bellwright', 'Silver Peal', { glow: '#DCE3EE', second: '#9FC8F0', debris: '#6E7686' }, 30, { feat: 'bellwright' }],
+  ['tint_wyrmbronze', 'bellwright', 'Wyrm Bronze', { glow: '#FF9A4A', second: '#FFD9A0', debris: '#5A3420' }, 0, { feat: 'tolly_wyrm' }],
   // ROUND TWO: Act IV's colours, and one for the four champions.
   ['tint_heartlight', 'healer', 'Heartlight', { glow: '#FF6F93', second: '#FFE1EA', debris: '#7A3048' }, 40, { level: 4 }],
   ['tint_censersmoke', 'tank', 'Censer Smoke', { glow: '#E8A858', second: '#F6E4C4', debris: '#4E4236' }, 40, { level: 4 }],
@@ -441,6 +462,9 @@ export function runFacts(summary, records = {}) {
     runs: num(records.runs),
     party,
     crashBest: Math.max(0, num(s.crashBest)),
+    // THE BELLWRIGHT: the most enemies one Peal or Carillon struck with
+    // three bells or more hung (save/deedrun.js).
+    pealBest: Math.max(0, Math.round(num(dr.pealBest))),
     // ROUND TWO: what the save service saw this run (save/index.js deedRun).
     events: list(dr.events),
     affixes: list(dr.affixes),
@@ -486,6 +510,9 @@ export function awardFor(facts, meta) {
   const rill = (facts.party || []).includes('tidecaller');
   if (rill && facts.bosses.includes('heron')) feats.push('rill_heron');
   if (facts.cleared.includes(2) || facts.bosses.some((k) => WATER_BOSSES.includes(k))) feats.push('tidecaller');
+  const tolly = (facts.party || []).includes('bellwright');
+  if (tolly && facts.bosses.includes('wyrm')) feats.push('tolly_wyrm');
+  if (facts.cleared.includes(3) || facts.bosses.some((k) => STONE_BOSSES.includes(k))) feats.push('bellwright');
   return { embers, lines, deeds, bosses: facts.bosses.slice(), feats };
 }
 
