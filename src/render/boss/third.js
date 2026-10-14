@@ -747,6 +747,8 @@ const WEAVE_CRYSTAL = HEART.crystal.clone().multiplyScalar(0.8);
 const WEAVE_BONE = HEART.bone.clone();
 
 export function buildVeinWeaver() {
+  // Slung low between high knees, as a spider sits.
+  const BODY_Y = 0.92;
   const s = rigShell('boss-veinweaver');
   const { rig, track } = s;
   const flesh = track(flashable(WEAVE_FLESH));
@@ -756,7 +758,7 @@ export function buildVeinWeaver() {
   const veinMat = lit(PALETTE.godstuffViolet);
   const eyeMat = lit(PALETTE.godstuffVioletPeak);
   const body = new Group();
-  body.position.y = 1.1;
+  body.position.y = BODY_Y;
   rig.add(body);
   // The head-chest, low and broad.
   const thorax = new Mesh(new IcosahedronGeometry(0.55, 1), flesh);
@@ -825,35 +827,60 @@ export function buildVeinWeaver() {
     fangs.push({ fg, side });
   }
   // Eight legs: a hip on the thorax, a high knee, a long shin to the floor.
+  // Each leg is a two-bone chain solved every frame (legIK below) so its
+  // crystal tip stays planted on the floor while the body bobs, rears and
+  // slams; the old fixed angles left every foot hovering 0.35 u up and the
+  // front pair dipping into the floor when it spun.
   const legs = [];
-  const upG = new CylinderGeometry(0.09, 0.07, 1.0, 6).translate(0, 0.5, 0);
-  const lowG = new CylinderGeometry(0.065, 0.025, 1.35, 6).translate(0, -0.67, 0);
+  const UP_LEN = 1.15;
+  const LOW_LEN = 1.45;
+  const TIP_LEN = 0.14; // the crystal tip below the shin's end
+  const upG = new CylinderGeometry(0.09, 0.07, UP_LEN, 6).translate(0, UP_LEN / 2, 0);
+  const lowG = new CylinderGeometry(0.065, 0.025, LOW_LEN, 6).translate(0, -LOW_LEN / 2, 0);
+  const tipG = new ConeGeometry(0.04, 0.16, 4);
   for (let i = 0; i < 4; i++) {
     for (const side of [-1, 1]) {
       const hip = new Group();
       const z = 0.65 - i * 0.28;
+      const yaw = side * (-0.9 + i * 0.6);
       hip.position.set(side * 0.45, 0.02, z);
-      hip.rotation.y = side * (-0.9 + i * 0.6);
+      hip.rotation.y = yaw;
       body.add(hip);
       const lift = new Group();
       hip.add(lift);
       const up = new Mesh(upG, i % 2 ? dark : flesh);
-      up.rotation.z = side * -1.0;
       addInk(up);
       lift.add(up);
       const knee = new Group();
-      knee.position.set(side * 0.84, 0.54, 0);
       lift.add(knee);
       const low = new Mesh(lowG, dark);
-      low.rotation.z = side * 0.42;
       knee.add(low);
-      const tipC = new Mesh(new ConeGeometry(0.04, 0.16, 4), crystal);
-      tipC.position.set(side * 0.55, -1.25, 0);
-      tipC.rotation.z = side * 0.42 + Math.PI;
+      const tipC = new Mesh(tipG, crystal);
+      tipC.position.set(0, -LOW_LEN - TIP_LEN / 2, 0);
+      tipC.rotation.z = Math.PI;
       knee.add(tipC);
-      legs.push({ hip, lift, knee, side, i, front: i === 0 });
+      // reach: how far out the foot rests from the hip (the end pairs reach
+      // farther, like a real spider's), z: the hip along the body for pitch.
+      legs.push({ hip, yaw, up, knee, side, i, z, reach: i === 0 || i === 3 ? 1.7 : 1.5, front: i === 0 });
     }
   }
+  // Two-bone planar IK in the leg's own vertical plane: the foot at `out`
+  // from the hip and `dy` below it; the knee bends up. Sets the shin and
+  // thigh so the tip lands on the target (clamped to what the leg can reach).
+  const legIK = (L, out, dy) => {
+    const a = UP_LEN;
+    const b = LOW_LEN + TIP_LEN;
+    const d = Math.min(a + b - 0.02, Math.max(Math.abs(a - b) + 0.02, Math.hypot(out, dy)));
+    const phi = Math.atan2(dy, out);
+    const alpha = Math.acos(Math.max(-1, Math.min(1, (a * a + d * d - b * b) / (2 * a * d))));
+    const th1 = phi + alpha;
+    const kx = a * Math.cos(th1);
+    const ky = a * Math.sin(th1);
+    const th2 = Math.atan2(dy - ky, out - kx);
+    L.up.rotation.z = L.side * (th1 - Math.PI / 2);
+    L.knee.position.set(L.side * kx, ky, 0);
+    L.knee.rotation.z = L.side * (th2 + Math.PI / 2);
+  };
   const floorGlow = glow(PALETTE.godstuffViolet, 3.2, 0.08);
   floorGlow.position.set(0, 0.06, -0.2);
   rig.add(floorGlow);
@@ -880,7 +907,7 @@ export function buildVeinWeaver() {
     const bound = e && Array.isArray(e.binds) ? e.binds.length : 0;
     // Gait: alternating tetrapod, legs lifting in two sets.
     const step = walkPhase * 2.4;
-    body.position.y = 1.1 - 0.35 * beatK - 0.15 * thump + 0.04 * Math.sin(t * 1.5) + 0.05 * Math.abs(Math.sin(step)) * moveK;
+    body.position.y = BODY_Y - 0.3 * beatK - 0.15 * thump + 0.04 * Math.sin(t * 1.5) + 0.05 * Math.abs(Math.sin(step)) * moveK;
     body.rotation.x = -0.18 * spinK + 0.12 * beatK;
     // Spinning: the abdomen tips up and back to aim its spinnerets; the
     // front legs rise. Beating: it rears, then slams down flat.
@@ -888,9 +915,15 @@ export function buildVeinWeaver() {
     for (const L of legs) {
       const set = (L.i + (L.side > 0 ? 1 : 0)) % 2;
       const ph = step + set * Math.PI;
-      L.lift.rotation.x = 0.25 * Math.max(0, Math.sin(ph)) * moveK * (L.i < 2 ? -1 : 1);
-      L.lift.rotation.z = L.side * (-0.18 * Math.max(0, Math.sin(ph)) * moveK - (L.front ? 0.7 * spinK + 0.5 * beatK : 0.12 * beatK) + 0.15 * thump);
-      L.knee.rotation.z = L.side * ((L.front ? 0.5 * spinK : 0) - 0.15 * beatK);
+      const swing = Math.max(0, Math.sin(ph)) * moveK;
+      // The hip's height over the floor under the body's pitch.
+      const hipY = body.position.y + 0.02 * Math.cos(body.rotation.x) - L.z * Math.sin(body.rotation.x);
+      // Stepping: the swinging set lifts and strides; spinning or beating,
+      // the front pair rises off the floor and draws in.
+      const raise = 0.28 * swing + (L.front ? 0.9 * spinK + 0.55 * beatK : 0);
+      const draw = L.front ? 0.35 * spinK + 0.2 * beatK : 0;
+      L.hip.rotation.y = L.yaw + L.side * 0.16 * Math.cos(ph) * moveK;
+      legIK(L, L.reach - draw, -hipY + raise);
     }
     for (const F of fangs) F.fg.rotation.x = -0.4 * Math.max(spinK, beatK) + 0.08 * Math.sin(t * 4 + F.side);
     const beat = Math.max(0, Math.sin(t * (3.2 + 1.6 * rageK + (1 - hpFrac))));

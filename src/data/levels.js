@@ -197,11 +197,12 @@ export const LEVELS = Object.freeze({
       }),
       // The Heart's own beasts: husks and a censer that mends them.
       Object.freeze({ kind: 'colossus', name: 'The Geode Colossus', adds: Object.freeze([Object.freeze(['husk', 2]), Object.freeze(['censer', 1])]) }),
-      // THIRD BOSSES (slice 11): the Heart's spider in the Hollow Nave. The
-      // Cantor stays the campaign's final boss, so the Weaver is met only past
-      // the Endless Descent's first cycle (endlessOnly), once the save has
-      // felled the Cantor and the Colossus (gated).
-      Object.freeze({ kind: 'veinweaver', name: 'The Vein Weaver', layout: 27, gated: true, endlessOnly: true, adds: Object.freeze([Object.freeze(['husk', 2]), Object.freeze(['siphon', 1])]) }),
+      // THIRD BOSSES (slice 11): the Heart's spider in the Hollow Nave, met
+      // once the save has felled the Cantor and the Colossus (gated). It was
+      // Endless-only while the Cantor was the campaign's final boss; since
+      // the Spire (Level V) ends the campaign it joins Level IV's roll like
+      // the other acts' thirds (Small fixes 3).
+      Object.freeze({ kind: 'veinweaver', name: 'The Vein Weaver', layout: 27, gated: true, adds: Object.freeze([Object.freeze(['husk', 2]), Object.freeze(['siphon', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 3 }),
   }),
@@ -331,9 +332,9 @@ export function bossIndexFor(act, seed, open = null) {
 // run can meet. A `gated` boss joins only when `open` (the run's
 // thirdBosses: the acts whose other bosses the save has felled) names the
 // act; until then a seed rolls between the others exactly as before. An
-// `endlessOnly` boss (slice 11: the Heart's Vein Weaver, so the Cantor stays
-// the campaign's final boss) joins only the pool of an Endless depth past
-// the first cycle (`endless`, data/endless.js endlessBossIndex).
+// `endlessOnly` boss joins only the pool of an Endless depth past the first
+// cycle (`endless`, data/endless.js endlessBossIndex). No row carries it
+// today: the Heart's Vein Weaver did while the Cantor ended the campaign.
 export function bossPool(lv, act, open = null, endless = false) {
   const list = lv.bosses ?? [];
   const on = Array.isArray(open) && open.includes(Number(act));
