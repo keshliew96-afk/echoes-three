@@ -141,6 +141,15 @@ export const NODES = Object.freeze({
   undercurrent: Object.freeze({ id: 'undercurrent', name: 'Undercurrent', kind: 'technique', rarity: 'common', limit: 1, cls: 'tidecaller' }),
   riptide: Object.freeze({ id: 'riptide', name: 'Riptide', kind: 'technique', rarity: 'rare', limit: 1, cls: 'tidecaller' }),
   confluence: Object.freeze({ id: 'confluence', name: 'Confluence', kind: 'technique', rarity: 'rare', limit: 1, cls: 'tidecaller' }),
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): her eight, six common and two rare.
+  bronze: Object.freeze({ id: 'bronze', name: 'Bronze', kind: 'technique', rarity: 'common', limit: 2, cls: 'bellwright' }),
+  clangour: Object.freeze({ id: 'clangour', name: 'Clangour', kind: 'technique', rarity: 'common', limit: 1, cls: 'bellwright' }),
+  resound: Object.freeze({ id: 'resound', name: 'Resound', kind: 'technique', rarity: 'common', limit: 1, cls: 'bellwright' }),
+  aftertone: Object.freeze({ id: 'aftertone', name: 'Aftertone', kind: 'technique', rarity: 'common', limit: 1, cls: 'bellwright' }),
+  tuned: Object.freeze({ id: 'tuned', name: 'Tuned', kind: 'technique', rarity: 'common', limit: 1, cls: 'bellwright' }),
+  cloister: Object.freeze({ id: 'cloister', name: 'Cloister', kind: 'technique', rarity: 'common', limit: 1, cls: 'bellwright' }),
+  belfry: Object.freeze({ id: 'belfry', name: 'Belfry', kind: 'technique', rarity: 'rare', limit: 1, cls: 'bellwright' }),
+  sympathy: Object.freeze({ id: 'sympathy', name: 'Sympathy', kind: 'technique', rarity: 'rare', limit: 1, cls: 'bellwright' }),
 });
 
 // The Healer's 17 shared nodes (class nodes excluded), ascending id.
@@ -380,6 +389,22 @@ export function classVerdict(d, id) {
       return d.drag || d.push || d.drawIn ? L : G('nothing on this skill moves an enemy');
     case 'confluence':
       return passive ? G(PASSIVE_GREY) : L;
+    // THE BELLWRIGHT (docs/BELLWRIGHT.md).
+    case 'bronze':
+    case 'belfry':
+      return d.bell ? L : G('this skill hangs no bell');
+    case 'clangour':
+      return d.bell && d.status && d.status.kind === 'slow' ? L : G('this skill hangs no bell');
+    case 'resound':
+    case 'sympathy':
+      return d.ringBonus ? L : G('nothing on this skill rings harder in a ring');
+    case 'aftertone':
+      return d.peal ? L : G('this skill rings no bells');
+    case 'tuned':
+      if (passive) return d.field === 'hostile' && d.output === 'damage' ? L : G(PASSIVE_GREY);
+      return dmg && (d.shape === 'projectile' || d.shape === 'melee_arc') && !d.ringBonus ? L : G('only a bolt, a swing or a hum without the ring bonus');
+    case 'cloister':
+      return d.archetype === 'guard' ? L : G('this skill shields no one');
     default:
       return G('unknown_node');
   }

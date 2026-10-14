@@ -108,7 +108,8 @@ function secondRoom(W, kit) {
 {
   const row = ALLY_CLASSES.bellwright;
   check(row && row.maxHp === 95 && row.basicShape === 'projectile' && row.basicPower === 7 && row.moveSpeed === 2.35, 'her class row: 95 HP, speed 2.35, Ding a 7-power bolt');
-  check(same(C.CLASS_SKILLS.bellwright, KIT) && KIT.every((id) => SKILLS[id] && SKILLS[id].cls === 'bellwright'), 'her four base skills, all hers');
+  // Slice 5 grew her pool to eleven; the base four still lead it.
+  check(same(C.CLASS_BASE_KIT.bellwright, KIT) && same(C.CLASS_SKILLS.bellwright.slice(0, 4), KIT) && C.CLASS_SKILLS.bellwright.every((id) => SKILLS[id] && SKILLS[id].cls === 'bellwright'), 'her four base skills lead her pool, all hers');
   check(KIT.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.gatedPool(KIT, false).length === 0 && C.gatedPool(KIT, true).length === 4, 'all four are campaign-only');
   check(SKILLS.hang_bell.bell === true && SKILLS.peal.peal === true && SKILLS.clapper.ringBonus === true && SKILLS.hum.shape === 'aura', 'Hang Bell hangs a bell, Peal rings them, the Clapper reads the ring, Hum is a passive');
   check(same(L.DEFAULT_LINEUP, ['healer', 'tank', 'swordsman', 'archer']) && same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller', 'bellwright']), 'the default lineup is the old four (Rill and Tolly at camp)');
@@ -137,7 +138,7 @@ let saved = null;
   const tolly = ally(W, 3);
   check(same(p.lineup(), TOLLY) && tolly.classId === 'bellwright' && tolly.maxHp === 95 && tolly.hp === 95, `seat 3 is Tolly (${tolly.classId}, ${tolly.maxHp} HP)`);
   const pool = p.pools(3);
-  check(same([...pool.classSkills].sort(), [...KIT].sort()), `her draft pool is her four skills (${pool.classSkills.join(',')})`);
+  check(same([...pool.classSkills].sort(), [...C.CLASS_SKILLS.bellwright].sort()), `her draft pool is her whole kit (${pool.classSkills.length})`);
   check(L.classOfSeat(3) === 'bellwright' && L.seatOfClass('archer') === -1, 'the UI lookup: Tolly on seat 3, the Archer at camp');
 
   secondRoom(W, { 3: KIT });

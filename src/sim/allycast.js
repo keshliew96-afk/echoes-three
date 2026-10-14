@@ -419,6 +419,9 @@ export function createAllyCaster(ctx) {
       if (def.push) opts.kbDist = def.push;
       const crashed = def.crash ? crashOn(t) : false;
       if (crashed) p *= CLASS_TECH.crashMul;
+      // THE BELLWRIGHT: a swing with the ring bonus (Tuned) lands harder in a ring.
+      const rung = def.ringBonus && !srcLabel ? ringOf(a.id, t) : null;
+      if (rung) p *= def.ringMul ?? CLASS_TECH.ringMul;
       if (M) {
         if (M.critMul) opts.critMul = M.critMul;
         if (M.kbScale !== undefined) opts.kbScale = M.kbScale;
@@ -431,6 +434,7 @@ export function createAllyCaster(ctx) {
       else if (T && srcLabel) T.suppressed(seat, () => combat.applyDamage(t, p, opts));
       else combat.applyDamage(t, p, opts);
       if (crashed) spendSoak(a.id, t, def.id, castId, !!(M && M.riptide));
+      if (rung) ringHit(seat, def.id, t, rung, !!def.sympathy, getTick());
     }
     applySkillStatus(a, def, targets);
   }
@@ -557,12 +561,69 @@ export function createAllyCaster(ctx) {
     }
     return best;
   }
-  function capBells(sourceId, tick) {
+  function capBells(sourceId, tick, cap = CLASS_TECH.bellCap) {
     const bells = bellsOf(sourceId);
-    for (let i = 0; i < bells.length - CLASS_TECH.bellCap; i++) {
+    for (let i = 0; i < bells.length - cap; i++) {
       events.emit(tick, 'azone_expire', { id: bells[i].id, skill: bells[i].skill, replaced: true });
       registry.despawn(bells[i].id);
     }
+  }
+
+  // THE BELLWRIGHT's nodes on one of her skills (docs/BELLWRIGHT.md): the
+  // resolved def with what they change. A skill with none of them comes back
+  // as the very same object, so every other class's cast is untouched.
+  function bellDef(a, def) {
+    if (a.classId !== 'bellwright' || a.partyIndex === undefined) return def;
+    const b = buildOf(a.partyIndex);
+    const techs = b ? b.tech.liveTechs(def.id) : [];
+    if (techs.length === 0) return def;
+    const n = (id) => techs.filter((x) => x === id).length;
+    const out = { ...def };
+    let any = false;
+    const set = (k, v) => {
+      out[k] = v;
+      any = true;
+    };
+    if (def.bell) {
+      // Bronze: +2 s on the bell, per copy. Clangour: each toll slows 15% more.
+      // Belfry: while she hangs with this skill, four bells.
+      if (n('bronze')) set('durationSec', def.durationSec + n('bronze') * CLASS_TECH.bronzeSec);
+      if (n('clangour') && def.status && def.status.kind === 'slow') set('status', { ...def.status, mag: def.status.mag + CLASS_TECH.clangourMag });
+      if (n('belfry')) set('bellCap', CLASS_TECH.belfryCap);
+    }
+    // Tuned: a bolt or a swing that lacked it lands harder in a ring too.
+    if (n('tuned') && !def.ringBonus && def.archetype === 'damage' && (def.shape === 'projectile' || def.shape === 'melee_arc')) set('ringBonus', true);
+    if (out.ringBonus) {
+      if (n('resound')) set('ringMul', CLASS_TECH.resoundMul); // +90% instead of +50%
+      if (n('sympathy')) set('sympathy', true); // the bell it lands in tolls at once
+    }
+    if (def.peal && n('aftertone')) set('aftertone', true); // each bell rung tolls twice more
+    if (def.archetype === 'guard' && n('cloister')) set('cloister', true); // +50% shield in a ring
+    return any ? out : def;
+  }
+  // Sympathy: a ring hit tolls that bell at once (an extra toll, its next one
+  // a second after this), at most once a second per bell.
+  function sympathyToll(z, tick) {
+    if (!z || !registry.byId(z.id)) return;
+    if (tick - (z.sympathyTick ?? -Infinity) < CLASS_TECH.sympathyGapTicks) return;
+    if (z.nextTickTick <= tick + 1) return; // it tolls this beat anyway
+    z.sympathyTick = tick;
+    z.nextTickTick = tick + 1;
+    z.totalTicks += 1;
+    events.emit(tick, 'bell_sympathy', { id: z.id, x: r2(z.x), z: r2(z.z) });
+  }
+  // Tuned on a passive (the Hum): the ring multiplier its pulse uses on an
+  // enemy inside one of her rings, 0 when the node is not there.
+  function tunedPulse(seat, skillId) {
+    const b = buildOf(seat);
+    const techs = b ? b.tech.liveTechs(skillId) : [];
+    if (!techs.includes('tuned')) return 0;
+    return techs.includes('resound') ? CLASS_TECH.resoundMul : CLASS_TECH.ringMul;
+  }
+  // A ring hit's own beat: the event, then Sympathy.
+  function ringHit(seat, skill, t, z, sympathy, tick) {
+    events.emit(tick, 'bell_ring_hit', { seat, skill, target: t.id, bell: z.id, x: r2(t.x), z: r2(t.z) });
+    if (sympathy) sympathyToll(z, tick);
   }
 
   // Crush: a stunned or taunted enemy takes x1.5.
@@ -594,7 +655,7 @@ export function createAllyCaster(ctx) {
   // M, extra }. Returns the emitted cast payload.
   function deliver(a, def0, power, c) {
     const { tick, human, target, f, tag, echo, castId, M, extra } = c;
-    const def = tideDef(a, def0);
+    const def = bellDef(a, tideDef(a, def0));
     let d = c.d;
     const seat = a.partyIndex;
     const T = tech();
@@ -631,7 +692,9 @@ export function createAllyCaster(ctx) {
       const ticks = def.status ? def.status.ticks : 240;
       for (const m of recips) {
         if (!S) break;
-        const rec = S.apply(m, 'shield', power, ticks, tick, a.id);
+        // THE BELLWRIGHT: Cloister — +50% on a member inside one of her rings.
+        const pw = def.cloister && ringOf(a.id, m) ? power * CLASS_TECH.cloisterMul : power;
+        const rec = S.apply(m, 'shield', pw, ticks, tick, a.id);
         if (rec) rec.skill = def.id;
         // THE TIDECALLER: Bubble Ward's bubble bursts when this shield ends.
         if (rec && def.burstSoak) m.bubble = { src: a.id, seat: a.partyIndex, untilTick: rec.untilTick };
@@ -741,6 +804,16 @@ export function createAllyCaster(ctx) {
       Object.assign(cast, extra);
       events.emit(tick, 'ally_cast', cast);
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
+      // The Carillon rings every bell back to its full length; Aftertone
+      // gives each bell rung two more tolls.
+      if (bells.length && (def.rehang || def.aftertone)) {
+        for (const z of bells) {
+          if (!registry.byId(z.id)) continue;
+          if (def.rehang) z.totalTicks = Math.max(z.totalTicks, z.ticksDone + (z.fullTicks ?? z.totalTicks));
+          if (def.aftertone) z.totalTicks += CLASS_TECH.aftertoneTolls;
+          events.emit(tick, 'bell_rehang', { id: z.id, left: z.totalTicks - z.ticksDone, x: r2(z.x), z: r2(z.z) });
+        }
+      }
       return cast;
     }
 
@@ -821,7 +894,12 @@ export function createAllyCaster(ctx) {
       // (Undercurrent: 40% farther); Whirlpool and Rain Squall also slow.
       if (def.drag) spec.drag = def.drag * (M && M.dragMul ? M.dragMul : 1);
       if (def.also) spec.also = { kind: def.also.kind, mag: def.also.mag, ticks: def.also.ticks };
-      if (def.bell) spec.bell = true; // THE BELLWRIGHT: a hung bell
+      // THE BELLWRIGHT: a hung bell (its full length kept for the Carillon).
+      if (def.bell) {
+        spec.bell = true;
+        spec.fullTicks = totalTicks;
+        if (def.bellSize) spec.bellSize = def.bellSize;
+      }
       zones.push(registry.spawn(spec));
     }
     const z0 = zones[0];
@@ -842,10 +920,11 @@ export function createAllyCaster(ctx) {
         radius: z.radius,
         totalTicks: z.totalTicks,
         ...(z.bell ? { bell: true } : {}),
+        ...(z.bellSize ? { bellSize: z.bellSize } : {}),
         ...(tag || {}),
       });
     }
-    if (def.bell) capBells(a.id, tick); // THE BELLWRIGHT: at most three bells, her oldest goes
+    if (def.bell) capBells(a.id, tick, def.bellCap); // THE BELLWRIGHT: at most three bells (Belfry: four), her oldest goes
     return cast;
   }
 
@@ -885,7 +964,10 @@ export function createAllyCaster(ctx) {
     }
     if (def.critBonus) put('critBonus', def.critBonus);
     if (def.crash && def.shape === 'projectile') put('crash', true); // THE TIDECALLER: a crashing bolt
-    if (def.ringBonus && def.shape === 'projectile') put('ring', true); // THE BELLWRIGHT: the Clapper
+    // THE BELLWRIGHT: the Clapper and the Knell (Resound: a bigger bonus;
+    // Sympathy: the bell tolls).
+    if (def.ringBonus && def.shape === 'projectile') put('ring', def.ringMul ?? true);
+    if (def.sympathy && def.shape === 'projectile') put('sympathy', true);
     if (!any) return null;
     put('castId', castId);
     if (echoFlag) put('echo', true);
@@ -922,9 +1004,9 @@ export function createAllyCaster(ctx) {
     if (crashed) p *= CLASS_TECH.crashMul;
     // THE BELLWRIGHT: the Clapper lands harder inside one of her bells' rings.
     const rung = m.ring ? ringOf(bolt.sourceId, t) : null;
-    if (rung) p *= CLASS_TECH.ringMul;
+    if (rung) p *= typeof m.ring === 'number' ? m.ring : CLASS_TECH.ringMul;
     const r = T ? T.instance({ seat, castId: m.castId ?? -1, echo: !!m.echo, skill: bolt.skill }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
-    if (rung) events.emit(tick, 'bell_ring_hit', { seat, skill: bolt.skill, target: t.id, bell: rung.id, x: r2(t.x), z: r2(t.z) });
+    if (rung) ringHit(seat, bolt.skill, t, rung, !!m.sympathy, tick);
     if (crashed) spendSoak(bolt.sourceId, t, bolt.skill, m.castId ?? null, !!m.riptide);
     if (m.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) soakApply(t, m.applies, tick, bolt.sourceId);
     // Deluge: the bolt leaves a puddle where it first lands.
@@ -1010,6 +1092,9 @@ export function createAllyCaster(ctx) {
     zoneHit,
     tideStatus,
     soakApply,
+    tunedPulse,
+    ringOf,
+    ringHit,
     bubbleStep,
     scatterShards,
     startDisplacement,

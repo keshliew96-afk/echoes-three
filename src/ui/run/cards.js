@@ -75,6 +75,15 @@ export const NODE_GLYPH = {
   undercurrent: '⥀',
   riptide: '⌁',
   confluence: '⋈',
+  // THE BELLWRIGHT's nodes (docs/BELLWRIGHT.md).
+  bronze: '⊚',
+  clangour: '≀',
+  resound: '⟐',
+  aftertone: '∾',
+  tuned: '♮',
+  cloister: '⌂',
+  belfry: '⩚',
+  sympathy: '⋄',
 };
 
 // §15.1 "Effect" column + the §15.3 matrix summarised per node.
@@ -135,6 +144,15 @@ export const NODE_EFFECT = {
   undercurrent: 'this skill drags enemies 40% farther · a pushing skill pulls them in instead.',
   riptide: 'a Crash from this skill also stuns for 0.4 s (not the bosses).',
   confluence: 'whenever a teammate hits a soaked enemy, this skill cools 0.1 s faster (at most every 0.5 s).',
+  // THE BELLWRIGHT's nodes (docs/BELLWRIGHT.md).
+  bronze: 'a bell from this skill tolls 2 s longer, per copy.',
+  clangour: 'each toll of a bell from this skill slows 15% more.',
+  resound: 'the ring bonus grows from +50% to +90%.',
+  aftertone: 'every bell this skill rings tolls two more times.',
+  tuned: 'this skill lands +50% on an enemy inside one of her bells\' rings.',
+  cloister: 'shields from this skill are 50% stronger on a teammate inside one of her bells\' rings.',
+  belfry: 'while she hangs bells with this skill, four can hang at once.',
+  sympathy: 'a ring hit from this skill makes that bell toll at once (at most once a second per bell).',
 };
 
 // The same effects in one breath. Used by the compact reflow (short windows),
@@ -193,6 +211,15 @@ export const NODE_EFFECT_SHORT = {
   undercurrent: 'drags farther · pushes pull.',
   riptide: 'a Crash also stuns.',
   confluence: 'teammates on soaked foes cool this.',
+  // THE BELLWRIGHT's nodes.
+  bronze: 'bells toll +2 s.',
+  clangour: 'tolls slow 15% more.',
+  resound: 'ring bonus +90%.',
+  aftertone: 'rung bells toll twice more.',
+  tuned: '+50% in her rings.',
+  cloister: '+50% shield in her rings.',
+  belfry: 'four bells at once.',
+  sympathy: 'a ring hit tolls the bell.',
 };
 
 // A skill's two-letter medallion (shown where a skill has no icon art). Two
@@ -274,6 +301,14 @@ export const SKILL_BODY = {
   peal: 'Ring every bell you have hung at once: 16 to up to 6 enemies round each bell and a 0.4 s daze (not the bosses). With no bell hung, it rings round the beetle.',
   clapper: 'A thrown clapper: 12, and +50% on an enemy standing in one of your bells\' rings.',
   hum: 'A passive hum: every second, the 3 nearest enemies within 2.2 u take 4.',
+  // THE BELLWRIGHT, the rest of her kit (content plan 4, slice 5).
+  great_bell: 'Hang a great bell at the target for 6 s: it tolls every second for 12 to enemies in its wide ring, slowing them 35% for a moment. It counts as one of your three bells.',
+  knell: 'A struck note: 15 to every enemy along a 5.5 u line, +50% on each one standing in one of your bells\' rings.',
+  bell_swing: 'The beetle swings her belfry bell in a 120° arc: 18 to up to 5 enemies within 1.9 u, knocked back.',
+  wing_hop: 'The beetle hops 2.4 u away (untouchable) and leaves a handbell where she stood for 4 s: 5 a toll, and each toll slows. It counts as one of your bells.',
+  vesper_chime: 'A soft chime over the two allies enemies are after: a 12 shield each for 4 s.',
+  tuning_fork: 'Every ally within 3 u, the beetle too: a 6 shield and 25% faster for 3 s.',
+  carillon: 'Ring every bell you have hung, harder: 24 to up to 8 enemies round each bell and a 0.6 s daze (not the bosses). Every bell it rings starts its time over.',
   // THE TIDECALLER, the rest of her kit (slice 3).
   torrent: 'Crash. A jet of water: 18 to every enemy along a 5.5 u line. +60% on a soaked enemy, which spends the soak.',
   whirlpool: 'A whirlpool at the target for 5 s: 4 per second, soaks, slows 30% and drags enemies inside toward its centre.',
