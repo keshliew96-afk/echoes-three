@@ -85,23 +85,22 @@ level clears and save round trips. All numbers are first guesses until play.
 
 # Third bosses: the Barrow and the Heart (content plan 3, slice 11)
 
-The Ashen Barrow gets a third boss on the same gate as slice 10, and the
-Hollow Heart gets one that is met only in the Endless Descent, so the Hollow
-Cantor stays the campaign's final boss.
+The Ashen Barrow gets a third boss on the same gate as slice 10, and so does
+the Hollow Heart. (The Heart's was met only in the Endless Descent while the
+Hollow Cantor ended the campaign; since the Still Spire, Level V, ends it,
+Small fixes 3 put the Weaver on the same gate as the others.)
 
 - **The Barrow.** The Ash Raven (`gated: true` on `LEVELS[3].bosses`) joins
   the Barrow's seed roll once the save has felled the Barrow Wyrm and the
   Lich Ram. Unlocked, seeds 1 to 60 meet the Wyrm 21 times, the Raven 23 and
   the Lich Ram 16 on Level III. Locked, every seed meets the boss it met
   before.
-- **The Heart.** The Vein Weaver carries `gated: true` and `endlessOnly:
-  true`. `bossPool(lv, act, open, endless)` leaves an `endlessOnly` row out
-  unless `endless` is set, and only `endlessBossIndex` sets it, for depths
-  past the first cycle (`beyondCampaign`). So a campaign's Level IV, and
-  Endless Depth 4 (the campaign's own Heart), always end on the Cantor or the
-  Colossus, unlocked or not. Once the save has felled both of them, the Heart
-  at Depths 8, 12, ... cycles through all three: every seed meets the Weaver
-  at Depth 8 or Depth 12.
+- **The Heart.** The Vein Weaver (`gated: true` on `LEVELS[4].bosses`)
+  joins the Heart's seed roll once the save has felled the Cantor and the
+  Colossus, so an open save meets it on about a third of its Level IV runs
+  and in Endless Depth 4. Locked, every seed meets the boss it met before.
+  The `endlessOnly` flag and `bossPool`'s `endless` argument stay for a
+  later boss that should wait for the deep descent; no row carries it now.
 - **The Daily** never meets either, whatever the save.
 
 | | The Ash Raven | The Vein Weaver |
@@ -166,8 +165,8 @@ attack from its "Third bosses" section.
 ## Checks
 
 `node tools/third-bosses-bh-probe.mjs` (headless): the gate (old seeds
-unchanged while locked, the Heart never in a campaign, the Weaver only past
-the first Endless cycle, the Daily never, saves), wiring, translations,
+unchanged while locked, the Weaver in an open campaign's Level IV roll and
+on a later Endless Heart, the Daily never, saves), wiring, translations,
 every attack landing, the Omen following then locking, the gust's shove, the
 Bind's leash, the enrage, the governor, level clears and save round trips.
 `node tools/third-bosses-bh-browser.mjs` (against `npm run dev`): rigs,

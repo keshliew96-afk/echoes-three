@@ -6,9 +6,8 @@
 //
 // Checks:
 //   1. Wiring: Level III meets the Wyrm, the Lich Ram or (unlocked) the Ash
-//      Raven by seed; Level IV keeps the Cantor and the Colossus in every
-//      campaign, unlocked or not, and the Vein Weaver joins only Endless
-//      depths past the first cycle once unlocked; the kits, the boss rooms
+//      Raven by seed; Level IV the Cantor, the Colossus or (unlocked, since
+//      Small fixes 3) the Vein Weaver; the kits, the boss rooms
 //      (Ash Amphitheatre 25, Hollow Nave 27), deeds, tints, the freed
 //      Barrow warden, the journal rows and the story lines in ten languages.
 //   2. Ash Raven: a Carrion Dive lane that hurts (it rises, then dives and
@@ -22,7 +21,7 @@
 //      telegraphs live, starts >= 72 ticks apart.
 //   5. Felling each clears its level.
 //   6. The run gate: a campaign carries it; the Daily ignores it; Endless
-//      meets the Weaver past the first cycle when the Heart is open.
+//      meets the Weaver on a later Heart when the Heart is open.
 //   7. Saves: a world mid-fight (each boss) continues bit-identically after
 //      a capture round trip.
 // Exit code 1 on any failure.
@@ -42,7 +41,7 @@ const { hashState } = await import(u('src/core/hash.js'));
 const { createStateIO } = await import(u('src/save/capture.js'));
 const { clonePlain } = await import(u('src/save/codec.js'));
 const { LEVELS, bossFor, thirdBossActs } = await import(u('src/data/levels.js'));
-const { endlessBossIndex } = await import(u('src/data/endless.js'));
+const { endlessBossIndex, CYCLE } = await import(u('src/data/endless.js'));
 const { isDailyKey } = await import(u('src/data/daily.js'));
 const { BOSS_KITS } = await import(u('src/sim/boss.js'));
 const { DEEDS, UNLOCKS, WATER_BOSSES } = await import(u('src/data/unlocks.js'));
@@ -146,7 +145,7 @@ const BOSSES_BEFORE = { 3: ['wyrm', 'lichram'], 4: ['cantor', 'colossus'] };
     for (let s = 1; s <= 200; s++) if (bossFor(lv, s).kind === before[oldIndex(lv, s)]) same += 1;
     check(same === 200, `locked, seeds 1-200 on Level ${lv} meet the boss they met before (${same}/200)`);
     let deep = 0;
-    for (let s = 1; s <= 40; s++) for (let d = lv; d <= lv + 12; d += 4) if (LEVELS[lv].bosses[endlessBossIndex(d, s)].kind === before[(oldIndex(lv, s) + Math.floor((d - 1) / 4)) % 2]) deep += 1;
+    for (let s = 1; s <= 40; s++) for (let d = lv; d <= lv + 3 * CYCLE; d += CYCLE) if (LEVELS[lv].bosses[endlessBossIndex(d, s)].kind === before[(oldIndex(lv, s) + Math.floor((d - 1) / CYCLE)) % 2]) deep += 1;
     check(deep === 160, `locked, Endless cycles the original two as before (${deep}/160)`);
   }
   {
@@ -154,27 +153,25 @@ const BOSSES_BEFORE = { 3: ['wyrm', 'lichram'], 4: ['cantor', 'colossus'] };
     for (let s = 1; s <= 60; s++) n[bossFor(3, s, null, [3]).kind] = (n[bossFor(3, s, null, [3]).kind] ?? 0) + 1;
     check(k3.every((k) => n[k] > 0), `unlocked, seeds 1-60 on Level III meet all three (${k3.map((k) => `${k} ${n[k] ?? 0}`).join(', ')})`);
     const ends = new Set();
-    for (let d = 3; d <= 11; d += 4) ends.add(LEVELS[3].bosses[endlessBossIndex(d, 3, [3])].kind);
+    for (let d = 3; d <= 3 + 2 * CYCLE; d += CYCLE) ends.add(LEVELS[3].bosses[endlessBossIndex(d, 3, [3])].kind);
     check(ends.size === 3, `unlocked, Endless cycles all three Barrow bosses (${[...ends].join(', ')})`);
   }
   {
-    // The Heart: the campaign never meets the Weaver, unlocked or not, and
-    // every seed keeps the boss it met before.
-    let same = 0;
-    for (let s = 1; s <= 200; s++) if (bossFor(4, s, null, [3, 4]).kind === BOSSES_BEFORE[4][oldIndex(4, s)]) same += 1;
-    check(same === 200, `unlocked, campaign Level IV still meets the Cantor or the Colossus as before, never the Weaver (${same}/200)`);
+    // The Heart (Small fixes 3): since the Spire ends the campaign the
+    // Weaver joins campaign Level IV's roll once the Heart is open, like the
+    // other acts' thirds; locked seeds keep their old boss (above).
+    const n4 = {};
+    for (let s = 1; s <= 60; s++) n4[bossFor(4, s, null, [3, 4]).kind] = (n4[bossFor(4, s, null, [3, 4]).kind] ?? 0) + 1;
+    check(k4.every((k) => n4[k] > 0), `unlocked, seeds 1-60 on Level IV meet all three (${k4.map((k) => `${k} ${n4[k] ?? 0}`).join(', ')})`);
     let firstCycle = 0;
-    for (let s = 1; s <= 60; s++) if (LEVELS[4].bosses[endlessBossIndex(4, s, [4])].kind === bossFor(4, s).kind) firstCycle += 1;
-    check(firstCycle === 60, `unlocked, Endless Depth 4 (the campaign's Heart) meets the campaign's boss (${firstCycle}/60)`);
-    const deepKinds = {};
-    for (let s = 1; s <= 60; s++) for (const d of [8, 12]) { const k = LEVELS[4].bosses[endlessBossIndex(d, s, [4])].kind; deepKinds[k] = (deepKinds[k] ?? 0) + 1; }
-    check(deepKinds.veinweaver > 0 && deepKinds.cantor > 0 && deepKinds.colossus > 0, `unlocked, Depths 8 and 12 cycle all three Heart bosses (${Object.entries(deepKinds).map(([k, v]) => `${k} ${v}`).join(', ')})`);
+    for (let s = 1; s <= 60; s++) if (LEVELS[4].bosses[endlessBossIndex(4, s, [4])].kind === bossFor(4, s, null, [4]).kind) firstCycle += 1;
+    check(firstCycle === 60, `unlocked, Endless Depth 4 (the campaign's Heart) meets the campaign's roll (${firstCycle}/60)`);
     let all3 = 0;
-    for (let s = 1; s <= 60; s++) { const set = new Set([4, 8, 12].map((d) => LEVELS[4].bosses[endlessBossIndex(d, s, [4])].kind)); if (set.size === 3) all3 += 1; }
-    check(all3 === 60, `unlocked, every seed meets all three Heart bosses by Depth 12 (${all3}/60)`);
+    for (let s = 1; s <= 60; s++) { const set = new Set([4, 4 + CYCLE, 4 + 2 * CYCLE].map((d) => LEVELS[4].bosses[endlessBossIndex(d, s, [4])].kind)); if (set.size === 3) all3 += 1; }
+    check(all3 === 60, `unlocked, every seed meets all three Heart bosses by its third Heart (${all3}/60)`);
   }
   check(thirdBossActs({ wyrm: 1 }).length === 0 && thirdBossActs({ wyrm: 1, lichram: 1 }).join() === '3', "felling the Wyrm and the Lich Ram opens the Barrow's third boss");
-  check(thirdBossActs({ cantor: 1, colossus: 1 }).join() === '4' && thirdBossActs({ cantor: 1 }).length === 0, "felling the Cantor and the Colossus opens the Heart's (for Endless)");
+  check(thirdBossActs({ cantor: 1, colossus: 1 }).join() === '4' && thirdBossActs({ cantor: 1 }).length === 0, "felling the Cantor and the Colossus opens the Heart's");
   check(!!BOSS_KITS.ashraven && !!BOSS_KITS.veinweaver, 'both boss kits are registered');
   check(bossFor(3, 1, 'ashraven').layout === 25 && bossFor(4, 1, 'veinweaver').layout === 27, 'the Raven fights in the Ash Amphitheatre (25), the Weaver in the Hollow Nave (27)');
   check(!!DEEDS.boss_ashraven && !!DEEDS.boss_veinweaver, `deeds: ${DEEDS.boss_ashraven?.name}, ${DEEDS.boss_veinweaver?.name}`);
@@ -387,7 +384,7 @@ for (const [kind, lv] of [['ashraven', 3], ['veinweaver', 4]]) {
   const W4 = makeWorld(seed);
   W4.run.startCampaign({ level: 4, harness: true, thirdBosses: [3, 4] });
   toBoss(W4);
-  check(['cantor', 'colossus'].includes(bossOf(W4)?.kind), `an unlocked campaign's Heart still ends on the Cantor or the Colossus (${bossOf(W4)?.kind})`);
+  check(bossOf(W4)?.kind === bossFor(4, W4.run.view().frame.seed, null, [4]).kind, `an unlocked campaign's Heart boss room holds the seed's roll (${bossOf(W4)?.kind})`);
   const key = ['2026-10-10', '20261010'].find((k) => isDailyKey(k));
   const D = makeWorld(seed);
   D.run.startCampaign({ level: 1, harness: true, daily: { key }, thirdBosses: [3, 4] });
@@ -396,15 +393,13 @@ for (const [kind, lv] of [['ashraven', 3], ['veinweaver', 4]]) {
   const X = makeWorld(seed);
   X.io.apply(clonePlain(tree));
   check(JSON.stringify(X.run.view().thirdBosses) === '[3,4]', 'the gate survives a save round trip');
-  // Endless: a descent on a seed whose second Heart cycle rolls the Weaver.
+  // Endless: a seed whose second Heart (Depth 4 + CYCLE) rolls the Weaver
+  // when open, and one of the first two when locked.
+  const HD = 4 + CYCLE;
   let es = 1;
-  while (LEVELS[4].bosses[endlessBossIndex(8, es, [4])].kind !== 'veinweaver') es += 1;
-  const E = makeWorld(es);
-  E.run.startCampaign({ level: 1, harness: true, endless: true, thirdBosses: [4] });
-  const efs = E.run.view().frame?.seed ?? es;
-  const want = LEVELS[4].bosses[endlessBossIndex(8, efs, [4])].kind;
-  const wantLocked = LEVELS[4].bosses[endlessBossIndex(8, efs)].kind;
-  check(wantLocked !== 'veinweaver' && ['cantor', 'colossus', 'veinweaver'].includes(want), `Depth 8 on this seed meets ${want} when open, ${wantLocked} when locked`);
+  while (LEVELS[4].bosses[endlessBossIndex(HD, es, [4])].kind !== 'veinweaver') es += 1;
+  const wantLocked = LEVELS[4].bosses[endlessBossIndex(HD, es)].kind;
+  check(es < 200 && wantLocked !== 'veinweaver', `Depth ${HD} on seed ${es} meets the Weaver when open, ${wantLocked} when locked`);
 }
 
 // ---------------------------------------------------------------- 7. saves --

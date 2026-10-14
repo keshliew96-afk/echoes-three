@@ -11,7 +11,7 @@ process figures are what Chrome's renderer and GPU processes really hold.
 
 | Holder | Size | Notes |
 |---|---|---|
-| Room dressings | ~27 MB of GPU each, five resident | Each layout has a painted floor (2048 px) and apron (1600 px), mipmapped. The level's layouts are built ahead in the background (`src/scenes/arena.js`, residency) so a room never waits on a build. |
+| Room dressings | ~27 MB of GPU each, seven resident since the new layouts (five with the cap) | Each layout has a painted floor (2048 px) and apron (1600 px), mipmapped. The level's layouts are built ahead in the background (`src/scenes/arena.js`, residency) so a room never waits on a build. |
 | Paint canvases | ~20 MB of CPU each (was) | The floor and apron canvases the dressing was painted on. Now released the moment the GPU has its copy. |
 | Frame buffers | ~4 bytes per drawing-buffer pixel less than before | Composer target (half-float colour + depth), its second buffer (half-float colour), bloom chain at half resolution, the canvas (colour only now). |
 | JS heap | 34-45 MB | Flat across rooms and runs. |
@@ -64,7 +64,13 @@ recipe for Chrome flags is in `docs/TESTING.md` and the probe header.
 
 ## Left as is
 
-- Five dressings resident per level is the price of rooms that never hitch
-  on entry. Holding fewer would save ~27 MB of GPU per layout dropped, but
-  the next room's layout would then build during the door fade.
+- Every layout of the level resident (seven since plan 3's new layouts, GPU
+  ~276 MB on Level I) is the price of rooms that never hitch on entry.
+- **The cap (Small fixes 3).** `dressingCap` in `src/scenes/arena.js` holds at
+  most five of the resident level's dressings when the browser reports 4 GB
+  of memory or less (`navigator.deviceMemory`), or N with `?dressings=N`
+  (`?dressings=0` turns it off). The background builder stops at the cap; a
+  room whose layout is not resident builds it on entry, under the door fade,
+  and the dressing drawn longest ago goes. `levelResidencyState().cap` shows
+  it; the level card waits for the cap's worth, not the whole level.
 - The bake cache grows to its 24 MB cap over a long session by design.

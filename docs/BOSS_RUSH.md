@@ -15,8 +15,8 @@ back, with no rooms or doors between them.
   all ten before the first fight.
 - **Third bosses follow the save.** A locked third boss never appears. Once the
   save has felled a land's other two bosses, its third can come up, as in a
-  campaign. The Vein Weaver is Endless-only, so it appears only on lap two,
-  and only once the save has opened it. The Daily is unchanged.
+  campaign, the Vein Weaver included (it was Endless-only, lap two, until
+  Small fixes 3). The Daily is unchanged.
 - **Kit.** The rush sets out with the Level II starter grant plus a first war
   chest.
 - **Between fights.** Each boss pays the clear stipend plus a bounty of 40

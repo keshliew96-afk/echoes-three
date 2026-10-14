@@ -70,7 +70,14 @@ POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version } -> { 
     1 tick to six hours;
   - `implausible`: a won run that did not clear all 40 rooms, or a time under
     `MIN_ROOM_TICKS` (240 ticks, 4 s) per room cleared. The autopilot's fastest
-    whole level over 64 seeds took 6046 ticks, 756 a room.
+    whole level over 64 seeds took 6046 ticks, 756 a room. Checked again in
+    Small fixes 3 against the fastest a run can possibly be: a "god mode"
+    Daily (every enemy killed the tick it spawns, the party kept whole) over
+    24 days won in 14,531 to 35,507 ticks (363 to 888 a room), and its fastest
+    stretch of 20 rooms or more ran 245 a room. So the floor never refuses
+    a real run, and it cannot rise much: below 20 rooms the god-mode runs dip
+    to about 100 a room through shops and event rooms. `tools/small-fixes-3-probe.mjs`
+    re-runs three of those days against the server's check.
 - **Storage:** the cloud saves' Upstash Redis (`ECHOES_CLOUD_REDIS_URL` and
   `ECHOES_CLOUD_REDIS_TOKEN`), one hash `echoes:daily:<day>` per day kept 30
   days. Without it, the board is kept in memory and is gone after a restart

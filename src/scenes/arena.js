@@ -332,6 +332,8 @@ function getShaftTexture() {
 // sprites, so a body in front of a fire still occludes its glow, and the flame
 // sprites themselves stay at renderOrder 8.
 const HALO_ORDER = -1.5;
+// SMALL FIXES 3: resident dressings on a low-memory device (see dressingCap).
+const DRESSING_CAP_LOW_MEMORY = 5;
 // Flat additive radial disc lying on the ground — the "pool of light" read.
 function groundPool(color, radius, opacity, y, broad = false) {
   const mesh = new Mesh(
@@ -430,6 +432,34 @@ export function createArenaScene(stage, toggles, ctx) {
   const wantedId = (id) => residentAct === null || actOf(id) === residentAct || actOf(id) === preloadAct;
   const residencyLog = { disposals: 0, disposedIds: [], lastMs: 0, maxMs: 0, freed: { geometries: 0, materials: 0, textures: 0 } };
   // @gnt:CAMPAIGN RESIDENCY-STATE end
+  // SMALL FIXES 3 (docs/MEMORY.md): the option to cap resident dressings.
+  // Seven layouts a level hold ~276 MB of GPU (each floor + apron ~27 MB);
+  // with a cap the builder stops at `dressingCap` of the resident level and
+  // a room whose dressing is not resident builds it on entry (under the
+  // fade), evicting the one drawn longest ago. On by default when the browser reports
+  // 4 GB of memory or less (navigator.deviceMemory), or with ?dressings=N
+  // (N >= 2; 0 = no cap). The last room of the level before, still drawn
+  // under the level-clear card, does not count.
+  const dressingCap = (() => {
+    const q = params.get('dressings');
+    if (q !== null) {
+      const n = Math.floor(Number(q));
+      return Number.isFinite(n) && n >= 2 ? n : null;
+    }
+    const mem = typeof navigator !== 'undefined' ? Number(navigator.deviceMemory) : NaN;
+    return Number.isFinite(mem) && mem > 0 && mem <= 4 ? DRESSING_CAP_LOW_MEMORY : null;
+  })();
+  let useClock = 0;
+  const capped = () => [...dressings.values()].filter((d) => !d.disposed && (residentAct === null || actOf(d.id) === residentAct));
+  // Over the cap: dispose the least recently drawn dressings, never the one
+  // on screen or `keep` (the one about to be).
+  function enforceCap(keep = null) {
+    if (dressingCap === null) return 0;
+    const live = capped();
+    if (live.length <= dressingCap) return 0;
+    const spare = live.filter((d) => d !== active && d !== keep).sort((a, b) => (a.usedAt ?? 0) - (b.usedAt ?? 0) || a.id - b.id);
+    return disposeDressings(spare.slice(0, live.length - dressingCap), 'cap');
+  }
   let mountEmitters = null; // bound below (needs the emitter FX helpers)
   // MEMORY (docs/MEMORY.md): a dressing's two paint canvases (floor 2048 px,
   // apron 1600 px: ~20 MB of CPU pixels per layout, six layouts resident)
@@ -982,6 +1012,7 @@ export function createArenaScene(stage, toggles, ctx) {
       const prev = active;
       if (active) active.group.visible = false;
       active = d;
+      d.usedAt = ++useClock;
       d.group.visible = true;
       if (root.visible) d.drawnOnce = true;
       root.name = `arena-v${d.id}`;
@@ -1204,6 +1235,8 @@ export function createArenaScene(stage, toggles, ctx) {
     const t0 = performance.now();
     if (!job) {
       while (queue.length && dressings.has(queue[0])) queue.shift();
+      // A capped level builds no further than the cap in the background.
+      if (dressingCap !== null && capped().length >= dressingCap) return;
       // Inside a run only the run's own act is built: another act's floor
       // upload + parked draw costs a GPU-side 150-180 ms frame (measured on
       // the reward / path screens with the builder on; none with it paused
@@ -1246,6 +1279,7 @@ export function createArenaScene(stage, toggles, ctx) {
         if (r.done) {
           dressings.set(job.id, r.value);
           buildStats.built.push(job.id);
+          enforceCap(r.value);
           job = null;
           uploading = { d: r.value, i: 0 }; // next pump calls: textures, then precompile
           tl(r.value.id, 'built');
@@ -1298,6 +1332,7 @@ export function createArenaScene(stage, toggles, ctx) {
     const built = ensureDressing(id);
     if (!built) return null;
     const d = activate(built);
+    enforceCap(d);
     buildStats.lastApplyMs = Math.round((performance.now() - ta) * 10) / 10;
     buildStats.maxApplyMs = Math.max(buildStats.maxApplyMs ?? 0, buildStats.lastApplyMs);
     return { layoutId: d.id, biome: biomeOfLayout(d.id), name: d.spec.name };
@@ -1467,7 +1502,9 @@ export function createArenaScene(stage, toggles, ctx) {
       if (busy) pending.push(id);
       else built += 1;
     }
-    return { level: a, ready: ids.length > 0 && built === ids.length, built, total: ids.length, pending, failed: ids.filter((id) => buildStats.failed[id]) };
+    // Capped: the level is ready once the cap's worth is built.
+    const total = dressingCap !== null ? Math.min(ids.length, dressingCap) : ids.length;
+    return { level: a, ready: ids.length > 0 && built >= total, built: Math.min(built, total), total, pending: built >= total ? [] : pending, failed: ids.filter((id) => buildStats.failed[id]) };
   }
   function residencyState() {
     return {
@@ -1475,6 +1512,7 @@ export function createArenaScene(stage, toggles, ctx) {
       perf: { uploads: (buildStats.uploads || []).slice(-12), stepMs: stepCost.map((x) => Math.round(x * 10) / 10), slices: (buildStats.sliceLog || []).slice(), pump: pumpStatsDebug(), maxSliceMs: buildStats.maxSliceMs, maxUploadMs: buildStats.maxUploadMs ?? 0, lastApplyMs: buildStats.lastApplyMs ?? 0, maxApplyMs: buildStats.maxApplyMs ?? 0, syncBuilds: buildStats.syncBuilds.slice(-4) },
       prefetched: [...prefetched.keys()],
       resident: residentAct,
+      cap: dressingCap,
       dressings: [...dressings.keys()].sort((x, y) => x - y),
       active: active ? { id: active.id, disposed: !!active.disposed } : null,
       queued: [...queue],

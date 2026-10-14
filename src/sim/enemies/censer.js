@@ -6,7 +6,8 @@
 // max HP. It hangs 3.2 u behind the nearest of its kin, on the side away from
 // the party, and flees a party body that comes within 2.4 u. A stun during
 // the gather spills it (no mend, the clock starts again). Kill it first, or
-// pull the fight away from it. No RNG.
+// pull the fight away from it. With no kin left it stops fleeing and drifts
+// in over the nearest hero (Small fixes 3). No RNG.
 import { r2, unit } from './common.js';
 
 const S = Object.freeze({
@@ -20,6 +21,8 @@ const S = Object.freeze({
   firstMend: 150,
   behind: 3.2,
   fleeRange: 2.4,
+  lostHover: 1.2, // with no kin: hover this far from the nearest hero
+  lostPace: 0.5, //   ...drifting in at this share of its speed
 });
 
 const mendable = (ctx, c, t) =>
@@ -55,6 +58,20 @@ export default {
   continuous(ctx, e, tick) {
     if (e.kbTicks > 0) return;
     const foe = ctx.nearestTarget(e);
+    const kin = nearestKin(ctx, e);
+    // Small fixes 3: with no kin left to mend it stops running. Its coals
+    // gutter and it drifts in over the nearest hero at half pace, so a party
+    // (the AI seats too) can finish it; it used to keep 4.5 u off and flee
+    // into a corner, and a Colossus room could stall on two of them.
+    if (!kin) {
+      if (!foe) return;
+      const a = unit(e.x - foe.x, e.z - foe.z);
+      const g = unit(foe.x + a.x * S.lostHover - e.x, foe.z + a.z * S.lostHover - e.z);
+      const s = Math.min(ctx.stepLen(e, S.moveSpeed * S.lostPace, tick), g.l);
+      if (g.l > 0.1) ctx.movement.walkStep(e, g.x * s, g.z * s, e.radius);
+      ctx.face(e, foe.x - e.x, foe.z - e.z);
+      return;
+    }
     const step = ctx.stepLen(e, S.moveSpeed, tick) * (e.mode === 'gather' ? 0.35 : 1);
     if (foe) {
       const f = unit(e.x - foe.x, e.z - foe.z);
@@ -64,17 +81,12 @@ export default {
         return;
       }
     }
-    const kin = nearestKin(ctx, e);
     let gx = e.x;
     let gz = e.z;
-    if (kin && foe) {
+    if (foe) {
       const a = unit(kin.x - foe.x, kin.z - foe.z);
       gx = kin.x + a.x * S.behind;
       gz = kin.z + a.z * S.behind;
-    } else if (foe) {
-      const a = unit(e.x - foe.x, e.z - foe.z);
-      gx = foe.x + a.x * 4.5;
-      gz = foe.z + a.z * 4.5;
     }
     const g = unit(gx - e.x, gz - e.z);
     if (g.l > 0.1) {
