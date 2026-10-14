@@ -88,7 +88,7 @@ docs/TIDECALLER.md, with her AI rules, VFX and sounds;
 
 ## The Bellwright
 
-Tolly's four base skills (Hang Bell, Peal, Clapper, Hum; all campaign-only)
-and her AI rules are in docs/BELLWRIGHT.md; `node tools/bellwright-probe.mjs`
-checks them. Her other seven skills and her eight class nodes come with the
-next slice.
+Tolly's eleven skills and eight class nodes (all campaign-only) are listed in
+docs/BELLWRIGHT.md, with her AI rules, VFX and sounds;
+`node tools/bellwright-kit-probe.mjs` checks them (the base four and her
+place in the team stay with `node tools/bellwright-probe.mjs`).
