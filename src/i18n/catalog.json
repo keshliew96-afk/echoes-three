@@ -1218,6 +1218,18 @@
   ],
   "data": true
  },
+ "+50% in her rings.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+50% shield in her rings.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "+6 Glint every time a combat room is cleared.": {
   "files": [
    "src/sim/relics.js"
@@ -1591,6 +1603,12 @@
  "A beast emptied out, with the Heart beating violet in its veins.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "a bell from this skill tolls 2 s longer, per copy.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -2006,6 +2024,18 @@
    "src/ui/run/relic.js"
   ]
  },
+ "a ring hit from this skill makes that bell toll at once (at most once a second per bell).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "a ring hit tolls the bell.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A ring of pale mushrooms. Laughter, very close, from nobody.": {
   "files": [
    "src/sim/encounters.js"
@@ -2089,6 +2119,12 @@
    "src/ui/run/hpbars.js"
   ]
  },
+ "A soft chime over the two allies enemies are after: a 12 shield each for 4 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A spinning burst: 20 to up to 5 enemies around the Tank.": {
   "files": [
    "src/ui/run/cards.js"
@@ -2108,6 +2144,12 @@
   "data": true
  },
  "A storm of blades: 14 to up to 5 enemies around the fox.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A struck note: 15 to every enemy along a 5.5 u line, +50% on each one standing in one of your bells' rings.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -2286,6 +2328,12 @@
  "after the cast, a 24-tick parry: the next hit is blocked and answered at 50% power · on Riposte: its window +24.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Aftertone": {
+  "files": [
+   "src/sim/nodes.js"
   ],
   "data": true
  },
@@ -3300,6 +3348,12 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Belfry": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Belfry Crown": {
   "files": [
    "src/data/layouts.js"
@@ -3318,6 +3372,12 @@
   ],
   "data": true
  },
+ "Bell Swing": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Bell Toll": {
   "files": [
    "src/sim/skills.js"
@@ -3327,6 +3387,12 @@
  "Bell Tower": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "bells toll +2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -3638,6 +3704,12 @@
   ],
   "data": true
  },
+ "Bronze": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Brood Spider": {
   "files": [
    "src/data/journal.js"
@@ -3748,6 +3820,12 @@
   ]
  },
  "BW": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "CA": {
   "files": [
    "src/sim/skills.js"
   ],
@@ -3869,6 +3947,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Carillon": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Carrion Dive: rises, then dives down a warning lane for 15. Wing Gust: a warning cone at its beak for 10 that blows you away. Omen: a warning ring that follows you, then locks and calls the crows down for 14.": {
   "files": [
@@ -4162,6 +4246,12 @@
   ],
   "data": true
  },
+ "Clangour": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Clapper": {
   "files": [
    "src/sim/allies.js"
@@ -4280,6 +4370,12 @@
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
+ },
+ "Cloister": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
  },
  "close": {
   "files": [
@@ -5425,6 +5521,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "each toll of a bell from this skill slows 15% more.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Earn the deed {deed}": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -5752,9 +5854,21 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Every ally within 3 u, the beetle too: a 6 shield and 25% faster for 3 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Every beast out there was a neighbour once. The song turned them, not their hearts.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "every bell this skill rings tolls two more times.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -6367,6 +6481,12 @@
    "src/ui/story/journal.js"
   ]
  },
+ "four bells at once.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Four Crowns": {
   "files": [
    "src/data/unlocks.js"
@@ -6735,6 +6855,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "GR": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "grant": {
   "files": [
    "src/ui/socket/index.js"
@@ -6762,6 +6888,12 @@
  "Gravefrost tint": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Great Bell": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -6829,6 +6961,12 @@
   ]
  },
  "Hang a bell at the target for 8 s: it tolls every second for 7 to enemies in its ring, slowing them 20% for a moment. Three bells at most; a fourth replaces the oldest.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Hang a great bell at the target for 6 s: it tolls every second for 12 to enemies in its wide ring, slowing them 35% for a moment. It counts as one of your three bells.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -7950,6 +8088,18 @@
  "Kits": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "KN": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Knell": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -10652,6 +10802,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Resound": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Restless": {
   "files": [
    "src/sim/relics.js"
@@ -10797,7 +10953,19 @@
   ],
   "data": true
  },
+ "ring bonus +90%.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Ring every bell you have hung at once: 16 to up to 6 enemies round each bell and a 0.4 s daze (not the bosses). With no bell hung, it rings round the beetle.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Ring every bell you have hung, harder: 24 to up to 8 enemies round each bell and a 0.6 s daze (not the bosses). Every bell it rings starts its time over.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -11040,6 +11208,12 @@
  "Rung": {
   "files": [
    "src/sim/interactables.js"
+  ],
+  "data": true
+ },
+ "rung bells toll twice more.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -11453,6 +11627,12 @@
   ],
   "data": true
  },
+ "SG": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Shard Hymn: a narrow warning cone, then five crystal shards for 9 each. Discord: a ring round it bursts for 15. It keeps its distance, and below half health it rages.": {
   "files": [
    "src/data/journal.js"
@@ -11497,6 +11677,12 @@
  "Shield Wall": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "shields from this skill are 50% stronger on a teammate inside one of her bells' rings.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -12284,6 +12470,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Sympathy": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Tabs": {
   "files": [
    "src/ui/menu/settings.js"
@@ -12444,6 +12636,12 @@
   "files": [
    "src/ui/menu/tabs/audio.js"
   ]
+ },
+ "TF": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Thanks for playing Echoes.": {
   "files": [
@@ -12790,6 +12988,18 @@
  "The barrow's carrion bird, grown huge on the ash of the pyres and masked in bone.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "The beetle hops 2.4 u away (untouchable) and leaves a handbell where she stood for 4 s: 5 a toll, and each toll slows. It counts as one of your bells.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The beetle swings her belfry bell in a 120° arc: 18 to up to 5 enemies within 1.9 u, knocked back.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -13852,6 +14062,12 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "the ring bonus grows from +50% to +90%.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "The river carries my song now. Drink.": {
   "files": [
    "src/data/story.js"
@@ -14456,6 +14672,12 @@
   ],
   "data": true
  },
+ "this skill lands +50% on an enemy inside one of her bells' rings.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "This tab could not be loaded.": {
   "files": [
    "src/ui/menu/settings.js"
@@ -14679,6 +14901,12 @@
   ],
   "data": true
  },
+ "tolls slow 15% more.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Tongue Lash: a warning lane for 14 that drags you in. Belly Flop: lands in a warning ring for 16 and leaves mire. Swallow: its throat swells and pulls you close, then a ring round it snaps shut for 18.": {
   "files": [
    "src/data/journal.js"
@@ -14768,6 +14996,18 @@
  "Tremor": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Tuned": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Tuning Fork": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -14931,6 +15171,12 @@
   ],
   "data": true
  },
+ "VC": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Vein Gallery": {
   "files": [
    "src/data/layouts.js"
@@ -14964,6 +15210,12 @@
   "files": [
    "src/ui/story/page.js"
   ]
+ },
+ "Vesper Chime": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Veteran": {
   "files": [
@@ -15313,6 +15565,12 @@
   ],
   "data": true
  },
+ "WH": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "WHAT COMES NEXT": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -15362,6 +15620,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "while she hangs bells with this skill, four can hang at once.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -15488,6 +15752,12 @@
  "Windward Court": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Wing Hop": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },

@@ -57,9 +57,15 @@ const CLASS_SETS = {
     ['whirlpool', 'crashing_wave', 'bubble_ward', 'ripple_step'],
     ['rain_squall', 'maelstrom', 'riverbolt', 'tidepool'],
   ],
-  // THE BELLWRIGHT (docs/BELLWRIGHT.md): her four base skills — three bells
-  // hung, the Clapper into a ring, the Peal, then the Hum.
-  bellwright: [['hang_bell', 'clapper', 'peal', 'hum']],
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): her eleven skills in three reels —
+  // three bells hung, the Clapper into a ring, the Peal, the Hum; the Great
+  // Bell, the Knell through it, the Carillon, Bell Swing; then bells again,
+  // her two wards and Wing Hop.
+  bellwright: [
+    ['hang_bell', 'clapper', 'peal', 'hum'],
+    ['great_bell', 'knell', 'carillon', 'bell_swing'],
+    ['hang_bell', 'vesper_chime', 'tuning_fork', 'wing_hop'],
+  ],
 };
 const ENEMIES = [
   ['Act I', 1, ['boar', 'mantis', 'quillback', 'toad', 'moth', 'ram', 'mole', 'wasp', 'thornling']],
@@ -380,14 +386,15 @@ export function mountVfxLab() {
       }
       // The targets stand 2.2 u in front of Rill herself (her zones reach
       // 4 u), and Ripple Step gets one on top of her to vault from.
+      // Bell Swing's targets stand inside its 1.9 u reach.
       const me = X().content.world().entities().find((e) => e.partyIndex === seat);
-      const f = me ? { x: me.x, z: me.z - 2.2 } : front();
+      const f = me ? { x: me.x, z: me.z - (set[k] === 'bell_swing' ? 1.2 : 2.2) } : front();
       for (const [dx, dz] of [[-0.9, 0], [0, -0.5], [0.9, 0]]) X().cmd('spawn', 'dummy', f.x + dx, f.z + dz);
-      if (set[k] === 'ripple_step' && me) X().cmd('spawn', 'dummy', me.x + 0.4, me.z);
+      if ((set[k] === 'ripple_step' || set[k] === 'wing_hop') && me) X().cmd('spawn', 'dummy', me.x + 0.4, me.z);
       say(`${cls}: ${set[k].replace(/_/g, ' ')}`);
       await wait(250);
       X().cmd('partyCast', seat, k, { x: f.x, z: f.z });
-      await wait(set[k] === 'maelstrom' || set[k] === 'rain_squall' ? 2600 : 1600);
+      await wait(set[k] === 'maelstrom' || set[k] === 'rain_squall' || set[k] === 'great_bell' ? 2600 : 1600);
     }
     say(`${cls} reel done`);
   }

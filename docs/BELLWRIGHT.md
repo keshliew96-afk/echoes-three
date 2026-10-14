@@ -1,12 +1,14 @@
 # The Bellwright (Tolly)
 
-v0.5.278. Content plan 4, slice 4 (`/mnt/project-files/plan/CONTENT_PLAN_4.md`,
-"Bellwright playable"). Tolly is a beetle bell-ringer from the Barrow and a
-**zone caster**: she hangs bells that toll on a beat, then rings them all at
-once. This slice makes her playable with a base kit of four skills. Slice 5
-fills the kit to eleven skills and eight class nodes with her full VFX and
-sound set; slice 6 puts her in the world (the unlock at the first Level III
-clear, camp talk, story, kit and tints, deeds, class relics, the Journal).
+v0.5.278, her whole kit v0.5.279. Content plan 4, slices 4 and 5
+(`/mnt/project-files/plan/CONTENT_PLAN_4.md`, "Bellwright playable" and
+"Bellwright kit, VFX and sounds"). Tolly is a beetle bell-ringer from the
+Barrow and a **zone caster**: she hangs bells that toll on a beat, then rings
+them all at once. Slice 4 made her playable with a base kit of four skills;
+slice 5 fills it to eleven skills and eight class nodes with her full VFX and
+sound set (see "Her whole kit" below). Slice 6 puts her in the world (the
+unlock at the first Level III clear, camp talk, story, kit and tints, deeds,
+class relics, the Journal).
 
 All numbers are first guesses, in the units of the skill table
 (docs/CLASS_SKILLS.md: u = world units, cd in seconds).
@@ -72,8 +74,8 @@ Engineering (`src/sim/`):
 - All four skills are campaign-only (`CAMPAIGN_ONLY_SKILLS`), so the nine
   goldens draw from the old pools.
 - Shared nodes she can draw (12): sharpen, quicken, multiply, ascend, widen,
-  reach, linger, bounce, snare, echo, resonance, siphon. Her eight class nodes
-  come in slice 5.
+  reach, linger, bounce, snare, echo, resonance, siphon, plus her eight class
+  nodes (below).
 
 ## How the AI plays her
 
@@ -108,8 +110,111 @@ every ranged seat has, plus (`src/sim/partyai.js`):
   `tools/smallfixes2-cuecal.mjs --only bellcues --write`.
 - `?vfxlab=1` has a "Bellwright A" reel: three bells hung, the Clapper into a
   ring, the Peal, then the Hum.
-- Slice 5 brings the rest: her own cast beats for every skill, the other
-  seven skills' effects and sounds, more reels.
+- Slice 5 brought the rest (below).
+
+## Her whole kit (slice 5)
+
+Seven more skills, all campaign-only like the first four, so her pool is
+eleven. The rhythm stays hang, then ring: two more ways to hang a bell, a
+bolt that reads the rings, a swing for when they close in, two wards for the
+party and a capstone that rings everything.
+
+| | what | numbers |
+|---|---|---|
+| Great Bell (GR) | a bigger bell: one of her bells, so it counts against the three | 12 per toll for 6 s, cd 14, range 4.0, ring 1.9; each toll slows 35% for 0.8 s |
+| Knell (KN) | a struck note through a line, reading the rings | 15 to every enemy along 5.5 u (speed 7), cd 7; **+50%** on each one inside one of her rings |
+| Bell Swing (SG) | she swings her belfry bell | 18 to up to 5 in a 120° arc 1.9 u out, cd 8, knocked back 1 u |
+| Wing Hop (WH) | her wing cases flick her clear | a 2.4 u hop away from the aim (untouchable, 14 ticks), cd 8; a handbell is left where she stood: 5 per toll for 4 s, ring 1.0, each toll slows 20%; one of her bells |
+| Vesper Chime (VC) | a ward for the hunted | a 12 shield for 4 s on the two members enemies are after (the Tank last), cd 11, range 4.0 |
+| Tuning Fork (TF) | the party in tune | every member within 3 u, her too: a 6 shield and 25% haste for 3 s, cd 12 |
+| Carillon (CA) | the capstone: the Peal at full weight | rings every bell at once: 24 to up to 8 round each, a 0.6 s daze (not the bosses), cd 18, area 1.8; **every bell it rings starts its time over** |
+
+Engineering: everything above reuses the plain-data keys the Tidecaller
+brought (`pierce`, `vault` + `atOrigin`, `pick: 'threat'`, `push`, `grant`)
+and the bell keys from slice 4 (`bell`, `peal`, `ringBonus`). Two are new:
+`bellSize` (how big the renderer draws a hung bell; the sim reads only its
+`area`) and `rehang` (the Carillon: each bell's `totalTicks` becomes its
+tolls done plus its full length, kept on the bell as `fullTicks`). Every bell
+also carries `fullTicks` and, when it is not 1, `bellSize` on its
+`azone_spawn` event. A ring bonus now works on a swing and on the Hum too
+(Tuned), not only on a bolt.
+
+### Class nodes (six common, two rare)
+
+| node | rarity | works on | effect |
+|---|---|---|---|
+| Bronze | common, 2 copies | her bells (Hang Bell, Great Bell, Wing Hop) | the bell tolls 2 s longer, per copy |
+| Clangour | common | her bells | each toll slows 15% more |
+| Resound | common | the ring-bonus skills (Clapper, Knell) | the ring bonus grows from +50% to +90% |
+| Aftertone | common | the Peal and the Carillon | every bell it rings tolls two more times |
+| Tuned | common | Bell Swing and the Hum | the skill gets the ring bonus (+50% inside one of her rings) |
+| Cloister | common | her wards (Vesper Chime, Tuning Fork) | the shield is 50% stronger on a member inside one of her rings |
+| Belfry | rare | her bells | while she hangs with this skill, four bells can hang at once |
+| Sympathy | rare | the ring-bonus skills | a ring hit makes that bell toll at once, an extra toll (at most once a second per bell) |
+
+All eight are campaign-only (`CAMPAIGN_ONLY_NODES`). Their logic is
+`bellDef()` in `src/sim/allycast.js` (a skill with none of them comes back as
+the very same def, so no other class's cast changes), `tunedPulse()` for the
+Hum (`src/sim/party.js`), and `classVerdict()` in `src/sim/nodes.js`. The
+numbers are in `CLASS_TECH` (`bronzeSec`, `clangourMag`, `resoundMul`,
+`aftertoneTolls`, `cloisterMul`, `belfryCap`, `sympathyGapTicks`). New events:
+`bell_sympathy` (`{ id, x, z }`) and `bell_rehang` (`{ id, left, x, z }`).
+
+The node ids avoid every skill id: a node named after the Healer's
+Sanctuary skill would have dropped Sanctuary from the old pools (the gate
+reads both lists), so her shield node is Cloister.
+
+### How the AI plays the rest
+
+- **Great Bell** follows Hang Bell's rule (the densest pack in reach no bell
+  already covers, by the Tank or the Waystone first).
+- **Knell** aims where the line holds two enemies, each one in a ring of hers
+  counting twice.
+- **Bell Swing** swings at two in reach, or one on top of her.
+- **Wing Hop** is her panic button (an enemy on top of her), like Ripple Step.
+- **Vesper Chime** goes up when a member in reach is hunted or below 70%.
+- **Tuning Fork** waits for two more members in reach and an enemy within
+  3 u of one of them.
+- **Carillon** waits for two bells and three enemies in their rings (or a
+  big one); with no bell hung, three round her.
+- Equip priority (`AI_PRIORITY.bellwright`): Hang Bell, Great Bell, Peal,
+  Carillon, Knell, Clapper, Vesper Chime, Bell Swing, Tuning Fork, Wing Hop,
+  Hum.
+
+### Look and sound
+
+`src/render/vfx/bellfx.js`:
+- The **Great Bell** is drawn 1.4 times the size and lands like a weight: a
+  bronze crack under it, a second slower shock ring, grit thrown up and a
+  heavier camera kick; its tolls throw a doubled ring. **Wing Hop's**
+  handbell is drawn at 0.7 and drops faster.
+- Every bell's floor ring now lasts exactly as long as the bell tolls.
+- The **Knell** leaves her mallet as a hard brass ring and rolls down its
+  line as six arcs bowed forward, each arriving with the bolt, over a faint
+  verdigris wake.
+- **Bell Swing** swings the belfry bell itself through the arc on a brass
+  slash, with a clang, sparks and a kick where it bottoms out.
+- **Wing Hop** flicks two bronze wing-case arcs open where she stood and
+  draws a verdigris line to where she lands.
+- **Vesper Chime** hangs a little chime bell over each ward that sways in and
+  is struck once, closing a verdigris shell round the ally.
+- **Tuning Fork** strikes a standing wave of thin rings out to its 3 u reach
+  and runs brass haste lines up every ally it reaches.
+- The **Carillon** is the Peal at full weight (taller columns, a third shock
+  ring, more sparks, a bigger kick) with every bell joined to the next by a
+  chord of struck light; then each bell's ring is drawn again as its time
+  starts over, with a verdigris glint climbing it. **Sympathy's** answering
+  toll rocks the bell and lifts a thin verdigris column.
+
+`src/audio/bellcues.js` adds `bw_great`, `bw_knell`, `bw_swing`, `bw_hop`,
+`bw_vesper`, `bw_fork`, `bw_carillon`, `bw_answer` (Sympathy) and `bw_after`
+(a bell's time starting over). A great bell tolls a fourth lower, a handbell
+an octave higher. `tools/smallfixes2-cuecal.mjs --only bellcues` now measures
+her cues.
+
+`?vfxlab=1` has three Bellwright reels: A (Hang Bell x3, Clapper, Peal, Hum),
+B (Great Bell, Knell, Carillon, Bell Swing) and C (Hang Bell x3, Vesper
+Chime, Tuning Fork, Wing Hop).
 
 ## Checks
 
@@ -122,4 +227,11 @@ every ranged seat has, plus (`src/sim/partyai.js`):
   bit-identically.
 - `node tools/bellwright-browser.mjs` (needs Vite on 5199) takes the
   screenshots under `/mnt/project-files/bellwright-playable/`.
+- `node tools/bellwright-kit-probe.mjs` (headless, 59 checks): her eleven
+  skills and eight nodes as data (campaign-only, the AI order, her node pool,
+  card text, icons and the nine languages), which skills each node works on,
+  the seven new skills on training dummies, the eight nodes each on a skill
+  it works on, the AI casting all ten actives in real fights, and a
+  mid-fight save with bells hung and nodes socketed continuing
+  bit-identically.
 - `node tools/gntM2-goldens.mjs` stays 9/9.

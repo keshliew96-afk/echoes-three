@@ -557,6 +557,96 @@ const ICONS = {
     ['path', { d: 'M16 12 V26', 'stroke-width': 1.2, stroke: 'black', 'stroke-opacity': 0.5 }],
     ['path', { d: 'M9 8 Q16 3 23 8 M5 5 Q16 -2 27 5', 'stroke-width': 1.6 }],
   ],
+  // Great Bell: a big bell on a beam, a wide ring beneath.
+  great_bell: [
+    ['path', { d: 'M4 4 H28', 'stroke-width': 2.4 }],
+    ['path', { d: 'M16 5 C10.5 5 9.5 12.65 9.5 16.9 C9.5 19.45 8 20.81 6 22 H26 C24 20.81 22.5 19.45 22.5 16.9 C22.5 12.65 21.5 5 16 5 Z', fill: 'currentColor', stroke: 'none' }],
+    ['ellipse', { cx: 16, cy: 27, rx: 14, ry: 3.4, 'stroke-width': 1.6, 'stroke-dasharray': '3 2' }],
+  ],
+  // Knell: a struck note running a line through three marks.
+  knell: [
+    ['path', { d: 'M3 16 H29', 'stroke-width': 2.2 }],
+    ['path', { d: 'M24 11 L29 16 L24 21', 'stroke-width': 2 }],
+    ...[8, 15, 22].map((x) => ['path', { d: `M${x} 9 Q${x + 3} 16 ${x} 23`, 'stroke-width': 1.5 }]),
+    ['circle', { cx: 5, cy: 16, r: 3, fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Bell Swing: a bell at the end of a sweeping arc.
+  bell_swing: [
+    ['path', { d: 'M5 26 A20 20 0 0 1 26 6', 'stroke-width': 1.8, 'stroke-dasharray': '3 2.5' }],
+    ['path', { d: 'M19 9 C15.7 9 15.1 13.95 15.1 16.7 C15.1 18.35 14.2 19.23 13 20 H25 C23.8 19.23 22.9 18.35 22.9 16.7 C22.9 13.95 22.3 9 19 9 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M5 26 L14 15', 'stroke-width': 2.2 }],
+  ],
+  // Wing Hop: an opened wing case over an arc, a small bell left below.
+  wing_hop: [
+    ['path', { d: 'M6 14 Q14 2 26 6', 'stroke-width': 1.8, 'stroke-dasharray': '3 2' }],
+    ['path', { d: 'M18 6 C22 2 29 3 29 9 C25 8 21 9 18 6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M8 18 C5.53 18 5.07 21.6 5.07 23.6 C5.07 24.8 4.4 25.44 3.5 26 H12.5 C11.6 25.44 10.93 24.8 10.93 23.6 C10.93 21.6 10.47 18 8 18 Z', fill: 'currentColor', stroke: 'none' }],
+    ['ellipse', { cx: 8, cy: 28, rx: 6, ry: 1.8, 'stroke-width': 1.3 }],
+  ],
+  // Vesper Chime: a little bell over two shields.
+  vesper_chime: [
+    ['path', { d: 'M16 2 C13.25 2 12.75 6.05 12.75 8.3 C12.75 9.65 12 10.37 11 11 H21 C20 10.37 19.25 9.65 19.25 8.3 C19.25 6.05 18.75 2 16 2 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M3 15 H13 V21 C13 25 8 28 8 28 C8 28 3 25 3 21 Z', 'stroke-width': 1.8 }],
+    ['path', { d: 'M19 15 H29 V21 C29 25 24 28 24 28 C24 28 19 25 19 21 Z', 'stroke-width': 1.8 }],
+  ],
+  // Tuning Fork: a fork with sound arcs on both sides.
+  tuning_fork: [
+    ['path', { d: 'M12 4 V15 C12 19 20 19 20 15 V4', 'stroke-width': 2.4 }],
+    ['path', { d: 'M16 18 V29', 'stroke-width': 2.6 }],
+    ['path', { d: 'M7 7 Q4 11 7 15 M25 7 Q28 11 25 15 M3 5 Q-1 11 3 17 M29 5 Q33 11 29 17', 'stroke-width': 1.4 }],
+  ],
+  // Carillon: a row of four bells under one beam, struck together.
+  carillon: [
+    ['path', { d: 'M2 5 H30', 'stroke-width': 2 }],
+    ...[6, 12.6, 19.4, 26].map((x, i) => ['path', { d: `M${x} ${7 + (i % 2) * 3} C${x - 2.6} ${7 + (i % 2) * 3} ${x - 3} ${11 + (i % 2) * 3} ${x - 3} ${14 + (i % 2) * 3} L${x - 3.6} ${16 + (i % 2) * 3} H${x + 3.6} L${x + 3} ${14 + (i % 2) * 3} C${x + 3} ${11 + (i % 2) * 3} ${x + 2.6} ${7 + (i % 2) * 3} ${x} ${7 + (i % 2) * 3} Z`, fill: 'currentColor', stroke: 'none' }]),
+    ['path', { d: 'M3 25 Q16 31 29 25', 'stroke-width': 1.6 }],
+  ],
+  // Bronze (node): a bell with an hourglass beside it (a longer toll).
+  bronze: [
+    ['path', { d: 'M11 6 C7.15 6 6.45 12.3 6.45 15.8 C6.45 17.9 5.4 19.02 4 20 H18 C16.6 19.02 15.55 17.9 15.55 15.8 C15.55 12.3 14.85 6 11 6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M21 8 H29 L25 15 L29 22 H21 L25 15 Z', 'stroke-width': 1.6 }],
+    ['path', { d: 'M4 26 H18', 'stroke-width': 1.6 }],
+  ],
+  // Clangour (node): a bell throwing a heavy zigzag wave.
+  clangour: [
+    ['path', { d: 'M10 6 C6.7 6 6.1 11.4 6.1 14.4 C6.1 16.2 5.2 17.16 4 18 H16 C14.8 17.16 13.9 16.2 13.9 14.4 C13.9 11.4 13.3 6 10 6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M18 8 L22 12 L18 16 L22 20 L18 24 M24 6 L28 11 L24 16 L28 21 L24 26', 'stroke-width': 1.8 }],
+  ],
+  // Resound (node): a struck star inside a ring.
+  resound: [
+    ['circle', { cx: 16, cy: 16, r: 12, 'stroke-width': 1.6, 'stroke-dasharray': '3 2.5' }],
+    ['path', { d: 'M16 7 L18.5 13.5 L25 16 L18.5 18.5 L16 25 L13.5 18.5 L7 16 L13.5 13.5 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Aftertone (node): a bell with a fading trail of arcs.
+  aftertone: [
+    ['path', { d: 'M9 8 C5.7 8 5.1 13.4 5.1 16.4 C5.1 18.2 4.2 19.16 3 20 H15 C13.8 19.16 12.9 18.2 12.9 16.4 C12.9 13.4 12.3 8 9 8 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M18 10 Q21 14 18 18', 'stroke-width': 2 }],
+    ['path', { d: 'M22 8 Q26 14 22 20', 'stroke-width': 1.6 }],
+    ['path', { d: 'M26 6 Q31 14 26 22', 'stroke-width': 1.1, 'stroke-dasharray': '2 2' }],
+  ],
+  // Tuned (node): a tuning fork standing in a ring.
+  tuned: [
+    ['ellipse', { cx: 16, cy: 25, rx: 13, ry: 4, 'stroke-width': 1.6, 'stroke-dasharray': '3 2' }],
+    ['path', { d: 'M12 3 V12 C12 16 20 16 20 12 V3', 'stroke-width': 2.2 }],
+    ['path', { d: 'M16 15 V25', 'stroke-width': 2.4 }],
+  ],
+  // Cloister (node): a shield inside a ring.
+  cloister: [
+    ['ellipse', { cx: 16, cy: 26, rx: 13, ry: 3.6, 'stroke-width': 1.6, 'stroke-dasharray': '3 2' }],
+    ['path', { d: 'M9 4 H23 V13 C23 19 16 23 16 23 C16 23 9 19 9 13 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Belfry (node): a tower with a bell in its arch.
+  belfry: [
+    ['path', { d: 'M16 2 L26 10 H6 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M8 10 V29 H24 V10', 'stroke-width': 1.8 }],
+    ['path', { d: 'M16 12 C13.53 12 13.07 16.05 13.07 18.3 C13.07 19.65 12.4 20.37 11.5 21 H20.5 C19.6 20.37 18.93 19.65 18.93 18.3 C18.93 16.05 18.48 12 16 12 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Sympathy (node): two bells, a spark leaping from one to the other.
+  sympathy: [
+    ['path', { d: 'M8 10 C4.97 10 4.42 14.95 4.42 17.7 C4.42 19.35 3.6 20.23 2.5 21 H13.5 C12.4 20.23 11.57 19.35 11.57 17.7 C11.57 14.95 11.03 10 8 10 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M24 10 C20.98 10 20.43 14.95 20.43 17.7 C20.43 19.35 19.6 20.23 18.5 21 H29.5 C28.4 20.23 27.57 19.35 27.57 17.7 C27.57 14.95 27.02 10 24 10 Z', 'stroke-width': 1.6 }],
+    ['path', { d: 'M12 6 L16 9 L14 11 L20 14', 'stroke-width': 1.6 }],
+  ],
   // Rampart (node): a tower wall with crenels.
   rampart: [
     ['path', { d: 'M6 28 V10 H10 V6 H14 V10 H18 V6 H22 V10 H26 V28 Z' }],

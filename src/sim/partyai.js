@@ -355,7 +355,8 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
     }
     // ---------------------------------------------------- Bellwright --
     // THE BELLWRIGHT (docs/BELLWRIGHT.md §AI): hang, then ring.
-    case 'hang_bell': {
+    case 'hang_bell':
+    case 'great_bell': {
       // The densest pack in reach that no bell of hers already covers, a pack
       // by the Tank or the Waystone first; else the target.
       const bells = bellsOf(ctx.registry, a.id);
@@ -377,15 +378,23 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
       if (best) return best;
       return inRange && !bells.some((z) => d2(target.x, target.z, z.x, z.z) <= z.radius * z.radius * 0.6) ? target : null;
     }
-    case 'peal': {
+    case 'peal':
+    case 'carillon': {
       // The Peal waits for its payoff: two enemies inside her bells' rings,
       // or one elite, champion or boss. With no bell hung it rings round her
-      // (two in the burst, or one on top of her).
+      // (two in the burst, or one on top of her). The Carillon, her capstone,
+      // waits for two bells and three enemies in their rings (or a big one).
       const bells = bellsOf(ctx.registry, a.id);
+      if (id === 'carillon' && bells.length === 1) return null;
       if (bells.length) {
         const rung = hostiles.filter((e) => bells.some((z) => d2(e.x, e.z, z.x, z.z) <= def.area * def.area));
-        if (rung.length >= 2 || rung.some((e) => e.elite || CHAMPIONS.has(e.kind) || e.boss === true || e.kind === 'stag')) return rung[0];
+        const need = id === 'carillon' ? 3 : 2;
+        if (rung.length >= need || rung.some((e) => e.elite || CHAMPIONS.has(e.kind) || e.boss === true || e.kind === 'stag')) return rung[0];
         return null;
+      }
+      if (id === 'carillon') {
+        const around = near(a.x, a.z, def.area);
+        return around.length >= 3 ? around[0] : null;
       }
       const around = near(a.x, a.z, def.area);
       if (around.length >= 2) return around[0];
@@ -399,6 +408,58 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
         .filter((e) => dist(e) <= def.range && bells.some((z) => d2(e.x, e.z, z.x, z.z) <= z.radius * z.radius))
         .sort((p, q) => dist(p) - dist(q) || p.id - q.id)[0];
       return rung ?? (inRange ? target : null);
+    }
+    case 'knell': {
+      // The note runs the whole line: aim where it holds two enemies (each
+      // one standing in a ring of hers counts twice: the ring bonus).
+      const bells = bellsOf(ctx.registry, a.id);
+      const ringed = (o) => bells.some((z) => d2(o.x, o.z, z.x, z.z) <= z.radius * z.radius);
+      let best = null;
+      let bestScore = 0;
+      for (const e of hostiles) {
+        const d = dist(e);
+        if (d > def.range || d < 1e-3) continue;
+        const ux = (e.x - a.x) / d;
+        const uz = (e.z - a.z) / d;
+        let score = 0;
+        for (const o of hostiles) {
+          const px = o.x - a.x;
+          const pz = o.z - a.z;
+          const along = px * ux + pz * uz;
+          if (along < 0 || along > def.range) continue;
+          if (Math.abs(px * uz - pz * ux) <= 0.45) score += ringed(o) ? 2 : 1;
+        }
+        if (score > bestScore || (score === bestScore && best && e.id < best.id)) {
+          bestScore = score;
+          best = e;
+        }
+      }
+      return best && bestScore >= 2 ? best : null;
+    }
+    case 'bell_swing': {
+      // Two enemies in reach of the swing, or one on top of her.
+      const close = near(a.x, a.z, def.range).sort((p, q) => dist(p) - dist(q) || p.id - q.id);
+      if (close.length >= 2) return target && dist(target) <= def.range ? target : close[0];
+      return close.find((e) => e.targetId === a.id && dist(e) <= 1.0) ?? null;
+    }
+    case 'wing_hop': {
+      // Her panic button: an enemy on top of her. The hop runs from the
+      // nearest and leaves a handbell tolling at it.
+      const close = near(a.x, a.z, 1.2).filter((e) => e.targetId === a.id || d2(e.x, e.z, a.x, a.z) <= 0.64);
+      return close.sort((p, q) => d2(p.x, p.z, a.x, a.z) - d2(q.x, q.z, a.x, a.z) || p.id - q.id)[0] ?? null;
+    }
+    case 'vesper_chime': {
+      // A member in reach that an enemy is closing on, or hurt below 70%; the
+      // delivery picks the two enemies are after.
+      const party = ctx.party().filter((m) => m.hp > 0 && (m.id === a.id || dist(m) <= def.range));
+      const need = party.some((m) => m.hp < m.maxHp * 0.7 || hostiles.some((e) => e.targetId === m.id && d2(e.x, e.z, m.x, m.z) <= 1.6 * 1.6));
+      return need ? a : null;
+    }
+    case 'tuning_fork': {
+      // Two more members in reach and a fight on: an enemy within 3 u of one.
+      const party = ctx.party().filter((m) => m.hp > 0 && m.id !== a.id && dist(m) <= def.range);
+      if (party.length < 2) return null;
+      return party.some((m) => near(m.x, m.z, 3).length > 0) ? a : null;
     }
     default:
       // The 12 starting skills: §7 — target in shape range.

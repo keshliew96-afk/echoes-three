@@ -420,6 +420,57 @@ export const SKILLS = Object.freeze({
     id: 'hum', name: 'Hum', abbrev: 'HU', cls: 'bellwright', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
     power: 4, area: 2.2, count: 3, cadenceSec: 1.0, knockback: 0, // each second the 3 nearest enemies within 2.2 u, never pushed
   }),
+
+  // THE BELLWRIGHT, her whole kit (content plan 4, slice 5). New plain-data
+  // keys: `bellSize` (how big a hung bell is drawn: the Great Bell larger,
+  // Wing Hop's handbell smaller; the sim reads its `area`), `rehang` (the
+  // Carillon rings every bell back to its full length). The rest reuse what
+  // the Tidecaller brought: `pierce`, `vault` + `atOrigin`, `pick: 'threat'`,
+  // `push` and `grant`.
+  great_bell: Object.freeze({
+    id: 'great_bell', name: 'Great Bell', abbrev: 'GR', cls: 'bellwright', archetype: 'damage', shape: 'ground_aoe',
+    power: 12, cd: 14, range: 4.0, area: 1.9, durationSec: 6,
+    bell: true, bellSize: 1.4, // one of her bells (it counts against the three), bigger and heavier
+    status: Object.freeze({ kind: 'slow', mag: 0.35, ticks: 48 }), // each toll: 35% slower for 0.8 s
+  }),
+  knell: Object.freeze({
+    id: 'knell', name: 'Knell', abbrev: 'KN', cls: 'bellwright', archetype: 'damage', shape: 'projectile',
+    power: 15, cd: 7, range: 5.5, speed: 7.0, count: 1, area: 0,
+    pierce: 12, // a struck note through every enemy on the line
+    ringBonus: true, // +50% on each enemy it passes inside one of her rings
+  }),
+  bell_swing: Object.freeze({
+    id: 'bell_swing', name: 'Bell Swing', abbrev: 'SG', cls: 'bellwright', archetype: 'damage', shape: 'melee_arc',
+    power: 18, cd: 8, range: 1.9, area: 60, count: 5, // a 120° swing of the belfry bell, 1.9 u out
+    push: 1.0,
+  }),
+  wing_hop: Object.freeze({
+    id: 'wing_hop', name: 'Wing Hop', abbrev: 'WH', cls: 'bellwright', archetype: 'damage', shape: 'ground_aoe',
+    power: 5, cd: 8, range: 0, area: 1.0, durationSec: 4,
+    vault: Object.freeze({ dist: 2.4, ticks: 14, iframes: true }), // wing cases open: a hop away from the aim
+    atOrigin: true, // a handbell left tolling where she stood
+    bell: true, bellSize: 0.7,
+    status: Object.freeze({ kind: 'slow', mag: 0.2, ticks: 36 }),
+  }),
+  vesper_chime: Object.freeze({
+    id: 'vesper_chime', name: 'Vesper Chime', abbrev: 'VC', cls: 'bellwright', archetype: 'guard', shape: 'direct',
+    power: 12, cd: 11, range: 4.0, count: 2,
+    pick: 'threat', // the two members enemies are after
+    status: Object.freeze({ kind: 'shield', mag: 12, ticks: 240 }),
+  }),
+  tuning_fork: Object.freeze({
+    id: 'tuning_fork', name: 'Tuning Fork', abbrev: 'TF', cls: 'bellwright', archetype: 'guard', shape: 'direct',
+    power: 6, cd: 12, range: 3.0, count: 4, // every member in reach (her too)
+    status: Object.freeze({ kind: 'shield', mag: 6, ticks: 180 }),
+    grant: Object.freeze({ kind: 'haste', mag: 0.25, ticks: 180 }), // 25% faster for 3 s
+  }),
+  carillon: Object.freeze({
+    id: 'carillon', name: 'Carillon', abbrev: 'CA', cls: 'bellwright', archetype: 'damage', shape: 'nova',
+    power: 24, cd: 18, area: 1.8, count: 8,
+    peal: true, // every bell at once, like the Peal, harder and wider
+    rehang: true, // and every bell it rings starts its time over
+    status: Object.freeze({ kind: 'stun', mag: 1, ticks: 36 }), // a 0.6 s daze (not the bosses)
+  }),
 });
 
 // A skill's class (Healer rows carry no `cls`).

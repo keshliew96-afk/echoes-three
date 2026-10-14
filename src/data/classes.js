@@ -35,9 +35,9 @@ export const CLASS_SKILLS = Object.freeze({
   // THE TIDECALLER (docs/TIDECALLER.md): the otter's four base skills, then
   // the seven of her whole kit (Tidecaller slice 3).
   tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool', 'torrent', 'whirlpool', 'ripple_step', 'bubble_ward', 'crashing_wave', 'rain_squall', 'maelstrom']),
-  // THE BELLWRIGHT (docs/BELLWRIGHT.md): the beetle's four base skills. The
-  // other seven join with the rest of her kit (content plan 4, slice 5).
-  bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum']),
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): the beetle's four base skills, then
+  // the seven of her whole kit (content plan 4, slice 5).
+  bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum', 'great_bell', 'knell', 'bell_swing', 'wing_hop', 'vesper_chime', 'tuning_fork', 'carillon']),
 });
 
 // MORE CLASS SKILLS: what joined the pools on 2026-10-08 — nine class skills,
@@ -56,11 +56,14 @@ export const CAMPAIGN_ONLY_SKILLS = Object.freeze([
   'torrent', 'whirlpool', 'ripple_step', 'bubble_ward', 'crashing_wave', 'rain_squall', 'maelstrom',
   // THE BELLWRIGHT: hers too.
   'hang_bell', 'peal', 'clapper', 'hum',
+  'great_bell', 'knell', 'bell_swing', 'wing_hop', 'vesper_chime', 'tuning_fork', 'carillon',
 ]);
 export const CAMPAIGN_ONLY_NODES = Object.freeze([
   'rampart', 'crush', 'gale_step', 'duel', 'longshot', 'prey',
   // THE TIDECALLER: her eight class nodes (her pool only exists in a campaign).
   'wellspring', 'deluge', 'current', 'ebb', 'spring_tide', 'undercurrent', 'riptide', 'confluence',
+  // THE BELLWRIGHT: hers too.
+  'bronze', 'clangour', 'resound', 'aftertone', 'tuned', 'cloister', 'belfry', 'sympathy',
 ]);
 // The pool a draft draws from: everything, or the old pool outside a campaign.
 export function gatedPool(ids, campaign) {
@@ -94,8 +97,8 @@ export const CLASS_NODES = Object.freeze({
   archer: Object.freeze(['skewer', 'concussive', 'steady_aim', 'disengage', 'scatter', 'heartseeker', 'longshot', 'prey']),
   // THE TIDECALLER (Tidecaller slice 3): six common, two rare.
   tidecaller: Object.freeze(['wellspring', 'deluge', 'current', 'ebb', 'spring_tide', 'undercurrent', 'riptide', 'confluence']),
-  // THE BELLWRIGHT: her eight class nodes come with the rest of her kit.
-  bellwright: Object.freeze([]),
+  // THE BELLWRIGHT (content plan 4, slice 5): six common, two rare.
+  bellwright: Object.freeze(['bronze', 'clangour', 'resound', 'aftertone', 'tuned', 'cloister', 'belfry', 'sympathy']),
 });
 
 // §25.3 shared-node access per class (the Healer: all 17, unchanged).
@@ -140,9 +143,12 @@ export const AI_PRIORITY = Object.freeze({
     'riverbolt', 'whirlpool', 'torrent', 'undertow', 'crashing_wave', 'maelstrom',
     'breaker', 'bubble_ward', 'rain_squall', 'ripple_step', 'tidepool',
   ]),
-  // THE BELLWRIGHT (docs/BELLWRIGHT.md): bells first, the Peal that rings
-  // them, then the Clapper and the Hum.
-  bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum']),
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): bells first, the rings that ring
+  // them, the bolts that land harder in them, then the guards and the Hum.
+  bellwright: Object.freeze([
+    'hang_bell', 'great_bell', 'peal', 'carillon', 'knell', 'clapper',
+    'vesper_chime', 'bell_swing', 'tuning_fork', 'wing_hop', 'hum',
+  ]),
 });
 
 const rankOf = (list, id) => {
@@ -324,6 +330,14 @@ export const CLASS_TECH = Object.freeze({
   // toll in.
   bellCap: 3, // bells per Bellwright; a fourth replaces her oldest
   ringMul: 1.5, // the Clapper: +50% on an enemy inside one of her bells' rings
+  // Her eight class nodes (content plan 4, slice 5).
+  bronzeSec: 2, // Bronze: a bell from this skill tolls 2 s longer, per copy
+  clangourMag: 0.15, // Clangour: each toll slows 15% more
+  resoundMul: 1.9, // Resound: the ring bonus grows from +50% to +90%
+  aftertoneTolls: 2, // Aftertone: a bell this skill rings tolls 2 more times
+  cloisterMul: 1.5, // Cloister: +50% shield on a member inside one of her rings
+  belfryCap: 4, // Belfry: while she hangs with this skill, four bells
+  sympathyGapTicks: 60, // Sympathy: a ring hit tolls that bell at once, once a second per bell
 });
 
 // §25.10 MAX-STRESS build (GP.10 / GP.15 precondition; `?partygrant=max`,

@@ -339,6 +339,8 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
         .sort((p, q) => (p.x - a.x) ** 2 + (p.z - a.z) ** 2 - ((q.x - a.x) ** 2 + (q.z - a.z) ** 2) || p.id - q.id)
         .slice(0, count);
       const hit = [];
+      // THE BELLWRIGHT: Tuned on the Hum — harder on an enemy in her ring.
+      const tunedMul = caster && caster.tunedPulse ? caster.tunedPulse(seat, skillId) : 0;
       for (const t of cands) {
         const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
         const opts = { delivery: base.knockback === 0 ? 'skill' : 'basic', shape: 'aura', dirX: (t.x - a.x) / tl, dirZ: (t.z - a.z) / tl, attacker: a.id, source: skillId };
@@ -349,7 +351,10 @@ export function createPartySystem({ rng, registry, events, combat, getTick, play
         if (M && M.kbScale !== undefined && base.knockback !== 0) opts.kbScale = M.kbScale;
         let p = power;
         if (M && M.execute && t.hp <= t.maxHp * 0.35) p *= 2;
+        const rung = tunedMul ? caster.ringOf(a.id, t) : null;
+        if (rung) p *= tunedMul;
         const r = tech ? tech.instance({ seat, castId: -1, echo, skill: skillId, pulse: true }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
+        if (rung) caster.ringHit(seat, skillId, t, rung, false, tick);
         if (r && !r.immune && !r.blocked) {
           hit.push(t.id);
           pulseInfo.dealt += r.amount ?? 0;
