@@ -17,8 +17,9 @@
 // Until the profile frees the Verse of Water (the first Level II clear,
 // docs/TIDECALLER.md "Unlock") her card shows locked, with what frees her,
 // and the team view leaves her out: she is not a choice yet.
-// THE BELLWRIGHT (docs/BELLWRIGHT.md): a sixth card, Tolly the beetle, free
-// from the start (content plan 4, slice 4), marked NEW.
+// THE BELLWRIGHT (docs/BELLWRIGHT.md): a sixth card, Tolly the beetle, marked
+// NEW. Since slice 6 she is locked the same way until the profile frees the
+// Verse of Stone (the first Level III clear, docs/BELLWRIGHT.md "Unlock").
 // Blocking: the single-player sim pauses while it is open.
 import { px } from '../../app/style.js';
 import { PALETTE as P, CLASS_ACCENTS } from '../../data/palette.js';
@@ -42,6 +43,11 @@ const ROLE = Object.freeze({
   tidecaller: () => t('Bends the fight with water: soak enemies, drag them together, then crash a wave into the soaked.'),
   bellwright: () => t('Holds ground with bells: hang up to three that toll on the beat, then ring them all at once.'),
 });
+// What frees a locked class (its card's "How to free her" panel).
+const FREE_HER = {
+  tidecaller: () => t('Rill was singing the sluices shut when the hollow song took the Mill. Fell the Level II boss, the Drowned Heron or the Millwheel, and she joins the party.'),
+  bellwright: () => t('Tolly was ringing the Barrow\'s hours when the hollow song cracked its bells. Fell the Level III boss, the Barrow Wyrm or the Lich Ram, and she joins the party.'),
+};
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 function installStyle() {
@@ -79,7 +85,7 @@ function installStyle() {
 .cs-classes .cs-card[disabled] { opacity: 0.45; cursor: default; }
 .cs-classes .cs-card.cs-locked { opacity: 0.6; filter: saturate(0.35); }
 .cs-classes .cs-card.cs-locked .cs-foot { color: ${P.warmGrey}; }
-.cs-classes .cs-new.cs-lock { background: ${P.warmGrey}; }
+.cs-classes .cs-new.cs-lock { background: ${P.warmGrey}; position: static; align-self: flex-start; margin-bottom: ${px(2)}; } /* in flow: six cards are too narrow for a corner badge beside the critter line */
 .cs-classes .cs-new { position: absolute; top: ${px(10)}; right: ${px(12)}; font-size: ${px(15)}; letter-spacing: 0.18em; font-weight: 800; color: ${P.voidCharcoal};
   background: ${P.hearthAmber}; border-radius: ${px(6)}; padding: ${px(2)} ${px(8)}; }
 .cs-classes .cs-lineup { align-self: center; font: inherit; font-size: ${px(20)}; font-weight: 700; color: ${P.parchment}; cursor: pointer;
@@ -232,7 +238,7 @@ export function createClassesScreen(ctx) {
           head +
           `<div class="cs-role">${esc(ROLE[cls]())}</div>` +
           `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +
-          `<div class="cs-kit"><h4>${esc(t('HOW TO FREE HER'))}</h4>${esc(t('Rill was singing the sluices shut when the hollow song took the Mill. Fell the Level II boss, the Drowned Heron or the Millwheel, and she joins the party.'))}</div>` +
+          `<div class="cs-kit"><h4>${esc(t('HOW TO FREE HER'))}</h4>${esc(FREE_HER[cls] ? FREE_HER[cls]() : '')}</div>` +
           `<div class="cs-foot">${esc(t('🔒 Locked'))}</div>`;
       } else {
         const kit = wornKit(cls);

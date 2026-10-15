@@ -45,7 +45,7 @@ import {
   metaOf,
 } from './slots.js';
 import { createProfileStore, scoreRun } from './profile.js';
-import { loadoutBoons, loadoutTints, tidecallerFreed } from '../data/unlocks.js';
+import { loadoutBoons, loadoutTints, tidecallerFreed, bellwrightFreed } from '../data/unlocks.js';
 import { createDeedRunTracker } from './deedrun.js';
 import { JOURNAL_ALIAS, ENEMY_JOURNAL_IDS, BOSS_JOURNAL_IDS } from '../data/journal.js';
 import { createThumbnailer } from './thumbnail.js';
@@ -1113,6 +1113,18 @@ export function createSaveSystem({
         }
       }
     }
+    // THE BELLWRIGHT (docs/BELLWRIGHT.md "Unlock"): the first Level III clear
+    // frees the Verse of Stone, and Tolly joins.
+    if (ev.level === 3 && ev.campaign && profileStore.noteFeat('bellwright')) {
+      notify(profileListeners, 'feat');
+      if (app && typeof app.toast === 'function') {
+        try {
+          app.toast(t('The Bellwright joins the party. Tolly hangs her bell by the hearth.'), { tone: 'good', ms: 6000 });
+        } catch {
+          /* UI only */
+        }
+      }
+    }
   });
   // THE TIDECALLER: High Water (a deed) wants the most soaked enemies one
   // cast crashed. A cast's crashes share its tick, seat and skill.
@@ -1564,6 +1576,11 @@ export function createSaveSystem({
       const p = profileStore.get();
       return tidecallerFreed(p.meta, p.records);
     },
+    // THE BELLWRIGHT: has this profile freed Tolly (the Verse of Stone)?
+    bellwrightFreed: () => {
+      const p = profileStore.get();
+      return bellwrightFreed(p.meta, p.records);
+    },
     noteFeat: (id) => {
       const ok = profileStore.noteFeat(id);
       if (ok) notify(profileListeners, 'feat');
@@ -1617,6 +1634,7 @@ export function createSaveSystem({
     boons: () => api.boons(),
     // THE TIDECALLER probes: free Rill (what the first Level II clear does).
     tidecallerFreed: () => api.tidecallerFreed(),
+    bellwrightFreed: () => api.bellwrightFreed(),
     noteFeat: (id) => api.noteFeat(id),
     // UNLOCKS round two probes: record and award a made-up run (its level
     // clears and records, then its Embers, deeds and marks), as a finished

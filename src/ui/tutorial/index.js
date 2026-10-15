@@ -44,7 +44,7 @@ import { tidecallerOpen, bellwrightOpen, rosterGrown } from '../../data/lineup.j
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked', 'escort', 'hold']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked', 'escort', 'hold', 'bells']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -131,6 +131,9 @@ function tipText(id) {
     // ... and mid-fight, the first time a soaked enemy is crashed.
     case 'soaked':
       return { title: t('Soak, then crash'), body: t('Rill\'s water soaks enemies: they drip and move slower. Her Crash skills hit a soaked enemy 60% harder and use the soak up, so soak a pack first, then crash a wave through it.') };
+    // THE BELLWRIGHT (docs/BELLWRIGHT.md): mid-fight, the first bell she hangs.
+    case 'bells':
+      return { title: t('Hang, then ring'), body: t('Tolly\'s bells toll once a second and slow whatever stands in their ring; she can hang three. Her Peal rings every bell at once, and her Clapper hits half again as hard inside a ring, so hang the bells where the fight will be, then ring them.') };
     case 'relic':
       return { title: t('Relics'), body: t('A relic helps the whole party for the rest of the run. Pick one of the three; there is no reroll.') };
     case 'curse':
@@ -504,6 +507,11 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
   bus.on('crash', () => {
     crashSeen = true;
   });
+  // THE BELLWRIGHT: the bells tip waits for the first bell it sees hung.
+  let bellSeen = false;
+  bus.on('azone_spawn', (ev) => {
+    if (ev && ev.bell && ev.classId === 'bellwright') bellSeen = true;
+  });
   bus.on('interact', (ev) => {
     if (step === 'use' && ev && ev.itype === 'dewfont') setStep('fight');
   });
@@ -614,7 +622,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       return;
     }
     if (!tipsOn || step || shown) return;
-    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : !tipsSeen().includes('soaked') && crashSeen ? 'soaked' : null;
+    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : !tipsSeen().includes('soaked') && crashSeen ? 'soaked' : !tipsSeen().includes('bells') && bellSeen ? 'bells' : null;
     if (!id) return;
     floorTip = { id, until: performance.now() + FLOOR_TIP_MS };
     markTip(id);

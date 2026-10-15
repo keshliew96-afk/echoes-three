@@ -9,6 +9,10 @@ const RELIC_SVG = {
   // THE TIDECALLER: a pearl in an open shell; a charm of three wave lines on a cord.
   otters_pearl: `<path d="M5 20 Q16 30 27 20 Z" ${STROKE}/><path d="M5 20 Q7 8 16 7 Q25 8 27 20" ${STROKE}/><circle cx="16" cy="18" r="3.4" ${FILL}/>`,
   millrace_charm: `<path d="M10 4 L16 10 L22 4" ${STROKE}/><circle cx="16" cy="19" r="9" ${STROKE}/><path d="M10 17 Q13 14 16 17 Q19 20 22 17 M10 22 Q13 19 16 22 Q19 25 22 22" ${STROKE}/>`,
+  // THE BELLWRIGHT: a coil of rope with a bell on its end; a clapper with a
+  // round tongue and two rings of sound.
+  bell_rope: `<path d="M16 3 Q11 6 16 9 Q21 12 16 15" ${STROKE}/><path d="M10 25 Q10 16 16 16 Q22 16 22 25 Z" ${STROKE}/><path d="M8 25 L24 25" ${STROKE}/><circle cx="16" cy="28" r="2" ${FILL}/>`,
+  verdigris_clapper: `<path d="M16 4 L16 19" ${STROKE}/><circle cx="16" cy="23" r="4" ${FILL}/><path d="M8 16 Q5 23 8 30 M24 16 Q27 23 24 30" ${STROKE}/>`,
   // A whetstone bar with a blade edge sliding across it.
   whetstone: `<rect x="6" y="17" width="20" height="8" rx="2" ${STROKE}/><path d="M9 13 L24 6" ${STROKE}/><path d="M11 12 L13 15" ${STROKE}/>`,
   // A curved fang with an ember at its tip.

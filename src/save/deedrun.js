@@ -8,12 +8,14 @@
 //   champions   champions felled (ids)
 //   arenas      arena layouts fought in (ids)
 //   vaults      vaults opened
+//   pealBest    THE BELLWRIGHT: the most enemies one Peal or Carillon struck
+//               while it rang three bells or more (docs/BELLWRIGHT.md)
 import { ARENA_IDS } from '../data/unlocks.js';
 
 export function createDeedRunTracker(bus) {
   let run = fresh();
   function fresh() {
-    return { events: [], affixes: [], objectives: [], champions: [], arenas: [], vaults: 0, wore: new Map() };
+    return { events: [], affixes: [], objectives: [], champions: [], arenas: [], vaults: 0, pealBest: 0, wore: new Map() };
   }
   const addOnce = (arr, v) => {
     if (v !== undefined && v !== null && !arr.includes(v)) arr.push(v);
@@ -40,6 +42,11 @@ export function createDeedRunTracker(bus) {
   bus.on('vault_open', () => {
     run.vaults += 1;
   });
+  bus.on('ally_cast', (ev) => {
+    if (ev.classId !== 'bellwright' || !Array.isArray(ev.bells) || !Array.isArray(ev.targets)) return;
+    if (ev.bells.filter((b) => b && b.id !== null && b.id !== undefined).length < 3) return;
+    if (ev.targets.length > run.pealBest) run.pealBest = ev.targets.length;
+  });
   bus.on('layout_enter', (ev) => {
     if (ARENA_IDS.includes(ev.layoutId)) addOnce(run.arenas, ev.layoutId);
   });
@@ -48,6 +55,6 @@ export function createDeedRunTracker(bus) {
       run = fresh();
     },
     // The plain facts (no live state), as awardRun's summary.deedRun.
-    facts: () => ({ events: run.events.slice(), affixes: run.affixes.slice(), objectives: run.objectives.slice(), champions: run.champions.slice(), arenas: run.arenas.slice(), vaults: run.vaults }),
+    facts: () => ({ events: run.events.slice(), affixes: run.affixes.slice(), objectives: run.objectives.slice(), champions: run.champions.slice(), arenas: run.arenas.slice(), vaults: run.vaults, pealBest: run.pealBest }),
   };
 }

@@ -44,7 +44,7 @@ const cards = () => page.evaluate(() => [...document.querySelectorAll('.cs-class
 const title = () => page.evaluate(() => (document.querySelector('.cs-classes .cs-title') || {}).textContent || '');
 
 const LANG = opt('lang', null);
-await page.goto(`${URL0}?seed=3${LANG ? `&lang=${LANG}` : ''}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+await page.goto(`${URL0}?seed=3&tolly=1${LANG ? `&lang=${LANG}` : ''}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
 await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
 await settle(1500);
 const tag = LANG ? `-${LANG}` : '';

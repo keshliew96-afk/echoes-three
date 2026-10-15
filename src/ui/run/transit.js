@@ -17,7 +17,7 @@ import { service } from '../../app/registry.js';
 import { bossFor, levelFor } from '../../data/levels.js';
 import { endlessBossIndex, beyondCampaign, CYCLE } from '../../data/endless.js';
 import { t, tn } from '../../i18n/index.js';
-import { chapterFor, RILL_CLEAR } from '../../data/story.js';
+import { chapterFor, RILL_CLEAR, TOLLY_CLEAR } from '../../data/story.js';
 import { activeLineup } from '../../data/lineup.js';
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 
@@ -36,6 +36,13 @@ export function rillLine(level, depth = null) {
   const ch = chapterFor(level);
   if (!ch || ch.verse !== 'water' || (depth !== null && depth > CAMPAIGN_LEVELS.length)) return '';
   return t(activeLineup().includes('tidecaller') ? RILL_CLEAR.along.text : RILL_CLEAR.freed.text);
+}
+// THE BELLWRIGHT (docs/BELLWRIGHT.md): the Level III clear card's line about
+// Tolly, the same way.
+export function tollyLine(level, depth = null) {
+  const ch = chapterFor(level);
+  if (!ch || ch.verse !== 'stone' || (depth !== null && depth > CAMPAIGN_LEVELS.length)) return '';
+  return t(activeLineup().includes('bellwright') ? TOLLY_CLEAR.along.text : TOLLY_CLEAR.freed.text);
 }
 
 const skillCount = (b) => (b.skills || []).filter(Boolean).length;
@@ -207,7 +214,8 @@ export function createTransitScreen({ run }) {
         depth === CYCLE + 1
           ? t('The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.')
           : boss ? boss() : t('The way ahead opens.');
-      verseEl.textContent = [verseLine(card.from, depth !== null ? depth - 1 : null), rillLine(card.from, depth !== null ? depth - 1 : null)].filter(Boolean).join(' ');
+      const vd = depth !== null ? depth - 1 : null;
+      verseEl.textContent = [verseLine(card.from, vd), rillLine(card.from, vd), tollyLine(card.from, vd)].filter(Boolean).join(' ');
       nextRow.style.display = '';
       const name = card.name ? t(card.name) : card.name;
       nextName.textContent =

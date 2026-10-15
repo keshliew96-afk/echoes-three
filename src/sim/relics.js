@@ -75,6 +75,10 @@ export const RELICS = Object.freeze({
   // (No dice: every fourth qualifying hit spreads, so holding it never moves
   // the relic stream.)
   millrace_charm: { name: 'Millrace Charm', rarity: 'rare', cls: 'tidecaller', text: 'Every fourth party hit on a soaked enemy spreads the soak to another enemy within 1.5 u.', charm: Object.freeze({ every: 4, range: 1.5 }) },
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md "Tolly in the world"): her two class
+  // relics, offered only while she stands in the party. No dice either.
+  bell_rope: { name: 'Bell-Rope', rarity: 'common', cls: 'bellwright', text: "The Bellwright's Peals and Carillons heal her for 3 HP for every bell they ring.", rope: Object.freeze({ heal: 3 }) },
+  verdigris_clapper: { name: 'Verdigris Clapper', rarity: 'rare', cls: 'bellwright', text: "Every fourth toll of the Bellwright's bells that strikes an enemy rings again: 6 damage to every enemy in that bell's ring.", clapper: Object.freeze({ every: 4, dmg: 6 }) },
   // Batch 4 (docs/RELICS.md "Batch 4"): relics that answer the rooms of
   // content plan 3 (Escort, Hold, champions, keys, vaults, objective rooms,
   // event rooms) and the curses themselves.
@@ -211,6 +215,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let oathTick = -1; // ... and how many taunts healed on that tick
   let oathCount = 0;
   let charmHits = 0; // THE TIDECALLER: Millrace Charm's count of soaked hits
+  let tollHits = 0; // THE BELLWRIGHT: Verdigris Clapper's count of striking tolls
   let ring = null; // batch 4: the live Hold ring { x, z, r } (Warding Chalk)
 
   const has = (id) => owned.includes(id);
@@ -248,6 +253,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     oathTick = -1;
     oathCount = 0;
     charmHits = 0;
+    tollHits = 0;
     ring = null;
     if (combat && typeof combat.setMods === 'function') combat.setMods(on ? mods : null);
   }
@@ -359,6 +365,23 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     const b = Number.isInteger(ev.seat) ? partyBodies().find((e) => e.partyIndex === ev.seat) : null;
     if (!b || bodyCls(b.id) !== 'tidecaller') return;
     pending.push({ kind: 'pearl', target: b.id, from: ev.target });
+  });
+  // THE BELLWRIGHT: Bell-Rope, one heal per bell her Peal or Carillon rang
+  // (a Peal with no bell hung rings round her and rings none).
+  events.on('ally_cast', (ev) => {
+    if (!on || !live() || !has('bell_rope') || ev.classId !== 'bellwright' || !Array.isArray(ev.bells)) return;
+    const n = ev.bells.filter((b) => b && b.id !== null && b.id !== undefined).length;
+    if (n > 0 && registry.byId(ev.id)) pending.push({ kind: 'rope', target: ev.id, bells: n });
+  });
+  // ... and Verdigris Clapper: a toll of one of her bells that struck someone.
+  events.on('azone_tick', (ev) => {
+    if (!on || !live() || !has('verdigris_clapper') || !Array.isArray(ev.hit) || ev.hit.length === 0) return;
+    const z = registry.byId(ev.id);
+    if (!z || !z.bell || bodyCls(z.sourceId) !== 'bellwright') return;
+    tollHits += 1;
+    if (tollHits < RELICS.verdigris_clapper.clapper.every) return;
+    tollHits = 0;
+    pending.push({ kind: 'clapper', bell: z.id, x: z.x, z: z.z, r: z.radius });
   });
   events.on('heal', (ev) => {
     if (!on || !live() || owned.length === 0) return;
@@ -553,6 +576,24 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         if (!t || !(t.hp > 0)) continue;
         combat.applyHeal(t, RELICS.otters_pearl.pearl.heal, { healer: t.id, source: 'otters_pearl' });
         events.emit(getTick(), 'relic_proc', { relic: 'otters_pearl', target: t.id, from: p.from, x: r2(t.x), z: r2(t.z) });
+      } else if (p.kind === 'rope') {
+        const t = registry.byId(p.target);
+        if (!t || !(t.hp > 0)) continue;
+        combat.applyHeal(t, RELICS.bell_rope.rope.heal * p.bells, { healer: t.id, source: 'bell_rope' });
+        events.emit(getTick(), 'relic_proc', { relic: 'bell_rope', target: t.id, bells: p.bells, x: r2(t.x), z: r2(t.z) });
+      } else if (p.kind === 'clapper') {
+        const K = RELICS.verdigris_clapper.clapper;
+        const near = registry
+          .all()
+          .filter((e) => hostileLive(e) && Math.hypot(e.x - p.x, e.z - p.z) <= p.r)
+          .sort((a, b) => a.id - b.id);
+        const hit = [];
+        for (const e of near) {
+          const l = Math.hypot(e.x - p.x, e.z - p.z) || 1;
+          const r = combat.applyDamage(e, K.dmg, { delivery: 'skill', shape: 'ground_aoe', dirX: (e.x - p.x) / l, dirZ: (e.z - p.z) / l, attacker: null, source: 'verdigris_clapper' });
+          if (r && r.amount > 0) hit.push(e.id);
+        }
+        events.emit(getTick(), 'relic_proc', { relic: 'verdigris_clapper', bell: p.bell, hit, radius: r2(p.r), x: r2(p.x), z: r2(p.z) });
       } else if (p.kind === 'charm') {
         const C = RELICS.millrace_charm.charm;
         const tick = getTick();
@@ -854,6 +895,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       ...(roomMode ? { roomMode } : {}),
       ...(Object.keys(oathAt).length ? { oathAt: { ...oathAt } } : {}),
       ...(charmHits ? { charmHits } : {}),
+      ...(tollHits ? { tollHits } : {}),
       ...(ring ? { ring: { ...ring } } : {}),
       ...(pending.length ? { pending: pending.map((p) => ({ ...p })) } : {}),
     };
@@ -878,6 +920,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     roomMode = typeof d.roomMode === 'string' ? d.roomMode : null;
     oathAt = d.oathAt && typeof d.oathAt === 'object' ? { ...d.oathAt } : {};
     charmHits = Number.isFinite(d.charmHits) ? d.charmHits : 0;
+    tollHits = Number.isFinite(d.tollHits) ? d.tollHits : 0;
     ring = d.ring && Number.isFinite(d.ring.x) && Number.isFinite(d.ring.z) ? { x: d.ring.x, z: d.ring.z, r: Number(d.ring.r) || 0, t0: Number(d.ring.t0) || 0 } : null;
     pending = Array.isArray(d.pending) ? d.pending.filter((p) => p && typeof p.kind === 'string').map((p) => ({ ...p })) : [];
   }

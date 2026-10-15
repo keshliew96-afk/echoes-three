@@ -49,10 +49,23 @@ export function forceTidecaller(on = true) {
   tidecallerForced = !!on;
   return tidecallerOpen();
 }
-// THE BELLWRIGHT is free from the start in this slice (content plan 4,
-// slice 4). The first Level III clear replaces this one flag (slice 6).
-export const BELLWRIGHT_FREE = true;
-export const bellwrightOpen = () => BELLWRIGHT_FREE;
+// THE BELLWRIGHT joins once the party frees the Verse of Stone: the first
+// Level III clear on this player's profile, or a Level III boss felled
+// (docs/BELLWRIGHT.md "Unlock"; content plan 4 slice 6). The same rules as
+// Rill's: the flag only gates CHOOSING her, never a lineup that already
+// holds her.
+export const BELLWRIGHT_FREE = false;
+let bellwrightUnlocked = false;
+let bellwrightForced = false; // ?tolly=1 harness boots and probes
+export const bellwrightOpen = () => BELLWRIGHT_FREE || bellwrightUnlocked || bellwrightForced;
+export function setBellwrightUnlocked(on) {
+  bellwrightUnlocked = !!on;
+  return bellwrightOpen();
+}
+export function forceBellwright(on = true) {
+  bellwrightForced = !!on;
+  return bellwrightOpen();
+}
 // Whether a class may be chosen right now (the four first classes always).
 export const classOpen = (c) => (c === 'tidecaller' ? tidecallerOpen() : c === 'bellwright' ? bellwrightOpen() : true);
 // More open joiners than ally seats: the team view has a choice to offer.
