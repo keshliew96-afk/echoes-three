@@ -106,6 +106,7 @@ import { affixCountFor, AFFIX_RULES, AFFIXES } from './affixes.js';
 import { encounterSpec } from './interactables.js';
 // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
 import { sanitizeBoons } from '../data/unlocks.js';
+import { VOW_RANKS, rankIn, rankValue, vowScale, vowFuseRule } from '../data/vows.js';
 import { swapSuggestion, PARTY_DEADLINES } from '../data/classes.js';
 import { DEFAULT_LINEUP } from '../data/lineup.js';
 // PARTY (PLAN §16.3): the party page + the party shelves.
@@ -206,7 +207,7 @@ export function createRunSystem({
   const allyOn = () => supplyOn && !!pages;
   if (typeof buildSys.attachSkills === 'function') buildSys.attachSkills(skillSys);
   const statusTracker = createStatusTracker({ registry, events, getTick });
-  const relics = createRelicSystem({ registry, events, getTick, combat, skillSys, player, live: () => active, glint: (n, reason) => gainGlint(n, reason) });
+  const relics = createRelicSystem({ registry, events, getTick, combat, skillSys, player, live: () => active, glint: (n, reason) => gainGlint(n, reason), vowMods: () => (active ? vowMods() : null) });
   // EVENT ROOMS: on with the relics (campaigns only, never the tutorial).
   const encounters = createEncounterSystem({ events, getTick });
   const encCtx = () => ({ wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length, majors: relics.majorCurses().length, land: levelFor(act)?.biome ?? null });
@@ -590,11 +591,35 @@ export function createRunSystem({
     });
   }
   const runVows = () => (campaign && campaign.boons && Array.isArray(campaign.boons.vows) ? campaign.boons.vows : null);
+  // VOW RANKS (data/vows.js): each vow reads its rank (I unless the boons
+  // name another), so a rank-I vow is the curse it always was.
+  const vowRank = (v) => rankIn(campaign && campaign.boons, v);
+  function vowedDiff(diff) {
+    const vows = runVows();
+    if (vows) for (const v of vows) diff = cursedDiff(diff, v, vowScale(v, vowRank(v)));
+    return diff;
+  }
   function vowFuse() {
     const vows = runVows();
     if (!vows || phase !== 'combat' || !frame || frame.modes[roomIndex - 1] === 'boss') return null;
-    for (const v of vows) if (CURSES[v] && CURSES[v].fuse) return CURSES[v].fuse;
+    for (const v of vows) {
+      if (VOW_RANKS[v] && VOW_RANKS[v].fuse) return vowFuseRule(v, vowRank(v));
+      if (CURSES[v] && CURSES[v].fuse) return CURSES[v].fuse;
+    }
     return null;
+  }
+  // The Spire vows (Thin Air, Heavy Bell): { heal, dodge }, null with neither.
+  function vowMods() {
+    const vows = runVows();
+    if (!vows) return null;
+    let heal = 0;
+    let dodge = 0;
+    for (const v of vows) {
+      const row = VOW_RANKS[v];
+      if (row && row.heal) heal = rankValue(v, vowRank(v));
+      if (row && row.dodge) dodge = rankValue(v, vowRank(v));
+    }
+    return heal || dodge ? { heal, dodge } : null;
   }
 
   // `?partygrant=N` / `max` (PLAN §16.11) — marks the run harness.
@@ -750,8 +775,7 @@ export function createRunSystem({
     // RELICS: each major curse the run holds reshapes every combat room.
     if (combatRoom) for (const m of relics.majorCurses()) diff = cursedDiff(diff, m, relics.majorScale());
     // UNLOCKS: each vow the party wears curses every combat room.
-    const vows = combatRoom ? runVows() : null;
-    if (vows) for (const v of vows) diff = cursedDiff(diff, v);
+    if (combatRoom) diff = vowedDiff(diff);
     // NEW ENEMIES: campaign kinds roll in campaign rooms only (levels.js
     // CAMPAIGN_ONLY_ENEMIES), on the objectives' gate.
     if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff, campaignKinds: objectivesOn(), ...(mode === 'champion' ? { champion: levelChampion() } : {}) });
@@ -1872,8 +1896,7 @@ export function createRunSystem({
     const A = EVENT_RULES.ambush;
     let diff = { ...base, budget: r2(base.budget * A.budgetMul), eliteChance: r2(Math.min(0.9, (base.eliteChance ?? 0) + A.eliteAdd)) };
     for (const m of relics.majorCurses()) diff = cursedDiff(diff, m, relics.majorScale());
-    const vows = runVows();
-    if (vows) for (const v of vows) diff = cursedDiff(diff, v);
+    diff = vowedDiff(diff);
     encounters.finish('ambush');
     waves.planRoom('kill_all', { act, room: n, challenge, level, diff, waves: A.waves, campaignKinds: objectivesOn() });
     const ring = layout ? LAYOUTS[layout.layoutId]?.spawns : null;

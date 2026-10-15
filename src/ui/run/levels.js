@@ -27,6 +27,8 @@ import { t, tn, getLanguage } from '../../i18n/index.js';
 import { RELICS, CURSES } from '../../sim/relics.js';
 import { clockOf } from '../../data/daily.js';
 import { placeLine } from './daily.js';
+import { UNLOCKS } from '../../data/unlocks.js';
+import { VOW_ROMAN, VOW_MODES, vowPayPct, vowName } from '../../data/vows.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 const STYLE_ID = 'cg-levels-style';
@@ -133,6 +135,19 @@ function installStyle() {
 .cg-levels .cg-card[aria-disabled="true"] .cg-omen { display: none; }
 .cg-levels .cg-card.cg-shake { animation: cg-shake 320ms ease; }
 @keyframes cg-shake { 0%,100% { transform: translateX(0); } 20% { transform: translateX(${px(-9)}); } 40% { transform: translateX(${px(8)}); } 60% { transform: translateX(${px(-6)}); } 80% { transform: translateX(${px(4)}); } }
+.cg-levels .cg-vows { display: flex; align-items: center; gap: ${px(14)}; flex-wrap: wrap; justify-content: center; max-width: 100%;
+  padding: ${px(7)} ${px(20)}; border-radius: ${px(40)}; font-size: ${px(18)}; color: ${P.bone};
+  background: radial-gradient(ellipse 60% 120% at 12% 50%, ${P.godstuffViolet}38 0%, #00000000 70%), #00000040;
+  border: max(1px, ${px(2)}) solid ${P.godstuffViolet}77; box-shadow: 0 0 ${px(18)} ${P.godstuffViolet}22; }
+.cg-levels .cg-vows[hidden] { display: none; }
+.cg-levels .cg-vows .cg-vlv { display: inline-flex; align-items: baseline; gap: ${px(8)}; font-weight: 800; letter-spacing: 0.16em; color: ${P.warmGrey}; font-size: ${px(16)}; }
+.cg-levels .cg-vows .cg-vlv b { font-size: ${px(30)}; letter-spacing: 0; color: #D9CCFF; text-shadow: 0 0 ${px(10)} ${P.godstuffViolet}, 0 0 ${px(22)} ${P.godstuffViolet}88; }
+.cg-levels .cg-vows.cg-vhot .cg-vlv b { color: #FFC2B2; text-shadow: 0 0 ${px(10)} #FF6A4D, 0 0 ${px(24)} #FF6A4D88; }
+.cg-levels .cg-vows .cg-vchip { padding: ${px(2)} ${px(10)}; border-radius: ${px(12)}; border: 1px solid ${P.godstuffViolet}99; color: ${P.parchment}; background: ${P.godstuffViolet}22; white-space: nowrap; }
+.cg-levels .cg-vows .cg-vchip i { font-style: normal; font-weight: 800; color: #D9CCFF; margin-left: ${px(5)}; }
+.cg-levels .cg-vows .cg-vpay { color: ${P.hearthAmber}; font-weight: 800; }
+.cg-levels .cg-vows .cg-vbest { color: ${P.warmGrey}; }
+.cg-levels .cg-vows .cg-vbest b { color: ${P.parchment}; }
 .cg-levels .cg-note { min-height: ${px(28)}; font-size: ${px(21)}; color: ${P.bone}; text-align: center; }
 .cg-levels .cg-foot { display: flex; gap: ${px(24)}; align-items: center; flex-wrap: wrap; justify-content: center; font-size: ${px(20)}; color: ${P.warmGrey}; }
 .cg-levels .cg-foot b { display: inline-flex; align-items: center; justify-content: center; min-width: ${px(34)}; height: ${px(32)}; padding: 0 ${px(8)}; margin-right: ${px(6)};
@@ -280,6 +295,31 @@ export function rushInfo() {
   };
 }
 
+const MODE_LABEL = { campaign: () => t('Campaign@@vow best'), endless: () => t('Endless@@vow best'), rush: () => t('Boss Rush@@vow best') };
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// VOW RANKS: the profile's sworn vows, Vow level and bests (null before the
+// profile owns a vow).
+export function vowInfo() {
+  let meta = null;
+  try {
+    const save = service('save');
+    const p = save && typeof save.profile === 'function' ? save.profile() : null;
+    meta = p && p.meta ? p.meta : null;
+  } catch {
+    meta = null;
+  }
+  if (!meta || !meta.loadout) return null;
+  const ownsVow = Object.keys(meta.owned || {}).some((id) => UNLOCKS[id] && UNLOCKS[id].kind === 'vow');
+  if (!ownsVow) return null;
+  const l = meta.loadout;
+  const worn = (l.vows || []).filter((id) => UNLOCKS[id]).map((id) => {
+    const r = l.vowRanks && Number.isFinite(l.vowRanks[id]) ? l.vowRanks[id] : 1;
+    return { id, name: vowName(UNLOCKS[id].curse), rank: Math.max(1, Math.min(3, r)) };
+  });
+  const best = Object.fromEntries(VOW_MODES.map((k) => [k, (meta.vowBest && meta.vowBest[k]) || 0]));
+  return { level: worn.reduce((n, w) => n + w.rank, 0), worn, best };
+}
+
 export function createLevelsScreen(ctx) {
   installStyle();
   const { manager, app } = ctx;
@@ -296,6 +336,7 @@ export function createLevelsScreen(ctx) {
         <h2 class="ap-h2">${t('Choose a level')}</h2>
         <div class="cg-sub">${t('A campaign runs from the level you choose through Level {level}. Clear a level to open the next.', { level: ROMAN[FINAL_LEVEL] ?? FINAL_LEVEL })}</div>
       </div>
+      <div class="cg-vows" hidden></div>
       <div class="cg-cards"></div>
       <div class="cg-note" aria-live="polite"></div>
       <div class="cg-foot">
@@ -305,6 +346,7 @@ export function createLevelsScreen(ctx) {
       </div>
     </div>`;
   const cardsEl = el.querySelector('.cg-cards');
+  const vowsEl = el.querySelector('.cg-vows');
   const noteEl = el.querySelector('.cg-note');
   let p = null;
   let settled = false;
@@ -338,7 +380,24 @@ export function createLevelsScreen(ctx) {
     card.classList.add('cg-shake');
   }
 
+  // VOW RANKS (plan 4 slice 10): the Vow level the next run sets out at, its
+  // Ember pay and the best per mode. Shown once the profile owns a vow.
+  function renderVows() {
+    const v = vowInfo();
+    vowsEl.hidden = !v;
+    vowsEl.classList.toggle('cg-vhot', !!v && v.level >= 10);
+    if (!v) return;
+    const chips = v.worn.map((w) => `<span class="cg-vchip">${esc(t(w.name))}<i>${VOW_ROMAN[w.rank]}</i></span>`).join('');
+    const bests = VOW_MODES.map((k) => `${esc(MODE_LABEL[k]())} <b>${v.best[k]}</b>`).join(' · ');
+    vowsEl.innerHTML =
+      `<span class="cg-vlv">${esc(t('VOW LEVEL'))} <b>${v.level}</b></span>` +
+      (v.level ? `${chips}<span class="cg-vpay">${esc(t('{currency} +{pct}%', { currency: t('Embers'), pct: vowPayPct(v.level) }))}</span>` : `<span>${esc(t('No vows sworn. Swear them at the camp (U).'))}</span>`) +
+      `<span class="cg-vbest">${esc(t('Best:'))} ${bests}</span>` +
+      `<span class="cg-vbest">${esc(t('The Daily is vow-free.'))}</span>`;
+  }
+
   function render() {
+    renderVows();
     cardsEl.textContent = '';
     infos = levelInfo();
     cardsEl.classList.toggle('cg-many', infos.length >= 4);
@@ -429,7 +488,7 @@ export function createLevelsScreen(ctx) {
         <div class="cg-name"></div>
         <div class="cg-blurb"></div>
         <div class="cg-omen"><span class="cg-o-relic"></span><span class="cg-o-curse"></span></div>
-        <div class="cg-danger"><span>${t('One seed for everyone')}</span></div>
+        <div class="cg-danger"><span>${t('One seed for everyone, no vows')}</span></div>
         <div class="cg-status"></div>
         <div class="cg-grant">${t("Opens today's board")}</div>
         <div class="cg-lock">${LOCK_SVG}<span class="cg-lock-t"></span></div>`;
@@ -533,6 +592,7 @@ export function createLevelsScreen(ctx) {
       return true;
     },
     debug: () => ({
+      vows: vowsEl.hidden ? null : vowsEl.textContent.replace(/\s+/g, ' ').trim(),
       chosen,
       denied,
       lastDenied,

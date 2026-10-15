@@ -704,7 +704,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     dodgeTotalAt = tickNow;
     const R = typeof world.runSystem === 'function' ? world.runSystem() : null;
     const rl = R && typeof R.relics === 'function' ? R.relics() : null;
-    dodgeTotalV = dodgeCooldownTicks(DODGE.cooldownTicks, rl ? rl.owned.map((o) => o.id) : null);
+    dodgeTotalV = dodgeCooldownTicks(DODGE.cooldownTicks, rl ? rl.owned.map((o) => o.id) : null, rl ? rl.vowDodge : 0);
     return dodgeTotalV;
   }
 

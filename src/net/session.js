@@ -688,14 +688,16 @@ export function createNetSession(ctx) {
   // the (replicated) run view — the guest predictors and HUD rings use it.
   function partyDodgeCd() {
     let ids = null;
+    let vowDodge = 0;
     try {
       const R = rawRunSystem();
       const rl = R && typeof R.relics === 'function' ? R.relics() : R && R.view ? R.view().relics : null;
       ids = rl && Array.isArray(rl.owned) ? rl.owned.map((o) => o.id) : null;
+      vowDodge = rl && Number.isFinite(rl.vowDodge) ? rl.vowDodge : 0;
     } catch {
       ids = null;
     }
-    return dodgeCooldownTicks(HUMAN_DODGE.cooldownTicks, ids);
+    return dodgeCooldownTicks(HUMAN_DODGE.cooldownTicks, ids, vowDodge);
   }
 
   // ---------------------------------------------------- audio cue hooks --

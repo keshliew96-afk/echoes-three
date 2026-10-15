@@ -135,6 +135,50 @@ Tints: **Still Air** (Swordsman, 40, Level V cleared) and **Gale Bronze**
 (Bellwright, free with Windfall). Heirlooms of the Weathercock Plume and the
 Hushbell come with the relics.
 
+## Vow ranks (plan 4 slice 10)
+
+Every vow is sworn at **rank I, II or III**. On the Unlocks screen (U) a vow
+card steps through off, I, II, III and off again; three pips on the card show
+the rank, red at III. Rank I is the vow exactly as it was, so a save from
+before the ranks keeps the run it picked. Rules and numbers live in
+`src/data/vows.js`.
+
+| Vow | Rank I | Rank II | Rank III | Where |
+|---|---|---|---|---|
+| Elite Tide | +35% elite chance | +50% | +65% | every combat room |
+| Crowded | waves +50% | +75% | +100% | every combat room |
+| Iron Hide | enemy HP +40% | +70% | +100% | every combat room |
+| Sharp Fangs | enemy damage +35% | +60% | +85% | every combat room |
+| Restless | waves 35% sooner | 50% | 60% | every combat room |
+| Short Fuse | warnings 20% shorter, 0.6 s floor | 30%, 0.55 s floor | 40%, 0.5 s floor | every combat room |
+| Thin Air (new, clear Level V) | healing on the party 20% weaker | 30% | 40% | every room, the boss's too |
+| Heavy Bell (new, fell the Skyhorn Warden) | dodges recover 25% slower | 45% | 65% | every room, the boss's too |
+
+Most enemy warnings already sit on the 0.6 s floor at rank I, so Short Fuse's
+higher ranks lower the floor as well. Thin Air and Heavy Bell are vows only:
+no door ever carries them.
+
+- **Vow level**: the ranks of every vow worn, added up (0 to 24). The Level
+  Select (the Set out page) shows it in a band above the cards with the vows
+  worn, the Ember pay and the bests; the end card shows it with the mode's
+  best.
+- **Ember pay**: each of the first six Vow levels pays +25% (six rank-I vows
+  pay +150%, as six vows always did); each level past six pays +15% (Vow
+  level 10 is +210%, 24 is +420%). The award line reads "Vow level N +X%".
+- **Best per mode** (`meta.vowBest`): the highest Vow level each mode has been
+  beaten at. Campaign: a campaign completed. Endless: the campaign won inside
+  an Endless Descent. Boss Rush: a rush won. A loss records nothing.
+- **Deeds**: Five Oaths (60), Ten Oaths (120) and Fifteen Oaths (200) for a
+  campaign completed or a Boss Rush won at Vow level 5, 10 and 15 (the
+  Endless campaign win counts as a campaign completed).
+- **The Daily stays vow-free**: it never takes boons, so it keeps no Vow
+  level; its card says so.
+- **Boons**: `boons.vows` is the curse ids as before; `boons.vowRanks`
+  ({ curse: 2 | 3 }) names only ranks past I, so a rank-I loadout makes the
+  same boons object it always made. In co-op the host's ranks set the party's
+  run, like the rest of the loadout. Heavy Bell's slower dodge reaches the HUD
+  ring through the relic view's `vowDodge` (present only when worn).
+
 ## Determinism: an unlock changes a run only when it is picked
 
 - Only a **real Begin Run from the camp** (the portal or the Level Select) passes `boons` to `startCampaign`, built by `loadoutBoons(meta)` from what is equipped. With nothing equipped it is `null`, the call is exactly the call it was before, and the run is event-for-event the same: `tools/unlocks-probe.mjs --base <gauntlet checkout>` hashes whole plain campaigns on both trees (seeds 1–3, identical), and the 9 golden traces (legacy `startRun()`, which never takes boons) match.

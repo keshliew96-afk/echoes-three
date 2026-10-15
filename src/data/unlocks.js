@@ -14,7 +14,9 @@
 //            starting pool), one per class at a time
 //   heirloom start every run holding this relic (found in a run first)
 //   purse    start every run with extra Glint (three tiers)
-//   vow      a run-long curse on every combat room; each raises Embers +25%
+//   vow      a run-long curse on every combat room, sworn at rank I, II or
+//            III (data/vows.js); the ranks add up to the Vow level, which
+//            raises the run's Embers
 //   tint     a class's VFX colours (cosmetic, local to this player's screen)
 import { RELICS, RELIC_IDS, CURSES } from '../sim/relics.js';
 import { SKILLS } from '../sim/skills.js';
@@ -28,6 +30,7 @@ import { AFFIX_IDS } from '../sim/affixes.js';
 import { CHAMPION_IDS, FIRST_CROWNS, FIVE_CROWNS } from '../sim/champions.js';
 import { LAYOUTS, LAYOUT_IDS } from './layouts.js';
 import { dayDiff, isDailyKey } from './daily.js';
+import { VOW_RANKS, VOW_MAX_RANK, VOW_DEED_LEVELS, vowName, vowLevelOf, vowPayPct, clampRank, freshVowBest, saneVowBest } from './vows.js';
 
 export const META_VERSION = 1;
 export const CURRENCY = 'Embers';
@@ -79,7 +82,7 @@ export const EMBER_RULES = Object.freeze({
   // cleared pays the Act IV clear plus this much per depth beyond 4.
   perDeepDepth: 20,
   challengeMul: Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 }),
-  perVow: 0.25, // +25% of the run's Embers for each vow worn
+  perVow: 0.25, // +25% of the run's Embers for each of the first six Vow levels (data/vows.js VOW_PAY)
   // BOSS RUSH (docs/BOSS_RUSH.md): each boss a rush fells, and a rush won.
   perRushBoss: 15,
   rushWon: 60,
@@ -210,6 +213,17 @@ export const DEEDS = Object.freeze(
           ['break_the_hush', { name: 'Break the Hush', text: 'Fell the Hush on the Harrowing challenge.', embers: 80, test: (r) => r.bosses.includes('hush') && r.challenge === 'harrowing' }],
         ]
       : []),
+    // VOW RANKS (plan 4 slice 10): a mode beaten (a campaign completed, the
+    // campaign won inside an Endless Descent, a Boss Rush won) at a Vow level.
+    ...VOW_DEED_LEVELS.map((n, i) => [
+      ['sworn_five', 'sworn_ten', 'sworn_fifteen'][i],
+      {
+        name: ['Five Oaths', 'Ten Oaths', 'Fifteen Oaths'][i],
+        text: `Complete a campaign or win a Boss Rush at Vow level ${n} or higher.`,
+        embers: [60, 120, 200][i],
+        test: (r) => !!r.vowBeaten && (r.vowLevel || 0) >= n,
+      },
+    ]),
     ['seven_dawns', { name: 'Seven Dawns', text: 'Play the Daily Descent seven days in a row.', embers: 80, test: (r, l) => !!(l && l.daily) && l.daily.best >= 7, goal: (l) => [Math.min(7, (l && l.daily && l.daily.best) || 0), 7] }],
   ])
 );
@@ -260,7 +274,35 @@ const VOW_ROWS = [
   // (Short Fuse has no wave numbers; the run shortens every telegraph).
   ['vow_restless', 'restless', { level: 4 }],
   ['vow_short_fuse', 'short_fuse', { deed: 'rush_lap' }],
+  // VOW RANKS: the Spire's two vows (data/vows.js), once Level V is played.
+  ...(ACT_IDS.includes(5)
+    ? [
+        ['vow_thin_air', 'thin_air', { level: 5 }],
+        ['vow_heavy_bell', 'heavy_bell', { boss: 'skyhorn' }],
+      ]
+    : []),
 ];
+// Each vow's card text, its three ranks' numbers filled in by the screen
+// (`vars`: r1, r2, r3).
+const VOW_TEXT = Object.freeze({
+  elite_tide: 'Elites are far more common in every combat room: +{r1}% elite chance at rank I, +{r2}% at II, +{r3}% at III.',
+  crowded: 'Every wave in every combat room is larger: +{r1}% at rank I, +{r2}% at II, +{r3}% at III.',
+  iron_hide: 'Enemies in every combat room have more HP: +{r1}% at rank I, +{r2}% at II, +{r3}% at III.',
+  sharp_fangs: 'Enemies in every combat room deal more damage: +{r1}% at rank I, +{r2}% at II, +{r3}% at III.',
+  restless: 'Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.',
+  short_fuse: 'Enemy attack warnings in every combat room run shorter: {r1}% shorter at rank I (never under 0.6 s), {r2}% at II (0.55 s), {r3}% at III (0.5 s).',
+  thin_air: 'Healing on the party is weaker in every room, the boss’s too: {r1}% weaker at rank I, {r2}% at II, {r3}% at III.',
+  heavy_bell: 'The party’s dodges recover slower in every room, the boss’s too: {r1}% slower at rank I, {r2}% at II, {r3}% at III.',
+});
+// A rank's number as the percent the card shows.
+function vowPct(id, v) {
+  const row = VOW_RANKS[id];
+  if (!row) return 0;
+  if (row.key === 'eliteAdd') return Math.round(v * 100);
+  if (row.key === 'waveMul' || row.fuse) return Math.round((1 - v) * 100);
+  if (row.key) return Math.round((v - 1) * 100);
+  return Math.round(v * 100);
+}
 const TINT_ROWS = [
   ['tint_moonlit', 'healer', 'Moonlit', { glow: '#9FB8FF', second: '#E4EAFF', debris: '#E4EAFF' }, 30, null],
   ['tint_emberforge', 'tank', 'Emberforge', { glow: '#FF8A3D', second: '#FFD08A', debris: '#6A3A1E' }, 30, null],
@@ -317,8 +359,9 @@ function build() {
     out[id] = Object.freeze({ id, kind: 'purse', tier, glint, name: `Pilgrim's Purse ${'I'.repeat(tier)}`, cost, req, text: `Begin every run with ${glint} extra Glint.` });
   }
   for (const [id, curse, req] of VOW_ROWS) {
-    const c = CURSES[curse];
-    out[id] = Object.freeze({ id, kind: 'vow', curse, name: `Vow: ${c.name}`, cost: 0, req, text: `${c.text.replace('in this room', 'in every combat room').replace('this room', 'every combat room')} Embers +${Math.round(EMBER_RULES.perVow * 100)}%.` });
+    const row = VOW_RANKS[curse];
+    const vars = Object.freeze(Object.fromEntries(row.ranks.map((v, i) => [`r${i + 1}`, vowPct(curse, v)])));
+    out[id] = Object.freeze({ id, kind: 'vow', curse, name: `Vow: ${vowName(curse)}`, cost: 0, req, text: VOW_TEXT[curse], vars });
   }
   for (const [id, cls, name, colors, cost, req] of TINT_ROWS) {
     out[id] = Object.freeze({ id, kind: 'tint', cls, name: `${name} tint`, colors: Object.freeze(colors), cost, req, text: `${CLASS_NAME[cls]} effects burn in ${name} colours. Cosmetic.` });
@@ -337,11 +380,12 @@ export function freshLoadout() {
     heirloom: null,
     purse: 0,
     vows: [],
+    vowRanks: {}, // VOW RANKS: vow unlock id -> 2 | 3 (absent = rank I)
     tints: Object.fromEntries(LOADOUT_CLASSES.map((c) => [c, null])),
   };
 }
 export function freshMeta() {
-  return { mv: META_VERSION, embers: 0, earned: 0, owned: {}, deeds: [], bosses: {}, relicsSeen: [], feats: [], marks: freshMarks(), loadout: freshLoadout(), lastAward: null };
+  return { mv: META_VERSION, embers: 0, earned: 0, owned: {}, deeds: [], bosses: {}, relicsSeen: [], feats: [], marks: freshMarks(), vowBest: freshVowBest(), loadout: freshLoadout(), lastAward: null };
 }
 
 const num = (v, d = 0) => (Number.isFinite(v) ? v : d);
@@ -377,6 +421,8 @@ export function saneMeta(m) {
   const tier = Math.round(num(l.purse));
   out.loadout.purse = tier > 0 && has(`purse_${tier}`, 'purse') ? tier : 0;
   out.loadout.vows = Array.isArray(l.vows) ? [...new Set(l.vows.filter((v) => has(v, 'vow')))] : [];
+  if (l.vowRanks && typeof l.vowRanks === 'object') for (const v of out.loadout.vows) if (clampRank(l.vowRanks[v]) > 1) out.loadout.vowRanks[v] = clampRank(l.vowRanks[v]);
+  out.vowBest = saneVowBest(m.vowBest);
   out.lastAward = m.lastAward && typeof m.lastAward === 'object' && Number.isFinite(m.lastAward.embers) ? m.lastAward : null;
   return out;
 }
@@ -462,6 +508,10 @@ export function runFacts(summary, records = {}) {
     .map((l) => (typeof l.boss === 'string' ? l.boss : isDeep(l) ? deepBoss(l) : bossFor(l.level, s.seed ?? null).kind))
     .filter(Boolean);
   const boons = s.boons || null;
+  // VOW RANKS: the run's Vow level, the mode it is recorded under, and
+  // whether the mode was beaten (the Daily is vow-free and keeps none).
+  const vowMode = !camp || (camp && camp.daily) ? null : rush ? 'rush' : camp.endless ? 'endless' : 'campaign';
+  const vowBeaten = vowMode === 'rush' ? !!rush.won : vowMode === 'endless' ? !!camp.won : vowMode === 'campaign' ? !!camp.complete : false;
   const depth = camp && camp.endless ? Math.max(num(camp.depth), num(camp.index), ...camp.levels.map((l) => num(l.index))) : 0;
   // THE TIDECALLER: who stood in the party (the run's four builds), and the
   // most soaked enemies one cast crashed (save/index.js counts it).
@@ -478,6 +528,9 @@ export function runFacts(summary, records = {}) {
     complete: !!(camp ? camp.complete : false),
     challenge: s.challenge ?? 'standard',
     vows: boons && Array.isArray(boons.vows) ? boons.vows : [],
+    vowLevel: vowMode ? vowLevelOf(boons) : 0,
+    vowMode,
+    vowBeaten,
     relics: Array.isArray(s.relics) ? s.relics : [],
     curses: Math.max(0, num(s.curses)),
     runs: num(records.runs),
@@ -511,10 +564,13 @@ export function awardFor(facts, meta) {
   if (facts.rush && facts.rush.won) lines.push({ label: 'Boss Rush won', embers: R.rushWon });
   let base = lines.reduce((n, l) => n + l.embers, 0);
   const chMul = R.challengeMul[facts.challenge] ?? 1;
-  const vowMul = 1 + R.perVow * facts.vows.length;
-  let embers = Math.round(base * chMul * vowMul);
+  // VOW RANKS: the Vow level pays (data/vows.js vowPayPct; six rank-I vows
+  // pay +150%, as six vows always did).
+  const vowLevel = Number.isFinite(facts.vowLevel) ? facts.vowLevel : facts.vows.length;
+  const vowPct = vowPayPct(vowLevel);
+  let embers = Math.round(base * chMul * (1 + vowPct / 100));
   if (base > 0 && chMul !== 1) lines.push({ label: `${facts.challenge[0].toUpperCase()}${facts.challenge.slice(1)} ×${chMul}`, embers: Math.round(base * chMul) - base });
-  if (base > 0 && facts.vows.length) lines.push({ label: `${facts.vows.length} vow${facts.vows.length === 1 ? '' : 's'} +${Math.round(R.perVow * 100 * facts.vows.length)}%`, embers: embers - Math.round(base * chMul) });
+  if (base > 0 && vowLevel > 0) lines.push({ label: `Vow level ${vowLevel} +${vowPct}%`, embers: embers - Math.round(base * chMul) });
   const done = new Set(meta && Array.isArray(meta.deeds) ? meta.deeds : []);
   const deeds = [];
   const life = lifeAfter(meta, facts);
@@ -534,7 +590,17 @@ export function awardFor(facts, meta) {
   const tolly = (facts.party || []).includes('bellwright');
   if (tolly && facts.bosses.includes('wyrm')) feats.push('tolly_wyrm');
   if (facts.cleared.includes(3) || facts.bosses.some((k) => STONE_BOSSES.includes(k))) feats.push('bellwright');
-  return { embers, lines, deeds, bosses: facts.bosses.slice(), feats };
+  // VOW RANKS: the mode's best Vow level (a beaten mode only).
+  const prev = saneVowBest(meta && meta.vowBest);
+  const mode = facts.vowMode || null;
+  const vow = mode ? { level: vowLevel, mode, beaten: !!facts.vowBeaten, best: prev[mode], newBest: !!facts.vowBeaten && vowLevel > prev[mode] } : null;
+  return { embers, lines, deeds, bosses: facts.bosses.slice(), feats, vow };
+}
+// The vow bests after an award (a pure copy; awardRun stores it).
+export function vowBestAfter(best, vow) {
+  const out = saneVowBest(best);
+  if (vow && vow.newBest && out[vow.mode] !== undefined) out[vow.mode] = Math.max(out[vow.mode], vow.level);
+  return out;
 }
 
 // ------------------------------------------------------------ the boons --
@@ -551,8 +617,17 @@ export function loadoutBoons(meta) {
   if (own(l.heirloom)) b.relic = UNLOCKS[l.heirloom].relic;
   const purse = l.purse > 0 && own(`purse_${l.purse}`) ? UNLOCKS[`purse_${l.purse}`].glint : 0;
   if (purse > 0) b.glint = purse;
-  const vows = (Array.isArray(l.vows) ? l.vows : []).filter(own).map((id) => UNLOCKS[id].curse);
+  const sworn = (Array.isArray(l.vows) ? l.vows : []).filter(own);
+  const vows = sworn.map((id) => UNLOCKS[id].curse);
   if (vows.length) b.vows = vows;
+  // VOW RANKS: only ranks past I are named, so a rank-I loadout makes the
+  // same boons it always made.
+  const ranks = {};
+  for (const id of sworn) {
+    const r = clampRank(l.vowRanks && l.vowRanks[id]);
+    if (r > 1) ranks[UNLOCKS[id].curse] = r;
+  }
+  if (Object.keys(ranks).length) b.vowRanks = ranks;
   return Object.keys(b).length ? b : null;
 }
 
@@ -576,8 +651,17 @@ export function sanitizeBoons(b) {
   const g = Math.round(Number(b.glint));
   if (g > 0) out.glint = Math.min(200, g);
   if (Array.isArray(b.vows)) {
-    const v = [...new Set(b.vows)].filter((c) => CURSES[c] && (CURSES[c].diff || CURSES[c].fuse));
+    const v = [...new Set(b.vows)].filter((c) => (CURSES[c] && (CURSES[c].diff || CURSES[c].fuse)) || VOW_RANKS[c]);
     if (v.length) out.vows = v;
+    // VOW RANKS: ranks II and III of the vows worn.
+    if (v.length && b.vowRanks && typeof b.vowRanks === 'object') {
+      const ranks = {};
+      for (const c of v) {
+        const r = Math.round(Number(b.vowRanks[c]));
+        if (VOW_RANKS[c] && r > 1 && r <= VOW_MAX_RANK) ranks[c] = r;
+      }
+      if (Object.keys(ranks).length) out.vowRanks = ranks;
+    }
   }
   return Object.keys(out).length ? out : null;
 }

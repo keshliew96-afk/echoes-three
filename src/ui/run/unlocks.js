@@ -5,7 +5,8 @@
 // kind: Kits, Heirlooms, Purse, Vows, Tints, plus the Deeds list.
 //
 // Cards: E / Enter / click on a card buys it (requirement met, enough
-// Embers), or equips / takes off one already owned. A locked card names its
+// Embers), or equips / takes off one already owned. VOW RANKS: a vow card
+// steps through its ranks instead (off, I, II, III, off). A locked card names its
 // requirement. Q / E (keyboard tabs) or the tab row switch kinds. "Plain run"
 // takes off everything that changes a run (tints stay: they are cosmetic).
 // Esc / B backs out to the camp. Blocking: the single-player sim pauses.
@@ -18,6 +19,7 @@ import { service } from '../../app/registry.js';
 import { UNLOCKS, UNLOCK_IDS, UNLOCK_KINDS, KIND_LABEL, DEEDS, DEED_IDS, CURRENCY, EMBER_RULES, BOSSES, unlockState, nextGoals, lifeAfter } from '../../data/unlocks.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { RELICS } from '../../sim/relics.js';
+import { VOW_MAX_RANK, VOW_ROMAN, VOW_MODES, vowPayPct } from '../../data/vows.js';
 import { SKILLS } from '../../sim/skills.js';
 import { relicIconHtml } from './relicicons.js';
 import { t, tn } from '../../i18n/index.js';
@@ -29,7 +31,7 @@ const TAB_BLURB = {
   kit: () => t('A kit replaces one class’s starting skills. One kit per class.'),
   heirloom: () => t('Begin every run holding one relic. Find a relic in a run to reveal its heirloom.'),
   purse: () => t('Begin every run with extra Glint for the draft and the peddler.'),
-  vow: () => t('Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.', { pct: Math.round(EMBER_RULES.perVow * 100), currency: t(CURRENCY) }),
+  vow: () => t('Swear vows at rank I, II or III. Their ranks add up to your Vow level: each of the first six levels pays {pct}% more {currency}, each level after that {more}%.', { pct: Math.round(EMBER_RULES.perVow * 100), more: vowPayPct(7) - vowPayPct(6), currency: t(CURRENCY) }),
   tint: () => t('Recolour a class’s effects. Cosmetic, and only on your screen.'),
   deed: () => t('One-off feats. Each pays its {currency} once, on the run that does it.', { currency: t(CURRENCY) }),
 };
@@ -79,6 +81,7 @@ function awardLabel(label) {
   if ((m = /^(\d+) boss(?:es)? felled in the rush$/.exec(s))) return tn(Number(m[1]), '{n} boss felled in the rush', '{n} bosses felled in the rush');
   if (s === 'Boss Rush won') return t('Boss Rush won');
   if ((m = /^(\d+) vows? \+(\d+)%$/.exec(s))) return tn(Number(m[1]), '{n} vow +{pct}%', '{n} vows +{pct}%', { pct: m[2] });
+  if ((m = /^Vow level (\d+) \+(\d+)%$/.exec(s))) return t('Vow level {n} +{pct}%', { n: m[1], pct: m[2] });
   if ((m = /^(\w+) ×(.+)$/.exec(s))) return t('{challenge} ×{mul}', { challenge: t(m[1]), mul: m[2] });
   if ((m = /^Deed: (.+)$/.exec(s))) return t('Deed: {name}', { name: t(m[1]) });
   return s;
@@ -155,6 +158,16 @@ function installStyle() {
 .ul-unlocks .ul-card[data-equipped="true"] .ul-foot { color: ${P.brightHeal}; }
 .ul-unlocks .ul-card[data-kind="vow"][data-equipped="true"] { border-color: ${P.godstuffViolet}; box-shadow: inset 0 0 ${px(22)} ${P.godstuffViolet}33; }
 .ul-unlocks .ul-card[data-kind="vow"][data-equipped="true"] .ul-foot { color: ${P.godstuffViolet}; }
+.ul-unlocks .ul-card[data-kind="vow"][data-rank="3"] { border-color: #FF6A4D; box-shadow: inset 0 0 ${px(26)} #FF6A4D33, 0 0 ${px(16)} #FF6A4D33; }
+.ul-unlocks .ul-card[data-kind="vow"][data-rank="3"] .ul-foot { color: #FF8A6A; }
+.ul-unlocks .ul-rank { display: inline-flex; gap: ${px(5)}; align-items: center; margin-left: auto; }
+.ul-unlocks .ul-rank i { width: ${px(13)}; height: ${px(13)}; transform: rotate(45deg); border: max(1px, ${px(2)}) solid ${P.warmGrey}AA; background: transparent; }
+.ul-unlocks .ul-rank i.on { background: ${P.godstuffViolet}; border-color: #E2D6FF; box-shadow: 0 0 ${px(9)} ${P.godstuffViolet}; }
+.ul-unlocks .ul-card[data-rank="3"] .ul-rank i.on { background: #FF6A4D; border-color: #FFD2C4; box-shadow: 0 0 ${px(10)} #FF6A4D; }
+.ul-unlocks .ul-vowlv { display: flex; align-items: baseline; gap: ${px(10)}; margin-top: ${px(4)}; padding-top: ${px(6)}; border-top: 1px solid ${P.warmGrey}55; }
+.ul-unlocks .ul-vowlv b { font-size: ${px(30)}; font-weight: 800; color: ${P.godstuffViolet}; text-shadow: 0 0 ${px(10)} ${P.godstuffViolet}88; }
+.ul-unlocks .ul-vowlv span { font-size: ${px(18)}; letter-spacing: 0.16em; font-weight: 800; color: ${P.warmGrey}; }
+.ul-unlocks .ul-vowlv i { font-style: normal; font-size: ${px(18)}; color: ${P.hearthAmber}; margin-left: auto; }
 .ul-unlocks .ul-card[data-state="done"] { border-color: ${P.paleGold}AA; }
 .ul-unlocks .ul-card[data-state="done"] .ul-foot { color: ${P.paleGold}; }
 .ul-unlocks .ul-card .ul-goal { flex: 0 0 auto; height: ${px(8)}; border-radius: ${px(4)}; background: ${P.voidCharcoal}; border: max(1px, ${px(1)}) solid ${P.warmGrey}55; overflow: hidden; }
@@ -199,6 +212,16 @@ function profileCtx() {
   const p = s && typeof s.profile === 'function' ? s.profile() : null;
   if (!p || !p.meta) return null;
   return { meta: p.meta, records: p.records || {}, profile: p };
+}
+
+// VOW RANKS: the rank a sworn vow is worn at, and the loadout's Vow level.
+function rankOf(id, meta) {
+  const r = meta && meta.loadout && meta.loadout.vowRanks ? meta.loadout.vowRanks[id] : null;
+  return Number.isFinite(r) ? Math.max(1, Math.min(VOW_MAX_RANK, r)) : 1;
+}
+function vowLevel(meta) {
+  const l = meta && meta.loadout;
+  return l && Array.isArray(l.vows) ? l.vows.reduce((n, v) => n + rankOf(v, meta), 0) : 0;
 }
 
 function isEquipped(id, meta) {
@@ -295,12 +318,14 @@ export function createUnlocksScreen(ctx) {
     for (const cls of Object.keys(l.kits)) if (l.kits[cls]) wear.push(t('{cls}: {name} kit', { cls: t(CLASS_NAME[cls]), name: t(UNLOCKS[l.kits[cls]].name) }));
     if (l.heirloom) wear.push(t('Heirloom: {name}', { name: t(UNLOCKS[l.heirloom].name) }));
     if (l.purse) wear.push(t('Purse: +{glint} Glint', { glint: UNLOCKS[`purse_${l.purse}`].glint }));
-    for (const v of l.vows) wear.push(t(UNLOCKS[v].name));
+    for (const v of l.vows) wear.push(t('{name} · rank {rank}', { name: t(UNLOCKS[v].name), rank: VOW_ROMAN[rankOf(v, m)] }));
     const tints = Object.keys(l.tints).filter((k) => l.tints[k]).map((k) => t(UNLOCKS[l.tints[k]].name));
     $('.ul-wear-b').innerHTML =
       (wear.length ? wear.map((w) => `<div class="ul-line"><span>${esc(w)}</span></div>`).join('') : `<div class="ul-empty">${esc(t('A plain run: the starting kits, no heirloom, no vows.'))}</div>`) +
       (tints.length ? `<div class="ul-line"><i>${esc(t('{names} (cosmetic)', { names: tints.join(', ') }))}</i></div>` : '') +
-      (l.vows.length ? `<div class="ul-line"><i>${esc(t('{currency} +{pct}%', { currency: t(CURRENCY), pct: Math.round(EMBER_RULES.perVow * 100 * l.vows.length) }))}</i></div>` : '');
+      (l.vows.length
+        ? `<div class="ul-vowlv"><span>${esc(t('VOW LEVEL'))}</span><i>${esc(t('{currency} +{pct}%', { currency: t(CURRENCY), pct: vowPayPct(vowLevel(m)) }))}</i><b>${vowLevel(m)}</b></div>`
+        : '');
     const role = netRole();
     $('.ul-net').textContent =
       role === 'guest'
@@ -313,7 +338,9 @@ export function createUnlocksScreen(ctx) {
       `<div class="ul-line"><span>${esc(t('Runs · victories'))}</span><b>${r.runs || 0} · ${r.victories || 0}</b></div>` +
       `<div class="ul-line"><span>${esc(t('{currency} earned', { currency: t(CURRENCY) }))}</span><b>${m.earned}</b></div>` +
       `<div class="ul-line"><span>${esc(t('Unlocks'))}</span><b>${Object.keys(m.owned).length} / ${UNLOCK_IDS.length}</b></div>` +
-      `<div class="ul-line"><span>${esc(t('Deeds'))}</span><b>${m.deeds.length} / ${DEED_IDS.length}</b></div>`;
+      `<div class="ul-line"><span>${esc(t('Deeds'))}</span><b>${m.deeds.length} / ${DEED_IDS.length}</b></div>` +
+      `<div class="ul-line"><span>${esc(t('Best Vow level'))}</span><b>${VOW_MODES.map((k) => (m.vowBest && m.vowBest[k]) || 0).join(' · ')}</b></div>` +
+      `<div class="ul-line"><i>${esc(t('Campaign · Endless · Boss Rush'))}</i></div>`;
   }
 
   // ------------------------------------------------------------ tabs --
@@ -351,6 +378,9 @@ export function createUnlocksScreen(ctx) {
               ? t('VOW')
               : t('PURSE'),
     );
+    // VOW RANKS: the rank pips, lit to the rank sworn.
+    const rank = u.kind === 'vow' && eq ? rankOf(id, c.meta) : 0;
+    if (u.kind === 'vow' && st === 'owned') kind += `<span class="ul-rank" aria-hidden="true">${[1, 2, 3].map((r) => `<i class="${r <= rank ? 'on' : ''}"></i>`).join('')}</span>`;
     let ico = '';
     if (u.kind === 'heirloom' && st !== 'locked') {
       try {
@@ -363,14 +393,15 @@ export function createUnlocksScreen(ctx) {
     if (u.kind === 'kit') extra = `<div class="ul-text">${esc(t(u.text))}<br><i style="font-style:normal;color:${P.warmGrey}">${u.skills.map((s) => esc(SKILLS[s] ? t(SKILLS[s].name) : s)).join(' · ')}</i></div>`;
     else if (u.kind === 'tint') extra = `<div class="ul-text">${esc(t(u.text))}</div><div class="ul-swatch"><i style="background:${u.colors.glow};color:${u.colors.glow}"></i><i style="background:${u.colors.second};color:${u.colors.second}"></i></div>`;
     else if (u.kind === 'heirloom' && st === 'locked') extra = `<div class="ul-text">${esc(t('An heirloom you have not found yet.'))}</div>`;
-    else extra = `<div class="ul-text">${esc(t(u.text))}</div>`;
+    else extra = `<div class="ul-text">${esc(t(u.text, u.vars))}</div>`;
     const name = u.kind === 'heirloom' && st === 'locked' ? t('Unknown heirloom') : t(u.name);
     let foot;
     if (st === 'locked') foot = `<span>${LOCK_SVG} ${esc(reqLabel(u.req))}</span>${u.cost ? `<span>${u.cost} ${EMBER_SVG}</span>` : ''}`;
     else if (st === 'buy') foot = `<span>${esc(t('Buy'))}</span><span>${u.cost} ${EMBER_SVG}</span>`;
     else if (st === 'poor') foot = `<span>${esc(t('Need {n} more', { n: u.cost - c.meta.embers }))}</span><span>${u.cost} ${EMBER_SVG}</span>`;
+    else if (u.kind === 'vow' && eq) foot = `<span>✓ ${esc(t('Sworn at rank {rank}', { rank: VOW_ROMAN[rank] }))}</span><span>${esc(rank < VOW_MAX_RANK ? t('Raise to {rank}', { rank: VOW_ROMAN[rank + 1] }) : t('Take off'))}</span>`;
     else foot = eq ? `<span>✓ ${esc(u.kind === 'vow' ? t('Sworn') : t('Equipped'))}</span><span>${esc(t('Take off'))}</span>` : `<span>${esc(t('Owned'))}</span><span>${esc(u.kind === 'vow' ? t('Swear') : t('Equip'))}</span>`;
-    return { st, eq, html: `<div class="ul-kind">${ico}${kind}</div><div class="ul-name">${esc(name)}</div>${extra}<div class="ul-foot">${foot}</div>` };
+    return { st, eq, rank, html: `<div class="ul-kind">${ico}${kind}</div><div class="ul-name">${esc(name)}</div>${extra}<div class="ul-foot">${foot}</div>` };
   }
 
   function deedHtml(id, c) {
@@ -403,6 +434,7 @@ export function createUnlocksScreen(ctx) {
       const r = tab === 'deed' ? deedHtml(id, c) : cardHtml(id, c);
       b.dataset.state = r.st;
       b.dataset.equipped = String(!!r.eq);
+      b.dataset.rank = String(r.rank || 0);
       b.innerHTML = r.html;
       b.setAttribute('aria-label', b.textContent.replace(/\s+/g, ' ').trim());
     }
@@ -463,6 +495,13 @@ export function createUnlocksScreen(ctx) {
         note(u.kind === 'vow' ? t('{name} unlocked.', { name: t(u.name) }) : t('{name} unlocked and equipped.', { name: t(u.name) }));
         bump(card, 'ul-pulse');
       } else note(t('Couldn\'t buy {name}.', { name: t(u.name) }));
+    } else if (u.kind === 'vow' && typeof s.setVowRank === 'function') {
+      // VOW RANKS: off -> I -> II -> III -> off.
+      const now = isEquipped(id, c.meta) ? rankOf(id, c.meta) : 0;
+      const next = now >= VOW_MAX_RANK ? 0 : now + 1;
+      r = s.setVowRank(id, next);
+      note(r.ok ? (next ? t('{name} sworn at rank {rank}. Vow level {level}.', { name: t(u.name), rank: VOW_ROMAN[next], level: vowLevel(profileCtx().meta) }) : t('{name} taken off.', { name: t(u.name) })) : t('Couldn\'t change {name}.', { name: t(u.name) }));
+      if (r.ok) bump(card, 'ul-pulse');
     } else {
       const on = !isEquipped(id, c.meta);
       r = s.equipUnlock(id, on);
@@ -524,7 +563,8 @@ export function createUnlocksScreen(ctx) {
         note: noteEl.textContent,
         embers: c ? c.meta.embers : null,
         log: log.slice(),
-        cards: [...gridEl.querySelectorAll('.ul-card')].map((b) => ({ id: b.dataset.id, state: b.dataset.state, equipped: b.dataset.equipped === 'true', focused: b.classList.contains('ap-focus') })),
+        cards: [...gridEl.querySelectorAll('.ul-card')].map((b) => ({ id: b.dataset.id, state: b.dataset.state, equipped: b.dataset.equipped === 'true', rank: Number(b.dataset.rank) || 0, focused: b.classList.contains('ap-focus') })),
+        vowLevel: c ? vowLevel(c.meta) : 0,
       };
     },
   };

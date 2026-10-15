@@ -41,7 +41,8 @@
 // records reset keeps `meta`.
 import { PROFILE_KEY } from './storage.js';
 import { CAMPAIGN_LEVELS, FIRST_LEVEL, nextLevel } from '../data/campaign.js';
-import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet, FEATS, featsOf, marksAfter } from '../data/unlocks.js';
+import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet, FEATS, featsOf, marksAfter, vowBestAfter } from '../data/unlocks.js';
+import { VOW_MAX_RANK } from '../data/vows.js';
 
 export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5, 5: 3.0 });
 export const CHALLENGE_MUL = Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 });
@@ -573,6 +574,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       for (const r of facts.relics) if (!m.relicsSeen.includes(r)) m.relicsSeen.push(r);
       for (const f of a.feats || []) if (!m.feats.includes(f)) m.feats.push(f); // THE TIDECALLER
       m.marks = marksAfter(m.marks, facts); // ROUND TWO: the lifetime marks
+      m.vowBest = vowBestAfter(m.vowBest, a.vow); // VOW RANKS: the best per mode
       const freed = grantFree(m, p.records);
       m.lastAward = { at: now(), result: facts.result, embers: a.embers, lines: a.lines, deeds: a.deeds, unlocked: freed };
       return { ...a, unlocked: freed, balance: m.embers };
@@ -641,8 +643,28 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     else if (u.kind === 'tint') l.tints[u.cls] = on ? id : l.tints[u.cls] === id ? null : l.tints[u.cls];
     else if (u.kind === 'heirloom') l.heirloom = on ? id : l.heirloom === id ? null : l.heirloom;
     else if (u.kind === 'purse') l.purse = on ? u.tier : l.purse === u.tier ? 0 : l.purse;
-    else if (u.kind === 'vow') l.vows = on ? [...new Set([...l.vows, id])] : l.vows.filter((v) => v !== id);
+    else if (u.kind === 'vow') {
+      l.vows = on ? [...new Set([...l.vows, id])] : l.vows.filter((v) => v !== id);
+      if (!on && l.vowRanks) delete l.vowRanks[id];
+    }
     return true;
+  }
+  // VOW RANKS: swear an owned vow at rank 1 to 3 (0 takes it off).
+  function setVowRank(id, rank) {
+    const u = UNLOCKS[id];
+    sync();
+    if (!u || u.kind !== 'vow' || profile.meta.owned[id] === undefined) return { ok: false, reason: 'not_owned' };
+    const r = Math.max(0, Math.min(VOW_MAX_RANK, Math.round(Number(rank)) || 0));
+    const { result, w } = commit((p) => {
+      const l = p.meta.loadout;
+      if (!l.vowRanks || typeof l.vowRanks !== 'object') l.vowRanks = {};
+      if (r === 0) return equipIn(p.meta, id, false);
+      equipIn(p.meta, id, true);
+      if (r > 1) l.vowRanks[id] = r;
+      else delete l.vowRanks[id];
+      return true;
+    });
+    return { ok: !!result, id, rank: r, written: w.ok };
   }
   function equipUnlock(id, on = true) {
     sync();
@@ -684,6 +706,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     noteLevelReached, // CAMPAIGN
     unlockLevel, // CAMPAIGN
     awardRun, // UNLOCKS
+    setVowRank, // VOW RANKS
     noteStory, // THE HEARTH SONG
     meetNpc, // THE HEARTH SONG
     noteJournal, // THE JOURNAL
