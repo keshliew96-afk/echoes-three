@@ -764,6 +764,11 @@
    "src/net/session.js"
   ]
  },
+ "{name} stands in this room. {trade}": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "{name} sworn.": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -772,6 +777,11 @@
  "{name} taken off.": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "{name} takes your key. A greater relic waits when the room clears.": {
+  "files": [
+   "src/ui/run/index.js"
   ]
  },
  "{name} unlocked and equipped.": {
@@ -787,6 +797,16 @@
  "{name}:": {
   "files": [
    "src/ui/run/shop.js"
+  ]
+ },
+ "{name}: {blessing} for 60 s ({text}).": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "{name}: {blessing} for 60 s. Your next fight is cursed: {curse}.": {
+  "files": [
+   "src/ui/run/index.js"
   ]
  },
  "{name}: {req}.": {
@@ -973,6 +993,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "{text} · {secs} s": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
  "{text} Pays {n} {currency} once.": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -1146,6 +1171,12 @@
   ],
   "data": true
  },
+ "+20% move speed, +15% damage": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "+25% area — bigger bursts and zones; a wider arc (to 90°).": {
   "files": [
    "src/ui/run/cards.js"
@@ -1179,6 +1210,18 @@
  "+25% range on this skill.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+30% damage": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
+ "+30% move speed": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },
@@ -1526,9 +1569,27 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "15% health → Swiftness, 60 s": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
+ "25 Glint → Ward, 60 s": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "25 Glint and your newest relic.": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "25% less damage taken": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },
@@ -1765,6 +1826,12 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "A cursed next fight → Fury, 60 s": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
  },
  "A damaging shape of your own.": {
   "files": [
@@ -2595,9 +2662,21 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Answered": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "Antler Quake: a warning ring under a hero bursts for 15. Close in, it tramples for 12 with no warning. Calls boars and a mantis at 75%, 50% and 25% health.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Antler Shrine": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },
@@ -6910,6 +6989,12 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Fury": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "Gale Bronze tint": {
   "files": [
    "src/data/unlocks.js"
@@ -7007,9 +7092,27 @@
   ],
   "data": true
  },
+ "Geode Shrine": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "German": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Give 15% of every hero's health for Swiftness: +30% move speed for 60 s.": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
+ "Give 25 Glint for a Ward: the party takes 25% less damage for 60 s.": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },
@@ -7022,6 +7125,18 @@
  "Give up your newest relic.": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Give your tonic or bomb for a Tailwind: +20% move speed and +15% damage for 60 s.": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
+ "Give your vault key for a rare or legendary relic pick when this room clears.": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },
@@ -7111,6 +7226,12 @@
  "Grave Mole": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Grave Shrine": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },
@@ -9714,6 +9835,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Offer": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
  },
  "Offerings to the hearth": {
   "files": [
@@ -12723,6 +12850,12 @@
   ],
   "data": true
  },
+ "Swiftness": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "Swinger": {
   "files": [
    "src/data/journal.js"
@@ -12811,6 +12944,12 @@
   ],
   "data": true
  },
+ "Tailwind": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "Take": {
   "files": [
    "src/ui/run/draft.js",
@@ -12822,6 +12961,12 @@
   "files": [
    "src/ui/run/draft.js"
   ]
+ },
+ "Take a curse on your next fight for Fury: the party deals 30% more damage for 60 s.": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
  },
  "Take a major curse for the rest of the run.": {
   "files": [
@@ -13765,6 +13910,11 @@
    "src/ui/run/transit.js"
   ]
  },
+ "THE GEODE SHRINE'S ANSWER": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
  "The Gloam Wolf": {
   "files": [
    "src/data/journal.js",
@@ -14576,6 +14726,21 @@
    "src/ui/run/index.js"
   ]
  },
+ "The shrine asks 25 Glint.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The shrine asks for a tonic or bomb.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The shrine asks for a vault key.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "The sigil ring": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -15285,6 +15450,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Tithe Shrine": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "TO": {
   "files": [
    "src/sim/skills.js"
@@ -15909,6 +16080,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "Ward": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "Ward Flask": {
   "files": [
    "src/sim/consumables.js"
@@ -16220,6 +16397,12 @@
  "Win the fight for 25 Glint and a choice of three relics.": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Wind Shrine": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },
@@ -16641,6 +16824,11 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "Your key bought a rare or legendary relic. Choose one.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
  "Your latest run stays in Load Game:\n{run}": {
   "files": [
    "src/ui/menu/title.js"
@@ -16715,6 +16903,18 @@
  "Your shelf at the peddler is 25% cheaper.": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Your tonic → Tailwind, 60 s": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
+ "Your vault key → a greater relic": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },

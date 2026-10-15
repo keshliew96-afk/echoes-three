@@ -39,6 +39,19 @@
 //              whatever lies down the lane (a rockfall, another hero's
 //              telegraph, the wall). Idle, the vent only breathes
 //
+//   spur       crystal spurs (Act IV, the Hollow Heart; docs/SHRINES.md): a
+//              room-long schedule like rockfall's (every 300-420 ticks, a pure
+//              hash of seed, room and layout) that marks the spot a hero stood
+//              on 0.6 s ago (their LAST spot: still feet are struck, a moving
+//              hero leaves it behind them). Ember ring r 0.75 for 54 ticks,
+//              then a cluster of crystal bursts up through the floor: 12 dmg
+//              to every body inside, any faction (so a hero can lead a chaser
+//              over it), and a PILLAR (rubble, skin 'spur': collider r 0.4,
+//              blocks movement and shots) stands for 420 ticks, <= 3 at once.
+//              It marks where a hero WAS, so it does not wait on the §11
+//              governor (a busy room would starve it) but its telegraph counts
+//              as player-targeted, so the enemies wait on it
+//
 // Telegraph discipline (§23.6): every hazard telegraph is Ember and >= 42
 // ticks; idle states are drawn in the biome palette. No two SCHEDULED hazard
 // resolutions land within 0.6 s (36 ticks) of each other: every resolution is
@@ -101,6 +114,22 @@ export const HAZARD_TYPES = Object.freeze({
     telegraphTicks: 60,
     gustTicks: 36,
     pushSpeed: 5.2, // u/s
+    affects: 'all',
+  }),
+  spur: Object.freeze({
+    telegraphTicks: 54,
+    minGap: 300,
+    maxGap: 420,
+    firstDelay: 210, // ticks into the room before the first spur can start
+    lagTicks: 36, // the spot is where the hero stood this long before the mark
+    sampleEvery: 6, // ticks between trail samples
+    trailLen: 12, // samples kept per hero
+    damage: 12,
+    radius: 0.75,
+    pillarR: 0.4,
+    pillarTicks: 420,
+    maxPillars: 3,
+    playerTargeted: true,
     affects: 'all',
   }),
   gravefire: Object.freeze({
@@ -302,6 +331,26 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         telegraph: null,
         drops: 0,
       });
+    } else if (htype === 'spur') {
+      const seed = hash(getSeed() >>> 0, 0x5b0c2a11 ^ ((params.room ?? 0) * 977) ^ ((params.layoutId ?? 0) * 131));
+      const schedule = [];
+      let t = tick + T.firstDelay + (hash(seed, 0) % 120);
+      for (let i = 0; i < 48; i++) {
+        schedule.push(t);
+        t += T.minGap + (hash(seed, i + 1) % (T.maxGap - T.minGap + 1));
+      }
+      h = registry.spawn({
+        ...base,
+        x: 0,
+        z: 0,
+        radius: T.radius,
+        schedule,
+        pick: schedule.map((_, i) => hash(seed, 1000 + i) % 4),
+        next: 0,
+        telegraph: null,
+        spurs: 0,
+        trail: {}, // partyIndex -> [[tick, x, z], ...] (oldest first)
+      });
     } else if (htype === 'gravefire') {
       const vents = (params.vents ?? [[x - 1.2, z], [x, z], [x + 1.2, z]]).map(([vx, vz]) => ({
         x: vx,
@@ -405,7 +454,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
     }
     for (const r of all) {
       if (r.kind === 'rubble' && tick >= r.untilTick) {
-        events.emit(tick, 'rubble_crumble', { id: r.id, cause: 'expired', x: r2(r.x), z: r2(r.z) });
+        events.emit(tick, 'rubble_crumble', { id: r.id, cause: 'expired', x: r2(r.x), z: r2(r.z), ...(r.skin ? { skin: r.skin } : {}) });
         registry.despawn(r.id);
         blockersDirty = true;
       }
@@ -451,7 +500,95 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
       else if (h.htype === 'rockfall') stepRockfall(h, tick);
       else if (h.htype === 'gravefire') stepGravefire(h, tick);
       else if (h.htype === 'gust') stepGust(h, tick);
+      else if (h.htype === 'spur') stepSpur(h, tick);
     }
+  }
+
+  // Crystal spurs: each hero's recent trail is sampled; a mark lands on the
+  // spot the target stood on lagTicks ago (their last spot).
+  function sampleTrail(h, tick) {
+    const T = HAZARD_TYPES.spur;
+    for (const e of registry.all()) {
+      if (e.partyIndex === undefined || !(e.hp > 0)) continue;
+      const k = String(e.partyIndex);
+      const row = h.trail[k] ?? (h.trail[k] = []);
+      row.push([tick, r2(e.x), r2(e.z)]);
+      if (row.length > T.trailLen) row.shift();
+    }
+  }
+  function lastSpot(h, target, tick) {
+    const T = HAZARD_TYPES.spur;
+    const row = h.trail[String(target.partyIndex)] ?? [];
+    let best = null;
+    for (const s of row) if (s[0] <= tick - T.lagTicks) best = s;
+    return best ? { x: best[1], z: best[2] } : { x: target.x, z: target.z };
+  }
+  function stepSpur(h, tick) {
+    const T = HAZARD_TYPES.spur;
+    if (tick % T.sampleEvery === 0) sampleTrail(h, tick);
+    if (h.telegraph) {
+      if (tick >= h.telegraph.resolveTick) resolveSpur(h, tick);
+      return;
+    }
+    if (h.next >= h.schedule.length || tick < h.schedule[h.next]) return;
+    const party = registry
+      .all()
+      .filter((e) => e.partyIndex !== undefined && e.hp > 0)
+      .sort((a, b) => a.partyIndex - b.partyIndex);
+    if (party.length === 0) return;
+    const target = party[h.pick[h.next] % party.length];
+    const spot = lastSpot(h, target, tick);
+    const r = reserve(tick, tick + T.telegraphTicks);
+    h.telegraph = { kind: 'ring', startTick: tick, resolveTick: r, x: spot.x, z: spot.z, dirX: 0, dirZ: 1, radius: T.radius, playerTargeted: true, targetId: target.id };
+    h.x = spot.x;
+    h.z = spot.z;
+    h.px = h.x;
+    h.pz = h.z;
+    h.phase = 'telegraph';
+    h.phaseUntilTick = r;
+    h.resolveTick = r;
+    if (governor) governor.noteStart(tick);
+    emitTelegraph(h, tick, spot.x, spot.z, T.radius, r, { target: target.id });
+    events.emit(tick, 'telegraph_start', { id: h.id, etype: 'spur', shape: 'ring', target: target.id, x: r2(spot.x), z: r2(spot.z), resolveTick: r, playerTargeted: true });
+  }
+  function resolveSpur(h, tick) {
+    const T = HAZARD_TYPES.spur;
+    const t = h.telegraph;
+    const victims = hurt(h, t.x, t.z, t.radius, T.damage);
+    h.telegraph = null;
+    h.phase = 'idle';
+    h.resolveTick = null;
+    h.next += 1;
+    h.spurs += 1;
+    events.emit(tick, 'telegraph_resolve', { id: h.id, playerTargeted: true });
+    events.emit(tick, 'hazard_resolve', { id: h.id, htype: h.htype, x: r2(t.x), z: r2(t.z), radius: t.radius, victims, telegraphTicks: tick - t.startTick });
+    events.emit(tick, 'screenshake', { cause: 'spur', amp: SCREENSHAKE.amp * 0.7, durationSec: SCREENSHAKE.durationSec, x: r2(t.x), z: r2(t.z) });
+    // The pillar: crystal cover, <= 3 at once (the oldest shatters first).
+    const pillars = registry.all().filter((e) => e.kind === 'rubble' && e.skin === 'spur');
+    while (pillars.length >= T.maxPillars) {
+      const old = pillars.shift();
+      events.emit(tick, 'rubble_crumble', { id: old.id, cause: 'cap', x: r2(old.x), z: r2(old.z), skin: 'spur' });
+      registry.despawn(old.id);
+    }
+    const rb = registry.spawn({
+      kind: 'rubble',
+      skin: 'spur',
+      faction: 'neutral',
+      x: t.x,
+      z: t.z,
+      px: t.x,
+      pz: t.z,
+      yaw: ((h.spurs * 2.39996) % (Math.PI * 2)),
+      radius: T.pillarR,
+      collider: { r: T.pillarR },
+      blocksMovement: true,
+      blocksProjectiles: true,
+      startTick: tick,
+      untilTick: tick + T.pillarTicks,
+      hazardId: h.id,
+    });
+    events.emit(tick, 'rubble_spawn', { id: rb.id, x: r2(t.x), z: r2(t.z), radius: T.pillarR, untilTick: rb.untilTick, skin: 'spur' });
+    blockersDirty = true;
   }
 
   // Gust vent: idle -> 60-tick Ember lane -> 36-tick gust (the push lives in
@@ -668,7 +805,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
       z: r2(t.z),
     });
     // Rubble: temporary cover, <= 2 at once (the oldest crumbles first).
-    const rubble = registry.all().filter((e) => e.kind === 'rubble');
+    const rubble = registry.all().filter((e) => e.kind === 'rubble' && e.skin !== 'spur');
     while (rubble.length >= T.maxRubble) {
       const old = rubble.shift();
       events.emit(tick, 'rubble_crumble', { id: old.id, cause: 'cap', x: r2(old.x), z: r2(old.z) });
@@ -815,6 +952,17 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         h.telegraph = null;
         h.phase = 'idle';
       }
+    } else if (h.htype === 'spur') {
+      if (phase === 'telegraph' || phase === 'active') {
+        h.telegraph = null;
+        if (h.next >= h.schedule.length) h.schedule.push(tick);
+        else h.schedule[h.next] = tick;
+        stepSpur(h, tick);
+        if (phase === 'active' && h.telegraph) resolveSpur(h, tick);
+      } else {
+        h.telegraph = null;
+        h.phase = 'idle';
+      }
     } else if (h.htype === 'gravefire') {
       const T = HAZARD_TYPES.gravefire;
       if (phase === 'telegraph') h.cycleStart = tick;
@@ -860,7 +1008,8 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         ...(h.htype === 'gust' ? { lane: { ...h.lane }, nextGustTick: h.nextGustTick, gusts: h.gusts } : {}),
         ...(h.vents ? { vents: h.vents.map((v) => ({ x: v.x, z: v.z, phase: v.phase })), cycleStart: h.cycleStart } : {}),
         ...(h.htype === 'rockfall' ? { next: h.schedule[h.next] ?? null, drops: h.drops, telegraph: h.telegraph ? { ...h.telegraph } : null } : {}),
-        ...(h.kind === 'rubble' ? { untilTick: h.untilTick } : {}),
+        ...(h.htype === 'spur' ? { next: h.schedule[h.next] ?? null, spurs: h.spurs, telegraph: h.telegraph ? { ...h.telegraph } : null } : {}),
+        ...(h.kind === 'rubble' ? { untilTick: h.untilTick, ...(h.skin ? { skin: h.skin } : {}) } : {}),
         ...(h.htype === 'puffcap' ? { bursts: h.bursts } : {}),
         ...(h.htype === 'slip' ? { skin: h.skin, grip: h.grip } : {}),
         ...(h.htype !== 'slip' && h.skin ? { skin: h.skin } : {}), // Act IV's vein gravefire (dressing only)

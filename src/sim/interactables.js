@@ -16,6 +16,8 @@
 //              surges) for 720 ticks, then a 1200-tick cooldown
 //   bell       E: stun every non-boss hostile within 3.0 u for 60 ticks; once
 //              per room
+//   shrine     (sim/shrines.js, spawned by sim/run.js) E: a trade for a 60 s
+//              party blessing; once per room, asleep once the room clears
 //
 // `interact` (KeyE press) resolves in the §4 discrete phase AFTER revive
 // arbitration: a press next to a Downed ally (or during a revive channel) is a
@@ -317,6 +319,10 @@ export function createInteractableSystem({ registry, events, combat, getTick, pl
     } else if (e.itype === 'vault_chest') {
       // KEYS AND VAULTS: the run system opens the vault's chest (sim/run.js).
       events.emit(tick, 'vault_touch', { id: e.id, by: actor.id });
+    } else if (e.itype === 'shrine') {
+      // SHRINES: the run system takes the price and lays the blessing
+      // (sim/run.js); a price the party cannot pay gives the use back.
+      events.emit(tick, 'shrine_touch', { id: e.id, by: actor.id, seat: actor.partyIndex ?? 0 });
     } else if (e.itype === 'sluice') {
       const T = INTERACT_TYPES.sluice;
       const stopped = [];

@@ -1001,6 +1001,11 @@ const ICONS = {
     ['circle', { cx: 16, cy: 26.5, r: 2.4, fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M2 10 C3 7 4.5 5.5 6 4.5 M30 10 C29 7 27.5 5.5 26 4.5', 'stroke-width': 1.8 }],
   ],
+  // SHRINES: a shrine's plinth with a flame in its bowl (the blessing plate).
+  shrine: [
+    ['path', { d: 'M16 3 C19 7 21 9 21 12 C21 15 18.8 17 16 17 C13.2 17 11 15 11 12 C11 9 13 7 16 3 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M8 19 H24 M11 19 V26 M21 19 V26 M6 28 H26' }],
+  ],
   // Dodge: double chevron dash (unchanged from the old drawn glyph).
   dodge: [
     ['path', { d: 'M4 6 L13 16 L4 26 L8.5 26 L17.5 16 L8.5 6 Z', fill: 'currentColor', stroke: 'none' }],

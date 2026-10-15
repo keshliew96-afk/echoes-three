@@ -34,7 +34,7 @@ function shapesOf(p) {
   // Act V gust vents: the lane's half-width counts (the push reaches it).
   if (p.type === 'gust') return [{ kind: 'seg', ax: p.x0, az: p.z0, bx: p.x1, bz: p.z1, r: (p.w ?? 1.6) / 2 }];
   if (p.type === 'gravefire') return p.vents.map(([x, z]) => ({ kind: 'pt', x, z, r: FOOT.gravefire }));
-  if (p.type === 'rockfall') return [];
+  if (p.type === 'rockfall' || p.type === 'spur') return [];
   const r = p.type === 'bramble' || p.type === 'slip' ? p.r : FOOT[p.type] ?? 0.4;
   return [{ kind: 'pt', x: p.x, z: p.z, r }];
 }

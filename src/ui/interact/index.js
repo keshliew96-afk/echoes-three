@@ -15,6 +15,7 @@ import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { t } from '../../i18n/index.js';
 import { cap, onHintsChange } from '../../app/controls.js';
+import { SHRINES } from '../../sim/shrines.js';
 
 const REACH = 1.1;
 const REVIVE_RANGE = 0.6;
@@ -42,6 +43,9 @@ const CSS = `
   .ix-prompt.ix-spent { border-color: ${PALETTE.warmGrey}AA; box-shadow: none; color: ${PALETTE.bone}; }
   .ix-prompt.ix-spent .ix-key { color: ${PALETTE.warmGrey}; border-color: ${PALETTE.warmGrey}88; }
   .ix-prompt .ix-sep { opacity: 0.7; }
+  .ix-prompt .ix-lab { display: inline-flex; flex-direction: column; gap: 2px; }
+  .ix-prompt .ix-trade { font-size: 14px; font-weight: 700; letter-spacing: 0.03em; color: ${PALETTE.paleGold}; }
+  .ix-prompt .ix-name { font-size: 13px; font-weight: 700; letter-spacing: 0.1em; color: ${PALETTE.bone}; opacity: 0.85; }
 `;
 
 export function createInteractPrompts({ stage, world, runUi = null }) {
@@ -127,7 +131,10 @@ export function createInteractPrompts({ stage, world, runUi = null }) {
     const st = availability(e, tick);
     let text;
     let glyph = '';
-    if (st === 'ready') text = `<span class="ix-sep">·</span> ${t(e.verb ?? 'Use')}`;
+    // SHRINES: the shrine's name and its trade under the verb.
+    const sh = e.itype === 'shrine' ? SHRINES[e.shrine] : null;
+    if (st === 'ready' && sh) text = `<span class="ix-name">${t(sh.name).toUpperCase()}</span><span><span class="ix-sep">·</span> ${t(e.verb ?? 'Use')}</span><span class="ix-trade">${t(sh.trade)}</span>`;
+    else if (st === 'ready') text = `<span class="ix-sep">·</span> ${t(e.verb ?? 'Use')}`;
     else if (st === 'used') {
       glyph = '✕';
       text = t(e.spentLabel ?? 'Spent');

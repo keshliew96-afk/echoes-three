@@ -285,6 +285,9 @@ registerChampionCues(service('audio'));
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the vault and its hoard.
 import { registerVaultCues } from './audio/vaultcues.js';
 registerVaultCues(service('audio'));
+// HAZARDS AND SHRINES (docs/SHRINES.md): crystal spurs and the land shrines.
+import { registerShrineCues } from './audio/shrinecues.js';
+registerShrineCues(service('audio'));
 // TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot's sounds.
 import { registerTonicCues } from './audio/tonicues.js';
 registerTonicCues(service('audio'));

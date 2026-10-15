@@ -25,6 +25,8 @@ import { createThreatLayer } from './threat.js';
 import { iconEl } from './icons.js';
 import { t } from '../../i18n/index.js';
 import { viewerSeat } from '../../app/viewerseat.js';
+import { BLESSINGS } from '../../sim/shrines.js';
+import { BLESSING_COLORS } from '../../data/palette.js';
 
 const BAR_EDGE_PX = 16; // real px from the window bottom to the command bar
 const BANNER_EDGE_PX = 14; // real px from the window top to the banner
@@ -175,6 +177,23 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
   keyTxt.append(keyName, keySub);
   keyPlate.append(keyIco, keyTxt);
   root.appendChild(keyPlate);
+  // SHRINES (docs/SHRINES.md): the party's blessing and its seconds left,
+  // under the Glint plate (and under the key when one is held).
+  const blessPlate = document.createElement('div');
+  blessPlate.className = 'hud-bless';
+  const blessIco = document.createElement('span');
+  blessIco.className = 'hud-bless-ico';
+  blessIco.appendChild(iconEl('shrine', { size: 28 }));
+  const blessTxt = document.createElement('span');
+  blessTxt.className = 'hud-key-txt';
+  const blessName = document.createElement('span');
+  blessName.className = 'hud-bless-name';
+  const blessSub = document.createElement('span');
+  blessSub.className = 'hud-key-sub';
+  blessTxt.append(blessName, blessSub);
+  blessPlate.append(blessIco, blessTxt);
+  root.appendChild(blessPlate);
+  let blessShown = '';
   let keyShown = false;
   let locKey = '';
   let glintShown = -1;
@@ -255,7 +274,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
     if (clash) root.style.setProperty('--bnH', `${(b2.height / (scale || 1) + 10).toFixed(1)}px`);
     loc.classList.toggle('hud-loc-drop', clash);
     // The corner plates are chrome too: a pointer must never hide under them.
-    for (const n of [loc, glint, keyPlate]) {
+    for (const n of [loc, glint, keyPlate, blessPlate]) {
       const r = n.getBoundingClientRect();
       if (r.width > 1) zoneList.push({ x: r.x, y: 0, w: r.width, h: r.y + r.height, edge: 'top' });
     }
@@ -363,6 +382,27 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
         keyPlate.classList.add('hud-key-pop');
       }
       publishZones();
+    }
+    const bl = rv && rv.active && rv.shrine && rv.shrine.blessing ? rv.shrine.blessing : null;
+    const B = bl ? BLESSINGS[bl.id] : null;
+    const bk = B ? `${B.id}|${Math.ceil(bl.ticksLeft / 60)}|${held}` : '';
+    if (bk !== blessShown) {
+      const fresh = B && !blessShown.startsWith(`${B.id}|`);
+      blessShown = bk;
+      blessPlate.classList.toggle('hud-bless-on', !!B);
+      blessPlate.classList.toggle('hud-bless-low', !!B && bl.ticksLeft < 300);
+      blessPlate.classList.toggle('hud-bless-under', held);
+      if (B) {
+        const c = BLESSING_COLORS[B.id];
+        blessPlate.style.setProperty('--bless', c ? c.glow : '#D9B872');
+        blessName.textContent = t(B.name).toUpperCase();
+        blessSub.textContent = t('{text} · {secs} s', { text: t(B.text), secs: Math.ceil(bl.ticksLeft / 60) });
+        if (fresh) {
+          blessPlate.classList.remove('hud-key-pop');
+          void blessPlate.offsetWidth;
+          blessPlate.classList.add('hud-key-pop');
+        }
+      }
     }
     greySkills.clear();
     for (const sk of snap.build?.skills ?? []) {
