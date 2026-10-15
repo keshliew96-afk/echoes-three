@@ -217,6 +217,7 @@ const champ = (w) => {
 };
 {
   const w = campaign(SEED);
+  w.run().cmd('championPick', ['briar_knight']);
   w.run().cmd('championRoom', [4]);
   w.world.cmd('skipToRoom', 4);
   stepUntil(w, () => !!champ(w), 240);

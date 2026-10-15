@@ -8,7 +8,7 @@
 // Pure data (sim-importable): no DOM, no three. Names and lines are English
 // keys the UI shows through t() (docs/I18N.md).
 import { LEVELS, ACT_IDS, campaignLevel } from './levels.js';
-import { CHAMPIONS } from '../sim/champions.js';
+import { CHAMPION_LIST } from '../sim/champions.js';
 
 // One row per enemy kind (sim etype), in the order a campaign meets them.
 //   name   shown name          role  one word for its job in a fight
@@ -70,6 +70,11 @@ const CHAMPION_ROWS = {
   bone_reeve: ['The barrow\'s bailiff, who still collects what the dead are owed.', 'Reaping Sweep: a wide warning cone in front of him for 16. Grave Lance: bone spikes burst down a warning lane for 14. Below half health he rages.'],
   hollow_choir: ['Three voices of the Heart sung into one crystal body. It hums even when it is still.', 'Shard Hymn: a narrow warning cone, then five crystal shards for 9 each. Discord: a ring round it bursts for 15. It keeps its distance, and below half health it rages.'],
   gale_herald: ['The gods\' own crier, carved to stand on the belfry roof and call the winds in. It never stopped calling.', 'Gale Call: a warning cone in front of its horn blasts for 12 and throws you down the wind. Stoop: it takes wing over a warning ring under a hero and lands on it for 17. Below half health it rages.'],
+  // Second champions (plan 4 slice 8): one more for each of Acts I to IV.
+  moss_hart: ['The Wood\'s eldest hart, so long asleep in the clearing that the moss grew over it. Now it walks, and the moss walks with it.', 'Antler Toss: a wide warning cone at its antlers hits for 15 and tosses you away. Hart\'s Leap: a warning ring under the farthest hero; it gathers itself, bounds over and lands on it for 15, leaving moss that slows. Below half health it rages.'],
+  lockkeeper: ['The mill\'s lock-keeper, who never let a boat through without his toll. He kept the key when the water rose.', 'Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.'],
+  gravebell_ringer: ['The barrow\'s bell-ringer, who rang the dead to their graves and still rings for the living.', 'Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.'],
+  vein_matron: ['The mother of the Heart\'s veins, crowned in crystal, who feeds every root that grows through the dark.', 'Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.'],
 };
 
 // One row per boss kind, in level order.
@@ -99,7 +104,7 @@ const landsOf = (etype) => ACT_IDS.filter((a) => (campaignLevel(LEVELS[a]).roste
 
 export const BESTIARY = Object.freeze([
   ...ROWS.map(([id, name, role, lore, text]) => Object.freeze({ id, boss: false, name, role, lore, text, lands: Object.freeze(landsOf(id)) })),
-  ...Object.values(CHAMPIONS).map((c) => {
+  ...CHAMPION_LIST.map((c) => {
     const row = CHAMPION_ROWS[c.id] ?? ['', ''];
     return Object.freeze({ id: c.id, boss: false, champion: true, name: c.name, role: 'Champion', lore: row[0], text: row[1], lands: Object.freeze([c.act]) });
   }),

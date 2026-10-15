@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Second champions rig sheet</title>
+<style>html,body{margin:0;background:#1b1f27;color:#ddd;font:12px sans-serif}canvas{display:block}</style>
+</head>
+<body>
+<!-- SECOND CHAMPIONS (plan 4 slice 8): a close-up sheet of the four new
+     champion rigs, posed through their moves, for screenshots and look
+     review. Dev only: open /tools/second-champions-rigs.html?kind=moss_hart
+     on `npm run dev` (tools/second-champions-browser.mjs --rigs takes it). -->
+<script type="module">
+import * as THREE from 'three';
+import { SECOND_CHAMPION_BUILDERS } from '../src/render/enemies/champions2.js';
+const q = new URLSearchParams(location.search);
+const kind = q.get('kind') || 'moss_hart';
+const POSES = {
+  // [label, move, warning progress 0..1 | -(seconds since it landed), walking, raged]
+  moss_hart: [['idle', null, 0], ['walk', null, 0, 1], ['antler_toss wind', 'antler_toss', 0.9], ['antler_toss fling', 'antler_toss', -0.08], ['leap crouch', 'harts_leap', 0.38], ['leap aloft', 'harts_leap', 0.62], ['leap fall', 'harts_leap', 0.86], ['leap land', 'harts_leap', -0.06]],
+  lockkeeper: [['idle', null, 0], ['walk', null, 0, 1], ['hook wind', 'chain_hook', 0.85], ['hook thrown', 'chain_hook', -0.25], ['hook reel', 'chain_hook', -0.45], ['lock raise', 'lock_turn', 0.9], ['lock drive', 'lock_turn', -0.05], ['lock turned', 'lock_turn', -0.25]],
+  gravebell_ringer: [['idle', null, 0], ['walk', null, 0, 1], ['knell wind', 'death_knell', 0.5], ['knell late', 'death_knell', 0.95], ['knell toll', 'death_knell', -0.05], ['call raise', 'grave_call', 0.9], ['call strike', 'grave_call', -0.05], ['call after', 'grave_call', -0.3]],
+  vein_matron: [['idle', null, 0], ['walk', null, 0, 1], ['lash wind', 'vein_lash', 0.9], ['lash crack', 'vein_lash', -0.06], ['lash after', 'vein_lash', -0.3], ['pulse wind', 'heart_pulse', 0.9], ['pulse beat', 'heart_pulse', -0.06], ['rage', null, 0, 0, true]],
+};
+const poses = POSES[kind];
+const W = 1600, H = 900, COLS = 4, ROWS = 2;
+const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+renderer.setSize(W, H);
+renderer.setScissorTest(true);
+document.body.appendChild(renderer.domElement);
+const cw = W / COLS, ch = H / ROWS;
+const cells = poses.map((p, i) => {
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color('#2a3140');
+  scene.add(new THREE.HemisphereLight('#c8d4ea', '#3a3226', 1.2));
+  const sun = new THREE.DirectionalLight('#fff2dc', 2.2);
+  sun.position.set(4, 8, 6);
+  scene.add(sun);
+  const ground = new THREE.Mesh(new THREE.CircleGeometry(3, 32).rotateX(-Math.PI / 2), new THREE.MeshLambertMaterial({ color: '#3b4350' }));
+  scene.add(ground);
+  const rig = SECOND_CHAMPION_BUILDERS[kind]();
+  scene.add(rig.group);
+  rig.setYaw(q.get('yaw') ? Number(q.get('yaw')) : -0.6);
+  const cam = new THREE.PerspectiveCamera(32, cw / ch, 0.1, 100);
+  cam.position.set(6.5, 6.0, 8.0);
+  cam.lookAt(0, 1.4, 0);
+  return { scene, rig, cam, pose: p, i };
+});
+// A fake entity driven through the pose: a telegraph at a progress, or the
+// strike clip `age` seconds after a move landed (negative progress: 1+p of
+// the clip left).
+function entity(p, tick) {
+  const [, move, prog, walk, rage] = p;
+  const e = { id: 1, x: 0, z: 0, mode: 'stalk', rage: !!rage, lastMove: null, moveTick: -1, telegraph: null, flight: null };
+  if (move && prog >= 0) {
+    e.telegraph = { move, startTick: 0, resolveTick: 100, length: 6, dirX: 0, dirZ: 1 };
+    if (move === 'harts_leap') e.flight = { x0: 0, z0: 0, x1: 0, z1: 0 };
+  } else if (move) {
+    e.lastMove = move;
+    e.moveTick = 5;
+  }
+  return e;
+}
+const t0 = performance.now();
+let n = 0;
+function frame() {
+  const t = 10 + (performance.now() - t0) / 1000;
+  n += 1;
+  for (const c of cells) {
+    const p = c.pose;
+    const prog = p[2];
+    const walk = p[3] ? 1 : 0;
+    const base = { tick: prog >= 0 ? prog * 100 : 0, walkPhase: t * 6 * walk, moveK: walk, telegraphK: prog >= 0 && p[1] ? 1 : 0 };
+    const e = entity(p);
+    if (prog < 0) {
+      // The strike clip: landed `-prog` seconds ago (reset, then aged).
+      c.rig.pose({ ...base, t, e: { ...e, moveTick: 2 * n } });
+      c.rig.pose({ ...base, t, e: { ...e, moveTick: 2 * n + 1 } });
+      c.rig.pose({ ...base, t: t - prog, e: { ...e, moveTick: 2 * n + 1 } });
+    } else c.rig.pose({ ...base, t, e });
+    const col = c.i % COLS, row = Math.floor(c.i / COLS);
+    const x = col * cw, y = (ROWS - 1 - row) * ch;
+    renderer.setViewport(x, y, cw, ch);
+    renderer.setScissor(x, y, cw, ch);
+    renderer.render(c.scene, c.cam);
+  }
+  requestAnimationFrame(frame);
+}
+frame();
+const labels = document.createElement('div');
+labels.style.cssText = 'position:absolute;left:0;top:0;width:1600px;height:900px;pointer-events:none';
+poses.forEach((p, i) => {
+  const d = document.createElement('div');
+  d.textContent = `${kind} · ${p[0]}`;
+  d.style.cssText = `position:absolute;left:${(i % COLS) * cw + 8}px;top:${Math.floor(i / COLS) * ch + 6}px;font-size:14px`;
+  labels.appendChild(d);
+});
+document.body.appendChild(labels);
+window.__ready = true;
+</script>
+</body>
+</html>

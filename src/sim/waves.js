@@ -273,7 +273,7 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
         // spot is chosen when it arrives, among the layout's props).
         const C = CHAMPION_RULES;
         for (let w = 0; w < C.waves; w++) schedule.push(rollBudgetWave(r2(d.budget * C.budgetMul), plan));
-        const etype = championFor(runPlan.act).id;
+        const etype = runPlan.champion ?? championFor(runPlan.act).id;
         schedule[0].units.unshift({ etype, x: CHAMPION_SPOTS[0][0], z: CHAMPION_SPOTS[0][1], cost: 0, champion: true });
         schedule[0].size = schedule[0].units.length;
         obj = { kind: 'champion', etype, champId: null, felled: false, lx: 0, lz: 0, chest: null };

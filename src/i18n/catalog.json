@@ -2601,6 +2601,12 @@
   ],
   "data": true
  },
+ "Antler Toss: a wide warning cone at its antlers hits for 15 and tosses you away. Hart's Leap: a warning ring under the farthest hero; it gathers itself, bounds over and lands on it for 15, leaving moss that slows. Below half health it rages.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Anything since the last save is lost.": {
   "files": [
    "src/ui/menu/pause.js"
@@ -4095,6 +4101,12 @@
   ],
   "data": true
  },
+ "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Challenge": {
   "files": [
    "src/ui/run/challenge.js"
@@ -5143,6 +5155,12 @@
  "DC": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -6226,12 +6244,6 @@
   ],
   "data": true
  },
- "Fell all five champions, the Gale Herald included.": {
-  "files": [
-   "src/data/unlocks.js"
-  ],
-  "data": true
- },
  "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": {
   "files": [
    "src/data/unlocks.js"
@@ -6289,6 +6301,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/ui/run/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the first champion of each of the five lands, the Gale Herald included.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -13286,6 +13304,12 @@
   ],
   "data": true
  },
+ "The barrow's bell-ringer, who rang the dead to their graves and still rings for the living.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The barrow's carrion bird, grown huge on the ash of the pyres and masked in bone.": {
   "files": [
    "src/data/journal.js"
@@ -13832,6 +13856,13 @@
   ],
   "data": true
  },
+ "The Gravebell Ringer": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
+ },
  "The ground seizes up to 6 enemies within 2.3 u: 12, dragged toward the Tank and slowed 30%.": {
   "files": [
    "src/ui/run/cards.js"
@@ -14163,9 +14194,22 @@
   ],
   "data": true
  },
+ "The Lockkeeper": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
+ },
  "The Long Road": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "The mill's lock-keeper, who never let a boat through without his toll. He kept the key when the water rose.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -14230,6 +14274,19 @@
  "The Mire King sits in the drained basin. When its throat swells, walk away from it, and do not let its tongue catch you.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Moss Hart": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
+ },
+ "The mother of the Heart's veins, crowned in crystal, who feeds every root that grows through the dark.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -14770,6 +14827,13 @@
    "src/ui/run/relic.js"
   ]
  },
+ "The Vein Matron": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
+ },
  "The Vein Weaver": {
   "files": [
    "src/data/journal.js",
@@ -14838,6 +14902,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "The Wood's eldest hart, so long asleep in the clearing that the moss grew over it. Now it walks, and the moss walks with it.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "The wood’s warden heard me first. Listen to how well it sings.": {
   "files": [
@@ -15577,6 +15647,12 @@
   "data": true
  },
  "Vein Lancer": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": {
   "files": [
    "src/data/journal.js"
   ],

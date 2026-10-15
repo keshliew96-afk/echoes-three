@@ -45,10 +45,10 @@ import { CHROME, mix } from './style.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { iconEl } from './icons.js';
 import { t, tn } from '../../i18n/index.js';
-import { CHAMPIONS } from '../../sim/champions.js';
+import { CHAMPION_LIST } from '../../sim/champions.js';
 
 // CHAMPION ROOMS: champion kind -> its English name (translated when shown).
-const CHAMPION_NAME = Object.fromEntries(Object.values(CHAMPIONS).map((c) => [c.id, c.name]));
+const CHAMPION_NAME = Object.fromEntries(CHAMPION_LIST.map((c) => [c.id, c.name]));
 
 // §11 add-phase thresholds, drawn as pips on the boss bar (75 / 50 / 25 %).
 // Mirrors sim/boss.js STAG.addPhases; the sim's `phasesFired` fills them.
