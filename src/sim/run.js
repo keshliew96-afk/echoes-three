@@ -91,7 +91,7 @@ import { RUSH_RULES, rushLine, rushDifficulty, rushNextLevel, rushSupply, rushRe
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
 import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives.js';
 // CHAMPION ROOMS (docs/CHAMPIONS.md): the crown door and its relic chest.
-import { crownFor, crownSide, championFor, CHAMPION_RULES, isChampionKind } from './champions.js';
+import { crownFor, crownSide, championPick, championById, CHAMPION_RULES, isChampionKind } from './champions.js';
 // KEYS AND VAULTS (docs/VAULTS.md): keys from elites and champions, the vault
 // door and its treasure room.
 import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES, VAULT_SPOTS, VAULT_CHEST } from './vaults.js';
@@ -333,6 +333,12 @@ export function createRunSystem({
   // the Daily; never the tutorial or the legacy single-level run).
   const championsOn = () => objectivesOn();
   let forcedCrown = null; // probe: the next path screen's crown ({ room, side })
+  let forcedChampion = null; // probe: this level's champion ({ index, id })
+  // SECOND CHAMPIONS: the level's champion (one of its act's, by seed).
+  const levelChampion = () => {
+    if (forcedChampion && forcedChampion.index === campaign.index) return forcedChampion.id;
+    return championPick(frame.seed, campaign.index, act).id;
+  };
   // KEYS AND VAULTS: on with the champions (campaign, Endless and the Daily;
   // never the tutorial or the legacy single-level run, so the goldens never
   // see a key).
@@ -738,7 +744,7 @@ export function createRunSystem({
     if (vows) for (const v of vows) diff = cursedDiff(diff, v);
     // NEW ENEMIES: campaign kinds roll in campaign rooms only (levels.js
     // CAMPAIGN_ONLY_ENEMIES), on the objectives' gate.
-    if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff, campaignKinds: objectivesOn() });
+    if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff, campaignKinds: objectivesOn(), ...(mode === 'champion' ? { champion: levelChampion() } : {}) });
     // Layout AFTER the schedule (one fixed roll order per room).
     // TUTORIAL: always the clearing with a dewfont (the spring the coach
     // sends the player to); no layout draw.
@@ -1225,7 +1231,7 @@ export function createRunSystem({
     if (crown && crown.room === nextRoom) {
       const side = crownSide(crown.side, dc ? dc.side : null, ed ? ed.side : null);
       const keep = options[side].event ? { side, win: 'champion', reward: frame.sides[roomIndex - 1] === 0 ? (side === 0 ? 'skill' : 'node') : side === 0 ? 'node' : 'skill' } : { ...options[side], win: 'champion' };
-      options[side] = { ...keep, champion: championFor(act).id };
+      options[side] = { ...keep, champion: levelChampion() };
     }
     // KEYS AND VAULTS: while the party holds a key, the vault door (never the
     // cursed or the crown door; over a "?" door only when it must). It keeps
@@ -3112,6 +3118,17 @@ export function createRunSystem({
         if (!active || !championsOn()) return null;
         forcedCrown = { room: roomIndex + 1, side: args[0] === 1 ? 1 : 0 };
         return { ...forcedCrown };
+      case 'championPick': {
+        // ('championPick'[, id]) — this level's champion (by seed); with an
+        // id of the act's own, force it for the rest of the level.
+        if (!active || !frame || !championsOn()) return null;
+        if (args.length && args[0] != null) {
+          const c = championById(String(args[0]));
+          if (!c) return null;
+          forcedChampion = { index: campaign.index, id: c.id };
+        }
+        return levelChampion();
+      }
       case 'crownOf':
         // The crown this level rolled: { room, side }.
         return active && frame && championsOn() ? crownFor(frame.seed, campaign.index) : null;

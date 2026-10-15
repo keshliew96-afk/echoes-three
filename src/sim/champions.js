@@ -49,14 +49,41 @@ export const CHAMPIONS = Object.freeze({
   // Act V (plan 4 slice 7, docs/CHAMPIONS.md "The Gale Herald").
   5: Object.freeze({ id: 'gale_herald', act: 5, name: 'The Gale Herald' }),
 });
-export const CHAMPION_IDS = Object.freeze(Object.values(CHAMPIONS).map((c) => c.id));
+// SECOND CHAMPIONS (plan 4 slice 8, docs/CHAMPIONS.md "Second champions"):
+// Acts I to IV each have a second lord. A level's crown door leads to one of
+// its act's two, picked by a hash of the level's frame seed and index
+// (championPick), so a seed still meets one champion per level.
+export const SECOND_CHAMPIONS = Object.freeze({
+  1: Object.freeze({ id: 'moss_hart', act: 1, name: 'The Moss Hart', second: true }),
+  2: Object.freeze({ id: 'lockkeeper', act: 2, name: 'The Lockkeeper', second: true }),
+  3: Object.freeze({ id: 'gravebell_ringer', act: 3, name: 'The Gravebell Ringer', second: true }),
+  4: Object.freeze({ id: 'vein_matron', act: 4, name: 'The Vein Matron', second: true }),
+});
+// Every champion, in act order (each act's first, then its second).
+export const CHAMPION_LIST = Object.freeze(
+  Object.keys(CHAMPIONS)
+    .map(Number)
+    .sort((a, b) => a - b)
+    .flatMap((a) => [CHAMPIONS[a], ...(SECOND_CHAMPIONS[a] ? [SECOND_CHAMPIONS[a]] : [])])
+);
+export const CHAMPION_IDS = Object.freeze(CHAMPION_LIST.map((c) => c.id));
 export const isChampionKind = (k) => CHAMPION_IDS.includes(k);
 // (An act past the last champion's meets the last one.)
 const LAST_CHAMPION_ACT = Math.max(...Object.keys(CHAMPIONS).map(Number));
-export const championFor = (act) => CHAMPIONS[act] ?? (act > LAST_CHAMPION_ACT ? CHAMPIONS[LAST_CHAMPION_ACT] : CHAMPIONS[1]);
+const actOf = (act) => (CHAMPIONS[act] ? act : act > LAST_CHAMPION_ACT ? LAST_CHAMPION_ACT : 1);
+// The act's first champion (the one every act had before slice 8).
+export const championFor = (act) => CHAMPIONS[actOf(act)];
+// The act's champions: its first, then its second when it has one.
+export const championsOfAct = (act) => {
+  const a = actOf(act);
+  return SECOND_CHAMPIONS[a] ? [CHAMPIONS[a], SECOND_CHAMPIONS[a]] : [CHAMPIONS[a]];
+};
 // The first four champions (Acts I to IV): the Four Crowns deed's list.
 export const FIRST_CROWNS = Object.freeze(['briar_knight', 'sluice_warden', 'bone_reeve', 'hollow_choir']);
-export const championById = (id) => Object.values(CHAMPIONS).find((c) => c.id === id) ?? null;
+// The first five (one per act, the Gale Herald included): the Five Crowns
+// deed's list. Second champions are their own Journal rows and marks.
+export const FIVE_CROWNS = Object.freeze([...FIRST_CROWNS, 'gale_herald']);
+export const championById = (id) => CHAMPION_LIST.find((c) => c.id === id) ?? null;
 
 const hash32 = (s) => parseInt(fnv1a64Hex(s).slice(0, 8), 16) >>> 0;
 
@@ -65,6 +92,16 @@ export function crownFor(seed, index) {
   const h = hash32(`${seed >>> 0}:${index | 0}:CROWN`);
   const R = CHAMPION_RULES.rooms;
   return { room: R[h % R.length], side: (h >>> 8) & 1 };
+}
+
+// The level's champion: one of its act's champions, from its own hash of the
+// frame seed and index (never the crown's, so the crown's room and side keep
+// their old roll; never the run stream). Pure.
+export function championPick(seed, index, act) {
+  const list = championsOfAct(act);
+  if (list.length < 2) return list[0];
+  const h = hash32(`${seed >>> 0}:${index | 0}:CHAMPION`);
+  return list[h % list.length];
 }
 
 // Where the crown door goes on a path screen: never on the cursed side; over

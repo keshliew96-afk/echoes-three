@@ -1,4 +1,4 @@
-// CHAMPIONS (docs/CHAMPIONS.md, content plan 3 slice 1): the four named
+// CHAMPIONS (docs/CHAMPIONS.md, content plan 3 slice 1): the named
 // mini-bosses behind the crown door, one per land. Each speaks the archetype
 // module contract (sim/enemies.js ARCHETYPES) with two telegraphed moves
 // under the §11 governor, alternating, plus a once-only rage at half health
@@ -72,6 +72,79 @@ function clipLength(ctx, x, z, dx, dz, len) {
   return Math.max(1, t);
 }
 
+// A throw or a drag (plain data on the champion, so a save mid-throw
+// continues): e.shove = { pushes: [[id, dx, dz, per?]], ticksLeft, per }.
+// Heroes ignore knockback, so the champion moves them itself, a few ticks.
+function shoveStep(ctx, e) {
+  if (!e.shove) return;
+  const base = e.shove.per ?? GH.throwDist / GH.throwTicks; // (a pre-slice-8 save: only the Gale Call threw)
+  for (const [id, dx, dz, per] of e.shove.pushes) {
+    const p = ctx.registry.byId(id);
+    const len = per ?? base;
+    if (p && p.hp > 0) ctx.movement.walkStep(p, dx * len, dz * len, p.radius ?? 0.3);
+  }
+  e.shove.ticksLeft -= 1;
+  if (e.shove.ticksLeft <= 0) e.shove = null;
+}
+// Heroes in `victims` still standing, thrown `dist` u away from (x, z) (or
+// along the move's facing when standing on it), over `ticks`.
+function throwFrom(e, victims, x, z, fx, fz, dist, ticks) {
+  const pushes = [];
+  for (const v of victims) {
+    if (v.partyIndex === undefined || !(v.hp > 0)) continue;
+    const u = unit(v.x - x, v.z - z);
+    pushes.push(u.l > 1e-6 ? [v.id, u.x, u.z] : [v.id, fx, fz]);
+  }
+  if (pushes.length) e.shove = { pushes, ticksLeft: ticks, per: dist / ticks };
+}
+// A glide or a leap over a move's warning: e.flight = { x0, z0, x1, z1,
+// from?, to?, move? } carries the champion from where it rose to the mark
+// between the `from` and `to` shares of the warning (the Gale Herald's
+// Stoop: 0 to 0.8). Aloft it is a flier (over barricades and hazards).
+function flightStep(ctx, e, tick) {
+  if (!e.flight) return;
+  const f = e.flight;
+  const t = e.telegraph;
+  if (!t || t.move !== (f.move ?? 'stoop')) {
+    // The move was cut short (a stun): it drops where it is.
+    e.flight = null;
+    e.flier = false;
+    return;
+  }
+  const from = f.from ?? 0;
+  const to = f.to ?? 0.8;
+  const W = t.resolveTick - t.startTick;
+  const span = Math.max(1, W * (to - from));
+  const k = Math.max(0, Math.min(1, (tick - t.startTick - W * from + 1) / span));
+  const tx = f.x0 + (f.x1 - f.x0) * k;
+  const tz = f.z0 + (f.z1 - f.z0) * k;
+  ctx.movement.walkStep(e, tx - e.x, tz - e.z, e.radius);
+}
+// The mark a leap or a stoop lands on: the hero's spot, inside the room.
+function landingMark(ctx, e, target) {
+  const { mx, mz } = ctx.movement.innerBounds(e.radius);
+  return { x: Math.max(-mx, Math.min(mx, target.x)), z: Math.max(-mz, Math.min(mz, target.z)) };
+}
+// Survivors among `victims` slowed (the party only).
+function slowAll(ctx, e, victims, mag, ticks, tick) {
+  for (const v of victims) if (v.partyIndex !== undefined && v.hp > 0) ctx.status.apply(v, 'slow', mag, ticks, tick, e.id);
+}
+// The farthest living hero between `min` and `max` u (ties: lowest id).
+function farthestHero(ctx, e, min, max) {
+  let best = null;
+  let bd = -1;
+  for (const t of ctx.registry.all()) {
+    if (t.partyIndex === undefined || !(t.hp > 0)) continue;
+    const l = Math.hypot(t.x - e.x, t.z - e.z);
+    if (l < min || l > max) continue;
+    if (l > bd + 1e-9) {
+      bd = l;
+      best = t;
+    }
+  }
+  return best;
+}
+
 // The shared champion frame: entrance, rage, moving in its band, and the
 // two-move rotation. `def.moves[i]`: { id, shape, ticks, cd, can(ctx, e,
 // target, d) -> bool, start(ctx, e, target, d, tick) -> telegraph fields,
@@ -103,7 +176,9 @@ function champion(def) {
     },
 
     continuous(ctx, e, tick) {
-      if (def.pre) def.pre(ctx, e, tick); // the Gale Herald's flight and throw
+      shoveStep(ctx, e); // a throw or a drag in flight (Gale Call, Antler Toss, Chain Hook)
+      flightStep(ctx, e, tick); // a glide or a leap over the warning (Stoop, Hart's Leap)
+      if (def.pre) def.pre(ctx, e, tick);
       if (!e.rage && e.hp > 0 && e.hp < e.maxHp * R.rageAt) {
         e.rage = true;
         ctx.events.emit(tick, 'champion_rage', { id: e.id, champion: def.id, x: r2(e.x), z: r2(e.z) });
@@ -146,8 +221,11 @@ function champion(def) {
         e.moveTick = tick;
         e.lastMove = m.id;
         e.nextAttackTick = tick + cd(e, m.cd);
+        e.moveExtra = null;
         const victims = m.resolve(ctx, e, t, tick);
-        ctx.events.emit(tick, 'champion_move', { id: e.id, champion: def.id, move: m.id, x: r2(t.x), z: r2(t.z), dx: r2(t.dirX), dz: r2(t.dirZ), victims: victims | 0, ...(e.rage ? { rage: true } : {}) });
+        const extra = e.moveExtra; // what the move adds to its event (the Vein Matron's drink)
+        e.moveExtra = null;
+        ctx.events.emit(tick, 'champion_move', { id: e.id, champion: def.id, move: m.id, x: r2(t.x), z: r2(t.z), dx: r2(t.dirX), dz: r2(t.dirZ), victims: victims | 0, ...(e.rage ? { rage: true } : {}), ...(extra || {}) });
         return;
       }
       if (def.busy && def.busy(ctx, e, tick)) return;
@@ -487,13 +565,7 @@ export const galeHerald = champion({
         const victims = inCone(ctx.registry, t);
         ctx.strike(e, victims, ctx.dmg(e, GH.coneDamage), t.x, t.z, { delivery: 'skill', shape: 'cone' });
         // Every hero still standing is thrown away from the horn.
-        const pushes = [];
-        for (const v of victims) {
-          if (v.partyIndex === undefined || !(v.hp > 0)) continue;
-          const u = unit(v.x - t.x, v.z - t.z);
-          pushes.push(u.l > 1e-6 ? [v.id, u.x, u.z] : [v.id, t.dirX, t.dirZ]);
-        }
-        if (pushes.length) e.shove = { pushes, ticksLeft: GH.throwTicks };
+        throwFrom(e, victims, t.x, t.z, t.dirX, t.dirZ, GH.throwDist, GH.throwTicks);
         return partyOnly(victims);
       },
     },
@@ -505,9 +577,7 @@ export const galeHerald = champion({
       can: (ctx, e, target, d) => d.l >= GH.stoopMin && d.l <= GH.stoopRange,
       start(ctx, e, target, d) {
         // The mark stays where the hero stood; the herald lands on it.
-        const { mx, mz } = ctx.movement.innerBounds(e.radius);
-        const x = Math.max(-mx, Math.min(mx, target.x));
-        const z = Math.max(-mz, Math.min(mz, target.z));
+        const { x, z } = landingMark(ctx, e, target);
         e.flight = { x0: e.x, z0: e.z, x1: x, z1: z };
         e.flier = true; // aloft: over barricades and hazards
         return { x, z, dirX: d.x, dirZ: d.z, radius: GH.stoopRadius };
@@ -522,34 +592,320 @@ export const galeHerald = champion({
       },
     },
   ],
-  pre(ctx, e, tick) {
-    // A thrown hero flies clear over a few ticks (the Rope Hanger's throw).
-    if (e.shove) {
-      const per = GH.throwDist / GH.throwTicks;
-      for (const [id, dx, dz] of e.shove.pushes) {
-        const p = ctx.registry.byId(id);
-        if (p && p.hp > 0) ctx.movement.walkStep(p, dx * per, dz * per, p.radius ?? 0.3);
-      }
-      e.shove.ticksLeft -= 1;
-      if (e.shove.ticksLeft <= 0) e.shove = null;
-    }
-    // Stoop: it glides from where it rose to the mark, arriving as the
-    // warning ends (the last fifth of the warning it hangs over the mark).
-    const t = e.telegraph;
-    if (!e.flight) return;
-    if (!t || t.move !== 'stoop') {
-      // The stoop was cut short (a stun): it drops where it is.
-      e.flight = null;
-      e.flier = false;
-      return;
-    }
-    const span = Math.max(1, (t.resolveTick - t.startTick) * 0.8);
-    const k = Math.min(1, (tick - t.startTick + 1) / span);
-    const f = e.flight;
-    const tx = f.x0 + (f.x1 - f.x0) * k;
-    const tz = f.z0 + (f.z1 - f.z0) * k;
-    ctx.movement.walkStep(e, tx - e.x, tz - e.z, e.radius);
-  },
 });
 
-export const CHAMPION_KITS = Object.freeze({ briar_knight: briarKnight, sluice_warden: sluiceWarden, bone_reeve: boneReeve, hollow_choir: hollowChoir, gale_herald: galeHerald });
+// ================================================== SECOND CHAMPIONS --
+// (plan 4 slice 8, docs/CHAMPIONS.md "Second champions"): each of Acts I to
+// IV has a second lord; the crown door leads to one of the two by seed.
+
+// ---------------------------------------------------------- MOSS HART --
+// The Hollow Wood. A great hart of moss and bark whose antlers have grown
+// into a lichen-lit thicket; it keeps close.
+//   Antler Toss   a cone r 3.0, half-angle 55° (56 ticks), 15, and every
+//                 hero it hits is tossed 2 u away
+//   Hart's Leap   a ring r 2.0 under the FARTHEST hero 2.5 to 8 u off (74
+//                 ticks): it gathers itself for the first half, bounds over
+//                 the second and lands on the mark for 15, leaving a moss
+//                 patch (slow 30 %)
+const MH = Object.freeze({
+  hp: 100,
+  moveSpeed: 1.3,
+  radius: 0.66,
+  kbScale: 0.12,
+  keepMin: 1.5,
+  keepMax: 2.6,
+  coneRadius: 3.0,
+  coneHalfDeg: 55,
+  coneDamage: 15,
+  tossDist: 2.0,
+  tossTicks: 10,
+  leapMin: 2.5,
+  leapMax: 8.0,
+  leapRadius: 2.0,
+  leapDamage: 15,
+  leapFrom: 0.45, // it crouches this share of the warning...
+  leapTo: 0.95, // ...and is down on the mark by this one
+  mossRadius: 1.8,
+  mossTicks: 300,
+  mossSlow: 0.3,
+});
+export const mossHart = champion({
+  id: 'moss_hart',
+  stats: MH,
+  moves: [
+    {
+      id: 'antler_toss',
+      shape: 'cone',
+      ticks: 56,
+      cd: 150,
+      can: (ctx, e, target, d) => d.l <= MH.coneRadius - 0.3 + (target.radius ?? 0),
+      start: (ctx, e, target, d) => ({ x: e.x, z: e.z, dirX: d.x, dirZ: d.z, radius: MH.coneRadius, halfAngleDeg: MH.coneHalfDeg }),
+      resolve(ctx, e, t) {
+        const victims = inCone(ctx.registry, t);
+        ctx.strike(e, victims, ctx.dmg(e, MH.coneDamage), t.x, t.z, { delivery: 'skill', shape: 'cone' });
+        throwFrom(e, victims, t.x, t.z, t.dirX, t.dirZ, MH.tossDist, MH.tossTicks);
+        return partyOnly(victims);
+      },
+    },
+    {
+      id: 'harts_leap',
+      shape: 'ring',
+      ticks: 74,
+      cd: 175,
+      // It leaps at the backline, not the blade in its face.
+      can: (ctx, e) => !!farthestHero(ctx, e, MH.leapMin, MH.leapMax),
+      start(ctx, e) {
+        const t = farthestHero(ctx, e, MH.leapMin, MH.leapMax);
+        const d = unit(t.x - e.x, t.z - e.z);
+        const { x, z } = landingMark(ctx, e, t);
+        e.flight = { x0: e.x, z0: e.z, x1: x, z1: z, from: MH.leapFrom, to: MH.leapTo, move: 'harts_leap' };
+        e.flier = true; // over barricades and hazards in the bound
+        return { x, z, dirX: d.x, dirZ: d.z, radius: MH.leapRadius, targetId: t.id };
+      },
+      resolve(ctx, e, t) {
+        e.flight = null;
+        e.flier = false;
+        const victims = partyInRadius(ctx.registry, t.x, t.z, t.radius);
+        const props = neutralsInRadius(ctx.registry, t.x, t.z, t.radius);
+        ctx.strike(e, victims.concat(props), ctx.dmg(e, MH.leapDamage), t.x, t.z, { delivery: 'skill', shape: 'ring' });
+        ctx.spawnSlick(e, t.x, t.z, { radius: MH.mossRadius, ticks: MH.mossTicks, slow: MH.mossSlow, variant: 'moss' });
+        return victims.length;
+      },
+    },
+  ],
+});
+
+// --------------------------------------------------------- LOCKKEEPER --
+// The Sunken Mill. A gaunt keeper of the mill's locks in a sodden coat, a
+// great iron key on a chain over one shoulder and a lock-box lantern.
+//   Chain Hook    a lane up to 7.5 u x 0.9 at its target, or else the
+//                 farthest hero, 2.2 u or more off (58 ticks): the key
+//                 flies down it for 10 and drags every hero it hooks back
+//                 to the keeper's feet
+//   Lock Turn     a ring r 2.5 round itself (70 ticks): it turns the key in
+//                 the floor for 16, and the heroes inside are clamped (slow
+//                 50 % for 1.5 s)
+// Together: hooked in, then locked down. Step out of the lane.
+const LK = Object.freeze({
+  hp: 100,
+  moveSpeed: 1.05,
+  radius: 0.64,
+  kbScale: 0.12,
+  keepMin: 1.6,
+  keepMax: 3.4,
+  hookMin: 2.2,
+  hookMax: 7.5,
+  hookWidth: 0.9,
+  hookDamage: 10,
+  hookTicks: 10, // the drag takes this long...
+  hookStop: 0.9, // ...and ends this far beyond touching
+  ringRadius: 2.5,
+  ringDamage: 16,
+  clampSlow: 0.5,
+  clampTicks: 90,
+});
+export const lockkeeper = champion({
+  id: 'lockkeeper',
+  stats: LK,
+  moves: [
+    {
+      id: 'chain_hook',
+      shape: 'lane',
+      ticks: 58,
+      cd: 160,
+      // Its target when that hero stands in reach, else the farthest hero
+      // who does: a tank at its knees must not keep the hook from the rest.
+      can: (ctx, e, target, d) => (d.l >= LK.hookMin && d.l <= LK.hookMax) || !!farthestHero(ctx, e, LK.hookMin, LK.hookMax),
+      start(ctx, e, target, d0) {
+        const h = d0.l >= LK.hookMin && d0.l <= LK.hookMax ? target : farthestHero(ctx, e, LK.hookMin, LK.hookMax);
+        const d = h === target ? d0 : unit(h.x - e.x, h.z - e.z);
+        const length = clipLength(ctx, e.x, e.z, d.x, d.z, LK.hookMax);
+        return { fromX: e.x, fromZ: e.z, x: e.x + d.x * length, z: e.z + d.z * length, dirX: d.x, dirZ: d.z, length, width: LK.hookWidth };
+      },
+      resolve(ctx, e, t) {
+        const victims = inLane(ctx.registry, t);
+        for (const v of victims) ctx.strike(e, [v], ctx.dmg(e, LK.hookDamage), v.x - t.dirX, v.z - t.dirZ, { delivery: 'skill', shape: 'lane' });
+        // Every hooked hero still standing is dragged in to its feet.
+        const pushes = [];
+        for (const v of victims) {
+          if (v.partyIndex === undefined || !(v.hp > 0)) continue;
+          const u = unit(e.x - v.x, e.z - v.z);
+          const pull = u.l - (e.radius + (v.radius ?? 0.3) + LK.hookStop);
+          if (u.l > 1e-6 && pull > 0.05) pushes.push([v.id, u.x, u.z, pull / LK.hookTicks]);
+        }
+        if (pushes.length) e.shove = { pushes, ticksLeft: LK.hookTicks, per: 0 };
+        e.moveExtra = { hooked: pushes.length };
+        return partyOnly(victims);
+      },
+    },
+    {
+      id: 'lock_turn',
+      shape: 'ring',
+      ticks: 70,
+      cd: 165,
+      can: (ctx, e, target, d) => d.l <= LK.ringRadius + 0.4,
+      start: (ctx, e, target, d) => ({ x: e.x, z: e.z, dirX: d.x, dirZ: d.z, radius: LK.ringRadius }),
+      resolve(ctx, e, t, tick) {
+        const victims = partyInRadius(ctx.registry, t.x, t.z, t.radius);
+        const props = neutralsInRadius(ctx.registry, t.x, t.z, t.radius);
+        ctx.strike(e, victims.concat(props), ctx.dmg(e, LK.ringDamage), t.x, t.z, { delivery: 'skill', shape: 'ring' });
+        slowAll(ctx, e, victims, LK.clampSlow, LK.clampTicks, tick);
+        return victims.length;
+      },
+    },
+  ],
+});
+
+// --------------------------------------------------- GRAVEBELL RINGER --
+// The Ashen Barrow. A hunched, hooded skeleton under a wooden yoke from
+// which a cracked grave bell hangs; it keeps back and rings.
+//   Death Knell   a ring r 3.6 round itself (78 ticks): the bell tolls for
+//                 11 and every hero inside is slowed 45 % for 2.5 s
+//   Grave Call    a ring r 1.8 under a hero up to 8 u off (64 ticks): the
+//                 grave opens in an ash burst for 14 and smoulders (an ash
+//                 patch, slow 30 %, 5 s)
+// Together: tolled slow, then the grave opens where you stand.
+const GR = Object.freeze({
+  hp: 100,
+  moveSpeed: 0.95,
+  radius: 0.62,
+  kbScale: 0.12,
+  keepMin: 2.6,
+  keepMax: 4.6,
+  knellRadius: 3.6,
+  knellDamage: 11,
+  knellSlow: 0.45,
+  knellTicks: 150,
+  callRange: 8.0,
+  callRadius: 1.8,
+  callDamage: 14,
+  ashTicks: 300,
+  ashSlow: 0.3,
+});
+export const gravebellRinger = champion({
+  id: 'gravebell_ringer',
+  stats: GR,
+  moves: [
+    {
+      id: 'death_knell',
+      shape: 'ring',
+      ticks: 78,
+      cd: 175,
+      can: (ctx, e, target, d) => d.l <= GR.knellRadius + 0.4,
+      start: (ctx, e, target, d) => ({ x: e.x, z: e.z, dirX: d.x, dirZ: d.z, radius: GR.knellRadius }),
+      resolve(ctx, e, t, tick) {
+        const victims = partyInRadius(ctx.registry, t.x, t.z, t.radius);
+        const props = neutralsInRadius(ctx.registry, t.x, t.z, t.radius);
+        ctx.strike(e, victims.concat(props), ctx.dmg(e, GR.knellDamage), t.x, t.z, { delivery: 'skill', shape: 'ring' });
+        slowAll(ctx, e, victims, GR.knellSlow, GR.knellTicks, tick);
+        return victims.length;
+      },
+    },
+    {
+      id: 'grave_call',
+      shape: 'ring',
+      ticks: 64,
+      cd: 155,
+      can: (ctx, e, target, d) => d.l <= GR.callRange,
+      start: (ctx, e, target, d) => ({ x: target.x, z: target.z, dirX: d.x, dirZ: d.z, radius: GR.callRadius }),
+      resolve(ctx, e, t) {
+        const victims = partyInRadius(ctx.registry, t.x, t.z, t.radius);
+        const props = neutralsInRadius(ctx.registry, t.x, t.z, t.radius);
+        ctx.strike(e, victims.concat(props), ctx.dmg(e, GR.callDamage), t.x, t.z, { delivery: 'skill', shape: 'ring' });
+        ctx.spawnSlick(e, t.x, t.z, { radius: GR.callRadius, ticks: GR.ashTicks, slow: GR.ashSlow, variant: 'ash' });
+        return victims.length;
+      },
+    },
+  ],
+});
+
+// -------------------------------------------------------- VEIN MATRON --
+// The Hollow Heart. The brood-mother of the Heart's veins: a tall crystal
+// matriarch on a skirt of violet vein-roots, a crown of crystal spines and
+// two long vein whips.
+//   Vein Lash     a lane up to 7 u x 1.0 at a hero (58 ticks): the whip
+//                 cracks down it for 13, and she drinks 3 % of her max HP
+//                 for every hero it cuts, 6 % at most
+//   Heart Pulse   a ring r 2.8 round herself (70 ticks): the heart in her
+//                 chest beats for 14, then eight crystal shards fly out all
+//                 round her, 7 each
+// Stay out of the lash and she cannot heal.
+const VM = Object.freeze({
+  hp: 100,
+  moveSpeed: 1.1,
+  radius: 0.7,
+  kbScale: 0.1,
+  keepMin: 2.0,
+  keepMax: 3.8,
+  lashMax: 7.0,
+  lashWidth: 1.0,
+  lashDamage: 13,
+  drinkShare: 0.03,
+  drinkCap: 0.06, // one lash heals at most this share, however many it cuts
+  pulseRadius: 2.8,
+  pulseDamage: 14,
+  shards: 8,
+  shardSpeed: 4.6,
+  shardRange: 7.0,
+  shardDamage: 7,
+});
+export const veinMatron = champion({
+  id: 'vein_matron',
+  stats: VM,
+  moves: [
+    {
+      id: 'vein_lash',
+      shape: 'lane',
+      ticks: 58,
+      cd: 150,
+      can: (ctx, e, target, d) => d.l > 1e-6 && d.l <= VM.lashMax,
+      start(ctx, e, target, d) {
+        const length = clipLength(ctx, e.x, e.z, d.x, d.z, VM.lashMax);
+        return { fromX: e.x, fromZ: e.z, x: e.x + d.x * length, z: e.z + d.z * length, dirX: d.x, dirZ: d.z, length, width: VM.lashWidth };
+      },
+      resolve(ctx, e, t) {
+        const victims = inLane(ctx.registry, t);
+        for (const v of victims) ctx.strike(e, [v], ctx.dmg(e, VM.lashDamage), v.x - t.dirX, v.z - t.dirZ, { delivery: 'skill', shape: 'lane' });
+        const cut = partyOnly(victims);
+        if (cut > 0 && e.hp > 0) {
+          const before = e.hp;
+          e.hp = Math.min(e.maxHp, e.hp + e.maxHp * Math.min(VM.drinkCap, VM.drinkShare * cut));
+          e.moveExtra = { drank: r2(e.hp - before) };
+        }
+        return cut;
+      },
+    },
+    {
+      id: 'heart_pulse',
+      shape: 'ring',
+      ticks: 70,
+      cd: 165,
+      can: (ctx, e, target, d) => d.l <= VM.pulseRadius + 0.5,
+      start: (ctx, e, target, d) => ({ x: e.x, z: e.z, dirX: d.x, dirZ: d.z, radius: VM.pulseRadius }),
+      resolve(ctx, e, t, tick) {
+        const victims = partyInRadius(ctx.registry, t.x, t.z, t.radius);
+        const props = neutralsInRadius(ctx.registry, t.x, t.z, t.radius);
+        ctx.strike(e, victims.concat(props), ctx.dmg(e, VM.pulseDamage), t.x, t.z, { delivery: 'skill', shape: 'ring' });
+        // The shards fly out all round her, the first along her facing.
+        const base = Math.atan2(t.dirZ, t.dirX);
+        for (let k = 0; k < VM.shards; k++) {
+          const a = base + (k / VM.shards) * Math.PI * 2;
+          ctx.fireShot(e, tick, Math.cos(a), Math.sin(a), { speed: VM.shardSpeed, range: VM.shardRange, power: ctx.dmg(e, VM.shardDamage) });
+        }
+        return victims.length;
+      },
+    },
+  ],
+});
+
+export const CHAMPION_KITS = Object.freeze({
+  briar_knight: briarKnight,
+  sluice_warden: sluiceWarden,
+  bone_reeve: boneReeve,
+  hollow_choir: hollowChoir,
+  gale_herald: galeHerald,
+  moss_hart: mossHart,
+  lockkeeper,
+  gravebell_ringer: gravebellRinger,
+  vein_matron: veinMatron,
+});

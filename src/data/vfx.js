@@ -224,6 +224,12 @@ export const ENEMY_VFX = Object.freeze({
   bone_reeve: Object.freeze({ matter: 'boneplate', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
   hollow_choir: Object.freeze({ matter: 'heartcrystal', family: 'flyer', shard: 'needle', chunk: 4, dust: 1, heart: true, shot: Object.freeze({ look: 'dart', trail: 0.2 }) }),
   gale_herald: Object.freeze({ matter: 'spirestone', family: 'brute', shard: 'feather', chunk: 8, dust: 4, feathers: 6 }),
+  // Second champions (plan 4 slice 8): their beats and deaths are director
+  // recipes keyed by champion_* events too.
+  moss_hart: Object.freeze({ matter: 'moss', family: 'brute', shard: 'petal', chunk: 8, dust: 3 }),
+  lockkeeper: Object.freeze({ matter: 'rust', family: 'brute', shard: 'drop', chunk: 8, dust: 2 }),
+  gravebell_ringer: Object.freeze({ matter: 'boneplate', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
+  vein_matron: Object.freeze({ matter: 'heartcrystal', family: 'brute', shard: 'needle', chunk: 6, dust: 1, heart: true, shot: Object.freeze({ look: 'dart', trail: 0.2 }) }),
 });
 
 const FAMILY_DEFAULT = Object.freeze({

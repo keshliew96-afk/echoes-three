@@ -25,7 +25,7 @@ import { endlessBossIndex, CYCLE } from './endless.js';
 import { RUSH_RULES, LAP as RUSH_LAP } from './rush.js';
 import { ENCOUNTER_IDS } from '../sim/encounters.js';
 import { AFFIX_IDS } from '../sim/affixes.js';
-import { CHAMPION_IDS, FIRST_CROWNS } from '../sim/champions.js';
+import { CHAMPION_IDS, FIRST_CROWNS, FIVE_CROWNS } from '../sim/champions.js';
 import { LAYOUTS, LAYOUT_IDS } from './layouts.js';
 import { dayDiff, isDailyKey } from './daily.js';
 
@@ -146,7 +146,7 @@ export function lifeAfter(meta, facts) {
   return { ...marksAfter(meta && meta.marks, facts), bosses: [...bosses] };
 }
 const markCount = (life, k) => ((life && life[k]) || []).length;
-const crownCount = (life) => FIRST_CROWNS.filter((id) => ((life && life.champion) || []).includes(id)).length;
+const crownCount = (life, list = FIRST_CROWNS) => list.filter((id) => ((life && life.champion) || []).includes(id)).length;
 const allFelled = (life) => BOSSES.every((b) => ((life && life.bosses) || []).includes(b.kind));
 
 // One-off deeds: paid once, on the run that first meets them (not multiplied).
@@ -206,7 +206,7 @@ export const DEEDS = Object.freeze(
       ? [
           ['skyward', { name: 'Skyward', text: 'Clear Level V, the Still Spire, and bring the Verse of Sky home.', embers: 60, test: (r) => r.cleared.includes(5) }],
           ['windfall', { name: 'Windfall', text: 'Fell the Gale Herald, the champion of the Still Spire.', embers: 25, test: (r) => (r.champions || []).includes('gale_herald') }],
-          ['five_crowns', { name: 'Five Crowns', text: 'Fell all five champions, the Gale Herald included.', embers: 80, test: (r, l) => markCount(l, 'champion') >= CHAMPION_IDS.length, goal: (l) => [markCount(l, 'champion'), CHAMPION_IDS.length] }],
+          ['five_crowns', { name: 'Five Crowns', text: 'Fell the first champion of each of the five lands, the Gale Herald included.', embers: 80, test: (r, l) => crownCount(l, FIVE_CROWNS) >= FIVE_CROWNS.length, goal: (l) => [crownCount(l, FIVE_CROWNS), FIVE_CROWNS.length] }],
           ['break_the_hush', { name: 'Break the Hush', text: 'Fell the Hush on the Harrowing challenge.', embers: 80, test: (r) => r.bosses.includes('hush') && r.challenge === 'harrowing' }],
         ]
       : []),

@@ -405,6 +405,8 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           // Slice 2: a thorn patch (Thornling, Thornmother) reads as dark
           // bramble-green, not the toad's black-teal.
           if (e.variant === 'thorn') m.material.color.copy(mix(PALETTE.voidCharcoal, PALETTE.sageCloak, 0.7).multiplyScalar(1.5));
+          // SECOND CHAMPIONS: the Moss Hart's landing moss, a dull olive bed.
+          if (e.variant === 'moss') m.material.color.set(VFX_MATTER.moss).multiplyScalar(1.1);
           // The Drowned Miller's wet flour paste: a grey-cream smear.
           if (e.variant === 'flour') m.material.color.set(VFX_MATTER.flour).multiplyScalar(0.8);
           // ELITE AFFIXES: a Frozen patch reads as pale glacier ice, a Molten

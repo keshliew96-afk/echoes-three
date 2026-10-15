@@ -1,4 +1,4 @@
-// CHAMPIONS (docs/CHAMPIONS.md): the four champion rigs and what makes each
+// CHAMPIONS (docs/CHAMPIONS.md): the first champion rigs and what makes each
 // one THE champion of its room. Same grammar as the other enemy rigs
 // (render/enemies/slice2.js): flat-faceted primitives, cool hides with a value
 // structure, ink on the big masses, a contact shadow, ONE indigo corruption
@@ -66,6 +66,7 @@ import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 import { impactFx } from '../vfx/hub.js';
 import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
+import { SECOND_CHAMPION_BUILDERS, SECOND_CHAMPION_CROWN_Y, hartLift } from './champions2.js';
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 const inkMat = () => new MeshBasicMaterial({ color: exactColor(PALETTE.voidCharcoal), toneMapped: false });
@@ -1017,9 +1018,11 @@ export const CHAMPION_BUILDERS = Object.freeze({
   bone_reeve: buildBoneReeve,
   hollow_choir: buildHollowChoir,
   gale_herald: buildGaleHerald,
+  // Second champions (plan 4 slice 8): render/enemies/champions2.js.
+  ...SECOND_CHAMPION_BUILDERS,
 });
 // Crown height per champion (world u above the ground).
-export const CHAMPION_CROWN_Y = Object.freeze({ briar_knight: 2.75, sluice_warden: 2.45, bone_reeve: 3.05, hollow_choir: 3.05, gale_herald: 2.95 });
+export const CHAMPION_CROWN_Y = Object.freeze({ briar_knight: 2.75, sluice_warden: 2.45, bone_reeve: 3.05, hollow_choir: 3.05, gale_herald: 2.95, ...SECOND_CHAMPION_CROWN_Y });
 
 // ------------------------------------------------------------ presence --
 const flat = (color, opacity) =>
@@ -1202,10 +1205,10 @@ export function createChampionFx({ root, world, bus, cosmetic }) {
       const m = marks.get(e.id);
       const ix = e.x;
       const iz = e.z;
-      const up = e.kind === 'gale_herald' ? heraldLift(e, world.tick) : 0;
+      const up = e.kind === 'gale_herald' ? heraldLift(e, world.tick) : e.kind === 'moss_hart' ? hartLift(e, world.tick) : 0;
       m.crown.g.position.set(ix, (CHAMPION_CROWN_Y[e.kind] ?? 2.6) + up + 0.06 * Math.sin(tSec * 2), iz);
       // The Gale Herald aloft: its wingbeats push pale air and dust down.
-      if (up > 0.3 && cosmetic.range(0, 1) < dt * 14) {
+      if (e.kind === 'gale_herald' && up > 0.3 && cosmetic.range(0, 1) < dt * 14) {
         impactFx.spray('smoke', ix, 0.12, iz, 1, { color: VFX_MATTER.spirestone, speed: [0.5, 1.1], up: [0.0, 0.15], size: [0.34, 0.5], grow: 1.3, life: [0.5, 0.8], opacity: 0.2, gravity: 0, drag: 2.4, jitter: 0.4 });
         impactFx.spray('spark', ix, up + 1.2, iz, 1, { color: VFX_MATTER.gust, speed: [0.2, 0.6], up: [-1.4, -0.6], size: [0.04, 0.07], life: [0.4, 0.7], gravity: 0, drag: 1.2, jitter: 0.9, opacity: 0.7 });
       }

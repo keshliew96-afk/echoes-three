@@ -118,6 +118,11 @@ export const VFX_MATTER = Object.freeze({
   hushveil: '#7F8799', // the Hush's veil: grey stillness with a cold slate cast
   hushpale: '#C3CBE0', // its silence: a cold lavender-white, drained of colour (never Bright Heal)
   ibexfur: '#B7AE9E', // the Skyhorn's coat: pale high-ledge goat hair
+  // Second champions (plan 4 slice 8, docs/CHAMPIONS.md).
+  moss: '#4F5E3A', // the Moss Hart: old dull olive moss (well off Bright Heal)
+  lichen: '#D4CF9C', // its antler lichen: a pale cream-sage glow (never Bright Heal)
+  rust: '#7A4E36', // the Lockkeeper's key and chain: wet old iron gone to rust
+  gravebronze: '#6E6248', // the Gravebell Ringer's bell: ash-dulled bronze
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

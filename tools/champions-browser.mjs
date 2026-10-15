@@ -160,6 +160,7 @@ async function walkIn(side) {
 // --------------------------------------------------------- Level I, all --
 await cmd('startCampaign', { level: 1 });
 await waitPhase(['combat']);
+await cmd('championPick', 'briar_knight'); // (slice 8: the seed may roll the Moss Hart)
 let { side } = await enterCrown('Level I');
 const tip = await tipAtDoors('champion', 'champion-2-tip');
 check(tip === 'champion', `the first-crown-door tip shows on the doors (${tip})`);
@@ -235,6 +236,7 @@ for (const [level, kind] of [[2, 'sluice_warden'], [3, 'bone_reeve'], [4, 'hollo
   await sleep(2000);
   await cmd('startCampaign', { level });
   await waitPhase(['combat']);
+  await cmd('championPick', kind);
   ({ side } = await enterCrown(`Level ${level}`));
   await closeTip();
   c = await walkIn(side);

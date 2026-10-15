@@ -119,6 +119,9 @@ const champ = (w) => {
 function into(seed, n = 4, level = 1, extra = {}) {
   const w = build(seed);
   w.run().startCampaign({ level, harness: true, ...extra });
+  // Slice 8: these legs test each act's first champion (second-champions-probe
+  // has the rest).
+  w.run().cmd('championPick', [extra.champion ?? { 1: 'briar_knight', 2: 'sluice_warden', 3: 'bone_reeve', 4: 'hollow_choir', 5: 'gale_herald' }[level]]);
   w.run().cmd('championRoom', [n]);
   w.world.cmd('skipToRoom', n);
   w.step();
@@ -192,6 +195,7 @@ function toPath(w) {
   // A cursed door on the crown's own side: the crown takes the other.
   const w = build(SEED);
   w.run().startCampaign({ level: 1, harness: true });
+  w.run().cmd('championPick', ['briar_knight']); // (slice 8: a Wood seed may roll the Moss Hart)
   w.world.cmd('skipToRoom', 3);
   w.step();
   w.run().cmd('relicDoor', ['short_fuse', 0]);
@@ -298,6 +302,7 @@ let saveTree = null;
 {
   const w = build(SEED);
   w.run().startCampaign({ endless: true, harness: true });
+  w.run().cmd('championPick', ['briar_knight']); // (slice 8: Depth 1 may roll the Moss Hart)
   check('endless', 'an Endless depth carries a crown', !!w.run().cmd('crownOf', []));
   w.run().cmd('championRoom', [4]);
   w.world.cmd('skipToRoom', 4);

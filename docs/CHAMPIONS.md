@@ -26,7 +26,7 @@ room 5. Beating it opens a relic chest with a greater pick.
 
 ## The champions
 
-There is one champion per act (land). Each has two telegraphed moves, which
+Each act (land) has a first champion here; Acts I to IV also have a second (see "Second champions" below). Each has two telegraphed moves, which
 alternate. Every move goes through the §11 governor: at most two
 player-targeted telegraphs at once, with starts at least 72 ticks apart. A
 move the governor holds back for 210 ticks goes anyway.
@@ -102,14 +102,41 @@ Plan 4 slice 7 gave the Still Spire its own champion, so Level V's crown door
 no longer holds the Hollow Choir. Its kit, look and sound are in
 `docs/ACT_V.md`, "Slice 7".
 
+## Second champions (Acts I to IV)
+
+Plan 4 slice 8 (v0.5.283) gave each of the first four lands a second
+champion. The crown door now rolls one of the land's two: a hash of the
+level's frame seed and index (`championPick` in `src/sim/champions.js`,
+`${seed}:${index}:CHAMPION`), apart from `crownFor`'s hash, so where the
+crown door sits is unchanged and nothing draws from the run's random stream.
+Level V has only the Gale Herald. Endless and the Daily use the same pick.
+
+| Land | Champion | Move 1 | Move 2 |
+|---|---|---|---|
+| Wood | The Moss Hart | Antler Toss: a cone (r 3.0, 55°) hits for 15 and throws 2 u | Hart's Leap: a ring (r 2.0) under the farthest hero; it bounds over and lands for 15, leaving moss that slows 30% |
+| Mill | The Lockkeeper | Chain Hook: a lane (7.5 × 0.9); the key hits for 10 and drags the hero to his feet | Lock Turn: a ring round him (r 2.5) for 16 and a 50% slow |
+| Barrow | The Gravebell Ringer | Death Knell: a ring round it (r 3.6) for 11 and a 45% slow | Grave Call: a ring (r 1.8) under a hero bursts for 14 and leaves ash that slows |
+| Heart | The Vein Matron | Vein Lash: a lane (7 × 1.0) for 13; she heals 3% of her max health per hero cut, 6% at most | Heart Pulse: a ring round her (r 2.8) for 14, then eight crystal shards, 7 each |
+
+Each has the frame's rage below half health, its own plate, sting, death
+burst and the usual relic chest. The Journal's champion row has nine
+entries. Four Crowns and Five Crowns still count only the first champion of
+each land (`FIRST_CROWNS`, `FIVE_CROWNS` in `src/sim/champions.js`), and the
+new champions add no deed.
+
 ## Debug and probes
 
 - `cmd('crownDoor'[, side])`: the next path screen carries the crown door.
 - `cmd('championRoom', n)`: room n of this level becomes the champion's room.
 - `cmd('crownOf')`: shows where this level's crown was rolled.
+- `cmd('championPick'[, id])`: shows this level's champion, or forces it.
 - `node tools/champions-probe.mjs`: the headless checks, 49 of them. They
   cover the crown roll, the door rules, every champion's moves at Levels
   I–V, the rage, the chest's greater pick, Endless, replay determinism and a
   mid-fight save.
 - `node tools/champions-browser.mjs [--shots dir]`: walks the real pages and
   takes the screenshots.
+- `node tools/second-champions-probe.mjs`: the slice 8 checks (the pick, each
+  new kit, the common frame, the deeds and a mid-leap save).
+- `node tools/second-champions-browser.mjs [--only kind]`: the second
+  champions' fights and Journal rows on the real pages.

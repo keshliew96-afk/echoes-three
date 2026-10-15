@@ -3479,6 +3479,13 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.flash({ x: c.x, y: 1.5, z: c.z, color: CH_GOLD, size: 0.7, life: 0.25, grow: -0.3, opacity: 0.7 });
     }
     anticipate(ev.x, ev.z, 1.6, EMBER, { y: 0.3, lines: 8 });
+    // The Moss Hart gathers itself for the Leap: dust pushed out from its
+    // hooves, moss shaken loose, lichen motes lifting off the rack.
+    if (ev.champion === 'moss_hart' && ev.move === 'harts_leap' && c) {
+      shock(c.x, c.z, 1.6, vfxMatterColor('earth'), { life: 0.5, width: 0.2, core: BONE, delay: 0.1 });
+      spray('smoke', c.x, 0.15, c.z, 6, { color: vfxMatterColor('earth'), speed: [0.8, 1.6], up: [0.05, 0.3], size: [0.36, 0.5], grow: 1.5, life: [0.6, 0.95], opacity: 0.26, gravity: -0.05, drag: 2.4, jitter: 0.4 });
+      spray('spark', c.x, 2.4, c.z, 8, { color: vfxMatterColor('lichen'), speed: [0.1, 0.4], up: [0.4, 1.0], size: [0.04, 0.07], life: [0.8, 1.2], gravity: -0.3, drag: 1.4, jitter: 0.8 });
+    }
     // The Gale Herald takes wing for the Stoop: its first beats blast the
     // floor — a pale ring of air thrown out, dust rolled away, stone
     // feathers shaken loose.
@@ -3690,6 +3697,183 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.65, 0.16);
     },
   });
+  // SECOND CHAMPIONS (plan 4 slice 8): Acts I to IV's second lords. Their
+  // own matter on what breaks, Ember only on the ground that hurts.
+  const CH_MOSS = vfxMatterColor('moss');
+  const CH_LICHEN = vfxMatterColor('lichen');
+  const CH_RUST = vfxMatterColor('rust');
+  const CH_GBRONZE = vfxMatterColor('gravebronze');
+  const CH_CINDER = vfxMatterColor('cinder');
+  Object.assign(CHAMP_MOVE, {
+    // Moss Hart: the rack flung up through the cone — a lichen-lit arc along
+    // the cone's rim, the Ember edge on its ground, torn moss and turf
+    // thrown down the cone, a pale sweep at antler height.
+    antler_toss(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const ang = Math.atan2(d.z, d.x);
+      const R = 3.0;
+      const half = 55 * (Math.PI / 180);
+      const segs = 8;
+      for (let i = 0; i < segs; i++) {
+        const a0 = ang - half + (i / segs) * 2 * half;
+        const a1 = ang - half + ((i + 1) / segs) * 2 * half;
+        kit.streak({ a: { x: ev.x + Math.cos(a0) * R, y: 1.6, z: ev.z + Math.sin(a0) * R }, b: { x: ev.x + Math.cos(a1) * R, y: 1.9, z: ev.z + Math.sin(a1) * R }, width: 0.2, tailW: 0.08, core: PARCH, glow: CH_LICHEN, life: 0.3, fall: 1.4, delay: i * 0.014 });
+        kit.streak({ a: { x: ev.x + Math.cos(a0) * R * 0.95, y: 0.08, z: ev.z + Math.sin(a0) * R * 0.95 }, b: { x: ev.x + Math.cos(a1) * R * 0.95, y: 0.08, z: ev.z + Math.sin(a1) * R * 0.95 }, width: 0.32, tailW: 0.32, core: EMBER, glow: EMBER, life: 0.22, fall: 2, opacity: 0.6, delay: i * 0.014 });
+      }
+      kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ev.x + d.x * R, y: 0.1, z: ev.z + d.z * R }, width: R * 1.4, tailW: R * 1.2, core: EMBER, glow: EMBER, life: 0.2, fall: 2.2, opacity: 0.35 });
+      flare(ev.x + d.x * 1.2, 1.4, ev.z + d.z * 1.2, CH_LICHEN, 2.0, { kind: 'burst', life: 0.26, angle: ang });
+      spray('shard', ev.x + d.x * 1.0, 0.6, ev.z + d.z * 1.0, 18, { color: CH_MOSS, tile: SHARD_TILE.petal, speed: [1.6, 3.4], up: [1.2, 2.6], size: [0.12, 0.18], life: [0.9, 1.4], gravity: 1.6, drag: 1.2, spin: [-6, 6], flutter: 0.5, dir: d, dirBias: 0.75, jitter: 0.5 });
+      spray('chunk', ev.x + d.x * 1.4, 0.3, ev.z + d.z * 1.4, 10, { color: vfxMatterColor('earth'), speed: [1.4, 3.0], up: [1.4, 2.6], size: [0.07, 0.14], life: [0.5, 0.9], dir: d, dirBias: 0.7, jitter: 0.5 });
+      spray('spark', ev.x + d.x * 1.0, 1.6, ev.z + d.z * 1.0, 10, { color: CH_LICHEN, speed: [0.6, 1.8], up: [0.4, 1.4], size: [0.04, 0.08], life: [0.6, 1.0], gravity: -0.2, drag: 1.4, dir: d, dirBias: 0.6, jitter: 0.6 });
+      kit.mark({ x: ev.x + d.x * 1.6, z: ev.z + d.z * 1.6, radius: 2.0, kind: 'gouge', angle: ang + Math.PI / 2, stretch: 2.0, stain: vfxMatterColor('earth'), glow: EMBER, cool: 0.6, life: 2.6, opacity: 0.4 });
+      camfx.kick(d.x, d.z, 0.45, 0.13);
+    },
+    // ... and Hart's Leap landing: a heavy crash of hooves — white-hot
+    // impact, the Ember ring, a crater of turf, a ring of moss torn up and
+    // lichen motes rising, the dust rolling out.
+    harts_leap(ev) {
+      const r = 2.0;
+      flare(ev.x, 0.45, ev.z, EMBER, 2.0, { kind: 'burst', life: 0.26 });
+      kit.flash({ x: ev.x, y: 0.5, z: ev.z, color: PARCH, size: 1.2, life: 0.14 });
+      shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.32, width: 0.16, jag: 0.6 });
+      shock(ev.x, ev.z, r * 1.5, CH_MOSS, { life: 0.6, width: 0.26, core: CH_LICHEN, delay: 0.05, jag: 0.8 });
+      spikes(ev.x, ev.z, r * 0.9, 12, CH_MOSS, { h: 0.5, life: 0.55, core: CH_LICHEN, delay: 0.03 });
+      kit.crack({ x: ev.x, z: ev.z, radius: r * 0.8, glow: EMBER, life: 1.6, cool: 0.5 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r * 1.2, kind: 'crater', stain: vfxMatterColor('earth'), glow: EMBER, glowOpacity: 0.4, cool: 0.9, life: 4, opacity: 0.5 });
+      kit.light({ x: ev.x, z: ev.z, radius: r * 1.3, color: EMBER, opacity: 0.4, life: 0.4, attack: 0.02 });
+      spray('chunk', ev.x, 0.3, ev.z, 14, { color: vfxMatterColor('earth'), speed: [1.2, 2.8], up: [1.6, 3.2], size: [0.08, 0.16], life: [0.55, 0.9], jitter: 0.4 });
+      spray('shard', ev.x, 0.5, ev.z, 16, { color: CH_MOSS, tile: SHARD_TILE.petal, speed: [1.0, 2.4], up: [1.2, 2.4], size: [0.12, 0.18], life: [1.0, 1.6], gravity: 1.2, drag: 1.3, spin: [-6, 6], flutter: 0.6, jitter: 0.6 });
+      spray('spark', ev.x, 0.4, ev.z, 12, { color: CH_LICHEN, speed: [0.2, 0.8], up: [0.8, 1.8], size: [0.04, 0.08], life: [1.0, 1.6], gravity: -0.3, drag: 1.4, jitter: 0.9 });
+      spray('smoke', ev.x, 0.2, ev.z, 7, { color: vfxMatterColor('earth'), speed: [1.4, 2.6], up: [0.05, 0.3], size: [0.42, 0.6], grow: 1.6, life: [0.7, 1.1], opacity: 0.3, gravity: -0.05, drag: 2.2, jitter: 0.6 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.65, 0.16);
+    },
+    // Lockkeeper: the key flies down the lane trailing its chain — a rust
+    // streak with sparks off the links, the Ember lane, a splash where the
+    // key bites; then the chain reels back in.
+    chain_hook(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const c = byId(ev.id);
+      const ox = c ? c.x : ev.x - d.x * 5;
+      const oz = c ? c.z : ev.z - d.z * 5;
+      const len = Math.hypot(ev.x - ox, ev.z - oz) || 6;
+      kit.streak({ a: { x: ox, y: 0.1, z: oz }, b: { x: ev.x, y: 0.1, z: ev.z }, width: 0.9, tailW: 0.8, core: EMBER, glow: EMBER, life: 0.22, fall: 2.2, opacity: 0.5 });
+      kit.streak({ a: { x: ox + d.x * 0.6, y: 1.3, z: oz + d.z * 0.6 }, b: { x: ev.x, y: 0.9, z: ev.z }, width: 0.12, tailW: 0.05, core: PARCH, glow: CH_RUST, life: 0.4, fall: 1.2, opacity: 0.85 });
+      const n = Math.max(4, Math.round(len / 0.7));
+      for (let i = 1; i <= n; i++) {
+        const k = i / n;
+        after(k * 0.12, () => spray('spark', ox + d.x * len * k, 1.1 - 0.2 * k, oz + d.z * len * k, 1, { color: CH_RUST, speed: [0.4, 1.2], up: [0.2, 0.8], size: [0.04, 0.07], life: [0.3, 0.5], jitter: 0.2 }));
+      }
+      flare(ev.x, 0.8, ev.z, EMBER, 1.6, { kind: 'star', life: 0.2, angle: Math.atan2(d.z, d.x) });
+      spray('shard', ev.x, 0.5, ev.z, 12, { color: CH_WATER, tile: SHARD_TILE.drop, speed: [1.0, 2.2], up: [1.0, 2.2], size: [0.09, 0.14], life: [0.5, 0.8], gravity: 7, drag: 0.3, jitter: 0.5 });
+      spray('chunk', ev.x, 0.4, ev.z, 5, { color: CH_RUST, speed: [0.8, 1.6], up: [0.8, 1.6], size: [0.05, 0.09], life: [0.5, 0.8] });
+      // The reel: a second streak back toward the keeper.
+      after(0.18, () => {
+        kit.streak({ a: { x: ev.x, y: 0.9, z: ev.z }, b: { x: ox + d.x * 0.8, y: 1.2, z: oz + d.z * 0.8 }, width: 0.09, tailW: 0.03, core: PARCH, glow: CH_RUST, life: 0.3, fall: 1.4, opacity: 0.7 });
+        if ((ev.hooked ?? 0) > 0) spray('smoke', ev.x, 0.15, ev.z, 4, { color: CH_SILT, speed: [0.6, 1.4], up: [0.05, 0.2], size: [0.4, 0.55], grow: 1.4, life: [0.7, 1.0], opacity: 0.3, drag: 2.4, dir: { x: -d.x, z: -d.z }, dirBias: 0.7 });
+      });
+      camfx.kick(-d.x, -d.z, 0.4, 0.12);
+    },
+    // ... and Lock Turn: the key driven into the floor and turned — a ring
+    // of iron teeth bursting up, the Ember ring, a turning gold-less ring of
+    // rust sparks, the floor's water thrown up.
+    lock_turn(ev) {
+      const r = 2.5;
+      spikes(ev.x, ev.z, r, 14, CH_RUST, { h: 0.7, life: 0.55, core: PARCH });
+      flare(ev.x, 0.5, ev.z, EMBER, 2.0, { kind: 'star', life: 0.26, spin: 0.8 });
+      shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.35, width: 0.16, jag: 0.5 });
+      shock(ev.x, ev.z, r * 1.3, CH_RUST, { life: 0.55, width: 0.22, core: PARCH, delay: 0.06 });
+      kit.ring({ x: ev.x, z: ev.z, r0: 0.4, r1: r * 0.9, width: 0.1, life: 0.5, core: PARCH, glow: CH_RUST, soft: 0.5, y: 0.08, opacity: 0.7 });
+      kit.crack({ x: ev.x, z: ev.z, radius: r * 0.75, glow: EMBER, life: 1.6, cool: 0.5 });
+      kit.light({ x: ev.x, z: ev.z, radius: r * 1.2, color: EMBER, opacity: 0.45, life: 0.4, attack: 0.02 });
+      for (let i = 0; i < N(10); i++) {
+        const a = (i / 10) * TAU;
+        spray('spark', ev.x + Math.cos(a) * r * 0.85, 0.3, ev.z + Math.sin(a) * r * 0.85, 1, { color: CH_RUST, speed: [0.6, 1.4], up: [0.8, 1.6], size: [0.04, 0.07], life: [0.4, 0.7], dir: { x: -Math.sin(a), z: Math.cos(a) }, dirBias: 0.8 });
+      }
+      spray('shard', ev.x, 0.3, ev.z, 18, { color: CH_WATER, tile: SHARD_TILE.drop, speed: [0.8, 2.0], up: [1.6, 3.0], size: [0.1, 0.15], life: [0.6, 0.9], gravity: 7, drag: 0.3, jitter: 0.8 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r * 1.1, kind: 'splash', stain: CH_SILT, glow: EMBER, glowOpacity: 0.25, cool: 0.8, life: 3, opacity: 0.4 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.55, 0.15);
+    },
+    // Gravebell Ringer: the knell — rings of sound off the bell's mouth at
+    // its height, the Ember edge on the floor, ash shaken out of the
+    // ground in a ring, a low violet-free grey light.
+    death_knell(ev) {
+      const r = 3.6;
+      const c = byId(ev.id);
+      const x = c ? c.x : ev.x;
+      const z = c ? c.z : ev.z;
+      flare(x, 2.6, z, CH_GBRONZE, 2.4, { kind: 'burst', life: 0.32, core: PARCH });
+      for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.4, r1: r * (0.7 + 0.25 * i), width: 0.1, life: 0.55 + 0.12 * i, core: PARCH, glow: CH_GBRONZE, soft: 0.6, y: 2.4 - i * 0.7, delay: i * 0.08, opacity: 0.6, thin: 0.5 });
+      shock(ev.x, ev.z, r * 1.02, EMBER, { life: 0.4, width: 0.18 });
+      shock(ev.x, ev.z, r * 1.35, CH_CINDER, { life: 0.65, width: 0.28, core: BONE, delay: 0.08 });
+      for (let i = 0; i < N(12); i++) {
+        const a = (i / 12) * TAU + rnd(-0.2, 0.2);
+        spray('smoke', ev.x + Math.cos(a) * r * 0.8, 0.15, ev.z + Math.sin(a) * r * 0.8, 1, { color: CH_CINDER, speed: [0.3, 0.8], up: [0.2, 0.6], size: [0.4, 0.55], grow: 1.5, life: [0.8, 1.2], opacity: 0.3, gravity: -0.1, drag: 2.0, dir: { x: Math.cos(a), z: Math.sin(a) }, dirBias: 0.6 });
+      }
+      spray('spark', x, 2.4, z, 14, { color: CH_GBRONZE, speed: [1.0, 2.4], up: [-0.2, 0.6], size: [0.04, 0.08], life: [0.4, 0.7], drag: 1.2, jitter: 0.4 });
+      kit.light({ x: ev.x, z: ev.z, radius: r * 1.2, color: BONE, opacity: 0.3, life: 0.5 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r, kind: 'scorch', stain: INK, glow: EMBER, glowOpacity: 0.2, cool: 0.8, life: 3, opacity: 0.25 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.45, 0.16);
+    },
+    // ... and Grave Call: the grave opens under the mark — an ash geyser
+    // with Ember coals in it, bone chips, the smouldering bed left behind.
+    grave_call(ev) {
+      const r = 1.8;
+      kit.pillar({ x: ev.x, z: ev.z, radius: r * 0.55, height: 2.8, color: CH_CINDER, life: 0.7, opacity: 0.55 });
+      flare(ev.x, 0.4, ev.z, EMBER, 1.8, { kind: 'burst', life: 0.24 });
+      shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.3, width: 0.14, jag: 0.7 });
+      kit.crack({ x: ev.x, z: ev.z, radius: r * 0.9, glow: EMBER, life: 2.0, cool: 0.6 });
+      spray('smoke', ev.x, 0.3, ev.z, 10, { color: CH_CINDER, speed: [0.3, 0.9], up: [1.6, 3.0], size: [0.45, 0.65], grow: 1.7, life: [1.0, 1.5], opacity: 0.4, gravity: -0.2, drag: 1.4, jitter: 0.5 });
+      spray('spark', ev.x, 0.4, ev.z, 16, { color: EMBER, speed: [0.4, 1.2], up: [1.6, 3.2], size: [0.04, 0.08], life: [0.6, 1.1], gravity: 2, drag: 0.8, jitter: 0.5 });
+      spray('chunk', ev.x, 0.3, ev.z, 10, { color: CH_BONE, speed: [0.8, 2.0], up: [1.6, 3.0], size: [0.06, 0.12], life: [0.6, 0.9], jitter: 0.4 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r * 1.15, kind: 'crater', stain: INK, glow: EMBER, glowOpacity: 0.45, cool: 1.2, life: 5, opacity: 0.5 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.4, 0.12);
+    },
+    // Vein Matron: the whip cracks down the lane — a violet streak with a
+    // white-hot crack at its tip, the Ember lane; what she drinks streams
+    // back to her heart as violet motes.
+    vein_lash(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const c = byId(ev.id);
+      const ox = c ? c.x : ev.x - d.x * 5;
+      const oz = c ? c.z : ev.z - d.z * 5;
+      kit.streak({ a: { x: ox, y: 0.1, z: oz }, b: { x: ev.x, y: 0.1, z: ev.z }, width: 1.0, tailW: 0.9, core: EMBER, glow: EMBER, life: 0.22, fall: 2.2, opacity: 0.5 });
+      kit.streak({ a: { x: ox + d.x * 0.5, y: 1.9, z: oz + d.z * 0.5 }, b: { x: ev.x, y: 0.6, z: ev.z }, width: 0.16, tailW: 0.06, core: CH_PEAK, glow: CH_VEIN, life: 0.32, fall: 1.4, opacity: 0.9 });
+      flare(ev.x, 0.6, ev.z, CH_PEAK, 1.6, { kind: 'star', life: 0.18, angle: Math.atan2(d.z, d.x) });
+      spray('shard', ev.x, 0.5, ev.z, 10, { color: CH_CRYSTAL, tile: SHARD_TILE.needle, speed: [1.2, 2.6], up: [0.4, 1.2], size: [0.08, 0.12], life: [0.4, 0.7], gravity: 3, spin: [-8, 8], dir: d, dirBias: 0.5 });
+      kit.mark({ x: (ox + ev.x) / 2, z: (oz + ev.z) / 2, radius: 1.2, kind: 'gouge', angle: Math.atan2(d.z, d.x), stretch: 3.0, stain: INK, glow: CH_VEIN, glowOpacity: 0.3, cool: 0.8, life: 2.4, opacity: 0.35 });
+      if ((ev.drank ?? 0) > 0 && c) {
+        for (let i = 0; i < N(8); i++) {
+          const k = rnd(0.3, 1);
+          const px = ox + (ev.x - ox) * k;
+          const pz = oz + (ev.z - oz) * k;
+          kit.streak({ a: { x: px, y: 0.8, z: pz }, b: { x: px, y: 0.95, z: pz }, width: 0.05, tailW: 0, core: CH_PEAK, glow: CH_VEIN, life: 0.45, delay: 0.1 + i * 0.03, travel: { x: (c.x - px) * 2, y: 2.0, z: (c.z - pz) * 2 }, fall: 0, opacity: 0.85 });
+        }
+        after(0.4, () => {
+          const m = byId(ev.id);
+          if (m) kit.flash({ x: m.x, y: 1.8, z: m.z, color: CH_VEIN, size: 1.2, life: 0.25 });
+        });
+      }
+      camfx.kick(d.x, d.z, 0.35, 0.12);
+    },
+    // ... and Heart Pulse: the heart beats — a violet burst at the chest,
+    // two rings of the beat, Ember where it hurts, the floor's veins lit.
+    heart_pulse(ev) {
+      const r = 2.8;
+      const c = byId(ev.id);
+      const x = c ? c.x : ev.x;
+      const z = c ? c.z : ev.z;
+      flare(x, 1.8, z, CH_VEIN, 2.6, { kind: 'burst', life: 0.32, core: CH_PEAK, spin: 0.6 });
+      kit.flash({ x, y: 1.8, z, color: CH_PEAK, size: 1.3, life: 0.16 });
+      shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.36, width: 0.18 });
+      shock(ev.x, ev.z, r * 1.45, CH_VEIN, { life: 0.6, width: 0.26, core: CH_PEAK, delay: 0.08 });
+      kit.ring({ x, z, r0: 0.4, r1: r, width: 0.12, life: 0.4, core: CH_PEAK, glow: CH_VEIN, soft: 0.5, y: 1.8, opacity: 0.75 });
+      kit.light({ x: ev.x, z: ev.z, radius: r * 1.3, color: CH_VEIN, opacity: 0.5, life: 0.5 });
+      kit.crack({ x: ev.x, z: ev.z, radius: r * 0.9, glow: CH_VEIN, life: 2.0, cool: 0.7 });
+      spray('shard', x, 1.4, z, 14, { color: CH_CRYSTAL, tile: SHARD_TILE.needle, speed: [1.4, 3.0], up: [0.4, 1.4], size: [0.09, 0.14], life: [0.5, 0.8], gravity: 4, spin: [-10, 10], jitter: 0.6 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r, kind: 'scorch', stain: INK, glow: CH_VEIN, cool: 1.0, life: 3, opacity: 0.3 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.5, 0.15);
+    },
+  });
   bus.on('champion_move', (ev) => {
     mark(`champion_${ev.move}`);
     const fn = CHAMP_MOVE[ev.move];
@@ -3746,6 +3930,43 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.ring({ x, z, r0: 0.6, r1: 5.0, width: 0.14, life: 0.8, core: PARCH, glow: GUST, soft: 0.6, y: 0.08, delay: 0.06, opacity: 0.55 });
       spray('shard', x, 1.8, z, 24, { color: SSTONE, tile: SHARD_TILE.feather, speed: [0.8, 2.4], up: [0.6, 2.0], size: [0.14, 0.22], life: [1.6, 2.4], gravity: 0.5, drag: 1.5, spin: [-6, 6], flutter: 0.85, jitter: 0.8 });
       spray('chunk', x, 1.6, z, 6, { color: BRONZE, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.06, 0.1], life: [0.6, 0.9] });
+    },
+    // SECOND CHAMPIONS (plan 4 slice 8).
+    moss_hart: (es, matter, x, z) => {
+      // It folds into the clearing: the rack's lichen goes out in a last
+      // pale burst, the moss mantle tears loose in a storm of moss.
+      mark('moss_hart_death');
+      championDeath(vfxMatterColor('moss'), CH_GOLD, x, z);
+      flare(x, 2.2, z, vfxMatterColor('lichen'), 2.4, { kind: 'burst', life: 0.4, core: PARCH });
+      spray('shard', x, 1.4, z, 26, { color: vfxMatterColor('moss'), tile: SHARD_TILE.petal, speed: [0.8, 2.4], up: [1.0, 2.4], size: [0.12, 0.2], life: [1.4, 2.2], gravity: 0.8, drag: 1.4, spin: [-6, 6], flutter: 0.7, jitter: 0.8 });
+      spray('spark', x, 2.0, z, 18, { color: vfxMatterColor('lichen'), speed: [0.2, 0.8], up: [0.6, 1.6], size: [0.04, 0.08], life: [1.2, 2.0], gravity: -0.3, drag: 1.3, jitter: 1.0 });
+    },
+    lockkeeper: (es, matter, x, z) => {
+      // The key drops and the chain goes slack: rust and links, his lantern
+      // breaking in a pale splash.
+      mark('lockkeeper_death');
+      championDeath(vfxMatterColor('rust'), CH_GOLD, x, z);
+      ripples(x, z, 3, 2.6, 0.1);
+      spray('chunk', x, 1.2, z, 12, { color: vfxMatterColor('rust'), speed: [0.8, 2.0], up: [1.0, 2.2], size: [0.05, 0.1], life: [0.6, 1.0], jitter: 0.5 });
+      spray('shard', x, 0.8, z, 16, { color: CH_WATER, tile: SHARD_TILE.drop, speed: [1.0, 2.2], up: [1.6, 3.0], size: [0.1, 0.15], life: [0.6, 0.9], gravity: 7, drag: 0.3, jitter: 0.6 });
+    },
+    gravebell_ringer: (es, matter, x, z) => {
+      // The bell's last toll and its crack splitting: bronze shards, a ring
+      // of sound, the bones going to ash.
+      mark('gravebell_ringer_death');
+      championDeath(CH_BONE, CH_GOLD, x, z);
+      kit.ring({ x, z, r0: 0.4, r1: 4.2, width: 0.1, life: 0.8, core: PARCH, glow: vfxMatterColor('gravebronze'), soft: 0.6, y: 2.4, opacity: 0.6, thin: 0.5 });
+      spray('chunk', x, 2.4, z, 10, { color: vfxMatterColor('gravebronze'), speed: [0.8, 2.0], up: [0.6, 1.6], size: [0.08, 0.14], life: [0.7, 1.0] });
+      spray('smoke', x, 0.5, z, 8, { color: vfxMatterColor('cinder'), speed: [0.4, 1.0], up: [0.6, 1.4], size: [0.45, 0.65], grow: 1.6, life: [1.0, 1.6], opacity: 0.35, gravity: -0.2, drag: 1.6, jitter: 0.6 });
+    },
+    vein_matron: (es, matter, x, z) => {
+      // Her heart bursts: violet light out through the roots, crystal
+      // spines flying.
+      mark('vein_matron_death');
+      championDeath(CH_CRYSTAL, CH_VEIN, x, z);
+      flare(x, 1.8, z, CH_VEIN, 2.6, { kind: 'burst', life: 0.42, core: CH_PEAK });
+      shock(x, z, 3.2, CH_VEIN, { life: 0.6, width: 0.24, core: CH_PEAK });
+      spray('shard', x, 1.8, z, 24, { color: CH_CRYSTAL, tile: SHARD_TILE.needle, speed: [1.2, 3.0], up: [1.0, 2.6], size: [0.1, 0.15], life: [0.7, 1.1], gravity: 4, spin: [-10, 10], jitter: 0.6 });
     },
     hollow_choir: (es, matter, x, z) => {
       mark('hollow_choir_death');
