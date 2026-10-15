@@ -156,7 +156,7 @@ function partyTakes(w, target, power = 20) {
 {
   const rar = NEW.map((id) => RELICS[id] && RELICS[id].rarity);
   const n = (r) => rar.filter((x) => x === r).length;
-  check('data', `39 relics, the ten new ones present (${RELIC_IDS.length})`, RELIC_IDS.length === 39 && NEW.every((id) => RELICS[id]));
+  check('data', `39 relics or more, the ten new ones present (${RELIC_IDS.length})`, RELIC_IDS.length >= 39 && NEW.every((id) => RELICS[id]));
   check('data', `rarities 4 common, 4 rare, 2 legendary (${n('common')}/${n('rare')}/${n('legendary')})`, n('common') === 4 && n('rare') === 4 && n('legendary') === 2);
   check('data', 'none of them a class relic', NEW.every((id) => !RELICS[id].cls));
   check('data', 'an heirloom for each', NEW.every((id) => UNLOCKS[`heirloom_${id}`] && UNLOCKS[`heirloom_${id}`].relic === id));

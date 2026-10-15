@@ -12,8 +12,10 @@
 // and vaults adds src/audio/vaultcues.js (vk_*); New enemies, Wood and Mill
 // adds src/audio/woodmillcues.js (wm_*); the Tidecaller's kit adds
 // src/audio/tidecues.js (td_*); Act V adds src/audio/spirecues.js (sp_*);
-// the Bellwright adds src/audio/bellcues.js (bw_*);
-// --only <file stem> measures just that file.
+// the Bellwright adds src/audio/bellcues.js (bw_*); the Act V champion,
+// the Vane Cock and Sacristan and the Spire's event rooms (plan 4 slice 7)
+// add to championcues, spirecues and encountercues;
+// --only <file stem>[,<file stem>...] measures just those files.
 // --write rewrites the `@cal begin/end` blocks; --verify re-measures: every
 // cue within 2 dB of levelDb and no SFX peak above the -6 dBFS pre-bus
 // ceiling. Do not --write while another probe uses the dev server (HMR).
@@ -35,7 +37,7 @@ const FILES = [
   { file: 'src/audio/tonicues.js', match: (id) => id.startsWith('tn_') },
   { file: 'src/audio/spirecues.js', match: (id) => id.startsWith('sp_') },
   { file: 'src/audio/bellcues.js', match: (id) => id.startsWith('bw_') },
-].filter((f) => !argv.includes('--only') || f.file.includes(argv[argv.indexOf('--only') + 1]));
+].filter((f) => !argv.includes('--only') || argv[argv.indexOf('--only') + 1].split(',').some((stem) => f.file.includes(stem)));
 const { browser, page, errors } = await openAudio(`${BASE}?menu=0&seed=7`);
 try {
   await sleep(3500);

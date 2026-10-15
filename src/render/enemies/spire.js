@@ -34,7 +34,9 @@
 // e })` (`e` = the sim entity, READ ONLY; the Journal's viewer passes an idle
 // stand-in, so every field read here has a default).
 import {
+  AdditiveBlending,
   BoxGeometry,
+  CircleGeometry,
   Color,
   ConeGeometry,
   CylinderGeometry,
@@ -45,6 +47,7 @@ import {
   LatheGeometry,
   Mesh,
   MeshBasicMaterial,
+  RingGeometry,
   Shape,
   SphereGeometry,
   TorusGeometry,
@@ -55,7 +58,7 @@ import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor } from '../critters/common.js';
 import { markShared } from '../geocache.js';
 import { PALETTE, VFX_MATTER } from '../../data/palette.js';
-import { makeGlowSprite } from '../glow.js';
+import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from './style.js';
 import { TICK_HZ } from '../../core/constants.js';
 
@@ -186,6 +189,17 @@ const C = Object.freeze({
   smockDark: slate(0.26, 0.13),
   skin: slate(0.08, 0.58).lerp(new Color(PALETTE.bone), 0.25),
   rope: new Color(VFX_MATTER.hemp).lerp(new Color(PALETTE.warmGrey), 0.35).multiplyScalar(0.95),
+  // Vane Cock: a brighter weathered brass than the bells (it caught the
+  // sun on the steeple), its patina in verdigris; a black iron spindle.
+  brass: new Color(VFX_MATTER.bellbronze).lerp(slate(0.2, 0.36), 0.12).multiplyScalar(1.02),
+  brassDark: new Color(VFX_MATTER.bellbronze).lerp(slate(0.2, 0.2), 0.5).multiplyScalar(0.6),
+  iron: slate(0.12, 0.17),
+  lead: slate(0.1, 0.26),
+  // Bell Sacristan: a cope of darker weathered stone over a pale stone
+  // face and hands; a bronze hem like a bell's lip.
+  cope: new Color(VFX_MATTER.spirestone).lerp(slate(0.24, 0.26), 0.7).multiplyScalar(0.62),
+  copeDark: new Color(VFX_MATTER.spirestone).lerp(slate(0.28, 0.14), 0.8).multiplyScalar(0.5),
+  face: new Color(VFX_MATTER.spirestone).lerp(new Color(PALETTE.bone), 0.25).multiplyScalar(0.92),
 });
 
 // -------------------------------------------------------------- KITE --
@@ -1123,5 +1137,494 @@ export function buildHanger() {
       tailEnd.rotation.x = 0.2 * Math.sin(t * 1.9 + id) + (swinging ? -0.6 : 0);
       shadow.scale.setScalar(1 - 0.25 * clamp01(lift / 0.5));
     },
+  };
+}
+
+// -------------------------------------------------------------- VANE --
+// Block letters for the compass arms (XY plane, facing +Z, ~0.16 tall).
+function letterGeo(ch) {
+  const w = 0.045;
+  const bar = (x0, y0, x1, y1) => {
+    const len = Math.hypot(x1 - x0, y1 - y0) + w;
+    const g = new BoxGeometry(len, w, 0.03);
+    g.rotateZ(Math.atan2(y1 - y0, x1 - x0));
+    g.translate((x0 + x1) / 2, (y0 + y1) / 2, 0);
+    return g;
+  };
+  const L = {
+    N: [[-0.05, -0.08, -0.05, 0.08], [0.05, -0.08, 0.05, 0.08], [-0.05, 0.08, 0.05, -0.08]],
+    E: [[-0.05, -0.08, -0.05, 0.08], [-0.05, 0.08, 0.05, 0.08], [-0.05, 0, 0.03, 0], [-0.05, -0.08, 0.05, -0.08]],
+    S: [[0.05, 0.08, -0.05, 0.08], [-0.05, 0.08, -0.05, 0], [-0.05, 0, 0.05, 0], [0.05, 0, 0.05, -0.08], [0.05, -0.08, -0.05, -0.08]],
+    W: [[-0.065, 0.08, -0.035, -0.08], [-0.035, -0.08, 0, 0.03], [0, 0.03, 0.035, -0.08], [0.035, -0.08, 0.065, 0.08]],
+  }[ch];
+  return mergeGeometries(L.map((b) => bar(...b)));
+}
+// The weathercock's silhouette: forward +X, up +Y in the outline, its feet
+// at y 0; rotated so forward is +Z.
+function cockGeometry() {
+  const g = plate(
+    [
+      [0.38, 0.43], [0.29, 0.39], [0.28, 0.33], [0.24, 0.34], [0.22, 0.28], [0.16, 0.18], [0.04, 0.1], [-0.14, 0.1],
+      [-0.3, 0.14], [-0.48, 0.24], [-0.4, 0.3], [-0.54, 0.42], [-0.44, 0.44], [-0.5, 0.6], [-0.38, 0.52], [-0.36, 0.7],
+      [-0.26, 0.52], [-0.18, 0.34], [-0.02, 0.32], [0.1, 0.4], [0.12, 0.5], [0.13, 0.57], [0.17, 0.54], [0.2, 0.62],
+      [0.23, 0.56], [0.27, 0.6], [0.28, 0.5], [0.31, 0.47],
+    ],
+    0.075
+  );
+  g.rotateY(-Math.PI / 2);
+  return g;
+}
+function cockWing() {
+  const g = plate([[-0.14, 0.31], [0.08, 0.3], [0.06, 0.2], [-0.04, 0.15], [-0.2, 0.2]], 0.02);
+  g.rotateY(-Math.PI / 2);
+  return g;
+}
+const VANE_TOP = 1.22;
+export function buildVane() {
+  const s = shell('vane');
+  const { rig, track } = s;
+  // The hop moves spindle, compass and cock together; only the cock turns.
+  const hop = new Group();
+  s.group.remove(s.yaw);
+  hop.add(s.yaw);
+  s.group.add(hop);
+  const brass = track(flashable(C.brass, { side: DoubleSide }));
+  const brassDark = track(flashable(C.brassDark));
+  const verd = track(flashable(C.verdigris, { side: DoubleSide }));
+  const iron = track(flashable(C.iron));
+  const lead = track(flashable(C.lead));
+  // The torn-off base: a lead roof cap and a ragged collar of flashing.
+  const cap = new Mesh(shared('vn-cap', () => new CylinderGeometry(0.14, 0.24, 0.12, 7).translate(0, 0.06, 0)), lead);
+  addInk(cap);
+  hop.add(cap);
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2 + 0.3;
+    const tab = new Mesh(shared('vn-tab', () => new BoxGeometry(0.1, 0.05, 0.12).translate(0, 0, 0.06)), lead);
+    tab.position.set(Math.sin(a) * 0.2, 0.03, Math.cos(a) * 0.2);
+    tab.rotation.set(0.35 + (i % 2) * 0.3, a, 0);
+    hop.add(tab);
+  }
+  // The iron spindle, a brass orb finial on it.
+  const spindle = new Mesh(shared('vn-spindle', () => new CylinderGeometry(0.036, 0.046, VANE_TOP, 6).translate(0, VANE_TOP / 2 + 0.08, 0)), iron);
+  addInk(spindle);
+  hop.add(spindle);
+  const orb = new Mesh(shared('vn-orb', () => new IcosahedronGeometry(0.075, 1)), brass);
+  orb.position.y = 0.98;
+  addInk(orb);
+  hop.add(orb);
+  // The compass: fixed to the world (it never turns), letters facing out
+  // toward the camera so they read.
+  const compass = new Group();
+  compass.position.y = 0.7;
+  hop.add(compass);
+  const armG = shared('vn-arm', () => mergeGeometries([new BoxGeometry(1.0, 0.035, 0.035), new BoxGeometry(0.035, 0.035, 1.0)]));
+  compass.add(new Mesh(armG, iron));
+  const hub = new Mesh(shared('vn-hub', () => new CylinderGeometry(0.05, 0.05, 0.06, 6)), brassDark);
+  compass.add(hub);
+  for (const [ch, x, z] of [['N', 0, -0.52], ['E', 0.52, 0], ['S', 0, 0.52], ['W', -0.52, 0]]) {
+    const l = new Mesh(shared(`vn-l${ch}`, () => letterGeo(ch)), brassDark);
+    l.scale.setScalar(1.45);
+    l.position.set(x * 1.1, 0.0, z * 1.1);
+    compass.add(l);
+    const tip = new Mesh(shared('vn-tip', () => new IcosahedronGeometry(0.025, 0)), brassDark);
+    tip.position.set(x * 0.85, 0, z * 0.85);
+    compass.add(tip);
+  }
+  // The cock on its pivot at the top: an arrow under its feet.
+  const head = new Group();
+  head.position.y = VANE_TOP + 0.08;
+  rig.add(head);
+  const collar = new Mesh(shared('vn-collar', () => new CylinderGeometry(0.045, 0.045, 0.08, 6)), brassDark);
+  head.add(collar);
+  const arrow = new Mesh(shared('vn-arrow', () => new CylinderGeometry(0.016, 0.016, 1.05, 4).rotateX(Math.PI / 2).translate(0, 0.05, 0.02)), iron);
+  head.add(arrow);
+  const point = new Mesh(shared('vn-point', () => new ConeGeometry(0.055, 0.18, 4).rotateX(Math.PI / 2).translate(0, 0.05, 0.62)), brassDark);
+  addInk(point);
+  head.add(point);
+  const fletch = new Mesh(
+    shared('vn-fletch', () => {
+      const g = plate([[0, 0], [-0.16, 0.12], [-0.22, 0.12], [-0.14, 0], [-0.22, -0.12], [-0.16, -0.12]], 0.02);
+      g.rotateY(-Math.PI / 2);
+      g.translate(0, 0.05, -0.46);
+      return g;
+    }),
+    brass
+  );
+  head.add(fletch);
+  // The cock itself: the brass silhouette with a little body, patina wings.
+  const cock = new Group();
+  cock.position.y = 0.06;
+  head.scale.setScalar(1.3);
+  head.add(cock);
+  const sil = new Mesh(shared('vn-cock', cockGeometry), brass);
+  addInk(sil);
+  cock.add(sil);
+  const belly = new Mesh(shared('vn-belly', () => new SphereGeometry(0.12, 8, 6)), brass);
+  belly.scale.set(0.8, 0.95, 1.6);
+  belly.position.set(0, 0.24, -0.02);
+  cock.add(belly);
+  for (const side of [-1, 1]) {
+    const w = new Mesh(shared('vn-wing', cockWing), verd);
+    w.position.x = side * 0.05;
+    cock.add(w);
+  }
+  for (const dz of [-0.06, 0.06]) {
+    const leg = new Mesh(shared('vn-leg', () => new CylinderGeometry(0.012, 0.012, 0.1, 4).translate(0, 0.05, 0)), brassDark);
+    leg.position.set(0, 0.0, dz);
+    cock.add(leg);
+  }
+  // The tell: an indigo eye on each side of the head.
+  for (const side of [-1, 1]) {
+    const eye = new Mesh(shared('vn-eye', () => new CylinderGeometry(0.026, 0.026, 0.012, 8).rotateZ(Math.PI / 2)), tellMat());
+    eye.position.set(side * 0.042, 0.47, 0.24);
+    cock.add(eye);
+  }
+  const eyeGlow = tellGlow(0.4, 0.26);
+  eyeGlow.position.set(0, 0.48, 0.25);
+  cock.add(eyeGlow);
+  // A pale gust puff at the beak (each dart).
+  const puff = makeGlowSprite({ color: VFX_MATTER.gust, size: 0.45, opacity: 0 });
+  puff.material.toneMapped = false;
+  puff.position.set(0, 0.42, 0.5);
+  cock.add(puff);
+  const shadow = groundShadow(0.3, 0.38);
+  s.group.add(shadow);
+  const dtOf = clock();
+  let hopPh = 0;
+  let lastMode = 'hop';
+  let spinT0 = -9;
+  let spinDir = 1;
+  let aimK = 0;
+  let volleyK = 0;
+  return {
+    group: s.group,
+    mats: s.mats,
+    setYaw: s.setYaw,
+    pose({ t, moveK = 0, telegraphK = 0, fireK = 0, e }) {
+      const dt = dtOf(t);
+      const id = e ? e.id ?? 0 : 0;
+      const mode = e && e.mode ? e.mode : 'hop';
+      if (mode === 'aim' && lastMode !== 'aim') {
+        spinT0 = t;
+        spinDir = id % 2 ? 1 : -1;
+      }
+      lastMode = mode;
+      aimK = approach(aimK, mode === 'aim' ? 1 : 0, 10, dt);
+      volleyK = approach(volleyK, mode === 'volley' ? 1 : 0, 12, dt);
+      // Hops on the spindle while it travels (and a restless one at rest).
+      const travel = clamp01(moveK * 1.5) * (1 - aimK) * (1 - volleyK);
+      hopPh += dt * (travel > 0.05 ? 2.4 : 0.35) * (1 - aimK);
+      const ph = hopPh % 1;
+      const air = ph < 0.55 ? Math.sin((ph / 0.55) * Math.PI) : 0;
+      const amp = travel > 0.05 ? 0.26 * travel : 0.06;
+      const squash = ph >= 0.55 && ph < 0.72 ? Math.sin(((ph - 0.55) / 0.17) * Math.PI) : 0;
+      hop.position.y = air * amp - 0.03 * aimK;
+      hop.scale.set(1 + 0.08 * squash * amp * 4, 1 - 0.12 * squash * amp * 4 - 0.04 * aimK, 1 + 0.08 * squash * amp * 4);
+      hop.rotation.z = 0.06 * Math.sin(hopPh * Math.PI * 2 + id) * travel;
+      // Aim: it swings round a full turn into the wind, overshoots and
+      // settles shivering on the line; the volley jerks it back each dart.
+      const sa = t - spinT0;
+      let spin = 0;
+      if (sa < 0.5) spin = spinDir * Math.PI * 2 * (1 - smooth(sa / 0.5));
+      else if (sa < 1.6) spin = 0.32 * Math.exp(-(sa - 0.5) * 5) * Math.sin((sa - 0.5) * 20) * spinDir;
+      const idleTurn = (1 - aimK) * (1 - volleyK) * 0.22 * Math.sin(t * 0.7 + id) * Math.sin(t * 0.31 + id * 2);
+      head.rotation.y = spin + idleTurn + 0.03 * Math.sin(t * 37) * aimK;
+      cock.rotation.x = -0.18 * aimK - 0.3 * fireK + 0.08 * volleyK;
+      cock.position.z = -0.08 * fireK;
+      cock.scale.set(1, 1 + 0.06 * telegraphK, 1 + 0.08 * fireK);
+      eyeGlow.material.opacity = 0.22 + 0.4 * aimK + 0.3 * volleyK;
+      puff.material.opacity = 0.55 * fireK;
+      puff.scale.setScalar(0.3 + 0.4 * fireK);
+      shadow.scale.setScalar(1 - 0.25 * clamp01(hop.position.y / 0.26));
+    },
+  };
+}
+
+// --------------------------------------------------------- SACRISTAN --
+// A bell profile for the cope: [radius, height] pairs, lip at y 0.
+const lathe = (pts, seg = 12) => new LatheGeometry(pts.map(([r, y]) => new Vector2(r, y)), seg);
+export function buildSacristan() {
+  const s = shell('sacristan');
+  const { rig, track } = s;
+  rig.scale.setScalar(1.1);
+  const cope = track(flashable(C.cope, { side: DoubleSide }));
+  const copeDark = track(flashable(C.copeDark, { side: DoubleSide }));
+  const face = track(flashable(C.face));
+  const bronze = track(flashable(C.bronze, { side: DoubleSide }));
+  const bronzeDark = track(flashable(C.bronzeDark));
+  const rope = track(flashable(C.rope));
+  // The skirt of the cope: the lower half of a bell, a bronze lip at the hem.
+  const skirt = new Group();
+  rig.add(skirt);
+  const skirtM = new Mesh(shared('sc-skirt', () => lathe([[0.45, 0.0], [0.43, 0.07], [0.37, 0.2], [0.32, 0.4], [0.3, 0.6]])), cope);
+  addInk(skirtM);
+  skirt.add(skirtM);
+  const lip = new Mesh(shared('sc-lip', () => new TorusGeometry(0.44, 0.03, 4, 18).rotateX(Math.PI / 2)), bronzeDark);
+  lip.position.y = 0.035;
+  skirt.add(lip);
+  const band = new Mesh(shared('sc-band', () => new TorusGeometry(0.36, 0.016, 3, 16).rotateX(Math.PI / 2)), bronze);
+  band.position.y = 0.22;
+  skirt.add(band);
+  // Stone feet shuffling under the hem.
+  const feet = [];
+  for (const side of [-1, 1]) {
+    const f = new Mesh(shared('sc-foot', () => new BoxGeometry(0.1, 0.07, 0.18).translate(0, 0.035, 0.05)), copeDark);
+    f.position.set(side * 0.13, 0, 0.2);
+    rig.add(f);
+    feet.push({ f, side });
+  }
+  // The stoop: everything above the waist pitches forward from here.
+  const waist = new Group();
+  waist.position.y = 0.58;
+  rig.add(waist);
+  const mantle = new Mesh(shared('sc-mantle', () => lathe([[0.31, 0.0], [0.3, 0.16], [0.27, 0.32], [0.2, 0.46], [0.1, 0.53], [0.0, 0.55]])), cope);
+  addInk(mantle);
+  waist.add(mantle);
+  // The hump of the back under the mantle.
+  const hump = new Mesh(shared('sc-hump', () => new SphereGeometry(0.22, 8, 6)), copeDark);
+  hump.scale.set(1.1, 0.8, 0.9);
+  hump.position.set(0, 0.42, -0.1);
+  waist.add(hump);
+  // A hemp cord round the waist, its tassel hanging.
+  const cord = new Mesh(shared('sc-cord', () => new TorusGeometry(0.305, 0.014, 3, 16).rotateX(Math.PI / 2)), rope);
+  cord.position.y = 0.04;
+  waist.add(cord);
+  const tassel = new Group();
+  tassel.position.set(0.16, 0.02, 0.25);
+  waist.add(tassel);
+  const tasselM = new Mesh(shared('sc-tassel', () => new CylinderGeometry(0.01, 0.01, 0.3, 3).translate(0, -0.15, 0)), rope);
+  tassel.add(tasselM);
+  const knot = new Mesh(shared('sc-knot', () => new ConeGeometry(0.035, 0.08, 4).translate(0, -0.32, 0)), rope);
+  tassel.add(knot);
+  // The tell: an indigo clasp on the breast of the cope.
+  const clasp = new Mesh(shared('sc-clasp', () => new IcosahedronGeometry(0.045, 0)), tellMat());
+  clasp.scale.set(1, 1.3, 0.6);
+  clasp.position.set(0, 0.36, 0.25);
+  waist.add(clasp);
+  const claspGlow = tellGlow(0.5, 0.26);
+  claspGlow.position.set(0, 0.36, 0.3);
+  waist.add(claspGlow);
+  // The hooded head, low and forward: a peaked cowl, a pale stone face.
+  const neck = new Group();
+  neck.position.set(0, 0.52, 0.1);
+  waist.add(neck);
+  const cowl = new Mesh(shared('sc-cowl', () => new IcosahedronGeometry(0.19, 1)), cope);
+  cowl.scale.set(1.0, 1.08, 1.1);
+  cowl.position.set(0, 0.06, -0.02);
+  addInk(cowl);
+  neck.add(cowl);
+  const peak = new Mesh(shared('sc-peak', () => new ConeGeometry(0.11, 0.22, 5)), cope);
+  peak.position.set(0, 0.24, -0.1);
+  peak.rotation.x = -0.6;
+  neck.add(peak);
+  const hollow = new Mesh(shared('sc-hollow', () => new SphereGeometry(0.13, 10, 6)), inkMat());
+  hollow.scale.set(0.95, 1.0, 0.5);
+  hollow.position.set(0, 0.03, 0.13);
+  neck.add(hollow);
+  const mask = new Mesh(shared('sc-mask', () => new SphereGeometry(0.1, 8, 6)), face);
+  mask.scale.set(0.85, 1.05, 0.55);
+  mask.position.set(0, 0.02, 0.15);
+  neck.add(mask);
+  slitEyes(neck, { x: 0.035, y: 0.05, z: 0.2, len: 0.04, slant: 0.15 });
+  // Arms: right rings the hand bell, left hushes (a finger to the mouth).
+  const armG = shared('sc-sleeve', () => new ConeGeometry(0.085, 0.42, 6, 1, true).rotateX(Math.PI).translate(0, -0.21, 0));
+  const handG = shared('sc-hand', () => new IcosahedronGeometry(0.045, 0));
+  const right = new Group();
+  right.position.set(0.27, 0.36, 0.06);
+  waist.add(right);
+  const rSleeve = new Mesh(armG, cope);
+  right.add(rSleeve);
+  const rHand = new Mesh(handG, face);
+  rHand.position.y = -0.44;
+  right.add(rHand);
+  // The hand bell hangs from the fist on its wooden grip.
+  const bellPivot = new Group();
+  bellPivot.position.y = -0.46;
+  bellPivot.scale.setScalar(1.35);
+  right.add(bellPivot);
+  const grip = new Mesh(shared('sc-grip', () => new CylinderGeometry(0.016, 0.02, 0.12, 5).translate(0, -0.06, 0)), bronzeDark);
+  bellPivot.add(grip);
+  const bell = new Mesh(shared('sc-bell', () => lathe([[0.0, 0.0], [0.05, -0.005], [0.07, -0.04], [0.08, -0.1], [0.1, -0.17], [0.13, -0.21], [0.11, -0.215], [0.09, -0.19]], 10).translate(0, -0.11, 0)), bronze);
+  addInk(bell);
+  bellPivot.add(bell);
+  const clap = new Mesh(shared('sc-clap', () => new IcosahedronGeometry(0.03, 0)), bronzeDark);
+  clap.position.y = -0.31;
+  bellPivot.add(clap);
+  const left = new Group();
+  left.position.set(-0.27, 0.36, 0.06);
+  waist.add(left);
+  const lSleeve = new Mesh(armG, cope);
+  left.add(lSleeve);
+  const lHand = new Mesh(handG, face);
+  lHand.position.y = -0.44;
+  left.add(lHand);
+  const finger = new Mesh(shared('sc-finger', () => new CylinderGeometry(0.012, 0.012, 0.1, 4).translate(0, -0.05, 0)), face);
+  finger.position.y = -0.47;
+  left.add(finger);
+  const shadow = groundShadow(0.46, 0.4);
+  s.group.add(shadow);
+  const dtOf = clock();
+  const ringAge = clip();
+  const rapAge = clip();
+  let hushK = 0;
+  let rapK = 0;
+  let ringPh = 0;
+  return {
+    group: s.group,
+    mats: s.mats,
+    setYaw: s.setYaw,
+    pose({ t, walkPhase = 0, moveK = 0, telegraphK = 0, e }) {
+      const dt = dtOf(t);
+      const id = e ? e.id ?? 0 : 0;
+      const mode = e && e.mode ? e.mode : 'tend';
+      hushK = approach(hushK, mode === 'hush' ? telegraphK : 0, 7, dt);
+      rapK = approach(rapK, mode === 'rap' ? telegraphK : 0, 12, dt);
+      const ra = ringAge(e ? e.ringTick : -1, dt);
+      const ka = rapAge(e ? e.rapTick : -1, dt);
+      // The ring that rang: a shudder that ebbs over ~0.9 s, the bell brought down.
+      const rung = ra < 0.9 ? Math.exp(-ra * 4) : 0;
+      // The rap: the bell swung down hard, then back.
+      const rap = ka < 0.45 ? (ka < 0.08 ? smooth(ka / 0.08) : 1 - smooth((ka - 0.08) / 0.37)) : 0;
+      const step = Math.sin(walkPhase * 1.4);
+      const tend = 1 - Math.max(hushK, rapK);
+      // A shuffling stoop; the hush draws it up straight, the rap leans in.
+      waist.rotation.x = 0.42 * tend + 0.08 * hushK + 0.25 * rapK - 0.15 * rapK * (1 - rap) + 0.55 * rap + 0.04 * Math.sin(t * 1.3 + id);
+      waist.rotation.y = -0.35 * rapK * (1 - rap) + 0.2 * rap;
+      waist.rotation.z = 0.05 * step * moveK;
+      rig.position.y = 0.02 * Math.abs(step) * moveK;
+      for (const { f, side } of feet) {
+        f.position.z = 0.2 + side * step * 0.1 * moveK;
+        f.position.y = Math.max(0, side * step) * 0.04 * moveK;
+      }
+      skirt.rotation.z = 0.03 * step * moveK;
+      skirtM.scale.set(1 + 0.05 * rung, 1, 1 + 0.05 * rung);
+      neck.rotation.x = 0.25 * tend - 0.45 * hushK + 0.2 * rap + 0.05 * Math.sin(t * 0.8 + id);
+      // The bell arm: carried low and tinkling; up over the head for the
+      // hush, ringing slow wide arcs; back for the rap, then down on you.
+      ringPh += dt * (3.0 + 4.5 * hushK);
+      const swing = Math.sin(ringPh + id);
+      right.rotation.x = -0.35 * tend - 3.0 * hushK + 0.6 * rung * hushK - 2.1 * rapK * (1 - rap) + 1.0 * rap - 0.1 * moveK * step;
+      right.rotation.z = 0.15 - 0.1 * hushK + 0.25 * hushK * swing - 0.1 * rapK;
+      bellPivot.rotation.x = (0.18 + 0.6 * hushK) * swing + 0.4 * rung * Math.sin(ra * 28) - 0.6 * rap;
+      bellPivot.rotation.z = 0.12 * Math.sin(t * 1.7 + id) * tend;
+      clap.position.x = 0.04 * Math.sin(ringPh * 2 + id) * (0.3 + hushK);
+      // The hushing hand: a finger to the mouth for the hush.
+      left.rotation.x = -0.5 * tend - 2.25 * hushK - 0.4 * rapK;
+      left.rotation.z = -0.15 + 0.6 * hushK;
+      left.rotation.y = 0;
+      finger.visible = hushK > 0.25;
+      tassel.rotation.x = -waist.rotation.x * 0.8 + 0.1 * Math.sin(t * 2 + id);
+      claspGlow.material.opacity = 0.24 + 0.45 * hushK + 0.4 * rung + 0.2 * rapK;
+      claspGlow.scale.setScalar(0.5 * (1 + 0.5 * rung + 0.3 * hushK));
+    },
+  };
+}
+
+// ------------------------------------------------------- HUSH VEILS --
+// A hushed enemy (sim `hushUntil > tick`: the Bell Sacristan's Vesper Hush,
+// 40 % less damage taken) wears a soft pale veil for as long as it lasts:
+// a cold lavender-white column over it, a still halo over its head with
+// three motes hanging round it, a thin ring at its feet. Pale, slow and
+// NEVER Ember (it is a ward, not a threat); it fades in, breathes slowly and
+// fades out over the last ~0.8 s. Render-only: reads entities, never writes.
+const HUSH_PALE = new Color(VFX_MATTER.hushpale);
+const HUSH_VEIL = new Color(VFX_MATTER.hushveil).lerp(new Color(VFX_MATTER.hushpale), 0.45);
+export function createHushVeils({ root, world, crownY = () => 1.2 }) {
+  const live = new Map(); // enemy id -> rec
+  const pool = [];
+  const add = (c, o) => new MeshBasicMaterial({ color: c.clone(), transparent: true, opacity: o, blending: AdditiveBlending, depthWrite: false, toneMapped: false, side: DoubleSide });
+  function build() {
+    const g = new Group();
+    g.name = 'hush-veil';
+    const column = makeGlowSprite({ color: VFX_MATTER.hushpale, size: 1, opacity: 0 });
+    column.material.toneMapped = false;
+    g.add(column);
+    const haloG = new Group();
+    g.add(haloG);
+    const haloMat = add(HUSH_PALE, 0);
+    const halo = new Mesh(shared('hv-halo', () => new TorusGeometry(0.26, 0.022, 4, 28).rotateX(Math.PI / 2)), haloMat);
+    haloG.add(halo);
+    const haloGlow = makeGlowSprite({ color: VFX_MATTER.hushpale, size: 0.9, opacity: 0 });
+    haloGlow.material.toneMapped = false;
+    haloGlow.scale.set(0.95, 0.4, 1);
+    haloG.add(haloGlow);
+    const motes = [];
+    const moteMat = add(HUSH_PALE, 0);
+    for (let i = 0; i < 3; i++) {
+      const m = new Mesh(shared('hv-mote', () => new IcosahedronGeometry(0.035, 0)), moteMat);
+      haloG.add(m);
+      motes.push(m);
+    }
+    const ringMat = add(HUSH_VEIL, 0);
+    const ring = new Mesh(shared('hv-ring', () => new RingGeometry(0.9, 1.0, 40).rotateX(-Math.PI / 2)), ringMat);
+    ring.position.y = 0.035;
+    ring.renderOrder = 3;
+    g.add(ring);
+    const poolMat = new MeshBasicMaterial({ map: getRadialTexture(), color: HUSH_VEIL.clone(), transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
+    const floor = new Mesh(shared('hv-pool', () => new CircleGeometry(1, 24).rotateX(-Math.PI / 2)), poolMat);
+    floor.position.y = 0.025;
+    floor.renderOrder = 2;
+    g.add(floor);
+    return { g, column, haloG, haloMat, haloGlow, motes, moteMat, ring, ringMat, poolMat, floor, age: 0 };
+  }
+  function drop(id) {
+    const r = live.get(id);
+    if (!r) return;
+    live.delete(id);
+    r.g.visible = false;
+    pool.push(r);
+  }
+  function update(tSec, dt, alpha = 1) {
+    const tick = world.tick;
+    const seen = new Set();
+    for (const e of world.entities()) {
+      if (!(e.hushUntil > tick) || !(e.hp > 0) || e.faction !== 'hostile') continue;
+      seen.add(e.id);
+      let r = live.get(e.id);
+      if (!r) {
+        r = pool.pop() || build();
+        if (!r.g.parent) root.add(r.g);
+        r.g.visible = true;
+        r.age = 0;
+        live.set(e.id, r);
+      }
+      r.age += dt;
+      const left = (e.hushUntil - tick) / 48; // the last 0.8 s fade it out
+      const k = Math.min(1, r.age / 0.3) * Math.min(1, Math.max(0, left));
+      const sc = e.elite ? e.scale ?? 1.2 : e.scale ?? 1;
+      const top = (crownY(e.kind) ?? 1.2) * sc;
+      const rad = (e.radius ?? 0.4) + 0.22;
+      const breathe = 0.5 + 0.5 * Math.sin(tSec * 2.2 + e.id);
+      r.g.position.set(e.px != null ? e.px + (e.x - e.px) * alpha : e.x, 0, e.pz != null ? e.pz + (e.z - e.pz) * alpha : e.z);
+      r.column.position.y = top * 0.5;
+      r.column.scale.set(rad * 2.6, top * 1.5, 1);
+      r.column.material.opacity = (0.035 + 0.02 * breathe) * k;
+      r.haloG.position.y = top + 0.16 + 0.04 * Math.sin(tSec * 1.4 + e.id);
+      r.haloG.rotation.y = tSec * 0.5;
+      r.haloG.scale.setScalar(0.9 + 0.25 * sc + 0.15 * (1 - Math.min(1, r.age / 0.3)));
+      r.haloMat.opacity = (0.45 + 0.12 * breathe) * k;
+      r.haloGlow.material.opacity = 0.22 * k;
+      r.moteMat.opacity = 0.55 * k;
+      for (let i = 0; i < r.motes.length; i++) {
+        const a = tSec * 0.6 + (i / r.motes.length) * Math.PI * 2;
+        r.motes[i].position.set(Math.cos(a) * 0.34, -0.1 - 0.06 * Math.sin(tSec * 1.1 + i * 2), Math.sin(a) * 0.34);
+      }
+      r.ring.scale.set(rad, 1, rad);
+      r.ringMat.opacity = (0.22 + 0.08 * breathe) * k;
+      r.floor.scale.set(rad * 1.25, 1, rad * 1.25);
+      r.poolMat.opacity = 0.1 * k;
+    }
+    for (const id of [...live.keys()]) if (!seen.has(id)) drop(id);
+  }
+  function clear() {
+    for (const id of [...live.keys()]) drop(id);
+  }
+  return {
+    update,
+    clear,
+    prewarm(park) {
+      park(root, build().g);
+    },
+    debug: () => ({ veils: live.size }),
   };
 }

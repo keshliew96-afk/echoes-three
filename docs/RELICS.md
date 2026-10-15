@@ -200,6 +200,17 @@ How they hook in:
 - `?vfxlab=1` → "Room relics": each relic's beat (`cmd('relicDemo', id)`) and
   the two room curses on a live room.
 
+## The Spire's pair (plan 4 slice 7)
+
+- **Weathercock Plume** (common): dodges recover 15% faster, and party hits
+  knock enemies back 30% farther (`dodgeCd`, `kb`).
+- **Hushbell** (rare): the party deals 25% more damage to an enemy while its
+  attack warning is up (`dealtMul` reads `target.telegraph`).
+
+Both have heirlooms. The Silent Bell event lifts a major curse
+(`liftMajor`, event `curse_lifted`); the Gods' Seat pays a legendary pick
+(source `seat`).
+
 ## Determinism and the legacy traces
 
 - Every relic roll (curse on a door, which door, which curse, which three

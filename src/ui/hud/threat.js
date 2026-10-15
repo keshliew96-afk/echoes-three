@@ -336,7 +336,7 @@ export function createThreatLayer({ stage, world, bus = null }) {
     for (const e of entities ?? world.entities()) {
       if (!isThreat(e)) continue;
       if (e.state === 'retreat' || e.state === 'retreating' || e.state === 'dead') continue;
-      push('e' + e.id, e.x, e.z, e.kind, !!e.telegraph, false, markId === e.id, !!e.burrowed && e.hittable === false);
+      push('e' + e.id, e.x, e.z, e.kind, !!e.telegraph && !e.telegraph.hush, false, markId === e.id, !!e.burrowed && e.hittable === false);
     }
     for (const sp of spawnCache) {
       push('s' + sp.wave + ':' + sp.x + ',' + sp.z, sp.x, sp.z, sp.etype, false, true, false);

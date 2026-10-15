@@ -57,6 +57,9 @@ const ENEMY_SHOT_TRAIL = Object.freeze({
   // Act IV: the Cantor's echo and the Colossus' burst throw crystal shards.
   cantor: Object.freeze({ y: ESHOT_Y, len: 0.7, width: 0.1, core: PARCH, glow: PALETTE.godstuffViolet, tailW: 0.1 }),
   colossus: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.1, core: '#DCD6F2', glow: EMBER, tailW: 0.1 }),
+  // Act V: the Vane Cock's gust darts — long thin streaks of cold air with
+  // an Ember edge (they hurt).
+  vane: Object.freeze({ y: ESHOT_Y, len: 0.95, width: 0.07, core: '#DCE6EE', glow: EMBER, tailW: 0.04 }),
 });
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
@@ -1091,6 +1094,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // telegraph SHAPE itself is the enemy layer's and unchanged.)
     const e = byId(ev.id);
     if (!e) return;
+    // The Bell Sacristan's hush is a ward, not a threat: pale, never Ember.
+    if (e.telegraph && e.telegraph.hush) return sacristanGather(e);
     spray('spark', e.x, 0.25, e.z, 3, { color: EMBER, speed: [0.05, 0.2], up: [0.6, 1.1], size: [0.05, 0.1], life: [0.35, 0.55], gravity: -0.4, drag: 1.4, jitter: 0.35, opacity: 0.8 });
     // Anticipation: a few Ember lines rush into the body as it winds up
     // (the telegraph shape on the floor stays the enemy layer's).
@@ -2686,6 +2691,104 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     spray('spark', x, 1.6, z, 4, { color: HEMP, speed: [0.05, 0.2], up: [-0.4, -0.1], size: [0.03, 0.05], life: [0.8, 1.2], gravity: 0.5, drag: 1.4, jitter: 0.3, opacity: 0.7 });
   });
 
+  // Vane Cock — "the volley". The cock swings into the wind and lets fly:
+  // a snap of cold air at its beak (a pale flash, wind lines streaming off
+  // down the lane), a gust puff and a brass glint with each dart (the darts
+  // themselves are enemy shots with their own long gust trail), grit shaken
+  // off the spindle.
+  const VANE_Y = 1.75; // the cock's head on its spindle (render/enemies/spire.js)
+  bus.on('vane_volley', (ev) => {
+    mark('vane_volley');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const v = byId(ev.id);
+    const vx = v ? v.x : ev.x;
+    const vz = v ? v.z : ev.z;
+    const ang = Math.atan2(d.z, d.x);
+    const n = ev.darts ?? 3;
+    for (let i = 0; i < n; i++) {
+      after(i * (9 / 60), () => {
+        const bx = vx + d.x * 0.45;
+        const bz = vz + d.z * 0.45;
+        kit.flash({ x: bx, y: VANE_Y - 0.2, z: bz, color: GUST, size: 0.55, life: 0.12 });
+        flare(bx, VANE_Y - 0.25, bz, BRONZE, 0.55, { life: 0.12, angle: ang });
+        // The gust leaving the beak, dropping to the darts' flight height.
+        kit.streak({ a: { x: bx, y: VANE_Y - 0.25, z: bz }, b: { x: bx + d.x * 0.5, y: 0.9, z: bz + d.z * 0.5 }, width: 0.06, tailW: 0.02, core: PARCH, glow: GUST, life: 0.22, travel: { x: d.x * 5, y: -2.4, z: d.z * 5 }, fall: 0.8, opacity: 0.75 });
+        for (const side of [-1, 1]) {
+          const ox = -d.z * side * 0.18;
+          const oz = d.x * side * 0.18;
+          kit.streak({ a: { x: bx + ox, y: 0.6, z: bz + oz }, b: { x: bx + ox + d.x * 0.6, y: 0.55, z: bz + oz + d.z * 0.6 }, width: 0.03, tailW: 0, core: PARCH, glow: GUST, life: 0.3, delay: 0.02, travel: { x: d.x * 7, y: 0, z: d.z * 7 }, fall: 0.8, opacity: 0.6 });
+        }
+        spray('smoke', bx, VANE_Y - 0.3, bz, 1, { color: GUST, speed: [0.4, 0.9], up: [-0.1, 0.1], size: [0.22, 0.32], grow: 1.4, life: [0.35, 0.55], opacity: 0.22, gravity: 0, drag: 2.4, dir: d, dirBias: 0.8 });
+      });
+    }
+    spray('chunk', vx, 0.1, vz, 2, { color: SSTONE, speed: [0.4, 0.9], up: [0.6, 1.2], size: [0.03, 0.06], life: [0.3, 0.5], dir: { x: -d.x, z: -d.z }, dirBias: 0.5 });
+  });
+
+  // Bell Sacristan — "the warder". Its Vesper Hush is a WARD, not a hit, so
+  // nothing here is Ember: the hand bell rings and its note falls pale and
+  // slow (lavender-white rings rolling out to the ring's edge, motes drifting
+  // DOWN), a thread of pale light runs from the bell to each enemy it hushed
+  // and a soft bloom settles on each (render/enemies/spire.js veils them for
+  // as long as it lasts). The rap is a hit: a bronze clang, an Ember edge on
+  // the short cone. A choke is the note dying in the bell.
+  const SAC_BELL_Y = 1.95; // the hand bell, raised overhead for the hush
+  function sacristanGather(e) {
+    const t = e.telegraph;
+    kit.ring({ x: e.x, z: e.z, r0: (t.radius ?? 3.6) * 0.9, r1: 0.3, width: 0.06, life: 0.6, core: HPALE, glow: HVEIL, soft: 0.6, y: 0.06, opacity: 0.55 });
+    spray('spark', e.x, 1.4, e.z, 6, { color: HPALE, speed: [0.05, 0.2], up: [0.3, 0.7], size: [0.04, 0.07], life: [0.7, 1.1], gravity: -0.25, drag: 1.6, jitter: 0.7, opacity: 0.8 });
+  }
+  bus.on('sacristan_hush', (ev) => {
+    mark('sacristan_hush');
+    const r = ev.radius ?? 3.6;
+    const sc = byId(ev.id);
+    const bx = sc ? sc.x : ev.x;
+    const bz = sc ? sc.z : ev.z;
+    kit.flash({ x: bx, y: SAC_BELL_Y, z: bz, color: HPALE, size: 1.1, life: 0.3, opacity: 0.8 });
+    flare(bx, SAC_BELL_Y, bz, HVEIL, 1.1, { kind: 'burst', life: 0.3, core: HPALE });
+    // The note, falling pale: rings in the air and on the floor.
+    for (let i = 0; i < 2; i++) kit.ring({ x: bx, z: bz, r0: 0.3, r1: r * (0.7 + 0.25 * i), width: 0.06, life: 0.9, core: HPALE, glow: HVEIL, soft: 0.7, y: SAC_BELL_Y - 0.3 - 0.5 * i, delay: i * 0.14, opacity: 0.6 - i * 0.15, thin: 0.5 });
+    for (let i = 0; i < 3; i++) kit.ring({ x: ev.x, z: ev.z, r0: 0.3, r1: r * (0.6 + 0.2 * i), width: 0.07, life: 0.9 + i * 0.15, core: HPALE, glow: HVEIL, soft: 0.75, y: 0.05, delay: 0.1 + i * 0.14, opacity: 0.55 - i * 0.12, gain: 0.5 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r, kind: 'sigil', stain: HVEIL, glow: HPALE, glowOpacity: 0.25, cool: 1.6, life: 3.2, opacity: 0.16 });
+    kit.light({ x: bx, z: bz, radius: r * 0.8, color: HPALE, opacity: 0.3, life: 0.8, attack: 0.08 });
+    spray('spark', ev.x, 2.0, ev.z, 14, { color: HPALE, speed: [0.05, 0.25], up: [-0.6, -0.2], size: [0.04, 0.08], life: [1.2, 1.8], gravity: 0.15, drag: 1.8, jitter: r * 0.7, opacity: 0.8 });
+    // A thread to each enemy it hushed, and a bloom settling on it.
+    let i = 0;
+    for (const kid of ev.kin || []) {
+      const k = byId(kid);
+      if (!k) continue;
+      const delay = 0.08 + 0.06 * i++;
+      kit.streak({ a: { x: bx, y: SAC_BELL_Y, z: bz }, b: { x: k.x, y: 1.2, z: k.z }, width: 0.05, tailW: 0.05, core: HPALE, glow: HVEIL, life: 0.55, delay, fall: 1.0, opacity: 0.75 });
+      after(delay + 0.12, () => {
+        kit.flash({ x: k.x, y: 1.0, z: k.z, color: HPALE, size: 1.0, life: 0.4, opacity: 0.6 });
+        kit.ring({ x: k.x, z: k.z, r0: 1.0, r1: 0.4, width: 0.05, life: 0.45, core: HPALE, glow: HVEIL, soft: 0.6, y: 0.05, opacity: 0.6 });
+        spray('spark', k.x, 1.8, k.z, 4, { color: HPALE, speed: [0.02, 0.12], up: [-0.5, -0.2], size: [0.04, 0.06], life: [0.8, 1.2], gravity: 0.1, drag: 1.8, jitter: 0.4, opacity: 0.8 });
+      });
+    }
+  });
+  bus.on('sacristan_rap', (ev) => {
+    mark('sacristan_rap');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const hx = ev.x + d.x * 0.75;
+    const hz = ev.z + d.z * 0.75;
+    flare(hx, 0.7, hz, BRONZE, 1.1, { kind: 'burst', life: 0.2 });
+    kit.flash({ x: hx, y: 0.7, z: hz, color: PARCH, size: 0.6, life: 0.1 });
+    kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ev.x + d.x * 1.6, y: 0.1, z: ev.z + d.z * 1.6 }, width: 1.5, tailW: 1.2, core: EMBER, glow: EMBER, life: 0.2, fall: 2.2, opacity: 0.4 });
+    shock(hx, hz, 0.9, EMBER, { life: 0.22, width: 0.08 });
+    kit.ring({ x: hx, z: hz, r0: 0.2, r1: 1.2, width: 0.05, life: 0.4, core: BRONZE, glow: BRONZE, soft: 0.6, y: 0.7, opacity: 0.6, thin: 0.5 });
+    spray('spark', hx, 0.7, hz, 6, { color: PARCH, speed: [1.2, 2.4], up: [0.2, 0.8], size: [0.03, 0.06], life: [0.15, 0.3], dir: d, dirBias: 0.6 });
+    spray('chunk', hx, 0.2, hz, 3, { color: SSTONE, speed: [0.6, 1.4], up: [0.8, 1.4], size: [0.04, 0.08], life: [0.35, 0.6] });
+  });
+  bus.on('sacristan_choke', (ev) => {
+    mark('sacristan_choke');
+    const sc = byId(ev.id);
+    const bx = sc ? sc.x : ev.x;
+    const bz = sc ? sc.z : ev.z;
+    kit.flash({ x: bx, y: SAC_BELL_Y, z: bz, color: BRONZE, size: 0.5, life: 0.14, opacity: 0.6 });
+    kit.ring({ x: bx, z: bz, r0: 1.4, r1: 0.1, width: 0.05, life: 0.35, core: HPALE, glow: HVEIL, soft: 0.7, y: 0.05, opacity: 0.45 });
+    spray('spark', bx, SAC_BELL_Y - 0.2, bz, 6, { color: BRONZE, speed: [0.3, 0.9], up: [0.0, 0.4], size: [0.03, 0.05], life: [0.3, 0.5], gravity: 3.5, drag: 0.8 });
+    spray('smoke', bx, SAC_BELL_Y - 0.3, bz, 2, { color: HVEIL, speed: [0.1, 0.3], up: [-0.1, 0.1], size: [0.24, 0.34], grow: 1.2, life: [0.5, 0.8], opacity: 0.22, gravity: 0.1, drag: 2.4 });
+  });
+
   // Their deaths, on top of enemyDeath's shared break.
   Object.assign(CREATURE_DEATH, {
     kite: (es, matter, x, z) => {
@@ -2727,6 +2830,33 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         spray('smoke', x, 0.2, z, 3, { color: SSTONE, speed: [0.4, 0.9], up: [0.1, 0.3], size: [0.3, 0.42], grow: 1.3, life: [0.6, 0.9], opacity: 0.3, gravity: -0.1, drag: 2.4 });
       });
       spray('spark', x, 1.5, z, 6, { color: HEMP, speed: [0.1, 0.4], up: [-0.2, 0.3], size: [0.03, 0.05], life: [0.9, 1.3], gravity: 0.4, drag: 1.4, jitter: 0.3, opacity: 0.75 });
+    },
+    vane: (es, matter, x, z) => {
+      // The cock snaps off its spindle and spins away: brass plates and a
+      // last gust, the iron letters clattering down.
+      mark('vane_death');
+      flare(x, VANE_Y, z, BRONZE, 1.0, { kind: 'burst', life: 0.22 });
+      kit.flash({ x, y: VANE_Y, z, color: GUST, size: 0.8, life: 0.18 });
+      kit.ring({ x, z, r0: 0.2, r1: 1.4, width: 0.06, life: 0.4, core: PARCH, glow: GUST, soft: 0.6, y: VANE_Y - 0.3, opacity: 0.6, thin: 0.5 });
+      spray('shard', x, VANE_Y, z, 8, { color: BRONZE, tile: SHARD_TILE.petal, speed: [0.8, 2.0], up: [1.2, 2.4], size: [0.1, 0.16], life: [0.7, 1.1], gravity: 5, spin: [-14, 14] });
+      spray('chunk', x, 0.7, z, 5, { color: vfxMatterColor('iron'), speed: [0.6, 1.4], up: [0.6, 1.4], size: [0.05, 0.09], life: [0.5, 0.8] });
+      spray('spark', x, VANE_Y, z, 6, { color: TELL_INDIGO_GLOW, speed: [0.3, 0.9], up: [0.2, 0.7], size: [0.03, 0.06], life: [0.4, 0.8], drag: 1.3 });
+    },
+    sacristan: (es, matter, x, z) => {
+      // It crumbles where it stoops; the hand bell drops and rings once,
+      // clear, the hush it held lifting in a last pale sigh.
+      mark('sacristan_death');
+      kit.crack({ x, z, radius: 0.8, glow: TELL_INDIGO_GLOW, life: 1.2, cool: 0.5 });
+      shock(x, z, 1.2, SSTONE, { life: 0.4, width: 0.16, core: BONE, jag: 0.8 });
+      spray('chunk', x, 0.8, z, 9, { color: SSTONE, speed: [0.6, 1.8], up: [0.6, 1.8], size: [0.08, 0.16], life: [0.6, 0.95], jitter: 0.3 });
+      spray('smoke', x, 0.5, z, 4, { color: SSTONE, speed: [0.3, 0.8], up: [0.2, 0.5], size: [0.36, 0.5], grow: 1.4, life: [0.9, 1.3], opacity: 0.3, gravity: -0.1, drag: 2.2, jitter: 0.3 });
+      after(0.28, () => {
+        flare(x, 0.25, z, BRONZE, 0.9, { kind: 'burst', life: 0.22 });
+        kit.ring({ x, z, r0: 0.2, r1: 1.6, width: 0.06, life: 0.6, core: BRONZE, glow: BRONZE, soft: 0.6, y: 0.06, opacity: 0.6 });
+        kit.ring({ x, z, r0: 0.4, r1: 2.6, width: 0.05, life: 0.9, core: HPALE, glow: HVEIL, soft: 0.8, y: 0.3, delay: 0.1, opacity: 0.45, thin: 0.5 });
+        spray('spark', x, 0.6, z, 8, { color: HPALE, speed: [0.05, 0.3], up: [0.4, 0.9], size: [0.04, 0.07], life: [1.0, 1.5], gravity: -0.2, drag: 1.6, jitter: 0.6, opacity: 0.75 });
+      });
+      kit.mark({ x, z, radius: 1.0, kind: 'crater', stain: SSTONE, glow: null, life: 3.2, opacity: 0.4 });
     },
   });
 
@@ -3349,6 +3479,21 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.flash({ x: c.x, y: 1.5, z: c.z, color: CH_GOLD, size: 0.7, life: 0.25, grow: -0.3, opacity: 0.7 });
     }
     anticipate(ev.x, ev.z, 1.6, EMBER, { y: 0.3, lines: 8 });
+    // The Gale Herald takes wing for the Stoop: its first beats blast the
+    // floor — a pale ring of air thrown out, dust rolled away, stone
+    // feathers shaken loose.
+    if (ev.champion === 'gale_herald' && ev.move === 'stoop' && c) {
+      kit.ring({ x: c.x, z: c.z, r0: 0.4, r1: 2.4, width: 0.12, life: 0.55, core: PARCH, glow: GUST, soft: 0.6, y: 0.05, opacity: 0.6, gain: 0.6 });
+      shock(c.x, c.z, 1.8, SSTONE, { life: 0.5, width: 0.2, core: BONE, delay: 0.05 });
+      spray('smoke', c.x, 0.15, c.z, 6, { color: SSTONE, speed: [1.0, 2.0], up: [0.05, 0.3], size: [0.36, 0.5], grow: 1.5, life: [0.6, 0.95], opacity: 0.28, gravity: -0.05, drag: 2.4, jitter: 0.4 });
+      spray('shard', c.x, 1.6, c.z, 5, { color: SSTONE, tile: SHARD_TILE.feather, speed: [0.4, 1.2], up: [0.2, 0.8], size: [0.12, 0.18], life: [1.2, 1.8], gravity: 0.5, drag: 1.7, spin: [-5, 5], flutter: 0.8, jitter: 0.6 });
+      for (let i = 0; i < N(6); i++) {
+        const a = (i / 6) * TAU + rnd(-0.3, 0.3);
+        const px = c.x + Math.cos(a) * 0.7;
+        const pz = c.z + Math.sin(a) * 0.7;
+        kit.streak({ a: { x: px, y: 1.8, z: pz }, b: { x: px, y: 1.2, z: pz }, width: 0.05, tailW: 0, core: PARCH, glow: GUST, life: 0.35, delay: i * 0.025, travel: { x: Math.cos(a) * 2.5, y: -3.2, z: Math.sin(a) * 2.5 }, fall: 1.0, opacity: 0.7 });
+      }
+    }
   });
   bus.on('champion_spawn', (ev) => {
     mark('champion_spawn');
@@ -3480,6 +3625,71 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.5, 0.15);
     },
   };
+  // Gale Herald (the Still Spire): the horn's blast and the stoop's landing.
+  // Pale wind and limestone; Ember only on the ground that hurts.
+  Object.assign(CHAMP_MOVE, {
+    // Gale Call: a white-hot blast at the horn's bell, a wall of cold wind
+    // streaming down the cone (streaks at several heights, scouring dust
+    // along the floor), the Ember edge over the cone's ground for a beat.
+    gale_call(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const ang = Math.atan2(d.z, d.x);
+      const R = 5.2;
+      const half = 34 * (Math.PI / 180);
+      const c = byId(ev.id);
+      const ox = c ? c.x : ev.x;
+      const oz = c ? c.z : ev.z;
+      const hx = ox + d.x * 1.7;
+      const hz = oz + d.z * 1.7;
+      flare(hx, 1.9, hz, GUST, 2.2, { kind: 'burst', life: 0.28, angle: ang });
+      flare(hx, 1.9, hz, BRONZE, 1.2, { kind: 'star', life: 0.2, angle: ang });
+      kit.flash({ x: hx, y: 1.9, z: hz, color: PARCH, size: 1.1, life: 0.14 });
+      kit.ring({ x: hx, z: hz, r0: 0.3, r1: 1.6, width: 0.08, life: 0.4, core: PARCH, glow: GUST, soft: 0.5, y: 1.9, opacity: 0.75, thin: 0.5 });
+      // The Ember edge on the cone's ground.
+      for (let i = 0; i < 5; i++) {
+        const a = ang + (i / 4 - 0.5) * 2 * half;
+        kit.streak({ a: { x: ox + Math.cos(a) * 0.6, y: 0.1, z: oz + Math.sin(a) * 0.6 }, b: { x: ox + Math.cos(a) * R, y: 0.1, z: oz + Math.sin(a) * R }, width: 0.9, tailW: 1.1, core: EMBER, glow: EMBER, life: 0.24, fall: 2.2, opacity: 0.32 });
+      }
+      // The wind: streaks thrown down the cone at several heights.
+      for (let i = 0; i < N(14); i++) {
+        const a = ang + rnd(-half, half) * 0.95;
+        const r0 = rnd(0.8, 1.8);
+        const y = rnd(0.25, 1.9);
+        const sp = rnd(9, 14);
+        const px = ox + Math.cos(a) * r0;
+        const pz = oz + Math.sin(a) * r0;
+        kit.streak({ a: { x: px, y, z: pz }, b: { x: px + Math.cos(a) * 0.9, y: y - 0.05, z: pz + Math.sin(a) * 0.9 }, width: rnd(0.04, 0.09), tailW: 0, core: PARCH, glow: GUST, life: (R - r0) / sp, delay: rnd(0, 0.12), travel: { x: Math.cos(a) * sp, y: -y * 0.3, z: Math.sin(a) * sp }, fall: 0.8, opacity: 0.8 });
+      }
+      kit.streak({ a: { x: hx, y: 1.9, z: hz }, b: { x: ox + d.x * R, y: 0.6, z: oz + d.z * R }, width: 0.5, tailW: 1.8, core: PARCH, glow: GUST, life: 0.4, fall: 1.4, opacity: 0.4 });
+      for (let i = 0; i < 3; i++) {
+        const k = 0.35 + i * 0.25;
+        spray('smoke', ox + d.x * R * k, 0.2, oz + d.z * R * k, 2, { color: SSTONE, speed: [1.6, 3.2], up: [0.05, 0.3], size: [0.4, 0.55], grow: 1.6, life: [0.6, 0.9], opacity: 0.26, drag: 2.0, dir: d, dirBias: 0.85, jitter: 0.5 });
+      }
+      spray('spark', hx, 1.9, hz, 10, { color: GUST, speed: [2.0, 4.0], up: [-0.4, 0.3], size: [0.04, 0.07], life: [0.3, 0.55], drag: 1.0, dir: d, dirBias: 0.8 });
+      kit.mark({ x: ox + d.x * 2.4, z: oz + d.z * 2.4, radius: 2.4, kind: 'gouge', angle: ang, stretch: 1.6, stain: SSTONE, glow: GUST, glowOpacity: 0.2, cool: 0.6, life: 2.6, opacity: 0.28 });
+      camfx.kick(d.x, d.z, 0.5, 0.14);
+    },
+    // Stoop: it comes down on the mark — a white-hot impact, the Ember ring,
+    // a ring of air slammed out across the floor, a limestone crater, stone
+    // feathers and chips flung, dust rolling out.
+    stoop(ev) {
+      const r = 2.1;
+      kit.streak({ a: { x: ev.x, y: 2.6, z: ev.z }, b: { x: ev.x, y: 0.2, z: ev.z }, width: 0.5, tailW: 0.9, core: PARCH, glow: GUST, life: 0.18, fall: 2.0, opacity: 0.7 });
+      flare(ev.x, 0.45, ev.z, EMBER, 2.0, { kind: 'burst', life: 0.26 });
+      kit.flash({ x: ev.x, y: 0.5, z: ev.z, color: PARCH, size: 1.2, life: 0.14 });
+      shock(ev.x, ev.z, r * 1.05, EMBER, { life: 0.32, width: 0.16, jag: 0.6 });
+      kit.ring({ x: ev.x, z: ev.z, r0: 0.5, r1: r * 2.0, width: 0.14, life: 0.6, core: PARCH, glow: GUST, soft: 0.6, y: 0.06, delay: 0.03, opacity: 0.7, gain: 0.7 });
+      shock(ev.x, ev.z, r * 1.4, SSTONE, { life: 0.55, width: 0.26, core: BONE, delay: 0.05, jag: 0.9 });
+      kit.crack({ x: ev.x, z: ev.z, radius: r * 0.8, glow: EMBER, life: 1.6, cool: 0.5 });
+      kit.mark({ x: ev.x, z: ev.z, radius: r * 1.2, kind: 'crater', stain: SSTONE, glow: EMBER, glowOpacity: 0.4, cool: 0.9, life: 4, opacity: 0.5 });
+      kit.light({ x: ev.x, z: ev.z, radius: r * 1.3, color: EMBER, opacity: 0.4, life: 0.4, attack: 0.02 });
+      spray('chunk', ev.x, 0.3, ev.z, 12, { color: SSTONE, speed: [1.2, 2.8], up: [1.6, 3.2], size: [0.08, 0.16], life: [0.55, 0.9], jitter: 0.4 });
+      spray('shard', ev.x, 1.0, ev.z, 8, { color: SSTONE, tile: SHARD_TILE.feather, speed: [0.8, 1.8], up: [0.8, 1.6], size: [0.12, 0.18], life: [1.2, 1.8], gravity: 0.6, drag: 1.6, spin: [-6, 6], flutter: 0.8, jitter: 0.5 });
+      spray('smoke', ev.x, 0.2, ev.z, 7, { color: SSTONE, speed: [1.4, 2.6], up: [0.05, 0.3], size: [0.42, 0.6], grow: 1.6, life: [0.7, 1.1], opacity: 0.32, gravity: -0.05, drag: 2.2, jitter: 0.6 });
+      spray('spark', ev.x, 0.4, ev.z, 8, { color: PARCH, speed: [1.8, 3.4], up: [0.6, 1.6], size: [0.04, 0.08], life: [0.15, 0.3] });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.65, 0.16);
+    },
+  });
   bus.on('champion_move', (ev) => {
     mark(`champion_${ev.move}`);
     const fn = CHAMP_MOVE[ev.move];
@@ -3525,6 +3735,17 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       mark('bone_reeve_death');
       championDeath(CH_BONE, CH_GOLD, x, z);
       spray('shard', x, 1.2, z, 16, { color: CH_BONE, tile: SHARD_TILE.needle, speed: [1.0, 2.4], up: [1.4, 2.8], size: [0.1, 0.15], life: [0.7, 1.0], gravity: 5, spin: [-10, 10], jitter: 0.5 });
+    },
+    gale_herald: (es, matter, x, z) => {
+      // It falls off its own wind: the horn's last note (a bronze ring), the
+      // great wings breaking into a storm of stone feathers, a cold gust out.
+      mark('gale_herald_death');
+      championDeath(SSTONE, CH_GOLD, x, z);
+      flare(x, 1.9, z, GUST, 2.2, { kind: 'burst', life: 0.4, core: PARCH });
+      kit.ring({ x, z, r0: 0.3, r1: 3.4, width: 0.08, life: 0.7, core: BRONZE, glow: BRONZE, soft: 0.6, y: 1.9, opacity: 0.6, thin: 0.5 });
+      kit.ring({ x, z, r0: 0.6, r1: 5.0, width: 0.14, life: 0.8, core: PARCH, glow: GUST, soft: 0.6, y: 0.08, delay: 0.06, opacity: 0.55 });
+      spray('shard', x, 1.8, z, 24, { color: SSTONE, tile: SHARD_TILE.feather, speed: [0.8, 2.4], up: [0.6, 2.0], size: [0.14, 0.22], life: [1.6, 2.4], gravity: 0.5, drag: 1.5, spin: [-6, 6], flutter: 0.85, jitter: 0.8 });
+      spray('chunk', x, 1.6, z, 6, { color: BRONZE, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.06, 0.1], life: [0.6, 0.9] });
     },
     hollow_choir: (es, matter, x, z) => {
       mark('hollow_choir_death');

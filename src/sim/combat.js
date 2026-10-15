@@ -190,6 +190,8 @@ export function createCombat({
     // Act V (docs/ACT_V.md): a body's own damage-taken factor (a grounded
     // Gust Kite takes more). Absent on every other body, so nothing changes.
     if (target.takenMul !== undefined) amount *= target.takenMul;
+    // ... and a Bell Sacristan's Vesper Hush on its kin (plan 4 slice 7).
+    if (target.hushUntil > tick) amount *= target.hushMul ?? 1;
     if (partyHit) amount *= M.takenMul();
     let absorbed = 0;
     let shieldSrc = null;

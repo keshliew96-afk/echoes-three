@@ -26,7 +26,7 @@ import {
   ShaderMaterial,
   SRGBColorSpace,
 } from 'three';
-import { PALETTE } from '../../data/palette.js';
+import { PALETTE, VFX_MATTER } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { sharedGeo } from '../geocache.js';
 import { exactColor } from '../critters/common.js';
@@ -461,12 +461,99 @@ function buildCone() {
   };
 }
 
-const BUILD = { ring: buildRing, lane: buildLane, cone: buildCone };
+// ---------------------------------------------------------------- HUSH --
+// The Bell Sacristan's Vesper Hush (sim telegraph `hush: true`,
+// playerTargeted false) is a WARD on its kin, not an attack, so it must
+// never read as an Ember danger ring: no scorched core, no chevrons, no
+// column, no 2 Hz danger pulse. A cold lavender-white ring instead (the
+// Hush's palette, VFX_MATTER.hushpale): a thin double rim beaded with
+// twelve small notes, a faint pale wash and the same closing progress band,
+// breathing slowly.
+let hushTex = null;
+function getHushTexture() {
+  if (hushTex) return hushTex;
+  hushTex = canvasTexture((ctx, S) => {
+    const c = S / 2;
+    const A = (a) => `rgba(255,255,255,${a})`;
+    const g = ctx.createRadialGradient(c, c, S * 0.1, c, c, S * 0.45);
+    g.addColorStop(0, A(0.02));
+    g.addColorStop(0.75, A(0.1));
+    g.addColorStop(1, A(0.22));
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(c, c, S * 0.45, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = A(1);
+    ctx.lineWidth = S * 0.022;
+    ctx.beginPath();
+    ctx.arc(c, c, S * 0.445, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = A(0.55);
+    ctx.lineWidth = S * 0.008;
+    ctx.beginPath();
+    ctx.arc(c, c, S * 0.395, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = A(0.95);
+    for (let i = 0; i < 12; i++) {
+      const a = (i / 12) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(c + Math.cos(a) * S * 0.42, c + Math.sin(a) * S * 0.42, S * (i % 3 === 0 ? 0.013 : 0.008), 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }, 512);
+  return hushTex;
+}
+function buildHush() {
+  const group = new Group();
+  group.name = 'm4b-tele-hush';
+  const pale = exactColor(VFX_MATTER.hushpale);
+  const unit = sharedGeo('m4b-unit-quad', () => new PlaneGeometry(2, 2));
+  const rim = flat(
+    unit,
+    new MeshBasicMaterial({ map: getHushTexture(), color: pale.clone(), transparent: true, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -4, polygonOffsetUnits: -4 }),
+    0.021,
+    2
+  );
+  const sweepMat = makeSweepMaterial();
+  sweepMat.uniforms.uColor.value.copy(pale);
+  const sweep = flat(sharedGeo('m4b-unit-disc', () => new CircleGeometry(1, 48)), sweepMat, 0.0215, 3);
+  const halo = makeGlowSprite({ color: VFX_MATTER.hushpale, size: 2, opacity: 0.12 });
+  halo.material.toneMapped = false;
+  halo.position.y = 0.1;
+  group.add(rim, sweep, halo);
+  return {
+    kind: 'hush',
+    group,
+    set(t, tSec, prog) {
+      group.position.set(t.x, 0, t.z);
+      const r = t.radius ?? 3;
+      rim.scale.set(r, r, 1);
+      sweep.scale.set(r * 0.9, r * 0.9, 1);
+      halo.scale.set(r * 1.8, r * 1.8, 1);
+      const k = 0.5 + 0.5 * Math.sin(Math.PI * 2 * 0.6 * tSec);
+      rim.material.opacity = (0.5 + 0.15 * k) * (0.6 + 0.4 * prog);
+      rim.rotation.z = tSec * 0.15;
+      sweepMat.uniforms.uProg.value = Math.max(0, Math.min(1, prog));
+      sweepMat.uniforms.uOpacity.value = 0.55;
+      halo.material.opacity = 0.06 + 0.06 * k;
+      group.scale.setScalar(1);
+    },
+    fade(e) {
+      rim.material.opacity *= e;
+      sweepMat.uniforms.uOpacity.value *= e * e;
+      halo.material.opacity *= e;
+      group.scale.setScalar(1 + 0.12 * (1 - e));
+    },
+    showColumn() {},
+  };
+}
+
+const BUILD = { ring: buildRing, lane: buildLane, cone: buildCone, hush: buildHush };
 
 // Pool of shapes by kind. acquire(kind) -> shape (added to root, visible);
 // release(shape) hides it and returns it to the pool.
 export function createTelegraphShapes(root) {
-  const free = { ring: [], lane: [], cone: [] };
+  const free = { ring: [], lane: [], cone: [], hush: [] };
   let built = 0;
   function acquire(kind) {
     const k = BUILD[kind] ? kind : 'ring';
@@ -488,7 +575,7 @@ export function createTelegraphShapes(root) {
   // Boot warm-up: build and SHOW one of each so the first wind-up of a room
   // never compiles a program (render/warmup.js rule); returned to the pool.
   function prewarm() {
-    const made = ['ring', 'lane', 'cone', 'ring', 'lane'].map((k) => acquire(k));
+    const made = ['ring', 'lane', 'cone', 'ring', 'lane', 'hush'].map((k) => acquire(k));
     for (const s of made) {
       s.set({ x: 0, z: -60, fromX: 0, fromZ: -60.5, radius: 0.001, width: 0.001, dirX: 0, dirZ: 1 }, 0, 0.5);
       s.group.position.y = -60;
@@ -497,5 +584,5 @@ export function createTelegraphShapes(root) {
       for (const s of made) release(s);
     };
   }
-  return { acquire, release, prewarm, stats: () => ({ built, free: free.ring.length + free.lane.length + free.cone.length }) };
+  return { acquire, release, prewarm, stats: () => ({ built, free: free.ring.length + free.lane.length + free.cone.length + free.hush.length }) };
 }

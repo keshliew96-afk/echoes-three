@@ -112,6 +112,10 @@ import kite from './enemies/kite.js';
 import chime from './enemies/chime.js';
 import gargoyle from './enemies/gargoyle.js';
 import hanger from './enemies/hanger.js';
+// ... and two more (plan 4 slice 7): the Vane Cock and the Bell Sacristan,
+// campaign rooms only (CAMPAIGN_ONLY_ENEMIES).
+import vane from './enemies/vane.js';
+import sacristan from './enemies/sacristan.js';
 // CHAMPIONS (docs/CHAMPIONS.md): the four named mini-bosses behind the crown
 // door, on the same module contract (never in a roster; waves.js spawns them).
 import { CHAMPION_KITS } from './enemies/champions.js';
@@ -178,7 +182,7 @@ function circleContactT(px, pz, dx, dz, cx, cz, R) {
 }
 
 // Gauntlet archetypes (M4b): etype -> plain-data module (PLAN §3.6).
-export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight, husk, lancer, geode, censer, owl, lasher, leech, miller, ...CHAMPION_KITS, keener, sexton, bloom, siphon, kite, chime, gargoyle, hanger });
+export const ARCHETYPES = Object.freeze({ quillback, toad, moth, ram, mole, rotcap, snail, crow, brood, broodling, wasp, thornling, crab, lamprey, gravewisp, knight, husk, lancer, geode, censer, owl, lasher, leech, miller, ...CHAMPION_KITS, keener, sexton, bloom, siphon, kite, chime, gargoyle, hanger, vane, sacristan });
 // Every hostile enemy kind this system owns (the boss is sim/boss.js's).
 export const ENEMY_KINDS = Object.freeze(new Set(['boar', 'mantis', ...Object.keys(ARCHETYPES)]));
 // §23.5 Elite modifier (any non-boss).

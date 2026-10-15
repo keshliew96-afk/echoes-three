@@ -48,7 +48,7 @@ export function telegraphCovers(registry, x, z, tick) {
 }
 
 // THE TIDECALLER: a live soak on an enemy (sim/status.js).
-const CHAMPIONS = new Set(['briar_knight', 'sluice_warden', 'bone_reeve', 'hollow_choir']);
+const CHAMPIONS = new Set(['briar_knight', 'sluice_warden', 'bone_reeve', 'hollow_choir', 'gale_herald']);
 const soakedNow = (e, tick) => !!(e && e.status && e.status.soaked && e.status.soaked.untilTick > tick);
 // THE BELLWRIGHT: the bells a seat has hung (its azones flagged `bell`).
 const bellsOf = (registry, id) => registry.all().filter((z) => z.kind === 'azone' && z.bell && z.sourceId === id);

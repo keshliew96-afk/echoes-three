@@ -92,6 +92,11 @@ export const RELICS = Object.freeze({
   wanderers_token: { name: "Wanderer's Token", rarity: 'common', text: 'Each event offer the party takes pays 12 Glint.', token: Object.freeze({ glint: 12 }) },
   geode_heart: { name: 'Geode Heart', rarity: 'legendary', text: 'A cleared cursed room pays a greater relic pick (rare or legendary) and 20 Glint.', geode: Object.freeze({ glint: 20 }) },
   saints_ashes: { name: "Saint's Ashes", rarity: 'legendary', text: 'Major curses weigh half as much on the party.', ashes: Object.freeze({ scale: 0.5 }) },
+  // THE STILL SPIRE (plan 4 slice 7, docs/RELICS.md "The Spire's pair"): the
+  // wind off the belfry and the quiet before a blow. Heirlooms like any
+  // relic once found (data/unlocks.js builds one per relic).
+  weathercock_plume: { name: 'Weathercock Plume', rarity: 'common', text: 'Dodges recover 15% faster, and party hits knock enemies back 30% farther.', dodgeCd: -0.15, kb: 0.3 },
+  hushbell: { name: 'Hushbell', rarity: 'rare', text: 'The party deals 25% more damage to an enemy while its attack warning is up.', hush: Object.freeze({ dealt: 0.25 }) },
 });
 // Batch 3: the class relics (a relic -> the class it needs in the party).
 export const CLASS_RELICS = Object.freeze(Object.fromEntries(Object.keys(RELICS).filter((id) => RELICS[id].cls).map((id) => [id, RELICS[id].cls])));
@@ -280,6 +285,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (has('huntsmans_horn') && (roomMode === 'hunt' || roomMode === 'purge')) m += RELICS.huntsmans_horn.horn.dealt;
       // Batch 4: Champion's Laurel on a champion.
       if (target && target.champion && has('champions_laurel')) m += RELICS.champions_laurel.laurel.dealt;
+      // THE STILL SPIRE: the Hushbell on an enemy mid-warning.
+      if (target && target.telegraph && has('hushbell')) m += RELICS.hushbell.hush.dealt;
       return m;
     },
     takenMul: () =>
@@ -735,7 +742,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     // (any relic once those run out).
     // EVENT ROOMS: the altar pays legendaries (rare when none are left), the
     // spirit pays the greater pool like a major curse.
-    if (d.source === 'altar') {
+    // THE STILL SPIRE: the Gods' Seat pays the altar's legendaries.
+    if (d.source === 'altar' || d.source === 'seat') {
       const legend = pool.filter((id) => RELICS[id].rarity === 'legendary');
       const greater = pool.filter((id) => RELICS[id].rarity !== 'common');
       if (legend.length > 0) pool = legend;
@@ -1052,6 +1060,14 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       return id;
     },
     freeMajors: () => (on && majors.length < RELIC_RULES.majorMax ? MAJOR_CURSE_IDS.filter((id) => !majors.includes(id)) : []),
+    // THE STILL SPIRE (plan 4 slice 7): the Silent Bell lifts the newest
+    // major curse (it stays counted in cursesTaken: the curse was taken).
+    liftMajor(source) {
+      if (!on || majors.length === 0) return null;
+      const id = majors.pop();
+      events.emit(getTick(), 'curse_lifted', { curse: id, source, majors: majors.length, x: r2(player.x), z: r2(player.z) });
+      return id;
+    },
     takeMajor(id, room) {
       if (!on || !CURSES[id] || !CURSES[id].major || majors.includes(id)) return null;
       majors.push(id);

@@ -25,6 +25,16 @@
 //                  Discord         a ring r 3.2 round itself (72 ticks), 15
 //                  Shard Hymn      a cone r 6, half-angle 28° (60 ticks), then
 //                                  a fan of five crystal shards, 9 each
+//   gale_herald    The Still Spire (plan 4 slice 7). A winged stone herald of
+//                  the gods' belfry with a long bronze horn; it keeps to the
+//                  middle distance.
+//                  Gale Call       a cone r 5.2, half-angle 34° (60 ticks):
+//                                  the horn blasts for 12 and throws every
+//                                  hero in it 2.4 u away down the wind
+//                  Stoop           a ring r 2.1 under a hero up to 7.5 u off
+//                                  (72 ticks): it takes wing and glides over,
+//                                  landing on the mark at the end for 17
+//                                  (over barricades and hazards while aloft)
 //
 // Sim discipline as every archetype: plain data on the entity, no RNG draws
 // (the move order alternates; the circling side is spawn-ordinal parity).
@@ -93,6 +103,7 @@ function champion(def) {
     },
 
     continuous(ctx, e, tick) {
+      if (def.pre) def.pre(ctx, e, tick); // the Gale Herald's flight and throw
       if (!e.rage && e.hp > 0 && e.hp < e.maxHp * R.rageAt) {
         e.rage = true;
         ctx.events.emit(tick, 'champion_rage', { id: e.id, champion: def.id, x: r2(e.x), z: r2(e.z) });
@@ -180,7 +191,7 @@ function champion(def) {
     },
 
     view(e) {
-      return { mode: e.mode, rage: !!e.rage, move: e.lastMove };
+      return { mode: e.mode, rage: !!e.rage, move: e.lastMove, ...(e.flight ? { aloft: true } : {}) };
     },
   };
 }
@@ -443,4 +454,102 @@ export const hollowChoir = champion({
   ],
 });
 
-export const CHAMPION_KITS = Object.freeze({ briar_knight: briarKnight, sluice_warden: sluiceWarden, bone_reeve: boneReeve, hollow_choir: hollowChoir });
+// --------------------------------------------------------- GALE HERALD --
+const GH = Object.freeze({
+  hp: 100,
+  moveSpeed: 1.15,
+  radius: 0.66,
+  kbScale: 0.12,
+  keepMin: 2.4,
+  keepMax: 4.6,
+  coneRadius: 5.2,
+  coneHalfDeg: 34,
+  coneDamage: 12,
+  throwDist: 2.4, // heroes ignore knockback: the gale throws them itself
+  throwTicks: 12,
+  stoopRange: 7.5,
+  stoopMin: 1.6,
+  stoopRadius: 2.1,
+  stoopDamage: 17,
+});
+export const galeHerald = champion({
+  id: 'gale_herald',
+  stats: GH,
+  moves: [
+    {
+      id: 'gale_call',
+      shape: 'cone',
+      ticks: 60,
+      cd: 160,
+      can: (ctx, e, target, d) => d.l > 1e-6 && d.l <= GH.coneRadius - 0.6 + (target.radius ?? 0),
+      start: (ctx, e, target, d) => ({ x: e.x, z: e.z, dirX: d.x, dirZ: d.z, radius: GH.coneRadius, halfAngleDeg: GH.coneHalfDeg }),
+      resolve(ctx, e, t) {
+        const victims = inCone(ctx.registry, t);
+        ctx.strike(e, victims, ctx.dmg(e, GH.coneDamage), t.x, t.z, { delivery: 'skill', shape: 'cone' });
+        // Every hero still standing is thrown away from the horn.
+        const pushes = [];
+        for (const v of victims) {
+          if (v.partyIndex === undefined || !(v.hp > 0)) continue;
+          const u = unit(v.x - t.x, v.z - t.z);
+          pushes.push(u.l > 1e-6 ? [v.id, u.x, u.z] : [v.id, t.dirX, t.dirZ]);
+        }
+        if (pushes.length) e.shove = { pushes, ticksLeft: GH.throwTicks };
+        return partyOnly(victims);
+      },
+    },
+    {
+      id: 'stoop',
+      shape: 'ring',
+      ticks: 72,
+      cd: 180,
+      can: (ctx, e, target, d) => d.l >= GH.stoopMin && d.l <= GH.stoopRange,
+      start(ctx, e, target, d) {
+        // The mark stays where the hero stood; the herald lands on it.
+        const { mx, mz } = ctx.movement.innerBounds(e.radius);
+        const x = Math.max(-mx, Math.min(mx, target.x));
+        const z = Math.max(-mz, Math.min(mz, target.z));
+        e.flight = { x0: e.x, z0: e.z, x1: x, z1: z };
+        e.flier = true; // aloft: over barricades and hazards
+        return { x, z, dirX: d.x, dirZ: d.z, radius: GH.stoopRadius };
+      },
+      resolve(ctx, e, t) {
+        e.flight = null;
+        e.flier = false;
+        const victims = partyInRadius(ctx.registry, t.x, t.z, t.radius);
+        const props = neutralsInRadius(ctx.registry, t.x, t.z, t.radius);
+        ctx.strike(e, victims.concat(props), ctx.dmg(e, GH.stoopDamage), t.x, t.z, { delivery: 'skill', shape: 'ring' });
+        return victims.length;
+      },
+    },
+  ],
+  pre(ctx, e, tick) {
+    // A thrown hero flies clear over a few ticks (the Rope Hanger's throw).
+    if (e.shove) {
+      const per = GH.throwDist / GH.throwTicks;
+      for (const [id, dx, dz] of e.shove.pushes) {
+        const p = ctx.registry.byId(id);
+        if (p && p.hp > 0) ctx.movement.walkStep(p, dx * per, dz * per, p.radius ?? 0.3);
+      }
+      e.shove.ticksLeft -= 1;
+      if (e.shove.ticksLeft <= 0) e.shove = null;
+    }
+    // Stoop: it glides from where it rose to the mark, arriving as the
+    // warning ends (the last fifth of the warning it hangs over the mark).
+    const t = e.telegraph;
+    if (!e.flight) return;
+    if (!t || t.move !== 'stoop') {
+      // The stoop was cut short (a stun): it drops where it is.
+      e.flight = null;
+      e.flier = false;
+      return;
+    }
+    const span = Math.max(1, (t.resolveTick - t.startTick) * 0.8);
+    const k = Math.min(1, (tick - t.startTick + 1) / span);
+    const f = e.flight;
+    const tx = f.x0 + (f.x1 - f.x0) * k;
+    const tz = f.z0 + (f.z1 - f.z0) * k;
+    ctx.movement.walkStep(e, tx - e.x, tz - e.z, e.radius);
+  },
+});
+
+export const CHAMPION_KITS = Object.freeze({ briar_knight: briarKnight, sluice_warden: sluiceWarden, bone_reeve: boneReeve, hollow_choir: hollowChoir, gale_herald: galeHerald });

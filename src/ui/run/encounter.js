@@ -34,6 +34,9 @@ export const ENCOUNTER_COLOR = Object.freeze({
   heart_crystal: '#E07FB0',
   traveling_smith: '#D97B3F',
   gamblers_dice: '#EDE3C8',
+  // The Still Spire (plan 4 slice 7).
+  gods_seat: '#E8E2D0',
+  silent_bell: '#AEB8CC',
 });
 
 // Line-drawn sigils, 24-unit box, stroke = currentColor.
@@ -52,6 +55,10 @@ const SIGIL = {
   heart_crystal: '<path d="M12 2l3 6.5-3 12.5-3-12.5z"/><path d="M7 9l2.2 3.2-1.6 7L5 13.5z"/><path d="M17 9l2.2 4.3-2.6 6.2-1.6-7.2z"/><path d="M4 21h16"/>',
   traveling_smith: '<path d="M3 9h13l4.5 2-4.5 1.2V14H8v-2C5 12 3 11 3 9z"/><path d="M9.5 14l-1.2 4h7.4l-1.2-4"/><path d="M6.5 21h11"/><path d="M14.5 1.8l3.8 3.8-2 2-3.8-3.8z"/><path d="M13.4 6.6L10.6 9"/>',
   gamblers_dice: '<rect x="2.5" y="9.5" width="9.5" height="9.5" rx="1.6"/><path d="M14.2 5.2l6.8 1.8-1.8 6.8-6.8-1.8z"/><circle cx="5.2" cy="12.2" r=".6"/><circle cx="7.25" cy="14.25" r=".6"/><circle cx="9.3" cy="16.3" r=".6"/><circle cx="16.4" cy="8.3" r=".6"/><circle cx="18.2" cy="10.6" r=".6"/>',
+  // A great stone throne with a high back and a sun-ring over it.
+  gods_seat: '<path d="M7 21v-6h10v6"/><path d="M5 15h14"/><path d="M8 15V7.5a4 4 0 0 1 8 0V15"/><path d="M5 15v-3.5M19 15v-3.5"/><circle cx="12" cy="3.4" r="1.4"/><path d="M3 21h18"/>',
+  // A tongueless bell under a hush stroke, two dead sound-arcs crossed out.
+  silent_bell: '<path d="M12 3v2"/><path d="M6.5 16c0-6 1.8-9.5 5.5-9.5s5.5 3.5 5.5 9.5z"/><path d="M4.5 16h15"/><path d="M3 9.5c-.8 1.2-.8 2.8 0 4M21 9.5c.8 1.2.8 2.8 0 4"/><path d="M2 7l3 8M22 7l-3 8"/><path d="M9 20h6"/>',
 };
 export function encounterSigil(id, size = 44) {
   const p = SIGIL[id] ?? '<path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .8-1 1.5V14M12 17.5v.5"/>';
@@ -133,6 +140,8 @@ const REFUSED = {
   relic: () => t('You carry no relic to give.'),
   major: () => t('Every major curse is already on you.'),
   curses: () => t('You carry no major curse for it to feed on.'),
+  relics: () => t('You carry fewer than two relics to give.'),
+  lift: () => t('You carry no major curse for it to drink.'),
 };
 
 export function createEncounterScreen({ run, onTake = null }) {

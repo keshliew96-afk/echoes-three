@@ -176,7 +176,7 @@ function runThrough(W, opts, maxLevels = 6) {
   // longer changes anything.
   check(!!o && o.acts.join() === '1,2,3,4,5' && o.levels.join() === '1,2,3,4,5' && o.campaign === 5, `without the flag the campaign has five acts too (${o ? o.acts.join(', ') : r.stderr.slice(0, 200)})`);
   check(!!o && o.endless.join() === '1,2,3,4,5' && o.cycle === 5 && o.lap === 5, `without the flag Endless cycles five and Boss Rush laps five (${o ? `${o.cycle}, ${o.lap}` : '-'})`);
-  check(!!o && o.spire === 4 && o.best === 51, `without the flag the Journal holds the Spire rows (${o ? o.best : '-'} entries)`);
+  check(!!o && o.spire === 4 && o.best === 54, `without the flag the Journal holds the Spire rows (${o ? o.best : '-'} entries)`);
 }
 
 // ---------------------------------------------------------------- 1. wiring --

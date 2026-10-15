@@ -227,7 +227,7 @@ await cmd('relicChoose', 0);
 await sleep(800);
 
 // --------------------------------------------- the other lands' champions --
-for (const [level, kind] of [[2, 'sluice_warden'], [3, 'bone_reeve'], [4, 'hollow_choir']]) {
+for (const [level, kind] of [[2, 'sluice_warden'], [3, 'bone_reeve'], [4, 'hollow_choir'], [5, 'gale_herald']]) {
   await cmd('endRun', 'defeat').catch(() => null);
   await sleep(1200);
   await cmd('returnToCamp').catch(() => null);

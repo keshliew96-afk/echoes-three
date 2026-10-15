@@ -25,7 +25,7 @@ import { endlessBossIndex, CYCLE } from './endless.js';
 import { RUSH_RULES, LAP as RUSH_LAP } from './rush.js';
 import { ENCOUNTER_IDS } from '../sim/encounters.js';
 import { AFFIX_IDS } from '../sim/affixes.js';
-import { CHAMPION_IDS } from '../sim/champions.js';
+import { CHAMPION_IDS, FIRST_CROWNS } from '../sim/champions.js';
 import { LAYOUTS, LAYOUT_IDS } from './layouts.js';
 import { dayDiff, isDailyKey } from './daily.js';
 
@@ -146,6 +146,7 @@ export function lifeAfter(meta, facts) {
   return { ...marksAfter(meta && meta.marks, facts), bosses: [...bosses] };
 }
 const markCount = (life, k) => ((life && life[k]) || []).length;
+const crownCount = (life) => FIRST_CROWNS.filter((id) => ((life && life.champion) || []).includes(id)).length;
 const allFelled = (life) => BOSSES.every((b) => ((life && life.bosses) || []).includes(b.kind));
 
 // One-off deeds: paid once, on the run that first meets them (not multiplied).
@@ -190,7 +191,8 @@ export const DEEDS = Object.freeze(
     ['holdfast', { name: 'Holdfast', text: 'Win a Hold room: keep the sigil to the end.', embers: 20, test: (r) => (r.objectives || []).includes('hold') }],
     ['four_trials', { name: 'Four Trials', text: 'Win a Hunt, a Purge, an Escort and a Hold room in one run.', embers: 50, test: (r) => OBJECTIVE_DEED_MODES.every((m) => (r.objectives || []).includes(m)) }],
     ['crownbreaker', { name: 'Crownbreaker', text: 'Fell a champion.', embers: 20, test: (r) => (r.champions || []).length > 0 }],
-    ['four_crowns', { name: 'Four Crowns', text: 'Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.', embers: 60, test: (r, l) => markCount(l, 'champion') >= CHAMPION_IDS.length, goal: (l) => [markCount(l, 'champion'), CHAMPION_IDS.length] }],
+    // (The first four champions, whatever later acts add.)
+    ['four_crowns', { name: 'Four Crowns', text: 'Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.', embers: 60, test: (r, l) => crownCount(l) >= FIRST_CROWNS.length, goal: (l) => [crownCount(l), FIRST_CROWNS.length] }],
     ['keyholder', { name: 'Keyholder', text: 'Open a vault.', embers: 20, test: (r) => (r.vaults || 0) >= 1 }],
     ['treasure_seeker', { name: 'Treasure Seeker', text: 'Open 3 vaults in one run.', embers: 50, test: (r) => (r.vaults || 0) >= 3 }],
     ['ringwalker', { name: 'Ringwalker', text: ACT_IDS.includes(5) ? 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre, the Hollow Nave and Windward Court.' : 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre and the Hollow Nave.', embers: 40, test: (r, l) => markCount(l, 'arena') >= ARENA_IDS.length, goal: (l) => [markCount(l, 'arena'), ARENA_IDS.length] }],
@@ -198,6 +200,16 @@ export const DEEDS = Object.freeze(
     ['kingslayer', { name: 'Kingslayer', text: 'Fell every boss at least once, the Vein Weaver included.', embers: 120, test: (r, l) => allFelled(l), goal: (l) => [BOSSES.filter((b) => ((l && l.bosses) || []).includes(b.kind)).length, BOSSES.length] }],
     ['down_the_river', { name: 'Down the River', text: 'Complete a campaign with the Tidecaller in the party.', embers: 60, test: (r) => r.complete && (r.party || []).includes('tidecaller') }],
     ['three_dawns', { name: 'Three Dawns', text: 'Play the Daily Descent three days in a row.', embers: 30, test: (r, l) => !!(l && l.daily) && l.daily.best >= 3, goal: (l) => [Math.min(3, (l && l.daily && l.daily.best) || 0), 3] }],
+    // THE STILL SPIRE (plan 4 slice 7): the Sky verse, its champion and the
+    // Hush. Listed only while Level V is played.
+    ...(ACT_IDS.includes(5)
+      ? [
+          ['skyward', { name: 'Skyward', text: 'Clear Level V, the Still Spire, and bring the Verse of Sky home.', embers: 60, test: (r) => r.cleared.includes(5) }],
+          ['windfall', { name: 'Windfall', text: 'Fell the Gale Herald, the champion of the Still Spire.', embers: 25, test: (r) => (r.champions || []).includes('gale_herald') }],
+          ['five_crowns', { name: 'Five Crowns', text: 'Fell all five champions, the Gale Herald included.', embers: 80, test: (r, l) => markCount(l, 'champion') >= CHAMPION_IDS.length, goal: (l) => [markCount(l, 'champion'), CHAMPION_IDS.length] }],
+          ['break_the_hush', { name: 'Break the Hush', text: 'Fell the Hush on the Harrowing challenge.', embers: 80, test: (r) => r.bosses.includes('hush') && r.challenge === 'harrowing' }],
+        ]
+      : []),
     ['seven_dawns', { name: 'Seven Dawns', text: 'Play the Daily Descent seven days in a row.', embers: 80, test: (r, l) => !!(l && l.daily) && l.daily.best >= 7, goal: (l) => [Math.min(7, (l && l.daily && l.daily.best) || 0), 7] }],
   ])
 );
@@ -280,6 +292,15 @@ const TINT_ROWS = [
   ['tint_censersmoke', 'tank', 'Censer Smoke', { glow: '#E8A858', second: '#F6E4C4', debris: '#4E4236' }, 40, { level: 4 }],
   ['tint_hollowtide', 'tidecaller', 'Hollow Tide', { glow: '#8C6CFF', second: '#DDD3FF', debris: '#3C3858' }, 40, { level: 4 }],
   ['tint_crowned', 'archer', 'Crowned', { glow: '#FFCF4A', second: '#FFF3C4', debris: '#8A6A2A' }, 0, { deed: 'four_crowns' }],
+  // THE STILL SPIRE (plan 4 slice 7): the Spire's high cold air for the
+  // Swordsman, and the Gale Herald's bronze and storm-white for the
+  // Bellwright.
+  ...(ACT_IDS.includes(5)
+    ? [
+        ['tint_stillair', 'swordsman', 'Still Air', { glow: '#BFE3F2', second: '#F7FBFF', debris: '#8C96A6' }, 40, { level: 5 }],
+        ['tint_galebronze', 'bellwright', 'Gale Bronze', { glow: '#E6B866', second: '#F2F6FF', debris: '#6C6A64' }, 0, { deed: 'windfall' }],
+      ]
+    : []),
 ];
 
 function build() {
