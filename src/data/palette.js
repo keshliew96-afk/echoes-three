@@ -33,6 +33,27 @@ export const TONIC_COLORS = Object.freeze({
   bell_charm: Object.freeze({ glow: '#D9B872', core: '#F7E7C0' }),
 });
 
+// SHRINES (docs/SHRINES.md): each land's shrine and the blessing it lays,
+// clear of the reserved hues (Ember the enemy's, Violet the gods'): moss gold
+// for the Antler Shrine's Swiftness, ward silver-blue for the Tithe Shrine,
+// Hearth Amber flame for the Grave Shrine's Fury, Pale Gold for the Geode
+// Shrine's relic, sky white-cyan for the Wind Shrine's Tailwind. `stone` is
+// the shrine's own body tone in its land.
+export const SHRINE_COLORS = Object.freeze({
+  wood: Object.freeze({ glow: '#B8D865', core: '#F3FBD6', stone: '#6E6A55' }),
+  mill: Object.freeze({ glow: '#8DB6F2', core: '#EEF5FF', stone: '#5C6670' }),
+  barrow: Object.freeze({ glow: '#E8A23D', core: '#FFF1C9', stone: '#5E5652' }),
+  heart: Object.freeze({ glow: '#D9B872', core: '#F7E7C0', stone: '#4A3F57' }),
+  spire: Object.freeze({ glow: '#BFE4F4', core: '#F6FCFF', stone: '#8A8F99' }),
+});
+// The blessing each shrine lays (HUD plate, hero aura).
+export const BLESSING_COLORS = Object.freeze({
+  swiftness: SHRINE_COLORS.wood,
+  ward: SHRINE_COLORS.mill,
+  fury: SHRINE_COLORS.barrow,
+  tailwind: SHRINE_COLORS.spire,
+});
+
 // Class accents (BUILD_BRIEF §19.1) — rings, HP bars, cloak trim.
 export const CLASS_ACCENTS = Object.freeze({
   healer: '#33513C',

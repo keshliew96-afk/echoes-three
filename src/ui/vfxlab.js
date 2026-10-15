@@ -23,6 +23,11 @@
 //   Hit      a light / heavy / over-time / downed hit on your character
 //   Gust     an Act V gust vent laid across the party, its wind-up and gust
 //            forced, with a kite in the lane so a flier is shoved too
+//   Spurs    an Act IV crystal spur forced under the party (wind-up, burst,
+//            the pillar it leaves)
+//   Shrines  a campaign room of each land with its shrine beside the party;
+//            Offer pays its price (the lab tops up Glint, a key, a tonic)
+//            and plays the answer and the blessing
 //
 // Off unless the URL asks for it; touches nothing else in the UI. The Act V
 // rows play in a Level V room with ?act5=1, and in an Act IV room without
@@ -776,6 +781,58 @@ export function mountVfxLab() {
     X().cmd('hazardPhase', gustId, 'active');
     say('gust vent: the gust itself (36 ticks)');
   }, 'force the gust');
+
+  // Crystal spurs (docs/SHRINES.md): one forced under the party.
+  const spurRow = section('Crystal spurs');
+  let spurId = null;
+  async function spurHere() {
+    await ensureCombat(4);
+    spurId = X().cmd('spawnHazard', 'spur', 0, 0, {});
+    return spurId;
+  }
+  button(spurRow, 'Wind-up', async () => {
+    if (spurId == null || !X().content.world().entities().some((e) => e.id === spurId)) await spurHere();
+    X().cmd('hazardPhase', spurId, 'telegraph');
+    say("crystal spur: the Ember ring on a hero's last spot (54 ticks), cracks and tips rising");
+  }, 'force its telegraph');
+  button(spurRow, 'Burst', async () => {
+    if (spurId == null || !X().content.world().entities().some((e) => e.id === spurId)) await spurHere();
+    X().cmd('hazardPhase', spurId, 'active');
+    say('crystal spur: the burst, then a pillar for 7 s');
+  }, 'force the burst');
+
+  // Shrines (docs/SHRINES.md): a campaign room of the land, its shrine
+  // beside the party.
+  const shrineRow = section('Shrines');
+  const LANDS = [['wood', 1, 'Antler'], ['mill', 2, 'Tithe'], ['barrow', 3, 'Grave'], ['heart', 4, 'Geode'], ['spire', 5, 'Wind']];
+  let shrineLand = null;
+  async function shrineRoom(land, level) {
+    const r = run();
+    if (!(r.active && r.phase === 'combat' && r.act === level && r.room !== 8 && r.shrine)) {
+      if (r.active) {
+        X().cmd('abandonRun', 'quit');
+        await wait(300);
+      }
+      X().cmd('startCampaign', { level });
+      for (let i = 0; i < 100 && run().phase !== 'combat'; i++) await wait(100);
+      X().cmd('skipToRoom', 3);
+      for (let i = 0; i < 100 && !(run().phase === 'combat' && run().room === 3); i++) await wait(100);
+      await wait(400);
+    }
+    X().cmd('killAllEnemies');
+    const p = X().content.world().player;
+    X().cmd('shrineHere', land, (p ? p.x : 0) + 1.6, (p ? p.z : 0) - 1.2);
+    shrineLand = land;
+  }
+  for (const [land, level, label] of LANDS) button(shrineRow, label, () => shrineRoom(land, level).then(() => say(`the ${label} Shrine beside the party`)), `a Level ${level} room with its shrine`);
+  button(shrineRow, 'Offer', async () => {
+    if (!shrineLand) await shrineRoom('wood', 1);
+    X().cmd('wallet', 60);
+    X().cmd('keyGive');
+    X().cmd('tonicGive', 0, 'haste_draught');
+    const r = X().cmd('shrineUse', 0);
+    say(r && !r.denied ? `offered: ${JSON.stringify(r)}` : `refused: ${JSON.stringify(r)}`);
+  }, 'pay the price and take the blessing');
 
   // ----------------------------------------------------------------- boss --
   const boss = section('Boss');

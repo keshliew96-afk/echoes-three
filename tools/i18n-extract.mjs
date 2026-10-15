@@ -60,7 +60,7 @@ for (const f of walk(SRC)) {
 }
 
 // Data tables.
-const FIELDS = new Set(['verb', 'spentLabel', 'abbrev', 'name', 'text', 'desc', 'description', 'blurb', 'title', 'short', 'long', 'tagline', 'flavor', 'epithet', 'subtitle', 'role', 'hint', 'tip', 'banner', 'land', 'full', 'label', 'summary', 'kicker', 'lore', 'effect', 'detail']);
+const FIELDS = new Set(['verb', 'spentLabel', 'trade', 'abbrev', 'name', 'text', 'desc', 'description', 'blurb', 'title', 'short', 'long', 'tagline', 'flavor', 'epithet', 'subtitle', 'role', 'hint', 'tip', 'banner', 'land', 'full', 'label', 'summary', 'kicker', 'lore', 'effect', 'detail']);
 const looksLikeText = (s) => /[A-Za-z]/.test(s) && !/^[a-z0-9_.:-]+$/.test(s) && !/^#[0-9a-f]+$/i.test(s);
 const dataFiles = [join(SRC, 'ui/run/cards.js'), ...walk(join(SRC, 'sim')), ...walk(join(SRC, 'data')), join(SRC, 'net/protocol/messages.js'), join(SRC, 'net/seats.js')].filter((f) => existsSync(f));
 const seenObj = new WeakSet();

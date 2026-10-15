@@ -751,7 +751,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     }
     // CHAMPION ROOMS: the champion's chest pays the greater pool too.
     // Batch 4: Geode Heart grows a plain cursed room's pick into a greater one.
-    if (d.source === 'major' || d.source === 'spirit' || d.source === 'champion' || (d.source === 'curse' && has('geode_heart'))) {
+    // SHRINES: the Geode Shrine's pick (a key's worth) is a greater one too.
+    if (d.source === 'major' || d.source === 'spirit' || d.source === 'champion' || d.source === 'shrine' || (d.source === 'curse' && has('geode_heart'))) {
       const greater = pool.filter((id) => RELICS[id].rarity !== 'common');
       if (greater.length > 0) pool = greater;
     }
@@ -1021,6 +1022,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     // EVENT ROOMS (docs/EVENT_ROOMS.md): a pick owed by an encounter (shown
     // by the next presentDue), a relic given outright, the newest relic
     // taken back, and a major curse taken in an event room.
+    // SHRINES: is a pick already owed (a cursed room's) when the room clears?
+    owed: () => !!due,
     owe(room, source, { not = null, curse = null } = {}) {
       if (!on) return false;
       due = { room, source, ...(Array.isArray(not) && not.length ? { not: [...not] } : {}), ...(curse && CURSES[curse] ? { curse } : {}) };

@@ -175,7 +175,7 @@ export const LEVELS = Object.freeze({
     // has six beasts of its own.
     roster: Object.freeze({ husk: 0.26, lancer: 0.14, geode: 0.12, censer: 0.08, moth: 0.08, brood: 0.08, gravewisp: 0.06, knight: 0.05, crow: 0.09, bloom: 0.1, siphon: 0.11 }),
     introduce: Object.freeze({ husk: 1, lancer: 1, crow: 1, moth: 1, geode: 2, brood: 2, censer: 3, gravewisp: 3, knight: 4, bloom: 3, siphon: 3 }),
-    hazards: Object.freeze(['rockfall', 'gravefire', 'slip']),
+    hazards: Object.freeze(['rockfall', 'gravefire', 'slip', 'spur']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg']),
     boss: 'cantor',
     bossName: 'The Hollow Cantor',

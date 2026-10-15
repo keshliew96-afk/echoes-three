@@ -16,6 +16,8 @@
 //   bell       a bronze bell in a timber A-frame: ringing swings it and sends a
 //              bronze/Parchment shockwave out to the 3.0 u stun radius; rung, it
 //              hangs dead still, tipped
+//   shrine     (render/interactables/shrines.js) a land's shrine: a plinth
+//              with a lit core and its land's crown; dark once answered
 import {
   AdditiveBlending,
   BoxGeometry,
@@ -49,6 +51,8 @@ import { buildEncounter, ENCOUNTER_KINDS } from './encounters.js';
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the hoard and the vault.
 import { buildVaultRig, VAULT_KINDS } from './vaults.js';
 import { buildTonicRig, TONIC_KINDS } from './tonics.js';
+// SHRINES (docs/SHRINES.md): the five land shrines.
+import { buildShrineRig, SHRINE_KINDS } from './shrines.js';
 
 const HEAL = exactColor(PALETTE.brightHeal);
 const BONE_STONE = new Color(PALETTE.bone).multiplyScalar(0.8);
@@ -513,6 +517,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
       case 'encounter':
         return buildEncounter(e);
       default:
+        if (SHRINE_KINDS.includes(e.kind)) return buildShrineRig(e);
         if (TONIC_KINDS.includes(e.kind)) return buildTonicRig(e);
         return VAULT_KINDS.includes(e.kind) ? buildVaultRig(e) : null;
     }
@@ -540,6 +545,18 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
       }
     });
   }
+  // SHRINES: a cleared room puts the shrine to sleep (its core goes dark).
+  let roomAsleep = false;
+  bus.on('room_cleared', () => {
+    roomAsleep = true;
+  });
+  bus.on('room_enter', () => {
+    roomAsleep = false;
+  });
+  bus.on('shrine_offer', (ev) => {
+    const r = rigs.get(ev.id);
+    if (r && r.r.onOffer) r.r.onOffer(ev);
+  });
   // KEYS AND VAULTS: the chest's opening drives its rig.
   bus.on('vault_open', () => {
     for (const rec of rigs.values()) if (rec.kind === 'vault_chest' && rec.r.onEvent) rec.r.onEvent('vault_open');
@@ -567,10 +584,10 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
   function update(tSec) {
     const dt = lastT === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastT));
     lastT = tSec;
-    const ctx = { tick: world.tick, cosmetic, camQuat: stage.camera.quaternion };
+    const ctx = { tick: world.tick, cosmetic, camQuat: stage.camera.quaternion, asleep: roomAsleep };
     const seen = new Set();
     for (const e of world.entities()) {
-      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter' && !VAULT_KINDS.includes(e.kind) && !TONIC_KINDS.includes(e.kind)) continue;
+      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter' && !VAULT_KINDS.includes(e.kind) && !TONIC_KINDS.includes(e.kind) && !SHRINE_KINDS.includes(e.kind)) continue;
       seen.add(e.id);
       let rec = rigs.get(e.id);
       if (!rec) {
@@ -638,6 +655,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     for (const item of ['mend_tonic', 'fire_bomb', 'bell_charm']) warmPark(root, buildTonicRig({ kind: 'tonic_item', item }).group);
     warmPark(root, buildTonicRig({ kind: 'tonic_bomb', item: 'frost_bomb', launchTick: 0, landTick: 27 }).group);
     warmPark(root, buildTonicRig({ kind: 'tonic_fire', radius: 2.1, untilTick: 0 }).group);
+    for (const shrine of ['wood', 'mill', 'barrow', 'heart', 'spire']) warmPark(root, buildShrineRig({ kind: 'shrine', shrine, uses: 1 }).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);
   }

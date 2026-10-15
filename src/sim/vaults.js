@@ -177,6 +177,14 @@ export function createVaultSystem({ registry, events, getTick }) {
       events.emit(getTick(), 'vault_door_taken', { room: roomIndex, from: k.from });
       return k;
     },
+    // SHRINES: the Geode Shrine takes the key (no vault opens for it).
+    surrender(reason) {
+      if (!key) return null;
+      const k = key;
+      key = null;
+      events.emit(getTick(), 'key_surrender', { from: k.from, reason });
+      return k;
+    },
     // The level ends: an unused key goes with it.
     levelReset(level) {
       if (key) {

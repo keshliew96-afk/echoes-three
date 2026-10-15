@@ -743,6 +743,29 @@ export function hudCss() {
 .hud-key.hud-key-on { display: flex; }
 .hud-key.hud-key-pop { animation: hud-key-pop 0.7s cubic-bezier(.2,1.6,.4,1); }
 @keyframes hud-key-pop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }
+/* SHRINES (docs/SHRINES.md): the party's blessing under the Glint plate
+   (one row lower while a key is held), in the blessing's colour, with its
+   seconds left; it pulses in its last five seconds. */
+.hud-bless {
+  position: absolute;
+  right: var(--zx, 18px);
+  top: calc(var(--zt, 18px) + 64px);
+  display: none; align-items: center; gap: 8px;
+  padding: 4px 14px 4px 8px;
+  border-radius: 10px;
+  background: linear-gradient(180deg, ${CHROME.plateHi} 0%, ${CHROME.plate} 55%);
+  border: 2px solid var(--bless, ${PALETTE.paleGold});
+  box-shadow: inset 0 0 0 1px ${CHROME.plateSunk}, 0 0 14px color-mix(in srgb, var(--bless, ${PALETTE.paleGold}) 40%, transparent);
+  white-space: nowrap;
+}
+.hud-bless.hud-bless-under { top: calc(var(--zt, 18px) + 122px); }
+.hud-bless.hud-bless-on { display: flex; }
+.hud-bless.hud-key-pop { animation: hud-key-pop 0.7s cubic-bezier(.2,1.6,.4,1); }
+.hud-bless.hud-bless-low { animation: hud-bless-low 0.8s ease-in-out infinite; }
+@keyframes hud-bless-low { 50% { opacity: 0.55; } }
+.hud-bless-ico { color: var(--bless, ${PALETTE.paleGold}); filter: drop-shadow(0 0 6px var(--bless, ${PALETTE.paleGold})); display: flex; }
+.hud-bless-ico svg { display: block; width: 28px; height: 28px; }
+.hud-bless-name { font-size: ${FS_KEY + 2}px; font-weight: 800; letter-spacing: 0.12em; color: var(--bless, ${PALETTE.paleGold}); line-height: 1; }
 .hud-key-ico { color: ${PALETTE.paleGold}; filter: drop-shadow(0 0 6px ${PALETTE.paleGold}AA); display: flex; }
 .hud-key-ico svg { display: block; width: 30px; height: 30px; }
 .hud-key-txt { display: flex; flex-direction: column; gap: 2px; }

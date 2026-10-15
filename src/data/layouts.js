@@ -21,6 +21,7 @@
 //     puffcap      offset (ticks into its idle)    minRoom (Act I: from room 2)
 //     millrace     x0 z0 x1 z1 (flow from 0 -> 1), w (1.4), offset (ticks toward the first surge)
 //     rockfall     (no position — targets the party)
+//     spur         (no position — rises under a hero's last spot; Act IV from room 2)
 //     gravefire    vents [[x, z] x3], offset (ticks into its 420-tick cycle)
 //     gust         x0 z0 x1 z1 (blows from the vent at 0 toward 1), w (1.6), offset (ticks into its 420-tick cycle)
 //     slip         r (1.1-1.9), skin ('wet' Mill | 'frost' Barrow, Spire)  slick floor:
@@ -412,6 +413,7 @@ export const LAYOUTS = Object.freeze({
     name: 'Root Gate',
     hazards: Object.freeze([
       { type: 'rockfall' },
+      { type: 'spur', minRoom: 2 }, // the Heart's own: crystal spurs (docs/SHRINES.md)
       { type: 'gravefire', vents: [[-6.8, -3.4], [-5.4, -4.0], [-4.0, -4.6]], offset: 0, skin: 'vein' },
       { type: 'slip', x: 5.6, z: 3.6, r: 1.4, skin: 'glass' },
     ]),
@@ -430,6 +432,7 @@ export const LAYOUTS = Object.freeze({
     name: 'Vein Gallery',
     hazards: Object.freeze([
       { type: 'rockfall' },
+      { type: 'spur', minRoom: 2 }, // the Heart's own: crystal spurs (docs/SHRINES.md)
       { type: 'gravefire', vents: [[-2.0, -4.6], [0.0, -4.6], [2.0, -4.6]], offset: 0, skin: 'vein' },
       { type: 'gravefire', vents: [[-6.2, 4.0], [-4.6, 4.2], [-3.0, 4.4]], offset: 210, skin: 'vein' },
     ]),
@@ -448,6 +451,7 @@ export const LAYOUTS = Object.freeze({
     name: 'Heart Chamber',
     hazards: Object.freeze([
       { type: 'rockfall' },
+      { type: 'spur', minRoom: 2 }, // the Heart's own: crystal spurs (docs/SHRINES.md)
       { type: 'gravefire', vents: [[-1.4, 5.2], [0.0, 5.6], [1.4, 5.2]], offset: 120, skin: 'vein' },
       { type: 'slip', x: -5.8, z: -3.4, r: 1.5, skin: 'glass' },
       { type: 'slip', x: 5.8, z: -3.4, r: 1.5, skin: 'glass' },
@@ -467,6 +471,7 @@ export const LAYOUTS = Object.freeze({
     name: 'Geode Hall',
     hazards: Object.freeze([
       { type: 'rockfall' },
+      { type: 'spur', minRoom: 2 }, // the Heart's own: crystal spurs (docs/SHRINES.md)
       // The floor is the threat: three spreads of heart crystal.
       { type: 'slip', x: -4.4, z: -3.4, r: 1.6, skin: 'glass' },
       { type: 'slip', x: 4.4, z: -3.4, r: 1.6, skin: 'glass' },
@@ -487,6 +492,7 @@ export const LAYOUTS = Object.freeze({
     name: 'Weeping Wells',
     hazards: Object.freeze([
       { type: 'rockfall' },
+      { type: 'spur', minRoom: 2 }, // the Heart's own: crystal spurs (docs/SHRINES.md)
       { type: 'gravefire', vents: [[-7.4, -2.4], [-6.4, -1.2], [-5.4, 0.0]], offset: 0, skin: 'vein' },
       { type: 'gravefire', vents: [[5.4, 0.0], [6.4, 1.2], [7.4, 2.4]], offset: 210, skin: 'vein' },
       { type: 'slip', x: 0.0, z: -5.2, r: 1.2, skin: 'glass' },
@@ -673,6 +679,7 @@ export const LAYOUTS = Object.freeze({
     spawns: Object.freeze([[-6.0, -7.0], [6.0, -7.0], [-10.8, -4.4], [10.8, -4.4], [-10.8, 4.4], [10.8, 4.4], [-6.0, 7.0], [6.0, 7.0]]),
     hazards: Object.freeze([
       { type: 'rockfall' },
+      { type: 'spur', minRoom: 2 }, // the Heart's own: crystal spurs (docs/SHRINES.md)
       { type: 'gravefire', vents: [[-10.6, -1.4], [-10.6, 0.0], [-10.6, 1.4]], offset: 0, skin: 'vein' },
       { type: 'gravefire', vents: [[10.6, 1.4], [10.6, 0.0], [10.6, -1.4]], offset: 210, skin: 'vein' },
       { type: 'slip', x: -5.6, z: -4.2, r: 1.2, skin: 'glass' },
@@ -694,6 +701,7 @@ export const LAYOUTS = Object.freeze({
     name: 'Crystal Thicket',
     hazards: Object.freeze([
       { type: 'rockfall' },
+      { type: 'spur', minRoom: 2 }, // the Heart's own: crystal spurs (docs/SHRINES.md)
       { type: 'gravefire', vents: [[-1.6, 6.4], [0.0, 6.8], [1.6, 6.4]], offset: 140, skin: 'vein' },
       { type: 'slip', x: 0.0, z: -6.0, r: 1.3, skin: 'glass' },
       { type: 'slip', x: -9.6, z: 0.0, r: 1.3, skin: 'glass' },

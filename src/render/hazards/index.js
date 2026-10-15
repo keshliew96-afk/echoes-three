@@ -38,6 +38,12 @@
 //              blue air (VFX_MATTER.gust): a torrent of wind lines, a pressure
 //              front run down the lane, dust, feathers and leaves blown along;
 //              then calm (see buildGust)
+//   spur       crystal spurs (Act IV, docs/SHRINES.md): the Ember ring on the
+//              hero's last spot with violet hairline cracks spreading under
+//              it and crystal tips nosing up through the floor in the last
+//              third of the wind-up; the burst itself is a signature beat
+//              (render/vfx/shrinefx.js); the PILLAR it leaves is a cluster of
+//              tall violet prisms with a lit core that shatters when it goes
 import {
   AdditiveBlending,
   BoxGeometry,
@@ -689,6 +695,133 @@ function buildRubble(e) {
       const left = (ent.untilTick - ctx.tick) / 30;
       const s = born * Math.min(1, Math.max(0.2, left));
       g.scale.set(s, s, s);
+    },
+  };
+}
+
+// Crystal spurs (Act IV): the controller rig draws the wind-up at the mark.
+const SPUR_CRYSTAL = new Color(VFX_MATTER.heartcrystal);
+const SPUR_DEEP = hslColor(272, 0.45, 0.22);
+function spurPrismGeo() {
+  // Five prisms leaning out from one root, the tallest in the middle.
+  return sharedGeo('hz-spur-prisms', () =>
+    mergeGeometries(
+      [
+        [0, 0, 0, 1.25, 0.2, 0],
+        [0.2, 0.06, 0.4, 0.8, 0.14, 0.9],
+        [-0.22, -0.1, -0.35, 0.7, 0.13, 2.4],
+        [0.05, 0.22, 0.3, 0.6, 0.11, 4.0],
+        [-0.12, -0.2, 0.32, 0.55, 0.1, 5.2],
+      ].map(([ox, oz, lean, h, r, yaw]) => {
+        const g = new ConeGeometry(r, h, 5, 1);
+        g.translate(0, h / 2, 0);
+        g.rotateZ(lean);
+        g.rotateY(yaw);
+        g.translate(ox, -0.02, oz);
+        return g;
+      })
+    )
+  );
+}
+function buildSpur() {
+  const g = new Group();
+  const tipsMat = toonMaterial({ color: SPUR_CRYSTAL, emissive: SPUR_CRYSTAL, emissiveIntensity: 0.35 });
+  const tips = new Mesh(spurPrismGeo(), tipsMat);
+  addInk(tips);
+  tips.visible = false;
+  g.add(tips);
+  const crackMat = new MeshBasicMaterial({ color: exactColor(VFX_MATTER.heartcrystal), transparent: true, opacity: 0, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
+  const cracks = new Mesh(
+    sharedGeo('hz-spur-cracks', () =>
+      mergeGeometries(
+        [0, 1, 2, 3, 4, 5, 6].map((i) => {
+          const a = (i / 7) * Math.PI * 2 + (i % 2 ? 0.2 : -0.15);
+          const len = 0.55 + (i % 3) * 0.12;
+          const p = new PlaneGeometry(0.035, len);
+          p.rotateX(-Math.PI / 2);
+          p.translate(0, 0, len / 2);
+          p.rotateY(a);
+          return p;
+        })
+      )
+    ),
+    crackMat
+  );
+  cracks.position.y = 0.025;
+  g.add(cracks);
+  const glow = makeGlowSprite({ color: VFX_MATTER.heartcrystal, size: 1.1, opacity: 0 });
+  glow.material.toneMapped = false;
+  glow.position.y = 0.2;
+  g.add(glow);
+  let tele = null;
+  return {
+    group: g,
+    update(e, tSec, ctx) {
+      const t = e.telegraph;
+      if (t) {
+        if (!tele) tele = ctx.shapes.acquire('ring');
+        const span = Math.max(1, t.resolveTick - t.startTick);
+        const prog = Math.min(1, Math.max(0, (ctx.tick - t.startTick) / span));
+        tele.set(t, tSec, prog);
+        tele.showColumn(false);
+        ctx.live.push(t);
+        g.position.set(t.x, 0, t.z);
+        // Cracks spread through the ring; the crystal tips break the floor
+        // from the first tick (so the mark reads as crystal, not a plain
+        // ring), creep up through the wind-up and surge in the last third.
+        cracks.scale.setScalar(0.3 + 0.9 * prog);
+        crackMat.opacity = 0.25 + 0.6 * prog * (0.8 + 0.2 * Math.sin(tSec * 22));
+        glow.material.opacity = 0.4 + 0.45 * prog;
+        const surge = Math.max(0, (prog - 0.62) / 0.38);
+        const jitter = 0.03 * surge * Math.sin(tSec * 47);
+        tips.visible = true;
+        tips.scale.set(0.85 + 0.25 * prog, 0.3 + 0.3 * prog + 0.3 * surge, 0.85 + 0.25 * prog);
+        tips.position.set(jitter, -0.04, -jitter);
+        tips.rotation.y = tSec * 0.4;
+        tipsMat.emissiveIntensity = 0.8 + 0.3 * prog + 0.5 * surge + 0.15 * Math.sin(tSec * 9);
+        if (ctx.cosmetic.chance(0.3)) impactFx.embers(t.x, t.z, { color: VFX_MATTER.heartcrystal, n: 1, radius: 0.6, tall: 0.4 });
+      } else {
+        if (tele) {
+          ctx.shapes.release(tele);
+          tele = null;
+        }
+        tips.visible = false;
+        crackMat.opacity = 0;
+        glow.material.opacity = 0;
+      }
+    },
+    dispose(ctx) {
+      if (tele) ctx.shapes.release(tele);
+    },
+  };
+}
+// The spur's pillar (rubble skin 'spur'): violet prisms, a lit core, a
+// contact shadow; it grows up in 5 ticks and sinks in its last half second.
+function buildSpurPillar(e) {
+  const g = new Group();
+  const mat = toonMaterial({ color: SPUR_CRYSTAL, emissive: SPUR_CRYSTAL, emissiveIntensity: 0.28 });
+  const prisms = new Mesh(spurPrismGeo(), mat);
+  addInk(prisms);
+  prisms.scale.set(1.25, 1.1, 1.25);
+  g.add(prisms);
+  const base = new Mesh(sharedGeo('hz-spur-base', () => new IcosahedronGeometry(0.34, 0).scale(1, 0.35, 1)), toonMaterial({ color: SPUR_DEEP }));
+  addInk(base);
+  g.add(base);
+  const core = makeGlowSprite({ color: VFX_MATTER.heartcrystal, size: 1.2, opacity: 0.35 });
+  core.material.toneMapped = false;
+  core.position.y = 0.6;
+  g.add(core);
+  g.add(groundShadow(0.55, 0.8, { forward: 0.1, wide: 1.0, deep: 1.0 }));
+  g.position.set(e.x, 0, e.z);
+  g.rotation.y = e.yaw ?? 0;
+  return {
+    group: g,
+    update(ent, tSec, ctx) {
+      const born = Math.min(1, (ctx.tick - (ent.startTick ?? 0)) / 5);
+      const left = Math.min(1, Math.max(0, (ent.untilTick - ctx.tick) / 30));
+      prisms.scale.set(1.25 * (0.6 + 0.4 * born), 1.1 * born * (0.3 + 0.7 * left), 1.25 * (0.6 + 0.4 * born));
+      core.material.opacity = (0.22 + 0.12 * Math.sin(tSec * 2.6 + ent.id)) * left;
+      mat.emissiveIntensity = 0.22 + 0.1 * Math.sin(tSec * 2.6 + ent.id);
     },
   };
 }
@@ -1447,7 +1580,7 @@ function buildGust(h) {
   };
 }
 
-const BUILD = { slip: buildSlip, bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire, gust: buildGust };
+const BUILD = { slip: buildSlip, bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire, gust: buildGust, spur: buildSpur };
 
 // ------------------------------------------------------------------ layer --
 export function createHazardLayer({ stage, world, bus, cosmetic, slide = null }) {
@@ -1513,9 +1646,9 @@ export function createHazardLayer({ stage, world, bus, cosmetic, slide = null })
       seen.add(e.id);
       let r = rigs.get(e.id);
       if (!r) {
-        r = e.kind === 'rubble' ? buildRubble(e) : BUILD[e.htype] ? BUILD[e.htype](e) : null;
+        r = e.kind === 'rubble' ? (e.skin === 'spur' ? buildSpurPillar(e) : buildRubble(e)) : BUILD[e.htype] ? BUILD[e.htype](e) : null;
         if (!r) continue;
-        if (e.kind === 'hazard' && e.htype !== 'millrace' && e.htype !== 'rockfall' && e.htype !== 'gravefire' && e.htype !== 'gust') r.group.position.set(e.x, 0, e.z);
+        if (e.kind === 'hazard' && e.htype !== 'millrace' && e.htype !== 'rockfall' && e.htype !== 'gravefire' && e.htype !== 'gust' && e.htype !== 'spur') r.group.position.set(e.x, 0, e.z);
         rigs.set(e.id, r);
         root.add(r.group);
       }
@@ -1559,10 +1692,12 @@ export function createHazardLayer({ stage, world, bus, cosmetic, slide = null })
       slipGlass: { id: 3, radius: 1.4, skin: 'glass' },
       gravefireVein: { id: 1, vents: [{ x: 0, z: 0 }], skin: 'vein' },
       gust: { id: 1, x: 0, z: 0, len: 4, dirX: 1, dirZ: 0, lane: { x0: -2, z0: 0, x1: 2, z1: 0, w: 1.6 } },
+      spur: {},
     };
     const kindOf = (k) => (k.startsWith('slip') ? 'slip' : k.startsWith('gravefire') ? 'gravefire' : k);
     for (const [k, f] of Object.entries(fake)) warmPark(root, BUILD[kindOf(k)](f).group);
     warmPark(root, buildRubble({ x: 0, z: 0 }).group);
+    warmPark(root, buildSpurPillar({ x: 0, z: 0, id: 0 }).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);
   }

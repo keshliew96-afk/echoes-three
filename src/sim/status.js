@@ -69,8 +69,23 @@ function live(e, kind, tick) {
 }
 
 // ------------------------------------------------------------- read side --
+// SHRINES (docs/SHRINES.md): a shrine's blessing rides on the hero as
+// `e.blessing = { id, untilTick, haste?, ward?, might? }`, its own record so
+// it never merges with a skill's status (absent on every other body).
+const blessed = (e, tick) => (e.blessing && e.blessing.untilTick > tick ? e.blessing : null);
+
 export function speedMul(e, tick) {
   if (!e) return 1;
+  const bl = e.blessing ? blessed(e, tick) : null;
+  if (bl && bl.haste) {
+    if (e.status && live(e, 'stun', tick)) return 0;
+    const base = speedMulRaw(e, tick);
+    return base * (1 + bl.haste);
+  }
+  return speedMulRaw(e, tick);
+}
+
+function speedMulRaw(e, tick) {
   // ELITE AFFIXES: Hasted (x1.4) and the Frozen wind-up (x0) ride on the
   // body as `affixSpeed`; absent on every other body (x1, the old rule).
   const am = e.affixSpeed;
@@ -92,10 +107,18 @@ export function isStunned(e, tick) {
 
 export function damageDealtMul(attacker, tick) {
   const s = live(attacker, 'inspired', tick);
-  return s ? 1 + s.mag : 1;
+  const bl = attacker && attacker.blessing ? blessed(attacker, tick) : null;
+  const b = bl && bl.might ? 1 + bl.might : 1;
+  return s ? (1 + s.mag) * b : b;
 }
 
 export function damageTakenMul(target, tick) {
+  const bl = target && target.blessing ? blessed(target, tick) : null;
+  if (bl && bl.ward) return damageTakenMulRaw(target, tick) * (1 - bl.ward);
+  return damageTakenMulRaw(target, tick);
+}
+
+function damageTakenMulRaw(target, tick) {
   if (!target || !target.status) return 1;
   let m = 1;
   const w = live(target, 'ward', tick);

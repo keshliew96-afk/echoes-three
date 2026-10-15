@@ -61,6 +61,7 @@ import { createRelicStrip, RELIC_STRIP_CSS } from './relicstrip.js';
 import { createEncounterScreen, createEventPlate, ENCOUNTER_CSS } from './encounter.js';
 import { ENCOUNTERS } from '../../sim/encounters.js';
 import { RELICS, CURSES } from '../../sim/relics.js';
+import { SHRINES, BLESSINGS } from '../../sim/shrines.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
 import { createSelectionSound } from '../../audio/uiselect.js';
 import { t } from '../../i18n/index.js';
@@ -964,6 +965,28 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       else if (ev.glint) a.toast(t('You roll {a} and {b}: {n} Glint.', { a: d1, b: d2, n: ev.glint }), { tone: 'info', ms: 4800 });
       else a.toast(t('You roll {a} and {b}: the stranger keeps the stake.', { a: d1, b: d2 }), { tone: 'info', ms: 4800 });
     }
+  });
+  // SHRINES (docs/SHRINES.md): the shrine's answer, or why it stays dark.
+  bus.on('shrine_spawn', (ev) => {
+    const a = service('app');
+    const S = SHRINES[ev.shrine];
+    if (a && typeof a.toast === 'function' && S) a.toast(t('{name} stands in this room. {trade}', { name: t(S.name), trade: t(S.trade) }), { tone: 'info', ms: 4200 });
+  });
+  bus.on('shrine_offer', (ev) => {
+    const a = service('app');
+    const S = SHRINES[ev.shrine];
+    if (!a || typeof a.toast !== 'function' || !S) return;
+    const B = ev.blessing ? BLESSINGS[ev.blessing] : null;
+    if (ev.pick) a.toast(t('{name} takes your key. A greater relic waits when the room clears.', { name: t(S.name) }), { tone: 'info', ms: 5200 });
+    else if (ev.curse && CURSES[ev.curse] && B) a.toast(t('{name}: {blessing} for 60 s. Your next fight is cursed: {curse}.', { name: t(S.name), blessing: t(B.name), curse: t(CURSES[ev.curse].name) }), { tone: 'info', ms: 5600 });
+    else if (B) a.toast(t('{name}: {blessing} for 60 s ({text}).', { name: t(S.name), blessing: t(B.name), text: t(B.text) }), { tone: 'info', ms: 4800 });
+  });
+  bus.on('shrine_denied', (ev) => {
+    const a = service('app');
+    if (!a || typeof a.toast !== 'function' || viewerSeat() !== (ev.seat ?? 0)) return;
+    if (ev.reason === 'glint') a.toast(t('The shrine asks 25 Glint.'), { tone: 'info', ms: 3600 });
+    else if (ev.reason === 'key') a.toast(t('The shrine asks for a vault key.'), { tone: 'info', ms: 3600 });
+    else if (ev.reason === 'tonic') a.toast(t('The shrine asks for a tonic or bomb.'), { tone: 'info', ms: 3600 });
   });
   bus.on('relic_lose', (ev) => {
     const a = service('app');

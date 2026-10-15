@@ -146,6 +146,10 @@ export function createRelicScreen({ run }) {
       // KEYS AND VAULTS (docs/VAULTS.md): the vault's chest.
       titleEl.textContent = t("THE VAULT'S CHEST");
       subEl.textContent = t('A relic from the hoard. Choose one.');
+    } else if (o.source === 'shrine') {
+      // SHRINES (docs/SHRINES.md): the Geode Shrine's answer for a key.
+      titleEl.textContent = t("THE GEODE SHRINE'S ANSWER");
+      subEl.textContent = t('Your key bought a rare or legendary relic. Choose one.');
     } else if (o.source === 'champion') {
       // CHAMPION ROOMS (docs/CHAMPIONS.md): the felled champion's chest.
       titleEl.textContent = t("THE CHAMPION'S CHEST");
