@@ -825,7 +825,7 @@ export const gravebellRinger = champion({
 // two long vein whips.
 //   Vein Lash     a lane up to 7 u x 1.0 at a hero (58 ticks): the whip
 //                 cracks down it for 13, and she drinks 3 % of her max HP
-//                 for every hero it cuts
+//                 for every hero it cuts, 6 % at most
 //   Heart Pulse   a ring r 2.8 round herself (70 ticks): the heart in her
 //                 chest beats for 14, then eight crystal shards fly out all
 //                 round her, 7 each
@@ -841,6 +841,7 @@ const VM = Object.freeze({
   lashWidth: 1.0,
   lashDamage: 13,
   drinkShare: 0.03,
+  drinkCap: 0.06, // one lash heals at most this share, however many it cuts
   pulseRadius: 2.8,
   pulseDamage: 14,
   shards: 8,
@@ -868,7 +869,7 @@ export const veinMatron = champion({
         const cut = partyOnly(victims);
         if (cut > 0 && e.hp > 0) {
           const before = e.hp;
-          e.hp = Math.min(e.maxHp, e.hp + e.maxHp * VM.drinkShare * cut);
+          e.hp = Math.min(e.maxHp, e.hp + e.maxHp * Math.min(VM.drinkCap, VM.drinkShare * cut));
           e.moveExtra = { drank: r2(e.hp - before) };
         }
         return cut;

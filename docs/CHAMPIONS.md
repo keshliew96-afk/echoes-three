@@ -116,7 +116,7 @@ Level V has only the Gale Herald. Endless and the Daily use the same pick.
 | Wood | The Moss Hart | Antler Toss: a cone (r 3.0, 55°) hits for 15 and throws 2 u | Hart's Leap: a ring (r 2.0) under the farthest hero; it bounds over and lands for 15, leaving moss that slows 30% |
 | Mill | The Lockkeeper | Chain Hook: a lane (7.5 × 0.9); the key hits for 10 and drags the hero to his feet | Lock Turn: a ring round him (r 2.5) for 16 and a 50% slow |
 | Barrow | The Gravebell Ringer | Death Knell: a ring round it (r 3.6) for 11 and a 45% slow | Grave Call: a ring (r 1.8) under a hero bursts for 14 and leaves ash that slows |
-| Heart | The Vein Matron | Vein Lash: a lane (7 × 1.0) for 13; she heals 3% of her max health per hero cut | Heart Pulse: a ring round her (r 2.8) for 14, then eight crystal shards, 7 each |
+| Heart | The Vein Matron | Vein Lash: a lane (7 × 1.0) for 13; she heals 3% of her max health per hero cut, 6% at most | Heart Pulse: a ring round her (r 2.8) for 14, then eight crystal shards, 7 each |
 
 Each has the frame's rage below half health, its own plate, sting, death
 burst and the usual relic chest. The Journal's champion row has nine

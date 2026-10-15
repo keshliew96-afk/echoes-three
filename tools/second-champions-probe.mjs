@@ -399,8 +399,8 @@ if (leapSave) {
         hpBefore = e.hp;
       }
     });
-    const want = lash ? e.maxHp * 0.03 * lash.victims : 0;
-    check('matron', `Vein Lash: she drinks 3 % of her max HP per hero cut (+${lash ? lash.drank : 0})`, !!lash && hpBefore !== null && Math.abs(lash.drank - want) < 0.02, { lash, want });
+    const want = lash ? e.maxHp * Math.min(0.06, 0.03 * lash.victims) : 0;
+    check('matron', `Vein Lash: she drinks 3 % of her max HP per hero cut, 6 % at most (+${lash ? lash.drank : 0})`, !!lash && hpBefore !== null && Math.abs(lash.drank - want) < 0.02, { lash, want });
     let pulse = null;
     run(w, e, 2400, (evs) => {
       pulse = moveOf(evs, e, 'heart_pulse') ?? pulse;
