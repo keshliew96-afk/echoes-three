@@ -86,6 +86,10 @@ const RELIC_SVG = {
   // A split geode: rough shell, crystals growing in its heart.
   geode_heart: `<path d="M5 17 Q5 6 16 5 Q27 6 27 17 Q27 27 16 28 Q5 27 5 17 Z" ${STROKE}/><path d="M11 21 L13 13 L15 21 Z M15 21 L17 10 L19 21 Z M19 21 L21 15 L22 21 Z" ${FILL}/>`,
   // A small reliquary urn with ash rising out of it.
+  // THE STILL SPIRE (plan 4 slice 7): a weathercock's tail plume over its
+  // compass arrow; a bell with a finger laid across its lip for quiet.
+  weathercock_plume: `<path d="M6 24 L26 24" ${STROKE}/><path d="M22 21 L26 24 L22 27" ${STROKE}/><path d="M9 21 Q8 11 15 6 Q14 13 18 18 Q13 18 9 21 Z" ${STROKE}/><path d="M11 18 L15 10" ${STROKE}/>`,
+  hushbell: `<path d="M16 4 V7" ${STROKE}/><path d="M8 22 Q8 8 16 8 Q24 8 24 22 Z" ${STROKE}/><path d="M6 22 H26" ${STROKE}/><path d="M5 27 L27 15" ${STROKE}/><circle cx="16" cy="26" r="1.8" ${FILL}/>`,
   saints_ashes: `<path d="M10 15 H22 L20 27 H12 Z" ${STROKE}/><path d="M8 15 H24" ${STROKE}/><path d="M13 11 Q11 8 13 5 M16 11 Q18 7 16 3 M19 11 Q21 8 19 6" ${STROKE}/><circle cx="16" cy="21" r="1.8" ${FILL}/>`,
 };
 

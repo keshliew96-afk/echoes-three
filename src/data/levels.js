@@ -225,8 +225,10 @@ export const LEVELS = Object.freeze({
     music: 'spire',
     // The Spire's four creatures from room 1, with a few of the Heart's and
     // the Barrow's climbing after the party.
-    roster: Object.freeze({ kite: 0.2, chime: 0.14, gargoyle: 0.14, hanger: 0.14, crow: 0.08, moth: 0.06, knight: 0.05, lancer: 0.09, husk: 0.1 }),
-    introduce: Object.freeze({ kite: 1, gargoyle: 1, husk: 1, crow: 1, chime: 2, hanger: 2, moth: 2, lancer: 3, knight: 4 }),
+    // Plan 4 slice 7: the Vane Cock and the Bell Sacristan join from room 3,
+    // in campaign rooms only (CAMPAIGN_ONLY_ENEMIES), so six of its own.
+    roster: Object.freeze({ kite: 0.2, chime: 0.14, gargoyle: 0.14, hanger: 0.14, crow: 0.08, moth: 0.06, knight: 0.05, lancer: 0.09, husk: 0.1, vane: 0.11, sacristan: 0.08 }),
+    introduce: Object.freeze({ kite: 1, gargoyle: 1, husk: 1, crow: 1, chime: 2, hanger: 2, moth: 2, lancer: 3, knight: 4, vane: 3, sacristan: 3 }),
     hazards: Object.freeze(['gust', 'rockfall', 'slip']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'bell']),
     boss: 'hush',
@@ -262,7 +264,7 @@ export const LEVELS = Object.freeze({
 // single-level run, the tutorial or the ?room= harness, so the golden traces
 // and the act runner's benches keep their draws. waves.js planRoom drops
 // them unless the run plan says `campaignKinds`.
-export const CAMPAIGN_ONLY_ENEMIES = Object.freeze(['keener', 'sexton', 'bloom', 'siphon']);
+export const CAMPAIGN_ONLY_ENEMIES = Object.freeze(['keener', 'sexton', 'bloom', 'siphon', 'vane', 'sacristan']);
 
 // The campaign's levels, in order. CAMPAIGN_ACTS decides how many of them a
 // campaign plays: five since the Spire's bosses (docs/ACT_V_BOSSES.md), so

@@ -46,12 +46,16 @@ export const CHAMPIONS = Object.freeze({
   2: Object.freeze({ id: 'sluice_warden', act: 2, name: 'The Sluice Warden' }),
   3: Object.freeze({ id: 'bone_reeve', act: 3, name: 'The Bone Reeve' }),
   4: Object.freeze({ id: 'hollow_choir', act: 4, name: 'The Hollow Choir' }),
+  // Act V (plan 4 slice 7, docs/CHAMPIONS.md "The Gale Herald").
+  5: Object.freeze({ id: 'gale_herald', act: 5, name: 'The Gale Herald' }),
 });
 export const CHAMPION_IDS = Object.freeze(Object.values(CHAMPIONS).map((c) => c.id));
 export const isChampionKind = (k) => CHAMPION_IDS.includes(k);
-// (Act V preview, docs/ACT_V.md: the Spire's champion comes with slice 7;
-// until then its crown door holds the Heart's Hollow Choir.)
-export const championFor = (act) => CHAMPIONS[act] ?? (act > 4 ? CHAMPIONS[4] : CHAMPIONS[1]);
+// (An act past the last champion's meets the last one.)
+const LAST_CHAMPION_ACT = Math.max(...Object.keys(CHAMPIONS).map(Number));
+export const championFor = (act) => CHAMPIONS[act] ?? (act > LAST_CHAMPION_ACT ? CHAMPIONS[LAST_CHAMPION_ACT] : CHAMPIONS[1]);
+// The first four champions (Acts I to IV): the Four Crowns deed's list.
+export const FIRST_CROWNS = Object.freeze(['briar_knight', 'sluice_warden', 'bone_reeve', 'hollow_choir']);
 export const championById = (id) => Object.values(CHAMPIONS).find((c) => c.id === id) ?? null;
 
 const hash32 = (s) => parseInt(fnv1a64Hex(s).slice(0, 8), 16) >>> 0;

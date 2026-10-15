@@ -1,4 +1,4 @@
-// CHAMPION ROOMS (docs/CHAMPIONS.md): the four champions' voices,
+// CHAMPION ROOMS (docs/CHAMPIONS.md): the five champions' voices,
 // registered on the engine like the boss and encounter cues
 // (engine.registerCue / registerEventCue): procedural, no files. Listen-only:
 // event payloads in, cues out, so the goldens cannot move.
@@ -16,7 +16,8 @@
 //                   rises, under the generic telegraph tick it replaces
 //   ch_<move>       each move's landing (bramble_charge, thorn_ring,
 //                   floodgate, undertow, reaping_sweep, grave_lance,
-//                   shard_hymn, discord)
+//                   shard_hymn, discord, gale_call, stoop)
+//   ch_stoop_rise   the Gale Herald's stoop taking wing (with ch_tell)
 //   ch_charge_stop  the Briar Knight's charge stops (a wall: a crash)
 import { UI_PEAK_DB } from './cues.js';
 import { phrase } from './bosscues.js';
@@ -37,6 +38,8 @@ export const CHAMPION_CUE_CAL = {
   ch_bone_reeve_rage: 6.6,
   ch_hollow_choir_sting: 4.4,
   ch_hollow_choir_rage: 4.7,
+  ch_gale_herald_sting: 7.2,
+  ch_gale_herald_rage: 7.3,
   ch_fall: 1.8,
   ch_chest: 0,
   ch_crown: 0,
@@ -49,6 +52,9 @@ export const CHAMPION_CUE_CAL = {
   ch_grave_lance: -3.6,
   ch_shard_hymn: -1,
   ch_discord: 4.3,
+  ch_gale_call: 1.8,
+  ch_stoop_rise: -8.2,
+  ch_stoop: 2.6,
   ch_charge_stop: -1.7,
   // @cal end
 };
@@ -60,6 +66,7 @@ const VOICE = {
   sluice_warden: { root: 57, lead: 'clank', drum: 'frame' }, // Sunken Mill, A phrygian
   bone_reeve: { root: 52, lead: 'toll', drum: 'taiko' }, // the Barrow, E harmonic minor
   hollow_choir: { root: 49, lead: 'choir', drum: 'heart' }, // the Heart, C# phrygian
+  gale_herald: { root: 53, lead: 'horn', drum: 'knell' }, // the Still Spire, F lydian
 };
 const STINGS = {
   // A knight's horn: tonic, fifth, then the flat second held over a thorn pluck.
@@ -70,6 +77,9 @@ const STINGS = {
   bone_reeve: [[0, 40, 'toll', 1], [0.36, 47, 'toll', 0.85], [0, 0, 'taiko', 0.9], [0.1, 52, 'choir', 0.4, 1.1], [0.1, 55, 'choir', 0.35, 1.1], [0.72, 63, 'horn', 0.8, 0.5], [0.72, 0, 'taiko', 1], [0.72, 28, 'low', 0.9, 0.9]],
   // Three voices entering one by one on the hollow chord, glass on top.
   hollow_choir: [[0, 0, 'heart', 0.9], [0, 25, 'low', 0.9, 1.3], [0.1, 61, 'choir', 0.45, 1.1], [0.32, 62, 'choir', 0.45, 0.9], [0.54, 68, 'choir', 0.5, 0.8], [0.54, 85, 'glass', 0.4, 0.9], [0.54, 0, 'heart', 0.8]],
+  // A herald's bronze horn over the wind and a deep bell: F, C, F, then up
+  // to the lydian raised fourth (B) held as the knell sounds again.
+  gale_herald: [[0, 0, 'knell', 0.85], [0, 29, 'low', 0.9, 1.3], [0, 84, 'breath', 0.5, 1.0], [0.08, 53, 'horn', 0.85, 0.2], [0.3, 60, 'horn', 0.9, 0.2], [0.52, 65, 'horn', 0.95, 0.18], [0.72, 71, 'horn', 0.9, 0.55], [0.72, 0, 'knell', 0.7], [0.72, 89, 'bell', 0.25, 1.0]],
 };
 const rageNotes = (v) => [
   [0, 0, v.drum, 1],
@@ -159,6 +169,34 @@ Object.assign(CUES, {
       k.tone(d, t, { f0: P(p, 70), f1: P(p, 35), d: 0.5, gain: 0.8 }),
       k.noise(d, t, { type: 'bandpass', f0: P(p, 1800), f1: P(p, 600), q: 1.2, d: 0.35, gain: 0.5 })
     )),
+  // The Gale Herald's horn blast with the gust it calls whooshing out.
+  ch_gale_call: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 172), f1: P(p, 174.6), glide: 0.05, a: 0.03, hold: 0.25, d: 0.35, gain: 0.5, filter: { f0: 1900, f1: 700, q: 1.2, glide: 0.5 } }),
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 261.6), a: 0.04, hold: 0.22, d: 0.3, gain: 0.22, filter: { f0: 1600, f1: 650, q: 1.2, glide: 0.5 } }),
+      k.tone(d, t, { f0: P(p, 87.3), a: 0.03, hold: 0.2, d: 0.4, gain: 0.4 }),
+      k.noise(d, t + 0.06, { type: 'bandpass', f0: P(p, 500), f1: P(p, 2200), q: 1.1, a: 0.1, hold: 0.15, d: 0.45, gain: 0.8 }),
+      k.noise(d, t + 0.08, { src: 'brown', type: 'lowpass', f0: 700, f1: 280, q: 0.8, a: 0.06, hold: 0.15, d: 0.4, gain: 0.55 })
+    )),
+  // The stoop's take-off (its wind-up): stone wings beating, rising and
+  // quickening as it climbs over the mark.
+  ch_stoop_rise: sfx(-11, (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.24, 0.44, 0.6, 0.73].map((o, i) => k.noise(d, t + o, { type: 'bandpass', f0: P(p, 320 + i * 140), f1: P(p, 800 + i * 260), q: 1.4, a: 0.05, d: 0.14, gain: 0.5 + i * 0.1 })),
+      ...[0, 0.24, 0.44].map((o) => k.tone(d, t + o, { f0: P(p, 70), f1: P(p, 50), d: 0.12, gain: 0.35 })),
+      k.noise(d, t + 0.2, { type: 'highpass', f0: P(p, 1500), f1: P(p, 3200), q: 0.7, a: 0.5, d: 0.2, gain: 0.18 })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // The stoop lands: a last rush of air, then the stone body's heavy thud
+  // and the crack of a bell in it.
+  ch_stoop: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 2200), f1: P(p, 700), q: 1.2, a: 0.04, d: 0.08, gain: 0.5 }),
+      k.tone(d, t + 0.06, { f0: P(p, 92), f1: P(p, 34), d: 0.5, gain: 1 }),
+      k.noise(d, t + 0.06, { src: 'brown', type: 'lowpass', f0: 1000, f1: 170, q: 0.8, d: 0.45, gain: 0.85 }),
+      k.noise(d, t + 0.07, { src: 'crackle', type: 'bandpass', f0: P(p, 1700), q: 0.8, d: 0.3, gain: 0.45 }),
+      k.bell(d, t + 0.07, { f: P(p, 349.2), ratio: 1.41, index: 2.8, d: 0.7, gain: 0.35 }),
+      k.bell(d, t + 0.07, { f: P(p, 357), ratio: 2.93, index: 1.4, d: 0.45, gain: 0.2 })
+    )),
   ch_charge_stop: sfx(-9, (k, t, d, p) =>
     Math.max(
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 250), q: 0.8, d: 0.3, gain: 0.9 }),
@@ -174,11 +212,16 @@ const at = (ev, h, id) => {
   return p || h.player() || {};
 };
 
+// The entrance roar's pitch: the choir's is high and glassy, the Gale
+// Herald's (a carved stone crier, wings and all) deep and heavy.
+const ROAR_PITCH = { hollow_choir: 1.3, gale_herald: 0.7 };
+
 export function createChampionEventCues() {
   return {
-    champion_spawn: (ev, h) => [{ cue: 'roar', ...at(ev, h, ev.id), pitch: ev.champion === 'hollow_choir' ? 1.3 : 0.8 }, { cue: `ch_${ev.champion}_sting` }],
+    champion_spawn: (ev, h) => [{ cue: 'roar', ...at(ev, h, ev.id), pitch: ROAR_PITCH[ev.champion] ?? 0.8 }, { cue: `ch_${ev.champion}_sting` }],
     champion_rage: (ev, h) => [{ cue: 'roar', ...at(ev, h, ev.id), pitch: 0.9, gainDb: -4 }, { cue: `ch_${ev.champion}_rage` }],
-    champion_tell: (ev, h) => [{ cue: 'ch_tell', ...at(ev, h, ev.id) }],
+    // The Gale Herald's stoop also takes wing where it stands.
+    champion_tell: (ev, h) => [{ cue: 'ch_tell', ...at(ev, h, ev.id) }, ...(ev.move === 'stoop' ? [{ cue: 'ch_stoop_rise', ...at({}, h, ev.id) }] : [])],
     champion_move: (ev, h) => (CUES[`ch_${ev.move}`] ? [{ cue: `ch_${ev.move}`, ...at(ev, h, ev.id), ...(ev.rage ? { pitch: 1.05 } : {}) }] : null),
     champion_charge_end: (ev, h) => [{ cue: 'ch_charge_stop', ...at(ev, h, ev.id), gainDb: ev.cause === 'wall' ? 0 : -6 }],
     champion_fall: () => [{ cue: 'ch_fall' }],

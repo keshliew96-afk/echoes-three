@@ -1,4 +1,4 @@
-// EVENT ROOMS (docs/EVENT_ROOMS.md): the fourteen encounter bodies, drawn by the
+// EVENT ROOMS (docs/EVENT_ROOMS.md): the sixteen encounter bodies, drawn by the
 // interactable layer (./index.js) for entities of kind 'encounter'.
 //
 // Every encounter shares one readable frame so a player knows at a glance
@@ -10,7 +10,10 @@
 // tarp over crates and coin, a ring of stones round bright water). More
 // event rooms (slice 6) adds a mushroom ring with wisps, a millrace sluice, a
 // skull niche, a rose geode fed by violet threads, a smith's handcart with
-// a working hammer and a gambler's table with two real dice.
+// a working hammer and a gambler's table with two real dice. The Still Spire
+// (plan 4 slice 7) adds the gods' empty limestone throne under a pale gold
+// sun-ring, cloud at its feet, and a great tongueless bronze bell in a stone
+// frame, wrapped in grey Hush-cloth, drinking the sound around it.
 //
 // States (driven by the sim's events, one encounter per room):
 //   idle   the circle breathes; the shaft and motes run
@@ -37,6 +40,7 @@ import {
   LatheGeometry,
   Mesh,
   MeshBasicMaterial,
+  NormalBlending,
   OctahedronGeometry,
   RingGeometry,
   SphereGeometry,
@@ -68,6 +72,9 @@ export const ENCOUNTER_ACCENT = Object.freeze({
   heart_crystal: '#E07FB0',
   traveling_smith: '#D97B3F',
   gamblers_dice: '#EDE3C8',
+  // The Still Spire (plan 4 slice 7).
+  gods_seat: '#E8E2D0',
+  silent_bell: '#AEB8CC',
 });
 
 const STONE = hslColor(30, 0.06, 0.4);
@@ -943,6 +950,203 @@ function propDice(g) {
   };
 }
 
+// THE STILL SPIRE (plan 4 slice 7). The Gods' Seat: a white limestone throne
+// far too large for anyone left, worn smooth, a pale gold sun-ring turning
+// slowly over its high back, cloud drifting round its feet. Taken, it
+// settles on its dais with a soft jolt and the ring flares.
+function propSeat(g) {
+  const lime = toonMaterial({ color: hslColor(44, 0.22, 0.84) });
+  const limeShade = toonMaterial({ color: hslColor(40, 0.16, 0.7) });
+  const gold = PALETTE.paleGold;
+  g.add(groundShadow(1.0, 0.45, { forward: -0.1, wide: 1.1 }));
+  const throne = new Group();
+  g.add(throne);
+  // The dais: two broad, worn steps.
+  add(throne, new Mesh(sharedGeo('ev-seat-step0', () => new BoxGeometry(1.7, 0.12, 1.25)), limeShade), { y: 0.06, z: -0.05 });
+  add(throne, new Mesh(sharedGeo('ev-seat-step1', () => new BoxGeometry(1.42, 0.12, 1.0)), lime), { y: 0.18, z: -0.12 });
+  // The seat (knee height to a giant), its arms rounded smooth by ages of hands.
+  add(throne, new Mesh(sharedGeo('ev-seat-seat', () => new BoxGeometry(1.12, 0.46, 0.78)), lime), { y: 0.47, z: -0.12 });
+  add(throne, new Mesh(sharedGeo('ev-seat-lip', () => new CylinderGeometry(0.07, 0.07, 1.12, 10).rotateZ(Math.PI / 2)), lime), { y: 0.7, z: 0.26 });
+  for (const sx of [-0.62, 0.62]) {
+    add(throne, new Mesh(sharedGeo('ev-seat-arm', () => new BoxGeometry(0.2, 0.42, 0.78)), limeShade), { x: sx, y: 0.6, z: -0.12 });
+    add(throne, new Mesh(sharedGeo('ev-seat-armtop', () => new CylinderGeometry(0.12, 0.12, 0.82, 10).rotateX(Math.PI / 2)), lime), { x: sx, y: 0.84, z: -0.12 });
+    add(throne, new Mesh(sharedGeo('ev-seat-knob', () => new SphereGeometry(0.15, 12, 10)), lime), { x: sx, y: 0.86, z: 0.3 });
+  }
+  // The high back, rounded at the top like a sunrise.
+  add(throne, new Mesh(sharedGeo('ev-seat-back', () => new BoxGeometry(1.12, 1.55, 0.24)), lime), { y: 1.37, z: -0.46 });
+  add(throne, new Mesh(sharedGeo('ev-seat-crown', () => new CylinderGeometry(0.56, 0.56, 0.24, 24, 1, false, 0, Math.PI).rotateX(Math.PI / 2).rotateZ(Math.PI / 2)), lime), { y: 2.14, z: -0.46 });
+  add(throne, new Mesh(sharedGeo('ev-seat-panel', () => new BoxGeometry(0.74, 1.1, 0.04)), limeShade), { ink: false, y: 1.42, z: -0.33 });
+  // The sun-ring: a pale gold band with a gap, turning slowly behind the crown.
+  const ringMat = toonMaterial({ color: mix(gold, '#FFFFFF', 0.2), emissive: gold, emissiveIntensity: 0.55 });
+  const halo = new Group();
+  halo.position.set(0, 2.2, -0.62);
+  throne.add(halo);
+  add(halo, new Mesh(sharedGeo('ev-seat-halo', () => new TorusGeometry(0.72, 0.04, 6, 48, Math.PI * 1.82)), ringMat));
+  const rays = [];
+  for (let i = 0; i < 12; i++) {
+    const a = (i / 12) * Math.PI * 2;
+    const ray = new Mesh(sharedGeo('ev-seat-ray', () => new BoxGeometry(0.03, 0.16, 0.02)), flatGlow(gold, 0.7));
+    ray.position.set(Math.cos(a) * 0.86, Math.sin(a) * 0.86, 0);
+    ray.rotation.z = a - Math.PI / 2;
+    halo.add(ray);
+    rays.push(ray);
+  }
+  const sun = makeGlowSprite({ color: gold, size: 2.0, opacity: 0.35 });
+  sun.material.toneMapped = false;
+  sun.position.set(0, 2.2, -0.7);
+  throne.add(sun);
+  // Still warm: a faint gold breath on the seat.
+  const warm = makeGlowSprite({ color: mix(gold, '#E8E2D0', 0.5), size: 0.8, opacity: 0.18 });
+  warm.material.toneMapped = false;
+  warm.position.set(0, 0.78, -0.1);
+  throne.add(warm);
+  // Cloud at its feet: soft puffs drifting round the dais.
+  const cloudMat = toonMaterial({ color: hslColor(210, 0.15, 0.94), transparent: true, opacity: 0.88 });
+  const clouds = [];
+  const puffs = [[-0.95, 0.42, 1.0], [0.98, 0.2, 0.9], [-0.55, 0.7, 0.75], [0.62, 0.62, 0.8]];
+  for (let i = 0; i < puffs.length; i++) {
+    const [cx, cz, sc] = puffs[i];
+    const c = new Group();
+    for (const [ox, oy, oz, r] of [[0, 0, 0, 0.2], [0.2, -0.02, 0.04, 0.15], [-0.18, -0.03, 0.02, 0.14], [0.06, 0.06, -0.08, 0.13]]) {
+      const m = new Mesh(sharedGeo('ev-seat-puff', () => new SphereGeometry(1, 12, 8)), cloudMat);
+      m.scale.set(r * 1.3, r * 0.75, r);
+      add(c, m, { ink: false, x: ox, y: oy, z: oz });
+    }
+    c.scale.setScalar(sc);
+    g.add(c);
+    clouds.push({ c, x: cx, z: cz, ph: i * 1.7 });
+  }
+  const wisps = [];
+  for (let i = 0; i < 5; i++) {
+    const w = makeGlowSprite({ color: '#F4F2EC', size: 0.5, opacity: 0.25 });
+    w.material.toneMapped = false;
+    g.add(w);
+    wisps.push({ w, ph: i / 5 });
+  }
+  let settle = 9;
+  return {
+    update(t, k, dt) {
+      settle += dt;
+      const kk = Math.max(0.3, Math.min(1.3, k));
+      // Taken: it settles a hand's breadth onto the dais, then rests.
+      throne.position.y = settle < 0.8 ? -0.05 * Math.sin((settle / 0.8) * Math.PI) * (1 - settle / 0.8) : 0;
+      const flare = settle < 1.6 ? 1 - settle / 1.6 : 0;
+      halo.rotation.z = t * 0.12;
+      ringMat.emissiveIntensity = 0.45 + 0.15 * Math.sin(t * 1.3) * kk + 1.2 * flare;
+      sun.material.opacity = (0.22 + 0.06 * Math.sin(t * 1.3)) * kk + 0.5 * flare;
+      sun.scale.setScalar(2.0 + 0.8 * flare);
+      for (let i = 0; i < rays.length; i++) rays[i].material.opacity = (0.35 + 0.3 * Math.sin(t * 2 + i * 0.9)) * kk + 0.4 * flare;
+      warm.material.opacity = (0.12 + 0.05 * Math.sin(t * 0.9)) * kk;
+      for (const o of clouds) {
+        o.c.position.set(o.x + 0.12 * Math.sin(t * 0.25 + o.ph), 0.1 + 0.03 * Math.sin(t * 0.6 + o.ph), o.z + 0.06 * Math.cos(t * 0.2 + o.ph));
+        o.c.rotation.y = 0.2 * Math.sin(t * 0.15 + o.ph);
+      }
+      for (const o of wisps) {
+        const u = (t * 0.07 + o.ph) % 1;
+        o.w.position.set(-1.3 + 2.6 * u, 0.12 + 0.05 * Math.sin(t + o.ph * 6), 0.55 + 0.25 * Math.sin(o.ph * 11));
+        o.w.scale.set(0.8, 0.28, 1);
+        o.w.material.opacity = 0.28 * Math.sin(Math.PI * u) * kk;
+      }
+    },
+    take(x, z) {
+      settle = 0;
+      impactFx.embers(x, z - 0.4, { color: PALETTE.paleGold, n: 24, radius: 0.6, tall: 2.8 });
+      impactFx.embers(x, z, { color: '#E8E2D0', n: 16, radius: 1.0, tall: 1.2 });
+    },
+  };
+}
+
+// The Silent Bell: a great bronze bell with no tongue, hung from a stone
+// beam, bound in grey Hush-cloth with fog drifting off it; the air round it
+// ripples INWARD (the sound being drunk). Taken, it swings once, silently,
+// and the ripple rushes in.
+function propBell(g) {
+  const stone = toonMaterial({ color: hslColor(220, 0.06, 0.52) });
+  const stoneDark = toonMaterial({ color: hslColor(220, 0.07, 0.34) });
+  const bronze = toonMaterial({ color: hslColor(30, 0.4, 0.31), side: DoubleSide });
+  const cloth = toonMaterial({ color: hslColor(220, 0.06, 0.6) });
+  const hush = '#AEB8CC';
+  g.add(groundShadow(1.0, 0.4, { wide: 1.2, deep: 0.6 }));
+  for (const sx of [-0.8, 0.8]) {
+    add(g, new Mesh(sharedGeo('ev-bell-post', () => new BoxGeometry(0.26, 2.2, 0.3)), stone), { x: sx, y: 1.1 });
+    add(g, new Mesh(sharedGeo('ev-bell-foot', () => new BoxGeometry(0.4, 0.16, 0.44)), stoneDark), { x: sx, y: 0.08 });
+  }
+  add(g, new Mesh(sharedGeo('ev-bell-beam', () => new BoxGeometry(1.95, 0.24, 0.36)), stone), { y: 2.3 });
+  add(g, new Mesh(sharedGeo('ev-bell-cap', () => new BoxGeometry(2.1, 0.08, 0.42)), stoneDark), { y: 2.45 });
+  // The bell swings from a pivot under the beam.
+  const pivot = new Group();
+  pivot.position.y = 2.18;
+  g.add(pivot);
+  add(pivot, new Mesh(sharedGeo('ev-bell-yoke', () => new TorusGeometry(0.09, 0.03, 6, 12)), toonMaterial({ color: IRON })), { y: -0.06 });
+  const prof = [[0, 0], [0.16, -0.01], [0.24, -0.06], [0.28, -0.2], [0.31, -0.45], [0.38, -0.7], [0.5, -0.88], [0.56, -0.95], [0.52, -0.97], [0.44, -0.9], [0.3, -0.72], [0.25, -0.45], [0.21, -0.18], [0, -0.1]].map(([x, y]) => new Vector2(x, y));
+  add(pivot, new Mesh(sharedGeo('ev-bell-body', () => new LatheGeometry(prof, 24)), bronze), { y: -0.14 });
+  // The empty mouth: no tongue, just dark.
+  const mouth = new Mesh(sharedGeo('ev-bell-mouth', () => new CircleGeometry(0.44, 20)), new MeshBasicMaterial({ color: new Color(PALETTE.voidCharcoal) }));
+  mouth.rotation.x = -Math.PI / 2;
+  add(pivot, mouth, { ink: false, y: -0.96 });
+  // The Hush-cloth: grey bands bound round it and a trailing strip.
+  add(pivot, new Mesh(sharedGeo('ev-bell-wrap0', () => new TorusGeometry(0.32, 0.055, 6, 20)), cloth), { y: -0.5 }).rotation.set(Math.PI / 2 + 0.12, 0, 0.08);
+  add(pivot, new Mesh(sharedGeo('ev-bell-wrap1', () => new TorusGeometry(0.43, 0.06, 6, 22)), cloth), { y: -0.8 }).rotation.set(Math.PI / 2 - 0.1, 0, -0.06);
+  const strip = new Mesh(sharedGeo('ev-bell-strip', () => new BoxGeometry(0.14, 0.7, 0.03)), cloth);
+  add(pivot, strip, { x: 0.36, y: -0.98, z: 0.22 });
+  // Fog off the cloth: soft grey sprites (not additive: grey dims, not glows).
+  const fog = [];
+  for (let i = 0; i < 7; i++) {
+    const f = makeGlowSprite({ color: mix(hush, PALETTE.parchment, 0.35), size: 0.9, opacity: 0.4 });
+    f.material.blending = NormalBlending;
+    f.material.toneMapped = false;
+    g.add(f);
+    fog.push({ f, ph: i / 7, a: i * 0.9 });
+  }
+  // The dead-sound ripple: rings on the ground closing in on the bell.
+  const ripples = [];
+  for (let i = 0; i < 3; i++) {
+    const r = new Mesh(sharedGeo('ev-bell-ripple', () => new RingGeometry(0.94, 1.0, 56)), flatGlow(hush, 0));
+    r.rotation.x = -Math.PI / 2;
+    r.position.y = 0.03;
+    r.renderOrder = 3;
+    g.add(r);
+    ripples.push({ r, ph: i / 3 });
+  }
+  const pall = makeGlowSprite({ color: hush, size: 1.6, opacity: 0.2 });
+  pall.material.toneMapped = false;
+  pall.position.y = 1.65;
+  g.add(pall);
+  let swing = 9;
+  return {
+    update(t, k, dt) {
+      swing += dt;
+      const kk = Math.max(0.3, Math.min(1.3, k));
+      const s = swing < 4 ? 0.32 * Math.sin(swing * 4.2) * Math.exp(-swing * 1.1) : 0;
+      pivot.rotation.x = 0.025 * Math.sin(t * 0.7) + s;
+      strip.rotation.z = 0.12 * Math.sin(t * 1.1);
+      const rush = swing < 1.2 ? 1 - swing / 1.2 : 0;
+      const speed = 0.22 + 0.9 * rush;
+      for (const o of ripples) {
+        const u = (t * speed + o.ph) % 1;
+        o.r.scale.setScalar(1.7 - 1.35 * u);
+        o.r.material.opacity = (0.32 * Math.sin(Math.PI * u) + 0.4 * rush) * kk;
+      }
+      for (const o of fog) {
+        const u = (t * 0.09 + o.ph) % 1;
+        const a = o.a + t * 0.15;
+        o.f.position.set(Math.cos(a) * (0.35 + 0.35 * u), 1.6 - 1.3 * u, Math.sin(a) * (0.3 + 0.3 * u));
+        o.f.scale.setScalar(0.6 + 0.8 * u);
+        o.f.material.opacity = 0.5 * Math.sin(Math.PI * u) * kk;
+      }
+      pall.material.opacity = (0.14 + 0.05 * Math.sin(t * 0.8)) * kk + 0.25 * rush;
+    },
+    take(x, z) {
+      swing = 0;
+      impactFx.embers(x, z, { color: '#AEB8CC', n: 20, radius: 1.2, tall: 1.6 });
+      impactFx.embers(x, z, { color: PALETTE.parchment, n: 10, radius: 0.5, tall: 2.4 });
+    },
+    restore(taken) {
+      if (taken) swing = 9;
+    },
+  };
+}
+
 const PROPS = {
   blood_shrine: propShrine,
   wishing_well: propWell,
@@ -958,6 +1162,8 @@ const PROPS = {
   heart_crystal: propCrystal,
   traveling_smith: propSmith,
   gamblers_dice: propDice,
+  gods_seat: propSeat,
+  silent_bell: propBell,
 };
 export const ENCOUNTER_KINDS = Object.freeze(Object.keys(PROPS));
 

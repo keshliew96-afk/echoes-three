@@ -96,14 +96,20 @@ z}` spot (src/sim/vaults.js, wired in src/sim/run.js). See docs/VAULTS.md.
 - **VFX lab** (`?vfxlab=1`): spawn each champion in its land, and play every
   champion sound.
 
+## The Gale Herald (Act V)
+
+Plan 4 slice 7 gave the Still Spire its own champion, so Level V's crown door
+no longer holds the Hollow Choir. Its kit, look and sound are in
+`docs/ACT_V.md`, "Slice 7".
+
 ## Debug and probes
 
 - `cmd('crownDoor'[, side])`: the next path screen carries the crown door.
 - `cmd('championRoom', n)`: room n of this level becomes the champion's room.
 - `cmd('crownOf')`: shows where this level's crown was rolled.
-- `node tools/champions-probe.mjs`: the headless checks, 43 of them. They
+- `node tools/champions-probe.mjs`: the headless checks, 49 of them. They
   cover the crown roll, the door rules, every champion's moves at Levels
-  I–IV, the rage, the chest's greater pick, Endless, replay determinism and a
+  I–V, the rage, the chest's greater pick, Endless, replay determinism and a
   mid-fight save.
 - `node tools/champions-browser.mjs [--shots dir]`: walks the real pages and
   takes the screenshots.

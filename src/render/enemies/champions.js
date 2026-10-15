@@ -20,6 +20,15 @@
 //   hollow_choir   three hollow choristers fused round a violet heart,
 //                  floating; a halo of crystal. Discord: the singers spread.
 //                  Shard Hymn: they turn as one and the heart brightens
+//   gale_herald    a winged limestone herald off the belfry roof: a long
+//                  robe, a winged helm, great feathered stone wings with
+//                  bell-bronze leading edges, a long bronze herald's horn held
+//                  to its mouth with a slate pennant; an indigo crack down
+//                  one cheek. Entrance: the horn raised to the sky. Gale
+//                  Call: wings braced wide, it draws breath and levels the
+//                  horn, then the blast jolts it. Stoop: it beats up ~1.6 u,
+//                  glides pitched forward to the mark, tucks and drops, and
+//                  lands with its wings flared
 //
 // Faces +Z; the enemy layer drives pose({ t, walkPhase, moveK, telegraphK,
 // fireK, e }) (e = the sim entity, READ ONLY). createChampionFx() is the
@@ -28,6 +37,12 @@
 import {
   AdditiveBlending,
   BoxGeometry,
+  ExtrudeGeometry,
+  LatheGeometry,
+  Quaternion,
+  Shape,
+  Vector2,
+  Vector3,
   CircleGeometry,
   Color,
   ConeGeometry,
@@ -46,10 +61,11 @@ import {
 import { toonMaterial } from '../toon.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { markShared, sharedGeo, releaseTree } from '../geocache.js';
-import { PALETTE } from '../../data/palette.js';
+import { PALETTE, VFX_MATTER } from '../../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 import { impactFx } from '../vfx/hub.js';
+import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 const inkMat = () => new MeshBasicMaterial({ color: exactColor(PALETTE.voidCharcoal), toneMapped: false });
@@ -89,6 +105,13 @@ const C = Object.freeze({
   cowl: slate(0.2, 0.17),
   choir: new Color(PALETTE.bone).lerp(new Color(PALETTE.godstuffViolet), 0.35).multiplyScalar(0.78),
   choirDark: slate(0.28, 0.16).lerp(new Color(PALETTE.godstuffViolet), 0.25),
+  // Gale Herald: pale belfry limestone, darker weathered feathers, bell
+  // bronze trim, a slate pennant.
+  lime: new Color(VFX_MATTER.spirestone).lerp(new Color(PALETTE.signalBlue), 0.1).multiplyScalar(0.9),
+  limeDark: new Color(VFX_MATTER.spirestone).lerp(slate(0.25, 0.3), 0.55).multiplyScalar(0.7),
+  bronze: new Color(VFX_MATTER.bellbronze).lerp(slate(0.2, 0.3), 0.22).multiplyScalar(0.9),
+  bronzeDark: new Color(VFX_MATTER.bellbronze).lerp(slate(0.2, 0.2), 0.5).multiplyScalar(0.6),
+  pennant: slate(0.35, 0.2),
 });
 
 function shell(name) {
@@ -618,14 +641,385 @@ export function buildHollowChoir() {
   };
 }
 
+// --------------------------------------------------------- GALE HERALD --
+const clamp01 = (x) => Math.min(1, Math.max(0, x));
+const smooth = (x) => {
+  const c = clamp01(x);
+  return c * c * (3 - 2 * c);
+};
+const approach = (cur, to, rate, dt) => cur + (to - cur) * (1 - Math.exp(-rate * dt));
+const mergeGeometries = (list) => mergeRaw(list.map((g) => (g.index ? g.toNonIndexed() : g)));
+// A flat plate from an outline in the XY plane, extruded thin and centred.
+function plate(points, depth = 0.03) {
+  const g = new ExtrudeGeometry(new Shape(points.map(([x, y]) => new Vector2(x, y))), { depth, bevelEnabled: false });
+  g.translate(0, 0, -depth / 2);
+  return g;
+}
+// One stone feather hanging down -Y from its quill at the origin.
+function feather(len, w) {
+  return plate([[0, 0.02], [w * 0.5, -0.06], [w * 0.55, -len * 0.55], [w * 0.25, -len * 0.92], [0, -len], [-w * 0.35, -len * 0.8], [-w * 0.5, -len * 0.4], [-w * 0.35, -0.05]], 0.03);
+}
+const placed = (g, x, y, z, rz) => g.rotateZ(rz).translate(x, y, z);
+// The wing in its own frame: span out along +X (inner arm 0 -> 0.8, outer
+// hand from the elbow 0 -> 0.8), feathers hanging down -Y.
+function heraldInnerFeathers() {
+  const list = [];
+  for (let i = 0; i < 6; i++) {
+    const x = 0.06 + i * 0.13;
+    list.push(placed(feather(0.62 + i * 0.05, 0.16), x, 0.15 * (x / 0.8), -0.012, 0.05 + i * 0.02));
+  }
+  return mergeGeometries(list);
+}
+function heraldCoverts() {
+  const list = [];
+  for (let i = 0; i < 6; i++) {
+    const x = 0.04 + i * 0.14;
+    list.push(placed(feather(0.3, 0.15), x, 0.15 * (x / 0.8) + 0.02, 0.018, 0.08));
+  }
+  return mergeGeometries(list);
+}
+function heraldPrimaries() {
+  const list = [];
+  for (let i = 0; i < 7; i++) {
+    const x = 0.04 + i * 0.11;
+    list.push(placed(feather(0.78 + i * 0.06, 0.15), x, 0.01 * i, -0.012 + (i % 2) * 0.01, 0.12 + i * 0.16));
+  }
+  return mergeGeometries(list);
+}
+// The Stoop's height off the ground (world u), read off the sim telegraph:
+// it climbs over the first quarter of the warning, glides ~1.6 u up, and
+// drops onto the mark over the last seventh so it lands as the ring
+// resolves. 0 unless it is aloft (`e.flight`). Shared with the presence
+// layer (the crown rides up with it). Render-only.
+export function heraldLift(e, tick) {
+  const tel = e && e.telegraph;
+  if (!e || !e.flight || !tel || tel.move !== 'stoop') return 0;
+  const span = Math.max(1, (tel.resolveTick ?? 0) - (tel.startTick ?? 0));
+  const p = clamp01(((tick ?? 0) - (tel.startTick ?? 0)) / span);
+  const up = smooth(p / 0.24);
+  const d = p < 0.86 ? 0 : (p - 0.86) / 0.14;
+  return (1.6 + 0.08 * Math.sin(p * 18)) * up * (1 - d * d);
+}
+export function buildGaleHerald() {
+  const s = shell('gale_herald');
+  const { rig, track } = s;
+  const lime = track(flashable(C.lime));
+  const robeMat = track(flashable(C.lime.clone().lerp(C.limeDark, 0.3)));
+  const limeDark = track(flashable(C.limeDark, { side: DoubleSide }));
+  const featherMat = track(flashable(C.lime, { side: DoubleSide }));
+  const bronze = track(flashable(C.bronze, { side: DoubleSide }));
+  const bronzeDark = track(flashable(C.bronzeDark));
+  const pennantMat = track(flashable(C.pennant, { side: DoubleSide }));
+  const lift = new Group();
+  rig.add(lift);
+  // The robe: a long limestone fall from the waist, bronze at the hem.
+  const robe = new Group();
+  robe.position.y = 1.2;
+  lift.add(robe);
+  const robeM = new Mesh(
+    shared('gh-robe', () =>
+      new LatheGeometry([[0.3, 0], [0.34, -0.2], [0.42, -0.5], [0.52, -0.9], [0.6, -1.14], [0.58, -1.18]].map(([r, y]) => new Vector2(r, y)), 11)
+    ),
+    robeMat
+  );
+  addInk(robeM);
+  robeM.material.side = DoubleSide;
+  robe.add(robeM);
+  for (let i = 0; i < 6; i++) {
+    const a = -1.1 + i * 0.44;
+    const fg = new Group();
+    fg.rotation.y = a;
+    robe.add(fg);
+    const fold = new Mesh(shared('gh-fold', () => new BoxGeometry(0.06, 1.0, 0.04).translate(0, -0.5, 0)), limeDark);
+    fold.position.set(0, -0.14, 0.33);
+    fold.rotation.x = -0.26;
+    fg.add(fold);
+  }
+  const hem = new Mesh(shared('gh-hem', () => new TorusGeometry(0.59, 0.035, 4, 22).rotateX(Math.PI / 2)), bronzeDark);
+  hem.position.y = -1.15;
+  robe.add(hem);
+  // Talons under the hem (they reach on the stoop).
+  const feet = [];
+  for (const side of [-1, 1]) {
+    const f = new Group();
+    f.position.set(side * 0.2, 0.1, 0.22);
+    lift.add(f);
+    for (const a of [-0.45, 0, 0.45]) {
+      const cl = new Mesh(shared('gh-talon', () => new ConeGeometry(0.045, 0.26, 4).rotateX(Math.PI / 2).translate(0, 0, 0.12)), limeDark);
+      cl.rotation.set(0.25, a, 0);
+      f.add(cl);
+    }
+    feet.push({ f, side });
+  }
+  // The body above the waist pitches from here.
+  const body = new Group();
+  body.position.y = 1.2;
+  lift.add(body);
+  const belt = new Mesh(shared('gh-belt', () => new TorusGeometry(0.31, 0.04, 4, 16).rotateX(Math.PI / 2)), bronze);
+  body.add(belt);
+  const chest = new Mesh(shared('gh-chest', () => new IcosahedronGeometry(0.34, 1)), lime);
+  chest.scale.set(1.2, 1.05, 0.85);
+  chest.position.y = 0.36;
+  addInk(chest);
+  body.add(chest);
+  const plateM = new Mesh(shared('gh-plate', () => new CylinderGeometry(0.37, 0.31, 0.44, 10, 1, true, -Math.PI * 0.42, Math.PI * 0.84)), bronze);
+  plateM.position.set(0, 0.34, 0.03);
+  body.add(plateM);
+  for (const side of [-1, 1]) {
+    const p = new Mesh(shared('gh-paul', () => new SphereGeometry(0.17, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2)), bronze);
+    p.scale.set(1.15, 0.8, 1);
+    p.position.set(side * 0.4, 0.52, 0);
+    p.rotation.z = -side * 0.35;
+    addInk(p);
+    body.add(p);
+  }
+  // Head: a smooth limestone face under a winged helm with a bronze
+  // circlet; the indigo crack running down from one eye (the tell).
+  const head = new Group();
+  head.position.set(0, 0.8, 0.04);
+  body.add(head);
+  const skull = new Mesh(shared('gh-skull', () => new SphereGeometry(0.17, 10, 8)), lime);
+  skull.scale.set(0.92, 1.1, 1.0);
+  addInk(skull);
+  head.add(skull);
+  const helm = new Mesh(shared('gh-helm', () => new SphereGeometry(0.185, 10, 6, 0, Math.PI * 2, 0, Math.PI * 0.45)), limeDark);
+  helm.position.y = 0.03;
+  head.add(helm);
+  const circlet = new Mesh(shared('gh-circ', () => new TorusGeometry(0.17, 0.022, 4, 16).rotateX(Math.PI / 2)), bronze);
+  circlet.position.y = 0.05;
+  head.add(circlet);
+  const helmWingG = shared('gh-hwing', () => mergeGeometries([placed(feather(0.26, 0.09), 0, 0, 0, 2.3), placed(feather(0.22, 0.08), 0, 0, 0.01, 2.0), placed(feather(0.18, 0.07), 0, 0, 0.02, 1.7)]));
+  for (const side of [-1, 1]) {
+    const hw = new Group();
+    hw.position.set(side * 0.16, 0.08, -0.02);
+    hw.scale.x = side;
+    hw.rotation.y = side * -0.5;
+    head.add(hw);
+    hw.add(new Mesh(helmWingG, featherMat));
+  }
+  slitEyes(head, { x: 0.065, y: 0.02, z: 0.155, len: 0.06, slant: 0.2 });
+  const crack = new Mesh(
+    shared('gh-crack', () => {
+      const r = (a, b, w) => {
+        const len = Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+        const g = new CylinderGeometry(w, w, len, 4);
+        g.rotateX(Math.acos((b[1] - a[1]) / len)).rotateY(Math.atan2(b[0] - a[0], b[2] - a[2]));
+        return g.translate((a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2);
+      };
+      return mergeGeometries([r([0.07, -0.005, 0.16], [0.095, -0.07, 0.15], 0.012), r([0.095, -0.07, 0.15], [0.08, -0.13, 0.13], 0.011), r([0.08, -0.13, 0.13], [0.1, -0.17, 0.1], 0.009)]);
+    }),
+    tellMat()
+  );
+  head.add(crack);
+  const tell = tellGlow(0.42, 0.34);
+  tell.position.set(0.09, -0.08, 0.18);
+  head.add(tell);
+  // The horn: a long bronze herald's trumpet from the mouth, two bands, a
+  // flared bell, a slate pennant hanging from it.
+  const horn = new Group();
+  horn.position.set(0, 0.74, 0.17);
+  body.add(horn);
+  const tube = new Mesh(shared('gh-tube', () => new CylinderGeometry(0.026, 0.036, 1.38, 6).rotateX(Math.PI / 2).translate(0, 0, 0.69)), bronze);
+  addInk(tube);
+  horn.add(tube);
+  const mouthpiece = new Mesh(shared('gh-mp', () => new CylinderGeometry(0.04, 0.022, 0.07, 6).rotateX(Math.PI / 2)), bronzeDark);
+  horn.add(mouthpiece);
+  for (const z of [0.42, 0.92]) {
+    const b = new Mesh(shared('gh-hband', () => new TorusGeometry(0.045, 0.016, 4, 10)), bronzeDark);
+    b.position.z = z;
+    horn.add(b);
+  }
+  const bellM = new Mesh(
+    shared('gh-bell', () =>
+      new LatheGeometry([[0.036, 0], [0.05, 0.1], [0.08, 0.18], [0.14, 0.25], [0.23, 0.3], [0.25, 0.31], [0.22, 0.3]].map(([r, y]) => new Vector2(r, y)), 14).rotateX(Math.PI / 2).translate(0, 0, 1.33)
+    ),
+    bronze
+  );
+  horn.add(bellM);
+  const bellRim = new Mesh(shared('gh-brim', () => new TorusGeometry(0.245, 0.02, 4, 18).translate(0, 0, 1.64)), bronzeDark);
+  horn.add(bellRim);
+  const pennant = new Group();
+  pennant.position.set(0, -0.03, 0.62);
+  horn.add(pennant);
+  const cloth = new Mesh(shared('gh-pennant', () => plate([[0, 0], [0.42, 0], [0.42, -0.36], [0.21, -0.48], [0, -0.36]], 0.01).rotateY(-Math.PI / 2).translate(0, 0, 0.21)), pennantMat);
+  pennant.add(cloth);
+  const fringe = new Mesh(shared('gh-fringe', () => new BoxGeometry(0.02, 0.03, 0.44).translate(0, 0, 0.0)), bronze);
+  pennant.add(fringe);
+  const hornGlow = makeGlowSprite({ color: VFX_MATTER.gust, size: 1.0, opacity: 0 });
+  hornGlow.material.toneMapped = false;
+  hornGlow.position.z = 1.66;
+  horn.add(hornGlow);
+  // Arms: two-bone rods from the shoulders to the hands on the horn.
+  const armG = shared('gh-armseg', () => new CylinderGeometry(0.07, 0.06, 1, 6).translate(0, 0.5, 0));
+  const handG = shared('gh-hand', () => new IcosahedronGeometry(0.075, 0));
+  const arms = [];
+  for (const side of [-1, 1]) {
+    const upper = new Mesh(armG, lime);
+    addInk(upper);
+    const fore = new Mesh(armG, lime);
+    const hand = new Mesh(handG, limeDark);
+    const cuff = new Mesh(shared('gh-cuff', () => new TorusGeometry(0.07, 0.022, 4, 10).rotateX(Math.PI / 2)), bronze);
+    body.add(upper, fore, hand, cuff);
+    arms.push({ side, upper, fore, hand, cuff, sh: new Vector3(side * 0.42, 0.5, 0.0), grip: new Vector3(side * 0.035, -0.045, side > 0 ? 0.3 : 0.62) });
+  }
+  // The great wings: pivot (on the back) -> mirror -> flap -> root (raise,
+  // sweep, tilt) -> arm feathers; an elbow to the hand's primaries. Bell
+  // bronze along the leading edges.
+  const wings = [];
+  const innerG = shared('gh-winner', heraldInnerFeathers);
+  const covertG = shared('gh-wcov', heraldCoverts);
+  const primG = shared('gh-wprim', heraldPrimaries);
+  const armBoneG = shared('gh-wbone', () => new CylinderGeometry(0.035, 0.028, 0.82, 5).rotateZ(-Math.PI / 2 + Math.atan2(0.15, 0.8)).translate(0.4, 0.075, 0));
+  const handBoneG = shared('gh-whand', () => new CylinderGeometry(0.028, 0.012, 0.85, 5).rotateZ(-Math.PI / 2).translate(0.42, 0.0, 0));
+  for (const side of [-1, 1]) {
+    const pivot = new Group();
+    pivot.position.set(side * 0.2, 0.55, -0.24);
+    body.add(pivot);
+    const mirror = new Group();
+    mirror.scale.x = side;
+    pivot.add(mirror);
+    const flap = new Group();
+    mirror.add(flap);
+    const root = new Group();
+    flap.add(root);
+    const inner = new Mesh(innerG, limeDark);
+    addInk(inner);
+    root.add(inner);
+    root.add(new Mesh(covertG, featherMat));
+    root.add(new Mesh(armBoneG, bronze));
+    const outer = new Group();
+    outer.position.set(0.8, 0.15, 0);
+    root.add(outer);
+    const prim = new Mesh(primG, limeDark);
+    addInk(prim);
+    outer.add(prim);
+    outer.add(new Mesh(handBoneG, bronze));
+    wings.push({ flap, root, outer, side });
+  }
+  const shadow = groundShadow(0.85, 0.85);
+  s.group.add(shadow);
+  const strike = clip();
+  let lastT = null;
+  let liftCur = 0;
+  let flapPh = 0;
+  let enterK = 0;
+  const _a = new Vector3();
+  const _b = new Vector3();
+  const _m = new Vector3();
+  const _d = new Vector3();
+  const _q = new Quaternion();
+  const UP = new Vector3(0, 1, 0);
+  const seg = (mesh, a, b) => {
+    _d.subVectors(b, a);
+    const len = _d.length() || 1e-3;
+    mesh.position.copy(a);
+    mesh.quaternion.copy(_q.setFromUnitVectors(UP, _d.multiplyScalar(1 / len)));
+    mesh.scale.set(1, len, 1);
+  };
+  // Wing poses: [tilt x, sweep y, raise z, elbow z].
+  const REST = [0.15, 0.42, 0.78, 0.55];
+  const BRACE = [0.05, 0.12, 0.32, 0.05];
+  const FLY = [-1.2, 0.1, 0.02, 0.04];
+  const TUCK = [-1.05, 1.15, 0.25, 0.75];
+  const FLARE = [-0.45, -0.1, 0.55, -0.12];
+  const w = [0, 0, 0, 0];
+  const mixIn = (to, k) => {
+    for (let i = 0; i < 4; i++) w[i] += (to[i] - w[i]) * k;
+  };
+  return {
+    group: s.group,
+    mats: s.mats,
+    setYaw: s.setYaw,
+    pose({ t, tick = 0, walkPhase = 0, moveK = 0, telegraphK = 0, e }) {
+      const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
+      lastT = t;
+      const k = strike(t, e ? e.moveTick : -1, 0.55);
+      const last = e ? e.lastMove : null;
+      const tel = e && e.telegraph;
+      const span = tel ? Math.max(1, (tel.resolveTick ?? 0) - (tel.startTick ?? 0)) : 1;
+      const prog = tel ? clamp01((tick - (tel.startTick ?? 0)) / span) : 0;
+      const callK = moving(e, 'gale_call') ? telegraphK : 0;
+      const stooping = moving(e, 'stoop') && !!(e && e.flight);
+      const blast = last === 'gale_call' ? k : 0;
+      const land = last === 'stoop' ? k : 0;
+      const rage = e && e.rage ? 1 : 0;
+      enterK = approach(enterK, e && e.mode === 'enter' ? 1 : 0, 5, dt);
+      // Aloft: the sim's flight drives the height; a cut-short stoop drops.
+      const want = heraldLift(e, tick);
+      liftCur = stooping ? want : approach(liftCur, 0, 16, dt);
+      const aloft = clamp01(liftCur / 1.4);
+      const dive = stooping && prog > 0.8 ? smooth((prog - 0.8) / 0.12) : 0;
+      lift.position.y = liftCur - 0.28 * land * (1 - land * 0.4);
+      // Body: upright and breathing; leans back drawing breath for the call
+      // and jolts forward on the blast; pitched into the glide aloft, nose
+      // down on the drop, a crouch on the landing.
+      const breathe = Math.sin(t * 1.5);
+      body.rotation.x = -0.24 * callK + 0.34 * blast + 0.5 * aloft * (1 - dive) + 0.85 * dive * aloft + 0.4 * land - 0.18 * enterK + 0.03 * breathe;
+      body.rotation.z = 0.04 * Math.sin(walkPhase * 1.2) * moveK + (rage ? 0.015 * Math.sin(t * 21) : 0);
+      chest.scale.set(1.2 * (1 + 0.08 * callK * prog), 1.05 * (1 + 0.02 * breathe + 0.06 * callK * prog), 0.85 * (1 + 0.1 * callK * prog));
+      robe.rotation.x = 0.5 * aloft - 0.45 * aloft * (1 - dive) * 0.6 + 0.25 * land + 0.04 * Math.sin(walkPhase * 1.2) * moveK;
+      robe.rotation.z = 0.05 * Math.sin(t * 2.3) * aloft;
+      robeM.scale.set(1 + 0.08 * land, 1 - 0.06 * aloft, 1 + 0.08 * land);
+      for (const { f, side } of feet) {
+        f.position.z = 0.22 + side * Math.sin(walkPhase * 1.2) * 0.14 * moveK + 0.25 * dive;
+        f.position.y = 0.1 + 0.15 * aloft * (1 - dive) - 0.05 * dive;
+        f.rotation.x = 0.6 * aloft * (1 - dive) - 0.5 * dive;
+      }
+      // The horn: tipped down at rest, to the sky for the entrance, levelled
+      // and lifted for the call, thrust out on the blast, tucked aloft.
+      horn.rotation.x = 0.4 * (1 - Math.max(callK, enterK, aloft)) - 0.12 * callK - 1.05 * enterK + 0.15 * aloft - 0.12 * blast + 0.04 * Math.sin(t * 1.1);
+      horn.position.z = 0.17 + 0.06 * blast;
+      horn.scale.setScalar(1 + 0.06 * blast);
+      pennant.rotation.x = -horn.rotation.x * 0.7 + 0.12 * Math.sin(t * 2.4) + 0.5 * aloft + 0.4 * blast;
+      pennant.rotation.y = 0.15 * Math.sin(t * 1.7);
+      hornGlow.material.opacity = 0.5 * callK * prog + 0.7 * blast + 0.2 * enterK;
+      hornGlow.scale.setScalar(0.7 + 0.8 * callK * prog + 1.0 * blast);
+      head.rotation.x = -0.1 * callK - 0.35 * enterK + 0.06 * Math.sin(t * 0.8);
+      tell.material.opacity = 0.3 + 0.35 * Math.max(callK, stooping ? 1 : 0) + (rage ? 0.25 + 0.15 * Math.sin(t * 9) : 0);
+      // Arms follow the horn: shoulders to the two grips.
+      for (const a of arms) {
+        _b.copy(a.grip).applyEuler(horn.rotation).multiplyScalar(horn.scale.x).add(horn.position);
+        _m.addVectors(a.sh, _b).multiplyScalar(0.5);
+        _m.x += a.side * 0.2;
+        _m.y -= 0.16;
+        _m.z -= 0.04;
+        seg(a.upper, a.sh, _m);
+        seg(a.fore, _m, _b);
+        a.hand.position.copy(_b);
+        a.cuff.position.copy(_m).lerp(_b, 0.75);
+        a.cuff.quaternion.copy(a.fore.quaternion);
+      }
+      // Wings.
+      for (let i = 0; i < 4; i++) w[i] = REST[i];
+      mixIn(BRACE, Math.max(callK, enterK) * (1 - aloft));
+      mixIn(FLY, aloft);
+      mixIn(TUCK, dive * aloft);
+      mixIn(FLARE, land);
+      const climbing = stooping && prog < 0.3;
+      flapPh += dt * (climbing ? 12 : stooping ? 6.5 : 0);
+      const beat = Math.sin(flapPh);
+      const flapAmp = aloft * (1 - dive) * (climbing ? 0.7 : 0.38);
+      for (const wg of wings) {
+        wg.flap.rotation.z = flapAmp * beat + 0.03 * Math.sin(t * 1.3) * (1 - aloft) + (rage ? 0.03 * Math.sin(t * 19 + wg.side) : 0) + 0.2 * blast;
+        wg.root.rotation.set(w[0], w[1] - 0.45 * blast, w[2]);
+        wg.outer.rotation.z = w[3] + flapAmp * 0.6 * Math.sin(flapPh - 0.7);
+      }
+      // Shadow: smaller and fainter the higher it rides.
+      shadow.scale.setScalar(1 - 0.35 * aloft);
+      shadow.material.opacity = 0.85 * (1 - 0.45 * aloft);
+    },
+  };
+}
+
 export const CHAMPION_BUILDERS = Object.freeze({
   briar_knight: buildBriarKnight,
   sluice_warden: buildSluiceWarden,
   bone_reeve: buildBoneReeve,
   hollow_choir: buildHollowChoir,
+  gale_herald: buildGaleHerald,
 });
 // Crown height per champion (world u above the ground).
-export const CHAMPION_CROWN_Y = Object.freeze({ briar_knight: 2.75, sluice_warden: 2.45, bone_reeve: 3.05, hollow_choir: 3.05 });
+export const CHAMPION_CROWN_Y = Object.freeze({ briar_knight: 2.75, sluice_warden: 2.45, bone_reeve: 3.05, hollow_choir: 3.05, gale_herald: 2.95 });
 
 // ------------------------------------------------------------ presence --
 const flat = (color, opacity) =>
@@ -808,7 +1202,13 @@ export function createChampionFx({ root, world, bus, cosmetic }) {
       const m = marks.get(e.id);
       const ix = e.x;
       const iz = e.z;
-      m.crown.g.position.set(ix, (CHAMPION_CROWN_Y[e.kind] ?? 2.6) + 0.06 * Math.sin(tSec * 2), iz);
+      const up = e.kind === 'gale_herald' ? heraldLift(e, world.tick) : 0;
+      m.crown.g.position.set(ix, (CHAMPION_CROWN_Y[e.kind] ?? 2.6) + up + 0.06 * Math.sin(tSec * 2), iz);
+      // The Gale Herald aloft: its wingbeats push pale air and dust down.
+      if (up > 0.3 && cosmetic.range(0, 1) < dt * 14) {
+        impactFx.spray('smoke', ix, 0.12, iz, 1, { color: VFX_MATTER.spirestone, speed: [0.5, 1.1], up: [0.0, 0.15], size: [0.34, 0.5], grow: 1.3, life: [0.5, 0.8], opacity: 0.2, gravity: 0, drag: 2.4, jitter: 0.4 });
+        impactFx.spray('spark', ix, up + 1.2, iz, 1, { color: VFX_MATTER.gust, speed: [0.2, 0.6], up: [-1.4, -0.6], size: [0.04, 0.07], life: [0.4, 0.7], gravity: 0, drag: 1.2, jitter: 0.9, opacity: 0.7 });
+      }
       m.crown.g.rotation.y = tSec * 0.9;
       m.sigil.g.position.set(ix, 0, iz);
       m.sigil.ticks.rotation.z = -tSec * 0.5;

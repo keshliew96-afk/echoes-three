@@ -54,3 +54,79 @@ A new hazard, `gust` in src/sim/hazards.js. A grate in the floor blows along a 1
 - `node tools/act5-probe.mjs` (headless; sets `ECHOES_ACT5=1` itself, and checks the flag-off state in a child process): the four enemies' behaviours, the gust push, governor holds, AI lane evasion, Level V wiring and runs, the campaign won after Level V, the Daily still four levels, Boss Rush still four acts, save and snapshot round trip.
 - `node tools/gntM4b-layoutcheck.mjs`: the six layouts' placements are clear (the gust lane is checked as a segment).
 - The nine goldens (`node tools/gntM2-goldens.mjs`) match: nothing in Acts I-IV changed.
+
+## Slice 7: the Spire's champion, two more creatures, events and deeds
+
+Content plan 4 slice 7 (v0.5.282) fills Level V to match Acts I to IV. Every
+number below is a first guess until the Spire has been played.
+
+### The Gale Herald (champion)
+
+The Spire's crown door no longer borrows the Hollow Choir. The Gale Herald
+(`gale_herald`, `src/sim/enemies/champions.js`) is the gods' own crier: a
+winged stone herald carved to stand on the belfry roof with a long bronze horn.
+It keeps 2.4 to 4.6 u from its target and alternates two moves under the
+governor, like every champion:
+
+| Move | Warning | What it does |
+|---|---|---|
+| Gale Call | a cone r 5.2, half-angle 34°, 60 ticks | the horn blasts for 12 and throws every hero it hits 2.4 u away from the horn over 12 ticks (heroes ignore knockback, so the throw is its own, like the Rope Hanger's) |
+| Stoop | a ring r 2.1 under a hero 1.6 to 7.5 u away, 72 ticks | it takes wing (a flier, over barricades and hazards) and glides to the mark over the first 80% of the warning, then hangs over it and lands on it for 17 |
+
+A stun mid-stoop drops it where it is. Below half health it rages like the
+others (cooldowns x0.7, speed x1.15). The champion frame gained a `pre` hook
+for the throw and the flight; the other four champions do not use it. The AI
+seats count it as a champion (`src/sim/partyai.js`).
+
+### Two more creatures (six of its own)
+
+Both join Level V's roster from room 3, campaign rooms only
+(`CAMPAIGN_ONLY_ENEMIES`), so the legacy single-level run never plans them.
+
+- **Vane Cock** (`vane`, `src/sim/enemies/vane.js`, 24 HP, threat 1.5): a brass
+  weathercock on its spindle. It keeps 4 to 7 u away and, with a clear line,
+  marks a lane 0.9 u wide through a hero for 48 ticks, then looses three gust
+  darts down it, 9 ticks apart, 7 each. Step out of the lane and all three
+  miss. A stun mid-aim cancels the volley. Cooldown 230 ticks.
+- **Bell Sacristan** (`sacristan`, `src/sim/enemies/sacristan.js`, 34 HP,
+  threat 1.6): a stone acolyte with a hand bell. When two or more kin stand
+  within 3.6 u it rings a Vesper Hush (a pale ring, 54 ticks, not an attack, so
+  the governor never holds it): every other enemy inside, never a boss or a
+  champion, is hushed for 300 ticks and takes 40% less damage (`hushUntil` /
+  `hushMul` on the body, read in `src/sim/combat.js`). A stun mid-ring chokes
+  it. Alone it walks in and raps a hero: a cone r 1.6, half-angle 60°, 36
+  ticks, 7. Hush cooldown 380 ticks, rap 150.
+
+### Spire events
+
+Two land-bound encounters (`land: 'spire'`, `src/sim/encounters.js`):
+
+- **Gods' Seat** (`gods_seat`): give up your two newest relics for a
+  legendary pick (rare when none are left). Refused with fewer than two
+  relics. The AI leaves it.
+- **Silent Bell** (`silent_bell`): every hero gives 15% of max HP and the bell
+  lifts your newest major curse for the rest of the run (`relics.liftMajor`,
+  event `curse_lifted`). Refused with no major curse. The AI takes it.
+
+### Relics, tints and deeds
+
+- **Relics** (heirlooms like any relic): Weathercock Plume (common, dodges
+  recover 15% faster, party knockback +30%) and the Hushbell (rare, +25%
+  party damage on an enemy while its attack warning is up).
+- **Tints**: Still Air for the Swordsman (40 Embers, Level V cleared) and Gale
+  Bronze for the Bellwright (free with Windfall).
+- **Deeds**: Skyward (clear Level V, 60), Windfall (fell the Gale Herald, 25),
+  Five Crowns (fell all five champions, 80) and Break the Hush (fell the Hush
+  on Harrowing, 80). Four Crowns still means the first four champions
+  (`FIRST_CROWNS` in `src/sim/champions.js`).
+- **Journal**: the Gale Herald joins the Champions row; the Vane Cock and the
+  Bell Sacristan join the Spire's pages.
+
+### Verification
+
+- `node tools/act5-champion-probe.mjs` (headless, 28 checks): the Herald's
+  throw and stoop and a mid-stoop save, the vane's volley, the sacristan's
+  hush (40% less on a real blow, never on a champion) and rap, the roster
+  gate, the Hushbell, the deeds, tints and Journal rows.
+- `tools/champions-probe.mjs` now covers Level V too; `tools/eventrooms-probe.mjs`
+  covers both Spire events and the Spire's land filter.

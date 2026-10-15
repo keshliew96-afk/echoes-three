@@ -76,7 +76,7 @@ const ENEMIES = [
   ['Wood, new', 1, ['owl', 'lasher']],
   ['Mill, new', 2, ['leech', 'miller']],
   // Act V, the Still Spire (docs/ACT_V.md).
-  ['Act V', 5, ['kite', 'chime', 'gargoyle', 'hanger']],
+  ['Act V', 5, ['kite', 'chime', 'gargoyle', 'hanger', 'vane', 'sacristan']],
 ];
 // The room an act's row plays in: Level V only exists behind ?act5=1.
 const roomAct = (act) => (ACT_IDS.includes(act) ? act : 4);
@@ -429,6 +429,17 @@ export function mountVfxLab() {
           X().cmd('spawn', 'gargoyle', f.x + 1.3, f.z - 2.6);
           return say('gargoyle x2: statues; walk within 2.6 u or hit one to wake it; stay 5 u off for 6 s and it settles back to stone');
         }
+        if (k === 'vane') {
+          X().cmd('spawn', 'vane', f.x - 1.8, f.z - 3.4);
+          X().cmd('spawn', 'vane', f.x + 1.8, f.z - 4.2);
+          return say('vane x2: they hop on their spindles, swing round into the wind (the lane), then three gust darts fly down it');
+        }
+        if (k === 'sacristan') {
+          X().cmd('spawn', 'sacristan', f.x, f.z - 4.2);
+          X().cmd('spawn', 'chime', f.x - 1.4, f.z - 3.0);
+          X().cmd('spawn', 'gargoyle', f.x + 1.4, f.z - 3.2);
+          return say('sacristan + kin: it rings the pale hush ring (a ward, not a hit); its kin wear the veil and take 40% less for 5 s; stun it mid-ring to choke it');
+        }
         if (k === 'hanger') {
           X().cmd('spawn', 'hanger', f.x - 1.4, f.z - 3.0);
           X().cmd('spawn', 'hanger', f.x + 1.4, f.z - 3.6);
@@ -704,9 +715,9 @@ export function mountVfxLab() {
   // of the party in its own land (crown, sigil, both moves, the rage below
   // half health and its fall all play live).
   const champ = section('Champions');
-  for (const [act, kind, name] of [[1, 'briar_knight', 'Briar Knight'], [2, 'sluice_warden', 'Sluice Warden'], [3, 'bone_reeve', 'Bone Reeve'], [4, 'hollow_choir', 'Hollow Choir']]) {
+  for (const [act, kind, name] of [[1, 'briar_knight', 'Briar Knight'], [2, 'sluice_warden', 'Sluice Warden'], [3, 'bone_reeve', 'Bone Reeve'], [4, 'hollow_choir', 'Hollow Choir'], [5, 'gale_herald', 'Gale Herald']]) {
     button(champ, name, async () => {
-      await ensureCombat(act);
+      await ensureCombat(roomAct(act));
       const f = front();
       X().cmd('spawn', kind, f.x, f.z - 3.6);
       say(`the ${name}: two telegraphed moves, rages below half health`);
@@ -812,13 +823,13 @@ export function mountVfxLab() {
     ]],
     // CHAMPION ROOMS (src/audio/championcues.js).
     ['Sound, champion stings', [
-      ['Briar Knight', 'ch_briar_knight_sting'], ['Sluice Warden', 'ch_sluice_warden_sting'], ['Bone Reeve', 'ch_bone_reeve_sting'], ['Hollow Choir', 'ch_hollow_choir_sting'],
+      ['Briar Knight', 'ch_briar_knight_sting'], ['Sluice Warden', 'ch_sluice_warden_sting'], ['Bone Reeve', 'ch_bone_reeve_sting'], ['Hollow Choir', 'ch_hollow_choir_sting'], ['Gale Herald', 'ch_gale_herald_sting'],
       ['Rage', 'ch_briar_knight_rage'], ['Fall', 'ch_fall'], ['Chest', 'ch_chest'], ['Crown door', 'ch_crown'],
     ]],
     ['Sound, champion moves', [
       ['Tell', 'ch_tell'], ['Bramble Charge', 'ch_bramble_charge'], ['Charge stops', 'ch_charge_stop'], ['Thorn Ring', 'ch_thorn_ring'],
       ['Floodgate', 'ch_floodgate'], ['Undertow', 'ch_undertow'], ['Reaping Sweep', 'ch_reaping_sweep'], ['Grave Lance', 'ch_grave_lance'],
-      ['Shard Hymn', 'ch_shard_hymn'], ['Discord', 'ch_discord'],
+      ['Shard Hymn', 'ch_shard_hymn'], ['Discord', 'ch_discord'], ['Gale Call', 'ch_gale_call'], ['Stoop', 'ch_stoop'],
     ]],
     // SHOP REFRESH (src/audio/cues.js): the peddler's riffle beside the buy.
     ['Sound, shop', [['Buy', 'purchase'], ['Refresh', 'shop_refresh'], ['Too dear', 'deny']]],

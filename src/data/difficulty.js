@@ -189,6 +189,8 @@ export const THREAT = Object.freeze({
   chime: 1.6,
   gargoyle: 2.6,
   hanger: 1.8,
+  vane: 1.5,
+  sacristan: 1.6,
 });
 export const ELITE_COST = 1.8;
 export const ELITE_MUL = Object.freeze({ hp: 1.8, dmg: 1.25, scale: 1.2 });

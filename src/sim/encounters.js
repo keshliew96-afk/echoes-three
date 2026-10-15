@@ -1,6 +1,7 @@
 // EVENT ROOMS (docs/EVENT_ROOMS.md, content plan 2 slice 1). A third kind of
 // door, marked "?", leads to a small room with no fight that holds one of
-// fourteen encounters (eight at first, six more in plan 3 slice 6). Each is a
+// sixteen encounters (eight at first, six more in plan 3 slice 6, two of the
+// Still Spire's in plan 4 slice 7). Each is a
 // trade: HP, Glint, a curse, a relic or a fight for a reward. Taking the "?"
 // door also gives up the combat room it replaces (its stipend, its clear
 // spoils and its draft), which is the price of the free ones.
@@ -46,6 +47,9 @@ export const EVENT_RULES = Object.freeze({
   diceStake: 20, // Gambler's Dice
   diceHigh: 8, // ... a sum at least this pays diceGlint
   diceGlint: 50,
+  // The Still Spire's two (plan 4 slice 7).
+  seatRelics: 2, // Gods' Seat: the newest relics it takes
+  bellCost: 0.15, // Silent Bell: each hero gives this share of max HP
   spot: Object.freeze({ x: 1.2, z: -3.6 }), // where the encounter stands
   bodyRadius: 0.6, // its solid footprint (bodies walk round it)
 });
@@ -156,6 +160,27 @@ export const ENCOUNTERS = Object.freeze({
     land: 'heart',
     safe: true,
   },
+  // THE STILL SPIRE (plan 4 slice 7, docs/ACT_V.md "Spire events"): the
+  // gods' empty throne, and the bell the Hush stilled.
+  gods_seat: {
+    name: "Gods' Seat",
+    text: 'A throne of white stone at the edge of the sky, too large for anyone left alive. It is still warm.',
+    detail: 'Sit where the gods sat: give up your two newest relics.',
+    effect: 'Choose one of three legendary relics (rare when none are left).',
+    cost: 'relics',
+    price: EVENT_RULES.seatRelics,
+    land: 'spire',
+    safe: false,
+  },
+  silent_bell: {
+    name: 'Silent Bell',
+    text: 'A great bell with no tongue, wrapped in the Hush. It drinks every sound, and it is still thirsty.',
+    detail: 'Every hero gives 15% of their max HP (never below 1).',
+    effect: 'It drinks your newest major curse: that curse is lifted for the rest of the run.',
+    cost: 'lift',
+    land: 'spire',
+    safe: true,
+  },
   traveling_smith: {
     name: 'Traveling Smith',
     text: 'An anvil on a handcart, and a smith who never stops whistling.',
@@ -214,6 +239,8 @@ export function createEncounterSystem({ events, getTick }) {
     const E = ENCOUNTERS[id];
     if ((E.cost === 'glint' || E.cost === 'purse') && ctx.wallet < E.price) return 'glint';
     if (E.cost === 'relic' && ctx.relics <= 0) return 'relic';
+    if (E.cost === 'relics' && ctx.relics < E.price) return 'relics';
+    if (E.cost === 'lift' && !(ctx.majors > 0)) return 'lift';
     if (E.cost === 'major' && ctx.freeMajors <= 0) return 'major';
     if (E.cost === 'curses' && !(ctx.majors > 0)) return 'curses';
     if (E.cost === 'reforge') return ctx.relics <= 0 ? 'relic' : ctx.wallet < E.price ? 'glint' : null;

@@ -125,6 +125,16 @@ Kits draw on the newer skills of each class's eleven-skill pool. A new requireme
 
 Verification: `node tools/deeds-unlocks-2-probe.mjs` (headless, 51 checks: the catalogue and its text in all ten languages, every new deed met and one short, marks over several runs on a real profile store and a reload, the Daily streak, deed requirements, both vows in a real room, and whole autopilot campaigns with the tracker on the sim bus).
 
+## The Still Spire (plan 4 slice 7)
+
+Listed while Level V is played. Deeds: **Skyward** (clear Level V, 60),
+**Windfall** (fell the Gale Herald, 25), **Five Crowns** (fell all five
+champions, 80, with an N of 5 bar) and **Break the Hush** (fell the Hush on
+Harrowing, 80). Four Crowns keeps counting only the first four champions.
+Tints: **Still Air** (Swordsman, 40, Level V cleared) and **Gale Bronze**
+(Bellwright, free with Windfall). Heirlooms of the Weathercock Plume and the
+Hushbell come with the relics.
+
 ## Determinism: an unlock changes a run only when it is picked
 
 - Only a **real Begin Run from the camp** (the portal or the Level Select) passes `boons` to `startCampaign`, built by `loadoutBoons(meta)` from what is equipped. With nothing equipped it is `null`, the call is exactly the call it was before, and the run is event-for-event the same: `tools/unlocks-probe.mjs --base <gauntlet checkout>` hashes whole plain campaigns on both trees (seeds 1–3, identical), and the 9 golden traces (legacy `startRun()`, which never takes boons) match.

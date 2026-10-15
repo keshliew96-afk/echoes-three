@@ -53,6 +53,9 @@ const SPIRE_ROWS = [
   ['chime', 'Chime Wraith', 'Toller', 'A shroud with a cracked bell where its heart should be. It still rings the hours nobody keeps.', 'Drifts in close, then lifts its bell in a warning ring round itself. The toll hits for 6 and slows every hero inside by 40% for 2 s. Step out of the ring; a stun chokes the bell.'],
   ['gargoyle', 'Gargoyle', 'Sleeper', 'It watched the gods sit down. It has been waiting for someone to stand up.', 'Stone until a hero comes close or strikes it. Then it cracks free in a warning ring for 12, stalks you and slams a ring in front of it for 13. Leave it alone long enough and it turns back to stone.'],
   ['hanger', 'Rope Hanger', 'Swinger', 'A bell-ringer who never let go of the rope.', 'Grips its rope and marks a long warning lane through a hero, then swings down it over everything in the way. Every hero it passes takes 8 and is thrown aside.'],
+  // Plan 4 slice 7: two more of the Spire's own.
+  ['vane', 'Vane Cock', 'Volley', 'A brass weathercock torn off a steeple. It still turns to face whatever is coming.', 'Keeps its distance, then swings into the wind and marks a long, narrow warning lane through a hero. Three gust darts fly down it for 7 each: step out of the lane and they all miss.'],
+  ['sacristan', 'Bell Sacristan', 'Warder', 'A stone acolyte of the belfry who still rings the hours for gods who stopped listening.', 'Hangs back behind its kin and rings a pale ring round itself: every other enemy inside is hushed and takes 40% less damage for 5 s. Kill it first, or stun it mid-ring. Alone, it raps you with its bell for 7.'],
 ];
 const ROWS = ACT_IDS.includes(5) ? [...ENEMY_ROWS, ...SPIRE_ROWS] : ENEMY_ROWS;
 // The same pages as display data, exported so tools/i18n-extract.mjs collects
@@ -66,6 +69,7 @@ const CHAMPION_ROWS = {
   sluice_warden: ['The keeper of the mill race, iron-shod and patient as the water.', 'Floodgate: a warning cone in front of him floods for 18. Undertow: a ring under a hero wells up for 12 and leaves slick water. Below half health he rages.'],
   bone_reeve: ['The barrow\'s bailiff, who still collects what the dead are owed.', 'Reaping Sweep: a wide warning cone in front of him for 16. Grave Lance: bone spikes burst down a warning lane for 14. Below half health he rages.'],
   hollow_choir: ['Three voices of the Heart sung into one crystal body. It hums even when it is still.', 'Shard Hymn: a narrow warning cone, then five crystal shards for 9 each. Discord: a ring round it bursts for 15. It keeps its distance, and below half health it rages.'],
+  gale_herald: ['The gods\' own crier, carved to stand on the belfry roof and call the winds in. It never stopped calling.', 'Gale Call: a warning cone in front of its horn blasts for 12 and throws you down the wind. Stoop: it takes wing over a warning ring under a hero and lands on it for 17. Below half health it rages.'],
 };
 
 // One row per boss kind, in level order.

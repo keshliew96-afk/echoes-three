@@ -1672,6 +1672,12 @@
   ],
   "data": true
  },
+ "A brass weathercock torn off a steeple. It still turns to face whatever is coming.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "A bubble on the ally enemies are after: a 14 shield for 4 s. When it breaks or ends, it pops and soaks enemies within 1 u.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1811,6 +1817,12 @@
   "files": [
    "src/ui/run/draft.js"
   ]
+ },
+ "A great bell with no tongue, wrapped in the Hush. It drinks every sound, and it is still thirsty.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "A GREATER RELIC": {
   "files": [
@@ -2143,6 +2155,12 @@
   ],
   "data": true
  },
+ "A stone acolyte of the belfry who still rings the hours for gods who stopped listening.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "A stone bowl, dark and warm. It drinks what it is given.": {
   "files": [
    "src/sim/encounters.js"
@@ -2165,6 +2183,12 @@
   "files": [
    "src/save/index.js"
   ]
+ },
+ "A throne of white stone at the edge of the sky, too large for anyone left alive. It is still warm.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
  },
  "A thrown clapper: 12, and +50% on an enemy standing in one of your bells' rings.": {
   "files": [
@@ -3156,6 +3180,12 @@
   ],
   "data": true
  },
+ "Begin every run holding Hushbell. The party deals 25% more damage to an enemy while its attack warning is up.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Jailer's Ring. Picking up a key heals the party for 15% of max HP and pays 10 Glint.": {
   "files": [
    "src/data/unlocks.js"
@@ -3293,6 +3323,12 @@
   ],
   "data": true
  },
+ "Begin every run holding Weathercock Plume. Dodges recover 15% faster, and party hits knock enemies back 30% farther.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Whetstone. The party deals 12% more damage.": {
   "files": [
    "src/data/unlocks.js"
@@ -3384,6 +3420,12 @@
   ],
   "data": true
  },
+ "Bell Sacristan": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Bell Stair": {
   "files": [
    "src/data/layouts.js"
@@ -3432,6 +3474,12 @@
    "src/data/classes.js",
    "src/ui/menu/saves.js",
    "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Bellwright effects burn in Gale Bronze colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -3720,6 +3768,12 @@
  "Brazilian Portuguese": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Break the Hush": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -4368,6 +4422,12 @@
   "data": true
  },
  "Clear Level IV, the Hollow Heart.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Clear Level V, the Still Spire, and bring the Verse of Sky home.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5378,6 +5438,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Dodges recover 15% faster, and party hits knock enemies back 30% farther.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Dodges recover 25% faster.": {
   "files": [
    "src/sim/relics.js"
@@ -5967,6 +6033,12 @@
   ],
   "data": true
  },
+ "Every hero gives 15% of their max HP (never below 1).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Every hero gives a fifth of their max HP (never below 1).": {
   "files": [
    "src/sim/encounters.js"
@@ -6154,6 +6226,12 @@
   ],
   "data": true
  },
+ "Fell all five champions, the Gale Herald included.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": {
   "files": [
    "src/data/unlocks.js"
@@ -6220,6 +6298,12 @@
   ],
   "data": true
  },
+ "Fell the Gale Herald, the champion of the Still Spire.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Geode Colossus": {
   "files": [
    "src/data/unlocks.js"
@@ -6245,6 +6329,12 @@
   "data": true
  },
  "Fell the Hush": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Hush on the Harrowing challenge.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6415,6 +6505,12 @@
  "Five arrows in a wide spray, 9 each, then the hare darts off 30% faster for 1.5 s.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Five Crowns": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -6796,6 +6892,18 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Gale Bronze tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Gale Call: a warning cone in front of its horn blasts for 12 and throws you down the wind. Stoop: it takes wing over a warning ring under a hero and lands on it for 17. Below half health it rages.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Gale Step": {
   "files": [
    "src/sim/nodes.js"
@@ -6947,6 +7055,12 @@
   ],
   "data": true
  },
+ "Gods' Seat": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Good. Now you sound a little more like me.": {
   "files": [
    "src/data/story.js"
@@ -7091,6 +7205,12 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "Hangs back behind its kin and rings a pale ring round itself: every other enemy inside is hushed and takes 40% less damage for 5 s. Kill it first, or stun it mid-ring. Alone, it raps you with its bell for 7.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Hare": {
   "files": [
@@ -7673,6 +7793,13 @@
   ],
   "data": true
  },
+ "Hushbell": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "I sang the sluices shut to keep the hollow song out. It came in with the river anyway. Thank you for bringing the water back.": {
   "files": [
    "src/data/story.js"
@@ -7849,6 +7976,12 @@
  "It ate from my pyres until it could carry the ash. Now it carries my song.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "It drinks your newest major curse: that curse is lifted for the rest of the run.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -8090,6 +8223,12 @@
   "data": true
  },
  "Keeps its distance, caws a warning cone, then fires a fan of three feathers for 5 each. Sidestep wide, not a little.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Keeps its distance, then swings into the wind and marks a long, narrow warning lane through a hero. Three gust darts fly down it for 7 each: step out of the lane and they all miss.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -11902,6 +12041,12 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Silent Bell": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Silver Peal tint": {
   "files": [
    "src/data/unlocks.js"
@@ -11937,6 +12082,12 @@
  "Siphon": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Sit where the gods sat: give up your two newest relics.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -12030,6 +12181,12 @@
  "Sky@@verse": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Skyward": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -12440,6 +12597,12 @@
   ],
   "data": true
  },
+ "Still Air tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Still joining {code}…": {
   "files": [
    "src/ui/net/hud.js"
@@ -12586,6 +12749,12 @@
   "data": true
  },
  "Swordsman effects burn in Gravefrost colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Swordsman effects burn in Still Air colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -13140,6 +13309,11 @@
    "src/ui/run/transit.js"
   ]
  },
+ "The bell drinks {name}. The curse is lifted.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "The bell rings in the gods’ own belfry, and the silence breaks. Five verses burn in the hearth. Two are still missing, and above the Spire, for the first time, the gods stand up.": {
   "files": [
    "src/data/story.js"
@@ -13505,6 +13679,13 @@
   ],
   "data": true
  },
+ "The Gale Herald": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
+ },
  "The game has ended": {
   "files": [
    "src/save/index.js"
@@ -13642,6 +13823,12 @@
  "The gods' high belfry, where they sat down to watch and never rose.": {
   "files": [
    "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "The gods' own crier, carved to stand on the belfry roof and call the winds in. It never stopped calling.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -14094,6 +14281,12 @@
   ],
   "data": true
  },
+ "The party deals 25% more damage to an enemy while its attack warning is up.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "The party deals 30% more damage to champions, and a champion's chest pays 25 Glint.": {
   "files": [
    "src/sim/relics.js"
@@ -14262,6 +14455,11 @@
  "The score: menu, camp, combat, boss and the victory / defeat stingers.": {
   "files": [
    "src/ui/menu/tabs/audio.js"
+  ]
+ },
+ "The seat takes {name}.": {
+  "files": [
+   "src/ui/run/index.js"
   ]
  },
  "the seat was released": {
@@ -15342,6 +15540,12 @@
   ],
   "data": true
  },
+ "Vane Cock": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "VAULT KEY": {
   "files": [
    "src/ui/hud/index.js"
@@ -15490,6 +15694,7 @@
  },
  "Volley": {
   "files": [
+   "src/data/journal.js",
    "src/sim/allies.js"
   ],
   "data": true
@@ -15716,6 +15921,13 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Weathercock Plume": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Weeping Wells": {
   "files": [
    "src/data/layouts.js"
@@ -15935,6 +16147,12 @@
   ],
   "data": true
  },
+ "Windfall": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Windowed": {
   "files": [
    "src/ui/menu/tabs/display.js"
@@ -16122,11 +16340,21 @@
   "plural": true,
   "one": "You carry {n} relic: {names}."
  },
+ "You carry fewer than two relics to give.": {
+  "files": [
+   "src/ui/run/encounter.js"
+  ]
+ },
  "You carry my bell. I rang it once, in the Hollow Wood, long before you.": {
   "files": [
    "src/data/story.js"
   ],
   "data": true
+ },
+ "You carry no major curse for it to drink.": {
+  "files": [
+   "src/ui/run/encounter.js"
+  ]
  },
  "You carry no major curse for it to feed on.": {
   "files": [

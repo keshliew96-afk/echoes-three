@@ -956,6 +956,8 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     else if (ev.encounter === 'sluice_gate') a.toast(t('The race carries down {n} Glint.', { n: ev.glint ?? 0 }), { tone: 'info', ms: 4200 });
     else if (ev.encounter === 'heart_crystal' && Array.isArray(ev.relics) && ev.relics.length) a.toast(t('The crystal grows: {names}.', { names: ev.relics.map((id) => (RELICS[id] ? t(RELICS[id].name) : id)).join(', ') }), { tone: 'info', ms: 5600 });
     else if (ev.encounter === 'traveling_smith' && r && ev.lost && RELICS[ev.lost]) a.toast(t('The smith reforges {old} into {name}. {text}', { old: t(RELICS[ev.lost].name), name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 6000 });
+    // THE STILL SPIRE (plan 4 slice 7).
+    else if (ev.encounter === 'silent_bell' && ev.lifted && CURSES[ev.lifted]) a.toast(t('The bell drinks {name}. The curse is lifted.', { name: t(CURSES[ev.lifted].name) }), { tone: 'info', ms: 5200 });
     else if (ev.encounter === 'gamblers_dice' && Array.isArray(ev.dice)) {
       const [d1, d2] = ev.dice;
       if (r) a.toast(t('Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}', { a: d1, b: d2, name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 6000 });
@@ -967,7 +969,8 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     const a = service('app');
     const r = RELICS[ev.relic];
     if (ev.source === 'smith') return; // the reforge toast names it
-    if (a && typeof a.toast === 'function' && r) a.toast(t('The spirit takes {name}.', { name: t(r.name) }), { tone: 'info', ms: 4200 });
+    if (a && typeof a.toast === 'function' && r && ev.source === 'seat') a.toast(t('The seat takes {name}.', { name: t(r.name) }), { tone: 'info', ms: 4200 });
+    else if (a && typeof a.toast === 'function' && r) a.toast(t('The spirit takes {name}.', { name: t(r.name) }), { tone: 'info', ms: 4200 });
   });
   // Slice 2: an elite's relic drop, a relic bought at the peddler.
   bus.on('relic_drop', (ev) => {

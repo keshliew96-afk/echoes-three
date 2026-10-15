@@ -206,8 +206,8 @@ function toPath(w) {
 }
 
 // --------------------------------------------------------- room / moves --
-const LEVEL_CHAMP = { 1: 'briar_knight', 2: 'sluice_warden', 3: 'bone_reeve', 4: 'hollow_choir' };
-for (const level of [1, 2, 3, 4]) {
+const LEVEL_CHAMP = { 1: 'briar_knight', 2: 'sluice_warden', 3: 'bone_reeve', 4: 'hollow_choir', 5: 'gale_herald' };
+for (const level of [1, 2, 3, 4, 5]) {
   const w = into(SEED, 4, level);
   check('room', `Level ${level}: room 4 plays as the champion room`, w.run().view().mode === 'champion', w.run().view().mode);
   stepUntil(w, () => !!champ(w), 240);

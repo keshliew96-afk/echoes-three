@@ -60,6 +60,13 @@ next page opens; the same after the trapped chest pays out. The hold is UI
 only: the sim is already at that page. Leave always goes straight on to the doors. When Take is refused (not enough
 Glint, say) the card opens on Leave and says why.
 
+### The Still Spire's two (plan 4 slice 7)
+
+- **Gods' Seat** (Spire): give up your two newest relics for a choice of three
+  legendary relics (rare when none are left). Needs two relics.
+- **Silent Bell** (Spire): every hero gives 15% of max HP; the bell lifts your
+  newest major curse for the rest of the run. Needs a major curse. AI-safe.
+
 ## Co-op, AI and autopilot
 
 - The host decides, like the doors. Guests see the card and their pick is

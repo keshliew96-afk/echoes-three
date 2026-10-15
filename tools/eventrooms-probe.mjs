@@ -160,8 +160,10 @@ function inspect(W) {
 const partyHp = (W) => W.registry.all().filter((e) => e.partyIndex !== undefined).map((e) => ({ hp: e.hp, max: e.maxHp }));
 
 for (const [i, id] of ENCOUNTER_IDS.entries()) {
-  const W = atEventRoom(10 + i, id, 60, id === 'heart_crystal' ? ['hunted', 'withering'] : []);
+  const W = atEventRoom(10 + i, id, 60, id === 'heart_crystal' || id === 'silent_bell' ? ['hunted', 'withering'] : []);
   if (!check(!!W, `${id}: reached its "?" room`)) continue;
+  // The Gods' Seat takes two relics: hand it a second.
+  if (id === 'gods_seat') W.run.cmd('relicGrant', ['whetstone']) || W.run.cmd('relicGrant', ['millstone']);
   const v0 = W.run.view();
   const hostiles = W.registry.all().filter((e) => e.faction === 'hostile').length;
   check(v0.mode === 'event' && v0.encounter && v0.encounter.id === id && v0.encounter.state === 'idle' && hostiles === 0, `${id}: an event room, no enemies, the encounter idle`);
@@ -233,6 +235,15 @@ for (const [i, id] of ENCOUNTER_IDS.entries()) {
     const up = lost && got && (rank[got.rarity] > rank[lost.rarity] || (lost.rarity === 'legendary' && got.rarity === 'legendary')) && got.relic !== lost.relic;
     const paid = W.log.some((e) => e.type === 'glint_spend' && e.amount === 25);
     check(!!up && paid && v1.phase === 'path', `${id}: 25 Glint, ${lost ? lost.relic : '-'} (${lost ? lost.rarity : '-'}) reforged into ${got ? got.relic : '-'} (${got ? got.rarity : '-'})`);
+  } else if (id === 'gods_seat') {
+    const lost = W.log.filter((e) => e.type === 'relic_lose' && e.source === 'seat').map((e) => e.relic);
+    const legend = v1.relics && v1.relics.offer && v1.relics.offer.choices.every((x) => x.rarity === 'legendary' && !lost.includes(x.id));
+    check(lost.length === 2 && v1.phase === 'relic' && legend, `${id}: gave up ${lost.join(' and ')}, then a legendary pick`);
+  } else if (id === 'silent_bell') {
+    const after = partyHp(W);
+    const paid = after.every((a, k) => a.hp >= 1 && a.hp <= before.hp[k].hp - Math.min(before.hp[k].hp - 1, before.hp[k].max * 0.15) + 0.02);
+    const lifted = r && r.lifted === 'withering';
+    check(paid && lifted && v1.relics.majors.length === 1 && v1.phase === 'path', `${id}: 15% of max HP each, the newest major (${r && r.lifted}) lifted, one left`);
   } else if (id === 'gamblers_dice') {
     const d = r && r.dice;
     const paid = W.log.some((e) => e.type === 'glint_spend' && e.amount === 20);
@@ -297,16 +308,18 @@ for (const [i, id] of ENCOUNTER_IDS.entries()) {
 
 // ------------------------------------------------ 5. more event rooms --
 {
-  const LAND = { 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart' };
+  const LAND = { 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart', 5: 'spire' };
   let wrong = 0;
-  const seenOn = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set() };
+  const seenOn = { 1: new Set(), 2: new Set(), 3: new Set(), 4: new Set(), 5: new Set() };
   let landOk = true;
-  for (const level of [1, 2, 3, 4]) {
+  for (const level of [1, 2, 3, 4, 5]) {
     for (let seed = 1; seed <= 40; seed++) {
       const W = startCampaign(seed, level);
       if (W.run.cmd('eventLand') !== LAND[level]) landOk = false;
       // Majors on the Heart so its crystal can be rolled; Glint for the rest.
-      if (level === 4) W.run.cmd('eventMajor', ['hunted']);
+      if (level === 4 || level === 5) W.run.cmd('eventMajor', ['hunted']);
+      // ... and relics on the Spire so its seat can be rolled.
+      if (level === 5) for (const id of ['whetstone', 'millstone']) W.run.cmd('relicGrant', [id]);
       for (let room = 1; room <= 5; room++) {
         if (!clearToPath(W)) break;
         W.run.cmd('wallet', [80]);
@@ -321,10 +334,10 @@ for (const [i, id] of ENCOUNTER_IDS.entries()) {
       }
     }
   }
-  check(landOk, 'the door roll reads each level\'s land (wood, mill, barrow, heart)');
+  check(landOk, 'the door roll reads each level\'s land (wood, mill, barrow, heart, spire)');
   check(wrong === 0, `land-bound encounters only on their own land (${wrong} elsewhere)`);
-  const own = { 1: 'fey_ring', 2: 'sluice_gate', 3: 'barrow_ossuary', 4: 'heart_crystal' };
-  for (const level of [1, 2, 3, 4]) check(seenOn[level].has(own[level]), `level ${level}: its own ${own[level]} rolled (${seenOn[level].size} kinds seen)`);
+  const own = { 1: ['fey_ring'], 2: ['sluice_gate'], 3: ['barrow_ossuary'], 4: ['heart_crystal'], 5: ['gods_seat', 'silent_bell'] };
+  for (const level of [1, 2, 3, 4, 5]) check(own[level].every((id) => seenOn[level].has(id)), `level ${level}: its own ${own[level].join(' and ')} rolled (${seenOn[level].size} kinds seen)`);
   const travellers = ['traveling_smith', 'gamblers_dice'].filter((id) => [1, 2, 3, 4].filter((l) => seenOn[l].has(id)).length >= 3);
   check(travellers.length === 2, `the smith and the dice travel (seen on 3+ lands: ${travellers.join(', ')})`);
   // Refusals: the crystal with no major curse, the smith with no relic.

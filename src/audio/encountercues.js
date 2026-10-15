@@ -25,6 +25,13 @@
 //   ev_crystal Heart Crystal: a glassy chime cluster growing upward over a hum
 //   ev_smith   Traveling Smith: three anvil strikes, the last one ringing
 //   ev_dice    Gambler's Dice: a cup rattle, then two dice clacking to rest
+//   The Still Spire's (plan 4 slice 7):
+//   ev_seat    Gods' Seat: a vast stone settling, a distant choir chord
+//              (F lydian) far off in the cold
+//   ev_bell    Silent Bell: a muffled bell strike dying into silence, then a
+//              reverse swell drawn back into the cloth
+//   ev_unbind  a curse lifted (curse_lifted, the Silent Bell's): a clean
+//              bright crack and a rising run of pure bells
 // Room objectives (in the room: spatial on the SFX bus):
 //   ob_horn    the quarry breaks cover: a two-note hunting horn
 //   ob_winded  the quarry tires: two short pants
@@ -79,6 +86,9 @@ export const ENCOUNTER_CUE_CAL = {
   ev_crystal: 0,
   ev_smith: 0,
   ev_dice: 0,
+  ev_seat: 0,
+  ev_bell: 0,
+  ev_unbind: 0,
   ob_horn: -3.6,
   ob_winded: -11.9,
   ob_escape: -5.8,
@@ -212,6 +222,29 @@ const CUES = {
     Math.max(
       ...[0, 0.05, 0.1, 0.15, 0.2].map((o) => k.noise(d, t + o, { src: 'brown', type: 'bandpass', f0: P(p, 900), q: 3, d: 0.04, gain: 0.5 })),
       ...[0.42, 0.52, 0.6, 0.66, 0.7].map((o, i) => k.noise(d, t + o, { type: 'bandpass', f0: P(p, 2600 - i * 150), q: 5, d: 0.03, gain: 0.55 - i * 0.07 }))
+    ) },
+  ev_seat: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 58), f1: P(p, 36), a: 0.02, d: 0.9, gain: 0.8 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 700), f1: P(p, 160), q: 0.8, a: 0.04, hold: 0.15, d: 0.7, gain: 0.7 }),
+      k.noise(d, t + 0.05, { src: 'crackle', type: 'bandpass', f0: P(p, 900), q: 1, a: 0.05, d: 0.45, gain: 0.3, rate: 1.2 }),
+      k.pad(d, t + 0.35, { notes: [P(p, 349.2), P(p, 440), P(p, 523.3), P(p, 659.3)], dur: 0.9, a: 0.45, r: 1.0, gain: 0.28, formant: 760, type: 'sawtooth' }),
+      k.noise(d, t + 0.3, { type: 'bandpass', f0: P(p, 1800), f1: P(p, 900), q: 1.2, a: 0.5, d: 0.8, gain: 0.12 })
+    ) },
+  ev_bell: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, 174.6), ratio: 1.41, index: 0.8, d: 0.9, gain: 0.6 }),
+      k.tone(d, t, { f0: P(p, 87.3), f1: P(p, 80), a: 0.01, d: 0.7, gain: 0.45 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 500, q: 0.8, d: 0.12, gain: 0.45 }),
+      k.tone(d, t + 1.0, { f0: P(p, 349.2), f1: P(p, 698.5), glide: 0.6, a: 0.6, d: 0.05, gain: 0.22 }),
+      k.noise(d, t + 1.0, { type: 'bandpass', f0: P(p, 600), f1: P(p, 2600), q: 1.4, a: 0.62, d: 0.04, gain: 0.3 })
+    ) },
+  ev_unbind: { ...ui, cooldownMs: 400, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'highpass', f0: P(p, 3800), q: 0.8, d: 0.07, gain: 0.45 }),
+      k.bell(d, t, { f: P(p, 2793.8), ratio: 2.76, index: 1.4, d: 0.25, gain: 0.25 }),
+      ...[1396.9, 1760, 2093, 2469.9, 2793.8].map((f, i) => k.bell(d, t + 0.06 + i * 0.055, { f: P(p, f), ratio: 2, index: 0.5, d: 0.8, gain: 0.24 })),
+      k.noise(d, t + 0.1, { type: 'highpass', f0: P(p, 6000), q: 0.7, a: 0.1, hold: 0.15, d: 0.3, gain: 0.14 })
     ) },
   // ------------------------------------------------------- room objectives --
   ob_horn: { levelDb: -10, priority: 4, maxVoices: 1, cooldownMs: 400, fn: (k, t, d, p) =>
@@ -362,6 +395,8 @@ const TAKE = {
   heart_crystal: 'ev_crystal',
   traveling_smith: 'ev_smith',
   gamblers_dice: 'ev_dice',
+  gods_seat: 'ev_seat',
+  silent_bell: 'ev_bell',
 };
 export const ENCOUNTER_TAKE_CUES = Object.freeze({ ...TAKE });
 
@@ -379,6 +414,7 @@ export function createEncounterEventCues() {
     event_leave: () => [{ cue: 'ev_leave' }],
     event_take: (ev) => (ev.encounter === 'sluice_gate' && ev.flood ? [{ cue: 'ev_flood' }] : TAKE[ev.encounter] ? [{ cue: TAKE[ev.encounter] }] : null),
     event_chest: () => [{ cue: 'ev_chest' }],
+    curse_lifted: () => [{ cue: 'ev_unbind' }],
     // The quarry's mark keeps its built-in ping under the new horn.
     quarry_spawn: (ev, h) => [...one('ob_horn', at({}, h)), ...one('mark', at(ev, h, ev.id), { pitch: 1.2 })],
     quarry_winded: (ev, h) => one('ob_winded', at(ev, h, ev.id)),

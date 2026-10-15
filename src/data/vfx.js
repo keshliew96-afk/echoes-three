@@ -212,12 +212,18 @@ export const ENEMY_VFX = Object.freeze({
   chime: Object.freeze({ matter: 'bellbronze', family: 'flyer', shard: null, chunk: 4, dust: 2 }),
   gargoyle: Object.freeze({ matter: 'spirestone', family: 'brute', shard: null, chunk: 8, dust: 4 }),
   hanger: Object.freeze({ matter: 'hemp', family: 'charger', shard: null, chunk: 2, dust: 3 }),
+  // Plan 4 slice 7: the volley and the warder (their beats — the volley,
+  // the hush, the rap and the choke — are director recipes; the hush veil
+  // on what it wards is render/enemies/spire.js).
+  vane: Object.freeze({ matter: 'bellbronze', family: 'shooter', shard: 'needle', chunk: 4, dust: 1, shot: Object.freeze({ look: 'dart', trail: 0.22 }) }),
+  sacristan: Object.freeze({ matter: 'spirestone', family: 'support', shard: null, chunk: 6, dust: 3 }),
   // CHAMPIONS (docs/CHAMPIONS.md): the four lords. Their move beats and
   // deaths are director recipes keyed by champion_* events.
   briar_knight: Object.freeze({ matter: 'bramble', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
   sluice_warden: Object.freeze({ matter: 'stone', family: 'brute', shard: 'drop', chunk: 8, dust: 2 }),
   bone_reeve: Object.freeze({ matter: 'boneplate', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
   hollow_choir: Object.freeze({ matter: 'heartcrystal', family: 'flyer', shard: 'needle', chunk: 4, dust: 1, heart: true, shot: Object.freeze({ look: 'dart', trail: 0.2 }) }),
+  gale_herald: Object.freeze({ matter: 'spirestone', family: 'brute', shard: 'feather', chunk: 8, dust: 4, feathers: 6 }),
 });
 
 const FAMILY_DEFAULT = Object.freeze({

@@ -1481,6 +1481,29 @@ export function createRunSystem({
         }
         break;
       }
+      // THE STILL SPIRE (plan 4 slice 7).
+      case 'gods_seat': {
+        const lost = [];
+        for (let k = 0; k < R.seatRelics; k++) {
+          const id = relics.loseNewest('seat');
+          if (id) lost.push(id);
+        }
+        relics.owe(room, 'seat', { not: lost });
+        result.lost = lost;
+        break;
+      }
+      case 'silent_bell': {
+        let paid = 0;
+        for (const e of bodies) {
+          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.bellCost));
+          e.hp = r2(e.hp - loss);
+          paid += loss;
+        }
+        result.hp = r2(paid);
+        const lifted = relics.liftMajor('bell');
+        if (lifted) result.lifted = lifted;
+        break;
+      }
       case 'traveling_smith': {
         spend(E.price, 'event_smith');
         const lost = relics.loseNewest('smith');

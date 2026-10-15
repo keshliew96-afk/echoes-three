@@ -42,6 +42,8 @@ import { createObjectiveFx } from './objectives.js';
 import { createEscortHoldFx } from './escorthold.js';
 // CHAMPION ROOMS (docs/CHAMPIONS.md): the crown, the sigil, the chest.
 import { createChampionFx } from './champions.js';
+// Act V: the Bell Sacristan's hush veils on the enemies it wards.
+import { createHushVeils } from './spire.js';
 import { registerContentProbe } from '../../data/content.js';
 import { impactFx } from '../vfx/hub.js';
 import { releaseTree } from '../geocache.js';
@@ -84,6 +86,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   const objfx = createObjectiveFx({ root, world, bus, cosmetic });
   const ehfx = createEscortHoldFx({ root, world, bus, cosmetic });
   const champfx = createChampionFx({ root, world, bus, cosmetic });
+  const hushfx = createHushVeils({ root, world, crownY: (k) => CROWN_Y[k] ?? 1.2 });
   function releaseShape(id) {
     const rec = shapeTele.get(id);
     if (!rec) return;
@@ -242,6 +245,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     objfx.prewarm(warmPark);
     ehfx.prewarm(warmPark);
     champfx.prewarm(warmPark);
+    hushfx.prewarm(warmPark);
   }
 
   let lastElapsed = null;
@@ -333,17 +337,19 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       // --- Archetype telegraphs (M4b): lane / ring / cone Ember shapes.
       if (ARCH_BUILDERS[e.kind]) {
         if (e.telegraph) {
+          // The Sacristan's hush is a ward, not an attack: its own pale ring.
+          const shapeKind = e.telegraph.hush ? 'hush' : e.telegraph.kind;
           let rec = shapeTele.get(e.id);
-          if (!rec || rec.shape.kind !== e.telegraph.kind) {
+          if (!rec || rec.shape.kind !== shapeKind) {
             if (rec) releaseShape(e.id);
-            rec = { shape: shapes.acquire(e.telegraph.kind) };
+            rec = { shape: shapes.acquire(shapeKind) };
             shapeTele.set(e.id, rec);
           }
           const span = (e.telegraph.resolveTick ?? 0) - (e.telegraph.startTick ?? 0);
           const prog = span > 0 ? (tick - e.telegraph.startTick) / span : 0;
           rec.shape.set(e.telegraph, tSec, Math.min(1, Math.max(0, prog)));
           rec.last = { ...e.telegraph };
-          liveTelegraphs.push(e.telegraph);
+          if (!e.telegraph.hush) liveTelegraphs.push(e.telegraph); // no Ember motes off a ward
         } else if (shapeTele.has(e.id)) {
           extras.onTelegraphEnd(e, shapeTele.get(e.id).last);
           releaseShape(e.id);
@@ -399,6 +405,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     objfx.update(tSec, dt, alpha, rigs);
     ehfx.update(tSec, dt, alpha);
     champfx.update(tSec, dt);
+    hushfx.update(tSec, dt, alpha);
     for (const id of lastTelegraph.keys()) if (!seen.has(id)) lastTelegraph.delete(id);
 
     // Telegraph dissolves (see removeDecal).
@@ -614,6 +621,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       waystoneRec = null;
     }
     champfx.clear();
+    hushfx.clear();
   });
   // @gnt:M2 RESTORE-RESYNC end
   return { update, debugState };
