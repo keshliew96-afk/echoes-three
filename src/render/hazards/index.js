@@ -766,16 +766,19 @@ function buildSpur() {
         tele.showColumn(false);
         ctx.live.push(t);
         g.position.set(t.x, 0, t.z);
-        // Cracks spread through the ring; the tips nose up in the last third.
+        // Cracks spread through the ring; the crystal tips break the floor
+        // from the first tick (so the mark reads as crystal, not a plain
+        // ring), creep up through the wind-up and surge in the last third.
         cracks.scale.setScalar(0.3 + 0.9 * prog);
         crackMat.opacity = 0.25 + 0.6 * prog * (0.8 + 0.2 * Math.sin(tSec * 22));
-        glow.material.opacity = 0.15 + 0.45 * prog;
-        const rise = Math.max(0, (prog - 0.62) / 0.38);
-        tips.visible = rise > 0;
-        tips.scale.set(0.7, 0.05 + 0.3 * rise, 0.7);
-        tips.position.y = -0.05;
+        glow.material.opacity = 0.4 + 0.45 * prog;
+        const surge = Math.max(0, (prog - 0.62) / 0.38);
+        const jitter = 0.03 * surge * Math.sin(tSec * 47);
+        tips.visible = true;
+        tips.scale.set(0.85 + 0.25 * prog, 0.3 + 0.3 * prog + 0.3 * surge, 0.85 + 0.25 * prog);
+        tips.position.set(jitter, -0.04, -jitter);
         tips.rotation.y = tSec * 0.4;
-        tipsMat.emissiveIntensity = 0.3 + 0.6 * rise;
+        tipsMat.emissiveIntensity = 0.8 + 0.3 * prog + 0.5 * surge + 0.15 * Math.sin(tSec * 9);
         if (ctx.cosmetic.chance(0.3)) impactFx.embers(t.x, t.z, { color: VFX_MATTER.heartcrystal, n: 1, radius: 0.6, tall: 0.4 });
       } else {
         if (tele) {

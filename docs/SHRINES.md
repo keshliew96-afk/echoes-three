@@ -22,10 +22,11 @@ from room 2 on (`{ type: 'spur', minRoom: 2 }`).
 - Schedules and picks hash the seed, room and layout, never the run stream,
   so the goldens cannot move.
 
-Render: `buildSpur` (Ember ring, violet cracks, crystal tips rising in the
-last third) and `buildSpurPillar` in `src/render/hazards/index.js`; burst and
+Render: `buildSpur` (Ember ring, violet cracks, crystal tips breaking the
+floor from the first tick and surging in the last third) and `buildSpurPillar` in `src/render/hazards/index.js`; burst and
 shatter in `src/render/vfx/shrinefx.js`; cues `hz_spur_in`, `hz_spur`,
-`hz_spur_go` in `src/audio/shrinecues.js`.
+`hz_spur_go` in `src/audio/shrinecues.js`, levelled with
+`tools/smallfixes2-cuecal.mjs --only shrinecues` like every other cue.
 
 ## Shrines
 

@@ -4,7 +4,7 @@
 // offer and its blessing plate, a refusal, and a Heart crystal spur winding
 // up and bursting. Captures into --shots (default captures/).
 //
-//   node tools/hazards-shrines-shots.mjs [--url http://127.0.0.1:5199/] [--shots dir] [--lang de]
+//   node tools/hazards-shrines-shots.mjs [--url http://127.0.0.1:5199/] [--shots dir] [--lang de] [--only spur]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
 // ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader".
 import { mkdirSync } from 'node:fs';
@@ -19,6 +19,7 @@ const URL0 = opt('url', 'http://127.0.0.1:5199/');
 const LANG = opt('lang', null);
 const SHOTS = opt('shots', 'captures');
 const sfx = LANG ? `-${LANG}` : '';
+const ONLY = opt('only', null); // 'spur' skips the shrines
 mkdirSync(SHOTS, { recursive: true });
 const extra = (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean);
 const browser = await puppeteer.launch({
@@ -65,7 +66,7 @@ const plate = () => page.evaluate(() => {
 });
 
 const LANDS = [['wood', 1], ['mill', 2], ['barrow', 3], ['heart', 4], ['spire', 5]];
-for (const [land, level] of LANDS) {
+for (const [land, level] of ONLY === 'spur' ? [] : LANDS) {
   const v0 = await run();
   if (v0.active) {
     await cmd('abandonRun', 'quit');
@@ -107,7 +108,7 @@ for (const [land, level] of LANDS) {
 }
 // The Heart crystal spur under the party.
 {
-  await cmd('abandonRun', 'quit');
+  if ((await run()).active) await cmd('abandonRun', 'quit');
   await sleep(500);
   await cmd('startCampaign', { level: 4 });
   await untilPhase('combat');
@@ -116,8 +117,26 @@ for (const [land, level] of LANDS) {
   await calm();
   const p = await page.evaluate(() => { const q = window.__echoes.content.world().player; return { x: q.x, z: q.z }; });
   const id = await cmd('spawnHazard', 'spur', p.x + 1.2, p.z + 0.4, {});
-  await cmd('hazardPhase', id, 'telegraph');
-  await sleep(700);
+  // Force the wind-up (applied on the next sim step), then step the player
+  // off the mark so the frame shows the ring and its crystal.
+  const held = await page.evaluate(async (hid) => {
+    const E = window.__echoes;
+    E.cmd('hazardPhase', hid, 'telegraph');
+    const find = () => E.content.world().entities().find((e) => e.id === hid);
+    for (let i = 0; i < 400 && !(find() && find().telegraph); i++) await new Promise((r) => setTimeout(r, 2));
+    const h = find();
+    if (!h || !h.telegraph) return false;
+    // A software-GL page paints about once a second, longer than the 0.9 s
+    // wind-up: stretch it (its own clock) so a frame lands mid-wind-up.
+    const t = h.telegraph;
+    t.resolveTick = t.startTick + 54 * 12;
+    t.startTick -= 54 * 4;
+    h.resolveTick = h.phaseUntilTick = t.resolveTick;
+    return true;
+  }, id);
+  await cmd('teleport', p.x - 2.2, p.z + 0.4);
+  check(held, 'the wind-up starts');
+  await sleep(2500);
   await shot('hs-spur-1-windup');
   const id2 = await cmd('spawnHazard', 'spur', p.x - 1.4, p.z - 0.6, {});
   await cmd('hazardPhase', id2, 'active');

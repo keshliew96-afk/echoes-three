@@ -17,20 +17,20 @@ const P = (p, f) => f * (p && p.pitch ? p.pitch : 1);
 const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
 // Measured design peaks (dBFS at unity gain) so each cue peaks at its
-// levelDb — tools/smallfixes2-cuecal.mjs --only shrinecues --write. Shipped
-// as estimates (0 = unmeasured); re-measure live when the sandbox allows.
+// levelDb — tools/smallfixes2-cuecal.mjs --only shrinecues --write
+// (measured 2026-10-15; --verify puts every cue within 0.5 dB).
 export const SHRINE_CUE_CAL = {
   // @cal begin
-  hz_spur_in: 0,
-  hz_spur: 0,
-  hz_spur_go: 0,
-  sh_offer_wood: 0,
-  sh_offer_mill: 0,
-  sh_offer_barrow: 0,
-  sh_offer_heart: 0,
-  sh_offer_spire: 0,
+  hz_spur_in: -10.9,
+  hz_spur: 1.6,
+  hz_spur_go: -12.7,
   sh_denied: 0,
   sh_curse: 0,
+  sh_offer_wood: -2.4,
+  sh_offer_mill: -2.4,
+  sh_offer_barrow: -2.5,
+  sh_offer_heart: -2.4,
+  sh_offer_spire: -2.7,
   // @cal end
 };
 
