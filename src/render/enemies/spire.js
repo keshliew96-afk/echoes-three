@@ -1598,21 +1598,21 @@ export function createHushVeils({ root, world, crownY = () => 1.2 }) {
       r.g.position.set(e.px != null ? e.px + (e.x - e.px) * alpha : e.x, 0, e.pz != null ? e.pz + (e.z - e.pz) * alpha : e.z);
       r.column.position.y = top * 0.5;
       r.column.scale.set(rad * 2.6, top * 1.5, 1);
-      r.column.material.opacity = (0.07 + 0.04 * breathe) * k;
+      r.column.material.opacity = (0.035 + 0.02 * breathe) * k;
       r.haloG.position.y = top + 0.16 + 0.04 * Math.sin(tSec * 1.4 + e.id);
       r.haloG.rotation.y = tSec * 0.5;
       r.haloG.scale.setScalar(0.9 + 0.25 * sc + 0.15 * (1 - Math.min(1, r.age / 0.3)));
-      r.haloMat.opacity = (0.7 + 0.2 * breathe) * k;
-      r.haloGlow.material.opacity = 0.45 * k;
-      r.moteMat.opacity = 0.85 * k;
+      r.haloMat.opacity = (0.45 + 0.12 * breathe) * k;
+      r.haloGlow.material.opacity = 0.22 * k;
+      r.moteMat.opacity = 0.55 * k;
       for (let i = 0; i < r.motes.length; i++) {
         const a = tSec * 0.6 + (i / r.motes.length) * Math.PI * 2;
         r.motes[i].position.set(Math.cos(a) * 0.34, -0.1 - 0.06 * Math.sin(tSec * 1.1 + i * 2), Math.sin(a) * 0.34);
       }
       r.ring.scale.set(rad, 1, rad);
-      r.ringMat.opacity = (0.4 + 0.15 * breathe) * k;
+      r.ringMat.opacity = (0.22 + 0.08 * breathe) * k;
       r.floor.scale.set(rad * 1.25, 1, rad * 1.25);
-      r.poolMat.opacity = 0.22 * k;
+      r.poolMat.opacity = 0.1 * k;
     }
     for (const id of [...live.keys()]) if (!seen.has(id)) drop(id);
   }
