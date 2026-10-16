@@ -6553,12 +6553,6 @@
   ],
   "data": true
  },
- "Fell a champion of the Still Spire, the Gale Herald or the Bell Abbess.": {
-  "files": [
-   "src/data/unlocks.js"
-  ],
-  "data": true
- },
  "Fell a champion.": {
   "files": [
    "src/data/unlocks.js"
@@ -6620,6 +6614,12 @@
   "data": true
  },
  "Fell the first five bosses of a Boss Rush.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Gale Herald, the champion of the Still Spire.": {
   "files": [
    "src/data/unlocks.js"
   ],

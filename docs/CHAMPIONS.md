@@ -157,9 +157,8 @@ over the great bell; `ch_rope_grip` on the swing's wind-up; `ch_rope_swing`;
 and `ch_vesper_peal`, in `src/audio/championcues.js`. Lab: `?vfxlab=1`,
 Champions, Bell Abbess.
 
-Deeds: **Windfall** now takes either Spire champion ("Fell a champion of the
-Still Spire, the Gale Herald or the Bell Abbess.") and **Five Crowns** lost its
-"the Gale Herald included" clause. She adds no relic, tint, deed or story line
+Deeds: **Five Crowns** lost its "the Gale Herald included" clause and takes
+either Spire champion; **Windfall** stays the Gale Herald's alone. She adds no relic, tint, deed or story line
 of her own, as with the other second champions.
 
 ## Debug and probes

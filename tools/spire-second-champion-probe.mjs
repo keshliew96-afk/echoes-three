@@ -14,9 +14,10 @@
 //   common   she spawns with the room's champion HP and rages below half; a
 //            mid-swing capture continues bit-identically in a fresh world
 //   deeds    the Journal lists ten champions with her in the Spire; Five
-//            Crowns and Windfall count either Spire champion; marks record her
-//   text     her name, lore, moves and the two reworded deeds in all nine
-//            other languages; the old deed lines are gone
+//            Crowns counts either Spire champion, Windfall only the Gale
+//            Herald (his pick); marks record her
+//   text     her name, lore, moves and the reworded Five Crowns line in all
+//            nine other languages; its old line is gone
 //   data     her cues and VFX rows are registered
 //
 //   node tools/spire-second-champion-probe.mjs [--seed 4] [--out captures/spire-second-champion-probe.json]
@@ -321,14 +322,14 @@ if (swingSave) {
   const life = (ids) => ({ champion: ids });
   const fr = { cleared: [], bosses: [], champions: [] };
   check('deeds', 'Five Crowns takes the Bell Abbess for the Spire as well as the Herald', !!five && five.test(fr, life([...C.FIRST_CROWNS, 'bell_abbess'])) && five.test(fr, life([...C.FIRST_CROWNS, 'gale_herald'])) && !five.test(fr, life([...C.FIRST_CROWNS])) && five.goal(life(['bell_abbess', 'gale_herald']))[0] === 1);
-  check('deeds', 'Windfall takes either Spire champion, never another land\'s', !!wind && wind.test({ ...fr, champions: ['bell_abbess'] }, life([])) && wind.test({ ...fr, champions: ['gale_herald'] }, life([])) && !wind.test({ ...fr, champions: ['moss_hart', 'vein_matron'] }, life([])));
+  check('deeds', 'Windfall stays the Gale Herald\'s alone', !!wind && !wind.test({ ...fr, champions: ['bell_abbess'] }, life([])) && wind.test({ ...fr, champions: ['gale_herald'] }, life([])) && !wind.test({ ...fr, champions: ['moss_hart', 'vein_matron'] }, life([])));
   check('deeds', 'champion marks record the Bell Abbess', MARK_KINDS.champion.length === 10 && MARK_KINDS.champion.includes('bell_abbess'));
 }
 
 // ----------------------------------------------------------------- text --
 {
-  const NEW = ['The Bell Abbess', row0('bell_abbess', 'lore'), row0('bell_abbess', 'text'), 'Fell a champion of the Still Spire, the Gale Herald or the Bell Abbess.', "Fell a champion in each of the five lands. Either of a land's two champions counts."];
-  const OLD = ['Fell the Gale Herald, the champion of the Still Spire.', "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts."];
+  const NEW = ['The Bell Abbess', row0('bell_abbess', 'lore'), row0('bell_abbess', 'text'), "Fell a champion in each of the five lands. Either of a land's two champions counts."];
+  const OLD = ["Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts."];
   const miss = [];
   const stale = [];
   for (const l of ['de', 'es', 'fr', 'ja', 'ko', 'pt-BR', 'ru', 'zh-Hans', 'zh-Hant']) {
@@ -338,7 +339,7 @@ if (swingSave) {
   }
   const cat = JSON.parse(readFileSync(join(here, 'src/i18n/catalog.json'), 'utf8'));
   check('text', `${NEW.length} new lines in all nine other languages and the catalog`, miss.length === 0 && NEW.every((k) => k in cat), miss);
-  check('text', 'the two old deed lines are gone', stale.length === 0 && OLD.every((k) => !(k in cat)), stale);
+  check('text', 'the old Five Crowns line is gone', stale.length === 0 && OLD.every((k) => !(k in cat)), stale);
 }
 function row0(id, f) {
   const r = BESTIARY.find((b) => b.id === id);
