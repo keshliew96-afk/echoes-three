@@ -29,10 +29,44 @@ back, with no rooms or doors between them.
 - **Numbers.** Lap one plays each land's own boss-room numbers (`difficulty(act,
   6)`, the same as room 8 of that level). Lap two multiplies boss and add HP by
   1.8 and their damage by 1.4 (`RUSH_RULES.lap2`).
-- **Single player only,** like the Daily, until co-op has been tried. The card
-  is locked in a network session.
+- **Co-op.** A co-op lobby plays the rush too (see "Co-op" below). The Daily
+  stays single player for its board.
 - **Unlock.** The card opens with Endless, once the campaign has been won.
   `?rush=1` opens it for probes, and `?menu=0&rush=1` sets out at once.
+
+## Co-op
+
+Content plan 4, floating slice 14 (v0.5.288). The rush runs on the same host
+and guest code as a co-op campaign or Endless descent, so the slice opens the
+card and leaves the rules alone.
+
+- **Who sets out.** In a lobby the host's Level Select shows the card open,
+  with a "The whole party sets out together" chip. A guest never opens the
+  Level Select and a guest's choose is refused, as with every level. The seats
+  are the lobby's: each human plays the character they picked, and the host's
+  lineup fills the empty seats with AI (the lineup rule of 10-09).
+- **What the guest sees.** The setting-out card with the same seeded line and
+  its follow line ("The Healer leads on…"), the HUD plate's fight count, the
+  card after each fight and the end card all read from the replicated run, so
+  they match the host's.
+- **Between fights.** Every seat gets the bounty in its own purse. The war
+  chest gives the host's seat its main share and every other seat, human or
+  AI, the ally share, with the same auto-fill as the Level II starter grant in
+  co-op (a human re-sockets on their own build page). Each human takes
+  their own draft card on their own page; the relic pick is the host's, as in
+  every co-op room. At the Peddler each human shops from their own purse and
+  the host's Advance waits on their Done (or the 15 s countdown).
+- **Numbers.** The party is four seats in solo and in co-op, so the rush's
+  numbers do not change with the number of humans.
+- **Records.** Each player records the rush on their own profile (runs, most
+  felled, best time, deeds and Embers), as a guest does for a co-op campaign.
+  A co-op time counts toward the same best as a solo one.
+- **Host migration.** If the host's page stalls and the host moves to a
+  guest, the rush goes on from the new host's last snapshot (seen once on the
+  probe machine's software renderer, where the line and fight were kept).
+- **Untried:** a real two-machine game. The probe runs two pages on one
+  machine over the relay; WebRTC, a slow link and a second human at a draft
+  page with a real hand on the controls are for a real game.
 
 ## Records, deeds and Embers
 
@@ -75,3 +109,7 @@ numbers are first guesses until the rush has been played.
 
 - `node tools/boss-rush-probe.mjs` (37 checks, headless).
 - `node tools/boss-rush-browser.mjs [--lang de]` against `npm run dev`.
+- `node tools/coop-boss-rush-probe.mjs [--lang de] [--shots dir]` against
+  `npm run dev`: a host and a guest page on their own server (port 7930), from
+  the lobby card through fight 1, its draft, the Peddler and a fall in fight 2
+  (15 checks).

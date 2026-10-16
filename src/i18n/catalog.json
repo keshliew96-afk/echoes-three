@@ -15364,6 +15364,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "The whole party sets out together": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "The Wood's eldest hart, so long asleep in the clearing that the moss grew over it. Now it walks, and the moss walks with it.": {
   "files": [
    "src/data/journal.js"

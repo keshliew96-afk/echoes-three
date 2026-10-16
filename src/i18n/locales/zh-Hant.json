@@ -3112,5 +3112,6 @@
  "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": "此房間每倒下一名敵人都會敲響喪鐘：0.8 秒後，它對 1.6 單位內的英雄造成其最大生命 10% 的傷害。",
  "Dulled Edge": "鈍刃",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "本局剩餘時間內，隊伍暴擊傷害由 ×1.5 降為 ×1.25。",
- "Corked: tonics and bombs cannot be used in this room.": "封瓶：此房間無法使用藥劑和炸彈。"
+ "Corked: tonics and bombs cannot be used in this room.": "封瓶：此房間無法使用藥劑和炸彈。",
+ "The whole party sets out together": "全隊一同出發"
 }

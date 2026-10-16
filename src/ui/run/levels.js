@@ -118,6 +118,10 @@ function installStyle() {
 .cg-levels .cg-skulls { display: inline-flex; gap: ${px(5)}; }
 .cg-levels .cg-skull { width: ${px(13)}; height: ${px(13)}; border-radius: 50%; border: max(2px, ${px(2)}) solid ${P.bone}; }
 .cg-levels .cg-skull.cg-on { background: ${RUSH_RED}; border-color: ${RUSH_RED}; }
+/* CO-OP BOSS RUSH: in a lobby, the card says the party sets out together
+   (two pips for the players who came along). */
+.cg-levels .cg-coop { margin-top: ${px(4)}; color: ${RUSH_RED}; font-size: ${px(15)}; font-weight: 600; line-height: 1.25; }
+.cg-levels .cg-coop::before { content: ''; display: inline-block; vertical-align: middle; width: ${px(7)}; height: ${px(7)}; margin: 0 ${px(14)} ${px(2)} 0; border-radius: 50%; background: ${RUSH_RED}; box-shadow: ${px(8)} 0 0 ${RUSH_RED}; }
 /* Seven cards (four levels, Endless, the Daily, Boss Rush): tighter still. */
 .cg-levels .cg-cards.cg-seven { gap: ${px(10)}; }
 .cg-levels .cg-cards.cg-seven .cg-card { padding: ${px(13)} ${px(12)} ${px(12)}; gap: ${px(7)}; }
@@ -261,8 +265,10 @@ export function dailyInfo() {
 }
 
 // BOSS RUSH (docs/BOSS_RUSH.md): the rush card — open once the game is won
-// (or with the ?rush=1 harness), single player only, with the profile's best
-// time and most bosses felled.
+// (or with the ?rush=1 harness), with the profile's best time and most
+// bosses felled. CO-OP BOSS RUSH: open in a co-op lobby too (the host's
+// card: a guest never sees the Level Select); `coop` marks a lobby so the
+// card says the party sets out together.
 export function rushInfo() {
   let profile = null;
   try {
@@ -271,12 +277,12 @@ export function rushInfo() {
   } catch {
     profile = null;
   }
-  let solo = true;
+  let coop = false;
   try {
     const n = service('net');
-    solo = !(n && ((typeof n.isGuest === 'function' && n.isGuest()) || (typeof n.isHost === 'function' && n.isHost())));
+    coop = !!(n && ((typeof n.isGuest === 'function' && n.isGuest()) || (typeof n.isHost === 'function' && n.isHost())));
   } catch {
-    solo = true;
+    coop = false;
   }
   const rec = profile && profile.records ? profile.records : {};
   const harness = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('rush') === '1';
@@ -285,13 +291,14 @@ export function rushInfo() {
     level: 'rush',
     name: t('The Boss Rush'),
     blurb: t('No rooms, no doors: the bosses one after another, a land at a time and then around again. A draft and the Peddler between fights.'),
-    unlocked: open && solo,
+    unlocked: open,
+    coop,
     // Only a best set on today's rush length (ten fights since the Spire).
     bestSec: rec.rushBestFights === RUSH_RULES.fights ? rec.rushBestSec ?? null : null,
     mostFelled: rec.rushMostFelled || 0,
     runs: rec.rushRuns || 0,
     fights: RUSH_RULES.fights,
-    lockLine: open ? t('Single player only') : t('Win the campaign to unlock'),
+    lockLine: t('Win the campaign to unlock'),
   };
 }
 
@@ -531,6 +538,7 @@ export function createLevelsScreen(ctx) {
         <div class="cg-danger"><span class="cg-skulls">${skulls}</span></div>
         <div class="cg-status"></div>
         <div class="cg-grant">${t('Begins with the Level II starter kit')}</div>
+        ${info.coop && info.unlocked ? `<div class="cg-coop">${t('The whole party sets out together')}</div>` : ''}
         <div class="cg-lock">${LOCK_SVG}<span class="cg-lock-t"></span></div>`;
       card.querySelector('.cg-name').textContent = info.name;
       card.querySelector('.cg-blurb').textContent = info.blurb;

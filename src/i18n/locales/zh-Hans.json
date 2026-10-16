@@ -3112,5 +3112,6 @@
  "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": "本房间每倒下一名敌人都会敲响丧钟：0.8 秒后，它对 1.6 单位内的英雄造成其最大生命 10% 的伤害。",
  "Dulled Edge": "钝刃",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "本局剩余时间内，队伍暴击伤害为 ×1.25，而非 ×1.5。",
- "Corked: tonics and bombs cannot be used in this room.": "封瓶：本房间无法使用药剂和炸弹。"
+ "Corked: tonics and bombs cannot be used in this room.": "封瓶：本房间无法使用药剂和炸弹。",
+ "The whole party sets out together": "全队一同出发"
 }

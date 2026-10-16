@@ -3112,5 +3112,6 @@
  "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": "이 방에서 쓰러진 적은 저마다 조종을 울립니다: 0.8초 뒤 1.6u 안의 영웅에게 최대 HP의 10% 피해를 줍니다.",
  "Dulled Edge": "무뎌진 칼날",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "남은 런 동안 파티의 치명타가 ×1.5 대신 ×1.25 피해를 줍니다.",
- "Corked: tonics and bombs cannot be used in this room.": "봉인된 마개: 이 방에서는 물약과 폭탄을 쓸 수 없습니다."
+ "Corked: tonics and bombs cannot be used in this room.": "봉인된 마개: 이 방에서는 물약과 폭탄을 쓸 수 없습니다.",
+ "The whole party sets out together": "파티 전원이 함께 출발합니다"
 }

@@ -3252,5 +3252,6 @@
  "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": "Каждый враг, павший в этой комнате, звонит по себе: через 0,8 с звон бьёт героев в пределах 1,6 ед. на 10% их макс. ОЗ.",
  "Dulled Edge": "Тупой клинок",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "До конца забега криты отряда наносят ×1,25 вместо ×1,5.",
- "Corked: tonics and bombs cannot be used in this room.": "Закупорено: в этой комнате нельзя использовать тоники и бомбы."
+ "Corked: tonics and bombs cannot be used in this room.": "Закупорено: в этой комнате нельзя использовать тоники и бомбы.",
+ "The whole party sets out together": "Весь отряд выступает вместе"
 }
