@@ -3008,7 +3008,6 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "사슬 갈고리: 영웅을 향한 경고 통로. 열쇠가 그 통로를 날아 10의 피해를 주고 그의 발치로 끌어당긴다. 자물쇠 돌리기: 그를 둘러싼 고리가 잠기며 16의 피해를 주고 크게 느려지게 한다. 통로에서 벗어나라. 체력이 절반 아래로 떨어지면 격노한다.",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "조종: 주위의 넓은 고리에 종이 울려 11의 피해를 주고 안의 모든 영웅을 느려지게 한다. 무덤의 부름: 영웅 아래 경고 고리가 재로 터져 14의 피해를 주고 그을리며 느려지게 한다. 체력이 절반 아래로 떨어지면 격노한다.",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "핏줄 채찍: 영웅을 향한 경고 통로가 13의 피해로 베고, 벤 영웅마다 체력을 조금 마신다. 심장 고동: 주위의 고리가 고동치며 14의 피해를 준 뒤 수정 파편 여덟 개가 사방으로 날아간다(각 7). 체력이 절반 아래로 떨어지면 격노한다.",
- "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "돌풍의 전령을 포함해 다섯 땅 각각에서 챔피언을 쓰러뜨려라. 각 땅의 두 챔피언 중 누구든 인정된다.",
  "{name} stands in this room. {trade}": "이 방에 {name}이(가) 있다. {trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name}이(가) 열쇠를 가져갔다. 방을 정리하면 더 좋은 유물이 기다린다.",
  "{name}: {blessing} for 60 s ({text}).": "{name}: {blessing} 60초 ({text}).",
@@ -3129,5 +3128,9 @@
  "The Hourwarden": "시간지기",
  "THE HOURWARDEN": "시간지기",
  "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "앞의 시계 다락은 시간지기가 지킨다. 진자가 흔들리면 되돌아올 때까지 그 선 밖에 있어라. 시각을 치기 시작하면 계속 움직이다가, 태엽이 풀릴 때 쳐라.",
- "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "시간지기의 태엽이 영영 풀린다. 다락에서 신들의 시계가 네가 온 시각에 멈춘다."
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "시간지기의 태엽이 영영 풀린다. 다락에서 신들의 시계가 네가 온 시각에 멈춘다.",
+ "The Bell Abbess": "종의 수녀원장",
+ "The abbess of the gods' belfry, who rang the hours for them until they fell still, and keeps the vigil still. She has never let go of the rope.": "신들의 종탑을 지키던 수녀원장. 신들이 고요해질 때까지 시간을 알리는 종을 울렸고, 지금도 밤샘을 지킨다. 그녀는 한 번도 밧줄을 놓은 적이 없다.",
+ "Rope Swing: a warning lane at a hero; she swings down it on the great bell's rope for 14 and knocks you aside. Vesper Peal: a warning cone in front of her hand-bell rings for 11 and rings you still, slowing you hard. Below half health she rages.": "밧줄 그네: 영웅을 향한 경고 통로. 큰 종의 밧줄을 타고 그 길을 휩쓸어 14의 피해를 주고 옆으로 밀쳐낸다. 저녁기도 종소리: 손종 앞의 경고 부채꼴이 울려 11의 피해를 주고 그 자리에 묶어 크게 느려지게 한다. 체력이 절반 아래로 떨어지면 격노한다.",
+ "Fell a champion in each of the five lands. Either of a land's two champions counts.": "다섯 땅 각각에서 챔피언을 쓰러뜨려라. 각 땅의 두 챔피언 중 누구든 인정된다."
 }

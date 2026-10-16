@@ -3509,6 +3509,20 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         kit.streak({ a: { x: px, y: 1.8, z: pz }, b: { x: px, y: 1.2, z: pz }, width: 0.05, tailW: 0, core: PARCH, glow: GUST, life: 0.35, delay: i * 0.025, travel: { x: Math.cos(a) * 2.5, y: -3.2, z: Math.sin(a) * 2.5 }, fall: 1.0, opacity: 0.7 });
       }
     }
+    // The Bell Abbess grips the rope for the Swing: the great bell high in
+    // the belfry answers (a bronze ring far overhead), a pale line runs up the
+    // rope into the dark, and the dust is pressed out from her crouch.
+    if (ev.champion === 'bell_abbess' && ev.move === 'rope_swing' && c) {
+      kit.ring({ x: c.x, z: c.z, r0: 0.3, r1: 1.8, width: 0.08, life: 0.7, core: PARCH, glow: BRONZE, soft: 0.6, y: 4.6, opacity: 0.5, thin: 0.5 });
+      kit.streak({ a: { x: c.x, y: 2.4, z: c.z }, b: { x: c.x, y: 6.5, z: c.z }, width: 0.06, tailW: 0.02, core: PARCH, glow: GUST, life: 0.45, fall: 1.2, opacity: 0.55 });
+      shock(c.x, c.z, 1.4, SSTONE, { life: 0.45, width: 0.16, core: BONE, delay: 0.08 });
+      spray('smoke', c.x, 0.15, c.z, 5, { color: SSTONE, speed: [0.7, 1.4], up: [0.05, 0.25], size: [0.34, 0.48], grow: 1.5, life: [0.6, 0.9], opacity: 0.24, gravity: -0.05, drag: 2.4, jitter: 0.4 });
+    }
+    // ... and lifts the hand-bell for the Peal: bronze glints off its lip.
+    if (ev.champion === 'bell_abbess' && ev.move === 'vesper_peal' && c) {
+      const d = faceOf(c);
+      spray('spark', c.x + d.x * 0.3 + 0.3, 2.2, c.z + d.z * 0.3, 8, { color: BRONZE, speed: [0.1, 0.4], up: [0.2, 0.6], size: [0.04, 0.07], life: [0.5, 0.8], gravity: -0.2, drag: 1.6, jitter: 0.7 });
+    }
   });
   bus.on('champion_spawn', (ev) => {
     mark('champion_spawn');
@@ -3882,6 +3896,99 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.5, 0.15);
     },
   });
+  // THE BELL ABBESS (content plan 5 slice 2): the Spire's bronze and pale
+  // air on what she moves, Ember only on the ground that hurts, and the
+  // Hush's drained lavender on what her peal stills.
+  const CH_LINEN = GUST; // her wimple's starched linen
+  const CH_STILL = vfxMatterColor('hushpale');
+  Object.assign(CHAMP_MOVE, {
+    // Rope Swing: she has ridden the rope down the lane — the great bell
+    // tolls far overhead, a pale ribbon of cut air hangs along her arc, the
+    // Ember lane flashes under it, and she drops at its end in a burst of
+    // dust and stone; the heroes in it are knocked out to the sides.
+    rope_swing(ev) {
+      const c = byId(ev.id);
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const ex = c ? c.x : ev.x;
+      const ez = c ? c.z : ev.z;
+      // (ev.x, ev.z is the lane's end; the lane ran back from it along -d.)
+      const len = ev.len ?? 5;
+      const ox = ev.x - d.x * len;
+      const oz = ev.z - d.z * len;
+      const ang = Math.atan2(d.z, d.x);
+      kit.streak({ a: { x: ox, y: 0.1, z: oz }, b: { x: ev.x, y: 0.1, z: ev.z }, width: 1.2, tailW: 1.0, core: EMBER, glow: EMBER, life: 0.24, fall: 2.2, opacity: 0.5 });
+      // The arc of her ride: a pale ribbon rising over the lane and down.
+      const segs = 8;
+      for (let i = 0; i < segs; i++) {
+        const k0 = i / segs;
+        const k1 = (i + 1) / segs;
+        const y0 = 1.3 + 1.1 * Math.sin(Math.PI * k0);
+        const y1 = 1.3 + 1.1 * Math.sin(Math.PI * k1);
+        kit.streak({ a: { x: ox + d.x * len * k0, y: y0, z: oz + d.z * len * k0 }, b: { x: ox + d.x * len * k1, y: y1, z: oz + d.z * len * k1 }, width: 0.16, tailW: 0.06, core: PARCH, glow: GUST, life: 0.45, fall: 1.1, delay: i * 0.012, opacity: 0.7 });
+      }
+      // The great bell's toll overhead, at the rope's anchor.
+      const mx = (ox + ev.x) / 2;
+      const mz = (oz + ev.z) / 2;
+      flare(mx, 5.2, mz, BRONZE, 2.2, { kind: 'burst', life: 0.35, core: PARCH });
+      for (let i = 0; i < 2; i++) kit.ring({ x: mx, z: mz, r0: 0.4, r1: 2.6 + i * 1.2, width: 0.08, life: 0.7 + 0.15 * i, core: PARCH, glow: BRONZE, soft: 0.6, y: 5.0 - i * 0.6, delay: i * 0.1, opacity: 0.5, thin: 0.5 });
+      // The drop at the lane's end.
+      flare(ex, 0.5, ez, EMBER, 1.8, { kind: 'burst', life: 0.24 });
+      kit.flash({ x: ex, y: 0.6, z: ez, color: PARCH, size: 1.0, life: 0.12 });
+      shock(ex, ez, 1.5, EMBER, { life: 0.3, width: 0.14, jag: 0.5 });
+      shock(ex, ez, 2.1, SSTONE, { life: 0.55, width: 0.22, core: BONE, delay: 0.05 });
+      kit.light({ x: ex, z: ez, radius: 2.2, color: EMBER, opacity: 0.35, life: 0.35, attack: 0.02 });
+      spray('chunk', ex, 0.3, ez, 10, { color: SSTONE, speed: [1.0, 2.4], up: [1.2, 2.6], size: [0.07, 0.14], life: [0.5, 0.85], jitter: 0.4 });
+      spray('smoke', ex, 0.2, ez, 6, { color: SSTONE, speed: [1.2, 2.2], up: [0.05, 0.3], size: [0.4, 0.56], grow: 1.6, life: [0.7, 1.0], opacity: 0.28, gravity: -0.05, drag: 2.2, jitter: 0.6 });
+      // Linen and dust thrown out to both sides of the lane (the knock).
+      for (const side of [-1, 1]) {
+        const sx = -d.z * side;
+        const sz = d.x * side;
+        spray('smoke', mx, 0.2, mz, 3, { color: SSTONE, speed: [1.4, 2.4], up: [0.05, 0.2], size: [0.36, 0.5], grow: 1.5, life: [0.6, 0.9], opacity: 0.22, drag: 2.4, dir: { x: sx, z: sz }, dirBias: 0.85 });
+        spray('shard', mx, 1.0, mz, 4, { color: CH_LINEN, tile: SHARD_TILE.feather, speed: [1.0, 2.0], up: [0.4, 1.0], size: [0.1, 0.15], life: [1.0, 1.5], gravity: 0.6, drag: 1.6, spin: [-6, 6], flutter: 0.8, dir: { x: sx, z: sz }, dirBias: 0.7 });
+      }
+      kit.mark({ x: mx, z: mz, radius: 1.2, kind: 'gouge', angle: ang, stretch: Math.max(1.5, len / 1.6), stain: INK, glow: EMBER, glowOpacity: 0.25, cool: 0.7, life: 2.4, opacity: 0.3 });
+      camfx.kick(d.x, d.z, 0.55, 0.15);
+    },
+    // Vesper Peal: the hand-bell rings out down the cone — bronze arcs of
+    // sound rolling out one after another, the Ember edge on the ground, and
+    // where it lands the air goes still: drained lavender motes hang and
+    // sink instead of flying.
+    vesper_peal(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const ang = Math.atan2(d.z, d.x);
+      const R = 4.4;
+      const half = 36 * (Math.PI / 180);
+      const c = byId(ev.id);
+      flare(ev.x + d.x * 0.5, 2.0, ev.z + d.z * 0.5, BRONZE, 2.2, { kind: 'burst', life: 0.3, core: PARCH, angle: ang });
+      kit.flash({ x: ev.x + d.x * 0.5, y: 2.0, z: ev.z + d.z * 0.5, color: PARCH, size: 1.0, life: 0.14 });
+      // Three arcs of the peal, each wider and later, rolling down the cone.
+      const segs = 7;
+      for (let w = 0; w < 3; w++) {
+        const r = R * (0.45 + 0.27 * w);
+        for (let i = 0; i < segs; i++) {
+          const a0 = ang - half + (i / segs) * 2 * half;
+          const a1 = ang - half + ((i + 1) / segs) * 2 * half;
+          kit.streak({ a: { x: ev.x + Math.cos(a0) * r, y: 1.2 - 0.25 * w, z: ev.z + Math.sin(a0) * r }, b: { x: ev.x + Math.cos(a1) * r, y: 1.2 - 0.25 * w, z: ev.z + Math.sin(a1) * r }, width: 0.14, tailW: 0.1, core: PARCH, glow: BRONZE, life: 0.35, fall: 1.2, delay: 0.06 * w + i * 0.008, opacity: 0.75 - 0.15 * w });
+        }
+      }
+      // The Ember rim and floor of the cone.
+      for (let i = 0; i < segs; i++) {
+        const a0 = ang - half + (i / segs) * 2 * half;
+        const a1 = ang - half + ((i + 1) / segs) * 2 * half;
+        kit.streak({ a: { x: ev.x + Math.cos(a0) * R * 0.97, y: 0.08, z: ev.z + Math.sin(a0) * R * 0.97 }, b: { x: ev.x + Math.cos(a1) * R * 0.97, y: 0.08, z: ev.z + Math.sin(a1) * R * 0.97 }, width: 0.3, tailW: 0.3, core: EMBER, glow: EMBER, life: 0.22, fall: 2, opacity: 0.55, delay: 0.1 });
+      }
+      kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ev.x + d.x * R, y: 0.1, z: ev.z + d.z * R }, width: R * 1.1, tailW: R * 1.0, core: EMBER, glow: EMBER, life: 0.2, fall: 2.2, opacity: 0.3 });
+      // The stilled air: motes that hang, then sink slowly.
+      for (let i = 0; i < N(14); i++) {
+        const a = ang + rnd(-half, half);
+        const r = rnd(1.0, R * 0.95);
+        spray('spark', ev.x + Math.cos(a) * r, rnd(0.6, 1.8), ev.z + Math.sin(a) * r, 1, { color: CH_STILL, speed: [0.0, 0.06], up: [-0.15, 0.0], size: [0.05, 0.09], life: [1.0, 1.5], gravity: 0.15, drag: 3, opacity: 0.85 });
+      }
+      kit.light({ x: ev.x + d.x * 2, z: ev.z + d.z * 2, radius: R * 0.8, color: CH_STILL, opacity: 0.3, life: 0.6 });
+      if (c && (ev.victims ?? 0) > 0) after(0.12, () => kit.ring({ x: c.x + d.x * 2.2, z: c.z + d.z * 2.2, r0: 0.6, r1: 2.0, width: 0.06, life: 0.8, core: PARCH, glow: CH_STILL, soft: 0.7, y: 0.06, opacity: 0.45 }));
+      camfx.kick(d.x, d.z, 0.35, 0.12);
+    },
+  });
   bus.on('champion_move', (ev) => {
     mark(`champion_${ev.move}`);
     const fn = CHAMP_MOVE[ev.move];
@@ -3966,6 +4073,18 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.ring({ x, z, r0: 0.4, r1: 4.2, width: 0.1, life: 0.8, core: PARCH, glow: vfxMatterColor('gravebronze'), soft: 0.6, y: 2.4, opacity: 0.6, thin: 0.5 });
       spray('chunk', x, 2.4, z, 10, { color: vfxMatterColor('gravebronze'), speed: [0.8, 2.0], up: [0.6, 1.6], size: [0.08, 0.14], life: [0.7, 1.0] });
       spray('smoke', x, 0.5, z, 8, { color: vfxMatterColor('cinder'), speed: [0.4, 1.0], up: [0.6, 1.4], size: [0.45, 0.65], grow: 1.6, life: [1.0, 1.6], opacity: 0.35, gravity: -0.2, drag: 1.6, jitter: 0.6 });
+    },
+    bell_abbess: (es, matter, x, z) => {
+      // The rope parts and falls, the great bell's last toll rolls out over
+      // the room, and her wimple's wings break into linen on the air.
+      mark('bell_abbess_death');
+      championDeath(vfxMatterColor('habit'), CH_GOLD, x, z);
+      kit.streak({ a: { x, y: 6.5, z }, b: { x, y: 2.2, z }, width: 0.06, tailW: 0.02, core: PARCH, glow: vfxMatterColor('hemp'), life: 0.6, fall: 1.0, opacity: 0.7, travel: { x: 0, y: -2.0, z: 0 } });
+      flare(x, 5.0, z, BRONZE, 2.4, { kind: 'burst', life: 0.42, core: PARCH });
+      for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.4, r1: 3.2 + i * 1.4, width: 0.08, life: 0.8 + 0.15 * i, core: PARCH, glow: BRONZE, soft: 0.6, y: 4.8 - i * 1.4, delay: i * 0.12, opacity: 0.55, thin: 0.5 });
+      spray('shard', x, 2.6, z, 22, { color: GUST, tile: SHARD_TILE.feather, speed: [0.6, 2.0], up: [0.6, 1.8], size: [0.14, 0.22], life: [1.6, 2.4], gravity: 0.5, drag: 1.5, spin: [-6, 6], flutter: 0.85, jitter: 0.8 });
+      spray('chunk', x, 1.4, z, 6, { color: BRONZE, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.06, 0.1], life: [0.6, 0.9] });
+      spray('spark', x, 1.6, z, 14, { color: vfxMatterColor('hushpale'), speed: [0.1, 0.4], up: [0.2, 0.6], size: [0.05, 0.08], life: [1.4, 2.0], gravity: -0.1, drag: 2, jitter: 0.9 });
     },
     vein_matron: (es, matter, x, z) => {
       // Her heart bursts: violet light out through the roots, crystal

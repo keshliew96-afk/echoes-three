@@ -20,6 +20,8 @@ const POSES = {
   moss_hart: [['idle', null, 0], ['walk', null, 0, 1], ['antler_toss wind', 'antler_toss', 0.9], ['antler_toss fling', 'antler_toss', -0.08], ['leap crouch', 'harts_leap', 0.38], ['leap aloft', 'harts_leap', 0.62], ['leap fall', 'harts_leap', 0.86], ['leap land', 'harts_leap', -0.06]],
   lockkeeper: [['idle', null, 0], ['walk', null, 0, 1], ['hook wind', 'chain_hook', 0.85], ['hook thrown', 'chain_hook', -0.25], ['hook reel', 'chain_hook', -0.45], ['lock raise', 'lock_turn', 0.9], ['lock drive', 'lock_turn', -0.05], ['lock turned', 'lock_turn', -0.25]],
   gravebell_ringer: [['idle', null, 0], ['walk', null, 0, 1], ['knell wind', 'death_knell', 0.5], ['knell late', 'death_knell', 0.95], ['knell toll', 'death_knell', -0.05], ['call raise', 'grave_call', 0.9], ['call strike', 'grave_call', -0.05], ['call after', 'grave_call', -0.3]],
+  // Content plan 5 slice 2: the Spire's second.
+  bell_abbess: [['idle', null, 0], ['walk', null, 0, 1], ['swing grip', 'rope_swing', 0.35], ['swing ride', 'rope_swing', 0.7], ['swing drop', 'rope_swing', -0.06], ['peal raise', 'vesper_peal', 0.9], ['peal rung', 'vesper_peal', -0.06], ['rage', null, 0, 0, true]],
   vein_matron: [['idle', null, 0], ['walk', null, 0, 1], ['lash wind', 'vein_lash', 0.9], ['lash crack', 'vein_lash', -0.06], ['lash after', 'vein_lash', -0.3], ['pulse wind', 'heart_pulse', 0.9], ['pulse beat', 'heart_pulse', -0.06], ['rage', null, 0, 0, true]],
 };
 const poses = POSES[kind];
@@ -54,7 +56,8 @@ function entity(p, tick) {
   const e = { id: 1, x: 0, z: 0, mode: 'stalk', rage: !!rage, lastMove: null, moveTick: -1, telegraph: null, flight: null };
   if (move && prog >= 0) {
     e.telegraph = { move, startTick: 0, resolveTick: 100, length: 6, dirX: 0, dirZ: 1 };
-    if (move === 'harts_leap') e.flight = { x0: 0, z0: 0, x1: 0, z1: 0 };
+    if (move === 'harts_leap' || move === 'rope_swing') e.flight = { x0: 0, z0: 0, x1: 0, z1: 0 };
+    if (move === 'rope_swing') Object.assign(e.telegraph, { fromX: 0, fromZ: -3 + 6 * Math.max(0, (prog - 0.5) / 0.42) });
   } else if (move) {
     e.lastMove = move;
     e.moveTick = 5;

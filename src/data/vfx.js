@@ -230,6 +230,8 @@ export const ENEMY_VFX = Object.freeze({
   lockkeeper: Object.freeze({ matter: 'rust', family: 'brute', shard: 'drop', chunk: 8, dust: 2 }),
   gravebell_ringer: Object.freeze({ matter: 'boneplate', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
   vein_matron: Object.freeze({ matter: 'heartcrystal', family: 'brute', shard: 'needle', chunk: 6, dust: 1, heart: true, shot: Object.freeze({ look: 'dart', trail: 0.2 }) }),
+  // The Still Spire's second (content plan 5 slice 2).
+  bell_abbess: Object.freeze({ matter: 'habit', family: 'brute', shard: 'feather', chunk: 6, dust: 3 }),
 });
 
 const FAMILY_DEFAULT = Object.freeze({

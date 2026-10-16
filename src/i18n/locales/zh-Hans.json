@@ -3008,7 +3008,6 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "锁链钩：指向英雄的预警通道；钥匙沿通道飞出造成 10 点伤害，把你拖到他脚下。转锁：他周围的圆环锁合，造成 16 点伤害并大幅减速。离开通道。生命低于一半时他会狂怒。",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "丧钟：它周围宽阔的圆环鸣响，造成 11 点伤害并使其中每位英雄减速。墓唤：英雄脚下的预警圆环迸出灰烬，造成 14 点伤害并持续阴燃减速。生命低于一半时它会狂怒。",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "血脉鞭笞：指向英雄的预警通道造成 13 点伤害，每命中一位英雄她就吸取一些生命。心脏搏动：她周围的圆环搏动造成 14 点伤害，随后八枚水晶碎片向四周飞射，每枚 7 点。生命低于一半时她会狂怒。",
- "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "在五片土地上各斩杀一名勇士，包括疾风传令。每片土地的两名勇士中任意一名均可。",
  "{name} stands in this room. {trade}": "{name}立于此室。{trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name}收下了你的钥匙。清空此室后，一件更好的遗物在等你。",
  "{name}: {blessing} for 60 s ({text}).": "{name}：{blessing}，持续 60 秒（{text}）。",
@@ -3129,5 +3128,9 @@
  "The Hourwarden": "守时者",
  "THE HOURWARDEN": "守时者",
  "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "前方的钟表阁楼由守时者看守。钟摆摆动时，待它摆回之前别进入那条线。它开始报时时，保持移动，趁它发条松尽时攻击它。",
- "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "守时者的发条永远松尽了。阁楼里，众神的时钟停在你到来的那一刻。"
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "守时者的发条永远松尽了。阁楼里，众神的时钟停在你到来的那一刻。",
+ "The Bell Abbess": "钟楼女修院长",
+ "The abbess of the gods' belfry, who rang the hours for them until they fell still, and keeps the vigil still. She has never let go of the rope.": "众神钟楼的女修院长，为众神敲响时辰，直到他们归于静止，如今仍在守夜。她从未松开过那根钟绳。",
+ "Rope Swing: a warning lane at a hero; she swings down it on the great bell's rope for 14 and knocks you aside. Vesper Peal: a warning cone in front of her hand-bell rings for 11 and rings you still, slowing you hard. Below half health she rages.": "钟绳摆荡：朝一名英雄的预警通道；她拽着大钟的钟绳荡过其中，造成 14 点伤害并把你撞开。晚祷钟鸣：她手铃前方的预警扇形鸣响，造成 11 点伤害并将你定在原地，大幅减速。生命低于一半时她会狂怒。",
+ "Fell a champion in each of the five lands. Either of a land's two champions counts.": "在五片土地上各斩杀一名勇士。每片土地的两名勇士中任意一名均可。"
 }

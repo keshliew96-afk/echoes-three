@@ -797,7 +797,7 @@ export function mountVfxLab() {
   // of the party in its own land (crown, sigil, both moves, the rage below
   // half health and its fall all play live).
   const champ = section('Champions');
-  for (const [act, kind, name] of [[1, 'briar_knight', 'Briar Knight'], [2, 'sluice_warden', 'Sluice Warden'], [3, 'bone_reeve', 'Bone Reeve'], [4, 'hollow_choir', 'Hollow Choir'], [5, 'gale_herald', 'Gale Herald'], [1, 'moss_hart', 'Moss Hart'], [2, 'lockkeeper', 'Lockkeeper'], [3, 'gravebell_ringer', 'Gravebell Ringer'], [4, 'vein_matron', 'Vein Matron']]) {
+  for (const [act, kind, name] of [[1, 'briar_knight', 'Briar Knight'], [2, 'sluice_warden', 'Sluice Warden'], [3, 'bone_reeve', 'Bone Reeve'], [4, 'hollow_choir', 'Hollow Choir'], [5, 'gale_herald', 'Gale Herald'], [1, 'moss_hart', 'Moss Hart'], [2, 'lockkeeper', 'Lockkeeper'], [3, 'gravebell_ringer', 'Gravebell Ringer'], [4, 'vein_matron', 'Vein Matron'], [5, 'bell_abbess', 'Bell Abbess']]) {
     button(champ, name, async () => {
       await ensureCombat(roomAct(act));
       const f = front();
@@ -957,7 +957,7 @@ export function mountVfxLab() {
     ]],
     // CHAMPION ROOMS (src/audio/championcues.js).
     ['Sound, champion stings', [
-      ['Briar Knight', 'ch_briar_knight_sting'], ['Sluice Warden', 'ch_sluice_warden_sting'], ['Bone Reeve', 'ch_bone_reeve_sting'], ['Hollow Choir', 'ch_hollow_choir_sting'], ['Gale Herald', 'ch_gale_herald_sting'], ['Moss Hart', 'ch_moss_hart_sting'], ['Lockkeeper', 'ch_lockkeeper_sting'], ['Gravebell Ringer', 'ch_gravebell_ringer_sting'], ['Vein Matron', 'ch_vein_matron_sting'],
+      ['Briar Knight', 'ch_briar_knight_sting'], ['Sluice Warden', 'ch_sluice_warden_sting'], ['Bone Reeve', 'ch_bone_reeve_sting'], ['Hollow Choir', 'ch_hollow_choir_sting'], ['Gale Herald', 'ch_gale_herald_sting'], ['Moss Hart', 'ch_moss_hart_sting'], ['Lockkeeper', 'ch_lockkeeper_sting'], ['Gravebell Ringer', 'ch_gravebell_ringer_sting'], ['Vein Matron', 'ch_vein_matron_sting'], ['Bell Abbess', 'ch_bell_abbess_sting'],
       ['Rage', 'ch_briar_knight_rage'], ['Fall', 'ch_fall'], ['Chest', 'ch_chest'], ['Crown door', 'ch_crown'],
     ]],
     ['Sound, champion moves', [
@@ -965,7 +965,7 @@ export function mountVfxLab() {
       ['Floodgate', 'ch_floodgate'], ['Undertow', 'ch_undertow'], ['Reaping Sweep', 'ch_reaping_sweep'], ['Grave Lance', 'ch_grave_lance'],
       ['Shard Hymn', 'ch_shard_hymn'], ['Discord', 'ch_discord'], ['Gale Call', 'ch_gale_call'], ['Stoop', 'ch_stoop'],
       ['Antler Toss', 'ch_antler_toss'], ['Leap gather', 'ch_leap_gather'], ["Hart's Leap", 'ch_harts_leap'], ['Hook whirl', 'ch_hook_whirl'], ['Chain Hook', 'ch_chain_hook'], ['Lock Turn', 'ch_lock_turn'],
-      ['Death Knell', 'ch_death_knell'], ['Grave Call', 'ch_grave_call'], ['Vein Lash', 'ch_vein_lash'], ['Heart Pulse', 'ch_heart_pulse'],
+      ['Death Knell', 'ch_death_knell'], ['Grave Call', 'ch_grave_call'], ['Vein Lash', 'ch_vein_lash'], ['Heart Pulse', 'ch_heart_pulse'], ['Rope grip', 'ch_rope_grip'], ['Rope Swing', 'ch_rope_swing'], ['Vesper Peal', 'ch_vesper_peal'],
     ]],
     // SHOP REFRESH (src/audio/cues.js): the peddler's riffle beside the buy.
     ['Sound, shop', [['Buy', 'purchase'], ['Refresh', 'shop_refresh'], ['Too dear', 'deny']]],

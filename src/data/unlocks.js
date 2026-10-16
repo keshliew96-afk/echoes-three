@@ -209,7 +209,7 @@ export const DEEDS = Object.freeze(
       ? [
           ['skyward', { name: 'Skyward', text: 'Clear Level V, the Still Spire, and bring the Verse of Sky home.', embers: 60, test: (r) => r.cleared.includes(5) }],
           ['windfall', { name: 'Windfall', text: 'Fell the Gale Herald, the champion of the Still Spire.', embers: 25, test: (r) => (r.champions || []).includes('gale_herald') }],
-          ['five_crowns', { name: 'Five Crowns', text: 'Fell a champion in each of the five lands, the Gale Herald included. Either of a land\'s two champions counts.', embers: 80, test: (r, l) => crownCount(l, FIVE_CROWN_ACTS) >= FIVE_CROWN_ACTS.length, goal: (l) => [crownCount(l, FIVE_CROWN_ACTS), FIVE_CROWN_ACTS.length] }],
+          ['five_crowns', { name: 'Five Crowns', text: 'Fell a champion in each of the five lands. Either of a land\'s two champions counts.', embers: 80, test: (r, l) => crownCount(l, FIVE_CROWN_ACTS) >= FIVE_CROWN_ACTS.length, goal: (l) => [crownCount(l, FIVE_CROWN_ACTS), FIVE_CROWN_ACTS.length] }],
           ['break_the_hush', { name: 'Break the Hush', text: 'Fell the Hush on the Harrowing challenge.', embers: 80, test: (r) => r.bosses.includes('hush') && r.challenge === 'harrowing' }],
         ]
       : []),

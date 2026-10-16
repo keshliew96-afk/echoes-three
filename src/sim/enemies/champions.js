@@ -35,6 +35,7 @@
 //                                  (72 ticks): it takes wing and glides over,
 //                                  landing on the mark at the end for 17
 //                                  (over barricades and hazards while aloft)
+//   (The second champions, the Spire's Bell Abbess among them, are below.)
 //
 // Sim discipline as every archetype: plain data on the entity, no RNG draws
 // (the move order alternates; the circling side is spawn-ordinal parity).
@@ -176,8 +177,8 @@ function champion(def) {
     },
 
     continuous(ctx, e, tick) {
-      shoveStep(ctx, e); // a throw or a drag in flight (Gale Call, Antler Toss, Chain Hook)
-      flightStep(ctx, e, tick); // a glide or a leap over the warning (Stoop, Hart's Leap)
+      shoveStep(ctx, e); // a throw or a drag in flight (Gale Call, Antler Toss, Chain Hook, Rope Swing)
+      flightStep(ctx, e, tick); // a glide or a leap over the warning (Stoop, Hart's Leap, Rope Swing)
       if (def.pre) def.pre(ctx, e, tick);
       if (!e.rage && e.hp > 0 && e.hp < e.maxHp * R.rageAt) {
         e.rage = true;
@@ -898,6 +899,106 @@ export const veinMatron = champion({
   ],
 });
 
+// --------------------------------------------------------- BELL ABBESS --
+// (content plan 5 slice 2, docs/CHAMPIONS.md "The Bell Abbess") The Still
+// Spire's second lord: the abbess of the gods' belfry, tall and still in a
+// pale habit and a winged wimple, a bronze hand-bell in one hand and the
+// great bell's rope in the other; it rises out of sight into the belfry.
+//   Rope Swing    a lane at its target, or else the farthest hero, 2.4 to
+//                 7.5 u off, running 1.2 u past them (66 ticks): she stands
+//                 the first half, then swings down it on the rope and drops
+//                 at its end; every hero in the lane is struck for 14 and
+//                 knocked 1.6 u aside, out of it (over barricades and
+//                 hazards while she swings)
+//   Vesper Peal   a cone r 4.4, half-angle 36° (60 ticks): the hand-bell
+//                 rings for 11 and rings every hero in it still (slow 55 %
+//                 for 1.2 s)
+// Together: she swings in among you, then rings you still where you stand.
+const BA = Object.freeze({
+  hp: 100,
+  moveSpeed: 1.1,
+  radius: 0.6,
+  kbScale: 0.12,
+  keepMin: 2.2,
+  keepMax: 4.4,
+  swingMin: 2.4,
+  swingMax: 7.5,
+  swingPast: 1.2, // the lane runs on this far past the hero
+  swingWidth: 1.2,
+  swingDamage: 14,
+  swingFrom: 0.5, // she stands this share of the warning...
+  swingTo: 0.92, // ...and has dropped at the lane's end by this one
+  knockDist: 1.6, // heroes ignore knockback: she knocks them aside herself
+  knockTicks: 10,
+  coneRadius: 4.4,
+  coneHalfDeg: 36,
+  coneDamage: 11,
+  stillSlow: 0.55,
+  stillTicks: 72,
+});
+export const bellAbbess = champion({
+  id: 'bell_abbess',
+  stats: BA,
+  moves: [
+    {
+      id: 'rope_swing',
+      shape: 'lane',
+      ticks: 66,
+      cd: 170,
+      // Its target when that hero stands in reach, else the farthest hero
+      // who does (a blade at her hem must not keep her off the backline).
+      can: (ctx, e, target, d) => (d.l >= BA.swingMin && d.l <= BA.swingMax) || !!farthestHero(ctx, e, BA.swingMin, BA.swingMax),
+      start(ctx, e, target, d0) {
+        const h = d0.l >= BA.swingMin && d0.l <= BA.swingMax ? target : farthestHero(ctx, e, BA.swingMin, BA.swingMax);
+        const d = h === target ? d0 : unit(h.x - e.x, h.z - e.z);
+        const want = clipLength(ctx, e.x, e.z, d.x, d.z, Math.min(BA.swingMax + BA.swingPast, d.l + BA.swingPast));
+        // Where she drops: the lane's end, kept inside the room for her body.
+        const { mx, mz } = ctx.movement.innerBounds(e.radius);
+        const x = Math.max(-mx, Math.min(mx, e.x + d.x * want));
+        const z = Math.max(-mz, Math.min(mz, e.z + d.z * want));
+        const v = unit(x - e.x, z - e.z);
+        const dir = v.l > 1e-6 ? v : d;
+        const length = Math.max(1, v.l);
+        e.flight = { x0: e.x, z0: e.z, x1: x, z1: z, from: BA.swingFrom, to: BA.swingTo, move: 'rope_swing' };
+        e.flier = true; // on the rope: over barricades and hazards
+        return { fromX: e.x, fromZ: e.z, x, z, dirX: dir.x, dirZ: dir.z, length, width: BA.swingWidth, targetId: h.id };
+      },
+      resolve(ctx, e, t) {
+        e.flight = null;
+        e.flier = false;
+        const victims = inLane(ctx.registry, t);
+        for (const v of victims) ctx.strike(e, [v], ctx.dmg(e, BA.swingDamage), v.x - t.dirX, v.z - t.dirZ, { delivery: 'skill', shape: 'lane' });
+        // Every hero still standing in the lane is knocked aside, out of it
+        // (to the side they stood on; dead on the line, to her left).
+        const pushes = [];
+        for (const v of victims) {
+          if (v.partyIndex === undefined || !(v.hp > 0)) continue;
+          const across = (v.x - t.fromX) * -t.dirZ + (v.z - t.fromZ) * t.dirX;
+          const side = across < 0 ? -1 : 1;
+          pushes.push([v.id, -t.dirZ * side, t.dirX * side]);
+        }
+        if (pushes.length) e.shove = { pushes, ticksLeft: BA.knockTicks, per: BA.knockDist / BA.knockTicks };
+        e.moveExtra = { knocked: pushes.length, len: r2(t.length) };
+        return partyOnly(victims);
+      },
+    },
+    {
+      id: 'vesper_peal',
+      shape: 'cone',
+      ticks: 60,
+      cd: 160,
+      can: (ctx, e, target, d) => d.l > 1e-6 && d.l <= BA.coneRadius - 0.5 + (target.radius ?? 0),
+      start: (ctx, e, target, d) => ({ x: e.x, z: e.z, dirX: d.x, dirZ: d.z, radius: BA.coneRadius, halfAngleDeg: BA.coneHalfDeg }),
+      resolve(ctx, e, t, tick) {
+        const victims = inCone(ctx.registry, t);
+        ctx.strike(e, victims, ctx.dmg(e, BA.coneDamage), t.x, t.z, { delivery: 'skill', shape: 'cone' });
+        slowAll(ctx, e, victims, BA.stillSlow, BA.stillTicks, tick);
+        return partyOnly(victims);
+      },
+    },
+  ],
+});
+
 export const CHAMPION_KITS = Object.freeze({
   briar_knight: briarKnight,
   sluice_warden: sluiceWarden,
@@ -908,4 +1009,5 @@ export const CHAMPION_KITS = Object.freeze({
   lockkeeper,
   gravebell_ringer: gravebellRinger,
   vein_matron: veinMatron,
+  bell_abbess: bellAbbess,
 });

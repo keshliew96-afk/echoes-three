@@ -1,4 +1,4 @@
-// CHAMPION ROOMS (docs/CHAMPIONS.md): the nine champions' voices,
+// CHAMPION ROOMS (docs/CHAMPIONS.md): the ten champions' voices,
 // registered on the engine like the boss and encounter cues
 // (engine.registerCue / registerEventCue): procedural, no files. Listen-only:
 // event payloads in, cues out, so the goldens cannot move.
@@ -19,10 +19,13 @@
 //                   shard_hymn, discord, gale_call, stoop, and the second
 //                   champions' antler_toss, harts_leap, chain_hook,
 //                   lock_turn, death_knell, grave_call, vein_lash,
-//                   heart_pulse)
+//                   heart_pulse, and the Spire's second, the Bell Abbess:
+//                   rope_swing, vesper_peal)
 //   ch_leap_gather  the Moss Hart gathering itself for the leap (with ch_tell)
 //   ch_hook_whirl   the Lockkeeper's key whirling up for the hook (with ch_tell)
 //   ch_stoop_rise   the Gale Herald's stoop taking wing (with ch_tell)
+//   ch_rope_grip    the Bell Abbess taking the rope for the swing: it creaks
+//                   taut and the great bell hums far overhead (with ch_tell)
 //   ch_charge_stop  the Briar Knight's charge stops (a wall: a crash)
 import { UI_PEAK_DB } from './cues.js';
 import { phrase } from './bosscues.js';
@@ -53,6 +56,8 @@ export const CHAMPION_CUE_CAL = {
   ch_vein_matron_rage: 6.6,
   ch_gale_herald_sting: 7.2,
   ch_gale_herald_rage: 7.3,
+  ch_bell_abbess_sting: 5.9,
+  ch_bell_abbess_rage: 5.5,
   ch_fall: 1.8,
   ch_chest: 0,
   ch_crown: 0,
@@ -78,6 +83,9 @@ export const CHAMPION_CUE_CAL = {
   ch_grave_call: -1.5,
   ch_vein_lash: 0.8,
   ch_heart_pulse: 0.9,
+  ch_rope_grip: -5.9,
+  ch_rope_swing: 3,
+  ch_vesper_peal: -2.5,
   ch_charge_stop: -1.7,
   // @cal end
 };
@@ -95,6 +103,8 @@ const VOICE = {
   lockkeeper: { root: 57, lead: 'clank', drum: 'frame' }, // Sunken Mill, A phrygian
   gravebell_ringer: { root: 52, lead: 'knell', drum: 'taiko' }, // the Barrow, E harmonic minor
   vein_matron: { root: 49, lead: 'glass', drum: 'heart' }, // the Heart, C# phrygian
+  // The Still Spire's second (content plan 5 slice 2).
+  bell_abbess: { root: 53, lead: 'choir', drum: 'knell' }, // the Still Spire, F lydian
 };
 const STINGS = {
   // A knight's horn: tonic, fifth, then the flat second held over a thorn pluck.
@@ -120,6 +130,10 @@ const STINGS = {
   // The heart's own beat twice, then glass voices rising out of it to the
   // flat second, a low swell under.
   vein_matron: [[0, 0, 'heart', 1], [0.2, 0, 'heart', 0.8], [0, 25, 'low', 0.9, 1.3], [0.4, 61, 'glass', 0.5, 0.6], [0.52, 64, 'glass', 0.5, 0.6], [0.64, 68, 'glass', 0.55, 0.8], [0.64, 62, 'choir', 0.4, 0.8], [0.64, 0, 'heart', 0.9]],
+  // Vespers in the belfry: the great bell, then a plainchant line climbing
+  // F, G, A to the lydian raised fourth (B) held as the bell sounds again,
+  // her hand-bell glinting over it.
+  bell_abbess: [[0, 0, 'knell', 0.8], [0, 29, 'low', 0.9, 1.4], [0.06, 65, 'choir', 0.45, 0.4], [0.3, 67, 'choir', 0.45, 0.35], [0.52, 69, 'choir', 0.5, 0.3], [0.72, 71, 'choir', 0.55, 0.8], [0.72, 0, 'knell', 0.7], [0.72, 89, 'bell', 0.3, 1.0], [0.84, 84, 'bell', 0.22, 0.9]],
 };
 const rageNotes = (v) => [
   [0, 0, v.drum, 1],
@@ -321,6 +335,36 @@ Object.assign(CUES, {
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 500, f1: 150, q: 0.8, d: 0.3, gain: 0.7 }),
       ...[68, 73, 76, 80].map((m, i) => k.bell(d, t + 0.18 + i * 0.025, { f: P(p, 440 * Math.pow(2, (m - 69) / 12)), ratio: 2.76, index: 1, d: 0.5, gain: 0.22 }))
     )),
+  // THE BELL ABBESS (content plan 5 slice 2).
+  // Taking the rope: hemp creaking taut in three pulls, the great bell's
+  // hum far above answering the first.
+  ch_rope_grip: sfx(-12, (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.2, 0.36].map((o, i) => k.noise(d, t + o, { type: 'bandpass', f0: P(p, 420 + i * 90), f1: P(p, 260 + i * 60), q: 6, a: 0.03, hold: 0.06, d: 0.12, gain: 0.5 })),
+      k.bell(d, t + 0.05, { f: P(p, 87.3), ratio: 2.4, index: 1.2, d: 1.1, gain: 0.3 }),
+      k.tone(d, t + 0.05, { f0: P(p, 43.7), d: 0.9, gain: 0.25 })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // The swing lands: a long rush of air, her drop, and the great bell
+  // tolling overhead with the pull of the rope.
+  ch_rope_swing: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 600), f1: P(p, 2400), q: 1.1, a: 0.06, d: 0.18, gain: 0.55 }),
+      k.tone(d, t + 0.06, { f0: P(p, 96), f1: P(p, 38), d: 0.4, gain: 0.85 }),
+      k.noise(d, t + 0.06, { src: 'brown', type: 'lowpass', f0: 900, f1: 200, q: 0.8, d: 0.35, gain: 0.7 }),
+      k.bell(d, t + 0.04, { f: P(p, 174.6), ratio: 2.4, index: 2.6, d: 1.8, gain: 0.45 }),
+      k.bell(d, t + 0.04, { f: P(p, 349.2), ratio: 1.41, index: 1.4, d: 1.2, gain: 0.22 }),
+      k.tone(d, t + 0.04, { f0: P(p, 87.3), d: 1.2, gain: 0.45 })
+    )),
+  // Vesper Peal: her hand-bell, bright and close (F, C and the raised B),
+  // then the air going still: a breath of high hush that fades.
+  ch_vesper_peal: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, 698.5), ratio: 2.76, index: 1.3, d: 1.1, gain: 0.42 }),
+      k.bell(d, t + 0.02, { f: P(p, 1046.5), ratio: 2.76, index: 1, d: 0.9, gain: 0.26 }),
+      k.bell(d, t + 0.05, { f: P(p, 987.8), ratio: 2.0, index: 0.8, d: 0.8, gain: 0.18 }),
+      k.noise(d, t, { type: 'highpass', f0: P(p, 5200), q: 0.7, d: 0.08, gain: 0.35 }),
+      k.noise(d, t + 0.12, { type: 'bandpass', f0: P(p, 3000), f1: P(p, 1200), q: 0.8, a: 0.15, hold: 0.2, d: 0.6, gain: 0.2 })
+    )),
   ch_charge_stop: sfx(-9, (k, t, d, p) =>
     Math.max(
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 250), q: 0.8, d: 0.3, gain: 0.9 }),
@@ -338,10 +382,10 @@ const at = (ev, h, id) => {
 
 // The entrance roar's pitch: the choir's is high and glassy, the Gale
 // Herald's (a carved stone crier, wings and all) deep and heavy.
-const ROAR_PITCH = { hollow_choir: 1.3, gale_herald: 0.7, moss_hart: 0.75, lockkeeper: 0.9, gravebell_ringer: 0.85, vein_matron: 1.15 };
+const ROAR_PITCH = { hollow_choir: 1.3, gale_herald: 0.7, moss_hart: 0.75, lockkeeper: 0.9, gravebell_ringer: 0.85, vein_matron: 1.15, bell_abbess: 1.1 };
 
 // A move whose wind-up has its own sound under the shared tell.
-const TELL_EXTRA = { stoop: 'ch_stoop_rise', harts_leap: 'ch_leap_gather', chain_hook: 'ch_hook_whirl' };
+const TELL_EXTRA = { stoop: 'ch_stoop_rise', harts_leap: 'ch_leap_gather', chain_hook: 'ch_hook_whirl', rope_swing: 'ch_rope_grip' };
 
 export function createChampionEventCues() {
   return {

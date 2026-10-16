@@ -75,6 +75,8 @@ const CHAMPION_ROWS = {
   lockkeeper: ['The mill\'s lock-keeper, who never let a boat through without his toll. He kept the key when the water rose.', 'Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.'],
   gravebell_ringer: ['The barrow\'s bell-ringer, who rang the dead to their graves and still rings for the living.', 'Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.'],
   vein_matron: ['The mother of the Heart\'s veins, crowned in crystal, who feeds every root that grows through the dark.', 'Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.'],
+  // The Still Spire's second (content plan 5 slice 2).
+  bell_abbess: ['The abbess of the gods\' belfry, who rang the hours for them until they fell still, and keeps the vigil still. She has never let go of the rope.', 'Rope Swing: a warning lane at a hero; she swings down it on the great bell\'s rope for 14 and knocks you aside. Vesper Peal: a warning cone in front of her hand-bell rings for 11 and rings you still, slowing you hard. Below half health she rages.'],
 };
 
 // One row per boss kind, in level order.
