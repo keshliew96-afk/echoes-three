@@ -1569,6 +1569,7 @@ export function createSaveSystem({
     lastAward: () => lastAward,
     buyUnlock: unlockCall(profileStore.buyUnlock),
     equipUnlock: unlockCall(profileStore.equipUnlock),
+    setVowRank: unlockCall(profileStore.setVowRank), // VOW RANKS
     clearLoadout: unlockCall(profileStore.clearLoadout),
     grantFreeUnlocks: unlockCall(profileStore.grantFreeUnlocks),
     // THE TIDECALLER: has this profile freed Rill (the Verse of Water)?
@@ -1631,6 +1632,7 @@ export function createSaveSystem({
     },
     buyUnlock: (id) => api.buyUnlock(id),
     equipUnlock: (id, on) => api.equipUnlock(id, on),
+    setVowRank: (id, rank) => api.setVowRank(id, rank), // VOW RANKS
     boons: () => api.boons(),
     // THE TIDECALLER probes: free Rill (what the first Level II clear does).
     tidecallerFreed: () => api.tidecallerFreed(),

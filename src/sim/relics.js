@@ -165,9 +165,11 @@ function weightedTake(stream, pool) {
 // Ash Feather: the dodge cooldown for a set of owned relic ids (the sim's
 // mods.dodgeCdMul() as a pure function, for the guest's predictors and the
 // HUD rings, which only see the replicated run view).
-export function dodgeCooldownTicks(base, ownedIds) {
+// (`extra`: VOW RANKS, the Heavy Bell vow's slower recovery, the relic
+// view's `vowDodge`.)
+export function dodgeCooldownTicks(base, ownedIds, extra = 0) {
   const ids = Array.isArray(ownedIds) ? ownedIds : [];
-  const add = ids.reduce((s, id) => s + ((RELICS[id] && RELICS[id].dodgeCd) || 0), 0);
+  const add = ids.reduce((s, id) => s + ((RELICS[id] && RELICS[id].dodgeCd) || 0), 0) + (Number.isFinite(extra) ? extra : 0);
   return add ? Math.round(base * Math.max(0.2, 1 + add)) : base;
 }
 
@@ -199,7 +201,9 @@ export function cursedDiff(diff, curseId, scale = 1) {
   return d;
 }
 
-export function createRelicSystem({ registry, events, getTick, combat, skillSys, player, live = () => true, glint = null }) {
+// `vowMods()` (VOW RANKS, sim/run.js): the Spire vows the run wears,
+// { heal, dodge } (null with none), read live like the major curses.
+export function createRelicSystem({ registry, events, getTick, combat, skillSys, player, live = () => true, glint = null, vowMods = () => null }) {
   let on = false;
   let stream = null;
   let owned = []; // relic ids in pick order
@@ -305,10 +309,17 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       let m = 1 + sum('heal');
       if (curse && CURSES[curse.id] && CURSES[curse.id].healCut && !CURSES[curse.id].major) m *= 1 - CURSES[curse.id].healCut;
       for (const id of majors) if (CURSES[id].healCut) m *= 1 - CURSES[id].healCut * majorScale();
+      // VOW RANKS: Thin Air.
+      const vm = vowMods();
+      if (vm && vm.heal) m *= 1 - vm.heal;
       return m;
     },
     // Ash Feather: the dodge cooldown factor (1 = unchanged).
-    dodgeCdMul: () => Math.max(0.2, 1 + sum('dodgeCd')),
+    dodgeCdMul: () => {
+      // VOW RANKS: Heavy Bell.
+      const vm = vowMods();
+      return Math.max(0.2, 1 + sum('dodgeCd') + (vm && vm.dodge ? vm.dodge : 0));
+    },
     // Last Light: true = the blow leaves this member at 1 HP instead.
     saveFromDown(target) {
       if (!has('last_light') || savedThisRoom.includes(target.id)) return false;
@@ -873,6 +884,9 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       curse: curse ? { id: curse.id, room: curse.room, name: CURSES[curse.id].name, text: CURSES[curse.id].text, ...(curse.major ? { major: true } : {}) } : null,
       cursesTaken,
       majors: majors.map((id) => ({ id, name: CURSES[id].name, text: CURSES[id].text })),
+      // VOW RANKS: Heavy Bell's slower dodges, for the HUD ring (present only
+      // when worn).
+      ...(vowMods() && vowMods().dodge ? { vowDodge: vowMods().dodge } : {}),
       shelf: shelf ? shelf.map((s) => ({ id: s.id, name: RELICS[s.id].name, rarity: RELICS[s.id].rarity, text: RELICS[s.id].text, ...(RELICS[s.id].cls ? { cls: RELICS[s.id].cls } : {}), price: s.price, sold: s.sold || owned.includes(s.id) })) : null,
       offer: offer
         ? {

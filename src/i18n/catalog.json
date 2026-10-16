@@ -24,6 +24,11 @@
    "src/ui/run/draft.js"
   ]
  },
+ "…and {n} more": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "· ROOM": {
   "files": [
    "src/ui/run/draft.js"
@@ -228,6 +233,7 @@
  },
  "{currency} +{pct}%": {
   "files": [
+   "src/ui/run/levels.js",
    "src/ui/run/unlocks.js"
   ]
  },
@@ -360,6 +366,16 @@
  "{language} · press Apply to switch": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ]
+ },
+ "{level} · best {best}": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "{level} · New best!": {
+  "files": [
+   "src/ui/run/endscreens.js"
   ]
  },
  "{loss} loss": {
@@ -767,6 +783,11 @@
  "{name} stands in this room. {trade}": {
   "files": [
    "src/ui/run/index.js"
+  ]
+ },
+ "{name} sworn at rank {rank}. Vow level {level}.": {
+  "files": [
+   "src/ui/run/unlocks.js"
   ]
  },
  "{name} sworn.": {
@@ -3612,6 +3633,16 @@
    "src/ui/run/levels.js"
   ]
  },
+ "Best Vow level": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Best:": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "Bestiary": {
   "files": [
    "src/ui/story/journal.js"
@@ -3780,6 +3811,11 @@
  "Boss Rush won": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "Boss Rush@@vow best": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "Bosses": {
@@ -4055,6 +4091,11 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Campaign · Endless · Boss Rush": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "Campaign {span}": {
   "files": [
    "src/ui/run/levels.js"
@@ -4079,6 +4120,11 @@
  "Campaign rules from Level I · Standard challenge · nothing equipped from Unlocks · single player. Your first run of the day counts on the board; every run after it is practice.": {
   "files": [
    "src/ui/run/daily.js"
+  ]
+ },
+ "Campaign@@vow best": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "Campaigns completed": {
@@ -4670,6 +4716,24 @@
   ]
  },
  "Complete a campaign (Levels I to V).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Complete a campaign or win a Boss Rush at Vow level 10 or higher.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Complete a campaign or win a Boss Rush at Vow level 15 or higher.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Complete a campaign or win a Boss Rush at Vow level 5 or higher.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5812,7 +5876,7 @@
   ],
   "data": true
  },
- "Elites are far more common in every combat room. Embers +25%.": {
+ "Elites are far more common in every combat room: +{r1}% elite chance at rank I, +{r2}% at II, +{r3}% at III.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5845,7 +5909,8 @@
  },
  "Embers": {
   "files": [
-   "src/data/unlocks.js"
+   "src/data/unlocks.js",
+   "src/ui/run/levels.js"
   ],
   "data": true
  },
@@ -5875,6 +5940,11 @@
    "src/ui/run/levels.js"
   ]
  },
+ "Endless@@vow best": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "Enemies and the Stag: {hp} HP, {dmg} damage": {
   "files": [
    "src/ui/run/challenge.js"
@@ -5890,7 +5960,7 @@
    "src/ui/socket/index.js"
   ]
  },
- "Enemies in every combat room deal 35% more damage. Embers +25%.": {
+ "Enemies in every combat room deal more damage: +{r1}% at rank I, +{r2}% at II, +{r3}% at III.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5902,7 +5972,7 @@
   ],
   "data": true
  },
- "Enemies in every combat room have 40% more HP. Embers +25%.": {
+ "Enemies in every combat room have more HP: +{r1}% at rank I, +{r2}% at II, +{r3}% at III.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5931,7 +6001,7 @@
   ],
   "data": true
  },
- "Enemy attack warnings in every combat room are 20% shorter (never under 0.6 s). Embers +25%.": {
+ "Enemy attack warnings in every combat room run shorter: {r1}% shorter at rank I (never under 0.6 s), {r2}% at II (0.55 s), {r3}% at III (0.5 s).": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6207,7 +6277,7 @@
    "src/ui/menu/saves.js"
   ]
  },
- "Every wave in every combat room is half again as large. Embers +25%.": {
+ "Every wave in every combat room is larger: +{r1}% at rank I, +{r2}% at II, +{r3}% at III.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6495,6 +6565,12 @@
   ],
   "data": true
  },
+ "Fifteen Oaths": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "FIGHT": {
   "files": [
    "src/ui/run/shop.js"
@@ -6624,6 +6700,12 @@
  "Five lands. I inked the Spire at the very top of the page, and there is still paper above it.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Five Oaths": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -7494,6 +7576,12 @@
   ],
   "data": true
  },
+ "Healing on the party is weaker in every room, the boss’s too: {r1}% weaker at rank I, {r2}% at II, {r3}% at III.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Healing Spring": {
   "files": [
    "src/sim/encounters.js"
@@ -7597,6 +7685,12 @@
  "Heavy": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Heavy Bell": {
+  "files": [
+   "src/data/vows.js"
   ],
   "data": true
  },
@@ -8777,6 +8871,11 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Levels {from} to {to} cleared": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "LEVELS CLEARED": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -9584,6 +9683,11 @@
    "src/ui/net/hud.js"
   ]
  },
+ "No vows sworn. Swear them at the camp (U).": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "No warden here, only the Thornmother. She fights the floor, so keep off her briars.": {
   "files": [
    "src/data/story.js"
@@ -9929,7 +10033,7 @@
    "src/ui/run/daily.js"
   ]
  },
- "One seed for everyone": {
+ "One seed for everyone, no vows": {
   "files": [
    "src/ui/run/levels.js"
   ]
@@ -10764,6 +10868,11 @@
    "src/sim/skills.js"
   ],
   "data": true
+ },
+ "Raise to {rank}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
  },
  "Rally the party": {
   "files": [
@@ -12844,6 +12953,11 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "Swear vows at rank I, II or III. Their ranks add up to your Vow level: each of the first six levels pays {pct}% more {currency}, each level after that {more}%.": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "Swift Mend": {
   "files": [
    "src/sim/skills.js"
@@ -12918,6 +13032,11 @@
   "data": true
  },
  "Sworn": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Sworn at rank {rank}": {
   "files": [
    "src/ui/run/unlocks.js"
   ]
@@ -13088,6 +13207,12 @@
  "Teeming": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Ten Oaths": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -13670,6 +13795,11 @@
   ]
  },
  "The Daily Descent. Locked: {line}.": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
+ "The Daily is vow-free.": {
   "files": [
    "src/ui/run/levels.js"
   ]
@@ -14544,6 +14674,12 @@
   ],
   "data": true
  },
+ "The party’s dodges recover slower in every room, the boss’s too: {r1}% slower at rank I, {r2}% at II, {r3}% at III.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "The peddler": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -15107,6 +15243,12 @@
  "Thick Hide": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Thin Air": {
+  "files": [
+   "src/data/vows.js"
   ],
   "data": true
  },
@@ -15956,6 +16098,18 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "VOW LEVEL": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/levels.js",
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Vow level {n} +{pct}%": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "Vow: Crowded": {
   "files": [
    "src/data/unlocks.js"
@@ -15963,6 +16117,12 @@
   "data": true
  },
  "Vow: Elite Tide": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Vow: Heavy Bell": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -15992,11 +16152,22 @@
   ],
   "data": true
  },
+ "Vow: Thin Air": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Vows": {
   "files": [
    "src/data/unlocks.js"
   ],
   "data": true
+ },
+ "Vows: {list}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
  },
  "VS": {
   "files": [
@@ -16141,7 +16312,7 @@
    "src/ui/hud/banner.js"
   ]
  },
- "Waves in every combat room arrive 35% sooner. Embers +25%.": {
+ "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -16167,11 +16338,6 @@
  "WAYSTONE LOST · NO REWARD": {
   "files": [
    "src/ui/hud/banner.js"
-  ]
- },
- "Wear vows to curse every combat room. Each vow pays {pct}% more {currency}.": {
-  "files": [
-   "src/ui/run/unlocks.js"
   ]
  },
  "Weathercock Plume": {

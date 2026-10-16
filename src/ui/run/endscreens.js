@@ -48,6 +48,7 @@ import { netOwners, ownerLabel } from './partystrip.js';
 // DAILY DESCENT (docs/DAILY.md): the day's place and the board's answer.
 import { placeLine, dayLabel } from './daily.js';
 import { clockOf } from '../../data/daily.js';
+import { vowLevelOf } from '../../data/vows.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 
@@ -336,6 +337,19 @@ export function createEndScreen({ run }) {
       pairs.push([t('LEVELS CLEARED'), `${camp.levelsCleared} / ${span.length}`]);
       pairs.push([complete ? t('FINAL LEVEL') : t('FURTHEST LEVEL'), `${ROMAN[camp.level] ?? camp.level} · ${t(levelFor(camp.level).name)}`]);
       rooms = [`${n} / ${8 * (camp.levels || []).length}`];
+    }
+    // VOW RANKS (plan 4 slice 10): the Vow level the run wore, and the
+    // mode's best (the save service's award for this run).
+    if (s.boons && Array.isArray(s.boons.vows) && s.boons.vows.length && camp && !daily) {
+      const level = vowLevelOf(s.boons);
+      const sv = service('save');
+      const rec = sv && typeof sv.lastRecord === 'function' ? sv.lastRecord() : null;
+      const aw = sv && typeof sv.lastAward === 'function' ? sv.lastAward() : null;
+      const v = rec && rec.summary && rec.summary.seed === s.seed && aw && aw.vow && aw.vow.level === level ? aw.vow : null;
+      pairs.push([
+        t('VOW LEVEL'),
+        v && v.newBest ? t('{level} · New best!', { level }) : v && v.best ? t('{level} · best {best}', { level, best: v.best }) : String(level),
+      ]);
     }
     // PARTY (BUILD_BRIEF §25.9 "the end card shows the four builds"): the
     // skill / node totals are the whole party's — the sums of the table below
