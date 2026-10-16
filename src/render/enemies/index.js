@@ -331,7 +331,9 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
 
       // §9 #1 hit flash: emissive modulation, tick-denominated (holds frozen
       // through kill hitstop exactly like the dummies).
-      const lit = tick < r.flashUntilTick ? HITFLASH.intensity : 0;
+      // A build may scale its flash down (flashScale): a big pale model lit
+      // white floods the bloom pass and veils the room (the Gale Herald).
+      const lit = tick < r.flashUntilTick ? HITFLASH.intensity * (r.build.flashScale ?? 1) : 0;
       for (const m of r.build.mats) m.emissiveIntensity = lit;
 
       // --- Archetype telegraphs (M4b): lane / ring / cone Ember shapes.
@@ -567,6 +569,8 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       archetypeTelegraphs: shapeTele.size,
       rigKinds: [...new Set([...rigs.values()].map((r) => r.kind))].sort(),
       elites: [...rigs.values()].filter((r) => r.elite).length,
+      // Live hit-flash level per rig id (Small fixes 4: the herald's flashScale).
+      flash: Object.fromEntries([...rigs].map(([id, r]) => [id, r.build.mats.reduce((a, m) => Math.max(a, m.emissiveIntensity ?? 0), 0)])),
       shapes: shapes.stats(),
       ...extras.debugState(),
       ...affixes.debugState(),

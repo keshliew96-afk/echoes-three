@@ -1271,6 +1271,7 @@ window.__echoes = {
     ...(allyfx ? { allyfx: allyfx.debugCounts() } : {}),
     ...(techfx ? { techfx: techfx.debugCounts() } : {}),
     ...(bossfx ? { bossfx: bossfx.debugCounts() } : {}),
+    ...(enemyfx ? { enemyfx: enemyfx.debugState() } : {}),
   }),
   cmd: (name, ...args) => {
     // UI-level commands route to the socket screen (docs/TESTING.md).
