@@ -858,9 +858,34 @@ export const LAYOUTS = Object.freeze({
       { type: 'keg', x: 6.4, z: 3.6 },
     ]),
   }),
+  // Act V · 35 — the Clock Loft (content plan 5 slice 1, docs/THIRD_BOSSES.md;
+  // also the Hourwarden's room dressing): the loft behind the gods' great
+  // clock face, its dial filling the north parapet. Two vents blow in across
+  // the loft from opposite corners, rime under the dial's west and east
+  // edges, cairn barricades shoring up the floor between them.
+  35: Object.freeze({
+    id: 35,
+    act: 5,
+    biome: 'spire',
+    name: 'Clock Loft',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'gust', x0: -8.0, z0: -5.0, x1: -4.4, z1: -2.2, offset: 0 },
+      { type: 'gust', x0: 7.6, z0: 5.0, x1: 3.6, z1: 2.4, offset: 210 },
+      { type: 'slip', x: 6.6, z: -3.6, r: 1.2, skin: 'frost' },
+      { type: 'slip', x: -6.6, z: 3.8, r: 1.2, skin: 'frost' },
+    ]),
+    interactables: Object.freeze([
+      { type: 'bell', x: 0.0, z: -6.0 },
+      { type: 'barricade', x: -4.0, z: 1.2, yaw: 1.3, skin: 'cairn' },
+      { type: 'barricade', x: 4.8, z: -0.8, yaw: 1.3, skin: 'cairn' },
+      { type: 'dewfont', x: -2.4, z: 5.4 },
+      { type: 'keg', x: 9.6, z: -6.0 },
+    ]),
+  }),
 });
 
-export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34]);
+export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]);
 
 // Plan 3 slice 8: the act's arena (the layout flagged `arena`), or null.
 export function arenaOf(table) {

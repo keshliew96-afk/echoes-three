@@ -95,6 +95,8 @@ const BOSS_ROWS = {
   // Act V (docs/ACT_V_BOSSES.md).
   hush: ['The silence that stopped the gods: the quiet the Hollow Cantor sang into, sitting in their belfry beside them.', 'Still Note: a warning ring for 11 that slows. Unringing: a warning lane for 15. At each Stillness it calls the Spire\'s creatures, then the Great Hush: a huge ring round it for 20. Walk to the walls, then hit it while it sinks.'],
   skyhorn: ['The Spire\'s warden, an ibex of the high ledges with horns cast in bell bronze.', 'Horn Rush: paws, then charges down a warning lane for 12 and throws you aside. Into a wall it stands dazed. Bell Toll: a ring round it for 12. From half health it leaps onto the farthest hero.'],
+  // Content plan 5 slice 1 (docs/THIRD_BOSSES.md): the Spire's third.
+  hourwarden: ['The gods\' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.', 'Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.'],
 };
 
 // The lands, in campaign order, and which of them each enemy lives in (its

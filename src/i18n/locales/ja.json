@@ -3116,5 +3116,18 @@
  "The whole party sets out together": "パーティ全員で出発する",
  "CO-OP BEST": "協力ベスト",
  "Co-op best: {time}": "協力ベスト：{time}",
- "Co-op most felled: {n} of {total}": "協力の最多撃破：{total}体中{n}体"
+ "Co-op most felled: {n} of {total}": "協力の最多撃破：{total}体中{n}体",
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.": "世界の上に静寂の尖塔がそびえる。神々が腰を下ろして見守った鐘楼だ。空角はその階段を守っていたが、頂でうつろの歌に歪められた。神々の傍らには静けさが座る。神々を止めた沈黙、うつろの詠い手が歌いかけていた静寂だ。大文字盤の奥では、神々の時計そのものである時守が、歌に巻き戻された時を刻み減らしていく。いずれかを討てば空の詩節が解き放たれ、神々に届く場所で鐘が鳴る。",
+ "Archer effects burn in Gilded Hour colours. Cosmetic.": "弓使いのエフェクトが金色の刻の色に。見た目のみ。",
+ "Clock Loft": "時計の屋根裏",
+ "Defeat the Hourwarden.": "時守を倒す。",
+ "Fell the Hourwarden": "時守を討て",
+ "Gilded Hour tint": "金色の刻の色",
+ "Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.": "振り子：警告の帯に14、続けて同じ帯を戻り振りで10。手の薙ぎ払い：手元の警告の扇に13、後ろへ弾き飛ばされる。時の鐘：周囲の警告の輪に錘が一刻ずつ落ち、それぞれ11。その後ぜんまいが切れ、被ダメージが増える。",
+ "The gods stopped their clock to watch. I wound it again. Now it counts you down.": "神々は見物のために時計を止めた。私がまた巻いた。今はお前の時を刻んでいる。",
+ "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": "神々の時計。神々が腰を下ろして見守るまで時を打っていた青銅の時打ち人形。うつろの歌がそれを再び巻いた。",
+ "The Hourwarden": "時守",
+ "THE HOURWARDEN": "時守",
+ "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "この先の時計の屋根裏は時守が守っている。振り子が振れたら、戻ってくるまでその線に入るな。時を打ち始めたら動き続け、ぜんまいが切れた隙に叩け。",
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "時守のぜんまいが永遠に切れる。屋根裏では、神々の時計がお前の来た時刻で止まった。"
 }

@@ -3226,5 +3226,18 @@
  "The whole party sets out together": "Tout le groupe part ensemble",
  "CO-OP BEST": "MEILLEUR EN COOP",
  "Co-op best: {time}": "Meilleur en coop : {time}",
- "Co-op most felled: {n} of {total}": "Record en coop : {n} abattus sur {total}"
+ "Co-op most felled: {n} of {total}": "Record en coop : {n} abattus sur {total}",
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.": "Au-dessus du monde se dresse la Flèche Immobile, le beffroi où les dieux se sont assis pour regarder. Le Cor-du-Ciel gardait son escalier, et le chant creux l’a perverti au sommet. Près des dieux siège le Silence, celui qui les a arrêtés : le calme dans lequel chantait le Chantre Creux. Derrière le grand cadran, le Gardien des Heures, l’horloge même des dieux, décompte les heures que le chant a remontées en lui. Abattre l’un d’eux libère le Couplet du Ciel, et la cloche sonne là où les dieux peuvent l’entendre.",
+ "Archer effects burn in Gilded Hour colours. Cosmetic.": "Les effets de l’Archer prennent les couleurs Heure dorée. Cosmétique.",
+ "Clock Loft": "Combles de l’Horloge",
+ "Defeat the Hourwarden.": "Vaincs le Gardien des Heures.",
+ "Fell the Hourwarden": "Abattre le Gardien des Heures",
+ "Gilded Hour tint": "Teinte Heure dorée",
+ "Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.": "Pendule : un couloir d’alerte pour 14, puis il revient par le même couloir pour 10. Balayage des Mains : un cône d’alerte à ses mains pour 13 qui te repousse. Glas des Heures : des poids tombent sur des anneaux d’alerte autour de lui, 11 chacun, heure après heure ; puis il se dérègle et subit plus de dégâts.",
+ "The gods stopped their clock to watch. I wound it again. Now it counts you down.": "Les dieux ont arrêté leur horloge pour regarder. Je l’ai remontée. Désormais elle compte tes heures.",
+ "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": "L’horloge des dieux, un jaquemart de bronze qui sonnait les heures jusqu’à ce qu’ils s’assoient pour regarder. Le chant creux l’a remonté.",
+ "The Hourwarden": "Le Gardien des Heures",
+ "THE HOURWARDEN": "LE GARDIEN DES HEURES",
+ "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "Le Gardien des Heures garde les combles de l’horloge devant toi. Quand son pendule oscille, reste hors de la ligne jusqu’à son retour. Quand il sonne les heures, continue de bouger, puis frappe-le pendant qu’il se dérègle.",
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "Le Gardien des Heures s’arrête pour de bon. Dans les combles, l’horloge des dieux s’immobilise à l’heure de ta venue."
 }

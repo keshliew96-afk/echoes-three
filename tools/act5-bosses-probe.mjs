@@ -125,7 +125,7 @@ const addKinds = (W, from) => W.log.slice(from).filter((e) => e.type === 'boss_a
   check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5', `the campaign has five levels (${CAMPAIGN_ACTS}; acts ${ACT_IDS.join()})`);
   const lv = LEVELS[5];
   const kinds = (lv.bosses || []).filter((b) => !b.endlessOnly).map((b) => b.kind);
-  check(kinds.join() === 'hush,skyhorn' && lv.boss === 'hush', `Level V's bosses are the Hush and the Skyhorn (${kinds.join(', ')})`);
+  check(kinds.slice(0, 2).join() === 'hush,skyhorn' && lv.boss === 'hush', `Level V's bosses open with the Hush and the Skyhorn (${kinds.join(', ')})`);
   const rolled = {};
   for (let s = 1; s <= 40; s++) rolled[bossFor(5, s).kind] = (rolled[bossFor(5, s).kind] || 0) + 1;
   check(rolled.hush > 0 && rolled.skyhorn > 0 && Object.keys(rolled).length === 2, `seeds 1-40 meet both (${JSON.stringify(rolled)})`);
@@ -140,7 +140,7 @@ const addKinds = (W, from) => W.log.slice(from).filter((e) => e.type === 'boss_a
   check(!!ch && ch.verse === 'sky' && /Hush/.test(ch.summary) && /Skyhorn/.test(ch.summary), 'Chapter V, the Verse of Sky, names both');
   check(S.endingFor(5) === S.ENDING.spire && S.endingFor(4) === S.ENDING.heart, 'a five-level campaign ends on the Spire ending');
   check(S.WARDENS.skyhorn?.model === 'warden_ibex' && S.WARDENS.skyhorn.also.includes('hush'), 'either boss frees the Skyhorn warden');
-  check(BESTIARY.length === 51 && BESTIARY.some((r) => r.id === 'hush' || r.kind === 'hush'), `the Journal lists them (${BESTIARY.length} entries)`);
+  check(BESTIARY.length >= 51 && BESTIARY.some((r) => r.id === 'hush' || r.kind === 'hush'), `the Journal lists them (${BESTIARY.length} entries)`);
   const lines = [
     'The Hush', 'THE HUSH', 'The Skyhorn', 'THE SKYHORN', 'Sky@@verse', ch.title, ch.summary,
     S.RUMOURS.hush.text, S.RUMOURS.skyhorn.text, S.BOSS_VOICE.hush.text, S.BOSS_VOICE.skyhorn.text, S.ENDING.spire.text, S.WARDENS.skyhorn.text,

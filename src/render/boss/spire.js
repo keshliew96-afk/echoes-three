@@ -1,4 +1,5 @@
-// Act V boss rigs (docs/ACT_V_BOSSES.md): the Hush and the Skyhorn. Same
+// Act V boss rigs (docs/ACT_V_BOSSES.md): the Hush and the Skyhorn, and the
+// third, the Hourwarden (content plan 5 slice 1, below). Same
 // grammar and interface as render/boss/heart.js — { group, mats, setYaw,
 // setFlash, pose } — faces +Z, world-unit sizes, ink on the big masses, a
 // contact shadow.
@@ -491,5 +492,316 @@ export function buildSkyhorn() {
     eyeGlow.material.opacity = 0.18 + 0.35 * Math.max(rageK, pawK) * (1 - 0.6 * dazeK);
     pool.material.opacity = 0.06 + 0.08 * hot;
     shadow.scale.setScalar(1 - 0.5 * airK);
+  });
+}
+
+// ---------------------------------------------------------- HOURWARDEN --
+// Content plan 5 slice 1 (docs/THIRD_BOSSES.md "The Spire"): the gods'
+// clock-jack. A tall six-sided clock case of pale limestone banded in bell
+// bronze glides on a turning bed of bronze cogs; a glass-less window in the
+// lower case shows the pendulum swinging, its bob lit with the hollow song's
+// violet. Its chest is the great dial (a pale face, twelve bronze hour marks,
+// two hands that tick on with the fight and spin when it is enraged), its
+// head a small bronze bell under a jack's peaked cap with a single violet eye
+// slit, and its two long arms end in blades cast as clock hands. A great wind
+// key stands out of its back. It pulls its pendulum back before a Pendulum,
+// raises both hand-blades and scythes for the Hand Sweep, lifts its hammer-arm
+// and strikes its own bell for the Toll of the Hours, and slumps run down,
+// the key turning, the dial dim, until it is wound again.
+const CASE = new Color(VFX_MATTER.spirestone);
+const CASE_DARK = CASE.clone().lerp(new Color(PALETTE.voidCharcoal), 0.55);
+const CLOCKBRONZE = new Color(VFX_MATTER.bellbronze);
+const CLOCKBRONZE_DARK = CLOCKBRONZE.clone().lerp(new Color(PALETTE.voidCharcoal), 0.45);
+const DIAL = new Color('#E8DFC8');
+
+// A cog: a disc with teeth, lying flat (y up).
+function cogGeometry(r, h, teeth) {
+  const parts = [new CylinderGeometry(r, r, h, Math.max(12, teeth * 2))];
+  for (let i = 0; i < teeth; i++) {
+    const a = (i / teeth) * Math.PI * 2;
+    parts.push(new BoxGeometry(r * 0.22, h, r * 0.22).translate(Math.cos(a) * r * 1.04, 0, Math.sin(a) * r * 1.04).rotateY(0));
+  }
+  return parts;
+}
+
+export function buildHourwarden() {
+  const s = rigShell('boss-hourwarden');
+  const { rig, track } = s;
+  const stone = track(flashable(CASE));
+  const stoneDark = track(flashable(CASE_DARK));
+  const bronze = track(flashable(CLOCKBRONZE));
+  const bronzeDark = track(flashable(CLOCKBRONZE_DARK));
+  const dialMat = track(flashable(DIAL));
+  const songMat = lit(HEART.vein);
+  const eyeMat = lit(HEART.veinHot);
+  const voidMat = lit(PALETTE.voidCharcoal);
+  // The cog bed it glides on: three cogs turning against each other.
+  const bed = new Group();
+  rig.add(bed);
+  const cogs = [];
+  for (const [x, z, r, n, dir] of [[0, 0, 0.62, 14, 1], [0.66, -0.36, 0.36, 9, -1], [-0.62, -0.4, 0.4, 10, -1]]) {
+    const parts = cogGeometry(r, 0.12, n);
+    const g = new Group();
+    g.position.set(x, 0.1, z);
+    for (const p of parts) {
+      const m = new Mesh(p, bronzeDark);
+      g.add(m);
+    }
+    const hub = new Mesh(new CylinderGeometry(r * 0.3, r * 0.3, 0.16, 8), bronze);
+    g.add(hub);
+    bed.add(g);
+    cogs.push({ g, r, dir });
+  }
+  // Everything above the bed hangs off `body` (it slumps when run down).
+  const body = new Group();
+  body.position.y = 0.2;
+  rig.add(body);
+  // The plinth and the six-sided case.
+  const plinth = new Mesh(new CylinderGeometry(0.6, 0.72, 0.24, 6), bronze);
+  plinth.position.y = 0.12;
+  addInk(plinth);
+  body.add(plinth);
+  const lower = new Mesh(new CylinderGeometry(0.5, 0.58, 1.1, 6), stone);
+  lower.position.y = 0.79;
+  addInk(lower);
+  body.add(lower);
+  // The window in the lower case: a dark recess where the pendulum swings.
+  const win = new Mesh(new BoxGeometry(0.44, 0.8, 0.06), voidMat);
+  win.position.set(0, 0.8, 0.47);
+  body.add(win);
+  const winFrame = new Mesh(new TorusGeometry(0.26, 0.03, 4, 4), bronze);
+  winFrame.scale.set(1, 1.7, 1);
+  winFrame.rotation.z = Math.PI / 4;
+  winFrame.position.set(0, 0.8, 0.5);
+  body.add(winFrame);
+  const pendPivot = new Group();
+  pendPivot.position.set(0, 1.16, 0.44);
+  body.add(pendPivot);
+  const rod = new Mesh(new BoxGeometry(0.03, 0.6, 0.03), bronze);
+  rod.position.y = -0.3;
+  pendPivot.add(rod);
+  const bob = new Mesh(new CylinderGeometry(0.13, 0.13, 0.05, 14), bronze);
+  bob.rotation.x = Math.PI / 2;
+  bob.position.y = -0.62;
+  pendPivot.add(bob);
+  const bobCore = new Mesh(new CylinderGeometry(0.06, 0.06, 0.06, 10), songMat);
+  bobCore.rotation.x = Math.PI / 2;
+  bobCore.position.set(0, -0.62, 0.01);
+  pendPivot.add(bobCore);
+  const bobGlow = glow(HEART.glow, 0.7, 0.3);
+  bobGlow.position.set(0, -0.62, 0.06);
+  pendPivot.add(bobGlow);
+  // Bronze bands on the case.
+  for (const y of [0.26, 1.32]) {
+    const band = new Mesh(new CylinderGeometry(y > 1 ? 0.53 : 0.6, y > 1 ? 0.53 : 0.6, 0.08, 6), bronze);
+    band.position.y = y;
+    body.add(band);
+  }
+  // The upper case (the chest) carries the dial.
+  const chest = new Group();
+  chest.position.y = 1.36;
+  body.add(chest);
+  const upper = new Mesh(new CylinderGeometry(0.66, 0.52, 1.0, 6), stone);
+  upper.position.y = 0.5;
+  addInk(upper);
+  chest.add(upper);
+  const shoulder = new Mesh(new CylinderGeometry(0.42, 0.7, 0.2, 6), stoneDark);
+  shoulder.position.y = 1.08;
+  chest.add(shoulder);
+  // The dial: a pale face on a bronze bezel, twelve marks, two hands.
+  const dial = new Group();
+  dial.position.set(0, 0.55, 0.6);
+  chest.add(dial);
+  const bezel = new Mesh(new TorusGeometry(0.44, 0.05, 6, 28), bronze);
+  addInk(bezel);
+  dial.add(bezel);
+  const face = new Mesh(new CylinderGeometry(0.43, 0.43, 0.04, 28), dialMat);
+  face.rotation.x = Math.PI / 2;
+  dial.add(face);
+  for (let h = 0; h < 12; h++) {
+    const a = (h / 12) * Math.PI * 2;
+    const L = h % 3 === 0 ? 0.1 : 0.06;
+    const mk = new Mesh(new BoxGeometry(0.03, L, 0.02), h % 3 === 0 ? songMat : bronzeDark);
+    mk.position.set(Math.sin(a) * (0.37 - L / 2), Math.cos(a) * (0.37 - L / 2), 0.03);
+    mk.rotation.z = -a;
+    dial.add(mk);
+  }
+  const hourHand = new Group();
+  hourHand.position.z = 0.04;
+  dial.add(hourHand);
+  const hh = new Mesh(new BoxGeometry(0.05, 0.22, 0.02), bronzeDark);
+  hh.position.y = 0.1;
+  hourHand.add(hh);
+  const minHand = new Group();
+  minHand.position.z = 0.05;
+  dial.add(minHand);
+  const mh = new Mesh(new BoxGeometry(0.03, 0.34, 0.02), bronzeDark);
+  mh.position.y = 0.16;
+  minHand.add(mh);
+  const hub = new Mesh(new CylinderGeometry(0.04, 0.04, 0.04, 8), bronze);
+  hub.rotation.x = Math.PI / 2;
+  hub.position.z = 0.06;
+  dial.add(hub);
+  const dialGlow = glow(HEART.glow, 1.4, 0.12);
+  dialGlow.position.set(0, 0, 0.12);
+  dial.add(dialGlow);
+  // The head: a bronze bell under a jack's peaked cap, one violet eye slit.
+  const head = new Group();
+  head.position.set(0, 1.2, 0.02);
+  chest.add(head);
+  const neck = new Mesh(new CylinderGeometry(0.12, 0.16, 0.14, 6), bronzeDark);
+  neck.position.y = 0.04;
+  head.add(neck);
+  const bell = new Mesh(new LatheGeometry(bellProfile(0.3, 0.5), 14), bronze);
+  bell.position.y = 0.08;
+  addInk(bell);
+  head.add(bell);
+  const slit = new Mesh(new BoxGeometry(0.26, 0.04, 0.03), eyeMat);
+  slit.position.set(0, 0.28, 0.27);
+  head.add(slit);
+  const eyeGlow = glow(HEART.glow, 0.8, 0.25);
+  eyeGlow.position.set(0, 0.28, 0.32);
+  head.add(eyeGlow);
+  const cap = new Mesh(new ConeGeometry(0.2, 0.4, 6), stoneDark);
+  cap.position.y = 0.76;
+  addInk(cap);
+  head.add(cap);
+  const finial = new Mesh(new SphereGeometry(0.06, 8, 6), bronze);
+  finial.position.y = 0.98;
+  head.add(finial);
+  // Arms: an upper arm, a forearm and a blade cast as a clock hand (the
+  // right arm also carries the striking hammer on its back).
+  const arms = [];
+  const upperG = new CylinderGeometry(0.09, 0.08, 0.6, 6).translate(0, -0.3, 0);
+  const foreG = new CylinderGeometry(0.075, 0.07, 0.55, 6).translate(0, -0.27, 0);
+  for (const side of [-1, 1]) {
+    const sh = new Group();
+    sh.position.set(side * 0.7, 0.95, 0);
+    chest.add(sh);
+    const ball = new Mesh(new SphereGeometry(0.15, 8, 6), bronze);
+    sh.add(ball);
+    const ua = new Mesh(upperG, bronzeDark);
+    addInk(ua);
+    sh.add(ua);
+    const elbow = new Group();
+    elbow.position.y = -0.6;
+    sh.add(elbow);
+    const fa = new Mesh(foreG, bronze);
+    elbow.add(fa);
+    // The blade: a long clock hand, a lozenge near the tip, the song in it.
+    const blade = new Group();
+    blade.position.y = -0.55;
+    elbow.add(blade);
+    const shaft = new Mesh(new BoxGeometry(0.07, side > 0 ? 1.0 : 0.8, 0.03), bronze);
+    shaft.position.y = side > 0 ? -0.5 : -0.4;
+    addInk(shaft);
+    blade.add(shaft);
+    const lozenge = new Mesh(new BoxGeometry(0.18, 0.18, 0.03), bronze);
+    lozenge.rotation.z = Math.PI / 4;
+    lozenge.position.y = side > 0 ? -0.72 : -0.58;
+    blade.add(lozenge);
+    const tip = new Mesh(new ConeGeometry(0.06, 0.3, 4), bronze);
+    tip.rotation.x = Math.PI;
+    tip.position.y = side > 0 ? -1.12 : -0.92;
+    blade.add(tip);
+    const edge = new Mesh(new BoxGeometry(0.02, side > 0 ? 0.8 : 0.62, 0.035), songMat);
+    edge.position.set(side * 0.04, side > 0 ? -0.55 : -0.45, 0);
+    blade.add(edge);
+    const bg = glow(HEART.glow, 0.9, 0);
+    bg.position.y = side > 0 ? -0.7 : -0.56;
+    blade.add(bg);
+    let hammer = null;
+    if (side > 0) {
+      hammer = new Mesh(new BoxGeometry(0.22, 0.16, 0.16), bronzeDark);
+      hammer.position.set(0, -0.15, -0.12);
+      elbow.add(hammer);
+    }
+    arms.push({ side, sh, elbow, blade, bg, hammer });
+  }
+  // The wind key out of its back.
+  const key = new Group();
+  key.position.set(0, 0.6, -0.62);
+  chest.add(key);
+  const stem = new Mesh(new CylinderGeometry(0.05, 0.05, 0.4, 6), bronze);
+  stem.rotation.x = Math.PI / 2;
+  stem.position.z = -0.2;
+  key.add(stem);
+  const bow = new Group();
+  bow.position.z = -0.42;
+  key.add(bow);
+  for (const sd of [-1, 1]) {
+    const lobe = new Mesh(new TorusGeometry(0.17, 0.045, 5, 12), bronze);
+    lobe.position.x = sd * 0.2;
+    addInk(lobe);
+    bow.add(lobe);
+  }
+  const pool = glow(HEART.glow, 3.0, 0.08);
+  pool.position.set(0, 0.06, 0.2);
+  rig.add(pool);
+  const shadow = groundShadow(1.0, 0.4, { deep: 1.3 });
+  s.group.add(shadow);
+  let lastT = null;
+  let swingK = 0;
+  let backK = 0;
+  let sweepK = 0;
+  let strikeK = 0;
+  let downK = 0;
+  let rageK = 0;
+  let handA = 0;
+  let cogA = 0;
+  let keyA = 0;
+  let pendA = 0;
+  return iface(s, ({ t, walkPhase = 0, moveK = 0, telegraphK = 0, hpFrac = 1, e = null }) => {
+    const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
+    lastT = t;
+    const attack = e && e.telegraph ? e.telegraph.attack : null;
+    const mode = e ? e.mode : 'stalk';
+    swingK = ease(swingK, attack === 'pendulum' ? telegraphK : 0, 10, dt);
+    backK = ease(backK, attack === 'backswing' ? 1 : 0, 14, dt);
+    sweepK = ease(sweepK, attack === 'sweep' ? telegraphK : 0, 12, dt);
+    strikeK = ease(strikeK, mode === 'strike' ? 1 : 0, 10, dt);
+    downK = ease(downK, mode === 'rundown' ? 1 : 0, mode === 'rundown' ? 5 : 8, dt);
+    rageK = ease(rageK, e && e.enraged ? 1 : 0, 3, dt);
+    // The cog bed turns as it glides (and idles slowly); run down, it stops.
+    cogA += dt * (0.4 + 3.2 * moveK) * (1 - downK);
+    for (const c of cogs) c.g.rotation.y = cogA * c.dir * (0.62 / c.r);
+    // The hands tick on: one jump a second; enraged they spin.
+    const tick = Math.floor(t * (1 + 3 * rageK));
+    handA = ease(handA, tick * (Math.PI / 30) * (1 - downK * 0.5) + rageK * t * 6, 30, dt);
+    minHand.rotation.z = -handA;
+    hourHand.rotation.z = -handA / 12 - 1.2;
+    // The pendulum: a steady swing; pulled far back before a Pendulum (the
+    // swing is thrown out by the VFX), flung across on the back-swing, still
+    // when run down.
+    const swingW = 0.35 * (1 - downK) + 0.3 * rageK;
+    pendA = Math.sin(t * Math.PI * (1 + 0.6 * rageK)) * swingW;
+    pendPivot.rotation.z = pendA * (1 - swingK) + 1.1 * swingK - 1.1 * backK;
+    // Body: leans back into the pull, forward on the back-swing, slumps run down.
+    body.rotation.x = -0.12 * swingK + 0.14 * backK + 0.22 * downK + 0.08 * sweepK;
+    body.position.y = 0.2 - 0.18 * downK + 0.04 * Math.sin(t * 2.4) * (1 - downK);
+    body.rotation.z = 0.06 * downK * Math.sin(t * 1.6);
+    // Arms: hanging blades by default; both raised wide for the Hand Sweep;
+    // the right raised over its head to strike its bell for the Toll.
+    const strikeBeat = strikeK > 0.5 ? Math.max(0, Math.sin(t * 9)) : 0;
+    for (const a of arms) {
+      const raise = sweepK * 1.9 + (a.side > 0 ? strikeK * (2.6 - 0.9 * strikeBeat) : strikeK * 0.4);
+      a.sh.rotation.x = -raise + 0.08 * Math.sin(walkPhase + a.side) * moveK + 0.5 * downK;
+      a.sh.rotation.z = a.side * (0.18 + 0.7 * sweepK - 0.15 * downK);
+      a.elbow.rotation.x = -0.35 - 0.4 * sweepK + 0.3 * downK - (a.side > 0 ? 0.8 * strikeK : 0);
+      a.blade.rotation.x = 0.2 * sweepK;
+      a.bg.material.opacity = 0.6 * Math.max(sweepK, rageK * 0.4);
+    }
+    // The key turns while it is run down (winding itself back up).
+    keyA += dt * (0.3 + 4.0 * downK);
+    bow.rotation.z = keyA;
+    head.rotation.x = 0.35 * downK - 0.15 * strikeBeat;
+    // The song: dial, bob and eye burn brighter as it weakens and enraged;
+    // run down, they gutter.
+    const beat = Math.pow(Math.max(0, Math.sin(t * (1 + rageK) * Math.PI)), 4);
+    const hot = Math.min(1, 0.25 * beat + 0.45 * swingK + 0.5 * strikeK + 0.4 * rageK + 0.2 * (1 - hpFrac)) * (1 - 0.75 * downK);
+    dialGlow.material.opacity = 0.08 + 0.4 * hot;
+    bobGlow.material.opacity = 0.2 + 0.5 * hot;
+    eyeGlow.material.opacity = (0.2 + 0.4 * Math.max(rageK, swingK, sweepK)) * (1 - 0.7 * downK);
+    pool.material.opacity = 0.05 + 0.08 * hot;
   });
 }

@@ -38,11 +38,13 @@
 //                              'stag' | 'heron' | 'wyrm', docs/CONTENT_PLAN.md §2)
 //   bossAdds                   [[etype, count], ...] per boss add phase (§11: 3 phases)
 //   bosses                     every boss this act can end on: [{ kind, name,
-//                              adds, layout?, gated?, endlessOnly? }] (layout: the
+//                              adds, layout?, gated?, endlessOnly?, rushLap? }] (layout: the
 //                              boss's own room dressing, else bossLayout; gated:
 //                              met only once the save has felled the act's other
 //                              bosses, the run's `thirdBosses` acts; endlessOnly:
-//                              met only past the Endless Descent's first cycle). The first is the act's original boss
+//                              met only past the Endless Descent's first cycle;
+//                              rushLap 2: once open, Boss Rush meets it on its
+//                              second lap, data/rush.js). The first is the act's original boss
 //                              (= boss / bossName / bossAdds). Which one a run
 //                              meets is bossFor(act, seed): a pure function of
 //                              the run seed — no RNG draw, nothing saved, so
@@ -219,7 +221,9 @@ export const LEVELS = Object.freeze({
     blurb: 'The gods\' high belfry, where they sat down to watch and never rose.',
     tier: 5,
     biome: 'spire',
-    layouts: Object.freeze([29, 30, 31, 32, 33, 34]),
+    // Content plan 5 slice 1: the Clock Loft (35), the Hourwarden's room,
+    // joins the Spire's table like the other lands' third-boss rooms.
+    layouts: Object.freeze([29, 30, 31, 32, 33, 34, 35]),
     legacyLayouts: Object.freeze([29, 30, 31]),
     bossLayout: 32,
     music: 'spire',
@@ -254,6 +258,11 @@ export const LEVELS = Object.freeze({
       // The Spire's own warden: an ibex of the high ledges with bell-bronze
       // horns, with its kites and a gargoyle.
       Object.freeze({ kind: 'skyhorn', name: 'The Skyhorn', adds: Object.freeze([Object.freeze(['kite', 2]), Object.freeze(['gargoyle', 1])]) }),
+      // THIRD BOSSES (content plan 5 slice 1, docs/THIRD_BOSSES.md): the
+      // gods' clock in the Clock Loft, met once the save has felled the Hush
+      // and the Skyhorn (gated), with two chimes and a Vane Cock. In Boss
+      // Rush it is met on the second lap (rushLap, data/rush.js).
+      Object.freeze({ kind: 'hourwarden', name: 'The Hourwarden', layout: 35, gated: true, rushLap: 2, adds: Object.freeze([Object.freeze(['chime', 2]), Object.freeze(['vane', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 4 }),
   }),

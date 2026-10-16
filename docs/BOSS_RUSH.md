@@ -16,7 +16,9 @@ back, with no rooms or doors between them.
 - **Third bosses follow the save.** A locked third boss never appears. Once the
   save has felled a land's other two bosses, its third can come up, as in a
   campaign, the Vein Weaver included (it was Endless-only, lap two, until
-  Small fixes 3). The Daily is unchanged.
+  Small fixes 3). A third boss row marked `rushLap: 2` (the Hourwarden)
+  is instead lap two's fight for its land once open, so lap one keeps the
+  boss the seed rolls from the other two. The Daily is unchanged.
 - **Kit.** The rush sets out with the Level II starter grant plus a first war
   chest.
 - **Between fights.** Each boss pays the clear stipend plus a bounty of 40

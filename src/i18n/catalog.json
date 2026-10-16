@@ -2394,7 +2394,7 @@
    "src/ui/menu/records.js"
   ]
  },
- "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Felling either frees the Verse of Sky, and the bell rings where the gods can hear it.": {
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.": {
   "files": [
    "src/data/story.js"
   ],
@@ -2783,6 +2783,12 @@
   "data": true
  },
  "Archer effects burn in Geode Glass colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Archer effects burn in Gilded Hour colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -4703,6 +4709,12 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Clock Loft": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Cloister": {
   "files": [
    "src/sim/nodes.js"
@@ -5504,6 +5516,12 @@
   "data": true
  },
  "Defeat the Hollow Stag.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Defeat the Hourwarden.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6631,6 +6649,12 @@
   ],
   "data": true
  },
+ "Fell the Hourwarden": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Hush": {
   "files": [
    "src/data/unlocks.js"
@@ -7319,6 +7343,12 @@
  "German": {
   "files": [
    "src/ui/menu/tabs/gameplay.js"
+  ],
+  "data": true
+ },
+ "Gilded Hour tint": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -10525,6 +10555,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -14293,9 +14329,21 @@
   ],
   "data": true
  },
+ "The gods stopped their clock to watch. I wound it again. Now it counts you down.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The gods. They watch, and they applaud.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -14547,6 +14595,32 @@
  "The host's game hasn't sent the world yet. Keep waiting, or leave with Esc → Leave Session.": {
   "files": [
    "src/ui/net/hud.js"
+  ]
+ },
+ "The Hourwarden": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js",
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "THE HOURWARDEN": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
   ]
  },
  "The hunt": {

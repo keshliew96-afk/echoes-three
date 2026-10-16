@@ -322,6 +322,8 @@ const TINT_ROWS = [
   // Act V's bosses (docs/ACT_V_BOSSES.md).
   ['tint_hushveil', 'healer', 'Hush Veil', { glow: '#C3CBE0', second: '#F6F7FF', debris: '#7F8799' }, 0, { boss: 'hush' }],
   ['tint_skybronze', 'tank', 'Sky Bronze', { glow: '#E0A85A', second: '#FFE6B8', debris: '#B7AE9E' }, 0, { boss: 'skyhorn' }],
+  // Content plan 5 slice 1: the Spire's third boss.
+  ['tint_gildedhour', 'archer', 'Gilded Hour', { glow: '#D9B45A', second: '#F2E7C4', debris: '#B08A4C' }, 0, { boss: 'hourwarden' }],
   // THE TIDECALLER (docs/TIDECALLER.md).
   ['tint_brine', 'tidecaller', 'Brine', { glow: '#3FC9A8', second: '#F2EEE2', debris: '#9FB8AE' }, 30, { feat: 'tidecaller' }],
   ['tint_heronrain', 'tidecaller', 'Heron Rain', { glow: '#8FB4D9', second: '#F4F8FC', debris: '#C7D3DD' }, 0, { feat: 'rill_heron' }],

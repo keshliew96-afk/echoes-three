@@ -3196,5 +3196,18 @@
  "The whole party sets out together": "Die ganze Gruppe zieht gemeinsam los",
  "CO-OP BEST": "KOOP-BESTZEIT",
  "Co-op best: {time}": "Koop-Bestzeit: {time}",
- "Co-op most felled: {n} of {total}": "Koop-Rekord: {n} von {total} gefällt"
+ "Co-op most felled: {n} of {total}": "Koop-Rekord: {n} von {total} gefällt",
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.": "Über der Welt steht der Stille Turm, der Glockenstuhl, in dem sich die Götter zum Zuschauen niederließen. Der Himmelshorn hütete seine Treppe, und oben verdrehte ihn der hohle Gesang. Neben den Göttern sitzt die Stille, das Schweigen, das sie anhielt: die Ruhe, in die der Hohle Kantor hineinsang. Hinter dem großen Zifferblatt zählt der Stundenwächter, die Uhr der Götter selbst, die Stunden herunter, die der Gesang wieder in ihn aufzog. Fällt einer von ihnen, wird die Strophe des Himmels frei, und die Glocke läutet dort, wo die Götter sie hören.",
+ "Archer effects burn in Gilded Hour colours. Cosmetic.": "Bogenschützen-Effekte leuchten in Vergoldete-Stunde-Farben. Kosmetisch.",
+ "Clock Loft": "Uhrboden",
+ "Defeat the Hourwarden.": "Besiege den Stundenwächter.",
+ "Fell the Hourwarden": "Fälle den Stundenwächter",
+ "Gilded Hour tint": "Vergoldete-Stunde-Farbton",
+ "Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.": "Pendel: eine Warnbahn für 14, dann schwingt es dieselbe Bahn für 10 zurück. Handstreich: ein Warnkegel an seinen Händen für 13, der dich zurückwirft. Läuten der Stunden: Gewichte fallen auf Warnringe um ihn herum, je 11, Stunde um Stunde; danach läuft er ab und nimmt mehr Schaden.",
+ "The gods stopped their clock to watch. I wound it again. Now it counts you down.": "Die Götter hielten ihre Uhr an, um zuzusehen. Ich zog sie wieder auf. Jetzt zählt sie dich herunter.",
+ "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": "Die Uhr der Götter, ein bronzener Glockenschläger, der die Stunden schlug, bis sie sich zum Zuschauen niederließen. Der hohle Gesang zog ihn wieder auf.",
+ "The Hourwarden": "Der Stundenwächter",
+ "THE HOURWARDEN": "DER STUNDENWÄCHTER",
+ "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "Der Stundenwächter hütet den Uhrboden vor dir. Schwingt sein Pendel, bleib aus der Bahn, bis es zurückgekommen ist. Schlägt er die Stunden, bleib in Bewegung und triff ihn, während er abläuft.",
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "Der Stundenwächter läuft für immer ab. Auf dem Boden bleibt die Uhr der Götter zu der Stunde stehen, in der du kamst."
 }

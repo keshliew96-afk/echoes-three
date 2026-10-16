@@ -101,6 +101,7 @@ const BOSSES = [
   ['Vein Weaver', 4, 'veinweaver'],
   ['The Hush', 5, 'hush'],
   ['Skyhorn', 5, 'skyhorn'],
+  ['Hourwarden', 5, 'hourwarden'],
 ];
 
 export function mountVfxLab() {
@@ -292,6 +293,19 @@ export function mountVfxLab() {
     await thirdBoss('skyhorn', 5);
     X().cmd('bossHp', 0.39);
     say('Skyhorn: enraged (a second rush chains after a miss)');
+  }, 'cut to 39%');
+  // Content plan 5 slice 1: the Spire's third, the Hourwarden.
+  button(act5, 'Hourwarden pendulum', () => standAt('hourwarden', 5, 5, 'Hourwarden: stand off for a Pendulum; step out, and stay out for the back-swing'), 'stand 5 u away');
+  button(act5, 'sweep', () => standAt('hourwarden', 5, 2.0, 'Hourwarden: crowd it for a Hand Sweep'), 'stand next to it');
+  button(act5, 'hours', async () => {
+    await thirdBoss('hourwarden', 5);
+    X().cmd('bossHp', 0.49);
+    say('Hourwarden: phase two, the Toll strikes four hours (then it runs down: hit it)');
+  }, 'cut to 49%');
+  button(act5, 'enrage', async () => {
+    await thirdBoss('hourwarden', 5);
+    X().cmd('bossHp', 0.39);
+    say('Hourwarden: enraged (six hours, the hands spin)');
   }, 'cut to 39%');
 
   // ---------------------------------------------------------------- party --

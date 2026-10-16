@@ -57,7 +57,7 @@ export const CHAPTERS = Object.freeze([
     name: 'Sky@@verse',
     title: 'Chapter V · The Still Spire',
     summary:
-      'Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Felling either frees the Verse of Sky, and the bell rings where the gods can hear it.',
+      'Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.',
   },
 ]);
 
@@ -218,6 +218,7 @@ export const RUMOURS = Object.freeze({
   // Level V's own bosses (docs/ACT_V_BOSSES.md).
   hush: { text: 'The Hush waits in the Belfry Crown, where the gods sat down. When the air goes still round it, walk to the walls, then hit it while it sinks.' },
   skyhorn: { text: 'The Skyhorn guards the belfry ahead. When it paws the floor, step out of its line and let it meet the wall.' },
+  hourwarden: { text: 'The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.' },
   other: { text: 'Something old waits beyond the next door. I haven’t seen its like before.' },
 });
 // Level IV (the Hollow Heart): the peddler names its own two bosses; a boss
@@ -278,6 +279,7 @@ export const BOSS_VOICE = Object.freeze({
   // Level V: the silence the song was sung into, and the Spire's warden.
   hush: { text: 'You silenced my song. Now hear what I was singing into.' },
   skyhorn: { text: 'It kept the stair to the gods. I taught it to keep you off it.' },
+  hourwarden: { text: 'The gods stopped their clock to watch. I wound it again. Now it counts you down.' },
   // A boss from another land standing in the Heart Chamber.
   heart: { text: 'You carried three verses all the way down. Sing them for me.' },
 });
@@ -344,8 +346,9 @@ export const WARDENS = Object.freeze({
   stag: { model: 'warden_stag', also: ['thornmother', 'gloamwolf'], x: -10.0, z: -3.9, yaw: 1.2, text: 'The Stag rests at the edge of the wood, free of the hollow song.' },
   heron: { model: 'warden_heron', also: ['millwheel', 'mireking'], x: 10.1, z: 4.6, yaw: -2.2, text: 'The Heron stands quietly, listening to clear water.' },
   wyrm: { model: 'warden_wyrm', also: ['lichram', 'ashraven'], x: 9.9, z: -4.1, yaw: -0.9, text: 'The Wyrm sleeps at last. Its long watch is over.' },
-  // ACT V: the Spire's warden, freed by the Skyhorn or the Hush.
-  skyhorn: { model: 'warden_ibex', also: ['hush'], x: -9.8, z: 4.4, yaw: 2.3, text: 'The Skyhorn stands where it can see the most sky. Its bronze horns are quiet at last.' },
+  // ACT V: the Spire's warden, freed by the Skyhorn, the Hush or the
+  // Hourwarden.
+  skyhorn: { model: 'warden_ibex', also: ['hush', 'hourwarden'], x: -9.8, z: 4.4, yaw: 2.3, text: 'The Skyhorn stands where it can see the most sky. Its bronze horns are quiet at last.' },
 });
 
 // How many verses a profile holds: one per campaign level cleared at least once.

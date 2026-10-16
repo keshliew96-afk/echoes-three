@@ -71,6 +71,7 @@ export const BOSS_MEDAL = Object.freeze({
   // Act V (docs/ACT_V_BOSSES.md).
   hush: 'boss_hush',
   skyhorn: 'boss_skyhorn',
+  hourwarden: 'boss_hourwarden',
 });
 
 const el = (tag, cls, parent) => {

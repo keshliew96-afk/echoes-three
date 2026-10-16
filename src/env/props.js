@@ -2506,6 +2506,85 @@ function buildSpireLandmark(root, [x, z, rad = 1, kind = 'bellframe', yaw = 0], 
     return m;
   }
 
+  if (kind === 'clockface') {
+    // CONTENT PLAN 5 slice 1 (docs/THIRD_BOSSES.md): the gods' great clock in
+    // the Clock Loft (35, the Hourwarden's room). A round limestone frame on
+    // two piers straddling the north parapet, a slate dial with twelve
+    // bronze hour marks and two bronze hands stopped at the hour the gods
+    // sat down, rime on the frame's crown; THE TELL is the crack across the
+    // dial, glowing indigo like the bells'.
+    const k = rad / 0.8;
+    const DR = 1.7 * k; // dial radius
+    const CY = 3.0 * k; // dial centre height
+    const FZ = 0.3 * k; // the dial's face, toward the room
+    const pw = 0.5 * k;
+    const piers = [];
+    const courses = [];
+    for (const sx of [-1, 1]) {
+      const px = sx * (DR + 0.15 * k);
+      piers.push(new BoxGeometry(pw * 1.4, 0.22 * k, 0.9 * k).translate(px, 0.11 * k, 0));
+      piers.push(new BoxGeometry(pw, CY, 0.7 * k).translate(px, CY / 2, 0));
+      for (let c = 1; c < 5; c++) courses.push(new BoxGeometry(pw * 1.03, 0.035, 0.72 * k).translate(px, (CY * c) / 5, 0));
+    }
+    put(mergeGeometries(piers), mats.lime);
+    put(mergeGeometries(courses), mats.limeShade, false);
+    // The round frame and its keystone; the slate dial set into it.
+    put(new TorusGeometry(DR + 0.12 * k, 0.24 * k, 8, 40).translate(0, CY, FZ * 0.5), mats.lime);
+    put(new BoxGeometry(0.42 * k, 0.5 * k, 0.5 * k).translate(0, CY + DR + 0.3 * k, FZ * 0.5), mats.limeLit, DETAIL_INK_PX);
+    put(new CylinderGeometry(DR, DR, 0.12 * k, 40).rotateX(Math.PI / 2).translate(0, CY, FZ * 0.2), mats.slateCloth, false);
+    // A bronze chapter ring and the twelve hour marks (the quarters longer).
+    put(new TorusGeometry(DR * 0.82, 0.035 * k, 4, 40).translate(0, CY, FZ * 0.32), mats.bronzeLit, false);
+    const marks = [];
+    for (let h = 0; h < 12; h++) {
+      const a = (h / 12) * Math.PI * 2;
+      const L = (h % 3 === 0 ? 0.34 : 0.2) * k;
+      const r = DR * 0.93 - L / 2;
+      marks.push(new BoxGeometry(0.08 * k, L, 0.06 * k).rotateZ(-a).translate(Math.sin(a) * r, CY + Math.cos(a) * r, FZ * 0.34));
+    }
+    put(mergeGeometries(marks), mats.bronze, false);
+    // The hands: stopped at a quarter to the hour, the minute hand long.
+    const hands = mergeGeometries([
+      new BoxGeometry(0.1 * k, DR * 0.55, 0.05 * k).translate(0, DR * 0.26, 0).rotateZ(-2.2).translate(0, CY, FZ * 0.4),
+      new BoxGeometry(0.07 * k, DR * 0.8, 0.05 * k).translate(0, DR * 0.38, 0).rotateZ(1.57).translate(0, CY, FZ * 0.44),
+      new CylinderGeometry(0.13 * k, 0.13 * k, 0.1 * k, 12).rotateX(Math.PI / 2).translate(0, CY, FZ * 0.46),
+    ]);
+    put(hands, mats.bronze, DETAIL_INK_PX);
+    put(mergeGeometries([
+      new TorusGeometry(DR + 0.12 * k, 0.05 * k, 3, 24, Math.PI * 0.6).rotateZ(Math.PI * 0.2).translate(0, CY + 0.2 * k, FZ * 0.5),
+      new BoxGeometry(0.5 * k, 0.03, 0.56 * k).translate(0, CY + DR + 0.56 * k, FZ * 0.5),
+    ]), mats.rime, false);
+    // THE TELL: a jagged crack across the dial from the rim toward the hub.
+    let sd = 0x5c1 + Math.round(x * 11 + z * 5);
+    const rnd = () => {
+      sd = (Math.imul(sd ^ (sd >>> 15), 2246822519) + 0x9e3779b9) >>> 0;
+      return sd / 4294967296;
+    };
+    const crack = (w) => {
+      const bars = [];
+      let px = -DR * 0.78;
+      let py = CY + DR * 0.48;
+      const n = 9;
+      for (let i = 0; i < n; i++) {
+        const qx = px + (DR * 1.3) / n;
+        const qy = py - (DR * 0.9) / n + (rnd() - 0.5) * 0.22 * k;
+        const len = Math.hypot(qx - px, qy - py);
+        const ang = Math.atan2(qy - py, qx - px);
+        const taper = 0.5 + 0.5 * Math.sin(Math.PI * ((i + 0.5) / n));
+        bars.push(new BoxGeometry(len + w * 0.6, w * taper, w * 0.6).rotateZ(ang).translate((px + qx) / 2, (py + qy) / 2, FZ * 0.5));
+        px = qx;
+        py = qy;
+      }
+      return mergeGeometries(bars);
+    };
+    const w = 0.055 * k;
+    const m = crackGroup(crack(w), 1.0, crack(w * 2.6));
+    shadows.push({ x, z, rx: DR + pw, rz: 0.7 * k, yaw });
+    footprints.push({ x: wx(-(DR + 0.15 * k), 0), z: wz(-(DR + 0.15 * k), 0), r: pw });
+    footprints.push({ x: wx(DR + 0.15 * k, 0), z: wz(DR + 0.15 * k, 0), r: pw });
+    emitters.push({ kind: 'monolith', x: wx(0, FZ + 0.4), y: CY - 0.4, z: wz(0, FZ + 0.4), size: 1.2, halo: 0.32, pool: 1.4 });
+    return m;
+  }
+
   if (kind === 'stair') {
     // A flight of worn limestone steps climbing the north parapet to a
     // landing and a doorway that opens onto nothing but sky.
