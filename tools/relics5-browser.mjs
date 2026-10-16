@@ -3,7 +3,8 @@
 // `npm run dev` (port 5199), drives a vowed campaign and captures
 // <out>/relics5-*.png: the relic page offering batch-5 relics, the relic
 // strip holding all eight, each relic's beat through cmd('relicDemo'), the
-// Corked HUD slot and toast, and a Tolling Dead knell tolling then striking.
+// Corked HUD slot and toast, a Tolling Dead knell tolling then striking,
+// and a Dulled Edge crit chipping.
 // `--lang de` takes only the relic page and the Corked toast, in that
 // language. Fails on any page error or an untranslated line.
 //
@@ -203,6 +204,25 @@ await ticks(24);
 await shot(`${k}-tolling_dead-toll`);
 await ticks(28);
 await shot(`${k}-tolling_dead-strike`);
+
+// ------------------------------------------------- 5. Dulled Edge --
+// Bound as a major curse, then a crit on a dummy in front of the party (the
+// room's enemies held off so the beat reads on its own).
+await cmd('eventMajor', 'dulled_edge');
+await ticks(150);
+await cmd('killAllEnemies');
+await sleep(400);
+const q = await playerAt();
+const dummy = await spawn('dummy', q.x + 1.6, q.z + 1.6, 9000);
+await ticks(6);
+const fired0 = await page.evaluate(() => window.__echoes.content.vfx().recipes.curse_dulled_edge ?? 0);
+await cmd('relicHit', dummy, await seatId(1), 20, true);
+await ticks(2);
+await shot(`${k + 1}-dulled_edge-1`);
+await ticks(6);
+await shot(`${k + 1}-dulled_edge-2`);
+const fired1 = await page.evaluate(() => window.__echoes.content.vfx().recipes.curse_dulled_edge ?? 0);
+check(fired1 === fired0 + 1, `Dulled Edge: a crit plays its beat (${fired0} -> ${fired1})`);
 
 check(errors.length === 0, `no page errors${errors.length ? `: ${errors.slice(0, 3).join(' / ')}` : ''}`);
 await browser.close();

@@ -5959,6 +5959,33 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       if ((ev.struck ?? []).length) camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.04, 0.1);
     }
   });
+  // Batch 5: Dulled Edge, a blunted crit. The crit's bright edge chips and
+  // goes grey: a broken blade of tarnished iron over the target whose tip
+  // snaps off and drops, a dull grey flash that dims the hit's light, a
+  // violet tarnish stain and ring, and heavy iron flecks that fall instead
+  // of fly.
+  const DULL_IRON = vfxMatterColor('iron');
+  bus.on('curse_proc', (ev) => {
+    if (ev.curse !== 'dulled_edge') return;
+    const b = byId(ev.target);
+    const x = b ? b.x : ev.x ?? 0;
+    const z = b ? b.z : ev.z ?? 0;
+    mark('curse_dulled_edge');
+    kit.flash({ x, y: 1.0, z, color: DULL_IRON, size: 1.1, life: 0.2, hold: 0.04 });
+    kit.light({ x, z, radius: 2.2, color: VIOLET, opacity: 0.35, life: 0.4 });
+    // The blade: a long edge across the target, broken in the middle.
+    const a = rnd(0, TAU);
+    const ux = Math.cos(a);
+    const uz = Math.sin(a);
+    kit.streak({ a: { x: x - ux * 1.1, y: 1.25, z: z - uz * 1.1 }, b: { x: x - ux * 0.08, y: 1.1, z: z - uz * 0.08 }, width: 0.11, tailW: 0.05, core: PARCH, glow: DULL_IRON, life: 0.32, fall: 0.6 });
+    kit.streak({ a: { x: x + ux * 0.12, y: 1.05, z: z + uz * 0.12 }, b: { x: x + ux * 0.8, y: 0.85, z: z + uz * 0.8 }, width: 0.09, tailW: 0.02, core: DULL_IRON, glow: VIOLET, life: 0.4, fall: 3.2 });
+    // The chips off the break, a little star of grey at the notch.
+    flare(x, 1.1, z, DULL_IRON, 0.55, { kind: 'star', life: 0.3 });
+    kit.ring({ x, z, r0: 0.3, r1: 1.25, width: 0.09, life: 0.45, core: DULL_IRON, glow: VIOLET, soft: 0.5, y: 0.06, opacity: 0.85 });
+    kit.mark({ x, z, radius: 0.9, kind: 'splash', stain: VIOLET, glow: DULL_IRON, life: 0.8, opacity: 0.25 });
+    spray('spark', x, 1.05, z, N(10), { color: DULL_IRON, speed: [0.4, 1.0], up: [0.1, 0.5], size: [0.05, 0.09], life: [0.4, 0.6], gravity: 4.5, drag: 0.6, jitter: 0.15, opacity: 0.95 });
+    spray('spark', x, 0.9, z, N(4), { color: VIOLET, speed: [0.05, 0.2], up: [0.3, 0.6], size: [0.05, 0.07], life: [0.6, 0.9], gravity: -0.2, drag: 1.5, jitter: 0.25, opacity: 0.75 });
+  });
   // Batch 4: Kindred Blood, a dark thread from the fallen to each kin it heals.
   bus.on('curse_proc', (ev) => {
     if (ev.curse !== 'kindred_blood') return;

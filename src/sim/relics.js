@@ -434,6 +434,20 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       }
     }
   });
+  // Batch 5: Dulled Edge's beat. A party crit under the curse emits a
+  // cosmetic curse_proc (a blunted spark, a dull clink) at most once every
+  // 20 ticks; nothing in the sim reads it.
+  let dullAt = -1e9;
+  events.on('hit', (ev) => {
+    if (!on || !live() || !ev.crit || !majors.includes('dulled_edge') || relicSource(ev.source) || !(ev.amount > 0)) return;
+    const t = registry.byId(ev.target);
+    if (!t || t.faction !== 'hostile') return;
+    const atk = ev.attacker !== null && ev.attacker !== undefined ? registry.byId(ev.attacker) : null;
+    if (atk && atk.faction === 'hostile') return;
+    if (getTick() - dullAt < 20) return;
+    dullAt = getTick();
+    events.emit(getTick(), 'curse_proc', { curse: 'dulled_edge', stage: 'blunt', target: t.id, from: atk ? atk.id : null, amount: r2(ev.amount), x: r2(t.x), z: r2(t.z) });
+  });
   // THE TIDECALLER: Otter's Pearl, one heal per soaked enemy her crash hit.
   events.on('crash', (ev) => {
     if (!on || !live() || !has('otters_pearl')) return;

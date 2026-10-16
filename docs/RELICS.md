@@ -255,7 +255,7 @@ How they hook in:
 - Corked: `relics.corked()` seals the consumable system (`sealed` option): a
   press is refused with reason `corked`, `aiStep` skips, and the tonic view
   carries `corked: true` for the HUD. Its HP comes from `diff.hpMul`.
-- Dulled Edge is a major `critMul` summed into `mods.critMulAdd()`.
+- Dulled Edge is a major `critMul` summed into `mods.critMulAdd()`. Its beat: a party crit under it emits a cosmetic `curse_proc` (stage `blunt`, at most once every 20 ticks), drawn as a broken iron blade over the target with a violet tarnish ring and a low parry clink.
 - `?vfxlab=1` → "Relics batch 5": each relic's beat (`cmd('relicDemo', id)`)
   and the two room curses on a live campaign room.
 

@@ -768,6 +768,15 @@ export function mountVfxLab() {
     }
     say('Tolling Dead: each fallen boar tolls a knell by the party');
   }, 'Tolling Dead on this room, three boars killed beside the party');
+  button(rel5, 'Dulled Edge', async () => {
+    if (!(await tonicRoom())) return say('no relics here (campaign only)');
+    X().cmd('eventMajor', 'dulled_edge');
+    const f = front();
+    const id = idOf(X().cmd('spawn', 'dummy', f.x, f.z));
+    await wait(900);
+    for (let k = 0; k < 3; k++) setTimeout(() => X().cmd('relicHit', id, seatBody(1)?.id ?? null, 20, true), 450 * k);
+    say('Dulled Edge: each blunted crit chips and clinks');
+  }, 'Bind Dulled Edge, then three crits on a dummy');
 
   // ------------------------------------------------------------ champions --
   // CHAMPION ROOMS (docs/CHAMPIONS.md): each act's champion spawned in front

@@ -958,8 +958,10 @@ export const DEFAULT_EVENT_CUES = {
     return c ? one(c.cue, at(ev, h, ev.target), c.pitch ? { pitch: c.pitch } : undefined) : null;
   },
   // RELICS batch 4: Kindred Blood, the fallen's kin drink its death.
-  // RELICS batch 5: Tolling Dead, a low knell as it warns and a struck toll.
+  // RELICS batch 5: Tolling Dead, a low knell as it warns and a struck toll;
+  // Dulled Edge, a dull low clink under a blunted crit.
   curse_proc: (ev, h) => {
+    if (ev.curse === 'dulled_edge') return one('sword_parry', at(ev, h, ev.target), { pitch: 0.6 });
     if (ev.curse === 'tolling_dead') return ev.stage === 'toll' ? one('bw_knell', at(ev, h, null), { pitch: 0.6 }) : one('bw_ring', at(ev, h, null), { pitch: 0.55 });
     return ev.healed && ev.healed.length ? one('siphon_heal', at(ev, h, ev.from), { pitch: 0.6 }) : null;
   },

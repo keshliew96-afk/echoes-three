@@ -449,6 +449,29 @@ let flaskSave = null;
   const c0 = crit([], []);
   const c1 = crit([], ['dulled_edge']);
   const c2 = crit(['saints_ashes'], ['dulled_edge']);
+  // Its beat: a party crit under the curse emits one cosmetic curse_proc,
+  // at most once every 20 ticks; a plain hit and an uncursed crit emit none.
+  const beat = (majors) => {
+    const v = campaign(SEED, []);
+    for (const m of majors) v.cmd('eventMajor', m);
+    const t2 = boar(v, seat(v, 0).x + 3, seat(v, 0).z, 9000);
+    const n = (crit) => {
+      v.log.length = 0;
+      v.cmd('relicHit', t2.id, seat(v, 1).id, 20, crit);
+      return v.log.filter((x) => x.type === 'curse_proc' && x.curse === 'dulled_edge' && x.stage === 'blunt').length;
+    };
+    const plain = n(false);
+    const first = n(true);
+    const again = n(true);
+    // A crit's hitstop holds the clock, so step until 21 ticks have passed.
+    const t0 = v.clock.tick;
+    for (let i = 0; i < 400 && v.clock.tick < t0 + 21; i++) v.step();
+    const later = n(true);
+    return [plain, first, again, later];
+  };
+  const b1 = beat(['dulled_edge']);
+  const b0 = beat([]);
+  check('curses', `Dulled Edge beat: plain/crit/again/after 21+ ticks ${b1.join('/')}; uncursed crit ${b0[1]}`, b1.join() === '0,1,0,1' && b0[1] === 0);
   check('curses', `Dulled Edge: crits x${c0.toFixed(3)} -> x${c1.toFixed(3)}; with Saint's Ashes x${c2.toFixed(3)}`, Math.abs(c0 - 1.5) < 0.01 && Math.abs(c1 - 1.25) < 0.01 && Math.abs(c2 - 1.375) < 0.01);
 }
 
