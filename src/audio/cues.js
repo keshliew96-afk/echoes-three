@@ -955,6 +955,7 @@ export const DEFAULT_EVENT_CUES = {
     const c = RELIC_PROC_CUE[ev.relic];
     if (ev.stage === 'mend') return null; // Warding Chalk's once-a-second mend stays visual
     if (RELIC_PROC_QUIET.has(ev.stage)) return null;
+    if (ev.relic === 'stormglass' && ev.stage === 'gather') return one('shimmer', at(ev, h, null), { pitch: 1.7 });
     return c ? one(c.cue, at(ev, h, ev.target), c.pitch ? { pitch: c.pitch } : undefined) : null;
   },
   // RELICS batch 4: Kindred Blood, the fallen's kin drink its death.

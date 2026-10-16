@@ -85,7 +85,7 @@ Deeds and Ember sinks for what landed after round one: event rooms, elite affixe
 | Holdfast | Win a Hold room | 20 | one run |
 | Four Trials | Win a Hunt, a Purge, an Escort and a Hold room in one run | 50 | one run |
 | Crownbreaker | Fell a champion | 20 | one run |
-| Four Crowns | Fell all four champions | 60 | across runs |
+| Four Crowns | Fell a champion in each of the first four lands (either of a land's two) | 60 | across runs |
 | Keyholder | Open a vault | 20 | one run |
 | Treasure Seeker | Open 3 vaults in one run | 50 | one run |
 | Ringwalker | Fight in all four arenas (layouts 21, 23, 25, 27) | 40 | across runs |
@@ -128,9 +128,10 @@ Verification: `node tools/deeds-unlocks-2-probe.mjs` (headless, 51 checks: the c
 ## The Still Spire (plan 4 slice 7)
 
 Listed while Level V is played. Deeds: **Skyward** (clear Level V, 60),
-**Windfall** (fell the Gale Herald, 25), **Five Crowns** (fell all five
-champions, 80, with an N of 5 bar) and **Break the Hush** (fell the Hush on
-Harrowing, 80). Four Crowns keeps counting only the first four champions.
+**Windfall** (fell the Gale Herald, 25), **Five Crowns** (fell a champion in
+each of the five lands, 80, with an N of 5 bar) and **Break the Hush** (fell
+the Hush on Harrowing, 80). Since small fixes 5 both Crowns deeds count a land
+when either of its champions has fallen, the second champions included.
 Tints: **Still Air** (Swordsman, 40, Level V cleared) and **Gale Bronze**
 (Bellwright, free with Windfall). Heirlooms of the Weathercock Plume and the
 Hushbell come with the relics.

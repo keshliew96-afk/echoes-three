@@ -126,9 +126,10 @@ Two land-bound encounters (`land: 'spire'`, `src/sim/encounters.js`):
 - **Tints**: Still Air for the Swordsman (40 Embers, Level V cleared) and Gale
   Bronze for the Bellwright (free with Windfall).
 - **Deeds**: Skyward (clear Level V, 60), Windfall (fell the Gale Herald, 25),
-  Five Crowns (fell all five champions, 80) and Break the Hush (fell the Hush
-  on Harrowing, 80). Four Crowns still means the first four champions
-  (`FIRST_CROWNS` in `src/sim/champions.js`).
+  Five Crowns (fell a champion in each of the five lands, 80) and Break the
+  Hush (fell the Hush on Harrowing, 80). Four Crowns means a champion in each
+  of the first four lands; since small fixes 5 either of a land's champions
+  counts (`crownLands` in `src/sim/champions.js`).
 - **Journal**: the Gale Herald joins the Champions row; the Vane Cock and the
   Bell Sacristan join the Spire's pages.
 

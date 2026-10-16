@@ -294,11 +294,12 @@ export function rushInfo() {
     unlocked: open,
     coop,
     // Only a best set on today's rush length (ten fights since the Spire).
-    // CO-OP BOSS RUSH: a lobby shows the co-op best, solo the solo best.
+    // CO-OP BOSS RUSH: a lobby shows the co-op best and most felled, solo
+    // the solo ones.
     bestSec: coop
       ? rec.rushCoopBestFights === RUSH_RULES.fights ? rec.rushCoopBestSec ?? null : null
       : rec.rushBestFights === RUSH_RULES.fights ? rec.rushBestSec ?? null : null,
-    mostFelled: rec.rushMostFelled || 0,
+    mostFelled: (coop ? rec.rushCoopMostFelled : rec.rushMostFelled) || 0,
     runs: rec.rushRuns || 0,
     fights: RUSH_RULES.fights,
     lockLine: t('Win the campaign to unlock'),
@@ -549,7 +550,7 @@ export function createLevelsScreen(ctx) {
         info.bestSec !== null
           ? `<b>${info.coop ? t('Co-op best: {time}', { time: clockOf(info.bestSec * 60) }) : t('Best time: {time}', { time: clockOf(info.bestSec * 60) })}</b> · ${tn(info.runs, '{n} rush', '{n} rushes')}`
           : info.runs
-          ? `<b>${t('Most felled: {n} of {total}', { n: info.mostFelled, total: info.fights })}</b> · ${tn(info.runs, '{n} rush', '{n} rushes')}`
+          ? `<b>${info.coop ? t('Co-op most felled: {n} of {total}', { n: info.mostFelled, total: info.fights }) : t('Most felled: {n} of {total}', { n: info.mostFelled, total: info.fights })}</b> · ${tn(info.runs, '{n} rush', '{n} rushes')}`
           : t('No rush yet');
       card.querySelector('.cg-lock-t').textContent = info.lockLine;
       card.setAttribute('aria-label', info.unlocked ? t('The Boss Rush.') : t('The Boss Rush. Locked: {line}.', { line: info.lockLine }));

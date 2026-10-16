@@ -5832,7 +5832,6 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       case 'stormglass': {
         // The gust turns blue: lightning-white wind streaks race down the
         // lane, every enemy caught in it flashes with a crackle of sparks.
-        mark('relic_stormglass');
         const L = ev.lane;
         if (!L) break;
         const len = Math.hypot(L.x1 - L.x0, L.z1 - L.z0) || 1;
@@ -5840,6 +5839,30 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         const dz = (L.z1 - L.z0) / len;
         const nx = -dz;
         const nz = dx;
+        if (ev.stage === 'gather') {
+          // The glass draws its own gust (a room with no vent): the lane's
+          // two edges trace out in pale blue on the floor, wind wisps race
+          // back up it into the carrier, and the glass glows as it fills.
+          mark('relic_stormglass_gather');
+          const live = Math.max(0.3, ((ev.resolveTick ?? 0) - (ev.tick ?? 0)) / 60 || 0.66);
+          const half = (L.w ?? 1.6) / 2;
+          for (const sgn of [-1, 1]) {
+            const ax = L.x0 + nx * half * sgn;
+            const az = L.z0 + nz * half * sgn;
+            kit.streak({ a: { x: ax, y: 0.05, z: az }, b: { x: ax + dx * len, y: 0.05, z: az + dz * len }, width: 0.05, tailW: 0.05, core: PARCH, glow: STORM, life: live, delay: 0, fall: 0 });
+          }
+          for (let i = 0; i < 6; i++) {
+            const off = ((i % 3) / 2 - 0.5) * half;
+            const t0 = 1 - i / 7;
+            const ax = L.x0 + dx * len * t0 + nx * off;
+            const az = L.z0 + dz * len * t0 + nz * off;
+            kit.streak({ a: { x: ax, y: 0.5 + (i % 2) * 0.35, z: az }, b: { x: L.x0 + nx * off * 0.3, y: 0.9, z: L.z0 + nz * off * 0.3 }, width: 0.035, tailW: 0, core: PARCH, glow: STORM, life: 0.3, delay: (i / 6) * live * 0.8, fall: 0.6 });
+          }
+          after(live * 0.5, () => flare(L.x0, 1.1, L.z0, STORM, 0.7, { kind: 'star', life: live * 0.5, spin: 6 }));
+          kit.light({ x: L.x0, z: L.z0, radius: 1.6, color: STORM, opacity: 0.3, life: live });
+          break;
+        }
+        mark('relic_stormglass');
         for (let i = 0; i < 5; i++) {
           const off = ((i / 4) - 0.5) * (L.w ?? 1.6) * 0.8;
           const ax = L.x0 + nx * off;

@@ -2838,7 +2838,7 @@
  "Crownbreaker": "Rompecoronas",
  "Fell a champion.": "Derriba a un campeón.",
  "Four Crowns": "Cuatro coronas",
- "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": "Derriba a los cuatro campeones: el Caballero de Zarzas, el Guardián de la Esclusa, el Alguacil de Hueso y el Coro Hueco.",
+ "Fell a champion in each of the first four lands. Either of a land's two champions counts.": "Derriba a un campeón en cada una de las cuatro primeras tierras. Cuenta cualquiera de los dos campeones de una tierra.",
  "Keyholder": "Portallaves",
  "Open a vault.": "Abre una cámara.",
  "Treasure Seeker": "Buscatesoros",
@@ -3118,7 +3118,7 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "Garfio de Cadena: un carril de aviso hacia un héroe; la llave vuela por él por 10 y te arrastra a sus pies. Vuelta de Llave: un anillo a su alrededor se cierra por 16 y te ralentiza mucho. Sal del carril. Por debajo de la mitad de salud se enfurece.",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "Toque de Difuntos: un amplio anillo a su alrededor tañe por 11 y ralentiza a cada héroe dentro. Llamada de la Tumba: un anillo de aviso bajo un héroe estalla en ceniza por 14 y humea, ralentizando. Por debajo de la mitad de salud se enfurece.",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "Latigazo de Venas: un carril de aviso hacia un héroe corta por 13, y ella bebe algo de salud por cada héroe que corta. Pulso del Corazón: un anillo a su alrededor late por 14 y luego ocho esquirlas de cristal salen volando en todas direcciones, 7 cada una. Por debajo de la mitad de salud se enfurece.",
- "Fell the first champion of each of the five lands, the Gale Herald included.": "Abate al primer campeón de cada una de las cinco tierras, el Heraldo del Vendaval incluido.",
+ "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "Derriba a un campeón en cada una de las cinco tierras, el Heraldo del Vendaval incluido. Cuenta cualquiera de los dos campeones de una tierra.",
  "{name} stands in this room. {trade}": "{name} se alza en esta sala. {trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name} toma tu llave. Una reliquia mayor te espera cuando la sala quede despejada.",
  "{name}: {blessing} for 60 s ({text}).": "{name}: {blessing} durante 60 s ({text}).",
@@ -3199,8 +3199,8 @@
  "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "La bendición de un santuario dura el doble, y cada ofrenda cura al grupo un 20 % de su PV máx.",
  "Begin every run holding Votive Ribbon. A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "Empieza cada partida con Cinta Votiva. La bendición de un santuario dura el doble, y cada ofrenda cura al grupo un 20 % de su PV máx.",
  "Stormglass": "Vidrio de Tormenta",
- "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Los respiraderos de ráfagas se vuelven contra el enemigo: cada ráfaga golpea a todo enemigo en su carril por un 12 % de su PV máx. (6 % a los élites, 2 % a campeones y jefes).",
- "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Empieza cada partida con Vidrio de Tormenta. Los respiraderos de ráfagas se vuelven contra el enemigo: cada ráfaga golpea a todo enemigo en su carril por un 12 % de su PV máx. (6 % a los élites, 2 % a campeones y jefes).",
+ "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Los respiraderos de ráfagas se vuelven contra el enemigo: cada ráfaga golpea a todo enemigo en su carril por un 12 % de su PV máx. (6 % a los élites, 2 % a campeones y jefes). En un combate sin respiradero de ráfagas, el vidrio sopla una ráfaga propia cada 8 segundos, desde ti por un carril hasta el enemigo más cercano.",
+ "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Empieza cada partida con Vidrio de Tormenta. Los respiraderos de ráfagas se vuelven contra el enemigo: cada ráfaga golpea a todo enemigo en su carril por un 12 % de su PV máx. (6 % a los élites, 2 % a campeones y jefes). En un combate sin respiradero de ráfagas, el vidrio sopla una ráfaga propia cada 8 segundos, desde ti por un carril hasta el enemigo más cercano.",
  "Twin Fuse": "Mecha Doble",
  "A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Una bomba lanzada estalla por segunda vez 0,6 s después de caer, con la mitad de su daño.",
  "Begin every run holding Twin Fuse. A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Empieza cada partida con Mecha Doble. Una bomba lanzada estalla por segunda vez 0,6 s después de caer, con la mitad de su daño.",
@@ -3225,5 +3225,6 @@
  "Corked: tonics and bombs cannot be used in this room.": "Taponado: en esta sala no se pueden usar tónicos ni bombas.",
  "The whole party sets out together": "Todo el grupo parte junto",
  "CO-OP BEST": "MEJOR EN COOPERATIVO",
- "Co-op best: {time}": "Mejor en cooperativo: {time}"
+ "Co-op best: {time}": "Mejor en cooperativo: {time}",
+ "Co-op most felled: {n} of {total}": "Más derribados en cooperativo: {n} de {total}"
 }

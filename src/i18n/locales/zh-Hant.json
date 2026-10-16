@@ -2728,7 +2728,7 @@
  "Crownbreaker": "碎冠者",
  "Fell a champion.": "擊倒一名勇士。",
  "Four Crowns": "四頂王冠",
- "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": "擊倒全部四名勇士：荊棘騎士、閘門守衛、骨之執事與空洞合唱。",
+ "Fell a champion in each of the first four lands. Either of a land's two champions counts.": "在前四片土地上各擊倒一名勇士。每片土地的兩名勇士中任意一名均可。",
  "Keyholder": "持鑰人",
  "Open a vault.": "打開一座寶庫。",
  "Treasure Seeker": "尋寶者",
@@ -3008,7 +3008,7 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "鎖鏈鉤：指向英雄的預警通道；鑰匙沿通道飛出造成 10 點傷害，把你拖到他腳下。轉鎖：他周圍的圓環鎖合，造成 16 點傷害並大幅減速。離開通道。生命低於一半時他會狂怒。",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "喪鐘：它周圍寬闊的圓環鳴響，造成 11 點傷害並使其中每位英雄減速。墓喚：英雄腳下的預警圓環迸出灰燼，造成 14 點傷害並持續陰燃減速。生命低於一半時它會狂怒。",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "血脈鞭笞：指向英雄的預警通道造成 13 點傷害，每命中一位英雄她就吸取一些生命。心臟搏動：她周圍的圓環搏動造成 14 點傷害，隨後八枚水晶碎片向四周飛射，每枚 7 點。生命低於一半時她會狂怒。",
- "Fell the first champion of each of the five lands, the Gale Herald included.": "討伐五片土地各自的第一位勇士，包括疾風傳令。",
+ "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "在五片土地上各討伐一名勇士，包括疾風傳令。每片土地的兩名勇士中任意一名均可。",
  "{name} stands in this room. {trade}": "{name}立於此室。{trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name}收下了你的鑰匙。清空此室後，一件更好的遺物在等你。",
  "{name}: {blessing} for 60 s ({text}).": "{name}：{blessing}，持續 60 秒（{text}）。",
@@ -3089,8 +3089,8 @@
  "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "神龕的祝福持續時間加倍，每次獻祭為隊伍恢復 20% 最大生命。",
  "Begin every run holding Votive Ribbon. A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "每次冒險開始時持有還願絲帶。神龕的祝福持續時間加倍，每次獻祭為隊伍恢復 20% 最大生命。",
  "Stormglass": "風暴玻璃",
- "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "風口轉而對付敵人：每次陣風都會擊中其風道內的所有敵人，造成其最大生命 12% 的傷害（精英 6%，勇士和首領 2%）。",
- "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "每次冒險開始時持有風暴玻璃。風口轉而對付敵人：每次陣風都會擊中其風道內的所有敵人，造成其最大生命 12% 的傷害（精英 6%，勇士和首領 2%）。",
+ "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "風口轉而對付敵人：每次陣風都會擊中其風道內的所有敵人，造成其最大生命 12% 的傷害（精英 6%，勇士和首領 2%）。在沒有風口的戰鬥中，玻璃每 8 秒自行吹出一陣風，從你身邊沿一條風道吹向最近的敵人。",
+ "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "每次冒險開始時持有風暴玻璃。風口轉而對付敵人：每次陣風都會擊中其風道內的所有敵人，造成其最大生命 12% 的傷害（精英 6%，勇士和首領 2%）。在沒有風口的戰鬥中，玻璃每 8 秒自行吹出一陣風，從你身邊沿一條風道吹向最近的敵人。",
  "Twin Fuse": "雙引信",
  "A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "投出的炸彈落地 0.6 秒後再次爆炸，造成一半傷害。",
  "Begin every run holding Twin Fuse. A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "每次冒險開始時持有雙引信。投出的炸彈落地 0.6 秒後再次爆炸，造成一半傷害。",
@@ -3115,5 +3115,6 @@
  "Corked: tonics and bombs cannot be used in this room.": "封瓶：此房間無法使用藥劑和炸彈。",
  "The whole party sets out together": "全隊一同出發",
  "CO-OP BEST": "合作最佳",
- "Co-op best: {time}": "合作最佳：{time}"
+ "Co-op best: {time}": "合作最佳：{time}",
+ "Co-op most felled: {n} of {total}": "合作最多擊敗：{total} 個中的 {n} 個"
 }

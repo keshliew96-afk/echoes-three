@@ -244,8 +244,10 @@ for (const level of [1, 2, 3, 4, 5]) {
   check('moves', `Level ${level}: ${LEVEL_CHAMP[level]} telegraphs both moves (${moves.join(', ')}) and lands them`, moves.every((m) => told.has(m) && landed.has(m)), { told: [...told], landed: [...landed] });
   check('moves', `Level ${level}: it waits out its entrance and lands hits on the party`, enterOk && hits > 0, { hits });
   // Governor: its tells start >= 1.2 s after any other player-targeted start
-  // (unless starved, which an otherwise empty room never is).
-  const starts = w.log.filter((x) => x.type === 'telegraph_start' && x.playerTargeted).map((x) => x.tick);
+  // (unless starved, which an otherwise empty room never is). The Heart's
+  // crystal spurs (slice 9, docs/SHRINES.md) never wait on the governor by
+  // design, only note their start, so their wind-ups are left out here.
+  const starts = w.log.filter((x) => x.type === 'telegraph_start' && x.playerTargeted && x.etype !== 'spur').map((x) => x.tick);
   let gap = Infinity;
   for (let i = 1; i < starts.length; i++) gap = Math.min(gap, starts[i] - starts[i - 1]);
   check('moves', `Level ${level}: player-targeted wind-ups stay ${GOVERNOR.staggerTicks} ticks apart`, starts.length >= 2 && gap >= GOVERNOR.staggerTicks, { starts: starts.length, minGap: gap });

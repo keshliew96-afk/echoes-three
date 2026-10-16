@@ -35,7 +35,13 @@ shatter in `src/render/vfx/shrinefx.js`; cues `hz_spur_in`, `hz_spur`,
 One shrine a level. It aims at a hashed room in 4-6 and stands in the first
 combat room from there on, never the boss room, the vault, the shop or a "?"
 room. A human seat presses E to use it once; the AI seats never press E. It
-answers only while the room is live (the clear puts it to sleep). A price the
+answers only while the room is live (the clear puts it to sleep). A shrine
+left unanswered at the clear moves on (small fixes 5): it stands again in the
+level's next combat room before the shop, so room 6 is its last (`shrine_moves`, then a new
+`shrine_spawn` and its toast), until it is used. The clear goes straight to
+the reward screen, so there is no walk-up moment after a clear; moving on lets
+the party offer at the start of the next fight, whose blessing then covers
+that fight. A price the
 party cannot pay is refused and the shrine stays. A new blessing replaces the
 old one; each blessing lasts 60 s and lies on every hero.
 

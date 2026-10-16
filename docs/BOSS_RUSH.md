@@ -63,8 +63,9 @@ card and leaves the rules alone.
   A co-op rush keeps its own best time (`rushCoopBestSec`, with its fight
   count), apart from the solo best: the co-op end card reads CO-OP BEST, the
   Level Select card in a lobby shows "Co-op best", and a solo rush never sets
-  or shows it (Kesh's pick at merge time). Most felled and the rush count are
-  shared.
+  or shows it (Kesh's pick at merge time). Most felled is kept apart the same
+  way (`rushCoopMostFelled`, small fixes 5): the lobby card's skulls and its
+  "Co-op most felled" line read it. The rush count stays shared.
 - **Host migration.** If the host's page stalls and the host moves to a
   guest, the rush goes on from the new host's last snapshot (seen once on the
   probe machine's software renderer, where the line and fight were kept).
