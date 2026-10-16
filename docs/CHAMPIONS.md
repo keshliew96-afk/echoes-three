@@ -120,9 +120,10 @@ Level V has only the Gale Herald. Endless and the Daily use the same pick.
 
 Each has the frame's rage below half health, its own plate, sting, death
 burst and the usual relic chest. The Journal's champion row has nine
-entries. Four Crowns and Five Crowns still count only the first champion of
-each land (`FIRST_CROWNS`, `FIVE_CROWNS` in `src/sim/champions.js`), and the
-new champions add no deed.
+entries. Four Crowns and Five Crowns count a land as crowned when either of
+its champions has been felled, the second as well as the first
+(`crownLands`, `FOUR_CROWN_ACTS`, `FIVE_CROWN_ACTS` in `src/sim/champions.js`;
+small fixes 5), and the new champions add no deed.
 
 ## Debug and probes
 

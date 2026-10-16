@@ -224,7 +224,7 @@ stream. Numbers are first guesses until play.
 |---|---|---|
 | Brewer's Satchel | common | Each tonic or bomb a hero uses also heals every other hero for 12% of max HP. |
 | Votive Ribbon | common | A shrine's blessing lasts twice as long (120 s), and each offering heals the party for 20% of max HP. |
-| Stormglass | common | Each gust a vent blows strikes every enemy in its lane for 12% of max HP (elites 6%, champions and bosses 2%). |
+| Stormglass | common | Each gust a vent blows strikes every enemy in its lane for 12% of max HP (elites 6%, champions and bosses 2%). In a fight with no gust vent the glass blows its own gust every 8 s, from the carrier down a 9 u lane through the nearest enemy (shown for 40 ticks first). |
 | Twin Fuse | rare | A thrown bomb bursts again 0.6 s after it lands, for half its damage (no second fire patch, slow or freeze). |
 | Trophy Cord | rare | +6% party damage for every champion the party has felled this run (up to +30%, five champions). |
 | Oathkeeper's Brand | rare | +4% party damage for every Vow level the run wears (up to +40%). Offered only while the run wears a vow; never the Daily's omen. |
@@ -247,6 +247,13 @@ How they hook in:
 - Votive Ribbon: `relics.blessMul()` lengthens `bless()` (sim/shrines.js
   takes the ticks now); the heal reads `shrine_offer`.
 - Stormglass reads the gust's `hazard_resolve` (its lane rides the event).
+  Small fixes 5: in a combat room with no gust vent, `stormTick()` aims its
+  own lane every `storm.everyTicks` (480) from the room's start: from the
+  player body through the nearest live enemy within `storm.len` (9 u; none in
+  reach looks again 30 ticks later). A `relic_proc` with `stage: 'gather'`
+  shows the lane for `gatherTicks` (40), then the `storm` proc lands through
+  `later` (`own: true`). A room with a gust vent leaves the gusts to the
+  vents. `stormNext` is saved while the relic is held.
 - Trophy Cord counts party kills of champions (`trophies`, saved); Oathkeeper's
   Brand reads `vowLevel()` (run.js passes `vowLevelOf(boons)`); both through
   `mods.dealtMul`.

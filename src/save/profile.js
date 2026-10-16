@@ -107,6 +107,8 @@ export function freshProfile() {
       // (and its fight count), never compared with a solo time.
       rushCoopBestSec: null,
       rushCoopBestFights: null,
+      // ... and its own most felled (small fixes 5); the rush count is shared.
+      rushCoopMostFelled: 0,
     },
     unlocks: { acts: [1] },
     lastAct: null,
@@ -532,9 +534,11 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     const felled = Math.max(0, rush.felled | 0);
     const sec = Math.round(timeSec);
     const won = !!rush.won && res === 'victory';
-    // CO-OP BOSS RUSH: a co-op rush sets and reads the co-op best only.
+    // CO-OP BOSS RUSH: a co-op rush sets and reads the co-op best and most
+    // felled only.
     const kSec = coop ? 'rushCoopBestSec' : 'rushBestSec';
     const kFights = coop ? 'rushCoopBestFights' : 'rushBestFights';
+    const kMost = coop ? 'rushCoopMostFelled' : 'rushMostFelled';
     const entry = { score: 0, rush: true, felled, fights: rush.fights | 0, won, result: res, timeSec: sec, seed, challenge, date: now(), ...(coop ? { coop: true } : {}) };
     if (Array.isArray(builds) && builds.length) entry.party = builds.map((b) => ({ classId: b.classId, skills: (b.skills || []).slice(0, 4), filled: b.filled | 0 }));
     const { result: out, w } = commit((p) => {
@@ -546,7 +550,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       else if (res === 'abandoned') r.abandoned = (r.abandoned ?? 0) + 1;
       else r.defeats += 1;
       r.rushRuns = (r.rushRuns ?? 0) + 1;
-      if (felled > (r.rushMostFelled ?? 0)) r.rushMostFelled = felled;
+      if (felled > (r[kMost] ?? 0)) r[kMost] = felled;
       const newBest = won && sec > 0 && (prevBestSec === null || sec < prevBestSec);
       if (newBest) {
         r[kSec] = sec;

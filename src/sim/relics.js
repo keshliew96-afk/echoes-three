@@ -105,7 +105,9 @@ export const RELICS = Object.freeze({
   // count, so holding one never moves the relic stream.
   brewers_satchel: { name: "Brewer's Satchel", rarity: 'common', text: 'Each tonic or bomb a hero uses also heals every other hero for 12% of max HP.', satchel: Object.freeze({ heal: 0.12 }) },
   votive_ribbon: { name: 'Votive Ribbon', rarity: 'common', text: "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.", votive: Object.freeze({ blessMul: 2, heal: 0.2 }) },
-  stormglass: { name: 'Stormglass', rarity: 'common', text: 'Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).', storm: Object.freeze({ dmg: 0.12, elite: 0.06, big: 0.02 }) },
+  // (Small fixes 5: in a fight with no gust vent the glass blows its own
+  // gust, so it works in every land; a vent room keeps the vents' gusts.)
+  stormglass: { name: 'Stormglass', rarity: 'common', text: 'Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.', storm: Object.freeze({ dmg: 0.12, elite: 0.06, big: 0.02, everyTicks: 480, gatherTicks: 40, len: 9, w: 1.6, retryTicks: 30 }) },
   twin_fuse: { name: 'Twin Fuse', rarity: 'rare', text: 'A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.', fuse: Object.freeze({ delayTicks: 36, frac: 0.5 }) },
   trophy_cord: { name: 'Trophy Cord', rarity: 'rare', text: '+6% party damage for every champion the party has felled this run (up to +30%).', trophy: Object.freeze({ per: 0.06, max: 5 }) },
   // Offered only while the run wears a vow (never the Daily's omen).
@@ -251,6 +253,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let trophies = 0; // batch 5: champions the party felled this run (Trophy Cord)
   let tenorKills = 0; // batch 5: Tenor Bell's count of this room's kills
   let flaskUsed = []; // batch 5: seats whose flask already refilled this room
+  let stormNext = -1; // small fixes 5: the tick Stormglass gathers its own gust (-1: none this room)
 
   const has = (id) => owned.includes(id);
   const sum = (key) => owned.reduce((s, id) => s + (RELICS[id][key] ?? 0), 0);
@@ -294,6 +297,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     trophies = 0;
     tenorKills = 0;
     flaskUsed = [];
+    stormNext = -1;
     if (combat && typeof combat.setMods === 'function') combat.setMods(on ? mods : null);
   }
 
@@ -575,6 +579,41 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     if (healed.length) events.emit(tick, 'relic_proc', { relic: 'warding_chalk', stage: 'mend', healed, radius: r2(ring.r), x: r2(ring.x), z: r2(ring.z) });
   }
 
+  // Stormglass in a room with no gust vent: on its beat it aims a lane from
+  // the carrier through the nearest enemy, shows it for gatherTicks, then
+  // blows (the `storm` proc, the vents' own). No enemy in reach waits a
+  // moment and looks again. A vent room leaves the gusts to the vents.
+  function stormTick() {
+    const tick = getTick();
+    if (tick < stormNext) return;
+    const S = RELICS.stormglass.storm;
+    if (registry.all().some((e) => e.kind === 'hazard' && e.htype === 'gust')) {
+      stormNext = -1;
+      return;
+    }
+    let best = null;
+    let bestD = Infinity;
+    for (const e of registry.all().filter(hostileLive).sort((a, b) => a.id - b.id)) {
+      const d = Math.hypot(e.x - player.x, e.z - player.z);
+      if (d < bestD && d <= S.len) {
+        best = e;
+        bestD = d;
+      }
+    }
+    if (!best || !(player.hp > 0)) {
+      stormNext = tick + S.retryTicks;
+      return;
+    }
+    const dx = (best.x - player.x) / (bestD || 1);
+    const dz = (best.z - player.z) / (bestD || 1);
+    const x0 = r2(player.x + dx * 0.5);
+    const z0 = r2(player.z + dz * 0.5);
+    const lane = { x0, z0, x1: r2(x0 + dx * S.len), z1: r2(z0 + dz * S.len), w: S.w };
+    later.push({ kind: 'storm', at: tick + S.gatherTicks, lane, own: true });
+    events.emit(tick, 'relic_proc', { relic: 'stormglass', stage: 'gather', lane: { ...lane }, resolveTick: tick + S.gatherTicks, x: r2((lane.x0 + lane.x1) / 2), z: r2((lane.z0 + lane.z1) / 2) });
+    stormNext = tick + S.everyTicks;
+  }
+
   // Short Fuse: the live room's telegraph rule ({ mul, minTicks }) or null.
   // sim/enemies.js shortens every new telegraph by it.
   function fuse() {
@@ -594,6 +633,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   function endOfTick() {
     if (!on) return;
     if (ring && live()) chalkTick();
+    if (stormNext >= 0 && roomMode && live() && has('stormglass')) stormTick();
     if (later.length && live()) {
       const tick = getTick();
       const due = later.filter((p) => p.at <= tick);
@@ -842,7 +882,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         const r = combat.applyDamage(e, e.maxHp * share, { delivery: 'skill', shape: 'gust', dirX: dx, dirZ: dz, attacker: null, source: 'stormglass' });
         if (r && r.amount > 0) hit.push(e.id);
       }
-      events.emit(getTick(), 'relic_proc', { relic: 'stormglass', hit, lane: { ...L }, x: r2((L.x0 + L.x1) / 2), z: r2((L.z0 + L.z1) / 2) });
+      events.emit(getTick(), 'relic_proc', { relic: 'stormglass', hit, lane: { ...L }, ...(p.own ? { own: true } : {}), x: r2((L.x0 + L.x1) / 2), z: r2((L.z0 + L.z1) / 2) });
     },
     trophy(p) {
       const T = RELICS.trophy_cord.trophy;
@@ -882,6 +922,9 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     roomMode = mode;
     tenorKills = 0;
     flaskUsed = [];
+    // Stormglass's own gust: a fight's first one after a full beat (never in
+    // an event or vault room; endOfTick skips a room with gust vents).
+    stormNext = mode === 'event' || mode === 'vault' ? -1 : getTick() + RELICS.stormglass.storm.everyTicks;
     later = later.filter((p) => p.kind === 'refill');
     if (curse && curse.room !== room) curse = null;
     if (curse) {
@@ -914,6 +957,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     const tick = getTick();
     roomMode = null;
     ring = null;
+    stormNext = -1;
     // Batch 5: a Bottomless Flask still pouring fills its slot now; a
     // knell or a second burst still waiting dies with the room.
     const refills = later.filter((p) => p.kind === 'refill');
@@ -1085,6 +1129,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     later = [];
     tenorKills = 0;
     flaskUsed = [];
+    stormNext = -1;
   }
 
   // Shop: the Healer's shelf prices with Peddler's Seal.
@@ -1139,6 +1184,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       ...(trophies ? { trophies } : {}),
       ...(tenorKills ? { tenorKills } : {}),
       ...(flaskUsed.length ? { flaskUsed: [...flaskUsed] } : {}),
+      ...(stormNext >= 0 && has('stormglass') ? { stormNext } : {}),
       ...(pending.length ? { pending: pending.map((p) => ({ ...p })) } : {}),
     };
   }
@@ -1169,6 +1215,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     trophies = Number.isFinite(d.trophies) ? d.trophies : 0;
     tenorKills = Number.isFinite(d.tenorKills) ? d.tenorKills : 0;
     flaskUsed = Array.isArray(d.flaskUsed) ? d.flaskUsed.filter(Number.isInteger) : [];
+    stormNext = Number.isFinite(d.stormNext) ? d.stormNext : -1;
   }
 
   return {
@@ -1256,7 +1303,13 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       // Batch 5: each beat through its real proc, in front of the party.
       else if (id === 'brewers_satchel') pending.push({ kind: 'satchel', seat: player.partyIndex ?? 0, by: player.id, item: 'mend_tonic' });
       else if (id === 'votive_ribbon') pending.push({ kind: 'votive', x: at.x, z: r2(at.z - 1.6), blessing: 'tailwind' });
-      else if (id === 'stormglass') pending.push({ kind: 'storm', lane: { x0: r2(at.x - 4.5), z0: r2(at.z - 2.2), x1: r2(at.x + 4.5), z1: r2(at.z - 2.2), w: 1.6 } });
+      else if (id === 'stormglass') {
+        // Its own gust (the every-land beat): the lane gathers, then blows.
+        const S = RELICS.stormglass.storm;
+        const lane = { x0: r2(at.x - 4.5), z0: r2(at.z - 2.2), x1: r2(at.x + 4.5), z1: r2(at.z - 2.2), w: S.w };
+        later.push({ kind: 'storm', at: tick + S.gatherTicks, lane, own: true });
+        events.emit(tick, 'relic_proc', { relic: id, stage: 'gather', lane: { ...lane }, resolveTick: tick + S.gatherTicks, x: at.x, z: lane.z0 });
+      }
       else if (id === 'twin_fuse') {
         const F = RELICS.twin_fuse.fuse;
         const fz = r2(at.z - 2.6);

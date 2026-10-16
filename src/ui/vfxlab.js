@@ -725,7 +725,7 @@ export function mountVfxLab() {
     ['bottomless_flask', 'Bottomless Flask', 'the flask pours, then refills 1.5 s later (10 s in play)'],
     ['twin_fuse', 'Twin Fuse', 'the fuse lit in the crater, then the second burst'],
     ['votive_ribbon', 'Votive Ribbon', 'a shrine offering tied with the ribbon'],
-    ['stormglass', 'Stormglass', 'a gust down a lane in front, striking what stands in it'],
+    ['stormglass', 'Stormglass', 'the glass gathers a gust down a lane in front, then it strikes what stands in it'],
     ['trophy_cord', 'Trophy Cord', 'a champion felled, its trophy knotted on'],
     ['oathkeepers_brand', "Oathkeeper's Brand", 'a room opens under a sworn vow'],
     ['tenor_bell', 'Tenor Bell', 'the tenth kill rings the great bell over the room'],

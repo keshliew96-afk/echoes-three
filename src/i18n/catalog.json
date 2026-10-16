@@ -3423,7 +3423,7 @@
   ],
   "data": true
  },
- "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": {
+ "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -4763,6 +4763,11 @@
  "Co-op for up to four — the host plays the Healer, the AI fills empty seats": {
   "files": [
    "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "Co-op most felled: {n} of {total}": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "Code copied: {code}": {
@@ -6518,13 +6523,19 @@
   ],
   "data": true
  },
- "Fell a champion.": {
+ "Fell a champion in each of the first four lands. Either of a land's two champions counts.": {
   "files": [
    "src/data/unlocks.js"
   ],
   "data": true
  },
- "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": {
+ "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell a champion.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6581,12 +6592,6 @@
   "files": [
    "src/data/unlocks.js",
    "src/ui/run/unlocks.js"
-  ],
-  "data": true
- },
- "Fell the first champion of each of the five lands, the Gale Herald included.": {
-  "files": [
-   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -7513,7 +7518,7 @@
   ],
   "data": true
  },
- "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": {
+ "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": {
   "files": [
    "src/sim/relics.js"
   ],

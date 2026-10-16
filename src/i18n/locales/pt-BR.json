@@ -2838,7 +2838,7 @@
  "Crownbreaker": "Quebra-Coroas",
  "Fell a champion.": "Derrube um campeão.",
  "Four Crowns": "Quatro Coroas",
- "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": "Derrube os quatro campeões: o Cavaleiro do Espinheiro, o Guardião da Eclusa, o Meirinho de Ossos e o Coro Oco.",
+ "Fell a champion in each of the first four lands. Either of a land's two champions counts.": "Derrube um campeão em cada uma das quatro primeiras terras. Qualquer um dos dois campeões de uma terra conta.",
  "Keyholder": "Guardião da Chave",
  "Open a vault.": "Abra um cofre.",
  "Treasure Seeker": "Caçador de Tesouros",
@@ -3118,7 +3118,7 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "Gancho de Corrente: uma faixa de aviso rumo a um herói; a chave voa por ela causando 10 e te arrasta até os pés dele. Giro da Chave: um anel ao redor dele se tranca causando 16 e te deixa muito lento. Saia da faixa. Abaixo de metade da vida, ele se enfurece.",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "Dobre Fúnebre: um amplo anel ao redor dele dobra causando 11 e deixa lento cada herói dentro. Chamado da Cova: um anel de aviso sob um herói explode em cinzas causando 14 e fumega, deixando lento. Abaixo de metade da vida, ele se enfurece.",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "Açoite das Veias: uma faixa de aviso rumo a um herói corta causando 13, e ela bebe um pouco de vida por herói atingido. Pulso do Coração: um anel ao redor dela pulsa causando 14 e então oito estilhaços de cristal voam para todos os lados, 7 cada. Abaixo de metade da vida, ela se enfurece.",
- "Fell the first champion of each of the five lands, the Gale Herald included.": "Derrube o primeiro campeão de cada uma das cinco terras, incluindo o Arauto do Vendaval.",
+ "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "Derrube um campeão em cada uma das cinco terras, incluindo o Arauto do Vendaval. Qualquer um dos dois campeões de uma terra conta.",
  "{name} stands in this room. {trade}": "{name} está nesta sala. {trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name} leva sua chave. Uma relíquia maior espera quando a sala for limpa.",
  "{name}: {blessing} for 60 s ({text}).": "{name}: {blessing} por 60 s ({text}).",
@@ -3199,8 +3199,8 @@
  "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "A bênção de um santuário dura o dobro, e cada oferenda cura o grupo em 20% do PV máx.",
  "Begin every run holding Votive Ribbon. A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "Comece toda jornada com Fita Votiva. A bênção de um santuário dura o dobro, e cada oferenda cura o grupo em 20% do PV máx.",
  "Stormglass": "Vidro da Tempestade",
- "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Os respiradouros de rajada se voltam contra o inimigo: cada rajada atinge todo inimigo em sua faixa em 12% do PV máx. (6% em elites, 2% em campeões e chefes).",
- "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Comece toda jornada com Vidro da Tempestade. Os respiradouros de rajada se voltam contra o inimigo: cada rajada atinge todo inimigo em sua faixa em 12% do PV máx. (6% em elites, 2% em campeões e chefes).",
+ "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Os respiradouros de rajada se voltam contra o inimigo: cada rajada atinge todo inimigo em sua faixa em 12% do PV máx. (6% em elites, 2% em campeões e chefes). Numa luta sem respiradouro de rajada, o vidro sopra uma rajada própria a cada 8 segundos, de você por uma faixa até o inimigo mais próximo.",
+ "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Comece toda jornada com Vidro da Tempestade. Os respiradouros de rajada se voltam contra o inimigo: cada rajada atinge todo inimigo em sua faixa em 12% do PV máx. (6% em elites, 2% em campeões e chefes). Numa luta sem respiradouro de rajada, o vidro sopra uma rajada própria a cada 8 segundos, de você por uma faixa até o inimigo mais próximo.",
  "Twin Fuse": "Pavio Duplo",
  "A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Uma bomba arremessada explode uma segunda vez 0,6 s depois de cair, com metade do dano.",
  "Begin every run holding Twin Fuse. A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Comece toda jornada com Pavio Duplo. Uma bomba arremessada explode uma segunda vez 0,6 s depois de cair, com metade do dano.",
@@ -3225,5 +3225,6 @@
  "Corked: tonics and bombs cannot be used in this room.": "Arrolhado: nesta sala não é possível usar tônicos nem bombas.",
  "The whole party sets out together": "O grupo inteiro parte junto",
  "CO-OP BEST": "MELHOR NO CO-OP",
- "Co-op best: {time}": "Melhor no co-op: {time}"
+ "Co-op best: {time}": "Melhor no co-op: {time}",
+ "Co-op most felled: {n} of {total}": "Mais derrubados no co-op: {n} de {total}"
 }

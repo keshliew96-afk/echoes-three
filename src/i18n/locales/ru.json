@@ -2868,7 +2868,7 @@
  "Crownbreaker": "Сокрушитель корон",
  "Fell a champion.": "Срази чемпиона.",
  "Four Crowns": "Четыре короны",
- "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": "Срази всех четырёх чемпионов: Тернового рыцаря, Шлюзового стража, Костяного пристава и Полый хор.",
+ "Fell a champion in each of the first four lands. Either of a land's two champions counts.": "Срази по чемпиону в каждой из первых четырёх земель. Засчитывается любой из двух чемпионов земли.",
  "Keyholder": "Хранитель ключа",
  "Open a vault.": "Открой сокровищницу.",
  "Treasure Seeker": "Искатель сокровищ",
@@ -3148,7 +3148,7 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "Цепной крюк: полоса предупреждения к герою; ключ летит по ней на 10 и подтаскивает тебя к его ногам. Поворот ключа: кольцо вокруг него запирается на 16 и сильно замедляет. Уйди с полосы. Ниже половины здоровья впадает в ярость.",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "Погребальный звон: широкое кольцо вокруг него звенит на 11 и замедляет каждого героя внутри. Зов могилы: кольцо предупреждения под героем взрывается пеплом на 14 и тлеет, замедляя. Ниже половины здоровья впадает в ярость.",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "Удар жилой: полоса предупреждения к герою режет на 13, и она пьёт немного здоровья за каждого задетого героя. Пульс Сердца: кольцо вокруг неё бьётся на 14, затем восемь хрустальных осколков разлетаются во все стороны, по 7. Ниже половины здоровья впадает в ярость.",
- "Fell the first champion of each of the five lands, the Gale Herald included.": "Срази первого чемпиона каждой из пяти земель, включая Глашатая Бурь.",
+ "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "Срази по чемпиону в каждой из пяти земель, включая Глашатая Бурь. Засчитывается любой из двух чемпионов земли.",
  "{name} stands in this room. {trade}": "{name} стоит в этой комнате. {trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name} забирает ваш ключ. Когда комната будет зачищена, вас ждёт лучшая реликвия.",
  "{name}: {blessing} for 60 s ({text}).": "{name}: {blessing} на 60 с ({text}).",
@@ -3229,8 +3229,8 @@
  "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "Благословение святилища длится вдвое дольше, а каждое подношение лечит отряд на 20% макс. ОЗ.",
  "Begin every run holding Votive Ribbon. A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "Начинай каждый забег с Обетной лентой. Благословение святилища длится вдвое дольше, а каждое подношение лечит отряд на 20% макс. ОЗ.",
  "Stormglass": "Штормовое стекло",
- "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Вихревые отдушины обращаются против врага: каждый порыв бьёт всех врагов на своей полосе на 12% их макс. ОЗ (элитных на 6%, чемпионов и боссов на 2%).",
- "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Начинай каждый забег с Штормовым стеклом. Вихревые отдушины обращаются против врага: каждый порыв бьёт всех врагов на своей полосе на 12% их макс. ОЗ (элитных на 6%, чемпионов и боссов на 2%).",
+ "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Вихревые отдушины обращаются против врага: каждый порыв бьёт всех врагов на своей полосе на 12% их макс. ОЗ (элитных на 6%, чемпионов и боссов на 2%). В бою без вихревой отдушины стекло само выпускает порыв каждые 8 секунд: от тебя по полосе к ближайшему врагу.",
+ "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Начинай каждый забег с Штормовым стеклом. Вихревые отдушины обращаются против врага: каждый порыв бьёт всех врагов на своей полосе на 12% их макс. ОЗ (элитных на 6%, чемпионов и боссов на 2%). В бою без вихревой отдушины стекло само выпускает порыв каждые 8 секунд: от тебя по полосе к ближайшему врагу.",
  "Twin Fuse": "Двойной фитиль",
  "A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Брошенная бомба взрывается второй раз через 0,6 с после падения, нанося половину урона.",
  "Begin every run holding Twin Fuse. A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Начинай каждый забег с Двойным фитилём. Брошенная бомба взрывается второй раз через 0,6 с после падения, нанося половину урона.",
@@ -3255,5 +3255,6 @@
  "Corked: tonics and bombs cannot be used in this room.": "Закупорено: в этой комнате нельзя использовать тоники и бомбы.",
  "The whole party sets out together": "Весь отряд выступает вместе",
  "CO-OP BEST": "ЛУЧШЕЕ В КООПЕРАТИВЕ",
- "Co-op best: {time}": "Лучшее в кооперативе: {time}"
+ "Co-op best: {time}": "Лучшее в кооперативе: {time}",
+ "Co-op most felled: {n} of {total}": "Рекорд в кооперативе: {n} из {total}"
 }

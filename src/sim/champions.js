@@ -78,11 +78,15 @@ export const championsOfAct = (act) => {
   const a = actOf(act);
   return SECOND_CHAMPIONS[a] ? [CHAMPIONS[a], SECOND_CHAMPIONS[a]] : [CHAMPIONS[a]];
 };
-// The first four champions (Acts I to IV): the Four Crowns deed's list.
+// Each act's first champion, Acts I to IV, then with the Gale Herald.
 export const FIRST_CROWNS = Object.freeze(['briar_knight', 'sluice_warden', 'bone_reeve', 'hollow_choir']);
-// The first five (one per act, the Gale Herald included): the Five Crowns
-// deed's list. Second champions are their own Journal rows and marks.
 export const FIVE_CROWNS = Object.freeze([...FIRST_CROWNS, 'gale_herald']);
+// The Crowns deeds' lands (small fixes 5): Four Crowns is a champion felled
+// in each of Acts I to IV, Five Crowns in each of the five; either of a
+// land's champions crowns it, its second as well as its first.
+export const FOUR_CROWN_ACTS = Object.freeze([1, 2, 3, 4]);
+export const FIVE_CROWN_ACTS = Object.freeze([1, 2, 3, 4, 5]);
+export const crownLands = (felled, acts) => acts.filter((a) => (CHAMPIONS[a] ? [CHAMPIONS[a], ...(SECOND_CHAMPIONS[a] ? [SECOND_CHAMPIONS[a]] : [])] : []).some((c) => (felled || []).includes(c.id))).length;
 export const championById = (id) => CHAMPION_LIST.find((c) => c.id === id) ?? null;
 
 const hash32 = (s) => parseInt(fnv1a64Hex(s).slice(0, 8), 16) >>> 0;

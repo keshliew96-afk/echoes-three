@@ -420,8 +420,9 @@ if (leapSave) {
   const five = DEEDS.five_crowns ?? (DEEDS.get ? DEEDS.get('five_crowns') : null);
   const life = (ids) => ({ champion: ids });
   const fr = { cleared: [], bosses: [], champions: [] };
-  check('deeds', 'Four Crowns still needs only the first four', !!four && four.test(fr, life(C.FIRST_CROWNS)) && !four.test(fr, life(['moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron'])));
-  if (five) check('deeds', 'Five Crowns counts the first five, never the second champions', five.test(fr, life(C.FIVE_CROWNS)) && !five.test(fr, life([...C.FIRST_CROWNS, 'moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron'])) && five.goal(life(C.CHAMPION_IDS))[1] === 5);
+  // (Small fixes 5: either of a land's champions crowns it.)
+  check('deeds', 'Four Crowns takes either champion of each of the first four lands', !!four && four.test(fr, life(C.FIRST_CROWNS)) && four.test(fr, life(['moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron'])) && !four.test(fr, life(['briar_knight', 'moss_hart', 'sluice_warden', 'lockkeeper', 'bone_reeve', 'gravebell_ringer'])));
+  if (five) check('deeds', 'Five Crowns counts a land per champion of either kind, the Herald for the Spire', five.test(fr, life(C.FIVE_CROWNS)) && five.test(fr, life(['moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron', 'gale_herald'])) && !five.test(fr, life([...C.FIRST_CROWNS, 'moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron'])) && five.goal(life(C.CHAMPION_IDS))[1] === 5);
   else check('deeds', 'Five Crowns is listed', false);
   check('deeds', 'champion marks record all nine', MARK_KINDS.champion.length === 9 && Object.values(SECONDS).every((id) => MARK_KINDS.champion.includes(id)));
 }

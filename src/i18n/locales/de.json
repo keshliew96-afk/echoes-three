@@ -2808,7 +2808,7 @@
  "Crownbreaker": "Kronenbrecher",
  "Fell a champion.": "Fälle einen Champion.",
  "Four Crowns": "Vier Kronen",
- "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": "Fälle alle vier Champions: den Dornenritter, den Schleusenwärter, den Knochenbüttel und den Hohlen Chor.",
+ "Fell a champion in each of the first four lands. Either of a land's two champions counts.": "Fälle in jedem der ersten vier Lande einen Champion. Jeder der beiden Champions eines Landes zählt.",
  "Keyholder": "Schlüsselträger",
  "Open a vault.": "Öffne einen Tresor.",
  "Treasure Seeker": "Schatzsucher",
@@ -3088,7 +3088,7 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "Kettenhaken: Eine Warnbahn auf einen Helden; der Schlüssel fliegt sie entlang für 10 und zerrt dich vor seine Füße. Schlossdrehung: Ein Ring um ihn schließt sich für 16 und verlangsamt dich stark. Tritt aus der Bahn. Unter halber Gesundheit rast er.",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "Totengeläut: Ein breiter Ring um ihn läutet für 11 und verlangsamt jeden Helden darin. Grabruf: Ein Warnring unter einem Helden birst in Asche für 14 und glimmt nach, was verlangsamt. Unter halber Gesundheit rast er.",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "Adernpeitsche: Eine Warnbahn auf einen Helden schneidet für 13, und sie trinkt für jeden getroffenen Helden etwas Gesundheit. Herzschlag: Ein Ring um sie pocht für 14, dann fliegen acht Kristallsplitter in alle Richtungen, je 7. Unter halber Gesundheit rast sie.",
- "Fell the first champion of each of the five lands, the Gale Herald included.": "Fälle den ersten Champion jedes der fünf Lande, den Sturmherold eingeschlossen.",
+ "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "Fälle in jedem der fünf Lande einen Champion, den Sturmherold eingeschlossen. Jeder der beiden Champions eines Landes zählt.",
  "{name} stands in this room. {trade}": "{name} steht in diesem Raum. {trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name} nimmt euren Schlüssel. Ein größeres Relikt wartet, wenn der Raum geräumt ist.",
  "{name}: {blessing} for 60 s ({text}).": "{name}: {blessing} für 60 s ({text}).",
@@ -3169,8 +3169,8 @@
  "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "Der Segen eines Schreins hält doppelt so lange, und jede Opfergabe heilt die Gruppe um 20% der max. LP.",
  "Begin every run holding Votive Ribbon. A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "Beginne jeden Lauf mit Votivband. Der Segen eines Schreins hält doppelt so lange, und jede Opfergabe heilt die Gruppe um 20% der max. LP.",
  "Stormglass": "Sturmglas",
- "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Böenschlote wenden sich gegen den Feind: Jede Böe trifft jeden Gegner in ihrer Bahn für 12% seiner max. LP (6% bei Elite-Gegnern, 2% bei Champions und Bossen).",
- "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Beginne jeden Lauf mit Sturmglas. Böenschlote wenden sich gegen den Feind: Jede Böe trifft jeden Gegner in ihrer Bahn für 12% seiner max. LP (6% bei Elite-Gegnern, 2% bei Champions und Bossen).",
+ "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Böenschlote wenden sich gegen den Feind: Jede Böe trifft jeden Gegner in ihrer Bahn für 12% seiner max. LP (6% bei Elite-Gegnern, 2% bei Champions und Bossen). In einem Kampf ohne Böenschlot bläst das Glas alle 8 Sekunden eine eigene Böe, von dir aus eine Bahn entlang zum nächsten Gegner.",
+ "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Beginne jeden Lauf mit Sturmglas. Böenschlote wenden sich gegen den Feind: Jede Böe trifft jeden Gegner in ihrer Bahn für 12% seiner max. LP (6% bei Elite-Gegnern, 2% bei Champions und Bossen). In einem Kampf ohne Böenschlot bläst das Glas alle 8 Sekunden eine eigene Böe, von dir aus eine Bahn entlang zum nächsten Gegner.",
  "Twin Fuse": "Doppelzünder",
  "A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Eine geworfene Bombe platzt 0,6 s nach der Landung ein zweites Mal, mit halbem Schaden.",
  "Begin every run holding Twin Fuse. A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Beginne jeden Lauf mit Doppelzünder. Eine geworfene Bombe platzt 0,6 s nach der Landung ein zweites Mal, mit halbem Schaden.",
@@ -3195,5 +3195,6 @@
  "Corked: tonics and bombs cannot be used in this room.": "Verkorkt: In diesem Raum können keine Tränke und Bomben benutzt werden.",
  "The whole party sets out together": "Die ganze Gruppe zieht gemeinsam los",
  "CO-OP BEST": "KOOP-BESTZEIT",
- "Co-op best: {time}": "Koop-Bestzeit: {time}"
+ "Co-op best: {time}": "Koop-Bestzeit: {time}",
+ "Co-op most felled: {n} of {total}": "Koop-Rekord: {n} von {total} gefällt"
 }

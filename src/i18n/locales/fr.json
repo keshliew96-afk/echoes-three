@@ -2838,7 +2838,7 @@
  "Crownbreaker": "Brise-couronne",
  "Fell a champion.": "Abats un champion.",
  "Four Crowns": "Quatre couronnes",
- "Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.": "Abats les quatre champions : le Chevalier des Ronces, le Gardien de l’Écluse, l’Huissier d’Os et le Chœur Creux.",
+ "Fell a champion in each of the first four lands. Either of a land's two champions counts.": "Abats un champion dans chacune des quatre premières terres. L’un ou l’autre des deux champions d’une terre compte.",
  "Keyholder": "Porte-clé",
  "Open a vault.": "Ouvre une salle forte.",
  "Treasure Seeker": "Chercheur de trésors",
@@ -3118,7 +3118,7 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "Croc de Chaîne : un couloir d’alerte vers un héros ; la clé le parcourt pour 10 et te traîne à ses pieds. Tour de Clé : un cercle autour de lui se verrouille pour 16 et te ralentit fortement. Sors du couloir. Sous la moitié de sa santé, il entre en rage.",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "Glas : un large cercle autour de lui sonne pour 11 et ralentit chaque héros à l’intérieur. Appel de la Tombe : un cercle d’alerte sous un héros éclate en cendres pour 14 et couve, ralentissant. Sous la moitié de sa santé, il entre en rage.",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "Fouet des Veines : un couloir d’alerte vers un héros tranche pour 13, et elle boit un peu de santé pour chaque héros touché. Pouls du Cœur : un cercle autour d’elle bat pour 14, puis huit éclats de cristal jaillissent tout autour, 7 chacun. Sous la moitié de sa santé, elle entre en rage.",
- "Fell the first champion of each of the five lands, the Gale Herald included.": "Abats le premier champion de chacune des cinq terres, le Héraut des Bourrasques compris.",
+ "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "Abats un champion dans chacune des cinq terres, le Héraut des Bourrasques compris. L’un ou l’autre des deux champions d’une terre compte.",
  "{name} stands in this room. {trade}": "{name} se dresse dans cette salle. {trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name} prend votre clé. Une relique supérieure vous attend quand la salle sera nettoyée.",
  "{name}: {blessing} for 60 s ({text}).": "{name} : {blessing} pendant 60 s ({text}).",
@@ -3199,8 +3199,8 @@
  "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "La bénédiction d’un autel dure deux fois plus longtemps, et chaque offrande soigne le groupe de 20 % de ses PV max.",
  "Begin every run holding Votive Ribbon. A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": "Commence chaque partie avec Ruban votif. La bénédiction d’un autel dure deux fois plus longtemps, et chaque offrande soigne le groupe de 20 % de ses PV max.",
  "Stormglass": "Verre-tempête",
- "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Les bouches de rafale se retournent contre l’ennemi : chaque rafale frappe tout ennemi dans son couloir pour 12 % de ses PV max (6 % pour les élites, 2 % pour les champions et les boss).",
- "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": "Commence chaque partie avec Verre-tempête. Les bouches de rafale se retournent contre l’ennemi : chaque rafale frappe tout ennemi dans son couloir pour 12 % de ses PV max (6 % pour les élites, 2 % pour les champions et les boss).",
+ "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Les bouches de rafale se retournent contre l’ennemi : chaque rafale frappe tout ennemi dans son couloir pour 12 % de ses PV max (6 % pour les élites, 2 % pour les champions et les boss). Dans un combat sans bouche de rafale, le verre souffle sa propre rafale toutes les 8 secondes, de toi le long d’un couloir jusqu’à l’ennemi le plus proche.",
+ "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses). In a fight with no gust vent, the glass blows a gust of its own every 8 seconds, from you down a lane to the nearest enemy.": "Commence chaque partie avec Verre-tempête. Les bouches de rafale se retournent contre l’ennemi : chaque rafale frappe tout ennemi dans son couloir pour 12 % de ses PV max (6 % pour les élites, 2 % pour les champions et les boss). Dans un combat sans bouche de rafale, le verre souffle sa propre rafale toutes les 8 secondes, de toi le long d’un couloir jusqu’à l’ennemi le plus proche.",
  "Twin Fuse": "Double mèche",
  "A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Une bombe lancée explose une seconde fois 0,6 s après sa chute, pour la moitié de ses dégâts.",
  "Begin every run holding Twin Fuse. A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": "Commence chaque partie avec Double mèche. Une bombe lancée explose une seconde fois 0,6 s après sa chute, pour la moitié de ses dégâts.",
@@ -3225,5 +3225,6 @@
  "Corked: tonics and bombs cannot be used in this room.": "Bouché : toniques et bombes sont inutilisables dans cette salle.",
  "The whole party sets out together": "Tout le groupe part ensemble",
  "CO-OP BEST": "MEILLEUR EN COOP",
- "Co-op best: {time}": "Meilleur en coop : {time}"
+ "Co-op best: {time}": "Meilleur en coop : {time}",
+ "Co-op most felled: {n} of {total}": "Record en coop : {n} abattus sur {total}"
 }

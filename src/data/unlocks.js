@@ -27,7 +27,7 @@ import { endlessBossIndex, CYCLE } from './endless.js';
 import { RUSH_RULES, LAP as RUSH_LAP } from './rush.js';
 import { ENCOUNTER_IDS } from '../sim/encounters.js';
 import { AFFIX_IDS } from '../sim/affixes.js';
-import { CHAMPION_IDS, FIRST_CROWNS, FIVE_CROWNS } from '../sim/champions.js';
+import { CHAMPION_IDS, FOUR_CROWN_ACTS, FIVE_CROWN_ACTS, crownLands } from '../sim/champions.js';
 import { LAYOUTS, LAYOUT_IDS } from './layouts.js';
 import { dayDiff, isDailyKey } from './daily.js';
 import { VOW_RANKS, VOW_MAX_RANK, VOW_DEED_LEVELS, vowName, vowLevelOf, vowPayPct, clampRank, freshVowBest, saneVowBest } from './vows.js';
@@ -149,7 +149,7 @@ export function lifeAfter(meta, facts) {
   return { ...marksAfter(meta && meta.marks, facts), bosses: [...bosses] };
 }
 const markCount = (life, k) => ((life && life[k]) || []).length;
-const crownCount = (life, list = FIRST_CROWNS) => list.filter((id) => ((life && life.champion) || []).includes(id)).length;
+const crownCount = (life, acts = FOUR_CROWN_ACTS) => crownLands((life && life.champion) || [], acts);
 const allFelled = (life) => BOSSES.every((b) => ((life && life.bosses) || []).includes(b.kind));
 
 // One-off deeds: paid once, on the run that first meets them (not multiplied).
@@ -194,8 +194,8 @@ export const DEEDS = Object.freeze(
     ['holdfast', { name: 'Holdfast', text: 'Win a Hold room: keep the sigil to the end.', embers: 20, test: (r) => (r.objectives || []).includes('hold') }],
     ['four_trials', { name: 'Four Trials', text: 'Win a Hunt, a Purge, an Escort and a Hold room in one run.', embers: 50, test: (r) => OBJECTIVE_DEED_MODES.every((m) => (r.objectives || []).includes(m)) }],
     ['crownbreaker', { name: 'Crownbreaker', text: 'Fell a champion.', embers: 20, test: (r) => (r.champions || []).length > 0 }],
-    // (The first four champions, whatever later acts add.)
-    ['four_crowns', { name: 'Four Crowns', text: 'Fell all four champions: the Briar Knight, the Sluice Warden, the Bone Reeve and the Hollow Choir.', embers: 60, test: (r, l) => crownCount(l) >= FIRST_CROWNS.length, goal: (l) => [crownCount(l), FIRST_CROWNS.length] }],
+    // (A champion of each of the first four lands, either of a land's two.)
+    ['four_crowns', { name: 'Four Crowns', text: 'Fell a champion in each of the first four lands. Either of a land\'s two champions counts.', embers: 60, test: (r, l) => crownCount(l) >= FOUR_CROWN_ACTS.length, goal: (l) => [crownCount(l), FOUR_CROWN_ACTS.length] }],
     ['keyholder', { name: 'Keyholder', text: 'Open a vault.', embers: 20, test: (r) => (r.vaults || 0) >= 1 }],
     ['treasure_seeker', { name: 'Treasure Seeker', text: 'Open 3 vaults in one run.', embers: 50, test: (r) => (r.vaults || 0) >= 3 }],
     ['ringwalker', { name: 'Ringwalker', text: ACT_IDS.includes(5) ? 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre, the Hollow Nave and Windward Court.' : 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre and the Hollow Nave.', embers: 40, test: (r, l) => markCount(l, 'arena') >= ARENA_IDS.length, goal: (l) => [markCount(l, 'arena'), ARENA_IDS.length] }],
@@ -209,7 +209,7 @@ export const DEEDS = Object.freeze(
       ? [
           ['skyward', { name: 'Skyward', text: 'Clear Level V, the Still Spire, and bring the Verse of Sky home.', embers: 60, test: (r) => r.cleared.includes(5) }],
           ['windfall', { name: 'Windfall', text: 'Fell the Gale Herald, the champion of the Still Spire.', embers: 25, test: (r) => (r.champions || []).includes('gale_herald') }],
-          ['five_crowns', { name: 'Five Crowns', text: 'Fell the first champion of each of the five lands, the Gale Herald included.', embers: 80, test: (r, l) => crownCount(l, FIVE_CROWNS) >= FIVE_CROWNS.length, goal: (l) => [crownCount(l, FIVE_CROWNS), FIVE_CROWNS.length] }],
+          ['five_crowns', { name: 'Five Crowns', text: 'Fell a champion in each of the five lands, the Gale Herald included. Either of a land\'s two champions counts.', embers: 80, test: (r, l) => crownCount(l, FIVE_CROWN_ACTS) >= FIVE_CROWN_ACTS.length, goal: (l) => [crownCount(l, FIVE_CROWN_ACTS), FIVE_CROWN_ACTS.length] }],
           ['break_the_hush', { name: 'Break the Hush', text: 'Fell the Hush on the Harrowing challenge.', embers: 80, test: (r) => r.bosses.includes('hush') && r.challenge === 'harrowing' }],
         ]
       : []),
