@@ -3222,5 +3222,8 @@
  "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": "Cada enemigo que cae en esta sala dobla a muerto: 0,8 s después golpea a los héroes a menos de 1,6 u por un 10 % de su PV máx.",
  "Dulled Edge": "Filo Romo",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "Los críticos del grupo hacen ×1,25 en vez de ×1,5 durante el resto de la partida.",
- "Corked: tonics and bombs cannot be used in this room.": "Taponado: en esta sala no se pueden usar tónicos ni bombas."
+ "Corked: tonics and bombs cannot be used in this room.": "Taponado: en esta sala no se pueden usar tónicos ni bombas.",
+ "The whole party sets out together": "Todo el grupo parte junto",
+ "CO-OP BEST": "MEJOR EN COOPERATIVO",
+ "Co-op best: {time}": "Mejor en cooperativo: {time}"
 }

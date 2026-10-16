@@ -1173,6 +1173,8 @@ export function createSaveSystem({
       lastRoom: s ? s.lastRoom : 0,
       campaign,
       builds: s && Array.isArray(s.builds) ? s.builds : null, // PARTY: the four builds
+      // CO-OP BOSS RUSH: a run played in a co-op lobby (host or guest).
+      ...(netRole() ? { coop: true } : {}),
     };
     profileStore.addPlaytime(profileTicks / TICK_HZ);
     profileTicks = 0;

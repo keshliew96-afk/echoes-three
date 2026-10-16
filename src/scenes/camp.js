@@ -905,11 +905,11 @@ export function createCampScene(stage, toggles, ctx) {
       queueMicrotask(() => openDaily(via));
       return { ok: true, level, daily: true };
     }
-    // BOSS RUSH (docs/BOSS_RUSH.md): the rush card, open with Endless, single
-    // player only (co-op is untried, like the Daily).
+    // BOSS RUSH (docs/BOSS_RUSH.md): the rush card, open with Endless. CO-OP
+    // BOSS RUSH: a co-op lobby plays it too; the host sets out, as with Endless.
     if (level === 'rush') {
       if (!rushOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
-      if (inSession()) return { ok: false, reason: 'solo', level, line: 'Single player only' };
+      if (isGuest()) return { ok: false, reason: 'guest', level };
       if (!canBegin()) return { ok: false, reason: 'busy', level };
       beginLevel(FIRST_LEVEL, { harness: false, via, rush: true });
       return { ok: true, level, rush: true };

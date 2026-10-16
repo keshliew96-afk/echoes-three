@@ -3222,5 +3222,8 @@
  "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": "Chaque ennemi qui tombe dans cette salle sonne le glas : 0,8 s plus tard, il frappe les héros à moins de 1,6 u pour 10 % de leurs PV max.",
  "Dulled Edge": "Tranchant émoussé",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "Les coups critiques du groupe font ×1,25 au lieu de ×1,5 jusqu’à la fin de la partie.",
- "Corked: tonics and bombs cannot be used in this room.": "Bouché : toniques et bombes sont inutilisables dans cette salle."
+ "Corked: tonics and bombs cannot be used in this room.": "Bouché : toniques et bombes sont inutilisables dans cette salle.",
+ "The whole party sets out together": "Tout le groupe part ensemble",
+ "CO-OP BEST": "MEILLEUR EN COOP",
+ "Co-op best: {time}": "Meilleur en coop : {time}"
 }

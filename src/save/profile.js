@@ -103,6 +103,10 @@ export function freshProfile() {
       // rush (since the Spire, docs/ACT_V_BOSSES.md) never compares against
       // an eight-fight time, so the old best stays on the record unbeaten.
       rushBestFights: null,
+      // CO-OP BOSS RUSH: a rush played in a co-op lobby keeps its own best
+      // (and its fight count), never compared with a solo time.
+      rushCoopBestSec: null,
+      rushCoopBestFights: null,
     },
     unlocks: { acts: [1] },
     lastAct: null,
@@ -431,13 +435,13 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // levels: [{ level, rooms, kills, cleared, ticks }], levelsCleared, complete }.
   // Rank and "New best" are measured against the freshest stored profile
   // (another tab's runs included).
-  function recordRun({ act = 1, victory = false, result = null, roomsCleared = 0, kills = 0, timeSec = 0, seed = null, challenge = 'standard', lastRoom = 0, campaign = null, builds = null }) {
+  function recordRun({ act = 1, victory = false, result = null, roomsCleared = 0, kills = 0, timeSec = 0, seed = null, challenge = 'standard', lastRoom = 0, campaign = null, builds = null, coop = false }) {
     const res = result === 'abandoned' || result === 'defeat' || result === 'victory' ? result : victory ? 'victory' : 'defeat';
     const camp0 = campaign && campaign.mode === 'campaign' && Array.isArray(campaign.levels) && campaign.levels.length ? campaign : null;
     // BOSS RUSH (docs/BOSS_RUSH.md): a rush keeps its own records only (no
     // level records, no score on the campaign table, never a won game).
     const rush = camp0 && camp0.rush ? camp0.rush : null;
-    if (rush) return recordRush({ rush, res, timeSec, seed, challenge, builds });
+    if (rush) return recordRush({ rush, res, timeSec, seed, challenge, builds, coop: !!coop });
     const camp = camp0;
     const complete = !!(camp ? camp.complete : res === 'victory');
     const score = camp
@@ -524,16 +528,19 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     };
   }
 
-  function recordRush({ rush, res, timeSec, seed, challenge, builds }) {
+  function recordRush({ rush, res, timeSec, seed, challenge, builds, coop = false }) {
     const felled = Math.max(0, rush.felled | 0);
     const sec = Math.round(timeSec);
     const won = !!rush.won && res === 'victory';
-    const entry = { score: 0, rush: true, felled, fights: rush.fights | 0, won, result: res, timeSec: sec, seed, challenge, date: now() };
+    // CO-OP BOSS RUSH: a co-op rush sets and reads the co-op best only.
+    const kSec = coop ? 'rushCoopBestSec' : 'rushBestSec';
+    const kFights = coop ? 'rushCoopBestFights' : 'rushBestFights';
+    const entry = { score: 0, rush: true, felled, fights: rush.fights | 0, won, result: res, timeSec: sec, seed, challenge, date: now(), ...(coop ? { coop: true } : {}) };
     if (Array.isArray(builds) && builds.length) entry.party = builds.map((b) => ({ classId: b.classId, skills: (b.skills || []).slice(0, 4), filled: b.filled | 0 }));
     const { result: out, w } = commit((p) => {
       const r = p.records;
       const fights = rush.fights | 0;
-      const prevBestSec = r.rushBestFights === fights ? r.rushBestSec ?? null : null;
+      const prevBestSec = r[kFights] === fights ? r[kSec] ?? null : null;
       r.runs += 1;
       if (res === 'victory') r.victories += 1;
       else if (res === 'abandoned') r.abandoned = (r.abandoned ?? 0) + 1;
@@ -542,17 +549,17 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       if (felled > (r.rushMostFelled ?? 0)) r.rushMostFelled = felled;
       const newBest = won && sec > 0 && (prevBestSec === null || sec < prevBestSec);
       if (newBest) {
-        r.rushBestSec = sec;
-        r.rushBestFights = fights;
+        r[kSec] = sec;
+        r[kFights] = fights;
       }
-      return { prevBestSec, newBest, bestSec: r.rushBestFights === fights ? r.rushBestSec ?? null : null };
+      return { prevBestSec, newBest, bestSec: r[kFights] === fights ? r[kSec] ?? null : null };
     });
     return {
       score: 0,
       rank: null,
       newBest: false,
       prevBest: null,
-      rush: { felled, won, sec, newBest: out.newBest, prevBestSec: out.prevBestSec, bestSec: out.bestSec },
+      rush: { felled, won, sec, newBest: out.newBest, prevBestSec: out.prevBestSec, bestSec: out.bestSec, ...(coop ? { coop: true } : {}) },
       entry,
       written: w.ok,
       error: w.ok ? null : w.error,

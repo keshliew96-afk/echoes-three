@@ -3112,5 +3112,8 @@
  "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": "この部屋で倒れた敵はそれぞれ弔いの鐘を鳴らす：0.8秒後、1.6u以内のヒーローに最大HPの10%のダメージ。",
  "Dulled Edge": "なまくら",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "このラン中、パーティのクリティカルが×1.5ではなく×1.25に。",
- "Corked: tonics and bombs cannot be used in this room.": "栓止め：この部屋では薬とボムが使えない。"
+ "Corked: tonics and bombs cannot be used in this room.": "栓止め：この部屋では薬とボムが使えない。",
+ "The whole party sets out together": "パーティ全員で出発する",
+ "CO-OP BEST": "協力ベスト",
+ "Co-op best: {time}": "協力ベスト：{time}"
 }

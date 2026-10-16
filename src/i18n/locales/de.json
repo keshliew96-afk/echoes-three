@@ -3192,5 +3192,8 @@
  "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": "Jeder Gegner, der in diesem Raum fällt, läutet eine Totenglocke: 0,8 s später trifft sie Helden im Umkreis von 1,6 u für 10% ihrer max. LP.",
  "Dulled Edge": "Stumpfe Klinge",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "Kritische Treffer der Gruppe verursachen für den Rest des Laufs ×1,25 statt ×1,5.",
- "Corked: tonics and bombs cannot be used in this room.": "Verkorkt: In diesem Raum können keine Tränke und Bomben benutzt werden."
+ "Corked: tonics and bombs cannot be used in this room.": "Verkorkt: In diesem Raum können keine Tränke und Bomben benutzt werden.",
+ "The whole party sets out together": "Die ganze Gruppe zieht gemeinsam los",
+ "CO-OP BEST": "KOOP-BESTZEIT",
+ "Co-op best: {time}": "Koop-Bestzeit: {time}"
 }

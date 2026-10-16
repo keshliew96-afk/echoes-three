@@ -4750,6 +4750,16 @@
    "src/ui/run/cards.js"
   ]
  },
+ "CO-OP BEST": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
+ "Co-op best: {time}": {
+  "files": [
+   "src/ui/run/levels.js"
+  ]
+ },
  "Co-op for up to four — the host plays the Healer, the AI fills empty seats": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -15362,6 +15372,11 @@
  "the whole party is already reached": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "The whole party sets out together": {
+  "files": [
+   "src/ui/run/levels.js"
   ]
  },
  "The Wood's eldest hart, so long asleep in the clearing that the moss grew over it. Now it walks, and the moss walks with it.": {
