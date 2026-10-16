@@ -15,7 +15,7 @@
 // Render-only: reads sim entities and events, never writes either; all
 // randomness from the COSMETIC stream.
 import { Color } from 'three';
-import { PALETTE, VFX_BIOME, VFX_MATTER, AFFIX_COLORS } from '../../data/palette.js';
+import { PALETTE, VFX_BIOME, VFX_MATTER, AFFIX_COLORS, TONIC_COLORS } from '../../data/palette.js';
 import { AFFIX_RULES } from '../../sim/affixes.js';
 import {
   vfxClassStyle,
@@ -5716,6 +5716,276 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         break;
     }
   });
+  // Batch 5 (docs/RELICS.md "Batch 5"): the relics of content plan 4. Each
+  // reads as its matter: brewed green and tonic hues for the satchel and the
+  // flask, fuse orange for the second burst, votive gold and silk for the
+  // shrine ribbon, storm cyan down the gust lane, trophy bone and gold for
+  // the cord, a branded ember-gold oath, and the tenor bell's brass and
+  // verdigris rolling across the whole room.
+  const TONIC5 = TONIC_COLORS;
+  const STORM = PALETTE.signalBlue;
+  bus.on('relic_proc', (ev) => {
+    switch (ev.relic) {
+      case 'brewers_satchel': {
+        // The brew is shared: a green bubble pops off the drinker, then a
+        // droplet arcs to every other hero and splashes a heal ring there.
+        mark('relic_brewers_satchel');
+        const { x, z } = bodyAt(ev);
+        const c = (TONIC5[ev.item] ?? TONIC5.mend_tonic).glow;
+        flare(x, 1.3, z, c, 0.9, { kind: 'burst', life: 0.22 });
+        kit.ring({ x, z, r0: 0.2, r1: 1.1, width: 0.08, life: 0.35, core: PARCH, glow: c, soft: 0.5, y: 0.07 });
+        (ev.healed ?? []).forEach((id, i) => {
+          const b = byId(id);
+          if (!b) return;
+          const mx = (x + b.x) / 2;
+          const mz = (z + b.z) / 2;
+          kit.streak({ a: { x, y: 1.3, z }, b: { x: mx, y: 2.3, z: mz }, width: 0.08, tailW: 0, core: PARCH, glow: c, life: 0.2, delay: 0.04 * i, fall: 1.0 });
+          kit.streak({ a: { x: mx, y: 2.3, z: mz }, b: { x: b.x, y: 0.9, z: b.z }, width: 0.08, tailW: 0, core: PARCH, glow: HEAL, life: 0.2, delay: 0.12 + 0.04 * i, fall: 1.0 });
+          after(0.3 + 0.04 * i, () => {
+            const t = byId(id) ?? b;
+            kit.ring({ x: t.x, z: t.z, r0: 0.2, r1: 0.9, width: 0.08, life: 0.4, core: PARCH, glow: HEAL, soft: 0.6, y: 0.06 });
+            spray('spark', t.x, 0.5, t.z, N(5), { color: HEAL, speed: [0.1, 0.4], up: [0.8, 1.4], size: [0.04, 0.07], life: [0.5, 0.8], gravity: -0.2, drag: 1.5, jitter: 0.3, opacity: 0.9 });
+          });
+        });
+        break;
+      }
+      case 'bottomless_flask': {
+        const { x, z } = bodyAt(ev);
+        const c = (TONIC5[ev.item] ?? TONIC5.mend_tonic).glow;
+        if (ev.stage === 'pour') {
+          // The flask keeps pouring: a slow spiral of the item's colour
+          // rises off the hero and hangs, a promise of the refill.
+          mark('relic_bottomless_flask');
+          for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * TAU;
+            after(i * 0.05, () => spray('spark', x + Math.cos(a) * 0.45, 0.4, z + Math.sin(a) * 0.45, N(2), { color: c, speed: [0.05, 0.15], up: [0.9, 1.4], size: [0.05, 0.08], life: [0.8, 1.2], gravity: -0.15, drag: 1.4, dir: { x: -Math.sin(a), z: Math.cos(a) }, dirBias: 0.6, opacity: 0.9 }));
+          }
+          kit.ring({ x, z, r0: 0.9, r1: 0.4, width: 0.05, life: 0.6, core: c, glow: c, soft: 0.6, y: 0.06, opacity: 0.6 });
+        } else {
+          // Refilled: a column of the item's colour drops into the hero, a
+          // tight ring snaps shut and a bright cork-pop flash.
+          mark('relic_bottomless_flask_refill');
+          kit.pillar({ x, z, radius: 0.25, height: 2.6, color: c, life: 0.5, opacity: 0.6 });
+          kit.ring({ x, z, r0: 1.3, r1: 0.25, width: 0.1, life: 0.35, core: PARCH, glow: c, soft: 0.4, y: 0.08 });
+          kit.flash({ x, y: 1.1, z, color: c, size: 0.9, life: 0.35, hold: 0.08, delay: 0.25 });
+          after(0.25, () => spray('spark', x, 1.1, z, N(10), { color: c, speed: [0.5, 1.2], up: [0.6, 1.4], size: [0.04, 0.07], life: [0.4, 0.7], gravity: 1.8, drag: 0.9, jitter: 0.15, opacity: 1 }));
+        }
+        break;
+      }
+      case 'twin_fuse': {
+        const x = ev.x ?? 0;
+        const z = ev.z ?? 0;
+        const r = ev.radius ?? 2.4;
+        const c = (TONIC5[ev.item] ?? TONIC5.fire_bomb).glow;
+        if (ev.stage === 'lit') {
+          // A second fuse fizzes in the crater: a sputtering orange spark
+          // runs round the rim while a thin ring closes on the centre.
+          mark('relic_twin_fuse');
+          const live = 0.6;
+          kit.ring({ x, z, r0: r, r1: 0.3, width: 0.06, life: live, core: EMBER, glow: c, soft: 0.4, y: 0.06, opacity: 0.85 });
+          for (let i = 0; i < 8; i++) {
+            const a = (i / 8) * TAU;
+            after(i * (live / 8), () => spray('spark', x + Math.cos(a) * r * (1 - i / 9), 0.2, z + Math.sin(a) * r * (1 - i / 9), N(3), { color: i % 2 ? EMBER : c, speed: [0.3, 0.8], up: [0.8, 1.6], size: [0.03, 0.05], life: [0.25, 0.45], gravity: 1.2, drag: 0.8, jitter: 0.1, opacity: 1 }));
+          }
+          kit.light({ x, z, radius: 1.4, color: EMBER, opacity: 0.35, life: live });
+        } else {
+          // The echo: a sharper, hotter blast than the first, a double shock
+          // ring and a short kick.
+          mark('relic_twin_fuse_burst');
+          flare(x, 0.8, z, c, 1.6, { kind: 'burst', life: 0.22 });
+          kit.flash({ x, y: 0.9, z, color: c, size: 1.4, life: 0.3, hold: 0.06 });
+          kit.ring({ x, z, r0: 0.3, r1: r, width: 0.2, life: 0.35, core: PARCH, glow: c, soft: 0.45, y: 0.07, gain: 1.2 });
+          after(0.06, () => kit.ring({ x, z, r0: 0.2, r1: r * 0.75, width: 0.08, life: 0.3, core: c, glow: EMBER, soft: 0.5, y: 0.08 }));
+          kit.light({ x, z, radius: r + 1, color: c, opacity: 0.6, life: 0.4 });
+          spray('spark', x, 0.4, z, N(18), { color: c, speed: [1.2, 2.6], up: [0.6, 1.8], size: [0.03, 0.07], life: [0.3, 0.6], gravity: 2.0, drag: 1.0, jitter: 0.2, opacity: 1 });
+          spray('smoke', x, 0.3, z, N(4), { color: PALETTE.warmGrey, speed: [0.4, 0.9], up: [0.3, 0.6], size: [0.5, 0.8], grow: 1.6, life: [0.7, 1.0], opacity: 0.3, gravity: -0.1, drag: 2.0, jitter: 0.5 });
+          kit.mark({ x, z, radius: r * 0.7, kind: 'scorch', stain: PALETTE.voidCharcoal, glow: EMBER, life: 2.0, opacity: 0.3 });
+          camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.05, 0.1);
+        }
+        break;
+      }
+      case 'votive_ribbon': {
+        // The ribbon is tied: two gold silk streams spiral up from the
+        // shrine, then a warm heal wash rolls out over the party.
+        mark('relic_votive_ribbon');
+        const x = ev.x ?? 0;
+        const z = ev.z ?? 0;
+        for (let k = 0; k < 2; k++) {
+          for (let i = 0; i < 6; i++) {
+            const a0 = (i / 6) * TAU + k * Math.PI;
+            const a1 = a0 + TAU / 6;
+            const y0 = 0.3 + i * 0.35;
+            kit.streak({ a: { x: x + Math.cos(a0) * 0.6, y: y0, z: z + Math.sin(a0) * 0.6 }, b: { x: x + Math.cos(a1) * 0.6, y: y0 + 0.35, z: z + Math.sin(a1) * 0.6 }, width: 0.06, tailW: 0.02, core: PARCH, glow: PALETTE.paleGold, life: 0.5, delay: i * 0.05, fall: 0.6 });
+          }
+        }
+        flare(x, 2.6, z, PALETTE.paleGold, 1.0, { kind: 'star', life: 0.35, delay: 0.3 });
+        kit.light({ x, z, radius: 3.0, color: GOLD, opacity: 0.5, life: 1.0 });
+        const p = player();
+        const px = p ? p.x : x;
+        const pz = p ? p.z : z;
+        after(0.35, () => {
+          kit.ring({ x: px, z: pz, r0: 0.4, r1: 3.4, width: 0.16, life: 0.7, core: PARCH, glow: HEAL, soft: 0.6, y: 0.06 });
+          spray('spark', px, 0.4, pz, N(12), { color: HEAL, speed: [0.1, 0.4], up: [0.8, 1.5], size: [0.04, 0.08], life: [0.7, 1.1], gravity: -0.25, drag: 1.4, jitter: 1.6, opacity: 0.9 });
+        });
+        break;
+      }
+      case 'stormglass': {
+        // The gust turns blue: lightning-white wind streaks race down the
+        // lane, every enemy caught in it flashes with a crackle of sparks.
+        mark('relic_stormglass');
+        const L = ev.lane;
+        if (!L) break;
+        const len = Math.hypot(L.x1 - L.x0, L.z1 - L.z0) || 1;
+        const dx = (L.x1 - L.x0) / len;
+        const dz = (L.z1 - L.z0) / len;
+        const nx = -dz;
+        const nz = dx;
+        for (let i = 0; i < 5; i++) {
+          const off = ((i / 4) - 0.5) * (L.w ?? 1.6) * 0.8;
+          const ax = L.x0 + nx * off;
+          const az = L.z0 + nz * off;
+          kit.streak({ a: { x: ax, y: 0.4 + (i % 2) * 0.3, z: az }, b: { x: ax + dx * len, y: 0.5 + (i % 2) * 0.3, z: az + dz * len }, width: 0.06, tailW: 0.0, core: PARCH, glow: STORM, life: 0.28, delay: i * 0.035, fall: 0.8 });
+        }
+        kit.light({ x: (L.x0 + L.x1) / 2, z: (L.z0 + L.z1) / 2, radius: len / 2 + 1, color: STORM, opacity: 0.45, life: 0.5 });
+        for (const id of ev.hit ?? []) {
+          const b = byId(id);
+          if (!b) continue;
+          kit.flash({ x: b.x, y: 0.8, z: b.z, color: STORM, size: 0.8, life: 0.22, hold: 0.04 });
+          for (let j = 0; j < 3; j++) {
+            const a = rnd(0, TAU);
+            kit.streak({ a: { x: b.x, y: 1.6, z: b.z }, b: { x: b.x + Math.cos(a) * 0.5, y: 0.6, z: b.z + Math.sin(a) * 0.5 }, width: 0.04, tailW: 0.01, core: PARCH, glow: STORM, life: 0.12, delay: 0.03 * j, fall: 1.4 });
+          }
+          spray('spark', b.x, 0.7, b.z, N(6), { color: STORM, speed: [0.6, 1.4], up: [0.3, 1.0], size: [0.03, 0.05], life: [0.2, 0.4], gravity: 1.0, drag: 1.0, dir: { x: dx, z: dz }, dirBias: 0.7, opacity: 1 });
+        }
+        break;
+      }
+      case 'trophy_cord': {
+        // A trophy knotted on: a bone-gold token rises off the fallen
+        // champion and arcs to the party, which flares gold for a beat.
+        mark('relic_trophy_cord');
+        const x = ev.x ?? 0;
+        const z = ev.z ?? 0;
+        const p = player();
+        flare(x, 1.6, z, GOLD, 1.2, { kind: 'star', life: 0.4, spin: 4 });
+        kit.ring({ x, z, r0: 0.3, r1: 1.8, width: 0.12, life: 0.5, core: PARCH, glow: BONE, soft: 0.45, y: 0.06 });
+        if (p) {
+          kit.streak({ a: { x, y: 1.6, z }, b: { x: (x + p.x) / 2, y: 2.8, z: (z + p.z) / 2 }, width: 0.08, tailW: 0, core: PARCH, glow: GOLD, life: 0.3, delay: 0.2, fall: 1.0 });
+          kit.streak({ a: { x: (x + p.x) / 2, y: 2.8, z: (z + p.z) / 2 }, b: { x: p.x, y: 1.2, z: p.z }, width: 0.08, tailW: 0, core: PARCH, glow: GOLD, life: 0.3, delay: 0.38, fall: 1.0 });
+          after(0.6, () => {
+            const q = player() ?? p;
+            const n = Math.max(1, Math.min(5, ev.trophies ?? 1));
+            for (let i = 0; i < n; i++) kit.ring({ x: q.x, z: q.z, r0: 0.5 + i * 0.15, r1: 0.9 + i * 0.25, width: 0.06, life: 0.5, core: GOLD, glow: GOLD, soft: 0.4, y: 1.9 - i * 0.18, delay: i * 0.06 });
+            kit.flash({ x: q.x, y: 1.4, z: q.z, color: GOLD, size: 1.0, life: 0.35, hold: 0.08 });
+          });
+        }
+        break;
+      }
+      case 'oathkeepers_brand': {
+        // The oath burns in at the room's start: an ember-gold sigil ring on
+        // the floor round the party, one notch flaring for each Vow level.
+        mark('relic_oathkeepers_brand');
+        const p = player();
+        const x = p ? p.x : ev.x ?? 0;
+        const z = p ? p.z : ev.z ?? 0;
+        const n = Math.max(1, Math.min(10, ev.level ?? 1));
+        kit.ring({ x, z, r0: 2.4, r1: 2.0, width: 0.12, life: 1.0, core: GOLD, glow: EMBER, soft: 0.4, y: 0.05 });
+        for (let i = 0; i < n; i++) {
+          const a = (i / n) * TAU - Math.PI / 2;
+          after(0.05 * i, () => {
+            flare(x + Math.cos(a) * 2.2, 0.3, z + Math.sin(a) * 2.2, GOLD, 0.5, { kind: 'star', life: 0.3 });
+            spray('spark', x + Math.cos(a) * 2.2, 0.2, z + Math.sin(a) * 2.2, N(3), { color: EMBER, speed: [0.05, 0.2], up: [0.8, 1.4], size: [0.04, 0.06], life: [0.5, 0.8], gravity: -0.2, drag: 1.5, opacity: 0.95 });
+          });
+        }
+        kit.light({ x, z, radius: 3.0, color: GOLD, opacity: 0.4, life: 1.0 });
+        break;
+      }
+      case 'tenor_bell': {
+        // The great bell tolls over the room: a brass bell-light high over
+        // the party, a slow deep shock ring that rolls to the walls, a
+        // verdigris after-ring, a hit flash on every enemy and a heavy kick.
+        mark('relic_tenor_bell');
+        const st = RELIC3.bellwright;
+        const p = player();
+        const x = p ? p.x : ev.px ?? ev.x ?? 0;
+        const z = p ? p.z : ev.pz ?? ev.z ?? 0;
+        kit.pillar({ x, z, radius: 0.5, height: 4.5, color: st.glow, life: 0.6, opacity: 0.45 });
+        flare(x, 3.6, z, st.glow, 2.2, { kind: 'burst', life: 0.35 });
+        kit.flash({ x, y: 3.4, z, color: st.glow, size: 2.0, life: 0.5, hold: 0.1 });
+        kit.ring({ x, z, r0: 0.6, r1: 11, width: 0.3, life: 0.9, core: PARCH, glow: st.glow, soft: 0.5, y: 0.06, gain: 1.1 });
+        after(0.15, () => kit.ring({ x, z, r0: 0.4, r1: 9, width: 0.12, life: 0.9, core: st.second, glow: st.second, soft: 0.6, y: 0.07, opacity: 0.8 }));
+        kit.light({ x, z, radius: 7, color: st.glow, opacity: 0.55, life: 0.8 });
+        for (const id of ev.hit ?? []) {
+          const b = byId(id);
+          if (!b) continue;
+          const d = Math.hypot(b.x - x, b.z - z);
+          after(Math.min(0.6, d / 14), () => {
+            const t = byId(id) ?? b;
+            flare(t.x, 0.7, t.z, st.second, 0.6, { kind: 'star', life: 0.16 });
+            kit.ring({ x: t.x, z: t.z, r0: 0.2, r1: 0.8, width: 0.06, life: 0.3, core: st.second, glow: st.glow, soft: 0.5, y: 0.06 });
+          });
+        }
+        camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.08, 0.2);
+        break;
+      }
+      default:
+        break;
+    }
+  });
+  // Batch 5: Tolling Dead, a knell over the fallen. Its warning is an Ember
+  // ring closing on the spot with a ghost bell above it; the strike is a
+  // dark shock ring, a violet bell-light and a short kick.
+  bus.on('curse_proc', (ev) => {
+    if (ev.curse !== 'tolling_dead') return;
+    const x = ev.x ?? 0;
+    const z = ev.z ?? 0;
+    const r = ev.radius ?? 1.6;
+    if (ev.stage === 'toll') {
+      mark('curse_tolling_dead');
+      kit.ring({ x, z, r0: r, r1: r * 0.98, width: 0.08, life: 0.8, core: EMBER, glow: EMBER, soft: 0.3, y: 0.05, opacity: 0.9 });
+      kit.ring({ x, z, r0: r, r1: 0.2, width: 0.05, life: 0.8, core: EMBER, glow: VIOLET, soft: 0.5, y: 0.06, opacity: 0.8 });
+      kit.mark({ x, z, radius: r, kind: 'splash', stain: VIOLET, glow: EMBER, life: 0.9, opacity: 0.22 });
+      flare(x, 1.6, z, VIOLET, 0.7, { kind: 'star', life: 0.8 });
+      for (let i = 0; i < 3; i++) after(0.25 * i, () => kit.ring({ x, z, r0: 0.3, r1: 0.7, width: 0.05, life: 0.25, core: VIOLET_PEAK, glow: VIOLET, soft: 0.5, y: 1.5 }));
+    } else {
+      mark('curse_tolling_dead_strike');
+      kit.flash({ x, y: 1.0, z, color: VIOLET, size: 1.2, life: 0.3, hold: 0.06 });
+      kit.ring({ x, z, r0: 0.2, r1: r + 0.2, width: 0.2, life: 0.32, core: PARCH, glow: EMBER, soft: 0.4, y: 0.07, gain: 1.15 });
+      kit.light({ x, z, radius: r + 1, color: VIOLET, opacity: 0.5, life: 0.35 });
+      spray('spark', x, 0.4, z, N(10), { color: EMBER, speed: [0.8, 1.6], up: [0.4, 1.0], size: [0.03, 0.06], life: [0.3, 0.5], gravity: 1.4, drag: 1.0, jitter: 0.2, opacity: 1 });
+      for (const id of ev.struck ?? []) {
+        const b = byId(id);
+        if (b) kit.streak({ a: { x, y: 0.6, z }, b: { x: b.x, y: 0.8, z: b.z }, width: 0.05, tailW: 0.01, core: PARCH, glow: EMBER, life: 0.14, fall: 1.2 });
+      }
+      if ((ev.struck ?? []).length) camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.04, 0.1);
+    }
+  });
+  // Batch 5: Dulled Edge, a blunted crit. The crit's bright edge chips and
+  // goes grey: a broken blade of tarnished iron over the target whose tip
+  // snaps off and drops, a dull grey flash that dims the hit's light, a
+  // violet tarnish stain and ring, and heavy iron flecks that fall instead
+  // of fly.
+  const DULL_IRON = vfxMatterColor('iron');
+  bus.on('curse_proc', (ev) => {
+    if (ev.curse !== 'dulled_edge') return;
+    const b = byId(ev.target);
+    const x = b ? b.x : ev.x ?? 0;
+    const z = b ? b.z : ev.z ?? 0;
+    mark('curse_dulled_edge');
+    kit.flash({ x, y: 1.0, z, color: DULL_IRON, size: 1.1, life: 0.2, hold: 0.04 });
+    kit.light({ x, z, radius: 2.2, color: VIOLET, opacity: 0.35, life: 0.4 });
+    // The blade: a long edge across the target, broken in the middle.
+    const a = rnd(0, TAU);
+    const ux = Math.cos(a);
+    const uz = Math.sin(a);
+    kit.streak({ a: { x: x - ux * 1.1, y: 1.25, z: z - uz * 1.1 }, b: { x: x - ux * 0.08, y: 1.1, z: z - uz * 0.08 }, width: 0.11, tailW: 0.05, core: PARCH, glow: DULL_IRON, life: 0.32, fall: 0.6 });
+    kit.streak({ a: { x: x + ux * 0.12, y: 1.05, z: z + uz * 0.12 }, b: { x: x + ux * 0.8, y: 0.85, z: z + uz * 0.8 }, width: 0.09, tailW: 0.02, core: DULL_IRON, glow: VIOLET, life: 0.4, fall: 3.2 });
+    // The chips off the break, a little star of grey at the notch.
+    flare(x, 1.1, z, DULL_IRON, 0.55, { kind: 'star', life: 0.3 });
+    kit.ring({ x, z, r0: 0.3, r1: 1.25, width: 0.09, life: 0.45, core: DULL_IRON, glow: VIOLET, soft: 0.5, y: 0.06, opacity: 0.85 });
+    kit.mark({ x, z, radius: 0.9, kind: 'splash', stain: VIOLET, glow: DULL_IRON, life: 0.8, opacity: 0.25 });
+    spray('spark', x, 1.05, z, N(10), { color: DULL_IRON, speed: [0.4, 1.0], up: [0.1, 0.5], size: [0.05, 0.09], life: [0.4, 0.6], gravity: 4.5, drag: 0.6, jitter: 0.15, opacity: 0.95 });
+    spray('spark', x, 0.9, z, N(4), { color: VIOLET, speed: [0.05, 0.2], up: [0.3, 0.6], size: [0.05, 0.07], life: [0.6, 0.9], gravity: -0.2, drag: 1.5, jitter: 0.25, opacity: 0.75 });
+  });
   // Batch 4: Kindred Blood, a dark thread from the fallen to each kin it heals.
   bus.on('curse_proc', (ev) => {
     if (ev.curse !== 'kindred_blood') return;
@@ -5759,6 +6029,21 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         const a = (i / 6) * TAU + 0.2;
         kit.streak({ a: { x: x + Math.cos(a) * 1.0, y: 0.05, z: z + Math.sin(a) * 1.0 }, b: { x: x + Math.cos(a) * 5.0, y: 0.05, z: z + Math.sin(a) * 5.0 }, width: 0.06, tailW: 0.02, core: EMBER, glow: VIOLET, life: 0.7, delay: i * 0.05, fall: 0.3 });
       }
+    } else if (ev.curse === 'corked') {
+      // Corked: wax seals drop round the party and stamp the floor.
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * TAU + 0.4;
+        const px = x + Math.cos(a) * 3.0;
+        const pz = z + Math.sin(a) * 3.0;
+        after(0.06 * i, () => {
+          flare(px, 0.4, pz, VIOLET, 0.7, { kind: 'burst', life: 0.2 });
+          kit.mark({ x: px, z: pz, radius: 0.45, kind: 'splash', stain: VIOLET, glow: VIOLET_PEAK, life: 1.6, opacity: 0.45 });
+        });
+      }
+    } else if (ev.curse === 'tolling_dead') {
+      // Tolling Dead: one deep toll over the room, dark rings rolling out.
+      for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.6, r1: 6.5, width: 0.12, life: 0.9, core: VIOLET, glow: EMBER, soft: 0.5, y: 0.05, delay: i * 0.3, opacity: 0.7 });
+      flare(x, 2.6, z, VIOLET, 1.1, { kind: 'star', life: 0.6 });
     } else if (ev.curse === 'short_fuse') {
       // Short Fuse: ember sparks fizz round the ring like a lit fuse.
       kit.ring({ x, z, r0: 4.2, r1: 4.6, width: 0.06, life: 1.0, core: EMBER, glow: EMBER, soft: 0.4, y: 0.05, opacity: 0.8 });

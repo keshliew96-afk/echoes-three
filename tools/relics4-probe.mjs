@@ -160,7 +160,7 @@ function partyTakes(w, target, power = 20) {
   check('data', `rarities 4 common, 4 rare, 2 legendary (${n('common')}/${n('rare')}/${n('legendary')})`, n('common') === 4 && n('rare') === 4 && n('legendary') === 2);
   check('data', 'none of them a class relic', NEW.every((id) => !RELICS[id].cls));
   check('data', 'an heirloom for each', NEW.every((id) => UNLOCKS[`heirloom_${id}`] && UNLOCKS[`heirloom_${id}`].relic === id));
-  check('data', `8 room curses and 6 major (${CURSE_IDS.length}/${MAJOR_CURSE_IDS.length})`, CURSE_IDS.length === 8 && MAJOR_CURSE_IDS.length === 6 && CURSE_IDS.includes('restless') && CURSE_IDS.includes('kindred_blood') && MAJOR_CURSE_IDS.includes('teeming') && MAJOR_CURSE_IDS.includes('paupers_mark'));
+  check('data', `8 room curses and 6 major or more (${CURSE_IDS.length}/${MAJOR_CURSE_IDS.length})`, CURSE_IDS.length >= 8 && MAJOR_CURSE_IDS.length >= 6 && CURSE_IDS.includes('restless') && CURSE_IDS.includes('kindred_blood') && MAJOR_CURSE_IDS.includes('teeming') && MAJOR_CURSE_IDS.includes('paupers_mark'));
 }
 
 // --------------------------------------------------------------- crook --

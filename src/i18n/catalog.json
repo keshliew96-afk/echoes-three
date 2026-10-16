@@ -1258,6 +1258,12 @@
   ],
   "data": true
  },
+ "+4% party damage for every Vow level the run wears (up to +40%).": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "+40% after standing still.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1295,6 +1301,12 @@
   "data": true
  },
  "+6 Glint every time a combat room is cleared.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "+6% party damage for every champion the party has felled this run (up to +30%).": {
   "files": [
    "src/sim/relics.js"
   ],
@@ -2204,6 +2216,12 @@
   ],
   "data": true
  },
+ "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "A shroud with a cracked bell where its heart should be. It still rings the hours nobody keeps.": {
   "files": [
    "src/data/journal.js"
@@ -2275,6 +2293,12 @@
  "A throne of white stone at the edge of the sky, too large for anyone left alive. It is still warm.": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -3208,7 +3232,19 @@
   ],
   "data": true
  },
+ "Begin every run holding Bottomless Flask. Once a room, each hero's first tonic or bomb comes back to their slot 10 s later.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Bounty Writ. Each elite the party kills pays 6 Glint, plus 4 for every affix it carried.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Brewer's Satchel. Each tonic or bomb a hero uses also heals every other hero for 12% of max HP.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -3340,6 +3376,12 @@
   ],
   "data": true
  },
+ "Begin every run holding Oathkeeper's Brand. +4% party damage for every Vow level the run wears (up to +40%).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding one relic. Find a relic in a run to reveal its heirloom.": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -3381,13 +3423,37 @@
   ],
   "data": true
  },
+ "Begin every run holding Stormglass. Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Sun Chalice. Party healing also sears the nearest enemy for the health it restores.": {
   "files": [
    "src/data/unlocks.js"
   ],
   "data": true
  },
+ "Begin every run holding Tenor Bell. Every 10th enemy the party fells in a room rings the great bell: every enemy in the room takes 12 damage and is slowed 40% for 2 s. Kills inside the Bellwright's bell rings count twice.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Thorn Mail. Enemies that hit the party take 60% of it back.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Trophy Cord. +6% party damage for every champion the party has felled this run (up to +30%).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Twin Fuse. A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -3406,6 +3472,12 @@
   "data": true
  },
  "Begin every run holding Vigil Candle. In Escort and Hold rooms the party takes 20% less damage.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Votive Ribbon. A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -3828,6 +3900,13 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Bottomless Flask": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Bounce": {
   "files": [
    "src/sim/nodes.js"
@@ -3901,6 +3980,13 @@
  "Breaker": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Brewer's Satchel": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -4844,6 +4930,17 @@
    "src/ui/menu/cloud.js"
   ]
  },
+ "Corked": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Corked: tonics and bombs cannot be used in this room.": {
+  "files": [
+   "src/ui/hud/commandbar.js"
+  ]
+ },
  "Corrupted Altar": {
   "files": [
    "src/sim/encounters.js"
@@ -5748,12 +5845,24 @@
   ],
   "data": true
  },
+ "Dulled Edge": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Each door shows what waits behind it: the kind of fight and the reward for clearing it. In a run it leads to the next room. Here it ends the tutorial.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
  },
  "Each elite the party kills pays 6 Glint, plus 4 for every affix it carried.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.": {
   "files": [
    "src/sim/relics.js"
   ],
@@ -5800,6 +5909,12 @@
  "each toll of a bell from this skill slows 15% more.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Each tonic or bomb a hero uses also heals every other hero for 12% of max HP.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -6111,6 +6226,12 @@
  "Events": {
   "files": [
    "src/ui/story/journal.js"
+  ],
+  "data": true
+ },
+ "Every 10th enemy the party fells in a room rings the great bell: every enemy in the room takes 12 damage and is slowed 40% for 2 s. Kills inside the Bellwright's bell rings count twice.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -7379,6 +7500,12 @@
  "Gust Kite": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -9923,6 +10050,13 @@
   ],
   "data": true
  },
+ "Oathkeeper's Brand": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "OF {n}": {
   "files": [
    "src/ui/run/path.js",
@@ -10003,6 +10137,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Once a room, each hero's first tonic or bomb comes back to their slot 10 s later.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Once Around": {
   "files": [
@@ -10274,6 +10414,12 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Party critical hits deal ×2 instead of ×1.5.": {
   "files": [
@@ -12886,6 +13032,13 @@
   ],
   "data": true
  },
+ "Stormglass": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Stormwater": {
   "files": [
    "src/data/unlocks.js"
@@ -13213,6 +13366,13 @@
  "Ten Oaths": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Tenor Bell": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -15631,6 +15791,12 @@
   ],
   "data": true
  },
+ "Tolling Dead": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "tolls slow 15% more.": {
   "files": [
    "src/ui/run/cards.js"
@@ -15692,6 +15858,12 @@
   "files": [
    "src/ui/run/shop.js"
   ]
+ },
+ "Tonics and bombs cannot be used in this room, and enemies here have 10% more HP.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Too late — that choice already closed": {
   "files": [
@@ -15769,6 +15941,13 @@
   ],
   "data": true
  },
+ "Trophy Cord": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Tuned": {
   "files": [
    "src/sim/nodes.js"
@@ -15800,6 +15979,13 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "Twin Fuse": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Two lands inked. The Mill’s ink is still wet.": {
   "files": [
@@ -16092,6 +16278,13 @@
   "files": [
    "src/ui/menu/tabs/audio.js"
   ]
+ },
+ "Votive Ribbon": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "VOW": {
   "files": [

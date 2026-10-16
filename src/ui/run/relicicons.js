@@ -91,6 +91,22 @@ const RELIC_SVG = {
   weathercock_plume: `<path d="M6 24 L26 24" ${STROKE}/><path d="M22 21 L26 24 L22 27" ${STROKE}/><path d="M9 21 Q8 11 15 6 Q14 13 18 18 Q13 18 9 21 Z" ${STROKE}/><path d="M11 18 L15 10" ${STROKE}/>`,
   hushbell: `<path d="M16 4 V7" ${STROKE}/><path d="M8 22 Q8 8 16 8 Q24 8 24 22 Z" ${STROKE}/><path d="M6 22 H26" ${STROKE}/><path d="M5 27 L27 15" ${STROKE}/><circle cx="16" cy="26" r="1.8" ${FILL}/>`,
   saints_ashes: `<path d="M10 15 H22 L20 27 H12 Z" ${STROKE}/><path d="M8 15 H24" ${STROKE}/><path d="M13 11 Q11 8 13 5 M16 11 Q18 7 16 3 M19 11 Q21 8 19 6" ${STROKE}/><circle cx="16" cy="21" r="1.8" ${FILL}/>`,
+  // Batch 5. A satchel with its flap, a little flask peeking out.
+  brewers_satchel: `<path d="M6 13 H26 V26 Q26 28 24 28 H8 Q6 28 6 26 Z" ${STROKE}/><path d="M6 13 Q16 21 26 13" ${STROKE}/><path d="M13 13 V6 H19 V13" ${STROKE}/><circle cx="16" cy="19" r="1.8" ${FILL}/>`,
+  // A ribbon tied in a bow, its tails falling.
+  votive_ribbon: `<path d="M16 13 Q8 4 6 10 Q5 15 16 13 Q27 15 26 10 Q24 4 16 13 Z" ${STROKE}/><circle cx="16" cy="13" r="2" ${FILL}/><path d="M15 15 L10 28 M17 15 L22 28" ${STROKE}/>`,
+  // A storm glass: a stoppered bottle with a lightning bolt inside.
+  stormglass: `<path d="M13 3 H19 M14 3 V8 Q8 11 8 19 Q8 28 16 28 Q24 28 24 19 Q24 11 18 8 V3" ${STROKE}/><path d="M17 12 L13 19 H17 L15 25" ${STROKE}/>`,
+  // Two bombs, the second's fuse lit off the first's.
+  twin_fuse: `<circle cx="11" cy="20" r="6" ${STROKE}/><circle cx="22" cy="22" r="5" ${FILL}/><path d="M14 15 Q16 9 21 9" ${STROKE}/><path d="M22 17 Q22 13 25 11" ${STROKE}/><path d="M24 6 L26 4 M27 9 L29 8" ${STROKE}/>`,
+  // A cord strung with three trophies: a fang, a crown point, a horn.
+  trophy_cord: `<path d="M4 7 Q16 15 28 7" ${STROKE}/><path d="M9 10 L10 20 L12 11" ${FILL}/><path d="M14 13 L16 22 L18 13 Z" ${FILL}/><path d="M21 12 Q24 17 21 22" ${STROKE}/>`,
+  // A branding iron: the oath sigil at its head, a handle.
+  oathkeepers_brand: `<circle cx="11" cy="11" r="7" ${STROKE}/><path d="M11 6 L13 10 L11 16 L9 10 Z" ${FILL}/><path d="M16 16 L27 27" ${STROKE}/><path d="M24 24 L28 20" ${STROKE}/>`,
+  // A flask with a swirl going down into it forever.
+  bottomless_flask: `<path d="M12 4 H20 M13 4 V10 L7 26 Q6 28 9 28 H23 Q26 28 25 26 L19 10 V4" ${STROKE}/><path d="M11 20 Q16 16 21 20 Q16 24 13 21 Q16 19 18 21" ${STROKE}/>`,
+  // A great bell with sound rings rolling out from its lip.
+  tenor_bell: `<path d="M16 3 V6" ${STROKE}/><path d="M9 21 Q9 6 16 6 Q23 6 23 21 Z" ${FILL}/><path d="M7 21 H25" ${STROKE}/><path d="M4 26 Q16 31 28 26 M2 21 Q1 25 4 26 M30 21 Q31 25 28 26" ${STROKE}/>`,
 };
 
 // The curse mark: a crescent moon cut by an eye slit.

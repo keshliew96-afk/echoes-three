@@ -211,6 +211,54 @@ Both have heirlooms. The Silent Bell event lifts a major curse
 (`liftMajor`, event `curse_lifted`); the Gods' Seat pays a legendary pick
 (source `seat`).
 
+## Batch 5: relics for plan 4's content, three curses
+
+Content plan 4, slice 11 (v0.5.287). Eight relics answer what plan 4 added
+(tonics and bombs, shrines, the second champions, the Spire's gust vents, the
+bells, the vows) and three curses, one of them major. 51 relics and 17 curses
+in all; every relic has its heirloom (data/unlocks.js builds them). No dice:
+each relic reads the bus or a count, so holding one never moves the relic
+stream. Numbers are first guesses until play.
+
+| Relic | Rarity | Effect |
+|---|---|---|
+| Brewer's Satchel | common | Each tonic or bomb a hero uses also heals every other hero for 12% of max HP. |
+| Votive Ribbon | common | A shrine's blessing lasts twice as long (120 s), and each offering heals the party for 20% of max HP. |
+| Stormglass | common | Each gust a vent blows strikes every enemy in its lane for 12% of max HP (elites 6%, champions and bosses 2%). |
+| Twin Fuse | rare | A thrown bomb bursts again 0.6 s after it lands, for half its damage (no second fire patch, slow or freeze). |
+| Trophy Cord | rare | +6% party damage for every champion the party has felled this run (up to +30%, five champions). |
+| Oathkeeper's Brand | rare | +4% party damage for every Vow level the run wears (up to +40%). Offered only while the run wears a vow; never the Daily's omen. |
+| Bottomless Flask | legendary | Once a room, each hero's first tonic or bomb comes back to their slot 10 s later (at once if the room clears first; a slot filled meanwhile keeps what it holds). |
+| Tenor Bell | legendary | Every 10th enemy the party fells in a room rings the great bell: every enemy in the room takes 12 damage and is slowed 40% for 2 s. A kill inside one of the Bellwright's bell rings counts twice. |
+
+| Curse | Kind | Effect |
+|---|---|---|
+| Corked | room | No tonic or bomb can be used in the room (the AI seats leave theirs alone, the HUD slot wears a wax seal), and its enemies have 10% more HP. |
+| Tolling Dead | room | Each enemy that falls tolls a knell where it fell: an Ember ring closes for 0.8 s, then strikes heroes within 1.6 u for 10% of their max HP (at most six knells waiting at once). |
+| Dulled Edge | major | Party critical hits deal x1.25 instead of x1.5 for the rest of the run (Saint's Ashes: x1.375). |
+
+How they hook in:
+
+- Brewer's Satchel and Bottomless Flask read `tonic_use`; Twin Fuse reads
+  `tonic_burst` and lands its second burst through the relic system's new
+  `later` queue (procs on a set tick, saved with the run). The flask fills
+  the slot through `tonicSlot` (run.js passes the consumable system's
+  `slot` / `setSlot`).
+- Votive Ribbon: `relics.blessMul()` lengthens `bless()` (sim/shrines.js
+  takes the ticks now); the heal reads `shrine_offer`.
+- Stormglass reads the gust's `hazard_resolve` (its lane rides the event).
+- Trophy Cord counts party kills of champions (`trophies`, saved); Oathkeeper's
+  Brand reads `vowLevel()` (run.js passes `vowLevelOf(boons)`); both through
+  `mods.dealtMul`.
+- Tenor Bell counts `mods.onKill` per room; Tolling Dead queues on it too and
+  emits `curse_proc` stages `toll` and `strike`.
+- Corked: `relics.corked()` seals the consumable system (`sealed` option): a
+  press is refused with reason `corked`, `aiStep` skips, and the tonic view
+  carries `corked: true` for the HUD. Its HP comes from `diff.hpMul`.
+- Dulled Edge is a major `critMul` summed into `mods.critMulAdd()`. Its beat: a party crit under it emits a cosmetic `curse_proc` (stage `blunt`, at most once every 20 ticks), drawn as a broken iron blade over the target with a violet tarnish ring and a low parry clink.
+- `?vfxlab=1` → "Relics batch 5": each relic's beat (`cmd('relicDemo', id)`)
+  and the two room curses on a live campaign room.
+
 ## Determinism and the legacy traces
 
 - Every relic roll (curse on a door, which door, which curse, which three
@@ -231,6 +279,13 @@ Both have heirlooms. The Silent Bell event lifts a major curse
   its configured door; `autopilot({ curses: 'avoid' })` steps around a cursed one.
 
 ## Verification
+
+- `node tools/relics5-probe.mjs` (headless, batch 5): the data (51 relics, 10
+  room curses and 7 major, every new line in the nine other languages), each
+  relic through its real hook (a tonic, a bomb, the Tithe Shrine, a real gust
+  vent on the Bell Stair, a champion, a vow run, kills inside a Bellwright
+  bell), the three curses' numbers, nothing in the legacy run, and a refill
+  riding a save.
 
 - `node tools/relics4-probe.mjs` (headless, batch 4): the data (39 relics, 8
   room curses and 6 major), each room relic in its real room (an Escort walk,

@@ -108,10 +108,11 @@ export function shrineSpec(shrineId, x, z) {
 }
 
 // Lay a blessing on every hero body (downed ones too: it rides their revive).
-export function bless(bodies, gift, tick) {
+// `ticks`: how long it lasts (Votive Ribbon doubles it).
+export function bless(bodies, gift, tick, ticks = SHRINE_RULES.blessTicks) {
   const B = BLESSINGS[gift];
   if (!B) return null;
-  const rec = { id: B.id, untilTick: tick + SHRINE_RULES.blessTicks, ...(B.haste ? { haste: B.haste } : {}), ...(B.ward ? { ward: B.ward } : {}), ...(B.might ? { might: B.might } : {}) };
+  const rec = { id: B.id, untilTick: tick + ticks, ...(B.haste ? { haste: B.haste } : {}), ...(B.ward ? { ward: B.ward } : {}), ...(B.might ? { might: B.might } : {}) };
   for (const e of bodies) e.blessing = { ...rec };
   return rec;
 }
