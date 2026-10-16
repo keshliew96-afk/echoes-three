@@ -159,7 +159,7 @@ const BEATS = [
   ['bottomless_flask', [8, 94], false],
   ['twin_fuse', [18, 39], true],
   ['votive_ribbon', [12, 30], false],
-  ['stormglass', [5, 12], true],
+  ['stormglass', [14, 46], true], // (small fixes 5: the lane gathers 40 ticks, then blows)
   ['trophy_cord', [16, 40], false],
   ['oathkeepers_brand', [6, 20], false],
   ['tenor_bell', [4, 14], true],

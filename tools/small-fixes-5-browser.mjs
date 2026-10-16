@@ -153,12 +153,20 @@ await shot('3-shrine-next-fight');
 // ------------------------------------------------- 3. the Journal --
 await cmd('endRun', 'abandoned');
 await sleep(4000);
-for (let i = 0; i < 6; i++) {
+// The end card's Return to Camp, then J in camp.
+for (let i = 0; i < 10; i++) {
   if (await page.evaluate(() => !!document.querySelector('.st-story'))) break;
-  await page.keyboard.press('Escape');
-  await sleep(1500);
+  const card = await page.evaluate(() => {
+    const b = [...document.querySelectorAll('button, .rn-btn')].find((e) => e.offsetParent && /Camp|Lager|campamento|camp|Acampamento|лагерь|营地|營地|キャンプ|캠프/i.test(e.textContent || ''));
+    if (b) b.click();
+    return !!b;
+  });
+  if (card) {
+    await sleep(6000);
+    continue;
+  }
   await key('KeyJ');
-  await sleep(2500);
+  await sleep(3000);
 }
 const dbg = () => page.evaluate(() => {
   const s = document.querySelector('.st-story');
