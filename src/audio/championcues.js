@@ -56,8 +56,8 @@ export const CHAMPION_CUE_CAL = {
   ch_vein_matron_rage: 6.6,
   ch_gale_herald_sting: 7.2,
   ch_gale_herald_rage: 7.3,
-  ch_bell_abbess_sting: 6.8,
-  ch_bell_abbess_rage: 6.5,
+  ch_bell_abbess_sting: 5.9,
+  ch_bell_abbess_rage: 5.5,
   ch_fall: 1.8,
   ch_chest: 0,
   ch_crown: 0,
@@ -83,9 +83,9 @@ export const CHAMPION_CUE_CAL = {
   ch_grave_call: -1.5,
   ch_vein_lash: 0.8,
   ch_heart_pulse: 0.9,
-  ch_rope_grip: -9,
-  ch_rope_swing: 2.5,
-  ch_vesper_peal: 1.5,
+  ch_rope_grip: -5.9,
+  ch_rope_swing: 3,
+  ch_vesper_peal: -2.5,
   ch_charge_stop: -1.7,
   // @cal end
 };

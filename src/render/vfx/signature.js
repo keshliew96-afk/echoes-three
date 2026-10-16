@@ -3899,7 +3899,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // THE BELL ABBESS (content plan 5 slice 2): the Spire's bronze and pale
   // air on what she moves, Ember only on the ground that hurts, and the
   // Hush's drained lavender on what her peal stills.
-  const CH_HABIT = vfxMatterColor('habit');
+  const CH_LINEN = GUST; // her wimple's starched linen
   const CH_STILL = vfxMatterColor('hushpale');
   Object.assign(CHAMP_MOVE, {
     // Rope Swing: she has ridden the rope down the lane — the great bell
@@ -3944,7 +3944,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         const sx = -d.z * side;
         const sz = d.x * side;
         spray('smoke', mx, 0.2, mz, 3, { color: SSTONE, speed: [1.4, 2.4], up: [0.05, 0.2], size: [0.36, 0.5], grow: 1.5, life: [0.6, 0.9], opacity: 0.22, drag: 2.4, dir: { x: sx, z: sz }, dirBias: 0.85 });
-        spray('shard', mx, 1.0, mz, 4, { color: CH_HABIT, tile: SHARD_TILE.feather, speed: [1.0, 2.0], up: [0.4, 1.0], size: [0.1, 0.15], life: [1.0, 1.5], gravity: 0.6, drag: 1.6, spin: [-6, 6], flutter: 0.8, dir: { x: sx, z: sz }, dirBias: 0.7 });
+        spray('shard', mx, 1.0, mz, 4, { color: CH_LINEN, tile: SHARD_TILE.feather, speed: [1.0, 2.0], up: [0.4, 1.0], size: [0.1, 0.15], life: [1.0, 1.5], gravity: 0.6, drag: 1.6, spin: [-6, 6], flutter: 0.8, dir: { x: sx, z: sz }, dirBias: 0.7 });
       }
       kit.mark({ x: mx, z: mz, radius: 1.2, kind: 'gouge', angle: ang, stretch: Math.max(1.5, len / 1.6), stain: INK, glow: EMBER, glowOpacity: 0.25, cool: 0.7, life: 2.4, opacity: 0.3 });
       camfx.kick(d.x, d.z, 0.55, 0.15);
@@ -4082,7 +4082,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       kit.streak({ a: { x, y: 6.5, z }, b: { x, y: 2.2, z }, width: 0.06, tailW: 0.02, core: PARCH, glow: vfxMatterColor('hemp'), life: 0.6, fall: 1.0, opacity: 0.7, travel: { x: 0, y: -2.0, z: 0 } });
       flare(x, 5.0, z, BRONZE, 2.4, { kind: 'burst', life: 0.42, core: PARCH });
       for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.4, r1: 3.2 + i * 1.4, width: 0.08, life: 0.8 + 0.15 * i, core: PARCH, glow: BRONZE, soft: 0.6, y: 4.8 - i * 1.4, delay: i * 0.12, opacity: 0.55, thin: 0.5 });
-      spray('shard', x, 2.6, z, 22, { color: vfxMatterColor('habit'), tile: SHARD_TILE.feather, speed: [0.6, 2.0], up: [0.6, 1.8], size: [0.14, 0.22], life: [1.6, 2.4], gravity: 0.5, drag: 1.5, spin: [-6, 6], flutter: 0.85, jitter: 0.8 });
+      spray('shard', x, 2.6, z, 22, { color: GUST, tile: SHARD_TILE.feather, speed: [0.6, 2.0], up: [0.6, 1.8], size: [0.14, 0.22], life: [1.6, 2.4], gravity: 0.5, drag: 1.5, spin: [-6, 6], flutter: 0.85, jitter: 0.8 });
       spray('chunk', x, 1.4, z, 6, { color: BRONZE, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.06, 0.1], life: [0.6, 0.9] });
       spray('spark', x, 1.6, z, 14, { color: vfxMatterColor('hushpale'), speed: [0.1, 0.4], up: [0.2, 0.6], size: [0.05, 0.08], life: [1.4, 2.0], gravity: -0.1, drag: 2, jitter: 0.9 });
     },

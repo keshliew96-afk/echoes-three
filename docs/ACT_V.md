@@ -125,7 +125,7 @@ Two land-bound encounters (`land: 'spire'`, `src/sim/encounters.js`):
   party damage on an enemy while its attack warning is up).
 - **Tints**: Still Air for the Swordsman (40 Embers, Level V cleared) and Gale
   Bronze for the Bellwright (free with Windfall).
-- **Deeds**: Skyward (clear Level V, 60), Windfall (fell the Gale Herald, 25),
+- **Deeds**: Skyward (clear Level V, 60), Windfall (fell a Spire champion, the Gale Herald or since content plan 5 slice 2 the Bell Abbess, 25),
   Five Crowns (fell a champion in each of the five lands, 80) and Break the
   Hush (fell the Hush on Harrowing, 80). Four Crowns means a champion in each
   of the first four lands; since small fixes 5 either of a land's champions

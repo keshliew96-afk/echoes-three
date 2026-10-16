@@ -1013,7 +1013,7 @@ export function buildBellAbbess() {
   const habitC = new Color(VFX_MATTER.habit).lerp(new Color(PALETTE.signalBlue), 0.06);
   const habit = track(flashable(habitC));
   const habitDark = track(flashable(habitC.clone().lerp(slate(0.25, 0.22), 0.55)));
-  const wimpleM = track(flashable(new Color(PALETTE.parchment).lerp(habitC, 0.35).multiplyScalar(0.92)));
+  const wimpleM = track(flashable(new Color(PALETTE.parchment).lerp(new Color(VFX_MATTER.gust), 0.25)));
   wimpleM.side = DoubleSide;
   const porcelain = track(flashable(new Color(PALETTE.bone).lerp(new Color(PALETTE.parchment), 0.4).multiplyScalar(0.92)));
   const bronzeC = new Color(VFX_MATTER.bellbronze).lerp(slate(0.2, 0.3), 0.2).multiplyScalar(0.9);
@@ -1033,15 +1033,6 @@ export function buildBellAbbess() {
   robe.add(skirt);
   const hem = new Mesh(shared('ba-hem', () => new TorusGeometry(0.6, 0.035, 4, 22).rotateX(Math.PI / 2).translate(0, 0.04, 0)), bronzeDark);
   robe.add(hem);
-  const folds = [];
-  for (let i = 0; i < 7; i++) {
-    const a = (i / 7) * Math.PI * 2 + 0.2;
-    const f = new Mesh(shared('ba-fold', () => new BoxGeometry(0.05, 1.5, 0.04).translate(0, -0.75, 0)), habitDark);
-    f.position.set(Math.sin(a) * 0.36, 1.62, Math.cos(a) * 0.36);
-    f.rotation.set(Math.cos(a) * 0.13, 0, -Math.sin(a) * 0.13);
-    robe.add(f);
-    folds.push(f);
-  }
   const scap = new Mesh(shared('ba-scap', () => new BoxGeometry(0.34, 1.45, 0.05).translate(0, -0.72, 0)), habitDark);
   scap.position.set(0, 1.95, 0.29);
   scap.rotation.x = -0.12;
@@ -1083,21 +1074,28 @@ export function buildBellAbbess() {
   const bib = new Mesh(shared('ba-bib', () => new ConeGeometry(0.3, 0.3, 9, 1, true).translate(0, -0.15, 0)), wimpleM);
   bib.position.y = -0.12;
   head.add(bib);
-  // The cornette: two great starched wings swept up and out from the coif.
+  // The cornette: two great starched wings swept up and out from the coif,
+  // each turned up again at its tip (the white V that reads from above).
   const wings = [];
   for (const side of [-1, 1]) {
-    const w = new Group();
+    const w = new Group(); // animated (lift, shiver)
     w.position.set(side * 0.12, 0.1, -0.02);
     head.add(w);
-    const sheet = new Mesh(shared('ba-wing', () => new BoxGeometry(0.82, 0.03, 0.42).translate(0.41, 0, 0)), wimpleM);
-    sheet.rotation.set(0, 0, 0.62);
+    const base = new Group(); // the wing's set
+    base.rotation.set(-0.15, side * 0.25, side * 0.32);
+    w.add(base);
+    const sheet = new Mesh(shared('ba-wing', () => new BoxGeometry(0.78, 0.035, 0.46).translate(0.39, 0, 0)), wimpleM);
     sheet.scale.x = side;
     addInk(sheet);
-    w.add(sheet);
-    const tipM = new Mesh(shared('ba-wtip', () => new ConeGeometry(0.21, 0.36, 4).rotateZ(-Math.PI / 2).translate(0.18, 0, 0)), wimpleM);
-    tipM.position.set(side * 0.66, 0.52, 0);
-    tipM.rotation.z = side > 0 ? 0.62 : Math.PI - 0.62;
-    w.add(tipM);
+    base.add(sheet);
+    const tipG = new Group();
+    tipG.position.x = side * 0.76;
+    tipG.rotation.z = side * 0.45;
+    base.add(tipG);
+    const tipM = new Mesh(shared('ba-wtip', () => new BoxGeometry(0.34, 0.035, 0.38).translate(0.17, 0, 0)), wimpleM);
+    tipM.scale.x = side;
+    addInk(tipM);
+    tipG.add(tipM);
     wings.push({ g: w, side });
   }
   // Arms. Left: up at the rope. Right: the hand-bell.
@@ -1120,8 +1118,13 @@ export function buildBellAbbess() {
   // the indigo tell.
   const ropePivot = new Group();
   ropePivot.position.y = -0.64;
+  ropePivot.rotation.order = 'ZYX'; // so the pose below is exactly the arm's inverse
   armL.add(ropePivot);
-  const rope = new Mesh(shared('ba-rope', () => new CylinderGeometry(0.022, 0.022, 1, 5).translate(0, 0.5, 0)), hemp);
+  // (Flagged transparent, so the Journal portrait frames her body, not the
+  // rope's full height.)
+  const ropeMat = flashable(new Color(VFX_MATTER.hemp));
+  ropeMat.transparent = true;
+  const rope = new Mesh(shared('ba-rope', () => new CylinderGeometry(0.022, 0.022, 1, 5).translate(0, 0.5, 0)), ropeMat);
   ropePivot.add(rope);
   const sally = new Mesh(shared('ba-sally', () => new CylinderGeometry(0.05, 0.05, 0.42, 7).translate(0, 0.28, 0)), tellMat());
   ropePivot.add(sally);
@@ -1186,7 +1189,6 @@ export function buildBellAbbess() {
       // The habit trails the swing and flares on the landing.
       robe.rotation.x = ride * (-0.4 + 0.25 * qa) + 0.1 * dropped;
       skirt.scale.set(1 + 0.12 * ride + 0.14 * dropped, 1 - 0.06 * ride, 1 + 0.12 * ride + 0.14 * dropped);
-      for (let i = 0; i < folds.length; i++) folds[i].rotation.y = 0.15 * Math.sin(t * 1.6 + i) * (0.3 + moveK + ride);
       // The wimple's wings: still at rest, lifting on the swing, shivering raged.
       for (const w of wings) {
         w.g.rotation.z = w.side * (0.06 * ride + 0.12 * pealK * prog - 0.08 * rung) + (rage ? w.side * 0.02 * Math.sin(t * 23) : 0);

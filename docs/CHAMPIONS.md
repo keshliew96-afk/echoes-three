@@ -109,7 +109,7 @@ champion. The crown door now rolls one of the land's two: a hash of the
 level's frame seed and index (`championPick` in `src/sim/champions.js`,
 `${seed}:${index}:CHAMPION`), apart from `crownFor`'s hash, so where the
 crown door sits is unchanged and nothing draws from the run's random stream.
-Level V has only the Gale Herald. Endless and the Daily use the same pick.
+Level V had only the Gale Herald until content plan 5 slice 2 (below). Endless and the Daily use the same pick.
 
 | Land | Champion | Move 1 | Move 2 |
 |---|---|---|---|
@@ -119,11 +119,48 @@ Level V has only the Gale Herald. Endless and the Daily use the same pick.
 | Heart | The Vein Matron | Vein Lash: a lane (7 × 1.0) for 13; she heals 3% of her max health per hero cut, 6% at most | Heart Pulse: a ring round her (r 2.8) for 14, then eight crystal shards, 7 each |
 
 Each has the frame's rage below half health, its own plate, sting, death
-burst and the usual relic chest. The Journal's champion row has nine
-entries. Four Crowns and Five Crowns count a land as crowned when either of
+burst and the usual relic chest. The Journal's champion row had nine
+entries (ten since the Bell Abbess). Four Crowns and Five Crowns count a land as crowned when either of
 its champions has been felled, the second as well as the first
 (`crownLands`, `FOUR_CROWN_ACTS`, `FIVE_CROWN_ACTS` in `src/sim/champions.js`;
 small fixes 5), and the new champions add no deed.
+
+## The Bell Abbess (the Still Spire's second)
+
+Content plan 5 slice 2 (v0.5.291) gave the Still Spire its second champion,
+so every land now has two (`SECOND_CHAMPIONS[5]` in `src/sim/champions.js`).
+Level V's crown door rolls the Gale Herald or the Bell Abbess by the same
+`championPick` hash; seeds 1 to 60 split 29 to 31. Old Level V seeds whose hash
+lands on her now meet her at the crown door; nothing else about their rooms
+changes.
+
+She is the abbess of the gods' belfry: tall and still in a pale habit and a
+winged wimple, a porcelain face with shut eyes, a bronze hand-bell in one hand
+and the great bell's rope in the other, rising out of sight. The rope's sally
+(its woven grip) is her indigo tell.
+
+| Move | Shape | What it does |
+|---|---|---|
+| Rope Swing | a lane (width 1.2) at its target, or else the farthest hero, 2.4 to 7.5 u off, running 1.2 u past them; 66 ticks, cooldown 170 | She stands through the first half, then rides the rope down the lane (a flier, over barricades and hazards) and drops at its end. Every hero in the lane takes 14 and is knocked 1.6 u aside, out of it. |
+| Vesper Peal | a cone r 4.4, half-angle 36°; 60 ticks, cooldown 160 | The hand-bell rings for 11, and every hero in the cone is slowed 55 % for 1.2 s. |
+
+She keeps 2.2 to 4.4 u off, moves at 1.1, and has the frame's rage, plate,
+sting, chest and HP. Look: `buildBellAbbess` in
+`src/render/enemies/champions2.js` (with `abbessLift`, which the presence layer
+shares, and a pale wake of cut air while she rides). VFX: `rope_swing` and
+`vesper_peal` in `src/render/vfx/signature.js`. On Rope Swing the great bell
+tolls far overhead and a ribbon of cut air hangs along her arc. On Vesper Peal
+bronze arcs of sound roll down the cone and leave drained lavender motes
+hanging. Her death has the rope falling, the bell's last tolls and the wimple
+breaking into linen. Sound: `ch_bell_abbess_sting`, a plainchant in F lydian
+over the great bell; `ch_rope_grip` on the swing's wind-up; `ch_rope_swing`;
+and `ch_vesper_peal`, in `src/audio/championcues.js`. Lab: `?vfxlab=1`,
+Champions, Bell Abbess.
+
+Deeds: **Windfall** now takes either Spire champion ("Fell a champion of the
+Still Spire, the Gale Herald or the Bell Abbess.") and **Five Crowns** lost its
+"the Gale Herald included" clause. She adds no relic, tint, deed or story line
+of her own, as with the other second champions.
 
 ## Debug and probes
 
@@ -141,3 +178,7 @@ small fixes 5), and the new champions add no deed.
   new kit, the common frame, the deeds and a mid-leap save).
 - `node tools/second-champions-browser.mjs [--only kind]`: the second
   champions' fights and Journal rows on the real pages.
+- `node tools/spire-second-champion-probe.mjs`: the Bell Abbess (the Spire's
+  pick, both moves, the frame, a mid-swing save, the deeds and her text).
+- `node tools/spire-second-champion-browser.mjs`: her fight and her Journal
+  page on the real pages.
