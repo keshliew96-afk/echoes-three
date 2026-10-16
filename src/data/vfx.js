@@ -461,6 +461,26 @@ export const BOSS_VFX = Object.freeze({
     leap: Object.freeze({ chunk: 16, dust: 6 }),
     camera: Object.freeze({ dolly: 0.1, kick: 0.08 }),
   }),
+  // Content plan 5 slice 1 (docs/THIRD_BOSSES.md): the Spire's third.
+  //   hourwarden  the gods' clock: bell bronze, pale dial-light and the
+  //               hollow song's violet in its works. The Pendulum carves a
+  //               bronze arc down its lane and back; the Hand Sweep throws
+  //               two blade-arcs; the Toll of the Hours draws a dial of
+  //               light on the floor and each weight lands on its hour mark
+  //               with a ring of bronze; run down, cogs and springs spill.
+  hourwarden: Object.freeze({
+    id: 'hourwarden',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'bellbronze',
+    second: 'spirestone',
+    dial: '#E8DFC8',
+    pendulum: Object.freeze({ sparks: 14, marks: 4 }),
+    sweep: Object.freeze({ arcs: 2, sparks: 12 }),
+    hours: Object.freeze({ chunk: 8, rings: 2 }),
+    camera: Object.freeze({ dolly: 0.1, kick: 0.07 }),
+  }),
 });
 export function isVfxBoss(kind) {
   return Object.prototype.hasOwnProperty.call(BOSS_VFX, kind);

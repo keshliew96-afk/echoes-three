@@ -172,3 +172,47 @@ Bind's leash, the enrage, the governor, level clears and save round trips.
 `node tools/third-bosses-bh-browser.mjs` (against `npm run dev`): rigs,
 arenas, medals, stings, grooves, beat cues and screenshots. All numbers are
 first guesses until play.
+
+## The Spire: the Hourwarden (content plan 5, slice 1)
+
+The Still Spire gets its third boss on the same gate: once the save has
+felled the Hush and the Skyhorn, the Hourwarden joins Level V's seed roll.
+Unlocked, seeds 1 to 60 meet the Hush 23 times, the Skyhorn 20 and the
+Hourwarden 17. Endless cycles the Hush, the Skyhorn, then the Hourwarden.
+In Boss Rush it is lap two's Spire fight (`rushLap: 2` on its row, see
+`docs/BOSS_RUSH.md`), so lap one's Spire boss is unchanged. The Daily never
+meets it.
+
+| | The Hourwarden |
+|---|---|
+| Role | the gods' own clock: a bronze clock-jack that struck the hours until they sat down to watch, wound again by the hollow song |
+| Kit | `src/sim/bosses/hourwarden.js` |
+| Model | `buildHourwarden` in `src/render/boss/spire.js`: a cog bed, a hexagonal bronze case with a pendulum window, a dial chest with moving hands, a bell head with an eye slit, blade arms (a striking hammer on the right) and a wind key |
+| Room | Clock Loft (layout 35), dressed round a cracked clock face; its boss room only, so old Level V seeds keep their rooms |
+| HP | `hpMul` 1.0 |
+| Adds | two Chimes and a Vane Cock at 75 / 50 / 25 % |
+| Deed, tint | Fell the Hourwarden; Archer tint **Gilded Hour** |
+
+- **Pendulum.** A lane through its target (1.4 u wide, up to 9.5 u, 54-tick
+  warning) for 14; 30 ticks later the back-swing comes down the same lane
+  for 10, with its own warning. Cooldown 300 ticks (230 enraged).
+  `lance: true`.
+- **Hand Sweep.** With a body inside 2.8 u, a cone in front (3.4 u, 70
+  degrees either side, 40-tick warning) for 13, throwing each body 1.8 u
+  back over 8 ticks. Cooldown 220 ticks.
+- **Toll of the Hours.** Bronze weights fall one hour after another on rings
+  r 1.3 placed round it at the target's distance (2.5 to 6.5 u), 30 degrees
+  apart, each for 11. The first falls after 60 ticks and each later one 14
+  ticks after. Three hours, four from the second add phase, six enraged.
+  Cooldown 480 ticks (380 enraged), first at 4 s.
+- **Run-down.** After a toll it stands still for 70 ticks and takes 25 %
+  more damage: the party's punish window.
+- **Enrage** under 40 %: faster, more hours, shorter cooldowns.
+
+Identity is the full set: medal, sting, groove, beat cues and tells,
+signature VFX for every attack, its enrage and its death, the falling
+weights (`weight` globs in `src/render/enemies/extras.js`), a fall line, a
+rumour, a Hollow Voice line, a Journal page and the Chapter V summary. The
+VFX lab lists it under Act V. `node tools/spire-third-boss-probe.mjs`
+(headless) checks the gate, wiring, translations, every attack, the
+governor, a level clear and a save round trip.

@@ -3116,5 +3116,18 @@
  "The whole party sets out together": "파티 전원이 함께 출발합니다",
  "CO-OP BEST": "협동 최고 기록",
  "Co-op best: {time}": "협동 최고 기록: {time}",
- "Co-op most felled: {n} of {total}": "협동 최다 처치: {total}마리 중 {n}마리"
+ "Co-op most felled: {n} of {total}": "협동 최다 처치: {total}마리 중 {n}마리",
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.": "세상 위에 고요한 첨탑이 서 있다. 신들이 앉아 지켜보던 종루다. 하늘뿔은 그 계단을 지켰지만, 꼭대기에서 공허의 노래에 뒤틀렸다. 신들 곁에는 정적이 앉아 있다. 신들을 멈추게 한 침묵, 공허의 선창자가 노래를 불어넣던 고요다. 거대한 문자판 뒤에서는 신들의 시계 그 자체인 시간지기가, 노래가 다시 감아 놓은 시간을 거꾸로 센다. 그중 하나를 쓰러뜨리면 하늘의 소절이 풀려나고, 신들이 들을 수 있는 곳에서 종이 울린다.",
+ "Archer effects burn in Gilded Hour colours. Cosmetic.": "궁수 효과가 금빛 시각 색으로 타오릅니다. 외형 전용.",
+ "Clock Loft": "시계 다락",
+ "Defeat the Hourwarden.": "시간지기 처치.",
+ "Fell the Hourwarden": "시간지기를 쓰러뜨려라",
+ "Gilded Hour tint": "금빛 시각 색조",
+ "Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.": "진자: 경고 띠에 14, 이어서 같은 띠로 되돌아오며 10. 손 휩쓸기: 손 앞 경고 부채꼴에 13, 뒤로 밀려난다. 시간의 종: 주위 경고 고리에 추가 한 시각씩 떨어져 각각 11. 그 뒤 태엽이 풀려 더 큰 피해를 받는다.",
+ "The gods stopped their clock to watch. I wound it again. Now it counts you down.": "신들은 구경하려고 시계를 멈췄다. 내가 다시 감았지. 이제 그것이 너의 시간을 센다.",
+ "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": "신들의 시계. 신들이 앉아 지켜볼 때까지 시각을 치던 청동 시보 인형이다. 공허의 노래가 그것을 다시 감았다.",
+ "The Hourwarden": "시간지기",
+ "THE HOURWARDEN": "시간지기",
+ "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "앞의 시계 다락은 시간지기가 지킨다. 진자가 흔들리면 되돌아올 때까지 그 선 밖에 있어라. 시각을 치기 시작하면 계속 움직이다가, 태엽이 풀릴 때 쳐라.",
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "시간지기의 태엽이 영영 풀린다. 다락에서 신들의 시계가 네가 온 시각에 멈춘다."
 }

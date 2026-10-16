@@ -466,6 +466,18 @@ export const BOSS_MUSIC = Object.freeze({
     lead: 'brass',
     motif: [[0, 0, 2], [2, 4, 2], [4, 7, 4], [8, 6, 2], [10, 4, 2], [12, 5, 4], [16, 7, 2], [18, 9, 2], [20, 7, 4], [24, 4, 8]],
   },
+  // Content plan 5 slice 1: the Hourwarden keeps the spire theme's key and
+  // tempo. Its groove is the clock: a bell ostinato that ticks on every
+  // step and tocks a fourth lower, the drum on the quarters like an
+  // escapement, and a heavy toll lead that strikes the hours.
+  hourwarden: {
+    theme: 'spire',
+    prog: [0, 3, 5, 0],
+    arp: { instr: 'bell', pattern: [4, 0, 4, 0, 4, 0, 5, 1] },
+    drum: { 0: 1, 4: 0.6, 8: 0.9, 12: 0.6 },
+    lead: 'toll',
+    motif: [[0, 0, 4], [4, 0, 4], [8, 0, 4], [16, 4, 2], [18, 3, 2], [20, 1, 2], [22, 0, 6]],
+  },
 });
 export const bossMusicKey = (kind) => (kind && BOSS_MUSIC[kind] ? kind : null);
 

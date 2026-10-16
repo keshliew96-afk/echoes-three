@@ -14,7 +14,8 @@
 // can come up), the second lap the next boss of that land's list
 // (endlessBossIndex at the Endless depth 5-8, so the Endless-only Vein
 // Weaver joins once the save has opened it). Locked third bosses never
-// appear, exactly as in a campaign.
+// appear, exactly as in a campaign. The Spire's third, the Hourwarden, is
+// always its second-lap fight once open (`rushLap: 2` on its row).
 //
 // Pure data + helpers (sim- and UI-importable): no DOM, no three. The plain
 // campaign, Endless, the Daily and the tutorial never read it, so the nine
@@ -81,11 +82,25 @@ export function rushLine(seed, open = null) {
     const act = rushAct(n);
     const lap = rushLap(n);
     const list = LEVELS[act].bosses ?? [];
-    const row = lap === 1 ? bossFor(act, seed, null, open) : list[endlessBossIndex(n, seed, open)] ?? list[0];
+    const lapTwo = rushLapTwoBoss(act, open);
+    let row;
+    if (lap === 1) row = bossFor(act, seed, null, lapTwo ? openWithout(open, act) : open);
+    else row = lapTwo ?? list[endlessBossIndex(n, seed, open)] ?? list[0];
     out.push({ fight: n, act, lap, kind: row.kind, name: row.name });
   }
   return out;
 }
+
+// SPIRE THIRD BOSS (content plan 5 slice 1, docs/THIRD_BOSSES.md): a boss
+// row with `rushLap: 2` (the Hourwarden) is, once the save has opened it,
+// the land's second-lap fight, and the first lap rolls between the land's
+// other bosses. No other row carries it, so every other land's line is as
+// before. -> the row, or null.
+function rushLapTwoBoss(act, open) {
+  if (!(Array.isArray(open) && open.includes(Number(act)))) return null;
+  return (LEVELS[act].bosses ?? []).find((b) => b.gated && b.rushLap === 2) ?? null;
+}
+const openWithout = (open, act) => open.filter((a) => Number(a) !== Number(act));
 
 // The boss room's numbers for fight `n`: the land's own (difficulty(act, 6),
 // what room 8 of that level plays), harder on the second lap.

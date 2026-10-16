@@ -25,8 +25,8 @@
 // payloads and entity kinds, so the goldens cannot move.
 import { midiHz } from './voices.js';
 
-export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn']);
-const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn']);
+export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden']);
+const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden']);
 
 // Measured design peaks (dBFS at unity gain) — tools/boss-identity-cuecal.mjs.
 export const BOSS_CUE_CAL = {
@@ -140,6 +140,19 @@ export const BOSS_CUE_CAL = {
   bx_skyhorn_wall: 3,
   bx_skyhorn_toll: 2,
   bx_skyhorn_leap: 3,
+  // Content plan 5 slice 1 (docs/THIRD_BOSSES.md): the Hourwarden, offline
+  // estimates from its nearest kin (the Millwheel's clanks, the Skyhorn's
+  // bronze); tools/boss-identity-cuecal.mjs --only hourwarden re-measures.
+  bx_hourwarden_sting: 6,
+  bx_hourwarden_phase: 6,
+  bx_hourwarden_fall: 5.5,
+  bx_hourwarden_tell: -3.5,
+  bx_hourwarden_swing: 1.5,
+  bx_hourwarden_sweep: 1.5,
+  bx_hourwarden_hour: 2.5,
+  bx_hourwarden_weight: 2.5,
+  bx_hourwarden_rundown: -1,
+  bx_hourwarden_wind: -2,
   // @cal end
 };
 
@@ -219,6 +232,7 @@ const VOICE = {
   veinweaver: { root: 49, lead: 'choir', drum: 'heart' }, // the Heart, C# phrygian
   hush: { root: 53, lead: 'breath', drum: 'knell' }, // the Spire, F aeolian
   skyhorn: { root: 53, lead: 'horn', drum: 'knell' }, // the Spire, F aeolian
+  hourwarden: { root: 53, lead: 'clank', drum: 'knell' }, // the Spire, F aeolian
 };
 
 // Signatures (~1.6-2.4 s): a phrase in the boss's own act key.
@@ -259,6 +273,10 @@ const STINGS = {
   // The Skyhorn: hooves on stone (three knocks), a horn call F C F rising
   // to the flat sixth, and the bronze knell under the last note.
   skyhorn: [[0, 0, 'hand', 0.9], [0.1, 0, 'hand', 0.8], [0.2, 0, 'hand', 1], [0, 29, 'low', 0.9, 1.6], [0.3, 53, 'horn', 0.85, 0.28], [0.6, 60, 'horn', 0.9, 0.26], [0.92, 65, 'horn', 1, 0.3], [1.25, 61, 'horn', 0.9, 0.7], [1.25, 0, 'knell', 1], [1.25, 77, 'bell', 0.3, 1.2]],
+  // The Hourwarden (content plan 5 slice 1): the clock's works ticking on an
+  // even grid, tick-tock F C, then the hour struck three times on the
+  // bronze, falling F C D-flat, the knell under the last.
+  hourwarden: [[0, 65, 'clank', 0.7], [0.16, 60, 'clank', 0.65], [0.32, 65, 'clank', 0.7], [0.48, 60, 'clank', 0.65], [0, 29, 'low', 0.8, 0.6], [0.66, 53, 'toll', 1], [0.66, 41, 'low', 0.9, 1.0], [1.06, 48, 'toll', 0.95], [1.46, 49, 'toll', 1], [1.46, 0, 'knell', 1], [1.46, 77, 'bell', 0.3, 1.2], [1.46, 53, 'choir', 0.35, 1.0]],
 };
 
 // Add phase / enrage: the boss's lead rises a half step over its drum.
@@ -664,6 +682,49 @@ Object.assign(CUES, {
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 200), q: 0.8, d: 0.45, gain: 0.9 }),
       ...[0.06, 0.13, 0.22].map((dt, i) => k.noise(d, t + dt, { f0: P(p, 1800 + i * 500), q: 2, d: 0.04, gain: 0.35 }))
     ), { maxVoices: 1, cooldownMs: 200 }),
+  // --- The Hourwarden (content plan 5 slice 1): the works, bronze, weights.
+  // Its tell: a tick and a tock, a little apart.
+  bx_hourwarden_tell: sfx(-10, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { f0: P(p, 4200), q: 6, d: 0.03, gain: 0.9 }),
+      k.tone(d, t, { type: 'square', f0: P(p, 1800), f1: P(p, 1400), d: 0.025, gain: 0.25 }),
+      k.noise(d, t + 0.2, { f0: P(p, 2600), q: 6, d: 0.035, gain: 0.8 }),
+      k.tone(d, t + 0.2, { type: 'square', f0: P(p, 1100), f1: P(p, 900), d: 0.03, gain: 0.25 })
+    )),
+  // The Pendulum swings out: a heavy whoosh down the lane and its chain.
+  bx_hourwarden_swing: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'lowpass', f0: P(p, 300), f1: P(p, 1400), q: 1.2, a: 0.08, d: 0.25, gain: 1 }),
+      k.tone(d, t + 0.2, { f0: P(p, 120), f1: P(p, 50), d: 0.3, gain: 0.7 }),
+      ...[0.04, 0.09, 0.15].map((dt, i) => k.noise(d, t + dt, { f0: P(p, 3000 + i * 400), q: 4, d: 0.03, gain: 0.35 }))
+    ), { maxVoices: 1, cooldownMs: 150 }),
+  // The Hand Sweep: two bronze blades scything.
+  bx_hourwarden_sweep: sfx(-9, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'highpass', f0: P(p, 1800), f1: P(p, 4800), q: 0.9, a: 0.02, d: 0.16, gain: 0.9 }),
+      k.noise(d, t + 0.08, { type: 'highpass', f0: P(p, 1600), f1: P(p, 4200), q: 0.9, a: 0.02, d: 0.16, gain: 0.8 }),
+      k.bell(d, t + 0.1, { f: P(p, midiHz(77)), ratio: 2.76, index: 0.9, d: 0.4, gain: 0.3 })
+    ), { maxVoices: 1, cooldownMs: 150 }),
+  // The Toll of the Hours: it strikes its own bell, once, heavy.
+  bx_hourwarden_hour: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.bell(d, t, { f: P(p, midiHz(53)), ratio: 1.41, index: 2.6, d: 1.8, gain: 0.85 }),
+      k.bell(d, t + 0.02, { f: P(p, midiHz(65)), ratio: 2.76, index: 1.4, d: 1.0, gain: 0.4 }),
+      k.tone(d, t, { f0: P(p, 90), f1: P(p, 45), d: 0.4, gain: 0.6 })
+    ), { maxVoices: 1, cooldownMs: 250 }),
+  // A weight lands: a bronze thud and a short ring.
+  bx_hourwarden_weight: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 140), f1: P(p, 46), d: 0.3, gain: 0.95 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 200), q: 0.8, d: 0.25, gain: 0.7 }),
+      k.bell(d, t + 0.01, { f: P(p, midiHz(72)), ratio: 1.41, index: 1.4, d: 0.6, gain: 0.35 })
+    ), { maxVoices: 3, cooldownMs: 60 }),
+  // Run down: the spring unwinding, the ticks slowing and falling.
+  bx_hourwarden_rundown: sfx(-10, (k, t, d, p) =>
+    Math.max(...[0, 0.08, 0.18, 0.3, 0.45, 0.63, 0.84].map((dt, i) => k.noise(d, t + dt, { f0: P(p, 3800 - i * 380), q: 5, d: 0.035, gain: 0.85 - i * 0.08 })), k.tone(d, t, { type: 'sawtooth', f0: P(p, 220), f1: P(p, 70), glide: 0.9, d: 0.9, gain: 0.25, filter: { f0: 700, q: 1 } })), { maxVoices: 1, cooldownMs: 300 }),
+  // Wound again: a ratchet climbing.
+  bx_hourwarden_wind: sfx(-11, (k, t, d, p) =>
+    Math.max(...[0, 0.06, 0.12, 0.18, 0.24].map((dt, i) => k.noise(d, t + dt, { f0: P(p, 2200 + i * 360), q: 5, d: 0.03, gain: 0.8 }))), { maxVoices: 1, cooldownMs: 300 }),
   // The sacs: soft wet lobs.
   bx_veinweaver_brood: sfx(-11, (k, t, d, p) =>
     Math.max(...[0, 0.08, 0.16].map((dt, i) => k.tone(d, t + dt, { f0: P(p, 260 + i * 40), f1: P(p, 120), d: 0.12, gain: 0.5 }))), { maxVoices: 1, cooldownMs: 200 }),
@@ -692,9 +753,10 @@ const SPAWN_VOICE = {
   veinweaver: [{ cue: 'bx_veinweaver_slam', gainDb: -3 }, { cue: 'bx_veinweaver_tell', pitch: 0.8 }],
   hush: [{ cue: 'bx_hush_still' }, { cue: 'bx_hush_tell', pitch: 0.75 }],
   skyhorn: [{ cue: 'bx_skyhorn_toll', gainDb: -4 }, { cue: 'bx_skyhorn_tell', pitch: 0.8 }],
+  hourwarden: [{ cue: 'bx_hourwarden_hour', gainDb: -4 }, { cue: 'bx_hourwarden_tell', pitch: 0.8 }],
 };
 // Per-attack tell pitch (boss_telegraph_start.attack).
-const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1, dive: 1, gust: 0.85, omen: 1.2, bind: 1.1, slam: 0.8, unring: 1.1, great: 0.7, toll: 0.85, leap: 1.15 };
+const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1, dive: 1, gust: 0.85, omen: 1.2, bind: 1.1, slam: 0.8, unring: 1.1, great: 0.7, toll: 0.85, leap: 1.15, pendulum: 0.9, backswing: 0.75, sweep: 1.15 };
 
 // An attack with a tell of its own (the Mire King's gape draws breath in).
 const TELL_CUE = { swallow: 'bx_mireking_gape' };
@@ -782,6 +844,15 @@ export function createBossEventCues() {
     boss_horn_rush_end: (ev, h) => (ev.wall ? [{ cue: 'bx_skyhorn_wall', ...at(ev, h, ev.id) }] : null),
     boss_horn_toll: beat('bx_skyhorn_toll'),
     boss_sky_leap: beat('bx_skyhorn_leap'),
+    boss_pendulum: beat('bx_hourwarden_swing'),
+    boss_pendulum_back: (ev, h) => [{ cue: 'bx_hourwarden_swing', ...at(ev, h, ev.id), pitch: 0.85 }],
+    boss_hand_sweep: beat('bx_hourwarden_sweep'),
+    boss_toll_hours: beat('bx_hourwarden_hour'),
+    boss_run_down: beat('bx_hourwarden_rundown'),
+    boss_wound: beat('bx_hourwarden_wind'),
+    // Its clock weights: they fall, they are not lobbed (no lob whoosh).
+    enemy_lob: (ev) => (ev.weight ? [] : null),
+    enemy_glob_land: (ev, h) => (ev.weight ? [{ cue: 'bx_hourwarden_weight', ...at(ev, h) }] : null),
   };
 }
 

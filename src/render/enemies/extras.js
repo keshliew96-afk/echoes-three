@@ -19,6 +19,7 @@ import {
   CircleGeometry,
   Color,
   ConeGeometry,
+  CylinderGeometry,
   Group,
   IcosahedronGeometry,
   Mesh,
@@ -147,6 +148,34 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     g.add(tie);
     const shadow = groundShadow(0.2, 0.5);
     return { g, core, shadow };
+  }
+  // SPIRE THIRD BOSS (content plan 5 slice 1): one of the Hourwarden's clock
+  // WEIGHTS — a fat bronze cylinder with a ring on top, lit violet at the
+  // waist. It does not fly: it hangs high over its ring (swaying on the
+  // works' chain) and drops in the last quarter of its time.
+  const weightGeo = sharedGeo('hw-weight', () =>
+    mergeGeometries([
+      new CylinderGeometry(0.2, 0.22, 0.46, 12),
+      new CylinderGeometry(0.24, 0.24, 0.06, 12).translate(0, -0.2, 0),
+      new CylinderGeometry(0.16, 0.2, 0.08, 12).translate(0, 0.26, 0),
+      new ConeGeometry(0.07, 0.14, 6).translate(0, 0.36, 0),
+    ])
+  );
+  const weightBandGeo = sharedGeo('hw-weight-band', () => new CylinderGeometry(0.205, 0.205, 0.05, 12));
+  const weightChainGeo = sharedGeo('hw-weight-chain', () => new BoxGeometry(0.025, 1, 0.025).translate(0, 0.5, 0));
+  function makeWeight() {
+    const g = new Group();
+    const core = new Mesh(weightGeo, toonMaterial({ color: new Color(VFX_MATTER.bellbronze).multiplyScalar(0.9) }));
+    addInk(core);
+    g.add(core);
+    const band = new Mesh(weightBandGeo, new MeshBasicMaterial({ color: HEART.vein, toneMapped: false }));
+    g.add(band);
+    const chain = new Mesh(weightChainGeo, toonMaterial({ color: new Color(VFX_MATTER.bellbronze).multiplyScalar(0.55) }));
+    chain.position.y = 0.4;
+    chain.scale.y = 6;
+    g.add(chain);
+    const shadow = groundShadow(0.26, 0.55);
+    return { g, core, shadow, weight: true, chain };
   }
   // ...and the patch it leaves: a jagged cluster of violet crystal punched up
   // through the floor over a dark bruise, never a liquid puddle. It grows in
@@ -316,7 +345,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         seenG.add(e.id);
         let r = globs.get(e.id);
         if (!r) {
-          r = e.shard ? makeShard() : e.sack ? makeSack() : makeGlob();
+          r = e.shard ? makeShard() : e.sack ? makeSack() : e.weight ? makeWeight() : makeGlob();
           if (e.shard) {
             shardIds.add(e.id);
             if (shardIds.size > 64) shardIds.clear();
@@ -336,11 +365,24 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         const u = Math.min(1, Math.max(0, (tick - 1 + alpha - e.startTick) / span));
         const x = e.fromX + (e.tx - e.fromX) * u;
         const z = e.fromZ + (e.tz - e.fromZ) * u;
-        r.g.position.set(x, 0.35 + GLOB_PEAK * 4 * u * (1 - u), z);
-        if (r.shard) r.g.rotation.set(0.5, tSec * 9, 0.35 + u * 2.4);
-        else r.g.rotation.set(tSec * 5, tSec * 3, 0);
-        r.shadow.position.set(x, 0, z);
-        r.shadow.scale.setScalar(0.6 + 0.4 * u);
+        if (r.weight) {
+          // Hangs over its own ring, then drops (gravity) in the last 18
+          // ticks; the chain pays out above it until it lets go.
+          const left = Math.max(0, e.landTick - (tick - 1 + alpha));
+          const fall = Math.min(1, Math.max(0, 1 - left / 18));
+          const hang = 5.6 + 0.12 * Math.sin(tSec * 2 + e.id);
+          r.g.position.set(e.tx + 0.06 * Math.sin(tSec * 1.6 + e.id) * (1 - fall), 0.2 + hang * (1 - fall * fall), e.tz);
+          r.g.rotation.set(0, tSec * 0.6, 0);
+          r.chain.visible = fall <= 0;
+          r.shadow.position.set(e.tx, 0, e.tz);
+          r.shadow.scale.setScalar(0.4 + 0.8 * fall);
+        } else {
+          r.g.position.set(x, 0.35 + GLOB_PEAK * 4 * u * (1 - u), z);
+          if (r.shard) r.g.rotation.set(0.5, tSec * 9, 0.35 + u * 2.4);
+          else r.g.rotation.set(tSec * 5, tSec * 3, 0);
+          r.shadow.position.set(x, 0, z);
+          r.shadow.scale.setScalar(0.6 + 0.4 * u);
+        }
         if (r.ring && e.telegraph) {
           r.ring.set(e.telegraph, tSec, u);
           liveTelegraphs.push(e.telegraph);

@@ -17,10 +17,11 @@
 // underglow).
 //
 // Layouts 29 Bell Stair · 30 Rope Walk · 31 Chime Gallery · 32 Belfry Crown
-// (also the boss room) · 33 Gargoyle Ledge · 34 Windward Court (the ARENA).
+// (also the boss room) · 33 Gargoyle Ledge · 34 Windward Court (the ARENA)
+// · 35 Clock Loft (the Hourwarden's room; content plan 5 slice 1).
 // Spec grammar = env/biomes/barrow.js plus the spire fields:
 //   landmarks  [[x, z, r, kind, yaw]] built pieces (props.js spire branch):
-//              'greatbell' / 'bellframe' (the tell, straddling a parapet:
+//              'greatbell' / 'bellframe' / 'clockface' (the tell, straddling a parapet:
 //              yaw 0 = the north wall, +-PI/2 the side walls) and 'stair'
 //              (a flight of steps up to a broken doorway on the north wall)
 //   ropes      [[x, z]] belfry ropes hanging out of the dark overhead, each
@@ -329,6 +330,41 @@ export const LAYOUT_SPECS = Object.freeze({
       [3.2, 7.4, 0.45, 'drum featherpile'],
       [8.8, 7.4, 0.4, 'gargoyle'],
       [4.2, -7.5, 0.3, 'urn'],
+    ],
+    rooms: ROOMS,
+  }),
+
+  // ---- 35 · Clock Loft (content plan 5 slice 1): the loft behind the gods'
+  // great clock, its dial filling the north parapet (the 'clockface' tell,
+  // the crack across the dial). Also the Hourwarden's room dressing. Ropes
+  // and weights hang out of the works overhead; bell cages and drums keep to
+  // the walls.
+  35: Object.freeze({
+    id: 35,
+    name: 'clockloft',
+    biome: 'spire',
+    mood: MOOD,
+    ground: GROUND,
+    ...SHARED,
+    paths: [
+      { pts: [[0.0, 8.6], [-0.4, 4.0], [0.3, 0.2], [0.0, -4.6]], w: 1.5 },
+      { pts: [[-12.6, 0.4], [-7.0, 0.0], [-4.6, -1.8]], w: 1.1 },
+    ],
+    landmarks: [[0.0, -8.0, 0.8, 'clockface', 0]],
+    ropes: [[-4.0, -7.5], [4.0, -7.5], [-11.0, 1.6], [11.0, -1.4], [-7.4, -7.3]],
+    torches: [[-2.8, -7.3], [2.8, -7.3], [-11.2, -5.0], [11.2, 5.0]],
+    lightIdx: [0, 1],
+    lanterns: [[-8.0, 7.3, HALF_PI], [7.0, 7.3, HALF_PI]],
+    braziers: [[-6.4, -1.4], [6.4, 1.6]],
+    clusters: [
+      [-9.4, -7.2, 0.5, 'gargoyle drum'],
+      [8.0, -7.3, 0.45, 'bellcage limeblock'],
+      [-11.1, 4.8, 0.4, 'bellcage'],
+      [11.1, -4.2, 0.35, 'balustrade'],
+      [-1.0, 7.4, 0.45, 'fallenbell featherpile'],
+      [3.2, 7.4, 0.4, 'ropecoil drum'],
+      [10.8, 6.6, 0.45, 'limeblock urn'],
+      [-11.0, -2.4, 0.35, 'spirebanner'],
     ],
     rooms: ROOMS,
   }),

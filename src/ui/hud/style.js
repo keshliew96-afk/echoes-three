@@ -855,6 +855,8 @@ ${Object.entries({
   // Act V: the Hush drains to grey stillness, the Skyhorn to bronze.
   hush: mix(VFX_MATTER.hushveil, VFX_MATTER.hushpale, 0.35),
   skyhorn: mix(VFX_MATTER.bellbronze, VFX_MATTER.spirestone, 0.35),
+  // Plan 5 slice 1: the Hourwarden in bronze and its dial's pale light.
+  hourwarden: mix(VFX_MATTER.bellbronze, VFX_MATTER.hushpale, 0.3),
 })
   .map(
     ([k, tint]) => `.hud-bn-medal[data-boss="${k}"] {

@@ -3226,5 +3226,18 @@
  "The whole party sets out together": "Todo el grupo parte junto",
  "CO-OP BEST": "MEJOR EN COOPERATIVO",
  "Co-op best: {time}": "Mejor en cooperativo: {time}",
- "Co-op most felled: {n} of {total}": "Más derribados en cooperativo: {n} de {total}"
+ "Co-op most felled: {n} of {total}": "Más derribados en cooperativo: {n} de {total}",
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.": "Sobre el mundo se alza la Aguja Quieta, el campanario donde los dioses se sentaron a mirar. El Cuernocielo guardaba su escalera, y el canto hueco lo torció en la cima. Junto a los dioses se sienta el Silencio, el que los detuvo: la quietud hacia la que cantaba el Chantre Hueco. Tras la gran esfera, el Guardahoras, el reloj de los propios dioses, descuenta las horas que el canto volvió a darle cuerda. Abatir a cualquiera de ellos libera el Verso del Cielo, y la campana suena donde los dioses pueden oírla.",
+ "Archer effects burn in Gilded Hour colours. Cosmetic.": "Los efectos del Arquero arden con los colores Hora Dorada. Cosmético.",
+ "Clock Loft": "Desván del Reloj",
+ "Defeat the Hourwarden.": "Derrota al Guardahoras.",
+ "Fell the Hourwarden": "Abate al Guardahoras",
+ "Gilded Hour tint": "Tinte hora dorada",
+ "Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.": "Péndulo: un carril de aviso por 14, y luego vuelve por el mismo carril por 10. Barrido de Manos: un cono de aviso en sus manos por 13 que te empuja hacia atrás. Toque de las Horas: caen pesas sobre anillos de aviso a su alrededor, 11 cada una, hora tras hora; después se queda sin cuerda y recibe más daño.",
+ "The gods stopped their clock to watch. I wound it again. Now it counts you down.": "Los dioses pararon su reloj para mirar. Yo le di cuerda otra vez. Ahora te descuenta a ti.",
+ "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": "El reloj de los dioses, un autómata de bronce que daba las horas hasta que se sentaron a mirar. El canto hueco le dio cuerda otra vez.",
+ "The Hourwarden": "El Guardahoras",
+ "THE HOURWARDEN": "EL GUARDAHORAS",
+ "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "El Guardahoras guarda el desván del reloj que tienes delante. Cuando su péndulo oscile, quédate fuera de la línea hasta que haya vuelto. Cuando dé las horas, sigue moviéndote y golpéalo mientras se queda sin cuerda.",
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "El Guardahoras se queda sin cuerda para siempre. En el desván, el reloj de los dioses se detiene a la hora en que llegaste."
 }

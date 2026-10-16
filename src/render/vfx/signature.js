@@ -1006,6 +1006,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (ev.glob != null) globKind.set(ev.glob, kind);
     if (ev.affix) return; // ELITE AFFIXES: no lob, the burst swells in place
     if (ev.sack) return millerToss(ev); // the Drowned Miller's flour sack
+    if (ev.weight) return; // the Hourwarden's weights fall, they are not thrown
     // The spore burst, the seed volley and the grave call are their own recipes.
     if (kind === 'rotcap' || kind === 'thornmother' || kind === 'lichram' || kind === 'geode') return; // (the geode's shards fly off its slam)
     const es = vfxEnemyStyle(owner?.kind ?? 'toad', 'lobber');
@@ -1016,6 +1017,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     globKind.delete(ev.id);
     if (ev.affix) return affixBurst(ev); // ELITE AFFIXES: Molten / Frozen
     if (ev.sack) return sackLand(ev);
+    if (ev.weight) return weightLand(ev); // the Hourwarden's clock weights
     if (kind === 'rotcap') {
       sporeCloud(ev.x, ev.z, ev.radius ?? 1.2);
       return;
@@ -1486,6 +1488,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (byId(ev.id)?.kind === 'ashraven') return ravenEnrage(ev);
     if (byId(ev.id)?.kind === 'veinweaver') return weaverEnrage(ev);
     if (byId(ev.id)?.kind === 'skyhorn') return skyhornEnrage(ev);
+    if (byId(ev.id)?.kind === 'hourwarden') return hourwardenEnrage(ev);
     mark('wyrm_enrage');
     const { x, z } = ev;
     kit.pillar({ x, z, radius: 0.5, height: 2.6, color: WYRM.corruption, life: 0.7, opacity: 0.5 });
@@ -2921,6 +2924,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     } else if (b.kind === 'gloamwolf' || b.kind === 'mireking') thirdBossWindup(b, ev);
     else if (b.kind === 'ashraven' || b.kind === 'veinweaver') slice11Windup(b, ev);
     else if (b.kind === 'hush' || b.kind === 'skyhorn') spireWindup(b, ev);
+    else if (b.kind === 'hourwarden') hourwardenWindup(b, ev);
   });
   bus.on('boss_charge', (ev) => {
     mark('thorn_charge');
@@ -3419,6 +3423,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (e.kind === 'gloamwolf' || e.kind === 'mireking') return thirdBossFrame(e, rec);
     if (e.kind === 'ashraven' || e.kind === 'veinweaver') return slice11Frame(e, rec);
     if (e.kind === 'hush' || e.kind === 'skyhorn') return spireFrame(e, rec);
+    if (e.kind === 'hourwarden') return hourwardenFrame(e, rec);
     if (e.kind === 'keener' || e.kind === 'sexton' || e.kind === 'bloom' || e.kind === 'siphon') return barrowHeartFrame(e, rec);
     if (e.kind === 'thornmother') {
       if (e.mode !== 'charge' || rec.clock < THORN.charge.every) return;
@@ -4872,6 +4877,187 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.light({ x, z, radius: 4.2, color: BRONZE, opacity: 0.6, life: 1.4 });
     camfx.dolly(x, z, HORN.camera.dolly, 0.55);
   }
+  // ------------------------------------- The Hourwarden (plan 5 slice 1) --
+  // (docs/THIRD_BOSSES.md "The Spire") The gods' clock: bell bronze and the
+  // pale light of its dial over the hollow song's violet. Ember stays on the
+  // frame that hurts. The Pendulum carves a bronze arc down its lane and back;
+  // the Hand Sweep throws two blade-arcs; the Toll of the Hours draws the dial
+  // on the floor round it and each weight lands on its hour mark; run down,
+  // cogs and spring-sparks spill off it.
+  const HOUR = vfxBossStyle('hourwarden');
+  const DIALC = HOUR.dial;
+  // The Pendulum (out and back): a bronze-and-dial streak sweeps the lane at
+  // waist height with the Ember edge flashing its full width (the hit),
+  // sparks thrown off the bob, scuffed gouges where it grazed the floor.
+  function pendulumPass(ev, back) {
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.len ?? 6;
+    const ang = Math.atan2(d.z, d.x);
+    const SPEED = back ? 20 : 26;
+    const sweep = len / SPEED;
+    const [sx, sz, ex, ez] = back ? [ev.x + d.x * len, ev.z + d.z * len, ev.x, ev.z] : [ev.x, ev.z, ev.x + d.x * len, ev.z + d.z * len];
+    const dx = ex - sx;
+    const dz = ez - sz;
+    kit.streak({ a: { x: ev.x, y: 0.1, z: ev.z }, b: { x: ev.x + d.x * len, y: 0.1, z: ev.z + d.z * len }, width: 1.4, tailW: 1.1, core: EMBER, glow: EMBER, life: 0.24, fall: 2.2, opacity: back ? 0.4 : 0.55 });
+    kit.streak({ a: { x: sx, y: 0.8, z: sz }, b: { x: sx + dx * 0.08, y: 0.8, z: sz + dz * 0.08 }, width: 0.5, tailW: 0.9, core: DIALC, glow: BRONZE, life: sweep + 0.05, travel: { x: dx / sweep, y: 0, z: dz / sweep }, fall: 0.4, opacity: 0.9 });
+    kit.streak({ a: { x: sx, y: 0.85, z: sz }, b: { x: ex, y: 0.85, z: ez }, width: 0.3, tailW: 0.2, core: HOUR.peak, glow: HOUR.corruption, life: sweep + 0.35, fall: 1.2, opacity: 0.6, delay: sweep * 0.3 });
+    const marks = Math.max(2, Math.min(HOUR.pendulum.marks, Math.round(len / 2)));
+    for (let i = 1; i <= marks; i++) {
+      const k = (i - 0.5) / marks;
+      const px = sx + dx * k;
+      const pz = sz + dz * k;
+      after(sweep * k, () => {
+        spray('spark', px, 0.5, pz, Math.round(HOUR.pendulum.sparks / marks), { color: BRONZE, speed: [1.0, 2.6], up: [0.4, 1.4], size: [0.03, 0.06], life: [0.25, 0.5], gravity: 3, drag: 0.6, dir: { x: dx / len, z: dz / len }, dirBias: 0.5, jitter: 0.3 });
+        if (!back) kit.mark({ x: px, z: pz, radius: (len / marks) * 0.5, kind: 'gouge', angle: ang, stretch: 2.4, stain: INK, glow: BRONZE, glowOpacity: 0.3, cool: 0.7, life: 2.4, opacity: 0.35 });
+      });
+    }
+    after(sweep, () => {
+      flare(ex, 0.8, ez, BRONZE, back ? 1.2 : 1.6, { kind: 'star', life: 0.22, core: PARCH, angle: ang });
+      kit.ring({ x: ex, z: ez, r0: 0.2, r1: 1.2, width: 0.08, life: 0.35, core: DIALC, glow: BRONZE, soft: 0.5, y: 0.7 });
+    });
+    kit.light({ x: (sx + ex) / 2, z: (sz + ez) / 2, radius: Math.min(3, len * 0.4), color: BRONZE, opacity: 0.4, life: 0.35, attack: 0.02 });
+    camfx.kick(dx / len, dz / len, HOUR.camera.kick * (back ? 0.35 : 0.6), 0.12);
+  }
+  bus.on('boss_pendulum', (ev) => {
+    mark('hourwarden_pendulum');
+    pendulumPass(ev, false);
+  });
+  bus.on('boss_pendulum_back', (ev) => {
+    mark('hourwarden_backswing');
+    pendulumPass(ev, true);
+  });
+  // The Hand Sweep: two bronze blade-arcs, the long hand wide and the short
+  // one tight behind it, Ember on the cut, the violet edge in the wake.
+  bus.on('boss_hand_sweep', (ev) => {
+    mark('hourwarden_sweep');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const ang = Math.atan2(d.z, d.x);
+    const r = ev.radius ?? 3.4;
+    kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: r * 0.9, width: 0.42, span: 2.44, sweep: 0.09, life: 0.32, core: PARCH, glow: EMBER, soft: 0.5, jag: 0.1, lift: 0.1, y: 0.9, gain: 1.1 });
+    kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: r * 0.62, width: 0.3, span: 2.2, sweep: 0.11, life: 0.3, core: DIALC, glow: BRONZE, soft: 0.6, jag: 0.15, lift: 0.06, y: 0.7, reverse: true, gain: 0.9, delay: 0.05 });
+    kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: r * 0.78, width: 0.16, span: 2.3, sweep: 0.1, life: 0.42, core: HOUR.peak, glow: HOUR.corruption, soft: 0.8, lift: 0.02, y: 0.5, gain: 0.6, opacity: 0.6, delay: 0.03 });
+    flare(ev.x + d.x * r * 0.7, 0.9, ev.z + d.z * r * 0.7, EMBER, 1.5, { life: 0.18, core: PARCH, angle: ang + Math.PI / 2 });
+    spray('spark', ev.x + d.x * r * 0.7, 0.8, ev.z + d.z * r * 0.7, HOUR.sweep.sparks, { color: BRONZE, speed: [1.2, 2.8], up: [0.3, 1.0], size: [0.03, 0.06], life: [0.25, 0.45], gravity: 2.5, drag: 0.6, dir: d, dirBias: 0.5, jitter: 0.8 });
+    kit.mark({ x: ev.x + d.x * r * 0.55, z: ev.z + d.z * r * 0.55, radius: r * 0.5, kind: 'gouge', angle: ang + Math.PI / 2, stretch: 2.8, stain: INK, glow: EMBER, glowOpacity: 0.3, cool: 0.6, life: 2.2, opacity: 0.35 });
+    camfx.kick(d.x, d.z, HOUR.camera.kick * 0.5, 0.1);
+  });
+  // The Toll of the Hours: it strikes its bell (a burst of bronze rings off
+  // its head), and the dial is drawn on the floor round it — a pale chapter
+  // ring through the weights' marks with a tick of light at each hour.
+  bus.on('boss_toll_hours', (ev) => {
+    mark('hourwarden_toll');
+    flare(ev.x, 3.3, ev.z, BRONZE, 2.4, { kind: 'star', life: 0.3, core: PARCH });
+    kit.flash({ x: ev.x, y: 3.2, z: ev.z, color: DIALC, size: 1.2, life: 0.14 });
+    for (let i = 0; i < HOUR.hours.rings; i++) kit.ring({ x: ev.x, z: ev.z, r0: 0.6, r1: 3.6 + i * 1.2, width: 0.08, life: 0.6 + i * 0.15, core: PARCH, glow: i % 2 ? HOUR.corruption : BRONZE, soft: 0.6, y: 2.8 - i * 0.6, delay: i * 0.08 });
+    const spots = Array.isArray(ev.spots) ? ev.spots : [];
+    const R = spots.length ? Math.hypot(spots[0][0] - ev.x, spots[0][1] - ev.z) : 3;
+    kit.ring({ x: ev.x, z: ev.z, r0: R, r1: R + 0.05, width: 0.06, life: 1.2, core: DIALC, glow: HOUR.corruption, soft: 0.7, y: 0.04, opacity: 0.5, thin: 0 });
+    spots.forEach(([sx, sz], i) => {
+      kit.mark({ x: sx, z: sz, radius: 0.5, kind: 'sigil', stain: INK, glow: DIALC, glowOpacity: 0.4, cool: 0.8, life: 1.6 + i * 0.25, opacity: 0.3, delay: i * 0.05 });
+      const a = Math.atan2(sz - ev.z, sx - ev.x);
+      kit.streak({ a: { x: ev.x + Math.cos(a) * 0.9, y: 0.06, z: ev.z + Math.sin(a) * 0.9 }, b: { x: sx, y: 0.06, z: sz }, width: 0.05, tailW: 0.05, core: DIALC, glow: HOUR.corruption, life: 0.5, fall: 1, opacity: 0.45, delay: i * 0.06 });
+    });
+    kit.light({ x: ev.x, z: ev.z, radius: 3.5, color: BRONZE, opacity: 0.45, life: 0.5, attack: 0.02 });
+    camfx.kick(0, 1, HOUR.camera.kick * 0.4, 0.1);
+  });
+  // A weight lands on its hour: the Ember ring flashes (the hit), a ring of
+  // bronze rolls out, stone chips and dust, a dent left in the flags.
+  function weightLand(ev) {
+    mark('hourwarden_weight');
+    const r = ev.radius ?? 1.3;
+    flare(ev.x, 0.4, ev.z, EMBER, 1.6, { kind: 'burst', life: 0.2, core: PARCH });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.26, width: 0.12 });
+    kit.ring({ x: ev.x, z: ev.z, r0: 0.3, r1: r * 1.4, width: 0.1, life: 0.45, core: DIALC, glow: BRONZE, soft: 0.5, y: 0.06 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 0.8, kind: 'crater', stain: LIMESTONE, glow: BRONZE, glowOpacity: 0.3, cool: 1.0, life: 3.2, opacity: 0.45 });
+    spray('chunk', ev.x, 0.2, ev.z, HOUR.hours.chunk, { color: LIMESTONE, speed: [0.8, 2.0], up: [1.0, 2.2], size: [0.05, 0.11], life: [0.5, 0.8], jitter: 0.3 });
+    spray('spark', ev.x, 0.3, ev.z, 6, { color: BRONZE, speed: [0.8, 1.8], up: [0.4, 1.0], size: [0.03, 0.05], life: [0.2, 0.4], gravity: 3, drag: 0.6 });
+    spray('smoke', ev.x, 0.15, ev.z, 2, { color: LIMESTONE, speed: [0.6, 1.2], up: [0.0, 0.2], size: [0.36, 0.5], grow: 1.3, life: [0.6, 0.9], opacity: 0.28, gravity: 0, drag: 2.4 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: BRONZE, opacity: 0.4, life: 0.3, attack: 0.02 });
+  }
+  // Run down: its spring lets go — a burst of little cogs and spring sparks,
+  // the violet in its dial guttering out; wound again, a tick of dial light.
+  bus.on('boss_run_down', (ev) => {
+    mark('hourwarden_rundown');
+    spray('shard', ev.x, 2.2, ev.z, 8, { color: BRONZE, tile: SHARD_TILE.needle, speed: [0.6, 1.6], up: [0.6, 1.6], size: [0.08, 0.12], life: [0.6, 0.9], gravity: 5, spin: [-10, 10], jitter: 0.4 });
+    spray('spark', ev.x, 2.0, ev.z, 10, { color: HOUR.corruption, speed: [0.2, 0.8], up: [-0.6, 0.2], size: [0.04, 0.07], life: [0.5, 0.8], gravity: 1, drag: 1.2, jitter: 0.5 });
+    kit.ring({ x: ev.x, z: ev.z, r0: 1.6, r1: 0.4, width: 0.06, life: 0.5, core: DIALC, glow: HOUR.corruption, soft: 0.6, y: 1.9, opacity: 0.6 });
+  });
+  bus.on('boss_wound', (ev) => {
+    mark('hourwarden_wound');
+    flare(ev.x, 2.0, ev.z, HOUR.corruption, 1.2, { kind: 'star', life: 0.25, core: HOUR.peak });
+    kit.ring({ x: ev.x, z: ev.z, r0: 0.3, r1: 1.6, width: 0.06, life: 0.4, core: DIALC, glow: HOUR.corruption, soft: 0.6, y: 1.9 });
+  });
+  bus.on('boss_hourwarden_phase', (ev) => {
+    mark('hourwarden_phase');
+    anticipate(ev.x, ev.z, 1.8, HOUR.corruption, { y: 2.0, lines: 12, core: HOUR.peak });
+    after(ANTICIP, () => {
+      flare(ev.x, 2.0, ev.z, HOUR.corruption, 2.0, { kind: 'burst', life: 0.32, core: HOUR.peak });
+      for (let i = 0; i < 12; i++) {
+        const a = (i / 12) * TAU;
+        kit.streak({ a: { x: ev.x + Math.cos(a) * 0.8, y: 0.06, z: ev.z + Math.sin(a) * 0.8 }, b: { x: ev.x + Math.cos(a) * 1.1, y: 0.06, z: ev.z + Math.sin(a) * 1.1 }, width: 0.06, tailW: 0.06, core: DIALC, glow: BRONZE, life: 0.6, travel: { x: Math.cos(a) * 3.4, y: 0, z: Math.sin(a) * 3.4 }, fall: 0.2, opacity: 0.8 });
+      }
+    });
+  });
+  function hourwardenEnrage(ev) {
+    mark('hourwarden_enrage');
+    const { x, z } = ev;
+    kit.pillar({ x, z, radius: 0.6, height: 3.4, color: HOUR.corruption, life: 0.8, opacity: 0.5 });
+    flare(x, 2.0, z, HOUR.corruption, 2.4, { kind: 'burst', life: 0.3, core: HOUR.peak, spin: 1.2 });
+    for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.5, r1: 2.6 + i * 0.8, width: 0.12, life: 0.6 + i * 0.12, core: DIALC, glow: i % 2 ? HOUR.corruption : BRONZE, soft: 0.5, y: 0.06 + i * 0.6, delay: i * 0.08 });
+    kit.crack({ x, z, radius: 1.8, glow: HOUR.corruption, life: 2.2, cool: 0.9 });
+    kit.light({ x, z, radius: 3, color: HOUR.corruption, opacity: 0.5, life: 0.8 });
+  }
+  function hourwardenDeath(x, z) {
+    // The clock stops for good: its bell strikes one last clean hour (dial-
+    // light and bronze rings climbing it), the case cracks open and its works
+    // burst out — cogs, springs and hands — and the violet spirals away.
+    mark('hourwarden_death');
+    kit.pillar({ x, z, radius: 1.0, height: 4.6, color: HOUR.corruption, life: 1.4, opacity: 0.65 });
+    flare(x, 2.6, z, DIALC, 3.8, { kind: 'burst', life: 0.5, core: PARCH, spin: 0.8 });
+    kit.flash({ x, y: 2.4, z, color: PARCH, size: 2.4, life: 0.24 });
+    for (let i = 0; i < 4; i++) kit.ring({ x, z, r0: 0.5, r1: 3.6 + i * 1.3, width: 0.24, life: 0.9 + i * 0.25, core: DIALC, glow: i % 2 ? HOUR.corruption : BRONZE, soft: 0.5, y: 0.06 + i * 0.7, delay: i * 0.1 });
+    kit.mark({ x, z, radius: 3.2, kind: 'sigil', stain: INK, glow: DIALC, glowOpacity: 0.45, cool: 2.0, life: 6, opacity: 0.4 });
+    for (let i = 0; i < N(12); i++) {
+      const a = (i / 12) * TAU;
+      kit.streak({ a: { x: x + Math.cos(a) * 0.4, y: 2.0, z: z + Math.sin(a) * 0.4 }, b: { x: x + Math.cos(a) * 0.6, y: 2.1, z: z + Math.sin(a) * 0.6 }, width: 0.08, tailW: 0, core: DIALC, glow: i % 3 === 0 ? HOUR.corruption : BRONZE, life: 0.8, travel: { x: Math.cos(a) * 3.2, y: 2.0, z: Math.sin(a) * 3.2 }, fall: 0.25 });
+    }
+    spray('shard', x, 2.2, z, 22, { color: BRONZE, tile: SHARD_TILE.needle, speed: [1.0, 2.8], up: [1.4, 3.2], size: [0.1, 0.17], life: [0.9, 1.3], gravity: 5, spin: [-10, 10], jitter: 0.5 });
+    spray('chunk', x, 1.2, z, 14, { color: LIMESTONE, speed: [0.8, 2.2], up: [1.0, 2.4], size: [0.07, 0.14], life: [0.7, 1.1], jitter: 0.6 });
+    spray('spark', x, 0.6, z, 36, { color: HOUR.corruption, speed: [0.3, 1.2], up: [0.8, 2.4], size: [0.06, 0.12], life: [1.4, 2.2], gravity: -0.3, drag: 1.2, jitter: 1.0 });
+    spray('smoke', x, 0.4, z, 8, { color: LIMESTONE, speed: [0.4, 1.2], up: [0.3, 0.8], size: [0.5, 0.7], grow: 1.6, life: [1.3, 1.9], opacity: 0.34, gravity: -0.2, drag: 2.0, jitter: 1.0 });
+    kit.light({ x, z, radius: 4.4, color: BRONZE, opacity: 0.6, life: 1.4 });
+    camfx.dolly(x, z, HOUR.camera.dolly, 0.55);
+  }
+  // Wind-ups: the pendulum drawn back (bronze glints at its case and a tick
+  // of dial-light), the hands raised (two glints at the blade tips).
+  function hourwardenWindup(b, ev) {
+    const f = faceOf(b);
+    if (ev.attack === 'pendulum') {
+      mark('hourwarden_swing_windup');
+      anticipate(b.x + f.x * 0.5, b.z + f.z * 0.5, 0.8, BRONZE, { y: 0.9, lines: 8, core: PARCH });
+      flare(b.x + f.x * 0.6, 1.0, b.z + f.z * 0.6, HOUR.corruption, 0.9, { life: 0.5, core: HOUR.peak });
+    } else if (ev.attack === 'sweep') {
+      mark('hourwarden_sweep_windup');
+      for (const sd of [-1, 1]) flare(b.x - f.z * 1.2 * sd, 2.6, b.z + f.x * 1.2 * sd, HOUR.corruption, 0.8, { life: 0.4, core: HOUR.peak });
+    }
+  }
+  // Per frame: run down, a slow drip of spring sparks off its key; striking
+  // the hour, dial-light motes rise off it; enraged, violet sparks off the
+  // spinning hands.
+  function hourwardenFrame(e, rec) {
+    if (e.mode === 'rundown' && rec.clock >= 0.12) {
+      rec.clock = 0;
+      const f = unit2(e.faceX ?? 0, e.faceZ ?? 1);
+      spray('spark', e.x - f.x * 0.8, 2.0, e.z - f.z * 0.8, 1, { color: BRONZE, speed: [0.1, 0.4], up: [0.2, 0.5], size: [0.04, 0.07], life: [0.4, 0.7], gravity: 1.5, drag: 1.0, opacity: 0.9 });
+    } else if (e.mode === 'strike' && rec.clock >= 0.06) {
+      rec.clock = 0;
+      spray('spark', e.x, 2.6, e.z, 1, { color: DIALC, speed: [0.05, 0.3], up: [0.4, 0.9], size: [0.05, 0.08], life: [0.6, 0.9], gravity: -0.4, drag: 1.4, jitter: 0.6, opacity: 0.85 });
+    } else if (e.enraged && rec.clock >= 0.25) {
+      rec.clock = 0;
+      spray('spark', e.x, 2.0, e.z, 1, { color: HOUR.corruption, speed: [0.05, 0.2], up: [0.4, 0.8], size: [0.05, 0.08], life: [0.6, 0.9], gravity: -0.3, drag: 1.4, jitter: 0.6, opacity: 0.85 });
+    }
+  }
+
   // Wind-ups: the Hush's Great Hush draws the room in (handled per frame for
   // its whole warning); its note gathers at the raised finger. The Skyhorn
   // paws grit up before a rush and its horns glint before a toll.
@@ -4942,13 +5128,13 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
   }
 
-  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath, gloamwolf: gloamwolfDeath, mireking: mirekingDeath, ashraven: ashravenDeath, veinweaver: veinweaverDeath, hush: hushDeath, skyhorn: skyhornDeath };
+  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath, gloamwolf: gloamwolfDeath, mireking: mirekingDeath, ashraven: ashravenDeath, veinweaver: veinweaverDeath, hush: hushDeath, skyhorn: skyhornDeath, hourwarden: hourwardenDeath };
 
   // Per frame: the Heron's drive throws spray off its legs and stops in a
   // splash; the burrowed Wyrm leaves a trail of turned earth so the party can
   // read where it is tunnelling.
   const bossMode = new Map(); // boss id -> { mode, clock }
-  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus', 'keener', 'sexton', 'bloom', 'siphon', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn']);
+  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus', 'keener', 'sexton', 'bloom', 'siphon', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden']);
   function bossFrame(dt) {
     for (const e of world.entities()) {
       if (S2_FRAME.has(e.kind)) {

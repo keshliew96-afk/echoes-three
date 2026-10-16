@@ -3256,5 +3256,18 @@
  "The whole party sets out together": "Весь отряд выступает вместе",
  "CO-OP BEST": "ЛУЧШЕЕ В КООПЕРАТИВЕ",
  "Co-op best: {time}": "Лучшее в кооперативе: {time}",
- "Co-op most felled: {n} of {total}": "Рекорд в кооперативе: {n} из {total}"
+ "Co-op most felled: {n} of {total}": "Рекорд в кооперативе: {n} из {total}",
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.": "Над миром стоит Безмолвный Шпиль, звонница, где боги сели смотреть. Небесный Рог стерёг его лестницу, и наверху полая песнь обратила его. Рядом с богами сидит Тишь, безмолвие, что их остановило: тишина, в которую пел Полый Кантор. За огромным циферблатом Хранитель Часов, часы самих богов, отсчитывает часы, которые песнь снова в него завела. Срази любого из них, и Строфа Неба освободится, а колокол зазвонит там, где его услышат боги.",
+ "Archer effects burn in Gilded Hour colours. Cosmetic.": "Эффекты Лучника в цветах «Золочёный час». Косметика.",
+ "Clock Loft": "Часовой чердак",
+ "Defeat the Hourwarden.": "Победи Хранителя Часов.",
+ "Fell the Hourwarden": "Срази Хранителя Часов",
+ "Gilded Hour tint": "Оттенок «Золочёный час»",
+ "Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.": "Маятник: полоса предупреждения на 14, затем он возвращается по той же полосе на 10. Взмах рук: конус предупреждения у его рук на 13, отбрасывает назад. Бой часов: гири падают на кольца предупреждения вокруг него, по 11, час за часом; затем у него кончается завод и он получает больше урона.",
+ "The gods stopped their clock to watch. I wound it again. Now it counts you down.": "Боги остановили свои часы, чтобы смотреть. Я завёл их снова. Теперь они отсчитывают тебя.",
+ "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": "Часы богов, бронзовый часовой автомат, что отбивал часы, пока боги не сели смотреть. Полая песнь завела его снова.",
+ "The Hourwarden": "Хранитель Часов",
+ "THE HOURWARDEN": "ХРАНИТЕЛЬ ЧАСОВ",
+ "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "Хранитель Часов стережёт часовой чердак впереди. Когда качнётся маятник, держись вне линии, пока он не вернётся. Когда он бьёт часы, не стой на месте, а потом бей его, пока кончается завод.",
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "У Хранителя Часов навсегда кончается завод. На чердаке часы богов останавливаются на часе твоего прихода."
 }

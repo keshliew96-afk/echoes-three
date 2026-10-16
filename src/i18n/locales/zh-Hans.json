@@ -3116,5 +3116,18 @@
  "The whole party sets out together": "全队一同出发",
  "CO-OP BEST": "合作最佳",
  "Co-op best: {time}": "合作最佳：{time}",
- "Co-op most felled: {n} of {total}": "合作最多击败：{total} 个中的 {n} 个"
+ "Co-op most felled: {n} of {total}": "合作最多击败：{total} 个中的 {n} 个",
+ "Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.": "世界之上矗立着静止尖塔，那是众神坐下观望的钟楼。天角守护着它的阶梯，却在塔顶被空洞之歌扭曲。众神身旁坐着寂静，那令众神停下的沉默：空洞领唱者对其歌唱的静谧。巨大表盘之后，守时者，众神自己的时钟，正倒数着空洞之歌重新为它上紧的时辰。击败其中任何一个，天空诗节便得解放，钟声将在众神听得见的地方响起。",
+ "Archer effects burn in Gilded Hour colours. Cosmetic.": "弓箭手特效变为鎏金时刻配色。仅外观。",
+ "Clock Loft": "钟表阁楼",
+ "Defeat the Hourwarden.": "击败守时者。",
+ "Fell the Hourwarden": "斩杀守时者",
+ "Gilded Hour tint": "鎏金时刻色调",
+ "Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.": "钟摆：警示通道造成14，随后沿同一通道回摆造成10。手扫：手前警示扇形造成13并将你击退。报时：重锤逐个时辰落在它周围的警示圈上，各造成11；之后它发条松尽，受到更多伤害。",
+ "The gods stopped their clock to watch. I wound it again. Now it counts you down.": "众神停下时钟来观望。我又将它上紧。如今它为你倒数。",
+ "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": "众神的时钟，一尊青铜报时人偶，曾一直敲响时辰，直到众神坐下观望。空洞之歌又为它上紧了发条。",
+ "The Hourwarden": "守时者",
+ "THE HOURWARDEN": "守时者",
+ "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "前方的钟表阁楼由守时者看守。钟摆摆动时，待它摆回之前别进入那条线。它开始报时时，保持移动，趁它发条松尽时攻击它。",
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "守时者的发条永远松尽了。阁楼里，众神的时钟停在你到来的那一刻。"
 }

@@ -726,6 +726,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(o.affix ? { affix: o.affix } : {}),
       ...(o.shard ? { shard: true } : {}),
       ...(o.sack ? { sack: true } : {}),
+      ...(o.weight ? { weight: true } : {}),
       telegraph: {
         kind: 'ring',
         startTick: tick,
@@ -763,6 +764,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       landTick: g.landTick,
       ...(o.affix ? { affix: o.affix } : {}),
       ...(o.sack ? { sack: true } : {}),
+      ...(o.weight ? { weight: true } : {}),
     });
     return g;
   }
@@ -794,6 +796,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(g.affix ? { affix: g.affix } : {}),
       ...(g.shard ? { shard: true } : {}),
       ...(g.sack ? { sack: true } : {}),
+      ...(g.weight ? { weight: true } : {}),
     });
     registry.despawn(g.id);
     const src = owner ?? { id: g.ownerId, kind: g.ownerKind, faceX: 0, faceZ: 1 };

@@ -934,6 +934,15 @@ const ICONS = {
     ['path', { d: 'M11.4 13.6 L6.4 12.4 L9.4 15.6 Z M20.6 13.6 L25.6 12.4 L22.6 15.6 Z', fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M13.8 27 C13.8 25.6 18.2 25.6 18.2 27 L19 30.5 H13 Z', fill: 'currentColor', stroke: 'none' }],
   ],
+  // Content plan 5 slice 1. The Hourwarden: a clock face under a small bell,
+  // twelve hour ticks, two hands stopped at a quarter to, a crack across it.
+  boss_hourwarden: [
+    ['path', { d: 'M13.2 6.4 C13.2 3.2 18.8 3.2 18.8 6.4 L19.6 8.4 H12.4 Z M15.2 1.4 H16.8 V3 H15.2 Z', fill: 'currentColor', stroke: 'none' }],
+    ['circle', { cx: 16, cy: 19.4, r: 10.6, 'stroke-width': 2 }],
+    ['path', { d: 'M16 10.2 V12.2 M16 26.6 V28.6 M6.8 19.4 H8.8 M23.2 19.4 H25.2 M11.4 11.4 L12.2 12.8 M20.6 11.4 L19.8 12.8 M11.4 27.4 L12.2 26 M20.6 27.4 L19.8 26 M8 14.8 L9.4 15.6 M24 14.8 L22.6 15.6 M8 24 L9.4 23.2 M24 24 L22.6 23.2', 'stroke-width': 1.3 }],
+    ['path', { d: 'M16 19.4 L10.6 19.4 M16 19.4 L18.6 13.4', 'stroke-width': 2 }],
+    ['path', { d: 'M20.4 21.6 L22.4 23.8 L21.2 25 L23.6 27.6', 'stroke-width': 1 }],
+  ],
   // Glint coin: rim, inner ring, a glint stroke.
   coin: [
     ['circle', { cx: 16, cy: 16, r: 12.5 }],

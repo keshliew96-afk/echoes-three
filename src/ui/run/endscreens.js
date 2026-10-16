@@ -32,6 +32,7 @@ const BOSS_WIN_FLAVOUR = {
   // Act V (docs/ACT_V_BOSSES.md).
   hush: () => t('The Hush breaks. In the gods’ belfry, a bell rings again.'),
   skyhorn: () => t('The Skyhorn falls. The stair to the gods’ belfry stands open.'),
+  hourwarden: () => t('The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.'),
   // Third bosses (docs/THIRD_BOSSES.md).
   gloamwolf: () => t('The Gloam Wolf lies down at last. The wood’s long night is over.'),
   mireking: () => t('The Mire King sinks into the silt. The millpond goes still.'),
