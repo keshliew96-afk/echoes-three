@@ -144,6 +144,8 @@ export const VFX_MATTER = Object.freeze({
   lichen: '#D4CF9C', // its antler lichen: a pale cream-sage glow (never Bright Heal)
   rust: '#7A4E36', // the Lockkeeper's key and chain: wet old iron gone to rust
   gravebronze: '#6E6248', // the Gravebell Ringer's bell: ash-dulled bronze
+  // The Still Spire's second champion (content plan 5 slice 2).
+  habit: '#B4B8C2', // the Bell Abbess's habit: pale belfry linen, a cool still grey (never Bright Heal)
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

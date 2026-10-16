@@ -3128,7 +3128,6 @@
  "Skyward": "Ввысь",
  "Clear Level V, the Still Spire, and bring the Verse of Sky home.": "Пройди уровень V, Безмолвный Шпиль, и принеси домой Стих Неба.",
  "Windfall": "Ветролом",
- "Fell the Gale Herald, the champion of the Still Spire.": "Срази Глашатая Бурь, чемпиона Безмолвного Шпиля.",
  "Five Crowns": "Пять корон",
  "Break the Hush": "Разбей Тишь",
  "Fell the Hush on the Harrowing challenge.": "Срази Тишь на испытании «Суровая».",
@@ -3148,7 +3147,6 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "Цепной крюк: полоса предупреждения к герою; ключ летит по ней на 10 и подтаскивает тебя к его ногам. Поворот ключа: кольцо вокруг него запирается на 16 и сильно замедляет. Уйди с полосы. Ниже половины здоровья впадает в ярость.",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "Погребальный звон: широкое кольцо вокруг него звенит на 11 и замедляет каждого героя внутри. Зов могилы: кольцо предупреждения под героем взрывается пеплом на 14 и тлеет, замедляя. Ниже половины здоровья впадает в ярость.",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "Удар жилой: полоса предупреждения к герою режет на 13, и она пьёт немного здоровья за каждого задетого героя. Пульс Сердца: кольцо вокруг неё бьётся на 14, затем восемь хрустальных осколков разлетаются во все стороны, по 7. Ниже половины здоровья впадает в ярость.",
- "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "Срази по чемпиону в каждой из пяти земель, включая Глашатая Бурь. Засчитывается любой из двух чемпионов земли.",
  "{name} stands in this room. {trade}": "{name} стоит в этой комнате. {trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name} забирает ваш ключ. Когда комната будет зачищена, вас ждёт лучшая реликвия.",
  "{name}: {blessing} for 60 s ({text}).": "{name}: {blessing} на 60 с ({text}).",
@@ -3269,5 +3267,10 @@
  "The Hourwarden": "Хранитель Часов",
  "THE HOURWARDEN": "ХРАНИТЕЛЬ ЧАСОВ",
  "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "Хранитель Часов стережёт часовой чердак впереди. Когда качнётся маятник, держись вне линии, пока он не вернётся. Когда он бьёт часы, не стой на месте, а потом бей его, пока кончается завод.",
- "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "У Хранителя Часов навсегда кончается завод. На чердаке часы богов останавливаются на часе твоего прихода."
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "У Хранителя Часов навсегда кончается завод. На чердаке часы богов останавливаются на часе твоего прихода.",
+ "The Bell Abbess": "Колокольная аббатиса",
+ "The abbess of the gods' belfry, who rang the hours for them until they fell still, and keeps the vigil still. She has never let go of the rope.": "Аббатиса колокольни богов, что отбивала им часы, пока они не застыли, и до сих пор несёт бдение. Верёвку она так и не выпустила.",
+ "Rope Swing: a warning lane at a hero; she swings down it on the great bell's rope for 14 and knocks you aside. Vesper Peal: a warning cone in front of her hand-bell rings for 11 and rings you still, slowing you hard. Below half health she rages.": "Взмах на верёвке: полоса предупреждения к герою; она проносится по ней на верёвке большого колокола на 14 и отбрасывает в сторону. Вечерний звон: конус предупреждения перед её колокольчиком звенит на 11 и сковывает тебя, сильно замедляя. Ниже половины здоровья впадает в ярость.",
+ "Fell a champion of the Still Spire, the Gale Herald or the Bell Abbess.": "Срази чемпиона Безмолвного Шпиля: Глашатая Бурь или Колокольную аббатису.",
+ "Fell a champion in each of the five lands. Either of a land's two champions counts.": "Срази по чемпиону в каждой из пяти земель. Засчитывается любой из двух чемпионов земли."
 }

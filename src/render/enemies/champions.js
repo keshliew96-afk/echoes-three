@@ -66,7 +66,7 @@ import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 import { impactFx } from '../vfx/hub.js';
 import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
-import { SECOND_CHAMPION_BUILDERS, SECOND_CHAMPION_CROWN_Y, hartLift } from './champions2.js';
+import { SECOND_CHAMPION_BUILDERS, SECOND_CHAMPION_CROWN_Y, hartLift, abbessLift } from './champions2.js';
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 const inkMat = () => new MeshBasicMaterial({ color: exactColor(PALETTE.voidCharcoal), toneMapped: false });
@@ -1225,12 +1225,21 @@ export function createChampionFx({ root, world, bus, cosmetic }) {
       const m = marks.get(e.id);
       const ix = e.x;
       const iz = e.z;
-      const up = e.kind === 'gale_herald' ? heraldLift(e, world.tick) : e.kind === 'moss_hart' ? hartLift(e, world.tick) : 0;
+      const up = e.kind === 'gale_herald' ? heraldLift(e, world.tick) : e.kind === 'moss_hart' ? hartLift(e, world.tick) : e.kind === 'bell_abbess' ? abbessLift(e, world.tick) : 0;
       m.crown.g.position.set(ix, (CHAMPION_CROWN_Y[e.kind] ?? 2.6) + up + 0.06 * Math.sin(tSec * 2), iz);
       // The Gale Herald aloft: its wingbeats push pale air and dust down.
       if (e.kind === 'gale_herald' && up > 0.3 && cosmetic.range(0, 1) < dt * 14) {
         impactFx.spray('smoke', ix, 0.12, iz, 1, { color: VFX_MATTER.spirestone, speed: [0.5, 1.1], up: [0.0, 0.15], size: [0.34, 0.5], grow: 1.3, life: [0.5, 0.8], opacity: 0.2, gravity: 0, drag: 2.4, jitter: 0.4 });
         impactFx.spray('spark', ix, up + 1.2, iz, 1, { color: VFX_MATTER.gust, speed: [0.2, 0.6], up: [-1.4, -0.6], size: [0.04, 0.07], life: [0.4, 0.7], gravity: 0, drag: 1.2, jitter: 0.9, opacity: 0.7 });
+      }
+      // The Bell Abbess on her rope: the air she cuts streams off behind her
+      // in pale ribbons, and dust is whipped up off the floor beneath.
+      if (e.kind === 'bell_abbess' && up > 0.2 && cosmetic.range(0, 1) < dt * 22) {
+        const tel = e.telegraph;
+        const bx = tel ? -(tel.dirX ?? 0) : 0;
+        const bz = tel ? -(tel.dirZ ?? 0) : 0;
+        impactFx.spray('spark', ix, up + 1.4, iz, 1, { color: VFX_MATTER.gust, speed: [1.2, 2.2], up: [-0.2, 0.2], size: [0.04, 0.07], life: [0.3, 0.5], gravity: 0, drag: 1.6, jitter: 0.4, opacity: 0.75, dir: { x: bx, z: bz }, dirBias: 0.85 });
+        if (cosmetic.range(0, 1) < 0.5) impactFx.spray('smoke', ix, 0.12, iz, 1, { color: VFX_MATTER.spirestone, speed: [0.6, 1.2], up: [0.0, 0.15], size: [0.32, 0.46], grow: 1.3, life: [0.45, 0.7], opacity: 0.18, gravity: 0, drag: 2.4, jitter: 0.4, dir: { x: bx, z: bz }, dirBias: 0.6 });
       }
       m.crown.g.rotation.y = tSec * 0.9;
       m.sigil.g.position.set(ix, 0, iz);

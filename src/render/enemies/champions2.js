@@ -1,5 +1,6 @@
 // SECOND CHAMPIONS (plan 4 slice 8, docs/CHAMPIONS.md "Second champions"):
-// the second lord of each of Acts I to IV. Same grammar as the first four
+// the second lord of each of Acts I to IV, and of the Still Spire (content
+// plan 5 slice 2). Same grammar as the first four
 // (render/enemies/champions.js): flat-faceted primitives, cool hides with a
 // value structure, ink on the big masses, a contact shadow, ONE indigo
 // corruption tell each, about twice a heavy's height; the crown, the sigil
@@ -25,6 +26,14 @@
 //                     and two long vein whips. Vein Lash: one whip drawn back,
 //                     then cracked out down the lane. Heart Pulse: the heart
 //                     swells, the spines flare, the roots lift
+//   bell_abbess       (content plan 5 slice 2, the Still Spire) a tall abbess
+//                     in a pale habit and a winged wimple, a porcelain face
+//                     with shut eyes, a bronze hand-bell and the great bell's
+//                     rope rising out of sight; the rope's sally is the indigo
+//                     tell. Rope Swing: both hands on the rope, a crouch, then
+//                     she rides it down the lane and drops at its end. Vesper
+//                     Peal: the hand-bell raised up and back, then rung out
+//                     down the cone
 //
 // Faces +Z; pose({ t, tick, walkPhase, moveK, telegraphK, e }) (e = the sim
 // entity, READ ONLY). Render-only.
@@ -979,11 +988,259 @@ export function buildVeinMatron() {
   };
 }
 
+// -------------------------------------------------------- BELL ABBESS --
+// (content plan 5 slice 2) The Still Spire's second lord: a tall, still
+// abbess in a pale belfry habit with a great winged wimple (the starched
+// cornette spreads like the Spire's stone wings), a porcelain face with its
+// eyes shut, a bronze hand-bell in her right hand and, in her left, the
+// great bell's rope rising out of sight into the belfry. The tell is the
+// rope's sally (its woven grip), indigo, glowing at her fist.
+//
+// Its height on the swing: she grips the rope and stands through the first
+// half of the warning, then rides the rope up in an arc (~1.1 u at the top)
+// and drops at the lane's end by 92%. 0 unless she is mid-swing
+// (`e.flight`). Shared with the presence layer (the crown rides up too).
+export function abbessLift(e, tick) {
+  const tel = e && e.telegraph;
+  if (!e || !e.flight || !tel || tel.move !== 'rope_swing') return 0;
+  const q = (progress(e, tick) - 0.5) / 0.42;
+  return q > 0 && q < 1 ? 1.1 * Math.sin(Math.PI * q) : 0;
+}
+const ROPE_TOP = 7.5; // where the rope's unseen anchor hangs (u above the floor)
+export function buildBellAbbess() {
+  const s = shell('bell_abbess');
+  const { rig, track } = s;
+  const habitC = new Color(VFX_MATTER.habit).lerp(new Color(PALETTE.signalBlue), 0.06);
+  const habit = track(flashable(habitC));
+  const habitDark = track(flashable(habitC.clone().lerp(slate(0.25, 0.22), 0.55)));
+  const wimpleM = track(flashable(new Color(PALETTE.parchment).lerp(habitC, 0.35).multiplyScalar(0.92)));
+  wimpleM.side = DoubleSide;
+  const porcelain = track(flashable(new Color(PALETTE.bone).lerp(new Color(PALETTE.parchment), 0.4).multiplyScalar(0.92)));
+  const bronzeC = new Color(VFX_MATTER.bellbronze).lerp(slate(0.2, 0.3), 0.2).multiplyScalar(0.9);
+  const bronze = track(flashable(bronzeC));
+  bronze.side = DoubleSide;
+  const bronzeDark = track(flashable(bronzeC.clone().multiplyScalar(0.55)));
+  const hemp = track(flashable(new Color(VFX_MATTER.hemp)));
+  const body = new Group(); // the whole figure (crouches and tilts on the swing)
+  rig.add(body);
+  // The habit: a long fall from the shoulders to the floor, a darker
+  // scapular down its front, a bronze-dark hem.
+  const robe = new Group();
+  body.add(robe);
+  const skirt = new Mesh(shared('ba-skirt', () => new ConeGeometry(0.62, 1.7, 10, 1, true).translate(0, 0.85, 0)), habit);
+  skirt.material.side = DoubleSide;
+  addInk(skirt);
+  robe.add(skirt);
+  const hem = new Mesh(shared('ba-hem', () => new TorusGeometry(0.6, 0.035, 4, 22).rotateX(Math.PI / 2).translate(0, 0.04, 0)), bronzeDark);
+  robe.add(hem);
+  const folds = [];
+  for (let i = 0; i < 7; i++) {
+    const a = (i / 7) * Math.PI * 2 + 0.2;
+    const f = new Mesh(shared('ba-fold', () => new BoxGeometry(0.05, 1.5, 0.04).translate(0, -0.75, 0)), habitDark);
+    f.position.set(Math.sin(a) * 0.36, 1.62, Math.cos(a) * 0.36);
+    f.rotation.set(Math.cos(a) * 0.13, 0, -Math.sin(a) * 0.13);
+    robe.add(f);
+    folds.push(f);
+  }
+  const scap = new Mesh(shared('ba-scap', () => new BoxGeometry(0.34, 1.45, 0.05).translate(0, -0.72, 0)), habitDark);
+  scap.position.set(0, 1.95, 0.29);
+  scap.rotation.x = -0.12;
+  addInk(scap);
+  body.add(scap);
+  // The upper body: a narrow tapered torso and a short cape over it.
+  const torso = new Group();
+  torso.position.y = 1.62;
+  body.add(torso);
+  const chest = new Mesh(shared('ba-chest', () => new CylinderGeometry(0.24, 0.33, 0.62, 9).translate(0, 0.31, 0)), habit);
+  addInk(chest);
+  torso.add(chest);
+  const cape = new Mesh(shared('ba-cape', () => new ConeGeometry(0.46, 0.56, 9, 1, true).translate(0, 0.32, 0)), habitDark);
+  cape.material.side = DoubleSide;
+  cape.position.y = 0.32;
+  addInk(cape);
+  torso.add(cape);
+  // A bronze cord at the waist with a little bell knotted on it.
+  const cord = new Mesh(shared('ba-cord', () => new TorusGeometry(0.31, 0.025, 4, 16).rotateX(Math.PI / 2)), bronze);
+  cord.position.y = 0.02;
+  torso.add(cord);
+  // Head: a porcelain face under the wimple, its eyes shut (two ink lines).
+  const head = new Group();
+  head.position.set(0, 0.86, 0.02);
+  torso.add(head);
+  const face = new Mesh(shared('ba-face', () => new SphereGeometry(0.15, 10, 8)), porcelain);
+  face.scale.set(0.9, 1.15, 0.9);
+  head.add(face);
+  for (const side of [-1, 1]) {
+    const lid = new Mesh(shared('ba-lid', () => new BoxGeometry(0.06, 0.012, 0.02)), inkMat());
+    lid.position.set(side * 0.055, 0.02, 0.13);
+    lid.rotation.z = side * -0.25;
+    head.add(lid);
+  }
+  const coif = new Mesh(shared('ba-coif', () => new SphereGeometry(0.19, 10, 7, 0, Math.PI * 2, 0, Math.PI * 0.62)), wimpleM);
+  coif.position.set(0, 0.03, -0.03);
+  addInk(coif);
+  head.add(coif);
+  const bib = new Mesh(shared('ba-bib', () => new ConeGeometry(0.3, 0.3, 9, 1, true).translate(0, -0.15, 0)), wimpleM);
+  bib.position.y = -0.12;
+  head.add(bib);
+  // The cornette: two great starched wings swept up and out from the coif.
+  const wings = [];
+  for (const side of [-1, 1]) {
+    const w = new Group();
+    w.position.set(side * 0.12, 0.1, -0.02);
+    head.add(w);
+    const sheet = new Mesh(shared('ba-wing', () => new BoxGeometry(0.82, 0.03, 0.42).translate(0.41, 0, 0)), wimpleM);
+    sheet.rotation.set(0, 0, 0.62);
+    sheet.scale.x = side;
+    addInk(sheet);
+    w.add(sheet);
+    const tipM = new Mesh(shared('ba-wtip', () => new ConeGeometry(0.21, 0.36, 4).rotateZ(-Math.PI / 2).translate(0.18, 0, 0)), wimpleM);
+    tipM.position.set(side * 0.66, 0.52, 0);
+    tipM.rotation.z = side > 0 ? 0.62 : Math.PI - 0.62;
+    w.add(tipM);
+    wings.push({ g: w, side });
+  }
+  // Arms. Left: up at the rope. Right: the hand-bell.
+  const armL = new Group();
+  armL.position.set(-0.27, 0.52, 0.04);
+  torso.add(armL);
+  const armR = new Group();
+  armR.position.set(0.27, 0.52, 0.04);
+  torso.add(armR);
+  for (const a of [armL, armR]) {
+    const sleeve = new Mesh(shared('ba-sleeve', () => new CylinderGeometry(0.07, 0.12, 0.62, 6).translate(0, -0.31, 0)), habit);
+    addInk(sleeve);
+    a.add(sleeve);
+    const hand = new Mesh(shared('ba-hand', () => new SphereGeometry(0.055, 6, 5)), porcelain);
+    hand.position.y = -0.64;
+    a.add(hand);
+  }
+  // The rope: from her left fist up into the belfry, on its own pivot so it
+  // can lean to the anchor while she swings. Its sally (the woven grip) is
+  // the indigo tell.
+  const ropePivot = new Group();
+  ropePivot.position.y = -0.64;
+  armL.add(ropePivot);
+  const rope = new Mesh(shared('ba-rope', () => new CylinderGeometry(0.022, 0.022, 1, 5).translate(0, 0.5, 0)), hemp);
+  ropePivot.add(rope);
+  const sally = new Mesh(shared('ba-sally', () => new CylinderGeometry(0.05, 0.05, 0.42, 7).translate(0, 0.28, 0)), tellMat());
+  ropePivot.add(sally);
+  const sg = tellGlow(0.8, 0.3);
+  sg.position.y = 0.3;
+  ropePivot.add(sg);
+  const tail = new Mesh(shared('ba-tail', () => new CylinderGeometry(0.02, 0.015, 0.5, 4).translate(0, -0.25, 0)), hemp);
+  ropePivot.add(tail);
+  // The hand-bell: a bronze cup on a short haft, its clapper lit on the peal.
+  const bellG = new Group();
+  bellG.position.y = -0.64;
+  armR.add(bellG);
+  const haft = new Mesh(shared('ba-haft', () => new CylinderGeometry(0.025, 0.03, 0.22, 5).translate(0, -0.1, 0)), bronzeDark);
+  bellG.add(haft);
+  const cup = new Mesh(shared('ba-cup', () => new CylinderGeometry(0.09, 0.22, 0.3, 10, 1, true).translate(0, -0.36, 0)), bronze);
+  addInk(cup);
+  bellG.add(cup);
+  const crownB = new Mesh(shared('ba-cupcrown', () => new SphereGeometry(0.095, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2).translate(0, -0.22, 0)), bronze);
+  bellG.add(crownB);
+  const clapper = new Mesh(shared('ba-clapper', () => new SphereGeometry(0.045, 6, 5).translate(0, -0.48, 0)), bronzeDark);
+  bellG.add(clapper);
+  const peal = softGlow(mix(VFX_MATTER.bellbronze, PALETTE.parchment, 0.55), 1.0, 0);
+  peal.position.y = -0.46;
+  bellG.add(peal);
+  s.group.add(groundShadow(0.8, 0.8));
+  const strike = clip();
+  let lastT = null;
+  let liftCur = 0;
+  let sway = 0;
+  let swayV = 0;
+  let ringV = 0;
+  let ring = 0;
+  return {
+    group: s.group,
+    mats: s.mats,
+    setYaw: s.setYaw,
+    pose({ t, tick = 0, walkPhase = 0, moveK = 0, telegraphK = 0, e }) {
+      const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
+      lastT = t;
+      const k = strike(t, e ? e.moveTick : -1, 0.5);
+      const last = e ? e.lastMove : null;
+      const tel = e && e.telegraph;
+      const swinging = moving(e, 'rope_swing');
+      const swingK = swinging ? telegraphK : 0;
+      const pealK = moving(e, 'vesper_peal') ? telegraphK : 0;
+      const prog = progress(e, tick);
+      const dropped = last === 'rope_swing' ? k : 0;
+      const rung = last === 'vesper_peal' ? k : 0;
+      const rage = e && e.rage ? 1 : 0;
+      const entering = e && e.mode === 'enter' ? 1 : 0;
+      // Aloft: the sim's flight drives the height; a cut-short swing drops.
+      const want = abbessLift(e, tick);
+      liftCur = swinging ? want : approach(liftCur, 0, 16, dt);
+      const ride = swinging && prog > 0.5 && prog < 0.92 ? 1 : 0;
+      const grip = swinging ? smooth(prog / 0.3) * (prog < 0.5 ? 1 : 0) : 0; // the crouch before she rides
+      body.position.y = liftCur + 0.03 * Math.sin(t * 1.1) - 0.22 * grip - 0.18 * dropped;
+      // She glides rather than walks: a slow sway, the habit swinging.
+      body.rotation.z = 0.03 * Math.sin(walkPhase * 0.6) * moveK + (rage ? 0.012 * Math.sin(t * 19) : 0);
+      // On the rope: tilted back on the way up the arc, forward on the drop.
+      const qa = swinging ? clamp01((prog - 0.5) / 0.42) : 0;
+      body.rotation.x = 0.08 * grip + ride * (-0.35 + 0.7 * qa) + 0.25 * dropped - 0.06 * entering;
+      // The habit trails the swing and flares on the landing.
+      robe.rotation.x = ride * (-0.4 + 0.25 * qa) + 0.1 * dropped;
+      skirt.scale.set(1 + 0.12 * ride + 0.14 * dropped, 1 - 0.06 * ride, 1 + 0.12 * ride + 0.14 * dropped);
+      for (let i = 0; i < folds.length; i++) folds[i].rotation.y = 0.15 * Math.sin(t * 1.6 + i) * (0.3 + moveK + ride);
+      // The wimple's wings: still at rest, lifting on the swing, shivering raged.
+      for (const w of wings) {
+        w.g.rotation.z = w.side * (0.06 * ride + 0.12 * pealK * prog - 0.08 * rung) + (rage ? w.side * 0.02 * Math.sin(t * 23) : 0);
+        w.g.rotation.x = -0.25 * ride + 0.1 * dropped;
+      }
+      head.rotation.x = 0.28 * entering + 0.06 * Math.sin(t * 0.7) - 0.15 * pealK + 0.1 * rung;
+      // The rope arm: up at the rope always, both hands on it before the ride.
+      armL.rotation.x = -2.6 - 0.25 * grip + 0.15 * Math.sin(t * 0.8) * (1 - swingK);
+      armL.rotation.z = -0.25 + 0.15 * grip;
+      // The rope leans to its anchor: over the middle of the lane on the
+      // swing (she faces down it), straight up otherwise, swaying a little.
+      let lean = 0;
+      let len = ROPE_TOP - 2.6;
+      if (swinging && tel && e) {
+        const L = tel.length ?? 4;
+        const along = (e.x - (tel.fromX ?? e.x)) * (tel.dirX ?? 0) + (e.z - (tel.fromZ ?? e.z)) * (tel.dirZ ?? 1);
+        const ahead = L / 2 - along;
+        const up = Math.max(1.5, ROPE_TOP - 2.6 - liftCur);
+        lean = Math.atan2(ahead, up);
+        len = Math.hypot(ahead, up);
+      } else {
+        swayV += (-9 * sway - 1.6 * swayV + (dropped > 0.9 ? -6 : 0)) * dt;
+        sway += swayV * dt;
+        lean = sway + 0.04 * Math.sin(t * 0.9);
+      }
+      // (The rope's pivot sits under the raised arm: undo the arm's tilt so
+      // the lean is the rope's own, in the body's frame.)
+      ropePivot.rotation.x = -armL.rotation.x - body.rotation.x + lean;
+      ropePivot.rotation.z = -armL.rotation.z;
+      rope.scale.y = len;
+      tail.rotation.x = 0.2 * Math.sin(t * 1.3) - 0.5 * ride;
+      sg.material.opacity = 0.3 + 0.4 * swingK + 0.5 * dropped + (rage ? 0.22 + 0.12 * Math.sin(t * 9) : 0);
+      sg.scale.setScalar(1 + 0.6 * swingK * prog + 0.6 * dropped);
+      // The bell arm: raised up and back through the peal's warning, rung
+      // down and out at its end; the clapper swings on its own.
+      armR.rotation.x = -0.35 - 2.2 * pealK * smooth(prog / 0.6) + 1.3 * rung;
+      armR.rotation.z = 0.18 + 0.25 * pealK;
+      ringV += (-40 * ring - 3 * ringV + pealK * 30 * Math.sin(t * 14) * prog + (rung > 0.9 ? 60 : 0)) * dt;
+      ring += ringV * dt;
+      ring = Math.max(-0.7, Math.min(0.7, ring));
+      bellG.rotation.x = -armR.rotation.x * 0.5 + ring;
+      clapper.rotation.x = -ring * 0.8;
+      peal.material.opacity = 0.35 * pealK * prog + 0.9 * rung;
+      peal.scale.setScalar(1 + 1.4 * rung);
+    },
+  };
+}
+
 export const SECOND_CHAMPION_BUILDERS = Object.freeze({
   moss_hart: buildMossHart,
   lockkeeper: buildLockkeeper,
   gravebell_ringer: buildGravebellRinger,
   vein_matron: buildVeinMatron,
+  bell_abbess: buildBellAbbess,
 });
 // Crown height per champion (world u above the ground at rest).
-export const SECOND_CHAMPION_CROWN_Y = Object.freeze({ moss_hart: 3.55, lockkeeper: 3.25, gravebell_ringer: 3.6, vein_matron: 3.3 });
+export const SECOND_CHAMPION_CROWN_Y = Object.freeze({ moss_hart: 3.55, lockkeeper: 3.25, gravebell_ringer: 3.6, vein_matron: 3.3, bell_abbess: 3.45 });

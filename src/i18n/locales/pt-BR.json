@@ -3098,7 +3098,6 @@
  "Skyward": "Rumo ao céu",
  "Clear Level V, the Still Spire, and bring the Verse of Sky home.": "Conclua o Nível V, a Torre Imóvel, e traga o Verso do Céu para casa.",
  "Windfall": "Queda do vento",
- "Fell the Gale Herald, the champion of the Still Spire.": "Derrube o Arauto do Vendaval, o campeão da Torre Imóvel.",
  "Five Crowns": "Cinco Coroas",
  "Break the Hush": "Rompa o Silêncio",
  "Fell the Hush on the Harrowing challenge.": "Derrube o Silêncio no desafio Tormentoso.",
@@ -3118,7 +3117,6 @@
  "Chain Hook: a warning lane at a hero; the key flies down it for 10 and drags you to his feet. Lock Turn: a ring round him locks shut for 16 and slows you hard. Step out of the lane. Below half health he rages.": "Gancho de Corrente: uma faixa de aviso rumo a um herói; a chave voa por ela causando 10 e te arrasta até os pés dele. Giro da Chave: um anel ao redor dele se tranca causando 16 e te deixa muito lento. Saia da faixa. Abaixo de metade da vida, ele se enfurece.",
  "Death Knell: a wide ring round it tolls for 11 and slows every hero inside. Grave Call: a warning ring under a hero bursts in ash for 14 and smoulders, slowing. Below half health it rages.": "Dobre Fúnebre: um amplo anel ao redor dele dobra causando 11 e deixa lento cada herói dentro. Chamado da Cova: um anel de aviso sob um herói explode em cinzas causando 14 e fumega, deixando lento. Abaixo de metade da vida, ele se enfurece.",
  "Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.": "Açoite das Veias: uma faixa de aviso rumo a um herói corta causando 13, e ela bebe um pouco de vida por herói atingido. Pulso do Coração: um anel ao redor dela pulsa causando 14 e então oito estilhaços de cristal voam para todos os lados, 7 cada. Abaixo de metade da vida, ela se enfurece.",
- "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": "Derrube um campeão em cada uma das cinco terras, incluindo o Arauto do Vendaval. Qualquer um dos dois campeões de uma terra conta.",
  "{name} stands in this room. {trade}": "{name} está nesta sala. {trade}",
  "{name} takes your key. A greater relic waits when the room clears.": "{name} leva sua chave. Uma relíquia maior espera quando a sala for limpa.",
  "{name}: {blessing} for 60 s ({text}).": "{name}: {blessing} por 60 s ({text}).",
@@ -3239,5 +3237,10 @@
  "The Hourwarden": "O Guarda-Horas",
  "THE HOURWARDEN": "O GUARDA-HORAS",
  "The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.": "O Guarda-Horas guarda o sótão do relógio à frente. Quando o pêndulo balançar, fique fora da linha até ele voltar. Quando ele bater as horas, continue se movendo e acerte-o enquanto a corda acaba.",
- "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "A corda do Guarda-Horas acaba para sempre. No sótão, o relógio dos deuses para na hora em que você chegou."
+ "The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.": "A corda do Guarda-Horas acaba para sempre. No sótão, o relógio dos deuses para na hora em que você chegou.",
+ "The Bell Abbess": "A Abadessa do Sino",
+ "The abbess of the gods' belfry, who rang the hours for them until they fell still, and keeps the vigil still. She has never let go of the rope.": "A abadessa do campanário dos deuses, que tocava as horas para eles até que ficassem imóveis, e ainda mantém a vigília. Ela nunca soltou a corda.",
+ "Rope Swing: a warning lane at a hero; she swings down it on the great bell's rope for 14 and knocks you aside. Vesper Peal: a warning cone in front of her hand-bell rings for 11 and rings you still, slowing you hard. Below half health she rages.": "Balanço da Corda: uma faixa de aviso até um herói; ela balança por ela na corda do grande sino causando 14 e te joga para o lado. Repique das Vésperas: um cone de aviso à frente do sininho dela toca causando 11 e te deixa imóvel, muito lento. Abaixo de metade da vida, ela se enfurece.",
+ "Fell a champion of the Still Spire, the Gale Herald or the Bell Abbess.": "Derrube um campeão da Torre Imóvel, o Arauto do Vendaval ou a Abadessa do Sino.",
+ "Fell a champion in each of the five lands. Either of a land's two champions counts.": "Derrube um campeão em cada uma das cinco terras. Qualquer um dos dois campeões de uma terra conta."
 }

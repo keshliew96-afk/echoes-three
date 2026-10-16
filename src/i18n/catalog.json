@@ -6547,7 +6547,13 @@
   ],
   "data": true
  },
- "Fell a champion in each of the five lands, the Gale Herald included. Either of a land's two champions counts.": {
+ "Fell a champion in each of the five lands. Either of a land's two champions counts.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell a champion of the Still Spire, the Gale Herald or the Bell Abbess.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6614,12 +6620,6 @@
   "data": true
  },
  "Fell the first five bosses of a Boss Rush.": {
-  "files": [
-   "src/data/unlocks.js"
-  ],
-  "data": true
- },
- "Fell the Gale Herald, the champion of the Still Spire.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -11845,6 +11845,12 @@
   ],
   "data": true
  },
+ "Rope Swing: a warning lane at a hero; she swings down it on the great bell's rope for 14 and knocks you aside. Vesper Peal: a warning cone in front of her hand-bell rings for 11 and rings you still, slowing you hard. Below half health she rages.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Rope Walk": {
   "files": [
    "src/data/layouts.js"
@@ -13684,6 +13690,12 @@
    "src/ui/socket/index.js"
   ]
  },
+ "The abbess of the gods' belfry, who rang the hours for them until they fell still, and keeps the vigil still. She has never let go of the rope.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The address of the Echoes server — ws://host:port/echoes (wss:// for a secure server). Automatic uses the server of the site you opened the game from.": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -13806,6 +13818,13 @@
  "The beetle swings her belfry bell in a 120° arc: 18 to up to 5 enemies within 1.9 u, knocked back.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The Bell Abbess": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
   ],
   "data": true
  },

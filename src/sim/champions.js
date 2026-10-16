@@ -50,7 +50,8 @@ export const CHAMPIONS = Object.freeze({
   5: Object.freeze({ id: 'gale_herald', act: 5, name: 'The Gale Herald' }),
 });
 // SECOND CHAMPIONS (plan 4 slice 8, docs/CHAMPIONS.md "Second champions"):
-// Acts I to IV each have a second lord. A level's crown door leads to one of
+// Acts I to IV each have a second lord, and the Still Spire too (content
+// plan 5 slice 2: the Bell Abbess). A level's crown door leads to one of
 // its act's two, picked by a hash of the level's frame seed and index
 // (championPick), so a seed still meets one champion per level.
 export const SECOND_CHAMPIONS = Object.freeze({
@@ -58,6 +59,7 @@ export const SECOND_CHAMPIONS = Object.freeze({
   2: Object.freeze({ id: 'lockkeeper', act: 2, name: 'The Lockkeeper', second: true }),
   3: Object.freeze({ id: 'gravebell_ringer', act: 3, name: 'The Gravebell Ringer', second: true }),
   4: Object.freeze({ id: 'vein_matron', act: 4, name: 'The Vein Matron', second: true }),
+  5: Object.freeze({ id: 'bell_abbess', act: 5, name: 'The Bell Abbess', second: true }),
 });
 // Every champion, in act order (each act's first, then its second).
 export const CHAMPION_LIST = Object.freeze(

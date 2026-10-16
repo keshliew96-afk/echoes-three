@@ -141,7 +141,8 @@ let heraldSave = null;
 {
   const w = build(SEED);
   w.run().startCampaign({ level: 5, harness: true });
-  check('herald', "Level V's champion is the Gale Herald (no longer the Hollow Choir)", C.championFor(5).id === 'gale_herald' && C.championsOfAct(5).length === 1);
+  check('herald', "Level V's champion is the Gale Herald (no longer the Hollow Choir)", C.championFor(5).id === 'gale_herald' && C.championsOfAct(5)[0].id === 'gale_herald');
+  w.run().cmd('championPick', ['gale_herald']); // (plan 5 slice 2: a Spire seed may roll the Bell Abbess)
   w.run().cmd('championRoom', [4]);
   w.world.cmd('skipToRoom', 4);
   w.ap.configure(false);
@@ -259,6 +260,7 @@ if (heraldSave) {
   // Never a champion.
   const w2 = build(SEED);
   w2.run().startCampaign({ level: 5, harness: true });
+  w2.run().cmd('championPick', ['gale_herald']);
   w2.run().cmd('championRoom', [4]);
   w2.world.cmd('skipToRoom', 4);
   w2.ap.configure(false);

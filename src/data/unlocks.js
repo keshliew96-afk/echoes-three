@@ -27,7 +27,7 @@ import { endlessBossIndex, CYCLE } from './endless.js';
 import { RUSH_RULES, LAP as RUSH_LAP } from './rush.js';
 import { ENCOUNTER_IDS } from '../sim/encounters.js';
 import { AFFIX_IDS } from '../sim/affixes.js';
-import { CHAMPION_IDS, FOUR_CROWN_ACTS, FIVE_CROWN_ACTS, crownLands } from '../sim/champions.js';
+import { CHAMPION_IDS, FOUR_CROWN_ACTS, FIVE_CROWN_ACTS, crownLands, championsOfAct } from '../sim/champions.js';
 import { LAYOUTS, LAYOUT_IDS } from './layouts.js';
 import { dayDiff, isDailyKey } from './daily.js';
 import { VOW_RANKS, VOW_MAX_RANK, VOW_DEED_LEVELS, vowName, vowLevelOf, vowPayPct, clampRank, freshVowBest, saneVowBest } from './vows.js';
@@ -149,6 +149,9 @@ export function lifeAfter(meta, facts) {
   return { ...marksAfter(meta && meta.marks, facts), bosses: [...bosses] };
 }
 const markCount = (life, k) => ((life && life[k]) || []).length;
+// The Still Spire's champions (the Gale Herald and, from content plan 5
+// slice 2, the Bell Abbess): Windfall takes either.
+const SPIRE_CHAMPIONS = Object.freeze(championsOfAct(5).map((c) => c.id));
 const crownCount = (life, acts = FOUR_CROWN_ACTS) => crownLands((life && life.champion) || [], acts);
 const allFelled = (life) => BOSSES.every((b) => ((life && life.bosses) || []).includes(b.kind));
 
@@ -208,8 +211,8 @@ export const DEEDS = Object.freeze(
     ...(ACT_IDS.includes(5)
       ? [
           ['skyward', { name: 'Skyward', text: 'Clear Level V, the Still Spire, and bring the Verse of Sky home.', embers: 60, test: (r) => r.cleared.includes(5) }],
-          ['windfall', { name: 'Windfall', text: 'Fell the Gale Herald, the champion of the Still Spire.', embers: 25, test: (r) => (r.champions || []).includes('gale_herald') }],
-          ['five_crowns', { name: 'Five Crowns', text: 'Fell a champion in each of the five lands, the Gale Herald included. Either of a land\'s two champions counts.', embers: 80, test: (r, l) => crownCount(l, FIVE_CROWN_ACTS) >= FIVE_CROWN_ACTS.length, goal: (l) => [crownCount(l, FIVE_CROWN_ACTS), FIVE_CROWN_ACTS.length] }],
+          ['windfall', { name: 'Windfall', text: 'Fell a champion of the Still Spire, the Gale Herald or the Bell Abbess.', embers: 25, test: (r) => (r.champions || []).some((id) => SPIRE_CHAMPIONS.includes(id)) }],
+          ['five_crowns', { name: 'Five Crowns', text: 'Fell a champion in each of the five lands. Either of a land\'s two champions counts.', embers: 80, test: (r, l) => crownCount(l, FIVE_CROWN_ACTS) >= FIVE_CROWN_ACTS.length, goal: (l) => [crownCount(l, FIVE_CROWN_ACTS), FIVE_CROWN_ACTS.length] }],
           ['break_the_hush', { name: 'Break the Hush', text: 'Fell the Hush on the Harrowing challenge.', embers: 80, test: (r) => r.bosses.includes('hush') && r.challenge === 'harrowing' }],
         ]
       : []),
