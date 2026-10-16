@@ -15,7 +15,7 @@
 //   - the party falls in fight 2: both pages show THE BOSS RUSH ENDS with 1 of
 //     10 felled, and each page records the rush on its own save (its
 //     lastRecord; the two pages share one browser profile here) with no level
-//     clears. (The won path is the single-player code: boss-rush-probe.)
+//     clears, under the co-op best (CO-OP BEST on the end card). (The won path is the single-player code: boss-rush-probe.)
 //   - 0 desyncs over the snapshot hash checks; no page errors.
 //   node tools/coop-boss-rush-probe.mjs [--port 7930] [--base http://127.0.0.1:5199/] [--shots dir] [--lang de]
 import { writeFileSync, mkdirSync } from 'node:fs';
@@ -182,12 +182,12 @@ try {
   const endOf = (c) => netEval(c, 'const q = (s) => document.querySelector(".rn-end " + s)?.textContent.replace(/\\s+/g, " ").trim(); return { head: q(".rn-headline"), flavour: q(".rn-flavour"), summary: q(".rn-summary") };');
   const he = await endOf(host);
   const ge = await endOf(guest);
-  check(`both pages end the rush: "${ge.head}" / "${ge.flavour}"`, /THE BOSS RUSH ENDS/.test(ge.head || '') && ge.head === he.head && /BOSSES FELLED\s*1 \/ 10/.test(ge.summary || ''), { he, ge });
+  check(`both pages end the rush: "${ge.head}" / "${ge.flavour}"`, /THE BOSS RUSH ENDS/.test(ge.head || '') && ge.head === he.head && /BOSSES FELLED\s*1 \/ 10/.test(ge.summary || '') && /CO-OP BEST/.test(ge.summary || '') && /CO-OP BEST/.test(he.summary || ''), { he, ge });
   await shot(guest, 'coop-rush-8-end-guest');
   await sleep(1500);
   const recOf = (c) => netEval(c, 'const l = E.save.lastRecord ? E.save.lastRecord() : null; const r = E.save.profile().records; return { rush: l && l.rush ? l.rush : null, written: l ? l.written : null, clears: r.levelClears, runs: r.rushRuns || 0 };');
   const recs = [await recOf(host), await recOf(guest)];
-  check(`each page recorded the rush on its own save (host ${JSON.stringify(recs[0].rush)}, guest ${JSON.stringify(recs[1].rush)}), no level clears`, recs.every((r) => r.rush && r.rush.felled === 1 && r.rush.won === false && r.written === true && !Object.values(r.clears || {}).some((n) => n > 0)) && recs[1].runs > rec0.runs, { rec0, recs });
+  check(`each page recorded the rush on its own save as a co-op rush (host ${JSON.stringify(recs[0].rush)}, guest ${JSON.stringify(recs[1].rush)}), no level clears`, recs.every((r) => r.rush && r.rush.felled === 1 && r.rush.won === false && r.rush.coop === true && r.written === true && !Object.values(r.clears || {}).some((n) => n > 0)) && recs[1].runs > rec0.runs, { rec0, recs });
   const gs = await netEval(guest, 'const g = n.session.debugGuest(); return g ? { desyncs: g.desyncs, hashChecks: g.hashChecks } : null;');
   check(`0 desyncs over ${gs && gs.hashChecks} snapshot hash checks`, gs && gs.desyncs === 0 && gs.hashChecks > 0, gs);
   const errs = { host: host.errors.slice(0, 5), guest: guest.errors.slice(0, 5) };

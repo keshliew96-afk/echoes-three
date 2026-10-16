@@ -3193,5 +3193,7 @@
  "Dulled Edge": "Stumpfe Klinge",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "Kritische Treffer der Gruppe verursachen für den Rest des Laufs ×1,25 statt ×1,5.",
  "Corked: tonics and bombs cannot be used in this room.": "Verkorkt: In diesem Raum können keine Tränke und Bomben benutzt werden.",
- "The whole party sets out together": "Die ganze Gruppe zieht gemeinsam los"
+ "The whole party sets out together": "Die ganze Gruppe zieht gemeinsam los",
+ "CO-OP BEST": "KOOP-BESTZEIT",
+ "Co-op best: {time}": "Koop-Bestzeit: {time}"
 }

@@ -3253,5 +3253,7 @@
  "Dulled Edge": "Тупой клинок",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "До конца забега криты отряда наносят ×1,25 вместо ×1,5.",
  "Corked: tonics and bombs cannot be used in this room.": "Закупорено: в этой комнате нельзя использовать тоники и бомбы.",
- "The whole party sets out together": "Весь отряд выступает вместе"
+ "The whole party sets out together": "Весь отряд выступает вместе",
+ "CO-OP BEST": "ЛУЧШЕЕ В КООПЕРАТИВЕ",
+ "Co-op best: {time}": "Лучшее в кооперативе: {time}"
 }

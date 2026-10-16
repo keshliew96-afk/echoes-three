@@ -60,7 +60,11 @@ card and leaves the rules alone.
   numbers do not change with the number of humans.
 - **Records.** Each player records the rush on their own profile (runs, most
   felled, best time, deeds and Embers), as a guest does for a co-op campaign.
-  A co-op time counts toward the same best as a solo one.
+  A co-op rush keeps its own best time (`rushCoopBestSec`, with its fight
+  count), apart from the solo best: the co-op end card reads CO-OP BEST, the
+  Level Select card in a lobby shows "Co-op best", and a solo rush never sets
+  or shows it (Kesh's pick at merge time). Most felled and the rush count are
+  shared.
 - **Host migration.** If the host's page stalls and the host moves to a
   guest, the rush goes on from the new host's last snapshot (seen once on the
   probe machine's software renderer, where the line and fight were kept).
@@ -107,7 +111,7 @@ numbers are first guesses until the rush has been played.
 
 ## Checks
 
-- `node tools/boss-rush-probe.mjs` (37 checks, headless).
+- `node tools/boss-rush-probe.mjs` (38 checks, headless).
 - `node tools/boss-rush-browser.mjs [--lang de]` against `npm run dev`.
 - `node tools/coop-boss-rush-probe.mjs [--lang de] [--shots dir]` against
   `npm run dev`: a host and a guest page on their own server (port 7930), from

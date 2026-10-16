@@ -244,6 +244,12 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
     const r3 = store.recordRun({ act: 4, victory: true, result: 'victory', timeSec: 450, seed: 3, campaign: { ...won.campaign } });
     const p = store.get();
     check('records', 'rushes, most felled, best time', p.records.rushRuns === 3 && p.records.rushMostFelled === 10 && p.records.rushBestSec === 450 && r3.rush.newBest && !r2.rush.newBest && r1.rush.newBest, { runs: p.records.rushRuns, most: p.records.rushMostFelled, best: p.records.rushBestSec });
+    // CO-OP BOSS RUSH: a co-op rush keeps its own best; the solo best is untouched.
+    const c1 = store.recordRun({ act: 4, victory: true, result: 'victory', timeSec: 300, seed: 4, campaign: { ...won.campaign }, coop: true });
+    const c2 = store.recordRun({ act: 4, victory: true, result: 'victory', timeSec: 400, seed: 5, campaign: { ...won.campaign }, coop: true });
+    const s4 = store.recordRun({ act: 4, victory: true, result: 'victory', timeSec: 440, seed: 6, campaign: { ...won.campaign } });
+    const q = store.get().records;
+    check('records', 'a co-op rush keeps its own best apart from the solo best', q.rushCoopBestSec === 300 && q.rushCoopBestFights === 10 && c1.rush.newBest && c1.rush.coop && !c2.rush.newBest && c2.rush.bestSec === 300 && s4.rush.newBest && s4.rush.prevBestSec === 450 && q.rushBestSec === 440 && q.rushRuns === 6, { coopBest: q.rushCoopBestSec, soloBest: q.rushBestSec, c1: c1.rush, s4: s4.rush });
     check('records', 'never a won game, a level clear or a score', !p.records.gameWon && !(p.records.levelClears[1] > 0) && p.highScores.length === 0 && (p.records.campaigns ?? 0) === 0, { gameWon: p.records.gameWon, scores: p.highScores.length });
   } catch (err) {
     check('records', 'profile store', false, { error: String(err && err.message) });

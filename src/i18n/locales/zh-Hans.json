@@ -3113,5 +3113,7 @@
  "Dulled Edge": "钝刃",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "本局剩余时间内，队伍暴击伤害为 ×1.25，而非 ×1.5。",
  "Corked: tonics and bombs cannot be used in this room.": "封瓶：本房间无法使用药剂和炸弹。",
- "The whole party sets out together": "全队一同出发"
+ "The whole party sets out together": "全队一同出发",
+ "CO-OP BEST": "合作最佳",
+ "Co-op best: {time}": "合作最佳：{time}"
 }

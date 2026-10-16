@@ -317,7 +317,7 @@ export function createEndScreen({ run }) {
       const time = clockOf(s.ticks);
       pairs.push([t('BOSSES FELLED'), `${rush.felled} / ${rush.fights}`]);
       pairs.push([t('RUSH TIME'), rush.won && r && r.newBest ? t('{time} · New best!', { time }) : rush.won ? time : t('{time} · not finished', { time })]);
-      pairs.push([t('BEST TIME'), r && r.bestSec !== null && r.bestSec !== undefined ? clockOf(r.bestSec * 60) : '—']);
+      pairs.push([r && r.coop ? t('CO-OP BEST') : t('BEST TIME'), r && r.bestSec !== null && r.bestSec !== undefined ? clockOf(r.bestSec * 60) : '—']);
       pairs.push([t('LAST BOSS'), t((rush.line[Math.min(rush.felled, rush.line.length - 1)] || { name: '—' }).name)]);
       rooms = [`${rush.felled} / ${rush.fights}`];
     } else if (deep) {

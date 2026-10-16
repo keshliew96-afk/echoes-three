@@ -3223,5 +3223,7 @@
  "Dulled Edge": "Tranchant émoussé",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "Les coups critiques du groupe font ×1,25 au lieu de ×1,5 jusqu’à la fin de la partie.",
  "Corked: tonics and bombs cannot be used in this room.": "Bouché : toniques et bombes sont inutilisables dans cette salle.",
- "The whole party sets out together": "Tout le groupe part ensemble"
+ "The whole party sets out together": "Tout le groupe part ensemble",
+ "CO-OP BEST": "MEILLEUR EN COOP",
+ "Co-op best: {time}": "Meilleur en coop : {time}"
 }

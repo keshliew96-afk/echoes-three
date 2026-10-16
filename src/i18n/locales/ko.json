@@ -3113,5 +3113,7 @@
  "Dulled Edge": "무뎌진 칼날",
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": "남은 런 동안 파티의 치명타가 ×1.5 대신 ×1.25 피해를 줍니다.",
  "Corked: tonics and bombs cannot be used in this room.": "봉인된 마개: 이 방에서는 물약과 폭탄을 쓸 수 없습니다.",
- "The whole party sets out together": "파티 전원이 함께 출발합니다"
+ "The whole party sets out together": "파티 전원이 함께 출발합니다",
+ "CO-OP BEST": "협동 최고 기록",
+ "Co-op best: {time}": "협동 최고 기록: {time}"
 }
