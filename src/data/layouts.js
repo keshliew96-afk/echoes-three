@@ -859,7 +859,7 @@ export const LAYOUTS = Object.freeze({
     ]),
   }),
   // Act V · 35 — the Clock Loft (content plan 5 slice 1, docs/THIRD_BOSSES.md;
-  // also the Hourwarden's room dressing): the loft behind the gods' great
+  // the Hourwarden's boss room only): the loft behind the gods' great
   // clock face, its dial filling the north parapet. Two vents blow in across
   // the loft from opposite corners, rime under the dial's west and east
   // edges, cairn barricades shoring up the floor between them.

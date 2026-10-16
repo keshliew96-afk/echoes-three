@@ -159,6 +159,7 @@ const BEFORE = ['hush', 'skyhorn'];
   check(rushLocked === 60, `Boss Rush: locked, the Hourwarden never comes up (${rushLocked}/60)`);
   check(!!BOSS_KITS.hourwarden, 'the boss kit is registered');
   check(bossFor(5, 1, 'hourwarden').layout === 35 && LAYOUTS[35]?.act === 5, `it fights in the Clock Loft (layout 35, ${LAYOUTS[35]?.name})`);
+  check(!LEVELS[5].layouts.includes(35) && LEVELS[5].layouts.join() === '29,30,31,32,33,34', `the Clock Loft is its boss room only: the Spire's rooms stay ${LEVELS[5].layouts.join(', ')}`);
   check(!!DEEDS.boss_hourwarden, `deed: ${DEEDS.boss_hourwarden?.name}`);
   check(UNLOCKS.tint_gildedhour?.req?.boss === 'hourwarden', 'the Gilded Hour tint unlocks for felling it');
   check(S.rumourFor('hourwarden', 5) === S.RUMOURS.hourwarden.text, 'Bramble has a rumour');

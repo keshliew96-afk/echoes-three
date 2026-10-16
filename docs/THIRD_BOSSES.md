@@ -188,7 +188,7 @@ meets it.
 | Role | the gods' own clock: a bronze clock-jack that struck the hours until they sat down to watch, wound again by the hollow song |
 | Kit | `src/sim/bosses/hourwarden.js` |
 | Model | `buildHourwarden` in `src/render/boss/spire.js`: a cog bed, a hexagonal bronze case with a pendulum window, a dial chest with moving hands, a bell head with an eye slit, blade arms (a striking hammer on the right) and a wind key |
-| Room | Clock Loft (layout 35), dressed round a cracked clock face; it also joins the Spire's combat rooms |
+| Room | Clock Loft (layout 35), dressed round a cracked clock face; its boss room only, so old Level V seeds keep their rooms |
 | HP | `hpMul` 1.0 |
 | Adds | two Chimes and a Vane Cock at 75 / 50 / 25 % |
 | Deed, tint | Fell the Hourwarden; Archer tint **Gilded Hour** |

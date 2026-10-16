@@ -221,9 +221,9 @@ export const LEVELS = Object.freeze({
     blurb: 'The gods\' high belfry, where they sat down to watch and never rose.',
     tier: 5,
     biome: 'spire',
-    // Content plan 5 slice 1: the Clock Loft (35), the Hourwarden's room,
-    // joins the Spire's table like the other lands' third-boss rooms.
-    layouts: Object.freeze([29, 30, 31, 32, 33, 34, 35]),
+    // Content plan 5 slice 1: the Clock Loft (35) is the Hourwarden's room
+    // only (its row's `layout`), so old Level V seeds keep their rooms.
+    layouts: Object.freeze([29, 30, 31, 32, 33, 34]),
     legacyLayouts: Object.freeze([29, 30, 31]),
     bossLayout: 32,
     music: 'spire',

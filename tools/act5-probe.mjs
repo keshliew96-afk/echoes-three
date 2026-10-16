@@ -453,7 +453,7 @@ function runThrough(W, opts, maxLevels = 6) {
     W.run.startCampaign({ level: 5, harness: true });
     for (let i = 0; i < 4000 && W.run.view().phase !== 'combat'; i++) W.step();
     const lay = W.run.view().layout?.layoutId;
-    check(lay >= 29 && lay <= 35 && lay !== 32, `seed ${seed}: Level V room 1 is a spire layout (${lay})`);
+    check(lay >= 29 && lay <= 34 && lay !== 32, `seed ${seed}: Level V room 1 is a spire layout (${lay})`);
     for (let w = 0; w < 6; w++) {
       W.world.cmd('startWave');
       steps(W, 90);
