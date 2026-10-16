@@ -84,7 +84,9 @@ The full white flash on that pale, wide-winged body crossed the bloom
 threshold across the whole wingspan, and in the pale Spire room every hit
 spread a white haze over the top of the screen (Small fixes 4,
 `tools/small-fixes-4-browser.mjs`: about 60000 blown pixels round it on a hit
-frame before, about 5000 after). Every other enemy keeps the full flash.
+frame before, about 5000 after). Every other champion flashes at 0.4
+(`CHAMPION_FLASH`) for the same reason; ordinary enemies and bosses keep the
+full flash.
 
 ### Two more creatures (six of its own)
 

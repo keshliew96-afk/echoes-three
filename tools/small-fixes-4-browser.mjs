@@ -3,13 +3,17 @@
 // `npm run dev` (port 5199) it opens a Level V campaign, forces the Gale
 // Herald's crown room, walks in and checks:
 //   - a hit on another enemy still lights its body at the full hit flash (1.0);
-//   - a hit on the herald lights it at its own flashScale (0.4), not 1.0: the
+//   - a hit on the herald lights it at its own flashScale (0.25), not 1.0: the
 //     full white flash on that pale, wide-winged body crossed the bloom
 //     threshold across the wingspan and veiled the Spire room in white haze;
 //   - on that frozen hit frame, the 720 x 420 window round the herald has
-//     fewer than 15000 blown (> 235) pixels (about 47000 before the fix).
+//     fewer than 15000 blown (> 235) pixels (about 60000 before the fix);
+//   - the Briar Knight (Level I) and the Hollow Choir (Level IV) light at the
+//     champions' softer CHAMPION_FLASH (0.4), and their hit frames pass the
+//     same blown-pixel bar.
 // Captures (into --shots, default captures/): sf4-1-herald-idle,
-// sf4-2-herald-hit (the sim frozen on the tick of a hit, so the flash holds).
+// sf4-2-herald-hit, sf4-3-<kind>-hit (the sim frozen on the tick of a hit, so
+// the flash holds).
 //
 //   node tools/small-fixes-4-browser.mjs [--url http://127.0.0.1:5199/] [--shots dir]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
@@ -168,7 +172,7 @@ const flashOf = (id) => P((i) => { const v = window.__echoes.state().enemyfx; re
 // Freeze the sim, then step it one tick at a time until the next hit that
 // matches lands, so its flash holds on screen (the realtime loop steps
 // several ticks per software-GL frame and would run the 3-tick flash out).
-async function freezeOnHit(wantHerald) {
+async function freezeOnHit(hid0, wantHerald) {
   const got = await P(([hid, want]) => {
     const E = window.__echoes;
     E.sim.freeze();
@@ -179,7 +183,7 @@ async function freezeOnHit(wantHerald) {
     });
     for (let i = 0; i < 3000 && window.__sf4 == null; i++) E.sim.stepN(1);
     off();
-    // Bring the party in front of the herald for the frame: one more tick
+    // Bring the party in front of the champion for the frame: one more tick
     // still holds the 3-tick flash.
     const h = (E.state().enemies || []).find((e) => e.id === hid);
     if (window.__sf4 === hid && h) {
@@ -187,11 +191,11 @@ async function freezeOnHit(wantHerald) {
       E.sim.stepN(1);
     }
     return window.__sf4;
-  }, [c.id, wantHerald]);
+  }, [hid0, wantHerald]);
   await sleep(1500); // a few rendered frames on the frozen tick
   return got;
 }
-const other = await freezeOnHit(false);
+const other = await freezeOnHit(c.id, false);
 const otherLit = other != null ? await flashOf(other) : null;
 const otherKind = await P((i) => (window.__echoes.state().enemies || []).find((e) => e.id === i)?.kind ?? null, other);
 check(other != null && Math.abs(otherLit - 1) < 1e-6, `a hit on another enemy lights it at the full flash (${otherKind} ${other}: ${otherLit})`);
@@ -200,22 +204,51 @@ await P(() => window.__echoes.sim.thaw());
 const hp = await P((id) => (window.__echoes.state().enemies || []).find((e) => e.id === id), c.id);
 if (hp) await cmd('teleport', hp.x, hp.z + 3.2);
 await sleep(1500);
-const her = await freezeOnHit(true);
+const her = await freezeOnHit(c.id, true);
 const herLit = her != null ? await flashOf(her) : null;
 check(her === c.id && Math.abs(herLit - 0.25) < 1e-6, `a hit on the herald lights it at its flashScale 0.25 (${her}: ${herLit})`);
 await shot('sf4-2-herald-hit');
 await P(() => window.__echoes.sim.thaw());
+// Every other champion: the softer CHAMPION_FLASH (0.4).
+const others = [[1, 'briar_knight'], [4, 'hollow_choir']];
+for (const [level, kind] of others) {
+  await cmd('endRun', 'defeat').catch(() => null);
+  await sleep(1200);
+  await cmd('returnToCamp').catch(() => null);
+  await page.waitForFunction(() => window.__echoes.cmd('campState').mode === 'camp', { timeout: 120000, polling: 250 }).catch(() => null);
+  await sleep(2000);
+  await cmd('startCampaign', { level });
+  await waitPhase(['combat']);
+  await cmd('championPick', kind);
+  const { side: sd } = await enterCrown(`Level ${level}`);
+  await closeTip();
+  const k = await walkIn(sd);
+  check(!!k && k.kind === kind, `Level ${level}: ${kind} stands in the room (${k && k.kind})`);
+  const id = await freezeOnHit(k.id, true);
+  const lit = id != null ? await flashOf(id) : null;
+  check(id === k.id && Math.abs(lit - 0.4) < 1e-6, `a hit on the ${kind} lights it at 0.4 (${id}: ${lit})`);
+  await shot(`sf4-3-${kind}-hit`);
+  await P(() => window.__echoes.sim.thaw());
+}
 await browser.close();
-{
-  const sharp = (await import('sharp')).default;
-  const { data, info } = await sharp(`${SHOTS}/sf4-2-herald-hit.png`).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+const sharp = (await import('sharp')).default;
+async function blown(name) {
+  const { data, info } = await sharp(`${SHOTS}/${name}.png`).removeAlpha().raw().toBuffer({ resolveWithObject: true });
   const x0 = Math.round(info.width / 2 - 360);
   let n = 0;
   for (let y = 0; y < 420; y++) for (let x = x0; x < x0 + 720; x++) {
     const i = (y * info.width + x) * 3;
     if (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2] > 235) n += 1;
   }
+  return n;
+}
+{
+  const n = await blown('sf4-2-herald-hit');
   check(n < 15000, `the hit frame round the herald is not veiled (${n} blown pixels, under 15000)`);
+  for (const [, kind] of others) {
+    const m = await blown(`sf4-3-${kind}-hit`);
+    check(m < 15000, `the ${kind}'s hit frame is not veiled (${m} blown pixels, under 15000)`);
+  }
 }
 check(errors.length === 0, `no page errors (${errors.slice(0, 2).join(' | ')})`);
 console.log(fails.length ? `\n${fails.length} FAILED` : '\nall checks pass');

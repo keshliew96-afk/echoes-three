@@ -934,8 +934,8 @@ export function buildGaleHerald() {
     // Small fixes 4: the full white hit flash on this pale, wide-winged
     // limestone body crossed the bloom threshold across the whole wingspan and
     // veiled the pale Spire room in a white haze on every hit (the "haze" in
-    // the slice 7 captures). At 0.4 the body still pops white, crisp, with no
-    // room-wide glare.
+    // the slice 7 captures). Softer than the other champions' 0.4
+    // (CHAMPION_FLASH): at 0.25 it still pops, with no room-wide glare.
     flashScale: 0.25,
     pose({ t, tick = 0, walkPhase = 0, moveK = 0, telegraphK = 0, e }) {
       const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
@@ -1018,15 +1018,29 @@ export function buildGaleHerald() {
   };
 }
 
-export const CHAMPION_BUILDERS = Object.freeze({
-  briar_knight: buildBriarKnight,
-  sluice_warden: buildSluiceWarden,
-  bone_reeve: buildBoneReeve,
-  hollow_choir: buildHollowChoir,
-  gale_herald: buildGaleHerald,
-  // Second champions (plan 4 slice 8): render/enemies/champions2.js.
-  ...SECOND_CHAMPION_BUILDERS,
-});
+// Small fixes 4: every champion's hit flash is softened. The full white
+// flash on a champion-sized body floods the bloom pass and glares over the
+// room on every hit; at 0.4 the body still pops white with no veil. A build
+// that sets its own flashScale keeps it (the Gale Herald, pale and
+// wide-winged in the pale Spire, needs 0.25).
+export const CHAMPION_FLASH = 0.4;
+const softFlash = (build) => (...args) => {
+  const b = build(...args);
+  return b.flashScale == null ? { ...b, flashScale: CHAMPION_FLASH } : b;
+};
+export const CHAMPION_BUILDERS = Object.freeze(
+  Object.fromEntries(
+    Object.entries({
+      briar_knight: buildBriarKnight,
+      sluice_warden: buildSluiceWarden,
+      bone_reeve: buildBoneReeve,
+      hollow_choir: buildHollowChoir,
+      gale_herald: buildGaleHerald,
+      // Second champions (plan 4 slice 8): render/enemies/champions2.js.
+      ...SECOND_CHAMPION_BUILDERS,
+    }).map(([k, build]) => [k, softFlash(build)])
+  )
+);
 // Crown height per champion (world u above the ground).
 export const CHAMPION_CROWN_Y = Object.freeze({ briar_knight: 2.75, sluice_warden: 2.45, bone_reeve: 3.05, hollow_choir: 3.05, gale_herald: 2.95, ...SECOND_CHAMPION_CROWN_Y });
 
