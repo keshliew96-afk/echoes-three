@@ -538,6 +538,15 @@ export function hudCss() {
 .hud-slot.hud-slot-tonic .hud-slot-ring { display: none; }
 .hud-slot.hud-slot-tonic.tonic-pop { animation: hud-tonic-pop 0.6s cubic-bezier(.2,1.6,.4,1); }
 .hud-slot.hud-slot-tonic.tonic-spent { animation: hud-tonic-spent 0.5s ease-out; }
+/* RELICS batch 5: a Corked room. The slot greys out under a violet wax seal
+   with a cork stamped in it. */
+.hud-slot.hud-slot-tonic.is-corked { border-color: #8A5CC8; box-shadow: inset 0 -2px 0 0 ${CHROME.plateSunk}, 0 0 8px #8A5CC8; }
+.hud-slot.hud-slot-tonic.is-corked .hud-slot-abbrev { filter: grayscale(1) brightness(0.55); }
+.hud-slot.hud-slot-tonic.is-corked::after { content: ''; position: absolute; left: 50%; top: ${MED_CY}px; width: 22px; height: 22px; margin: -11px 0 0 -11px; border-radius: 50%; z-index: 5; pointer-events: none;
+  background: radial-gradient(circle at 40% 35%, #C9A2F0 0%, #8A5CC8 45%, #4B2A78 100%); box-shadow: 0 0 8px #8A5CC8, inset 0 0 0 2px rgba(255,255,255,0.18);
+  -webkit-mask: radial-gradient(circle, #000 62%, transparent 64%); animation: hud-cork-in 0.45s cubic-bezier(.2,1.6,.4,1); }
+.hud-slot.hud-slot-tonic.is-corked::before { content: ''; position: absolute; left: 50%; top: ${MED_CY}px; width: 10px; height: 8px; margin: -4px 0 0 -5px; border-radius: 2px 2px 3px 3px; z-index: 6; pointer-events: none; background: #C9A27A; box-shadow: inset 0 -2px 0 #8A6A48; }
+@keyframes hud-cork-in { 0% { transform: scale(1.8); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
 @keyframes hud-tonic-pop { 0% { transform: scale(0.5); } 60% { transform: scale(1.15); } 100% { transform: scale(1); } }
 @keyframes hud-tonic-spent { 0% { box-shadow: 0 0 0 4px ${PALETTE.parchment}, 0 0 26px ${PALETTE.parchment}; } 100% { box-shadow: inset 0 -2px 0 0 ${CHROME.plateSunk}; } }
 /* GLYPH BAND = the MEDALLION (check 9: icons + cooldown radials). A ${MED}px

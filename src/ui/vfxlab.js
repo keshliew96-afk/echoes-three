@@ -715,6 +715,60 @@ export function mountVfxLab() {
     say('a loose one lands in front of the party (walk over it)');
   }, 'a loose tonic falls in front of the party');
 
+  // ------------------------------------------------------- relics batch 5 --
+  // RELICS batch 5 (docs/RELICS.md "Batch 5"): each new relic's beat through
+  // its real proc in a campaign room (tonics on), training dummies in front
+  // where it strikes, then the two new room curses laid on the live room.
+  const rel5 = section('Relics batch 5');
+  const BATCH5 = [
+    ['brewers_satchel', "Brewer's Satchel", 'a tonic shared with the party'],
+    ['bottomless_flask', 'Bottomless Flask', 'the flask pours, then refills 1.5 s later (10 s in play)'],
+    ['twin_fuse', 'Twin Fuse', 'the fuse lit in the crater, then the second burst'],
+    ['votive_ribbon', 'Votive Ribbon', 'a shrine offering tied with the ribbon'],
+    ['stormglass', 'Stormglass', 'a gust down a lane in front, striking what stands in it'],
+    ['trophy_cord', 'Trophy Cord', 'a champion felled, its trophy knotted on'],
+    ['oathkeepers_brand', "Oathkeeper's Brand", 'a room opens under a sworn vow'],
+    ['tenor_bell', 'Tenor Bell', 'the tenth kill rings the great bell over the room'],
+  ];
+  for (const [id, label, what] of BATCH5) {
+    button(rel5, label, async () => {
+      if (!(await tonicRoom())) return say('no relics here (campaign only)');
+      for (const i of [0, 1, 2, 3]) {
+        const b = seatBody(i);
+        if (b) b.hp = Math.max(1, b.maxHp * 0.6);
+      }
+      if (id === 'stormglass' || id === 'tenor_bell' || id === 'twin_fuse') {
+        const f = front();
+        for (const dx of [-3, -1.5, 0, 1.5, 3]) X().cmd('spawn', 'dummy', f.x + dx, f.z);
+        await wait(150);
+      }
+      X().cmd('relicDemo', id);
+      say(`${label}: ${what}`);
+    }, what);
+  }
+  button(rel5, 'Corked', async () => {
+    if (!(await tonicRoom())) return say('no relics here (campaign only)');
+    X().cmd('tonicGive', 0, 'fire_bomb');
+    X().cmd('relicCurseHere', 'corked');
+    await wait(400);
+    X().cmd('tonicUse', 0);
+    say('Corked: the slot is sealed (the press is refused)');
+  }, 'Corked on this room, then a refused bomb');
+  button(rel5, 'Tolling Dead', async () => {
+    if (!(await tonicRoom())) return say('no relics here (campaign only)');
+    X().cmd('relicCurseHere', 'tolling_dead');
+    const f = front();
+    const ids = [-1.2, 0, 1.2].map((dx) => idOf(X().cmd('spawn', 'boar', f.x + dx, f.z + 0.6)));
+    await wait(200);
+    for (const [k, id] of ids.entries()) {
+      setTimeout(() => {
+        X().cmd('setHp', id, 0.02);
+        X().cmd('relicHit', id, seatBody(1)?.id ?? null, 30, false);
+      }, 250 * k);
+    }
+    say('Tolling Dead: each fallen boar tolls a knell by the party');
+  }, 'Tolling Dead on this room, three boars killed beside the party');
+
   // ------------------------------------------------------------ champions --
   // CHAMPION ROOMS (docs/CHAMPIONS.md): each act's champion spawned in front
   // of the party in its own land (crown, sigil, both moves, the rage below

@@ -204,7 +204,8 @@ export function aiChoice(id, body, hostiles, shots, isChampion) {
 
 // The consumable system. Plain state, saved with the run (present only when
 // on). `isChampion(kind)` comes from sim/champions.js.
-export function createConsumableSystem({ registry, events, getTick, combat, isChampion = () => false }) {
+// `sealed()`: RELICS batch 5, a Corked room (no slot may be used).
+export function createConsumableSystem({ registry, events, getTick, combat, isChampion = () => false, sealed = () => false }) {
   let on = false;
   let slots = [null, null, null, null]; // per seat: null | id
   let pending = []; // drops that fell this tick (they land at its end)
@@ -285,6 +286,7 @@ export function createConsumableSystem({ registry, events, getTick, combat, isCh
     const b = bodyOf(seat);
     if (!alive(b)) return denyUse(seat, 'downed');
     if (!live) return denyUse(seat, 'calm');
+    if (sealed()) return denyUse(seat, 'corked');
     const row = CONSUMABLES[id];
     const tick = getTick();
     slots[seat] = null;
@@ -466,7 +468,7 @@ export function createConsumableSystem({ registry, events, getTick, combat, isCh
     // The AI seats' look at their slots. `seats`: the AI-held seats this
     // tick; `live`: a fight is on. Returns the uses made.
     aiStep(seats, live) {
-      if (!on || !live) return [];
+      if (!on || !live || sealed()) return [];
       const tick = getTick();
       const hostiles = registry.all().filter(isHostile).sort((a, b) => a.id - b.id);
       if (!hostiles.length) return [];
@@ -484,7 +486,7 @@ export function createConsumableSystem({ registry, events, getTick, combat, isCh
       return out;
     },
     view() {
-      return { slots: [...slots], found, used };
+      return { slots: [...slots], found, used, ...(on && sealed() ? { corked: true } : {}) };
     },
     saveState: () => ({ on, slots: [...slots], found, used, usedBy: { ...usedBy }, ...(pending.length ? { pending: pending.map((p) => ({ ...p })) } : {}) }),
     loadState(d) {

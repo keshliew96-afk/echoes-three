@@ -712,7 +712,18 @@ const RELIC_PROC_CUE = Object.freeze({
   banner_pennant: { cue: 'heal_crit', pitch: 1.05 },
   wanderers_token: { cue: 'reward', pitch: 1.3 },
   geode_heart: { cue: 'shimmer', pitch: 0.7 },
+  // Batch 5: the relics of content plan 4.
+  brewers_satchel: { cue: 'heal_crit', pitch: 1.25 },
+  bottomless_flask: { cue: 'tn_mend', pitch: 1.3 },
+  twin_fuse: { cue: 'tn_fire', pitch: 1.2 },
+  votive_ribbon: { cue: 'heal_crit', pitch: 0.95 },
+  stormglass: { cue: 'crit', pitch: 1.5 },
+  trophy_cord: { cue: 'reward', pitch: 0.8 },
+  oathkeepers_brand: { cue: 'zone_spawn', pitch: 0.8 },
+  tenor_bell: { cue: 'bw_great', pitch: 0.7 },
 });
+// Twin Fuse's lit fuse and the flask's pour stay quiet: their payoff speaks.
+const RELIC_PROC_QUIET = new Set(['lit', 'pour']);
 const HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'restorative_wave', 'guardian_bond']);
 // PARTY: the new class skills' own cues (BUILD_BRIEF §25.2 audio column).
 export const CLASS_SKILL_CUE = Object.freeze({
@@ -943,10 +954,15 @@ export const DEFAULT_EVENT_CUES = {
   relic_proc: (ev, h) => {
     const c = RELIC_PROC_CUE[ev.relic];
     if (ev.stage === 'mend') return null; // Warding Chalk's once-a-second mend stays visual
+    if (RELIC_PROC_QUIET.has(ev.stage)) return null;
     return c ? one(c.cue, at(ev, h, ev.target), c.pitch ? { pitch: c.pitch } : undefined) : null;
   },
   // RELICS batch 4: Kindred Blood, the fallen's kin drink its death.
-  curse_proc: (ev, h) => (ev.healed && ev.healed.length ? one('siphon_heal', at(ev, h, ev.from), { pitch: 0.6 }) : null),
+  // RELICS batch 5: Tolling Dead, a low knell as it warns and a struck toll.
+  curse_proc: (ev, h) => {
+    if (ev.curse === 'tolling_dead') return ev.stage === 'toll' ? one('bw_knell', at(ev, h, null), { pitch: 0.6 }) : one('bw_ring', at(ev, h, null), { pitch: 0.55 });
+    return ev.healed && ev.healed.length ? one('siphon_heal', at(ev, h, ev.from), { pitch: 0.6 }) : null;
+  },
   glint_gain: () => [{ cue: 'glint' }],
   node_socketed: () => [{ cue: 'socket' }],
   node_unsocketed: () => [{ cue: 'unsocket' }],

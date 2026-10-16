@@ -130,7 +130,7 @@ const stepUntil = (W, pred, max = 600) => {
   const archer = seat(W, 3);
   W.registry.despawn(archer.id);
   const gated = W.run.cmd('relicPool', []);
-  check(all.includes('fletchers_knot') && all.length === RELIC_IDS.filter((id) => CLASS_RELICS[id] !== 'tidecaller' && CLASS_RELICS[id] !== 'bellwright').length, `class gate: a full party is offered every relic (${all.length})`);
+  check(all.includes('fletchers_knot') && all.length === RELIC_IDS.filter((id) => CLASS_RELICS[id] !== 'tidecaller' && CLASS_RELICS[id] !== 'bellwright' && !RELICS[id].vow).length, `class gate: a full party is offered every relic (${all.length}; a vow relic waits on a vow)`);
   check(!gated.includes('fletchers_knot') && gated.includes('fox_ribbon') && gated.length === all.length - 1, "class gate: with no Archer, Fletcher's Knot leaves the pool");
 }
 

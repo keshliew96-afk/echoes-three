@@ -435,11 +435,20 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
   tonic.slot.classList.add('hud-slot-tonic');
   tonicGroup.appendChild(tonic.slot);
   let tonicShown = null; // null = hidden, '' = empty, else the item id
+  let tonicCorked = false;
   function paintTonic() {
     const R = typeof world.runSystem === 'function' ? world.runSystem() : null;
     const v = R && typeof R.tonics === 'function' && R.isActive() ? R.tonics() : null;
     const slots = v ? v.slots : null;
     const id = slots ? slots[viewerSeat()] ?? '' : null;
+    // RELICS batch 5: a Corked room seals the slot (a wax seal over it).
+    const corked = !!(v && v.corked);
+    if (corked !== tonicCorked) {
+      tonicCorked = corked;
+      tonic.slot.classList.toggle('is-corked', corked);
+      if (corked) tonic.slot.title = t('Corked: tonics and bombs cannot be used in this room.');
+      else if (id === tonicShown) tonicShown = undefined; // repaint the title
+    }
     if (id === tonicShown) return;
     const was = tonicShown;
     tonicShown = id;
@@ -451,7 +460,7 @@ export function createCommandBar({ bus, world, portraits, onSelect }) {
     tonic.slot.style.setProperty('--tonic', id ? TONIC_COLORS[id].glow : 'transparent');
     setIcon(tonic, id || null, '·');
     const row = id ? CONSUMABLES[id] : null;
-    tonic.slot.title = row ? `${t(row.name)} — ${t(row.text)}` : t('Carry slot: empty. Elites, chests and the Peddler give tonics and bombs.');
+    tonic.slot.title = corked ? t('Corked: tonics and bombs cannot be used in this room.') : row ? `${t(row.name)} — ${t(row.text)}` : t('Carry slot: empty. Elites, chests and the Peddler give tonics and bombs.');
     tonic.slot.classList.remove('tonic-pop', 'tonic-spent');
     void tonic.slot.offsetWidth;
     if (id) tonic.slot.classList.add('tonic-pop');

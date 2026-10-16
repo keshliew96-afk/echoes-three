@@ -31,6 +31,8 @@ import { createGameplayRng } from '../core/rng.js';
 import * as STATUS from './status.js';
 import { dailyPick } from '../data/daily.js';
 import { CLASS_TECH } from '../data/classes.js';
+import { CONSUMABLES, shareFor } from './consumables.js';
+import { isChampionKind } from './champions.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -97,6 +99,19 @@ export const RELICS = Object.freeze({
   // relic once found (data/unlocks.js builds one per relic).
   weathercock_plume: { name: 'Weathercock Plume', rarity: 'common', text: 'Dodges recover 15% faster, and party hits knock enemies back 30% farther.', dodgeCd: -0.15, kb: 0.3 },
   hushbell: { name: 'Hushbell', rarity: 'rare', text: 'The party deals 25% more damage to an enemy while its attack warning is up.', hush: Object.freeze({ dealt: 0.25 }) },
+  // Batch 5 (docs/RELICS.md "Batch 5"): relics that answer content plan 4
+  // (tonics and bombs, shrines, the second champions, the Spire's gust
+  // vents, the bells and the vows). No dice: every one reads the bus or a
+  // count, so holding one never moves the relic stream.
+  brewers_satchel: { name: "Brewer's Satchel", rarity: 'common', text: 'Each tonic or bomb a hero uses also heals every other hero for 12% of max HP.', satchel: Object.freeze({ heal: 0.12 }) },
+  votive_ribbon: { name: 'Votive Ribbon', rarity: 'common', text: "A shrine's blessing lasts twice as long, and each offering heals the party for 20% of max HP.", votive: Object.freeze({ blessMul: 2, heal: 0.2 }) },
+  stormglass: { name: 'Stormglass', rarity: 'common', text: 'Gust vents turn on the enemy: each gust strikes every enemy in its lane for 12% of its max HP (6% for elites, 2% for champions and bosses).', storm: Object.freeze({ dmg: 0.12, elite: 0.06, big: 0.02 }) },
+  twin_fuse: { name: 'Twin Fuse', rarity: 'rare', text: 'A thrown bomb bursts a second time 0.6 s after it lands, for half its damage.', fuse: Object.freeze({ delayTicks: 36, frac: 0.5 }) },
+  trophy_cord: { name: 'Trophy Cord', rarity: 'rare', text: '+6% party damage for every champion the party has felled this run (up to +30%).', trophy: Object.freeze({ per: 0.06, max: 5 }) },
+  // Offered only while the run wears a vow (never the Daily's omen).
+  oathkeepers_brand: { name: "Oathkeeper's Brand", rarity: 'rare', vow: true, text: '+4% party damage for every Vow level the run wears (up to +40%).', brand: Object.freeze({ per: 0.04, max: 10 }) },
+  bottomless_flask: { name: 'Bottomless Flask', rarity: 'legendary', text: "Once a room, each hero's first tonic or bomb comes back to their slot 10 s later.", flask: Object.freeze({ delayTicks: 600 }) },
+  tenor_bell: { name: 'Tenor Bell', rarity: 'legendary', text: "Every 10th enemy the party fells in a room rings the great bell: every enemy in the room takes 12 damage and is slowed 40% for 2 s. Kills inside the Bellwright's bell rings count twice.", tenor: Object.freeze({ every: 10, dmg: 12, slow: 0.4, ticks: 120 }) },
 });
 // Batch 3: the class relics (a relic -> the class it needs in the party).
 export const CLASS_RELICS = Object.freeze(Object.fromEntries(Object.keys(RELICS).filter((id) => RELICS[id].cls).map((id) => [id, RELICS[id].cls])));
@@ -124,6 +139,10 @@ export const CURSES = Object.freeze({
   kindred_blood: { name: 'Kindred Blood', text: 'When an enemy falls in this room, enemies within 2.5 u heal 10% of their max HP.', kindred: Object.freeze({ heal: 0.1, radius: 2.5 }) },
   teeming: { name: 'Teeming', major: true, text: 'Every wave is 12% larger for the rest of the run.', diff: { budgetMul: 1.12 } },
   paupers_mark: { name: "Pauper's Mark", major: true, text: 'The party gains 20% less Glint for the rest of the run.', glintCut: 0.2 },
+  // Batch 5: two room curses and one major one.
+  corked: { name: 'Corked', text: 'Tonics and bombs cannot be used in this room, and enemies here have 10% more HP.', corked: true, diff: { hpMul: 1.1 } },
+  tolling_dead: { name: 'Tolling Dead', text: 'Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.', toll: Object.freeze({ delayTicks: 48, radius: 1.6, dmg: 0.1, max: 6 }) },
+  dulled_edge: { name: 'Dulled Edge', major: true, text: 'Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.', critMul: -0.25 },
 });
 // The room curses a door can carry, and the major ones.
 export const CURSE_IDS = Object.freeze(Object.keys(CURSES).filter((id) => !CURSES[id].major));
@@ -133,7 +152,7 @@ export const MAJOR_CURSE_IDS = Object.freeze(Object.keys(CURSES).filter((id) => 
 // to a class) and its fixed major curse, from the day's seed.
 export function dailyOmen(seed) {
   return {
-    relic: dailyPick(seed, RELIC_IDS.filter((id) => !RELICS[id].cls), 'relic'),
+    relic: dailyPick(seed, RELIC_IDS.filter((id) => !RELICS[id].cls && !RELICS[id].vow), 'relic'),
     curse: dailyPick(seed, MAJOR_CURSE_IDS, 'curse'),
   };
 }
@@ -203,7 +222,9 @@ export function cursedDiff(diff, curseId, scale = 1) {
 
 // `vowMods()` (VOW RANKS, sim/run.js): the Spire vows the run wears,
 // { heal, dodge } (null with none), read live like the major curses.
-export function createRelicSystem({ registry, events, getTick, combat, skillSys, player, live = () => true, glint = null, vowMods = () => null }) {
+// Batch 5: `vowLevel()` is the run's Vow level (Oathkeeper's Brand) and
+// `tonicSlot` reads and fills a seat's carry slot (Bottomless Flask).
+export function createRelicSystem({ registry, events, getTick, combat, skillSys, player, live = () => true, glint = null, vowMods = () => null, vowLevel = () => 0, tonicSlot = null }) {
   let on = false;
   let stream = null;
   let owned = []; // relic ids in pick order
@@ -226,6 +247,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let charmHits = 0; // THE TIDECALLER: Millrace Charm's count of soaked hits
   let tollHits = 0; // THE BELLWRIGHT: Verdigris Clapper's count of striking tolls
   let ring = null; // batch 4: the live Hold ring { x, z, r } (Warding Chalk)
+  let later = []; // batch 5: procs that land on a later tick ({ at, ... })
+  let trophies = 0; // batch 5: champions the party felled this run (Trophy Cord)
+  let tenorKills = 0; // batch 5: Tenor Bell's count of this room's kills
+  let flaskUsed = []; // batch 5: seats whose flask already refilled this room
 
   const has = (id) => owned.includes(id);
   const sum = (key) => owned.reduce((s, id) => s + (RELICS[id][key] ?? 0), 0);
@@ -233,7 +258,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   // Batch 3: the body of a class's seat, and whether that class stands in
   // the party (a class relic is offered only then).
   const seatBody = (cls) => partyBodies().find((e) => (e.partyIndex === 0 ? 'healer' : e.classId) === cls) ?? null;
-  const offerable = (id) => !owned.includes(id) && (!RELICS[id].cls || !!seatBody(RELICS[id].cls));
+  // Batch 5: a vow relic is offered only while the run wears a vow.
+  const offerable = (id) => !owned.includes(id) && (!RELICS[id].cls || !!seatBody(RELICS[id].cls)) && (!RELICS[id].vow || vowLevel() > 0);
   const pool0 = () => RELIC_IDS.filter(offerable);
   const hostileLive = (e) => !!e && e.faction === 'hostile' && e.hp > 0 && e.lifecycle !== 'break' && e.kind !== 'eglob';
   const relicSource = (src) => typeof src === 'string' && !!RELICS[src];
@@ -264,6 +290,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     charmHits = 0;
     tollHits = 0;
     ring = null;
+    later = [];
+    trophies = 0;
+    tenorKills = 0;
+    flaskUsed = [];
     if (combat && typeof combat.setMods === 'function') combat.setMods(on ? mods : null);
   }
 
@@ -291,6 +321,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (target && target.champion && has('champions_laurel')) m += RELICS.champions_laurel.laurel.dealt;
       // THE STILL SPIRE: the Hushbell on an enemy mid-warning.
       if (target && target.telegraph && has('hushbell')) m += RELICS.hushbell.hush.dealt;
+      // Batch 5: Trophy Cord (champions felled) and Oathkeeper's Brand (the
+      // Vow level).
+      if (has('trophy_cord')) m += RELICS.trophy_cord.trophy.per * Math.min(RELICS.trophy_cord.trophy.max, trophies);
+      if (has('oathkeepers_brand')) m += RELICS.oathkeepers_brand.brand.per * Math.min(RELICS.oathkeepers_brand.brand.max, vowLevel());
       return m;
     },
     takenMul: () =>
@@ -303,7 +337,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
           (has('vigil_candle') && (roomMode === 'escort' || roomMode === 'hold') ? RELICS.vigil_candle.vigil.taken : 0),
       ),
     critChance: () => sum('crit'),
-    critMulAdd: () => sum('critMul'),
+    // Batch 5: Dulled Edge (a major curse) blunts every crit.
+    critMulAdd: () => sum('critMul') + majorSum('critMul'),
     kbMul: () => 1 + sum('kb'),
     healMul() {
       let m = 1 + sum('heal');
@@ -341,6 +376,28 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (!target) return;
       // Batch 4: Kindred Blood, the fallen's kin drink its death.
       if (cursedNow('kindred_blood')) pending.push({ kind: 'kindred', x: target.x, z: target.z, id: target.id });
+      // Batch 5: Tolling Dead tolls where the fallen stood; Trophy Cord counts
+      // a champion; Tenor Bell counts the room's kills.
+      if (cursedNow('tolling_dead')) {
+        const K = CURSES.tolling_dead.toll;
+        if (later.filter((p) => p.kind === 'toll').length < K.max) {
+          const at = getTick() + K.delayTicks;
+          later.push({ kind: 'toll', at, from: target.id, x: r2(target.x), z: r2(target.z) });
+          events.emit(getTick(), 'curse_proc', { curse: 'tolling_dead', stage: 'toll', from: target.id, radius: K.radius, resolveTick: at, x: r2(target.x), z: r2(target.z) });
+        }
+      }
+      if ((target.champion || isChampionKind(target.kind)) && !target.trophied) {
+        target.trophied = true;
+        trophies += 1;
+        if (has('trophy_cord')) pending.push({ kind: 'trophy', x: target.x, z: target.z, id: target.id });
+      }
+      if (has('tenor_bell')) {
+        tenorKills += inBellRing(target) ? 2 : 1;
+        if (tenorKills >= RELICS.tenor_bell.tenor.every) {
+          tenorKills = 0;
+          pending.push({ kind: 'tenor', x: target.x, z: target.z, id: target.id });
+        }
+      }
       if (has('spore_sac')) pending.push({ kind: 'spores', x: target.x, z: target.z, id: target.id });
       if (target.elite && has('bounty_writ')) pending.push({ kind: 'bounty', x: target.x, z: target.z, id: target.id, affixes: Array.isArray(target.affixes) ? target.affixes.length : 0 });
       if (target.elite && (!dropped || dropNext)) pending.push({ kind: 'drop', x: target.x, z: target.z, id: target.id, etype: target.kind });
@@ -454,6 +511,42 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     for (const e of partyBodies()) if (e.hp > 0 && e.hp < e.maxHp && combat.applyHeal(e, e.maxHp * frac, { source })) n += 1;
     return n;
   };
+
+  // ------------------------------------------------ batch 5 listeners --
+  // Tonics and bombs, shrines and gust vents announce themselves on the bus;
+  // each relic queues a proc for endOfTick() (or `later`, on a set tick).
+  // Tenor Bell: did `e` fall inside one of the Bellwright's bell rings?
+  function inBellRing(e) {
+    for (const z of registry.all()) {
+      if (!z.bell || bodyCls(z.sourceId) !== 'bellwright') continue;
+      if (Math.hypot(e.x - z.x, e.z - z.z) <= (z.radius ?? 0) + (e.radius ?? 0)) return true;
+    }
+    return false;
+  }
+  // A big body (a boss, the Stag, a champion) takes the small share.
+  const bigBody = (e) => e.boss === true || e.kind === 'stag' || !!e.champion || isChampionKind(e.kind);
+  events.on('tonic_use', (ev) => {
+    if (!on || !live() || !Number.isInteger(ev.seat)) return;
+    if (has('brewers_satchel')) pending.push({ kind: 'satchel', seat: ev.seat, by: ev.by, item: ev.item });
+    if (has('bottomless_flask') && tonicSlot && !flaskUsed.includes(ev.seat) && CONSUMABLES[ev.item]) {
+      flaskUsed.push(ev.seat);
+      later.push({ kind: 'refill', at: getTick() + RELICS.bottomless_flask.flask.delayTicks, seat: ev.seat, item: ev.item });
+      events.emit(getTick(), 'relic_proc', { relic: 'bottomless_flask', stage: 'pour', seat: ev.seat, item: ev.item, target: ev.by ?? null, x: r2(ev.x ?? player.x), z: r2(ev.z ?? player.z) });
+    }
+  });
+  events.on('tonic_burst', (ev) => {
+    if (!on || !live() || !has('twin_fuse') || ev.echo || !CONSUMABLES[ev.item]) return;
+    const F = RELICS.twin_fuse.fuse;
+    later.push({ kind: 'fuse', at: getTick() + F.delayTicks, item: ev.item, seat: ev.seat, x: ev.x, z: ev.z, radius: ev.radius });
+    events.emit(getTick(), 'relic_proc', { relic: 'twin_fuse', stage: 'lit', item: ev.item, radius: ev.radius, resolveTick: getTick() + F.delayTicks, x: r2(ev.x), z: r2(ev.z) });
+  });
+  events.on('shrine_offer', (ev) => {
+    if (on && live() && has('votive_ribbon')) pending.push({ kind: 'votive', x: ev.x, z: ev.z, blessing: ev.blessing ?? null });
+  });
+  events.on('hazard_resolve', (ev) => {
+    if (!on || !live() || !ev.gust || !ev.lane || !has('stormglass')) return;
+    pending.push({ kind: 'storm', lane: { ...ev.lane } });
+  });
   // Warding Chalk: once a second, every standing member inside the ring.
   function chalkTick() {
     if (!ring || !has('warding_chalk')) return;
@@ -487,10 +580,22 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   function endOfTick() {
     if (!on) return;
     if (ring && live()) chalkTick();
+    if (later.length && live()) {
+      const tick = getTick();
+      const due = later.filter((p) => p.at <= tick);
+      if (due.length) {
+        later = later.filter((p) => p.at > tick);
+        pending.push(...due);
+      }
+    }
     if (pending.length === 0) return;
     const list = pending;
     pending = [];
     for (const p of list) {
+      if (p.kind in BATCH5) {
+        BATCH5[p.kind](p);
+        continue;
+      }
       if (p.kind === 'thorns') {
         const a = registry.byId(p.attacker);
         if (!a || !(a.hp > 0)) continue;
@@ -670,6 +775,90 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     }
   }
 
+  // Batch 5's procs (endOfTick).
+  const BATCH5 = {
+    satchel(p) {
+      const H = RELICS.brewers_satchel.satchel.heal;
+      const healed = [];
+      for (const e of partyBodies()) {
+        if (e.partyIndex === p.seat || !(e.hp > 0) || e.downed || e.hp >= e.maxHp) continue;
+        if (combat.applyHeal(e, e.maxHp * H, { source: 'brewers_satchel' })) healed.push(e.id);
+      }
+      const by = p.by !== undefined && p.by !== null ? registry.byId(p.by) : null;
+      events.emit(getTick(), 'relic_proc', { relic: 'brewers_satchel', seat: p.seat, item: p.item, healed, target: by ? by.id : null, x: r2(by ? by.x : player.x), z: r2(by ? by.z : player.z) });
+    },
+    refill(p) {
+      if (!tonicSlot || tonicSlot.get(p.seat)) return; // a full slot keeps what it holds
+      if (!tonicSlot.set(p.seat, p.item)) return;
+      const b = partyBodies().find((e) => e.partyIndex === p.seat) ?? player;
+      events.emit(getTick(), 'relic_proc', { relic: 'bottomless_flask', stage: 'refill', seat: p.seat, item: p.item, target: b.id, x: r2(b.x), z: r2(b.z) });
+    },
+    fuse(p) {
+      const row = CONSUMABLES[p.item];
+      const F = RELICS.twin_fuse.fuse;
+      const hit = [];
+      for (const e of registry.all().filter(hostileLive).sort((a, b) => a.id - b.id)) {
+        const dx = e.x - p.x;
+        const dz = e.z - p.z;
+        if (Math.hypot(dx, dz) > p.radius + (e.radius ?? 0.3)) continue;
+        const l = Math.hypot(dx, dz) || 1;
+        const r = combat.applyDamage(e, e.maxHp * shareFor(row, e, (k) => !!e.champion || isChampionKind(k)) * F.frac, { delivery: 'skill', shape: 'burst', dirX: dx / l, dirZ: dz / l, attacker: null, source: 'twin_fuse' });
+        if (r && r.amount > 0) hit.push(e.id);
+      }
+      events.emit(getTick(), 'relic_proc', { relic: 'twin_fuse', stage: 'burst', item: p.item, radius: p.radius, hit, x: r2(p.x), z: r2(p.z) });
+    },
+    votive(p) {
+      const healed = healParty(RELICS.votive_ribbon.votive.heal, 'votive_ribbon');
+      events.emit(getTick(), 'relic_proc', { relic: 'votive_ribbon', blessing: p.blessing, healed, x: r2(p.x ?? player.x), z: r2(p.z ?? player.z) });
+    },
+    storm(p) {
+      const S = RELICS.stormglass.storm;
+      const L = p.lane;
+      const len = Math.hypot(L.x1 - L.x0, L.z1 - L.z0) || 1;
+      const dx = (L.x1 - L.x0) / len;
+      const dz = (L.z1 - L.z0) / len;
+      const hit = [];
+      for (const e of registry.all().filter(hostileLive).sort((a, b) => a.id - b.id)) {
+        const rx = e.x - L.x0;
+        const rz = e.z - L.z0;
+        const along = rx * dx + rz * dz;
+        const side = -rx * dz + rz * dx;
+        if (along < 0 || along > len || Math.abs(side) > L.w / 2 + (e.radius ?? 0)) continue;
+        const share = bigBody(e) ? S.big : e.elite ? S.elite : S.dmg;
+        const r = combat.applyDamage(e, e.maxHp * share, { delivery: 'skill', shape: 'gust', dirX: dx, dirZ: dz, attacker: null, source: 'stormglass' });
+        if (r && r.amount > 0) hit.push(e.id);
+      }
+      events.emit(getTick(), 'relic_proc', { relic: 'stormglass', hit, lane: { ...L }, x: r2((L.x0 + L.x1) / 2), z: r2((L.z0 + L.z1) / 2) });
+    },
+    trophy(p) {
+      const T = RELICS.trophy_cord.trophy;
+      events.emit(getTick(), 'relic_proc', { relic: 'trophy_cord', from: p.id, trophies, dealt: r2(T.per * Math.min(T.max, trophies)), x: r2(p.x), z: r2(p.z) });
+    },
+    tenor(p) {
+      const B = RELICS.tenor_bell.tenor;
+      const tick = getTick();
+      const hit = [];
+      for (const e of registry.all().filter(hostileLive).sort((a, b) => a.id - b.id)) {
+        const l = Math.hypot(e.x - p.x, e.z - p.z) || 1;
+        const r = combat.applyDamage(e, B.dmg, { delivery: 'skill', shape: 'ground_aoe', dirX: (e.x - p.x) / l, dirZ: (e.z - p.z) / l, attacker: null, source: 'tenor_bell' });
+        if (registry.byId(e.id) && e.hp > 0) combat.status.apply(e, 'slow', B.slow, B.ticks, tick, null);
+        if (r && r.amount > 0) hit.push(e.id);
+      }
+      events.emit(tick, 'relic_proc', { relic: 'tenor_bell', from: p.id ?? null, hit, x: r2(p.x), z: r2(p.z), px: r2(player.x), pz: r2(player.z) });
+    },
+    toll(p) {
+      const K = CURSES.tolling_dead.toll;
+      const struck = [];
+      for (const e of partyBodies()) {
+        if (!(e.hp > 0) || e.downed || Math.hypot(e.x - p.x, e.z - p.z) > K.radius + (e.radius ?? 0)) continue;
+        const l = Math.hypot(e.x - p.x, e.z - p.z);
+        const r = combat.applyDamage(e, e.maxHp * K.dmg, { delivery: 'hazard', shape: 'hazard', dirX: l > 1e-6 ? (e.x - p.x) / l : 0, dirZ: l > 1e-6 ? (e.z - p.z) / l : 1, attacker: null, source: 'tolling_dead' });
+        if (r && r.amount > 0) struck.push(e.id);
+      }
+      events.emit(getTick(), 'curse_proc', { curse: 'tolling_dead', stage: 'strike', from: p.from, struck, radius: K.radius, x: r2(p.x), z: r2(p.z) });
+    },
+  };
+
   // ------------------------------------------------------- run hooks --
   // A combat or boss room's first tick.
   function onRoomEnter(room, mode) {
@@ -677,12 +866,16 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     savedThisRoom = [];
     roomNow = room;
     roomMode = mode;
+    tenorKills = 0;
+    flaskUsed = [];
+    later = later.filter((p) => p.kind === 'refill');
     if (curse && curse.room !== room) curse = null;
     if (curse) {
       events.emit(getTick(), 'curse_apply', { curse: curse.id, room, mode, ...(CURSES[curse.id].major ? { major: true } : {}), x: r2(player.x), z: r2(player.z) });
       if (has('cinder_pact')) events.emit(getTick(), 'relic_proc', { relic: 'cinder_pact', room, majors: majors.length, x: r2(player.x), z: r2(player.z) });
     }
     if (has('huntsmans_horn') && (mode === 'hunt' || mode === 'purge')) events.emit(getTick(), 'relic_proc', { relic: 'huntsmans_horn', room, mode, stage: 'enter', x: r2(player.x), z: r2(player.z) });
+    if (has('oathkeepers_brand') && vowLevel() > 0 && mode !== 'event' && mode !== 'vault') events.emit(getTick(), 'relic_proc', { relic: 'oathkeepers_brand', room, level: vowLevel(), x: r2(player.x), z: r2(player.z) });
     if (has('vigil_candle') && (mode === 'escort' || mode === 'hold')) events.emit(getTick(), 'relic_proc', { relic: 'vigil_candle', room, mode, x: r2(player.x), z: r2(player.z) });
     if (has('pilgrims_lamp') && mode === 'event') {
       const L = RELICS.pilgrims_lamp.lamp;
@@ -707,6 +900,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     const tick = getTick();
     roomMode = null;
     ring = null;
+    // Batch 5: a Bottomless Flask still pouring fills its slot now; a
+    // knell or a second burst still waiting dies with the room.
+    const refills = later.filter((p) => p.kind === 'refill');
+    later = [];
+    for (const p of refills) BATCH5.refill(p);
     // Batch 4: Banner Pennant (any objective won), Champion's Laurel (the
     // chest), Geode Heart (a cursed room cleared).
     if (has('banner_pennant') && objective && won) {
@@ -870,6 +1068,9 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     roomMode = null;
     oathAt = {};
     ring = null;
+    later = [];
+    tenorKills = 0;
+    flaskUsed = [];
   }
 
   // Shop: the Healer's shelf prices with Peddler's Seal.
@@ -920,6 +1121,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       ...(charmHits ? { charmHits } : {}),
       ...(tollHits ? { tollHits } : {}),
       ...(ring ? { ring: { ...ring } } : {}),
+      ...(later.length ? { later: later.map((p) => ({ ...p })) } : {}),
+      ...(trophies ? { trophies } : {}),
+      ...(tenorKills ? { tenorKills } : {}),
+      ...(flaskUsed.length ? { flaskUsed: [...flaskUsed] } : {}),
       ...(pending.length ? { pending: pending.map((p) => ({ ...p })) } : {}),
     };
   }
@@ -946,6 +1151,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     tollHits = Number.isFinite(d.tollHits) ? d.tollHits : 0;
     ring = d.ring && Number.isFinite(d.ring.x) && Number.isFinite(d.ring.z) ? { x: d.ring.x, z: d.ring.z, r: Number(d.ring.r) || 0, t0: Number(d.ring.t0) || 0 } : null;
     pending = Array.isArray(d.pending) ? d.pending.filter((p) => p && typeof p.kind === 'string').map((p) => ({ ...p })) : [];
+    later = Array.isArray(d.later) ? d.later.filter((p) => p && typeof p.kind === 'string' && Number.isFinite(p.at)).map((p) => ({ ...p })) : [];
+    trophies = Number.isFinite(d.trophies) ? d.trophies : 0;
+    tenorKills = Number.isFinite(d.tenorKills) ? d.tenorKills : 0;
+    flaskUsed = Array.isArray(d.flaskUsed) ? d.flaskUsed.filter(Number.isInteger) : [];
   }
 
   return {
@@ -976,6 +1185,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     glintMul: () => (on ? Math.max(0, 1 - majorSum('glintCut')) : 1),
     vaultPileMul: () => (on && has('vault_ledger') ? RELICS.vault_ledger.ledger.mul : 1),
     holdFadeMul: () => (on && has('warding_chalk') ? RELICS.warding_chalk.chalk.fadeMul : 1),
+    // Batch 5: a shrine blessing's length factor (Votive Ribbon), whether the
+    // live room is Corked (no tonic or bomb), and the champions felled.
+    blessMul: () => (on && has('votive_ribbon') ? RELICS.votive_ribbon.votive.blessMul : 1),
+    corked: () => on && cursedHere() && !!CURSES[curse.id] && !!CURSES[curse.id].corked,
+    trophies: () => (on ? trophies : 0),
     fuse,
     openShelf,
     shelfItem,
@@ -1025,6 +1239,24 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       else if (id === 'vigil_candle') events.emit(tick, 'relic_proc', { relic: id, mode: 'hold', ...at });
       else if (id === 'champions_laurel') events.emit(tick, 'relic_proc', { relic: id, champion: 'demo', glint: RELICS.champions_laurel.laurel.glint, ...at });
       else if (id === 'geode_heart') events.emit(tick, 'relic_proc', { relic: id, curse: 'restless', glint: RELICS.geode_heart.geode.glint, ...at });
+      // Batch 5: each beat through its real proc, in front of the party.
+      else if (id === 'brewers_satchel') pending.push({ kind: 'satchel', seat: player.partyIndex ?? 0, by: player.id, item: 'mend_tonic' });
+      else if (id === 'votive_ribbon') pending.push({ kind: 'votive', x: at.x, z: r2(at.z - 1.6), blessing: 'tailwind' });
+      else if (id === 'stormglass') pending.push({ kind: 'storm', lane: { x0: r2(at.x - 4.5), z0: r2(at.z - 2.2), x1: r2(at.x + 4.5), z1: r2(at.z - 2.2), w: 1.6 } });
+      else if (id === 'twin_fuse') {
+        const F = RELICS.twin_fuse.fuse;
+        const fz = r2(at.z - 2.6);
+        later.push({ kind: 'fuse', at: tick + F.delayTicks, item: 'fire_bomb', seat: 0, x: at.x, z: fz, radius: CONSUMABLES.fire_bomb.radius });
+        events.emit(tick, 'relic_proc', { relic: id, stage: 'lit', item: 'fire_bomb', radius: CONSUMABLES.fire_bomb.radius, resolveTick: tick + F.delayTicks, x: at.x, z: fz });
+      } else if (id === 'trophy_cord') {
+        trophies += 1;
+        pending.push({ kind: 'trophy', x: at.x, z: r2(at.z - 2), id: null });
+      } else if (id === 'oathkeepers_brand') events.emit(tick, 'relic_proc', { relic: id, level: Math.max(1, vowLevel()), ...at });
+      else if (id === 'bottomless_flask') {
+        const seat = player.partyIndex ?? 0;
+        later.push({ kind: 'refill', at: tick + 90, seat, item: 'mend_tonic' });
+        events.emit(tick, 'relic_proc', { relic: id, stage: 'pour', seat, item: 'mend_tonic', target: player.id, ...at });
+      } else if (id === 'tenor_bell') pending.push({ kind: 'tenor', x: at.x, z: at.z, id: null });
       return id;
     },
     grant(id) {

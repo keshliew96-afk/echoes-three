@@ -106,7 +106,7 @@ import { affixCountFor, AFFIX_RULES, AFFIXES } from './affixes.js';
 import { encounterSpec } from './interactables.js';
 // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
 import { sanitizeBoons } from '../data/unlocks.js';
-import { VOW_RANKS, rankIn, rankValue, vowScale, vowFuseRule } from '../data/vows.js';
+import { VOW_RANKS, rankIn, rankValue, vowScale, vowFuseRule, vowLevelOf } from '../data/vows.js';
 import { swapSuggestion, PARTY_DEADLINES } from '../data/classes.js';
 import { DEFAULT_LINEUP } from '../data/lineup.js';
 // PARTY (PLAN §16.3): the party page + the party shelves.
@@ -207,7 +207,21 @@ export function createRunSystem({
   const allyOn = () => supplyOn && !!pages;
   if (typeof buildSys.attachSkills === 'function') buildSys.attachSkills(skillSys);
   const statusTracker = createStatusTracker({ registry, events, getTick });
-  const relics = createRelicSystem({ registry, events, getTick, combat, skillSys, player, live: () => active, glint: (n, reason) => gainGlint(n, reason), vowMods: () => (active ? vowMods() : null) });
+  // RELICS batch 5: the run's Vow level (Oathkeeper's Brand) and the carry
+  // slots (Bottomless Flask; `tonics` is built further down).
+  const relics = createRelicSystem({
+    registry,
+    events,
+    getTick,
+    combat,
+    skillSys,
+    player,
+    live: () => active,
+    glint: (n, reason) => gainGlint(n, reason),
+    vowMods: () => (active ? vowMods() : null),
+    vowLevel: () => (active && campaign && campaign.boons ? vowLevelOf(campaign.boons) : 0),
+    tonicSlot: { get: (seat) => tonics.slot(seat), set: (seat, id) => tonics.setSlot(seat, id) },
+  });
   // EVENT ROOMS: on with the relics (campaigns only, never the tutorial).
   const encounters = createEncounterSystem({ events, getTick });
   const encCtx = () => ({ wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length, majors: relics.majorCurses().length, land: levelFor(act)?.biome ?? null });
@@ -363,7 +377,8 @@ export function createRunSystem({
   // the keys (campaign, Endless, the Daily and Boss Rush; never the tutorial
   // or the legacy single-level run, so the goldens never see one). Elites
   // drop them by a hash roll; the champion's and the vault's chests pay one.
-  const tonics = createConsumableSystem({ registry, events, getTick, combat, isChampion: isChampionKind });
+  // RELICS batch 5: a Corked room seals every slot.
+  const tonics = createConsumableSystem({ registry, events, getTick, combat, isChampion: isChampionKind, sealed: () => active && relics.corked() });
   events.on('death', (ev) => {
     if (!active || !tonics.enabled() || phase !== 'combat' || !frame || !campaign) return;
     const e = registry.byId(ev.id);
@@ -1727,7 +1742,8 @@ export function createRunSystem({
       result.tonic = tonics.slot(seat);
       tonics.setSlot(seat, null);
     }
-    const B = S.gift !== 'relic' ? bless(bodies, S.gift, tick) : null;
+    // RELICS batch 5: Votive Ribbon makes the blessing last longer.
+    const B = S.gift !== 'relic' ? bless(bodies, S.gift, tick, Math.round(SHRINE_RULES.blessTicks * relics.blessMul())) : null;
     if (B) result.blessing = B.id;
     shrine.used = true;
     shrine.usedBy = seat;
