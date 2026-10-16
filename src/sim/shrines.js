@@ -17,8 +17,7 @@
 // from a hashed room in 4-6 on (never the boss room, the vault, the shop or a
 // "?" room). E uses it once (any human seat; the AI seats leave it alone,
 // they never press E). It answers only while the room is live: the clear
-// puts it to sleep with the other combat assets, and one left unanswered
-// moves on to the level's next combat room before the shop (small fixes 5). A trade the party cannot
+// puts it to sleep with the other combat assets. A trade the party cannot
 // pay (too little Glint, no key, no tonic) is refused and the shrine stays.
 // A new blessing replaces the old one. Campaign runs only (Endless and the
 // Daily included), never the tutorial or the legacy single-level run, so the

@@ -920,15 +920,6 @@ export function createRunSystem({
         else relics.grantTier('shrine', ['legendary', 'rare'], null, player);
       }
     }
-    // SHRINES (small fixes 5): a shrine left unanswered at the clear moves
-    // on, and stands again in the level's next combat room (never the shop
-    // or the boss room, so room 6 is its last), so a fight that ends fast
-    // never wastes it.
-    if (shrine && shrine.room === roomIndex && !shrine.used && roomIndex + 1 < RUN.shopRoom) {
-      events.emit(tick, 'shrine_moves', { shrine: shrine.id, room: roomIndex });
-      shrine.room = null;
-      shrine.aim = roomIndex + 1;
-    }
     // CHAMPION ROOMS: the champion's chest opens; its greater relic pick
     // comes after the room's draft (the crown door is never cursed, so no
     // other pick is owed here).

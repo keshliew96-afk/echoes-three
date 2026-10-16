@@ -7,9 +7,6 @@
 //           gathers its own gust (a lane from the carrier through the
 //           nearest enemy, shown 40 ticks) and blows it for the vents' 12%;
 //           a Spire room with gust vents leaves it to the vents
-//   shrine  a shrine left unanswered at the clear stands again in the next
-//           combat room (and answers there); a used one does not move; none
-//           moves into the boss room
 //   crowns  Four Crowns and Five Crowns count either champion of a land
 //   rush    a co-op rush keeps its own most felled; the rush count is shared
 //   text    the changed lines in all nine other languages
@@ -180,49 +177,6 @@ for (const level of [1, 2, 3, 4]) {
     w.step();
   }
   check('storm', 'no Stormglass, no gust of its own', !w.log.some((e) => e.type === 'relic_proc' && e.relic === 'stormglass'));
-}
-
-// -------------------------------------------------------------- shrine --
-function advanceToNextFight(w, from) {
-  for (let i = 0; i < 8000; i++) {
-    w.step();
-    mend(w);
-    const v = w.run().view();
-    if (v.phase === 'combat' && v.room > from) return v.room;
-    if (i % 20 !== 0) continue;
-    const R = w.run();
-    if (v.phase === 'reward') R.declineReward();
-    else if (v.phase === 'relic') R.chooseRelic(0);
-    else if (v.phase === 'path') R.choosePath(0);
-    else if (v.phase === 'shop') R.advanceFromShop({ force: true });
-    else if (v.phase === 'event' || v.phase === 'encounter' || v.phase === 'vault') w.cmd('skipToRoom', v.room + 1);
-  }
-  if (process.env.DBG) console.log('advance stuck', JSON.stringify({ phase: w.run().view().phase, room: w.run().view().room }));
-  return null;
-}
-{
-  const w = room(1, 6, 3, (x) => x.run().cmd('shrineRoom', [3]));
-  const st0 = w.run().cmd('shrineState', []);
-  check('shrine', `the Wood's shrine stands in room 3 (${st0?.room})`, st0?.room === 3 && !st0.used);
-  w.cmd('clearRoom');
-  const next = advanceToNextFight(w, 3);
-  const moved = w.log.find((e) => e.type === 'shrine_moves');
-  const spawns = w.log.filter((e) => e.type === 'shrine_spawn');
-  const st1 = w.run().cmd('shrineState', []);
-  check('shrine', `unanswered at the clear, it moves on and stands again in the next fight (room ${next}, ${spawns.length} spawns)`, !!moved && moved.room === 3 && spawns.length === 2 && st1?.room === next && w.registry.all().some((e) => e.kind === 'shrine'), { moved, st1 });
-  const r = w.run().cmd('shrineUse', [0]);
-  const h = heroes(w)[0];
-  check('shrine', 'there it answers: Swiftness for the party, for this fight', r?.blessing === 'swiftness' && h.blessing?.id === 'swiftness' && h.blessing.untilTick > w.clock.tick);
-  w.cmd('clearRoom');
-  const after = advanceToNextFight(w, next);
-  check('shrine', `a used shrine stays behind (room ${after}: no new shrine)`, after !== null && w.log.filter((e) => e.type === 'shrine_spawn').length === 2 && w.log.filter((e) => e.type === 'shrine_moves').length === 1);
-}
-{
-  const w = room(1, 6, 6, (x) => x.run().cmd('shrineRoom', [6]));
-  const st = w.run().cmd('shrineState', []);
-  w.cmd('clearRoom');
-  for (let i = 0; i < 60; i++) w.step();
-  check('shrine', `a shrine left in room 6 stays there: the shop and the boss room never take it (stood in ${st?.room})`, st?.room === 6 && !w.log.some((e) => e.type === 'shrine_moves'));
 }
 
 // -------------------------------------------------------------- crowns --
