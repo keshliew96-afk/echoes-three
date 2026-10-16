@@ -19,7 +19,7 @@ import { service } from '../../app/registry.js';
 import { UNLOCKS, UNLOCK_IDS, UNLOCK_KINDS, KIND_LABEL, DEEDS, DEED_IDS, CURRENCY, EMBER_RULES, BOSSES, unlockState, nextGoals, lifeAfter } from '../../data/unlocks.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { RELICS } from '../../sim/relics.js';
-import { VOW_MAX_RANK, VOW_ROMAN, VOW_MODES, vowPayPct } from '../../data/vows.js';
+import { VOW_MAX_RANK, VOW_ROMAN, VOW_MODES, vowPayPct, vowName } from '../../data/vows.js';
 import { SKILLS } from '../../sim/skills.js';
 import { relicIconHtml } from './relicicons.js';
 import { t, tn } from '../../i18n/index.js';
@@ -164,6 +164,15 @@ function installStyle() {
 .ul-unlocks .ul-rank i { width: ${px(13)}; height: ${px(13)}; transform: rotate(45deg); border: max(1px, ${px(2)}) solid ${P.warmGrey}AA; background: transparent; }
 .ul-unlocks .ul-rank i.on { background: ${P.godstuffViolet}; border-color: #E2D6FF; box-shadow: 0 0 ${px(9)} ${P.godstuffViolet}; }
 .ul-unlocks .ul-card[data-rank="3"] .ul-rank i.on { background: #FF6A4D; border-color: #FFD2C4; box-shadow: 0 0 ${px(10)} #FF6A4D; }
+.ul-unlocks .ul-life-grid { display: grid; grid-template-columns: 1fr 1fr; column-gap: ${px(16)}; }
+.ul-unlocks .ul-cap { font-style: normal; font-size: ${px(15)}; color: ${P.warmGrey}; }
+.ul-unlocks .ul-side.ul-compact { gap: ${px(6)}; }
+.ul-unlocks .ul-side.ul-compact .ul-box { padding: ${px(7)} ${px(12)}; }
+.ul-unlocks .ul-side.ul-compact .ul-box h3 { margin-bottom: ${px(4)}; font-size: ${px(16)}; }
+.ul-unlocks .ul-side.ul-compact .ul-line, .ul-unlocks .ul-side.ul-compact .ul-empty { font-size: ${px(17)}; line-height: 1.25; }
+.ul-unlocks .ul-side.ul-compact .ul-plain { margin-top: ${px(5)}; padding: ${px(6)}; font-size: ${px(17)}; }
+.ul-unlocks .ul-side.ul-compact .ul-vowlv b { font-size: ${px(24)}; }
+.ul-unlocks .ul-side.ul-nonext .ul-next { display: none; }
 .ul-unlocks .ul-vowlv { display: flex; align-items: baseline; gap: ${px(10)}; margin-top: ${px(4)}; padding-top: ${px(6)}; border-top: 1px solid ${P.warmGrey}55; }
 .ul-unlocks .ul-vowlv b { font-size: ${px(30)}; font-weight: 800; color: ${P.godstuffViolet}; text-shadow: 0 0 ${px(10)} ${P.godstuffViolet}88; }
 .ul-unlocks .ul-vowlv span { font-size: ${px(18)}; letter-spacing: 0.16em; font-weight: 800; color: ${P.warmGrey}; }
@@ -212,6 +221,26 @@ function profileCtx() {
   const p = s && typeof s.profile === 'function' ? s.profile() : null;
   if (!p || !p.meta) return null;
   return { meta: p.meta, records: p.records || {}, profile: p };
+}
+
+// The last run's award lines, fitted to the side panel (VOW RANKS: a full
+// campaign plus deeds ran past the screen): consecutive level clears fold
+// into one line, and past LAST_MAX lines the rest fold into "…and N more".
+const LAST_MAX = 7;
+function fitLines(lines, max = LAST_MAX) {
+  const out = [];
+  for (const l of lines) {
+    const m = /^Level (\S+) cleared$/.exec(String(l.label));
+    const prev = out[out.length - 1];
+    if (m && prev && prev.levels) {
+      prev.levels.push(m[1]);
+      prev.embers += l.embers;
+    } else out.push(m ? { levels: [m[1]], embers: l.embers } : { text: awardLabel(l.label), embers: l.embers });
+  }
+  for (const o of out) if (o.levels) o.text = o.levels.length > 1 ? t('Levels {from} to {to} cleared', { from: o.levels[0], to: o.levels[o.levels.length - 1] }) : t('Level {level} cleared', { level: o.levels[0] });
+  if (out.length <= max) return out;
+  const rest = out.slice(max - 1);
+  return [...out.slice(0, max - 1), { text: t('…and {n} more', { n: rest.length }), embers: rest.reduce((n, o) => n + o.embers, 0) }];
 }
 
 // VOW RANKS: the rank a sworn vow is worn at, and the loadout's Vow level.
@@ -281,6 +310,11 @@ export function createUnlocksScreen(ctx) {
   const noteEl = $('.ul-note');
   let tab = 'kit';
   let off = null;
+  let lastMax = LAST_MAX; // VOW RANKS: award lines shown (fitSide)
+  const onResize = () => {
+    const c = profileCtx();
+    if (c) fitSide(c);
+  };
   let log = []; // probe: the last actions { id, action, ok, reason }
 
   function note(s) {
@@ -297,7 +331,7 @@ export function createUnlocksScreen(ctx) {
     else {
       const res = { victory: () => t('Victory'), defeat: () => t('Defeat'), abandoned: () => t('Left early') }[last.result];
       lastB.innerHTML =
-        (last.lines || []).map((l) => `<div class="ul-line"><span>${esc(awardLabel(l.label))}</span><b>${l.embers >= 0 ? '+' : ''}${l.embers}</b></div>`).join('') +
+        fitLines(last.lines || [], lastMax).map((l) => `<div class="ul-line"><span>${esc(l.text)}</span><b>${l.embers >= 0 ? '+' : ''}${l.embers}</b></div>`).join('') +
         `<div class="ul-line ul-total"><span>${esc(res ? res() : '')}</span><b>+${last.embers}</b></div>` +
         (last.unlocked && last.unlocked.length ? `<div class="ul-line"><i>${esc(t('Unlocked: {names}', { names: last.unlocked.map((id) => (UNLOCKS[id] ? t(UNLOCKS[id].name) : id)).join(', ') }))}</i></div>` : '');
     }
@@ -318,7 +352,9 @@ export function createUnlocksScreen(ctx) {
     for (const cls of Object.keys(l.kits)) if (l.kits[cls]) wear.push(t('{cls}: {name} kit', { cls: t(CLASS_NAME[cls]), name: t(UNLOCKS[l.kits[cls]].name) }));
     if (l.heirloom) wear.push(t('Heirloom: {name}', { name: t(UNLOCKS[l.heirloom].name) }));
     if (l.purse) wear.push(t('Purse: +{glint} Glint', { glint: UNLOCKS[`purse_${l.purse}`].glint }));
-    for (const v of l.vows) wear.push(t('{name} · rank {rank}', { name: t(UNLOCKS[v].name), rank: VOW_ROMAN[rankOf(v, m)] }));
+    // VOW RANKS: every vow worn on one line, so eight vows never push the
+    // panel past the screen.
+    if (l.vows.length) wear.push(t('Vows: {list}', { list: l.vows.map((v) => `${t(vowName(UNLOCKS[v].curse))} ${VOW_ROMAN[rankOf(v, m)]}`).join(' · ') }));
     const tints = Object.keys(l.tints).filter((k) => l.tints[k]).map((k) => t(UNLOCKS[l.tints[k]].name));
     $('.ul-wear-b').innerHTML =
       (wear.length ? wear.map((w) => `<div class="ul-line"><span>${esc(w)}</span></div>`).join('') : `<div class="ul-empty">${esc(t('A plain run: the starting kits, no heirloom, no vows.'))}</div>`) +
@@ -334,13 +370,34 @@ export function createUnlocksScreen(ctx) {
           ? t('Online as host: your kits, heirloom, purse and vows set the whole party’s run. Every player earns on their own profile.')
           : '';
     const r = c.records;
+    // (Two stats a row, so the panel fits without scrolling.)
     $('.ul-life-b').innerHTML =
+      `<div class="ul-life-grid">` +
       `<div class="ul-line"><span>${esc(t('Runs · victories'))}</span><b>${r.runs || 0} · ${r.victories || 0}</b></div>` +
       `<div class="ul-line"><span>${esc(t('{currency} earned', { currency: t(CURRENCY) }))}</span><b>${m.earned}</b></div>` +
       `<div class="ul-line"><span>${esc(t('Unlocks'))}</span><b>${Object.keys(m.owned).length} / ${UNLOCK_IDS.length}</b></div>` +
       `<div class="ul-line"><span>${esc(t('Deeds'))}</span><b>${m.deeds.length} / ${DEED_IDS.length}</b></div>` +
-      `<div class="ul-line"><span>${esc(t('Best Vow level'))}</span><b>${VOW_MODES.map((k) => (m.vowBest && m.vowBest[k]) || 0).join(' · ')}</b></div>` +
-      `<div class="ul-line"><i>${esc(t('Campaign · Endless · Boss Rush'))}</i></div>`;
+      `</div>` +
+      `<div class="ul-line"><span>${esc(t('Best Vow level'))}<i class="ul-cap"> ${esc(t('Campaign · Endless · Boss Rush'))}</i></span><b>${VOW_MODES.map((k) => (m.vowBest && m.vowBest[k]) || 0).join(' · ')}</b></div>`;
+  }
+
+  // VOW RANKS: the side panel fits without scrolling. When it would run past
+  // its column (a full campaign's award, a long language, a short window) it
+  // steps down: a tighter cut, then fewer award lines, then the "What comes
+  // next" box gives way (the cards on the right still show every price).
+  function fitSide(c) {
+    const side = $('.ul-side');
+    if (!side || !side.clientHeight) return;
+    const over = () => side.scrollHeight > side.clientHeight + 1;
+    side.classList.remove('ul-compact', 'ul-nonext');
+    lastMax = LAST_MAX;
+    renderSide(c);
+    if (!over()) return;
+    side.classList.add('ul-compact');
+    if (!over()) return;
+    for (lastMax = LAST_MAX - 1; lastMax >= 4 && over(); lastMax--) renderSide(c);
+    if (!over()) return;
+    side.classList.add('ul-nonext');
   }
 
   // ------------------------------------------------------------ tabs --
@@ -449,6 +506,7 @@ export function createUnlocksScreen(ctx) {
     renderSide(c);
     renderTabs(c);
     renderGrid(c, { rebuild });
+    fitSide(c);
   }
 
   function setTab(k, { focus = true } = {}) {
@@ -539,10 +597,14 @@ export function createUnlocksScreen(ctx) {
       }
       render({ rebuild: true });
       if (s && typeof s.onProfileChanged === 'function') off = s.onProfileChanged(() => render());
+      window.addEventListener('resize', onResize);
+      // (A late web font can grow the text: fit once more when fonts settle.)
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => onResize()).catch(() => {});
     },
     onClose() {
       if (off) off();
       off = null;
+      window.removeEventListener('resize', onResize);
     },
     onNav(action) {
       if (action === 'tabNext' || action === 'tabPrev') {

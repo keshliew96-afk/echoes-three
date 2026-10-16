@@ -3156,7 +3156,6 @@
  "Answered": "Atendido",
  "{level} · best {best}": "{level} · melhor {best}",
  "{level} · New best!": "{level} · Novo melhor!",
- "{name} · rank {rank}": "{name} · nível {rank}",
  "{name} sworn at rank {rank}. Vow level {level}.": "{name} jurado no nível {rank}. Nível de voto {level}.",
  "Best Vow level": "Melhor nível de voto",
  "Best:": "Melhor:",
@@ -3189,5 +3188,8 @@
  "The Daily is vow-free.": "A Descida Diária não tem votos.",
  "VOW LEVEL": "NÍVEL DE VOTO",
  "Vow level {n} +{pct}%": "Nível de voto {n} +{pct}%",
- "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "As ondas em toda sala de combate chegam mais cedo: {r1}% no nível I, {r2}% no II, {r3}% no III."
+ "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "As ondas em toda sala de combate chegam mais cedo: {r1}% no nível I, {r2}% no II, {r3}% no III.",
+ "…and {n} more": "…e mais {n}",
+ "Levels {from} to {to} cleared": "Níveis {from} a {to} limpos",
+ "Vows: {list}": "Votos: {list}"
 }

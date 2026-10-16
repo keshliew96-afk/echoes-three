@@ -24,6 +24,11 @@
    "src/ui/run/draft.js"
   ]
  },
+ "…and {n} more": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "· ROOM": {
   "files": [
    "src/ui/run/draft.js"
@@ -683,11 +688,6 @@
  "{name} · FELLED": {
   "files": [
    "src/ui/hud/banner.js"
-  ]
- },
- "{name} · rank {rank}": {
-  "files": [
-   "src/ui/run/unlocks.js"
   ]
  },
  "{name} · Room {room}": {
@@ -8871,6 +8871,11 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Levels {from} to {to} cleared": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
  "LEVELS CLEARED": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -16158,6 +16163,11 @@
    "src/data/unlocks.js"
   ],
   "data": true
+ },
+ "Vows: {list}": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
  },
  "VS": {
   "files": [

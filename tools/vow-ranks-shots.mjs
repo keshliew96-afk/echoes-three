@@ -73,6 +73,21 @@ await settle(1000);
 await page.click('.ul-unlocks .ul-tab[data-tab="vow"]');
 await settle(900);
 await page.screenshot({ path: `${OUT}/vow-ranks-1-vows${suffix}.png` });
+// The side panel fits without scrolling (a full campaign plus deeds and four
+// vows), at this size and at 1280x720.
+const fits = () => page.evaluate(() => {
+  const el = document.querySelector('.ul-unlocks .ul-side');
+  return el ? { scroll: el.scrollHeight, client: el.clientHeight } : null;
+});
+const f1 = await fits();
+check(!!f1 && f1.scroll <= f1.client + 1, `the side panel fits at ${W}x${H} (${JSON.stringify(f1)})`);
+await page.setViewport({ width: 1280, height: 720, deviceScaleFactor: 1 });
+await settle(2500);
+const f2 = await fits();
+check(!!f2 && f2.scroll <= f2.client + 1, `the side panel fits at 1280x720 (${JSON.stringify(f2)})`);
+await page.screenshot({ path: `${OUT}/vow-ranks-1-vows-1280${suffix}.png` });
+await page.setViewport({ width: W, height: H, deviceScaleFactor: 1 });
+await settle(900);
 const cards = await page.evaluate(() => [...document.querySelectorAll('.ul-unlocks .ul-card')].map((c) => ({ id: c.dataset.id, rank: Number(c.dataset.rank), lit: c.querySelectorAll('.ul-rank i.on').length })));
 const iron = cards.find((c) => c.id === 'vow_iron_hide');
 check(iron && iron.rank === 3 && iron.lit === 3, `Iron Hide shows rank III with three pips lit (${JSON.stringify(iron)})`);

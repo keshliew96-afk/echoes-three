@@ -3046,7 +3046,6 @@
  "Answered": "응답함",
  "{level} · best {best}": "{level} · 최고 {best}",
  "{level} · New best!": "{level} · 최고 기록!",
- "{name} · rank {rank}": "{name} · {rank}단계",
  "{name} sworn at rank {rank}. Vow level {level}.": "{name}을(를) {rank}단계로 맹세했습니다. 서약 레벨 {level}.",
  "Best Vow level": "최고 서약 레벨",
  "Best:": "최고:",
@@ -3079,5 +3078,8 @@
  "The Daily is vow-free.": "일일 하강은 서약 없이 진행됩니다.",
  "VOW LEVEL": "서약 레벨",
  "Vow level {n} +{pct}%": "서약 레벨 {n} +{pct}%",
- "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "모든 전투 방의 웨이브가 더 빨리 옵니다: I단계 {r1}%, II단계 {r2}%, III단계 {r3}% 빨라짐."
+ "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "모든 전투 방의 웨이브가 더 빨리 옵니다: I단계 {r1}%, II단계 {r2}%, III단계 {r3}% 빨라짐.",
+ "…and {n} more": "…외 {n}개",
+ "Levels {from} to {to} cleared": "레벨 {from}~{to} 클리어",
+ "Vows: {list}": "서약: {list}"
 }

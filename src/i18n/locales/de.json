@@ -3126,7 +3126,6 @@
  "Answered": "Erhört",
  "{level} · best {best}": "{level} · Bestwert {best}",
  "{level} · New best!": "{level} · Neue Bestleistung!",
- "{name} · rank {rank}": "{name} · Rang {rank}",
  "{name} sworn at rank {rank}. Vow level {level}.": "{name} auf Rang {rank} geschworen. Schwurstufe {level}.",
  "Best Vow level": "Beste Schwurstufe",
  "Best:": "Bestwerte:",
@@ -3159,5 +3158,8 @@
  "The Daily is vow-free.": "Der Tägliche Abstieg ist schwurfrei.",
  "VOW LEVEL": "SCHWURSTUFE",
  "Vow level {n} +{pct}%": "Schwurstufe {n} +{pct}%",
- "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "Wellen in jedem Kampfraum kommen früher: {r1}% früher auf Rang I, {r2}% auf II, {r3}% auf III."
+ "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "Wellen in jedem Kampfraum kommen früher: {r1}% früher auf Rang I, {r2}% auf II, {r3}% auf III.",
+ "…and {n} more": "…und {n} weitere",
+ "Levels {from} to {to} cleared": "Level {from} bis {to} geschafft",
+ "Vows: {list}": "Schwüre: {list}"
 }

@@ -3046,7 +3046,6 @@
  "Answered": "応えた",
  "{level} · best {best}": "{level}・ベスト {best}",
  "{level} · New best!": "{level}・自己ベスト！",
- "{name} · rank {rank}": "{name}・ランク{rank}",
  "{name} sworn at rank {rank}. Vow level {level}.": "{name}をランク{rank}で誓った。誓いレベル{level}。",
  "Best Vow level": "誓いレベルのベスト",
  "Best:": "ベスト：",
@@ -3079,5 +3078,8 @@
  "The Daily is vow-free.": "デイリーは誓いなし。",
  "VOW LEVEL": "誓いレベル",
  "Vow level {n} +{pct}%": "誓いレベル{n} +{pct}%",
- "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "すべての戦闘部屋でウェーブが早く来る：ランクIで{r1}%、IIで{r2}%、IIIで{r3}%早まる。"
+ "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "すべての戦闘部屋でウェーブが早く来る：ランクIで{r1}%、IIで{r2}%、IIIで{r3}%早まる。",
+ "…and {n} more": "…ほか{n}件",
+ "Levels {from} to {to} cleared": "レベル{from}〜{to}クリア",
+ "Vows: {list}": "誓い：{list}"
 }

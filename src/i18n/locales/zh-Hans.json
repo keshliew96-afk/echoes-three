@@ -3046,7 +3046,6 @@
  "Answered": "已回应",
  "{level} · best {best}": "{level} · 最佳 {best}",
  "{level} · New best!": "{level} · 新最佳！",
- "{name} · rank {rank}": "{name} · {rank} 阶",
  "{name} sworn at rank {rank}. Vow level {level}.": "{name} 以 {rank} 阶立誓。誓约等级 {level}。",
  "Best Vow level": "最佳誓约等级",
  "Best:": "最佳：",
@@ -3079,5 +3078,8 @@
  "The Daily is vow-free.": "每日深渊不受誓约影响。",
  "VOW LEVEL": "誓约等级",
  "Vow level {n} +{pct}%": "誓约等级 {n} +{pct}%",
- "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "每个战斗房间的敌人波次提前到来：I 阶提前 {r1}%，II 阶 {r2}%，III 阶 {r3}%。"
+ "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "每个战斗房间的敌人波次提前到来：I 阶提前 {r1}%，II 阶 {r2}%，III 阶 {r3}%。",
+ "…and {n} more": "……另有 {n} 项",
+ "Levels {from} to {to} cleared": "第 {from} 至 {to} 关已通关",
+ "Vows: {list}": "誓约：{list}"
 }

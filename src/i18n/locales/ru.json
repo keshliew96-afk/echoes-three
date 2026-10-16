@@ -3186,7 +3186,6 @@
  "Answered": "Услышано",
  "{level} · best {best}": "{level} · рекорд {best}",
  "{level} · New best!": "{level} · Новый рекорд!",
- "{name} · rank {rank}": "{name} · ранг {rank}",
  "{name} sworn at rank {rank}. Vow level {level}.": "{name}: обет дан на ранге {rank}. Уровень обетов {level}.",
  "Best Vow level": "Лучший уровень обетов",
  "Best:": "Рекорд:",
@@ -3219,5 +3218,8 @@
  "The Daily is vow-free.": "Ежедневный спуск идёт без обетов.",
  "VOW LEVEL": "УРОВЕНЬ ОБЕТОВ",
  "Vow level {n} +{pct}%": "Уровень обетов {n} +{pct}%",
- "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "Волны в каждой боевой комнате приходят раньше: на {r1}% на ранге I, {r2}% на II, {r3}% на III."
+ "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "Волны в каждой боевой комнате приходят раньше: на {r1}% на ранге I, {r2}% на II, {r3}% на III.",
+ "…and {n} more": "…и ещё {n}",
+ "Levels {from} to {to} cleared": "Уровни {from}–{to} пройдены",
+ "Vows: {list}": "Обеты: {list}"
 }

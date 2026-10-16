@@ -3156,7 +3156,6 @@
  "Answered": "Exaucé",
  "{level} · best {best}": "{level} · record {best}",
  "{level} · New best!": "{level} · Nouveau record !",
- "{name} · rank {rank}": "{name} · rang {rank}",
  "{name} sworn at rank {rank}. Vow level {level}.": "{name} juré au rang {rank}. Niveau de vœu {level}.",
  "Best Vow level": "Meilleur niveau de vœu",
  "Best:": "Record :",
@@ -3189,5 +3188,8 @@
  "The Daily is vow-free.": "La Descente du jour se joue sans vœux.",
  "VOW LEVEL": "NIVEAU DE VŒU",
  "Vow level {n} +{pct}%": "Niveau de vœu {n} +{pct} %",
- "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "Les vagues de chaque salle de combat arrivent plus tôt : de {r1} % au rang I, {r2} % au II, {r3} % au III."
+ "Waves in every combat room arrive sooner: {r1}% sooner at rank I, {r2}% at II, {r3}% at III.": "Les vagues de chaque salle de combat arrivent plus tôt : de {r1} % au rang I, {r2} % au II, {r3} % au III.",
+ "…and {n} more": "…et {n} de plus",
+ "Levels {from} to {to} cleared": "Niveaux {from} à {to} terminés",
+ "Vows: {list}": "Vœux : {list}"
 }
