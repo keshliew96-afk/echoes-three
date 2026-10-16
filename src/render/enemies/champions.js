@@ -931,6 +931,12 @@ export function buildGaleHerald() {
     group: s.group,
     mats: s.mats,
     setYaw: s.setYaw,
+    // Small fixes 4: the full white hit flash on this pale, wide-winged
+    // limestone body crossed the bloom threshold across the whole wingspan and
+    // veiled the pale Spire room in a white haze on every hit (the "haze" in
+    // the slice 7 captures). At 0.4 the body still pops white, crisp, with no
+    // room-wide glare.
+    flashScale: 0.25,
     pose({ t, tick = 0, walkPhase = 0, moveK = 0, telegraphK = 0, e }) {
       const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
       lastT = t;

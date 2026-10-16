@@ -27,7 +27,7 @@ import { LEVELS, ACT_IDS, ENDLESS_ACTS, levelFor, bossIndexFor, bossPool, campai
 // The descent cycles every act's biome, Act IV included even when the
 // campaign keeps three levels (levels.js CAMPAIGN_ACTS).
 const ORDER = Object.freeze([...ENDLESS_ACTS].sort((a, b) => a - b));
-export const CYCLE = ORDER.length; // 4 biomes per cycle
+export const CYCLE = ORDER.length; // one biome per act (5 with the Still Spire)
 const FINAL = Math.max(...ACT_IDS); // the campaign's final level
 
 // Per depth past the first cycle (k = depth - CYCLE - 1; the first depth past

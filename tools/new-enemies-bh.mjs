@@ -40,7 +40,7 @@ const { canonicalJSON } = await import(u('src/core/canonical.js'));
 const { createStateIO } = await import(u('src/save/capture.js'));
 const { clonePlain } = await import(u('src/save/codec.js'));
 const { LEVELS, CAMPAIGN_ONLY_ENEMIES } = await import(u('src/data/levels.js'));
-const { endlessLevel, GUEST_WEIGHT } = await import(u('src/data/endless.js'));
+const { endlessLevel, GUEST_WEIGHT, CYCLE } = await import(u('src/data/endless.js'));
 const { rollAffixes } = await import(u('src/sim/affixes.js'));
 const { BESTIARY } = await import(u('src/data/journal.js'));
 const { ARCHETYPES } = await import(u('src/sim/enemies.js'));
@@ -351,11 +351,13 @@ for (const level of [3, 4]) {
 }
 {
   const guests = {};
-  for (let d = 5; d <= 8; d++) {
+  // The whole second cycle, one depth per land (four lands when this probe
+  // was written, five since the Still Spire joined the descent).
+  for (let d = CYCLE + 1; d <= 2 * CYCLE; d++) {
     const lv = endlessLevel(d);
     for (const k of KINDS) if (lv.roster[k] > 0) guests[k] = (guests[k] ?? []).concat({ depth: d, land: lv.act, w: lv.roster[k], intro: lv.introduce[k] });
   }
-  const ok = KINDS.every((k) => (guests[k] ?? []).length === 4 && guests[k].every((g) => (g.land === LAND[k] ? g.w === LEVELS[LAND[k]].roster[k] && g.intro === 3 : Math.abs(g.w - Math.round(LEVELS[LAND[k]].roster[k] * GUEST_WEIGHT * 10000) / 10000) < 1e-9 && g.intro === 4)));
+  const ok = KINDS.every((k) => (guests[k] ?? []).length === CYCLE && guests[k].every((g) => (g.land === LAND[k] ? g.w === LEVELS[LAND[k]].roster[k] && g.intro === 3 : Math.abs(g.w - Math.round(LEVELS[LAND[k]].roster[k] * GUEST_WEIGHT * 10000) / 10000) < 1e-9 && g.intro === 4)));
   check('roster', 'Endless past the first cycle: home weight at home, guests at GUEST_WEIGHT from room 4', ok, guests);
 }
 

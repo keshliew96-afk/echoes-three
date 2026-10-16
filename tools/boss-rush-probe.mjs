@@ -4,7 +4,8 @@
 //            in order then a
 //            second lap that meets each land's other boss; the same seed
 //            gives the same line; locked third bosses never appear, an
-//            unlocked one can, and the Vein Weaver only on the second lap
+//            unlocked one can, and the Vein Weaver on either lap once open
+//            (lap one too since Small fixes 3 dropped its endlessOnly flag)
 //   start    a rush opens in the boss room of Level I with the Level II kit
 //            and the war chest, its boss the line's first; a plain campaign,
 //            Endless and the Daily carry no rush
@@ -104,7 +105,7 @@ const gated = (act) => (LEVELS[act].bosses || []).filter((b) => b.gated).map((b)
   check('line', 'the second lap meets each land\'s other boss', lapOther === 200 * LAP, { lapOther });
   check('line', 'locked third bosses never appear', thirdLocked === 0, { thirdLocked });
   check('line', 'unlocked third bosses can appear', thirdOpenSeen > 0, { thirdOpenSeen });
-  check('line', 'the Vein Weaver only on the second lap, once open', weaverLap1 === 0 && weaverSeen > 0, { weaverLap1, weaverSeen });
+  check('line', 'the Vein Weaver on either lap, once open', weaverLap1 > 0 && weaverSeen > 0, { weaverLap1, weaverSeen });
   const d1 = rushDifficulty(1);
   const d5 = rushDifficulty(5);
   const base = difficulty(1, 6);
