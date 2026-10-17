@@ -1935,6 +1935,12 @@
   ],
   "data": true
  },
+ "A fruit bat who roosted in the dark under the roads, where the Heart's beat comes up through the stone. Freed with the Verse of Heart, he drops on a pack from out of the dark and puts its lights out.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "A gaunt wading bird whose bill is a spear.": {
   "files": [
    "src/data/journal.js"
@@ -3508,6 +3514,12 @@
   ],
   "data": true
  },
+ "Begin every run holding Moonless Fang. Every fourth blow the Duskwing lands on a blinded enemy bites again for 8.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Oathkeeper's Brand. +4% party damage for every Vow level the run wears (up to +40%).": {
   "files": [
    "src/data/unlocks.js"
@@ -3532,6 +3544,12 @@
   "data": true
  },
  "Begin every run holding Pilgrim's Lamp. Entering an event room heals the party for 30% of max HP and pays 10 Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Ripe Fig. The Duskwing's Dusk Dive heals him for 3 HP for every enemy it strikes where he lands.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -3924,6 +3942,12 @@
  "Blade Storm": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Blind 6 enemies with one cast.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -4786,6 +4810,12 @@
   "data": true
  },
  "Clear a level with the Bellwright in the party.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Clear a level with the Duskwing in the party.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5897,6 +5927,11 @@
    "src/ui/menu/pause.js"
   ]
  },
+ "Dive, then darken": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Diver": {
   "files": [
    "src/data/journal.js"
@@ -6033,6 +6068,12 @@
   ],
   "data": true
  },
+ "Drop in, put their lights out, bite, and get out before they find you. The dark is not a place, it is a moment. Use it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Drowned Granary": {
   "files": [
    "src/data/layouts.js"
@@ -6086,6 +6127,18 @@
    "src/data/classes.js",
    "src/ui/menu/saves.js",
    "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "Duskwing effects burn in Gloaming colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Duskwing effects burn in Heartblood colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -6583,6 +6636,12 @@
    "src/ui/run/effects.js"
   ]
  },
+ "Every fourth blow the Duskwing lands on a blinded enemy bites again for 8.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Every fourth party hit on a soaked enemy spreads the soak to another enemy within 1.5 u.": {
   "files": [
    "src/sim/relics.js"
@@ -6896,6 +6955,13 @@
   ],
   "data": true
  },
+ "Fell the Hollow Cantor with the Duskwing in the party": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/ui/run/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell the Hollow Stag": {
   "files": [
    "src/data/unlocks.js"
@@ -7151,6 +7217,12 @@
   ],
   "data": true
  },
+ "Five verses. The Spire is all open sky and nowhere to hide. I flew it anyway. Up there the wind does the flying for you.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "FL": {
   "files": [
    "src/sim/allies.js"
@@ -7373,6 +7445,17 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Free Sable: fell the Level IV boss": {
+  "files": [
+   "src/ui/run/unlocks.js"
+  ]
+ },
+ "Free the Verse of Heart: fell the Level IV boss": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Free the Verse of Stone: fell the Level III boss": {
   "files": [
@@ -7730,6 +7813,12 @@
   "data": true
  },
  "Gloamfang tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Gloaming tint": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -8128,6 +8217,12 @@
   ],
   "data": true
  },
+ "Heartblood tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Heartbreaker": {
   "files": [
    "src/data/unlocks.js"
@@ -8440,6 +8535,11 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "HOW TO FREE HIM": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "HP": {
   "files": [
    "src/ui/menu/saves.js"
@@ -8525,6 +8625,12 @@
  "I built them a clock so they would know when to stand. They never looked at it. I am sorry the hours ran on without them.": {
   "files": [
    "src/sim/secrets.js"
+  ],
+  "data": true
+ },
+ "I roosted right over the Heart for years. Every beat came up through the stone and shook my roost. Since you stilled it, I sleep the whole day through.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -8645,6 +8751,12 @@
   "files": [
    "src/ui/menu/pause.js"
   ]
+ },
+ "In the quiet under the Heart a bat unfolds his wings and drops from the dark. Sable follows the bell home.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
  },
  "In use — {source}: {url}": {
   "files": [
@@ -9403,6 +9515,12 @@
    "src/ui/menu/loading.js"
   ]
  },
+ "Lights Out": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "limit {n}/skill": {
   "files": [
    "src/ui/run/cards.js"
@@ -9421,6 +9539,12 @@
  "Linger": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Little bat, you slept on my heartbeat for years. You knew every beat before it came. Did it never once sound like a song?": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -9773,6 +9897,13 @@
   ],
   "data": true
  },
+ "Moonless Fang": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Moonlit tint": {
   "files": [
    "src/data/unlocks.js"
@@ -10023,6 +10154,12 @@
  "Night Hunger on this skill's blows is doubled, and at full health it gathers as a shield (up to 15).": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Night Roost": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -12105,6 +12242,13 @@
   ],
   "data": true
  },
+ "Ripe Fig": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Riposte": {
   "files": [
    "src/sim/skills.js"
@@ -12394,6 +12538,46 @@
    "src/sim/skills.js"
   ],
   "data": true
+ },
+ "Sable": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Sable flies the Heart's dark one last time. Nothing in it beats now but his wings.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Sable sleeps upside down over the woodpile and eats all my figs. He says the hearth is too bright. He sits as close to it as he can anyway.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Sable was roosting over the Heart when the hollow song began to beat through it. Fell the Level IV boss, the Hollow Cantor or the Geode Colossus, and he joins the party.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "Sable, the Duskwing": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Sable's Night": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Sable's Nightfall blinds the enemies round him for 2 s: a blinded enemy starts no attack and gropes about at half speed (never a boss). Dive into a pack, put its lights out at once, then bite through it while his Night Hunger keeps him standing.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
  },
  "Safe Home": {
   "files": [
@@ -14599,6 +14783,23 @@
  "The Drowned Heron stands in the next pool. Watch the water: it strikes from below.": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Duskwing begins with Echo Screech, Talon Rake, Bat Swarm and Flit.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "The Duskwing joins the party. Sable perches by the hearth.": {
+  "files": [
+   "src/save/index.js"
+  ]
+ },
+ "The Duskwing's Dusk Dive heals him for 3 HP for every enemy it strikes where he lands.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },

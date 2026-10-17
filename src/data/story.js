@@ -92,6 +92,9 @@ export const NPCS = Object.freeze({
   // THE BELLWRIGHT (docs/BELLWRIGHT.md "Tolly in the world"): the same, from
   // her spot on the west side of the fire.
   tolly: { id: 'tolly', name: 'Tolly, the Bellwright', short: 'Tolly', where: 'camp' },
+  // THE DUSKWING (docs/DUSKWING.md "Sable in the world"): the same, from his
+  // perch on the east side of the fire.
+  sable: { id: 'sable', name: 'Sable, the Duskwing', short: 'Sable', where: 'camp' },
 });
 
 // Who appears under "People" on the Story so far page, and when.
@@ -105,6 +108,7 @@ export const PEOPLE = Object.freeze([
   { id: 'chorus', always: true, lore: 'The gods. They watch, and they applaud.' },
   { id: 'rill', feat: 'tidecaller', lore: 'A river otter from the Mill who sang the sluices shut. Freed with the Verse of Water, she fights with the tide.' },
   { id: 'tolly', feat: 'bellwright', lore: 'A bell beetle who rang the hours over the Barrow until the hollow song cracked every bell but hers. Freed with the Verse of Stone, she hangs her bells where the fight will be.' },
+  { id: 'sable', feat: 'duskwing', lore: 'A fruit bat who roosted in the dark under the roads, where the Heart\'s beat comes up through the stone. Freed with the Verse of Heart, he drops on a pack from out of the dark and puts its lights out.' },
 ]);
 
 // Who speaks on which event-room card.
@@ -173,6 +177,23 @@ export const TOLLY_LINES = Object.freeze({
 export const tollyLineFor = (verses) => TOLLY_LINES.byVerses.text[Math.max(0, Math.min(TOLLY_LINES.byVerses.text.length - 1, verses - 3))];
 // Wick's one line about her, in his rotation once she has joined.
 export const KEEPER_TOLLY_LINE = Object.freeze({ text: 'Tolly polishes her bell before she sleeps, every night. Says a bell that is not loved goes flat. I believe her.' });
+
+// THE DUSKWING: Sable at his perch. He joins with Heart, so the first line
+// is for four verses or fewer; `extra` rotates after it.
+export const SABLE_LINES = Object.freeze({
+  byVerses: {
+    text: [
+      'I roosted right over the Heart for years. Every beat came up through the stone and shook my roost. Since you stilled it, I sleep the whole day through.',
+      'Five verses. The Spire is all open sky and nowhere to hide. I flew it anyway. Up there the wind does the flying for you.',
+    ],
+  },
+  extra: {
+    text: ['Drop in, put their lights out, bite, and get out before they find you. The dark is not a place, it is a moment. Use it.'],
+  },
+});
+export const sableLineFor = (verses) => SABLE_LINES.byVerses.text[Math.max(0, Math.min(SABLE_LINES.byVerses.text.length - 1, verses - 4))];
+// Wick's one line about him, in his rotation once he has joined.
+export const KEEPER_SABLE_LINE = Object.freeze({ text: 'Sable sleeps upside down over the woodpile and eats all my figs. He says the hearth is too bright. He sits as close to it as he can anyway.' });
 
 // Bramble at camp (her shelf opens in room 7, never at camp: BUILD_BRIEF §18).
 export const PEDDLER_LINES = Object.freeze({
@@ -298,6 +319,14 @@ export const TOLLY_VOICE = Object.freeze({ text: 'Every bell in the Barrow sang 
 export const TOLLY_CLEAR = Object.freeze({
   freed: { text: 'In the barrow dust a beetle digs out her bell and pulls the moss from it. Tolly follows the bell home.' },
   along: { text: 'Tolly rings the Barrow\'s hours again. The old stones remember the time.' },
+});
+
+// THE DUSKWING: the Hollow Voice the first time Sable stands in a Heart
+// boss room (any Level IV boss), and his line on the Level IV clear card.
+export const SABLE_VOICE = Object.freeze({ text: 'Little bat, you slept on my heartbeat for years. You knew every beat before it came. Did it never once sound like a song?' });
+export const SABLE_CLEAR = Object.freeze({
+  freed: { text: 'In the quiet under the Heart a bat unfolds his wings and drops from the dark. Sable follows the bell home.' },
+  along: { text: 'Sable flies the Heart\'s dark one last time. Nothing in it beats now but his wings.' },
 });
 
 // The level-clear card: the verse the bell catches.

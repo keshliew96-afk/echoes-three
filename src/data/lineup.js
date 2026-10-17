@@ -67,10 +67,12 @@ export function forceBellwright(on = true) {
   bellwrightForced = !!on;
   return bellwrightOpen();
 }
-// THE DUSKWING is free from the start in this slice (content plan 5,
-// slice 4). The first Level IV clear replaces this one flag (slice 6); the
-// same rules as Rill's and Tolly's: the flag only gates CHOOSING him.
-export const DUSKWING_FREE = true;
+// THE DUSKWING joins once the party frees the Verse of Heart: the first
+// Level IV clear on this player's profile, or a Level IV boss felled
+// (docs/DUSKWING.md "Unlock"; content plan 5 slice 6). The same rules as
+// Rill's and Tolly's: the flag only gates CHOOSING him, never a lineup that
+// already holds him.
+export const DUSKWING_FREE = false;
 let duskwingUnlocked = false;
 let duskwingForced = false; // ?sable=1 harness boots and probes
 export const duskwingOpen = () => DUSKWING_FREE || duskwingUnlocked || duskwingForced;

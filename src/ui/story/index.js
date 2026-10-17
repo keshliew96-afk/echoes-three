@@ -13,8 +13,8 @@
 // Nothing here touches the sim.
 import { provide, service } from '../../app/registry.js';
 import { PALETTE as P } from '../../data/palette.js';
-import { BOSS_VOICE, NPCS, voiceKeyFor, RILL_VOICE, TOLLY_VOICE } from '../../data/story.js';
-import { WATER_BOSSES, STONE_BOSSES } from '../../data/unlocks.js';
+import { BOSS_VOICE, NPCS, voiceKeyFor, RILL_VOICE, TOLLY_VOICE, SABLE_VOICE } from '../../data/story.js';
+import { WATER_BOSSES, STONE_BOSSES, HEART_BOSSES } from '../../data/unlocks.js';
 import { activeLineup } from '../../data/lineup.js';
 import { t } from '../../i18n/index.js';
 
@@ -117,6 +117,7 @@ export function createStory({ app, world, scene: campScene = null, params = null
   let bossKey = null;
   let rillDue = 0; // THE TIDECALLER: the Voice's line to Rill, queued
   let tollyDue = 0; // THE BELLWRIGHT: and to Tolly
+  let sableDue = 0; // THE DUSKWING: and to Sable
   setInterval(() => {
     const now = performance.now();
     if (voiceUntil && now > voiceUntil) {
@@ -161,6 +162,11 @@ export function createStory({ app, world, scene: campScene = null, params = null
       if (STONE_BOSSES.includes(met) && v.act === 3 && activeLineup().includes('bellwright') && !seen('voice_tolly')) {
         tollyDue = first ? now + VOICE_MS + 400 : now;
       }
+      // THE DUSKWING (docs/DUSKWING.md): the first time Sable stands in a
+      // Heart boss room, the same.
+      if (HEART_BOSSES.includes(met) && v.act === 4 && activeLineup().includes('duskwing') && !seen('voice_sable')) {
+        sableDue = first ? now + VOICE_MS + 400 : now;
+      }
     } else if (!key) bossKey = null;
     if (rillDue && now >= rillDue) {
       rillDue = 0;
@@ -169,6 +175,10 @@ export function createStory({ app, world, scene: campScene = null, params = null
     if (tollyDue && now >= tollyDue) {
       tollyDue = 0;
       if (note('voice_tolly')) voice(TOLLY_VOICE.text);
+    }
+    if (sableDue && now >= sableDue) {
+      sableDue = 0;
+      if (note('voice_sable')) voice(SABLE_VOICE.text);
     }
   }, POLL_MS);
 

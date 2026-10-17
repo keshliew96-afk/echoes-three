@@ -702,6 +702,9 @@ const RELIC_PROC_CUE = Object.freeze({
   // THE BELLWRIGHT: hers.
   bell_rope: { cue: 'sparkle', pitch: 1.15 },
   verdigris_clapper: { cue: 'bw_ring', pitch: 0.85 },
+  // THE DUSKWING: his.
+  ripe_fig: { cue: 'sparkle', pitch: 0.95 },
+  moonless_fang: { cue: 'dk_bite', pitch: 1.2 },
   // Batch 4: the relics of the new rooms.
   shepherds_crook: { cue: 'heal_crit', pitch: 1.15 },
   vigil_candle: { cue: 'zone_spawn', pitch: 1.2 },

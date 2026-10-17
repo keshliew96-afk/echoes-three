@@ -5871,6 +5871,42 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         spray('spark', x, 0.45, z, N(4 + 2 * n), { color: st.glow, speed: [0.1, 0.35], up: [0.7, 1.3], size: [0.04, 0.07], life: [0.6, 0.9], gravity: -0.25, drag: 1.5, jitter: 0.35, opacity: 0.85 });
         break;
       }
+      // THE DUSKWING (docs/DUSKWING.md "Sable in the world"): his two class
+      // relics.
+      case 'ripe_fig': {
+        // The fig splits over him: a rose burst at his chest, one pale ring
+        // closing on him per enemy the dive struck, a beat apart, and juice
+        // drops falling off his ruff in his rose.
+        mark('relic_ripe_fig');
+        const st = RELIC3.duskwing;
+        const { x, z } = bodyAt(ev);
+        const n = Math.max(1, Math.min(4, ev.struck ?? 1));
+        flare(x, 0.75, z, st.glow, 0.7, { kind: 'burst', life: 0.2 });
+        for (let i = 0; i < n; i++) {
+          after(0.07 * i, () => {
+            kit.ring({ x, z, r0: 0.9 - i * 0.08, r1: 0.22, width: 0.07, life: 0.32, core: st.second, glow: st.glow, soft: 0.5, y: 0.07 + i * 0.01 });
+          });
+        }
+        kit.light({ x, z, radius: 1.3, color: st.glow, opacity: 0.35, life: 0.38 });
+        spray('spark', x, 0.8, z, N(4 + 2 * n), { color: st.glow, speed: [0.3, 0.9], up: [0.2, 0.8], size: [0.04, 0.07], life: [0.45, 0.7], gravity: 2.2, drag: 1.0, jitter: 0.25, opacity: 0.9 });
+        spray('spark', x, 0.5, z, N(4), { color: st.second, speed: [0.1, 0.3], up: [0.6, 1.1], size: [0.03, 0.05], life: [0.5, 0.8], gravity: -0.3, drag: 1.5, jitter: 0.3, opacity: 0.8 });
+        break;
+      }
+      case 'moonless_fang': {
+        // A second bite out of the dark: two pale crescents cross over the
+        // blinded enemy, a rose flash where they meet, and a puff of ink.
+        mark('relic_moonless_fang');
+        const st = RELIC3.duskwing;
+        const { x, z } = ev;
+        const s = 0.42;
+        kit.streak({ a: { x: x - s, y: 1.0, z: z - s }, b: { x: x + s, y: 0.35, z: z + s }, width: 0.07, tailW: 0.012, core: PARCH, glow: st.glow, life: 0.14, fall: 1.4 });
+        after(0.05, () => kit.streak({ a: { x: x + s, y: 1.0, z: z - s }, b: { x: x - s, y: 0.35, z: z + s }, width: 0.07, tailW: 0.012, core: PARCH, glow: st.glow, life: 0.14, fall: 1.4 }));
+        flare(x, 0.65, z, st.glow, 0.55, { kind: 'star', life: 0.14, delay: 0.05 });
+        kit.ring({ x, z, r0: 0.15, r1: 0.7, width: 0.06, life: 0.24, core: st.second, glow: st.glow, soft: 0.5, y: 0.08 });
+        spray('spark', x, 0.6, z, N(6), { color: st.second, speed: [0.5, 1.3], up: [0.3, 1.0], size: [0.03, 0.06], life: [0.25, 0.45], gravity: 1.6, drag: 1.2, jitter: 0.15, opacity: 0.95 });
+        spray('spark', x, 0.5, z, N(5), { color: st.debris, speed: [0.1, 0.4], up: [0.2, 0.6], size: [0.06, 0.1], life: [0.5, 0.8], gravity: -0.15, drag: 1.8, jitter: 0.3, opacity: 0.6 });
+        break;
+      }
       case 'verdigris_clapper': {
         // The bell rings again in green: a struck flash at its mouth, a
         // double verdigris shock ring out to its rim, a crack of green light

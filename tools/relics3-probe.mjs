@@ -118,7 +118,7 @@ const stepUntil = (W, pred, max = 600) => {
   const n = (r) => rar.filter((x) => x === r).length;
   check(RELIC_IDS.length >= 29 && NEW.every((id) => RELICS[id]), `data: ${RELIC_IDS.length} relics, the ten new ones present`);
   const cls = Object.values(CLASS_RELICS).sort().join(',');
-  check(cls === 'archer,bellwright,bellwright,healer,swordsman,tank,tidecaller,tidecaller', `data: one class relic per class, two for the Tidecaller and two for the Bellwright (${cls})`);
+  check(cls === 'archer,bellwright,bellwright,duskwing,duskwing,healer,swordsman,tank,tidecaller,tidecaller', `data: one class relic per class, two each for the Tidecaller, the Bellwright and the Duskwing (${cls})`);
   check(n('common') === 4 && n('rare') === 4 && n('legendary') === 2, `data: rarities common ${n('common')}, rare ${n('rare')}, legendary ${n('legendary')}`);
   check(NEW.every((id) => UNLOCKS[`heirloom_${id}`] && UNLOCKS[`heirloom_${id}`].relic === id), 'data: an heirloom unlock for each new relic');
 }
@@ -130,7 +130,7 @@ const stepUntil = (W, pred, max = 600) => {
   const archer = seat(W, 3);
   W.registry.despawn(archer.id);
   const gated = W.run.cmd('relicPool', []);
-  check(all.includes('fletchers_knot') && all.length === RELIC_IDS.filter((id) => CLASS_RELICS[id] !== 'tidecaller' && CLASS_RELICS[id] !== 'bellwright' && !RELICS[id].vow).length, `class gate: a full party is offered every relic (${all.length}; a vow relic waits on a vow)`);
+  check(all.includes('fletchers_knot') && all.length === RELIC_IDS.filter((id) => CLASS_RELICS[id] !== 'tidecaller' && CLASS_RELICS[id] !== 'bellwright' && CLASS_RELICS[id] !== 'duskwing' && !RELICS[id].vow).length, `class gate: a full party is offered every relic (${all.length}; a vow relic waits on a vow)`);
   check(!gated.includes('fletchers_knot') && gated.includes('fox_ribbon') && gated.length === all.length - 1, "class gate: with no Archer, Fletcher's Knot leaves the pool");
 }
 

@@ -48,17 +48,26 @@ export const LOADOUT_CLASSES = Object.freeze(['healer', ...LINEUP_CLASSES]);
 //                Level III clear, or a Level III boss felled;
 //                docs/BELLWRIGHT.md "Unlock")
 //   tolly_wyrm   the Barrow Wyrm felled with the Bellwright in the party
+//   duskwing     Sable has joined: the Verse of Heart is free (the first
+//                Level IV clear, or a Level IV boss felled;
+//                docs/DUSKWING.md "Unlock")
+//   sable_cantor the Hollow Cantor felled with the Duskwing in the party
 export const FEATS = Object.freeze({
   tidecaller: { text: 'Free the Verse of Water: fell the Level II boss' },
   rill_heron: { text: 'Fell the Drowned Heron with the Tidecaller in the party' },
   bellwright: { text: 'Free the Verse of Stone: fell the Level III boss' },
   tolly_wyrm: { text: 'Fell the Barrow Wyrm with the Bellwright in the party' },
+  duskwing: { text: 'Free the Verse of Heart: fell the Level IV boss' },
+  sable_cantor: { text: 'Fell the Hollow Cantor with the Duskwing in the party' },
 });
 // The Level II bosses: felling any of them frees the Verse of Water (and Rill).
 export const WATER_BOSSES = Object.freeze(['heron', 'millwheel', 'mireking']);
 // THE BELLWRIGHT: the Level III bosses; felling any of them frees the Verse
 // of Stone (and Tolly).
 export const STONE_BOSSES = Object.freeze(['wyrm', 'lichram', 'ashraven']);
+// THE DUSKWING: the Level IV bosses; felling any of them frees the Verse of
+// Heart (and Sable).
+export const HEART_BOSSES = Object.freeze(['cantor', 'colossus', 'veinweaver']);
 // A profile's feats as they stand: the stored list plus any the records
 // already prove (a save from before feats existed, a Level II clear recorded
 // before this build).
@@ -68,10 +77,12 @@ export function featsOf(meta, records = {}) {
   const clears = (records && records.levelClears) || {};
   if ((clears[2] ?? 0) > 0 || WATER_BOSSES.some((k) => (bosses[k] ?? 0) > 0)) out.add('tidecaller');
   if ((clears[3] ?? 0) > 0 || STONE_BOSSES.some((k) => (bosses[k] ?? 0) > 0)) out.add('bellwright');
+  if ((clears[4] ?? 0) > 0 || HEART_BOSSES.some((k) => (bosses[k] ?? 0) > 0)) out.add('duskwing');
   return [...out];
 }
 export const tidecallerFreed = (meta, records) => featsOf(meta, records).includes('tidecaller');
 export const bellwrightFreed = (meta, records) => featsOf(meta, records).includes('bellwright');
+export const duskwingFreed = (meta, records) => featsOf(meta, records).includes('duskwing');
 
 // -------------------------------------------------------------- earning --
 export const EMBER_RULES = Object.freeze({
@@ -180,6 +191,9 @@ export const DEEDS = Object.freeze(
     // THE BELLWRIGHT (docs/BELLWRIGHT.md "Tolly in the world").
     ['tollys_toll', { name: "Tolly's Toll", text: 'Clear a level with the Bellwright in the party.', embers: 25, test: (r) => r.cleared.length + (r.deep || []).length > 0 && (r.party || []).includes('bellwright') }],
     ['full_peal', { name: 'Full Peal', text: 'Ring three bells with one Peal or Carillon and strike 6 enemies.', embers: 30, test: (r) => (r.pealBest || 0) >= 6 }],
+    // THE DUSKWING (docs/DUSKWING.md "Sable in the world").
+    ['sables_night', { name: "Sable's Night", text: 'Clear a level with the Duskwing in the party.', embers: 25, test: (r) => r.cleared.length + (r.deep || []).length > 0 && (r.party || []).includes('duskwing') }],
+    ['lights_out', { name: 'Lights Out', text: 'Blind 6 enemies with one cast.', embers: 30, test: (r) => (r.blindBest || 0) >= 6 }],
     // BOSS RUSH (docs/BOSS_RUSH.md).
     ['rush_lap', { name: 'Once Around', text: 'Fell the first five bosses of a Boss Rush.', embers: 30, test: (r) => !!r.rush && r.rush.felled >= RUSH_LAP }],
     ['rush_won', { name: 'Back to Back', text: 'Win a Boss Rush: all ten bosses.', embers: 60, test: (r) => !!r.rush && r.rush.won }],
@@ -255,6 +269,9 @@ const KIT_ROWS = [
   // THE BELLWRIGHT (docs/BELLWRIGHT.md): her bell and peal, the Clapper, and
   // the Tuning Fork for the party.
   ['kit_belltower', 'bellwright', 'Belltower', ['hang_bell', 'peal', 'clapper', 'tuning_fork'], 80, { feat: 'bellwright' }, 'The Bellwright begins with Hang Bell, Peal, Clapper and Tuning Fork.'],
+  // THE DUSKWING (docs/DUSKWING.md): the screech and the rake, the swarm,
+  // and Flit to get out again.
+  ['kit_nightroost', 'duskwing', 'Night Roost', ['echo_screech', 'talon_rake', 'bat_swarm', 'flit'], 80, { feat: 'duskwing' }, 'The Duskwing begins with Echo Screech, Talon Rake, Bat Swarm and Flit.'],
   ['kit_stormwater', 'tidecaller', 'Stormwater', ['crashing_wave', 'rain_squall', 'maelstrom', 'whirlpool'], 100, { level: 4 }, 'The Tidecaller begins with Crashing Wave, Rain Squall, Maelstrom and Whirlpool.'],
 ];
 const HEIRLOOM_COST = Object.freeze({ common: 40, rare: 90, legendary: 160 });
@@ -331,6 +348,10 @@ const TINT_ROWS = [
   // Wyrm's own furnace bronze.
   ['tint_silverpeal', 'bellwright', 'Silver Peal', { glow: '#DCE3EE', second: '#9FC8F0', debris: '#6E7686' }, 30, { feat: 'bellwright' }],
   ['tint_wyrmbronze', 'bellwright', 'Wyrm Bronze', { glow: '#FF9A4A', second: '#FFD9A0', debris: '#5A3420' }, 0, { feat: 'tolly_wyrm' }],
+  // THE DUSKWING (docs/DUSKWING.md): the blue of the last light, and the
+  // Heart's own blood red.
+  ['tint_gloaming', 'duskwing', 'Gloaming', { glow: '#7FA0E8', second: '#E6ECFF', debris: '#2E3350' }, 30, { feat: 'duskwing' }],
+  ['tint_heartblood', 'duskwing', 'Heartblood', { glow: '#D8344A', second: '#FFD0D6', debris: '#4A1820' }, 0, { feat: 'sable_cantor' }],
   // ROUND TWO: Act IV's colours, and one for the four champions.
   ['tint_heartlight', 'healer', 'Heartlight', { glow: '#FF6F93', second: '#FFE1EA', debris: '#7A3048' }, 40, { level: 4 }],
   ['tint_censersmoke', 'tank', 'Censer Smoke', { glow: '#E8A858', second: '#F6E4C4', debris: '#4E4236' }, 40, { level: 4 }],
@@ -541,6 +562,8 @@ export function runFacts(summary, records = {}) {
     // THE BELLWRIGHT: the most enemies one Peal or Carillon struck with
     // three bells or more hung (save/deedrun.js).
     pealBest: Math.max(0, Math.round(num(dr.pealBest))),
+    // THE DUSKWING: the most enemies one cast of his blinded.
+    blindBest: Math.max(0, Math.round(num(dr.blindBest))),
     // ROUND TWO: what the save service saw this run (save/index.js deedRun).
     events: list(dr.events),
     affixes: list(dr.affixes),
@@ -592,6 +615,9 @@ export function awardFor(facts, meta) {
   const tolly = (facts.party || []).includes('bellwright');
   if (tolly && facts.bosses.includes('wyrm')) feats.push('tolly_wyrm');
   if (facts.cleared.includes(3) || facts.bosses.some((k) => STONE_BOSSES.includes(k))) feats.push('bellwright');
+  const sable = (facts.party || []).includes('duskwing');
+  if (sable && facts.bosses.includes('cantor')) feats.push('sable_cantor');
+  if (facts.cleared.includes(4) || facts.bosses.some((k) => HEART_BOSSES.includes(k))) feats.push('duskwing');
   // VOW RANKS: the mode's best Vow level (a beaten mode only).
   const prev = saneVowBest(meta && meta.vowBest);
   const mode = facts.vowMode || null;
