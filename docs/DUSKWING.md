@@ -1,6 +1,6 @@
 # The Duskwing (Sable)
 
-v0.5.293. Content plan 5, slice 4
+v0.5.293 (slice 4), v0.5.294 (slice 5). Content plan 5, slices 4 and 5
 (`/mnt/project-files/plan/CONTENT_PLAN_5.md`, "Duskwing playable"). Sable is
 a fruit bat from the dark under the roads and a **melee diver**: he drops
 onto a pack from out of reach, bites the life out of it and puts its lights
@@ -129,6 +129,89 @@ seat (`MELEE_CLASSES`, like the Tank and the Swordsman), plus
   `tools/smallfixes2-cuecal.mjs --only duskcues --write`.
 - `?vfxlab=1` has a "Duskwing A" reel: the dive, Bloodbite, Nightfall and
   Night Wings.
+
+## His whole kit (slice 5)
+
+Seven more skills join the four, all campaign-only and in his draft pool
+only:
+
+| | what | numbers |
+|---|---|---|
+| Echo Screech (EC) | a screech down a cone | 10 to up to 6 in a 70° cone 2.6 u out, cd 9; each is **exposed** 25% for 3 s |
+| Talon Rake (TK) | a wide rake of the wing claws | 15 to up to 5 in a 150° arc 1.2 u out, knocked back 0.6 u, cd 6 |
+| Bat Swarm (BR) | a cloud of small bats at the target | 5 a second for 4 s in 1.3 u (range 4.5), slows 20%, cd 10; **drain 25%** |
+| Shadow Veil (SV) | the dark folds round him | an 18 shield on him for 3 s, and 8 to up to 4 within 1.2 u, cd 12 |
+| Flit (FT) | his way out | flits 2.8 u away from the aim (untouchable), leaving a puff of night where he was for 2 s: 4 a second and a 1 s **blind**, cd 7 |
+| Blood Scent (SE) | passive | every second, 2 to the 2 nearest within 2.6 u, each exposed 15% |
+| Blood Moon (BM) | his capstone | 30 to up to 10 within 2.4 u, a 1.5 s blind (not the bosses), cd 18; **drain 35%** |
+
+`drain` is the same key Bloodbite carries; it now feeds him from a zone's
+ticks (Bat Swarm) and a burst (Blood Moon) too, on top of Night Hunger's 8%.
+His AI order: Dusk Dive, Bloodbite, Nightfall, Blood Moon, Talon Rake, Echo
+Screech, Bat Swarm, Flit, Shadow Veil, Blood Scent, Night Wings.
+
+### His eight class nodes
+
+Six common, two rare (`CLASS_NODES.duskwing`, numbers in `CLASS_TECH`). His
+node pool is 20: the 12 shared and these eight.
+
+| node | what | works on |
+|---|---|---|
+| Deep Dive (×2) | a dive or a flit goes 0.8 u farther, per copy | Dusk Dive, Flit |
+| Thirst (×2) | the skill's blows feed him 15% more, per copy | all eleven |
+| Gloom | what the skill hits is blinded 1 s (not the bosses) | strikes and zones that do not blind already |
+| Ambush | +40% on a blinded enemy | his nine actives |
+| Echolocate | what the skill hits takes +15% for 2 s | actives that do not mark already |
+| Frenzy | reaching 3 or more enemies makes him 25% faster for 2 s | swings and bursts |
+| Vampire (rare) | Night Hunger on the skill's blows doubled; at full health it gathers as a shield, up to 15 | all eleven |
+| Eclipse (rare) | an enemy the skill fells bursts into darkness: a 1 s blind within 1.4 u | swings and bursts |
+
+Engineering: `duskDef` in `src/sim/allycast.js` (like `bellDef`) resolves
+Gloom, Echolocate (`extraStatus`, riding a zone as `extras`), Ambush, Frenzy
+and Eclipse; Deep Dive rides `seatDisplacement` / `aiDisplacement` (so a
+guest predicts it); Thirst and Vampire ride Night Hunger in
+`src/sim/duskwing.js` through `techsOf(seat, skill)`. New events:
+`dusk_frenzy`, `dusk_eclipse`, `dusk_vampire`, `dusk_pull_out`,
+`dusk_back_in`. A run without him draws nothing new, so the nine goldens hold.
+
+### When the AI dives and when it pulls out
+
+- `AI_DUSK` in `src/data/classes.js`: below 35% health he **pulls out**
+  (`dusk_pull_out`): no more dives, and he steps back to 2.4 u off the
+  nearest enemy inside his ring, still facing it, until Night Hunger and the
+  Healer bring him over 60% (`dusk_back_in`).
+- Dusk Dive never picks a landing a telegraph covers, and never fires while
+  he is pulled out or below 35%.
+- Flit is his way out: low (or pulled out) with an enemy within 1.4 u, or a
+  telegraph over him; it runs from the nearest.
+- Shadow Veil: an enemy on top of him and after him, a telegraph over him,
+  or below 60% with an enemy within 2 u.
+- Echo Screech: the cone that holds two or more, else a big enemy in reach.
+  Talon Rake: two in reach, or one on top of him. Bat Swarm: the densest
+  pack of two or more, else a big enemy. Blood Moon: four round him (three
+  when he is below half or one is big), at least two not yet blinded.
+
+### Look and sound
+
+`src/render/vfx/duskfx.js` adds a beat for each: Echo Screech rolls three
+pale sound fronts down the cone and rings each enemy it finds; Talon Rake
+fans three claw cuts over a rose sweep; Bat Swarm pours wing streaks in and
+keeps small bats darting round the spot while it holds, a rose nip on each
+bite; Shadow Veil wraps two dark wings shut round him and cuts a ring; Flit
+leaves wing streaks and a puff of night that hangs where he was; Blood Scent
+curls a red wisp off each marked enemy; Blood Moon raises a red moon over
+him, drops a sheet of dark with two shock rings and pulls a thread of life
+off every enemy. Frenzy, Eclipse and Vampire each have a small beat.
+`?vfxlab=1` has "Duskwing A", "B" and "C" reels.
+
+Sounds (`src/audio/duskcues.js`): `dk_screech`, `dk_rake`, `dk_swarm`,
+`dk_nibble`, `dk_veil`, `dk_flit`, `dk_moon`, `dk_eclipse`, `dk_frenzy`,
+measured with `tools/smallfixes2-cuecal.mjs --only duskcues --write`.
+
+Checks: `node tools/duskwing-kit-probe.mjs` (headless) covers the data and
+gate, every node's verdicts, each new skill on training dummies, each node
+on a skill it works on, the AI playing all nine actives, pulling out and
+going back in, and a mid-fight save that continues bit-identically.
 
 ## Checks
 

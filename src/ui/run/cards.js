@@ -84,6 +84,15 @@ export const NODE_GLYPH = {
   cloister: '⌂',
   belfry: '⩚',
   sympathy: '⋄',
+  // THE DUSKWING's nodes (docs/DUSKWING.md).
+  deep_dive: '⤓',
+  thirst: '⧫',
+  gloom: '◐',
+  ambush: '⋏',
+  echolocate: '⦾',
+  frenzy: '⨳',
+  vampire: '⩛',
+  eclipse: '◑',
 };
 
 // §15.1 "Effect" column + the §15.3 matrix summarised per node.
@@ -153,6 +162,15 @@ export const NODE_EFFECT = {
   cloister: 'shields from this skill are 50% stronger on a teammate inside one of her bells\' rings.',
   belfry: 'while she hangs bells with this skill, four can hang at once.',
   sympathy: 'a ring hit from this skill makes that bell toll at once (at most once a second per bell).',
+  // THE DUSKWING's nodes (docs/DUSKWING.md).
+  deep_dive: 'a dive or a flit from this skill goes 0.8 u farther, per copy.',
+  thirst: 'every blow from this skill feeds the bat 15% more of its damage, per copy.',
+  gloom: 'what this skill hits is blinded for 1 s (not the bosses).',
+  ambush: 'this skill lands +40% on a blinded enemy.',
+  echolocate: 'what this skill hits takes 15% more damage for 2 s.',
+  frenzy: 'when this skill reaches 3 or more enemies, the bat runs 25% faster for 2 s.',
+  vampire: 'Night Hunger on this skill\'s blows is doubled, and at full health it gathers as a shield (up to 15).',
+  eclipse: 'an enemy this skill fells bursts into darkness, blinding those within 1.4 u for 1 s.',
 };
 
 // The same effects in one breath. Used by the compact reflow (short windows),
@@ -220,6 +238,15 @@ export const NODE_EFFECT_SHORT = {
   cloister: '+50% shield in her rings.',
   belfry: 'four bells at once.',
   sympathy: 'a ring hit tolls the bell.',
+  // THE DUSKWING's nodes.
+  deep_dive: 'dives +0.8 u.',
+  thirst: 'feeds 15% more.',
+  gloom: 'blinds 1 s.',
+  ambush: '+40% on the blinded.',
+  echolocate: 'hits take +15%.',
+  frenzy: '3 hit: 25% faster.',
+  vampire: 'feeds ×2 · full: a shield.',
+  eclipse: 'a kill blinds round it.',
 };
 
 // A skill's two-letter medallion (shown where a skill has no icon art). Two
@@ -314,6 +341,14 @@ export const SKILL_BODY = {
   blood_bite: 'A deep bite: 20 to up to 2 enemies in reach, and half of what it deals comes back to the bat as health.',
   nightfall: 'Darkness falls round the bat: 6 to up to 8 enemies within 2 u, blinded for 2 s (they start no attack and grope at half speed; not the bosses).',
   night_wings: 'A passive beat of the wings: every second, the 3 nearest enemies within 1.3 u take 3.',
+  // THE DUSKWING, the rest of his kit (content plan 5, slice 5).
+  echo_screech: 'A screech in a 70° cone 2.6 u out: 10 to up to 6 enemies, found out for 3 s (they take 25% more).',
+  talon_rake: 'The bat rakes with his wing claws in a 150° arc: 15 to up to 5 enemies within 1.2 u, knocked back.',
+  bat_swarm: 'A swarm of small bats at the target for 4 s: 5 per second to enemies inside, slowing them 20%, and a quarter of it comes back to the bat as health.',
+  shadow_veil: 'The dark folds round the bat: an 18 shield for 3 s, and its edge cuts up to 4 enemies within 1.2 u for 8.',
+  flit: 'The bat flits 2.8 u away (untouchable) and leaves a puff of night where he was for 2 s: 4 per second, and it blinds for 1 s.',
+  blood_scent: 'A passive scent of blood: every second, the 2 nearest enemies within 2.6 u take 2 and are marked (15% more damage taken).',
+  blood_moon: 'The moon turns red over the bat: 30 to up to 10 enemies within 2.4 u, blinded for 1.5 s (not the bosses), and over a third of it comes back to him as health.',
   // THE TIDECALLER, the rest of her kit (slice 3).
   torrent: 'Crash. A jet of water: 18 to every enemy along a 5.5 u line. +60% on a soaked enemy, which spends the soak.',
   whirlpool: 'A whirlpool at the target for 5 s: 4 per second, soaks, slows 30% and drags enemies inside toward its centre.',

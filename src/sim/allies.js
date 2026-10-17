@@ -54,7 +54,7 @@ import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE }
 // is cast from the seat's LOADOUT (sim/party.js) through ONE pipeline
 // (sim/allycast.js); the AI picks with the §25.8 rules (sim/partyai.js).
 import { SKILLS } from './skills.js';
-import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, AI_KITE, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS, CLASS_TECH } from '../data/classes.js';
+import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, AI_KITE, AI_DUSK, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS, CLASS_TECH } from '../data/classes.js';
 import { createAllyCaster, cdTicksOf } from './allycast.js';
 import { castChoice } from './partyai.js';
 
@@ -1052,6 +1052,32 @@ export function createAllySystem({
           const uz = nd > 1e-4 ? (a.z - near.z) / nd : -(target.z - a.z) / (d || 1);
           gx = near.x + ux * AI_KITE.toU;
           gz = near.z + uz * AI_KITE.toU;
+        }
+      }
+      // THE DUSKWING (AI_DUSK, docs/DUSKWING.md §AI): low on health he pulls
+      // out and steps back off the pack, still facing it (what reaches him
+      // still gets bitten), until Night Hunger and the Healer bring him back.
+      if (engageOn() && a.classId === 'duskwing') {
+        const f = a.hp / (a.maxHp || 1);
+        if (!a.duskPullOut && f < AI_DUSK.pullOutFrac) {
+          a.duskPullOut = true;
+          events.emit(tick, 'dusk_pull_out', { id: a.id, partyIndex: a.partyIndex, x: r2(a.x), z: r2(a.z) });
+        } else if (a.duskPullOut && f >= AI_DUSK.backInFrac) {
+          delete a.duskPullOut;
+          events.emit(tick, 'dusk_back_in', { id: a.id, partyIndex: a.partyIndex, x: r2(a.x), z: r2(a.z) });
+        }
+        if (a.duskPullOut) {
+          const near = nearestHostileTo(a.x, a.z);
+          const nd = near ? distTo(near, a.x, a.z) : Infinity;
+          if (nd < AI_DUSK.backU) {
+            const ux = nd > 1e-4 ? (a.x - near.x) / nd : -(target.x - a.x) / (d || 1);
+            const uz = nd > 1e-4 ? (a.z - near.z) / nd : -(target.z - a.z) / (d || 1);
+            gx = near.x + ux * AI_DUSK.backU;
+            gz = near.z + uz * AI_DUSK.backU;
+          } else {
+            gx = a.x;
+            gz = a.z;
+          }
         }
       }
       // Balance pass (AI_EVADE): a glob ring a ranged seat stands in wins over

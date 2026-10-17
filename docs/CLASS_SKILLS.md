@@ -95,7 +95,8 @@ place in the team stay with `node tools/bellwright-probe.mjs`).
 
 ## The Duskwing
 
-Sable's four base skills (all campaign-only), his Night Hunger life steal and
-the new blind status are listed in docs/DUSKWING.md, with his AI rules, VFX
-and sounds; `node tools/duskwing-probe.mjs` checks them. His full kit and
-class nodes come in content plan 5, slice 5.
+Sable's eleven skills and eight class nodes (all campaign-only), his Night
+Hunger life steal and the blind status are listed in docs/DUSKWING.md, with
+his AI rules, VFX and sounds; `node tools/duskwing-kit-probe.mjs` checks the
+whole kit (the base four and his place in the team stay with
+`node tools/duskwing-probe.mjs`).

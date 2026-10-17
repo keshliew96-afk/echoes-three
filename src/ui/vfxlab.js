@@ -71,9 +71,15 @@ const CLASS_SETS = {
     ['great_bell', 'knell', 'carillon', 'bell_swing'],
     ['hang_bell', 'vesper_chime', 'tuning_fork', 'wing_hop'],
   ],
-  // THE DUSKWING (docs/DUSKWING.md): his four base skills — the Dive onto
-  // the targets, Bloodbite, Nightfall blinding the pack, Night Wings.
-  duskwing: [['dusk_dive', 'blood_bite', 'nightfall', 'night_wings']],
+  // THE DUSKWING (docs/DUSKWING.md): his eleven skills in three reels — the
+  // Dive onto the targets, Bloodbite, Nightfall, Night Wings; Echo Screech,
+  // Talon Rake, Shadow Veil, Blood Moon; Bat Swarm, Flit, Blood Scent and the
+  // Dive again.
+  duskwing: [
+    ['dusk_dive', 'blood_bite', 'nightfall', 'night_wings'],
+    ['echo_screech', 'talon_rake', 'shadow_veil', 'blood_moon'],
+    ['bat_swarm', 'flit', 'blood_scent', 'dusk_dive'],
+  ],
 };
 const ENEMIES = [
   ['Act I', 1, ['boar', 'mantis', 'quillback', 'toad', 'moth', 'ram', 'mole', 'wasp', 'thornling']],
@@ -410,13 +416,13 @@ export function mountVfxLab() {
       // 4 u), and Ripple Step gets one on top of her to vault from.
       // Bell Swing's targets stand inside its 1.9 u reach.
       const me = X().content.world().entities().find((e) => e.partyIndex === seat);
-      const f = me ? { x: me.x, z: me.z - (set[k] === 'bell_swing' ? 1.2 : 2.2) } : front();
+      const f = me ? { x: me.x, z: me.z - (set[k] === 'bell_swing' || set[k] === 'talon_rake' || set[k] === 'shadow_veil' ? 1.0 : 2.2) } : front();
       for (const [dx, dz] of [[-0.9, 0], [0, -0.5], [0.9, 0]]) X().cmd('spawn', 'dummy', f.x + dx, f.z + dz);
-      if ((set[k] === 'ripple_step' || set[k] === 'wing_hop') && me) X().cmd('spawn', 'dummy', me.x + 0.4, me.z);
+      if ((set[k] === 'ripple_step' || set[k] === 'wing_hop' || set[k] === 'flit') && me) X().cmd('spawn', 'dummy', me.x + 0.4, me.z);
       say(`${cls}: ${set[k].replace(/_/g, ' ')}`);
       await wait(250);
       X().cmd('partyCast', seat, k, { x: f.x, z: f.z });
-      await wait(set[k] === 'maelstrom' || set[k] === 'rain_squall' || set[k] === 'great_bell' ? 2600 : 1600);
+      await wait(set[k] === 'maelstrom' || set[k] === 'rain_squall' || set[k] === 'great_bell' || set[k] === 'bat_swarm' || set[k] === 'blood_moon' ? 2600 : 1600);
     }
     say(`${cls} reel done`);
   }

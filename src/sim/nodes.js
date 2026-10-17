@@ -150,6 +150,15 @@ export const NODES = Object.freeze({
   cloister: Object.freeze({ id: 'cloister', name: 'Cloister', kind: 'technique', rarity: 'common', limit: 1, cls: 'bellwright' }),
   belfry: Object.freeze({ id: 'belfry', name: 'Belfry', kind: 'technique', rarity: 'rare', limit: 1, cls: 'bellwright' }),
   sympathy: Object.freeze({ id: 'sympathy', name: 'Sympathy', kind: 'technique', rarity: 'rare', limit: 1, cls: 'bellwright' }),
+  // THE DUSKWING (docs/DUSKWING.md): his eight, six common and two rare.
+  deep_dive: Object.freeze({ id: 'deep_dive', name: 'Deep Dive', kind: 'technique', rarity: 'common', limit: 2, cls: 'duskwing' }),
+  thirst: Object.freeze({ id: 'thirst', name: 'Thirst', kind: 'technique', rarity: 'common', limit: 2, cls: 'duskwing' }),
+  gloom: Object.freeze({ id: 'gloom', name: 'Gloom', kind: 'technique', rarity: 'common', limit: 1, cls: 'duskwing' }),
+  ambush: Object.freeze({ id: 'ambush', name: 'Ambush', kind: 'technique', rarity: 'common', limit: 1, cls: 'duskwing' }),
+  echolocate: Object.freeze({ id: 'echolocate', name: 'Echolocate', kind: 'technique', rarity: 'common', limit: 1, cls: 'duskwing' }),
+  frenzy: Object.freeze({ id: 'frenzy', name: 'Frenzy', kind: 'technique', rarity: 'common', limit: 1, cls: 'duskwing' }),
+  vampire: Object.freeze({ id: 'vampire', name: 'Vampire', kind: 'technique', rarity: 'rare', limit: 1, cls: 'duskwing' }),
+  eclipse: Object.freeze({ id: 'eclipse', name: 'Eclipse', kind: 'technique', rarity: 'rare', limit: 1, cls: 'duskwing' }),
 });
 
 // The Healer's 17 shared nodes (class nodes excluded), ascending id.
@@ -405,6 +414,26 @@ export function classVerdict(d, id) {
       return dmg && (d.shape === 'projectile' || d.shape === 'melee_arc') && !d.ringBonus ? L : G('only a bolt, a swing or a hum without the ring bonus');
     case 'cloister':
       return d.archetype === 'guard' ? L : G('this skill shields no one');
+    // THE DUSKWING (docs/DUSKWING.md).
+    case 'deep_dive':
+      return d.dash || d.vault ? L : G('this skill neither dives nor flits');
+    case 'thirst':
+    case 'vampire':
+      if (passive) return d.field === 'hostile' && d.output === 'damage' ? L : G(PASSIVE_GREY);
+      return dmg ? L : G('this skill lands no blow');
+    case 'gloom':
+      if (passive || !dmg) return G('only a strike or a zone');
+      return d.status && d.status.kind === 'blind' ? I('+0 — this skill blinds already') : L;
+    case 'echolocate':
+      if (passive || !dmg) return G('only a strike or a zone');
+      return d.status && d.status.kind === 'exposed' ? I('+0 — this skill marks already') : L;
+    case 'ambush':
+      if (passive || !dmg) return G('only a strike or a zone');
+      return d.shape === 'projectile' ? G('only a strike or a zone') : L;
+    case 'frenzy':
+    case 'eclipse':
+      if (passive || !dmg) return G('only a strike or a zone');
+      return d.shape === 'nova' || d.shape === 'melee_arc' ? L : G('only a swing or a burst');
     default:
       return G('unknown_node');
   }

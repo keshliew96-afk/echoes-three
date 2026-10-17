@@ -10,7 +10,7 @@
 // fallback casts an active that has been ready ≥ 480 ticks under the §7 range
 // rule, so no equipped skill idles. For the 12 starting skills the AI rule IS
 // the §7 range rule, so an unbuilt party casts exactly as v0.5.150.
-import { AI_IDLE_FALLBACK_TICKS, AI_ENGAGE, swapSuggestion } from '../data/classes.js';
+import { AI_IDLE_FALLBACK_TICKS, AI_ENGAGE, AI_DUSK, swapSuggestion } from '../data/classes.js';
 import { shapeRange } from './allycast.js';
 import { CHAMPION_IDS } from './champions.js';
 
@@ -53,6 +53,19 @@ const CHAMPIONS = new Set(CHAMPION_IDS);
 const soakedNow = (e, tick) => !!(e && e.status && e.status.soaked && e.status.soaked.untilTick > tick);
 // THE BELLWRIGHT: the bells a seat has hung (its azones flagged `bell`).
 const bellsOf = (registry, id) => registry.all().filter((z) => z.kind === 'azone' && z.bell && z.sourceId === id);
+// THE DUSKWING: a live blind, and the enemies a cone from (x, z) along u holds.
+const blindNow = (e, tick) => !!(e && e.status && e.status.blind && e.status.blind.untilTick > tick);
+const isBig = (e) => e.elite || CHAMPIONS.has(e.kind) || e.champion || e.boss === true || e.kind === 'stag';
+function inCone(list, x, z, ux, uz, reach, halfDeg) {
+  const c = Math.cos((halfDeg * Math.PI) / 180);
+  return list.filter((o) => {
+    const dx = o.x - x;
+    const dz = o.z - z;
+    const d = Math.hypot(dx, dz);
+    if (d > reach) return false;
+    return d < 1e-3 || (dx * ux + dz * uz) / d >= c;
+  });
+}
 
 // castChoice(a, tick, ctx) -> { slot, def, target } | null
 //   ctx: { registry, slots (ids ×4), resolve(def), baseDef(id), cds (a.cds),
@@ -463,16 +476,20 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
       return party.some((m) => near(m.x, m.z, 3).length > 0) ? a : null;
     }
     // ------------------------------------------------------ Duskwing --
-    // THE DUSKWING (docs/DUSKWING.md): a first pass (slice 5 teaches him
-    // when to pull out). He dives onto a pack, bites when hurt, and throws
-    // the dark over a crowd.
+    // THE DUSKWING (docs/DUSKWING.md §AI): he dives onto a pack, bites when
+    // hurt, throws the dark over a crowd, and pulls out when he runs low
+    // (the steering half lives in sim/allies.js, AI_DUSK).
     case 'dusk_dive': {
-      // The densest pack in reach, two or more, else his target from a gap.
+      // Never while he is pulled out or low; never onto a landing a
+      // telegraph covers. The densest pack in reach, two or more, else his
+      // target from a gap.
+      if (a.duskPullOut || a.hp < a.maxHp * AI_DUSK.diveFloorFrac) return null;
       let best = null;
       let bestN = 0;
       for (const e of hostiles) {
         const d = dist(e);
         if (d > def.dash.dist + def.area || d < 0.6) continue;
+        if (telegraphCovers(ctx.registry, e.x, e.z, tick)) continue;
         const n = near(e.x, e.z, def.area).length;
         if (n > bestN || (n === bestN && best && e.id < best.id)) {
           bestN = n;
@@ -497,6 +514,71 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
       if (around.length >= 3) return target ?? around[0];
       const big = around.find((e) => (e.elite || e.champion) && !(e.boss === true || e.kind === 'stag'));
       return big ?? null;
+    }
+    // His whole kit (content plan 5, slice 5).
+    case 'echo_screech': {
+      // The cone that holds the most, two or more (or one big enemy).
+      let best = null;
+      let bestN = 0;
+      for (const e of hostiles) {
+        const d = dist(e);
+        if (d > def.range || d < 1e-3) continue;
+        const n = inCone(hostiles, a.x, a.z, (e.x - a.x) / d, (e.z - a.z) / d, def.range, def.area).length;
+        if (n > bestN || (n === bestN && best && e.id < best.id)) {
+          bestN = n;
+          best = e;
+        }
+      }
+      if (best && bestN >= 2) return best;
+      const big = hostiles.filter((e) => isBig(e) && dist(e) <= def.range).sort((p, q) => dist(p) - dist(q) || p.id - q.id)[0];
+      return big ?? null;
+    }
+    case 'talon_rake': {
+      // Two enemies in reach of the rake, or one on top of him.
+      const close = near(a.x, a.z, def.range).sort((p, q) => dist(p) - dist(q) || p.id - q.id);
+      if (close.length >= 2) return target && dist(target) <= def.range ? target : close[0];
+      return close.find((e) => e.targetId === a.id && dist(e) <= 0.9) ?? null;
+    }
+    case 'bat_swarm': {
+      // The densest pack in reach (two or more), else a big enemy.
+      let best = null;
+      let bestN = 0;
+      for (const e of hostiles) {
+        if (dist(e) > def.range) continue;
+        const n = near(e.x, e.z, def.area).length;
+        if (n > bestN || (n === bestN && best && e.id < best.id)) {
+          bestN = n;
+          best = e;
+        }
+      }
+      if (best && bestN >= 2) return best;
+      return inRange && isBig(target) ? target : null;
+    }
+    case 'shadow_veil': {
+      // A blow on its way: an enemy on top of him and after him, a telegraph
+      // over him, or hurt below 60% with an enemy close.
+      const rush = near(a.x, a.z, 1.2).filter((e) => e.targetId === a.id);
+      const close = near(a.x, a.z, 2.0);
+      if (rush.length >= 1 || telegraphCovers(ctx.registry, a.x, a.z, tick) || (a.hp < a.maxHp * 0.6 && close.length)) return close.sort((p, q) => dist(p) - dist(q) || p.id - q.id)[0] ?? a;
+      return null;
+    }
+    case 'flit': {
+      // His way out: low (below AI_DUSK.pullOutFrac, or already pulled out)
+      // with an enemy close, or a telegraph over him. The flit runs from the
+      // nearest and leaves the dark where he was.
+      const close = near(a.x, a.z, 1.4).sort((p, q) => d2(p.x, p.z, a.x, a.z) - d2(q.x, q.z, a.x, a.z) || p.id - q.id);
+      if (close.length === 0) return null;
+      const low = a.duskPullOut || a.hp < a.maxHp * AI_DUSK.pullOutFrac;
+      return low || telegraphCovers(ctx.registry, a.x, a.z, tick) ? close[0] : null;
+    }
+    case 'blood_moon': {
+      // The capstone: four round him, or three when he is hungry (below
+      // half) or one of them is big. Blinded ones already count less.
+      const around = near(a.x, a.z, def.area);
+      const fresh = around.filter((e) => !blindNow(e, tick));
+      const need = a.hp < a.maxHp * 0.5 || around.some(isBig) ? 3 : 4;
+      if (around.length >= need && fresh.length >= 2) return target && dist(target) <= def.area ? target : around[0];
+      return null;
     }
     default:
       // The 12 starting skills: §7 — target in shape range.

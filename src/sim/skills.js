@@ -497,6 +497,50 @@ export const SKILLS = Object.freeze({
     id: 'night_wings', name: 'Night Wings', abbrev: 'NW', cls: 'duskwing', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
     power: 3, area: 1.3, count: 3, cadenceSec: 1.0, knockback: 0, // each second the 3 nearest enemies within 1.3 u, never pushed
   }),
+
+  // THE DUSKWING, his whole kit (content plan 5, slice 5). No new plain-data
+  // keys: `drain` now also rides a zone's ticks (Bat Swarm) and a nova's
+  // burst (Blood Moon), and the rest reuse what came before: `status:
+  // exposed`, `push`, `selfStatus`, `vault` + `atOrigin`, a passive's status.
+  echo_screech: Object.freeze({
+    id: 'echo_screech', name: 'Echo Screech', abbrev: 'EC', cls: 'duskwing', archetype: 'damage', shape: 'melee_arc',
+    power: 10, cd: 9, range: 2.6, area: 35, count: 6, // a 70° cone of sound 2.6 u out
+    status: Object.freeze({ kind: 'exposed', mag: 0.25, ticks: 180 }), // found out: +25% taken for 3 s
+  }),
+  talon_rake: Object.freeze({
+    id: 'talon_rake', name: 'Talon Rake', abbrev: 'TK', cls: 'duskwing', archetype: 'damage', shape: 'melee_arc',
+    power: 15, cd: 6, range: 1.2, area: 75, count: 5, // a 150° rake of the wing claws
+    push: 0.6,
+  }),
+  bat_swarm: Object.freeze({
+    id: 'bat_swarm', name: 'Bat Swarm', abbrev: 'BR', cls: 'duskwing', archetype: 'damage', shape: 'ground_aoe',
+    power: 5, cd: 10, range: 4.5, area: 1.3, durationSec: 4, // a cloud of small bats at the target, 5 a second for 4 s
+    drain: 0.25, // a quarter of each nibble comes back to him
+    status: Object.freeze({ kind: 'slow', mag: 0.2, ticks: 72 }),
+  }),
+  shadow_veil: Object.freeze({
+    id: 'shadow_veil', name: 'Shadow Veil', abbrev: 'SV', cls: 'duskwing', archetype: 'damage', shape: 'nova',
+    power: 8, cd: 12, area: 1.2, count: 4, // the cloak's edge cuts what is close
+    selfStatus: Object.freeze({ kind: 'shield', mag: 18, ticks: 180 }), // and the dark folds round him: an 18 shield for 3 s
+  }),
+  flit: Object.freeze({
+    id: 'flit', name: 'Flit', abbrev: 'FT', cls: 'duskwing', archetype: 'damage', shape: 'ground_aoe',
+    power: 4, cd: 7, range: 0, area: 1.1, durationSec: 2,
+    vault: Object.freeze({ dist: 2.8, ticks: 12, iframes: true }), // a flick of the wings away from the aim (the AI: from the nearest enemy)
+    atOrigin: true, // a puff of night left where he was
+    status: Object.freeze({ kind: 'blind', mag: 1, ticks: 60 }), // what follows him into it is blinded 1 s
+  }),
+  blood_scent: Object.freeze({
+    id: 'blood_scent', name: 'Blood Scent', abbrev: 'SE', cls: 'duskwing', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
+    power: 2, area: 2.6, count: 2, cadenceSec: 1.0, knockback: 0, // each second the 2 nearest enemies within 2.6 u, never pushed
+    status: Object.freeze({ kind: 'exposed', mag: 0.15, ticks: 72 }), // and marked: +15% taken
+  }),
+  blood_moon: Object.freeze({
+    id: 'blood_moon', name: 'Blood Moon', abbrev: 'BM', cls: 'duskwing', archetype: 'damage', shape: 'nova',
+    power: 30, cd: 18, area: 2.4, count: 10, // the moon turns red over him
+    drain: 0.35,
+    status: Object.freeze({ kind: 'blind', mag: 1, ticks: 90 }), // 1.5 s of darkness (not the bosses)
+  }),
 });
 
 // A skill's class (Healer rows carry no `cls`).
