@@ -30,7 +30,7 @@ import { placeLine } from './daily.js';
 import { UNLOCKS } from '../../data/unlocks.js';
 import { VOW_ROMAN, VOW_MODES, vowPayPct, vowName } from '../../data/vows.js';
 
-const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'V']; // 6: the Ember Kiln is the other Level V (docs/KILN.md)
 const STYLE_ID = 'cg-levels-style';
 // BOSS RUSH: the card's own rust red (not Ember, which is enemy threat only).
 const RUSH_RED = '#D9654B';

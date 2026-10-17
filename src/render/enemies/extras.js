@@ -11,6 +11,9 @@
 //     label (the §17 numeral grammar in Bone), a spark tink at the horns and a
 //     flare on the rig's guard glow
 //   - dust at a quillback's charge start and at a ram's slam
+//   - the Slag Golem's SLAG POOL (slick variant 'slag', the Ember Kiln): a
+//     pool of glowing slag that cools over its life, a dark crust knitting
+//     over it toward the end with the last gold showing in its cracks
 // Render-only: reads sim entities and bus events, never mutates sim state.
 import {
   AdditiveBlending,
@@ -24,6 +27,7 @@ import {
   IcosahedronGeometry,
   Mesh,
   MeshBasicMaterial,
+  PlaneGeometry,
   SRGBColorSpace,
   Vector3,
 } from 'three';
@@ -83,6 +87,117 @@ function getSlickTexture() {
   return slickTex;
 }
 
+// THE EMBER KILN (docs/KILN.md): the Slag Golem's pool. Two canvases, both
+// tinted by their material: a blobby molten mask (bright heart, dimmer rim,
+// a few flow streaks) and a crust of cooled plates with open cracks between
+// them (alpha 0 in the cracks, so the molten layer shows through as seams).
+let slagPoolTex = null;
+let slagCrustTex = null;
+function slagRand(seed) {
+  let v = seed >>> 0;
+  return () => {
+    v = (v * 1664525 + 1013904223) >>> 0;
+    return v / 4294967296;
+  };
+}
+function getSlagPoolTexture() {
+  if (slagPoolTex) return slagPoolTex;
+  const S = 256;
+  const c = document.createElement('canvas');
+  c.width = S;
+  c.height = S;
+  const ctx = c.getContext('2d');
+  const rand = slagRand(17);
+  // A lumpy rim: overlapping soft discs round the edge and one in the heart.
+  const blob = (x, y, r, a) => {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+    g.addColorStop(0, `rgba(255,255,255,${a})`);
+    g.addColorStop(0.7, `rgba(235,235,235,${a * 0.85})`);
+    g.addColorStop(1, 'rgba(200,200,200,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  blob(S / 2, S / 2, S * 0.44, 1);
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2 + rand() * 0.5;
+    const rr = S * (0.26 + rand() * 0.1);
+    blob(S / 2 + Math.cos(a) * rr, S / 2 + Math.sin(a) * rr, S * (0.13 + rand() * 0.07), 0.9);
+  }
+  // Flow streaks: darker swirls through the melt (the glow is not flat).
+  ctx.globalCompositeOperation = 'source-atop';
+  ctx.strokeStyle = 'rgba(120,120,120,0.45)';
+  ctx.lineCap = 'round';
+  for (let i = 0; i < 7; i++) {
+    ctx.lineWidth = 3 + rand() * 6;
+    ctx.beginPath();
+    const r = S * (0.12 + rand() * 0.3);
+    const a0 = rand() * Math.PI * 2;
+    ctx.arc(S / 2 + (rand() - 0.5) * 30, S / 2 + (rand() - 0.5) * 30, r, a0, a0 + 0.6 + rand() * 1.2);
+    ctx.stroke();
+  }
+  ctx.globalCompositeOperation = 'source-over';
+  slagPoolTex = new CanvasTexture(c);
+  slagPoolTex.colorSpace = SRGBColorSpace;
+  return slagPoolTex;
+}
+function getSlagCrustTexture() {
+  if (slagCrustTex) return slagCrustTex;
+  const S = 160;
+  const c = document.createElement('canvas');
+  c.width = S;
+  c.height = S;
+  const ctx = c.getContext('2d');
+  const img = ctx.createImageData(S, S);
+  const rand = slagRand(29);
+  const pts = Array.from({ length: 16 }, () => [rand() * S, rand() * S, 0.72 + rand() * 0.28]);
+  for (let y = 0; y < S; y++) {
+    for (let x = 0; x < S; x++) {
+      let d1 = 1e9;
+      let d2 = 1e9;
+      let shade = 1;
+      for (const [px, py, sh] of pts) {
+        const d = Math.hypot(x - px, y - py);
+        if (d < d1) {
+          d2 = d1;
+          d1 = d;
+          shade = sh;
+        } else if (d < d2) d2 = d;
+      }
+      const rr = Math.hypot(x - S / 2, y - S / 2) / (S / 2);
+      const edge = Math.min(1, Math.max(0, (0.9 - rr) / 0.1));
+      const crack = d2 - d1 < 2.6 ? 0 : 1;
+      // Plates: a value ramp toward each plate's centre (ashen rims).
+      const v = Math.round(255 * shade * (0.75 + 0.25 * Math.min(1, d1 / 18)));
+      const i = (y * S + x) * 4;
+      img.data[i] = v;
+      img.data[i + 1] = v;
+      img.data[i + 2] = v;
+      img.data[i + 3] = Math.round(255 * crack * edge);
+    }
+  }
+  ctx.putImageData(img, 0, 0);
+  slagCrustTex = new CanvasTexture(c);
+  slagCrustTex.colorSpace = SRGBColorSpace;
+  return slagCrustTex;
+}
+const SLAG_COAL = new Color(VFX_MATTER.coal);
+const SLAG_GOLD = new Color(VFX_MATTER.kilngold);
+const SLAG_HEAT = new Color(VFX_MATTER.kilnheat);
+// coal (0) -> kiln gold (0.6) -> white-hot (1), as render/enemies/kiln.js:
+// crimson and gold never blend at full value (that mix is Ember's orange).
+const _slagDk = new Color();
+function slagHeat(out, k) {
+  if (k <= 0.22) return out.copy(SLAG_COAL).multiplyScalar(0.55 + 0.45 * Math.max(0, k / 0.22));
+  if (k <= 0.34) {
+    const u = (k - 0.22) / 0.12;
+    return out.copy(SLAG_COAL).multiplyScalar(1 - 0.7 * u).lerp(_slagDk.copy(SLAG_GOLD).multiplyScalar(0.3), u);
+  }
+  if (k <= 0.6) return out.copy(SLAG_GOLD).multiplyScalar(0.3 + 0.7 * ((k - 0.34) / 0.26));
+  return out.copy(SLAG_GOLD).lerp(SLAG_HEAT, Math.min(1, (k - 0.6) / 0.4));
+}
+
 export function createContentExtras({ root, stage, world, bus, cosmetic, shapes }) {
   const globs = new Map(); // glob id -> { g, core, shadow, ring }
   const slicks = new Map(); // slick id -> mesh
@@ -90,6 +205,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   const shardIds = new Set(); // live Geode shard glob ids (their landing is the director's)
   const tethers = new Map(); // gravewisp id -> beam (slice 2)
   const snares = new Map(); // snare slick id -> { g, disc, teeth, glow, ring } (Barrow Sexton)
+  const slagPools = new Map(); // slag slick id -> { g, base, melt, crust, glow, bubbles } (the Ember Kiln)
   const drinks = new Map(); // siphon id -> { core, halo } (Vein Siphon tether)
   const wake = []; // { mesh, age }
   const wakePool = [];
@@ -241,6 +357,41 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
     bead.material.toneMapped = false;
     bead.material.color.copy(HEART.glow);
     return { core, halo, bead };
+  }
+
+  // THE EMBER KILN: the Slag Golem's pool — a dark slag rim, the molten
+  // melt over it (additive: it lights the floor), the crust of cooled
+  // plates knitting over it, a low glow and a few bubbles popping while hot.
+  const slagPlaneGeo = sharedGeo('kn-slag-pool', () => new PlaneGeometry(2, 2).rotateX(-Math.PI / 2));
+  function makeSlagPool() {
+    const g = new Group();
+    const layer = (map, color, y, extra) => {
+      const m = new Mesh(slagPlaneGeo, new MeshBasicMaterial({ map, color, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2, ...extra }));
+      m.position.y = y;
+      m.renderOrder = -3;
+      g.add(m);
+      return m;
+    };
+    const base = layer(getSlagPoolTexture(), new Color(VFX_MATTER.slag).multiplyScalar(0.7), 0.012, {});
+    base.scale.setScalar(1.08);
+    const melt = layer(getSlagPoolTexture(), SLAG_GOLD.clone(), 0.016, { blending: AdditiveBlending });
+    melt.scale.setScalar(0.94);
+    const crust = layer(getSlagCrustTexture(), new Color(VFX_MATTER.slag).lerp(new Color(PALETTE.bone), 0.12).multiplyScalar(1.5), 0.02, {});
+    const glow = makeGlowSprite({ color: VFX_MATTER.kilngold, size: 2.2, opacity: 0 });
+    glow.material.toneMapped = false;
+    glow.position.y = 0.22;
+    g.add(glow);
+    const bubbles = [];
+    for (let i = 0; i < 4; i++) {
+      const b = makeGlowSprite({ color: VFX_MATTER.kilnheat, size: 0.2, opacity: 0 });
+      b.material.toneMapped = false;
+      const a = i * 2.2 + 0.4;
+      const r = 0.25 + (i % 2) * 0.3;
+      b.position.set(Math.cos(a) * r, 0.06, Math.sin(a) * r);
+      g.add(b);
+      bubbles.push(b);
+    }
+    return { g, base, melt, crust, glow, bubbles };
   }
 
   function makeSlick() {
@@ -421,6 +572,42 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         n.teeth.material.emissiveIntensity = armed ? 0.18 + 0.1 * Math.sin(tSec * 3 + e.id) + 0.8 * rise : 0;
         n.disc.material.opacity = 0.75 * inK * outK;
         n.glow.material.opacity = armed ? (0.12 + 0.06 * Math.sin(tSec * 3 + e.id) + 0.4 * rise) * outK : 0;
+      } else if (e.kind === 'slick' && e.variant === 'slag') {
+        seenS.add(e.id);
+        let p = slagPools.get(e.id);
+        if (!p) {
+          p = makeSlagPool();
+          p.g.position.set(e.x, 0, e.z);
+          p.g.rotation.y = (e.id * 2.399963) % (Math.PI * 2);
+          root.add(p.g);
+          slagPools.set(e.id, p);
+        }
+        // Life: splashed out molten white-gold, cooling through gold to
+        // crimson coal; the crust knits over the last half, the gold left
+        // only in its cracks; then it sinks away.
+        const span = Math.max(1, e.untilTick - e.startTick);
+        const age = tick - 1 + alpha - e.startTick;
+        const k = Math.min(1, Math.max(0, age / span));
+        const inK = Math.min(1, Math.max(0, age / 8));
+        const outK = Math.min(1, Math.max(0, (e.untilTick - tick) / 30));
+        const spread = 0.55 + 0.45 * (1 - Math.pow(1 - inK, 3));
+        p.g.scale.setScalar(e.radius * spread);
+        const heat = 1.05 - 0.85 * Math.pow(k, 0.8);
+        const crustK = k < 0.35 ? 0 : Math.min(1, (k - 0.35) / 0.5);
+        const cs = crustK * crustK * (3 - 2 * crustK);
+        slagHeat(p.melt.material.color, heat + 0.05 * Math.sin(tSec * 6 + e.id));
+        p.melt.material.opacity = (0.95 - 0.35 * k) * inK * outK;
+        p.base.material.opacity = 0.85 * Math.min(1, inK * 2) * outK;
+        p.crust.material.opacity = 0.97 * cs * outK;
+        p.crust.scale.setScalar(0.94 - 0.06 * (1 - cs));
+        slagHeat(p.glow.material.color, Math.min(0.9, heat));
+        p.glow.material.opacity = (0.08 + 0.42 * (1 - k)) * inK * outK;
+        for (let i = 0; i < p.bubbles.length; i++) {
+          const u = (tSec * 0.8 + i * 0.37 + e.id * 0.1) % 1;
+          const b = p.bubbles[i];
+          b.material.opacity = (1 - cs) * outK * (u < 0.7 ? 0.5 * Math.sin((u / 0.7) * Math.PI) : 0);
+          b.scale.setScalar(0.08 + 0.18 * u);
+        }
       } else if (e.kind === 'slick' && e.variant === 'crystal') {
         seenS.add(e.id);
         let c = crystals.get(e.id);
@@ -526,6 +713,12 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
       n.teeth.material.dispose();
       n.glow.material.dispose();
       snares.delete(id);
+    }
+    for (const [id, p] of slagPools) {
+      if (seenS.has(id)) continue;
+      root.remove(p.g);
+      for (const m of [p.base, p.melt, p.crust, p.glow, ...p.bubbles]) m.material.dispose();
+      slagPools.delete(id);
     }
     for (const [id, c] of crystals) {
       if (seenS.has(id)) continue;
@@ -679,7 +872,8 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   function debugState() {
     return {
       globs: globs.size,
-      slicks: slicks.size + crystals.size + snares.size,
+      slicks: slicks.size + crystals.size + snares.size + slagPools.size,
+      slagPools: slagPools.size,
       snares: snares.size,
       drinks: drinks.size,
       moleWake: wake.length,

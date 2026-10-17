@@ -15,11 +15,16 @@
 // low choir, and a lub-dub heartbeat drum under everything) · spire (Act V,
 // the Still Spire, the gods' high belfry: F lydian, 92 bpm, a chime ostinato
 // of tuned bell partials, a high airy choir pad and lead, low toms answering
-// like far bells; the boss state turns F aeolian under a heavy bell toll).
+// like far bells; the boss state turns F aeolian under a heavy bell toll) ·
+// kiln (Act VI, the Ember Kiln, the gods' forge where the first bells were
+// fired: B-flat phrygian dominant, 100 bpm, a hammer on the anvil on the
+// beat with a hammer-on-bell ring, a struck-string forge ostinato, low
+// bellows breaths and a dark drone under a low pad, a bronze bell lead; the
+// boss state turns B-flat harmonic minor under a great cast bell).
 // Tempo table (bpm) — every state differs from every other by >= 18 % inside
 // a theme (G3.5 distinctness), boss = combat x 1.22:
-//   defeat 44 · menu 56 · lobby 64 · camp 72 · combat 104/96/88/86/92 ·
-//   boss 127/117/107/105/112 · victory 152
+//   defeat 44 · menu 56 · lobby 64 · camp 72 · combat 104/96/88/86/92/100 ·
+//   boss 127/117/107/105/112/122 · victory 152
 // Every state keeps a sustained pad/drone layer so the music tap never
 // drops out between notes (G3.5 "never below -50 dBFS for > 1 s").
 // Crossfades are equal-power (sin/cos gain curves). Intensity (0..1) opens
@@ -37,6 +42,9 @@ const SCALES = {
   mixolydian: [0, 2, 4, 5, 7, 9, 10],
   harmonic: [0, 2, 3, 5, 7, 8, 11],
   lydian: [0, 2, 4, 6, 7, 9, 11],
+  // Act VI: phrygian dominant (the fifth mode of harmonic minor): the flat
+  // second and the major third together, hot and close.
+  phrygdom: [0, 1, 4, 5, 7, 8, 10],
 };
 
 const THEMES = {
@@ -65,6 +73,23 @@ const THEMES = {
     bossDrumHits: { 0: 1, 4: 0.55, 8: 0.9, 10: 0.45, 12: 0.6 },
     bossToll: { 0: [0, 1], 24: [4, 0.75] },
   },
+  // Act VI (the Ember Kiln): hot, low and struck. The drum is a smith's
+  // hammer on the anvil (a hard ring over a thud) on every beat with a
+  // lighter rebound before the third; the ostinato is a dark struck string
+  // with a metal ping (the forge); the pad sits low and closed with a dark
+  // drone under it (combatDrone) and the bellows breathe on each half bar
+  // (breath: a slow swell of filtered noise); the lead is a bronze bell. The
+  // boss state turns B-flat harmonic minor, the anvil doubles up and a great
+  // cast bell (tollInstr 'cast') strikes the root and the fifth.
+  kiln: {
+    id: 'kiln', root: 46, scale: 'phrygdom', combatBpm: 100, prog: [0, 1, 6, 0], bossScale: 'harmonic', bossProg: [0, 5, 1, 4],
+    ostinato: 'forge', drum: 'anvil', lead: 'bronze', padType: 'square', padCut: 620, combatDrone: 0.3,
+    drumHits: { 0: 1, 4: 0.8, 7: 0.35, 8: 0.95, 12: 0.8, 15: 0.3 },
+    breath: { 0: 1, 8: 0.7 },
+    bossDrumHits: { 0: 1, 2: 0.5, 4: 0.85, 6: 0.5, 8: 1, 10: 0.5, 12: 0.85, 14: 0.6 },
+    bossToll: { 0: [0, 1], 16: [4, 0.8] },
+    tollInstr: 'cast',
+  },
 };
 
 // Per-state output trims (dB) that bring each state to about -18 dBFS RMS
@@ -74,12 +99,14 @@ export const MUSIC_TRIM = {
   'boss:barrow': -9.6,
   'boss:heart': -10.6,
   'boss:mill': -8.9,
+  'boss:kiln': -9.5,
   'boss:spire': -9.7,
   'boss:wood': -9.5,
   'camp': -7.6,
   'combat:barrow': -9.1,
   'combat:heart': -10.3,
   'combat:mill': -7.8,
+  'combat:kiln': -8.9,
   'combat:spire': -9.5,
   'combat:wood': -7.9,
   'defeat': -7,
@@ -193,6 +220,49 @@ const INSTR = {
       k.bell(d, t, { f, ratio: 1.4, index: 2.4, d: 2.4, gain: v * 0.8 }),
       k.tone(d, t, { f0: f * 0.5, a: 0.01, d: 1.8, gain: v * 0.35 }),
       k.tone(d, t, { f0: f * 1.195, a: 0.004, d: 1.1, gain: v * 0.12 })
+    ),
+  // Act VI: the smith's hammer on the anvil — a hard, high, inharmonic ring
+  // (FM on a non-integer ratio, short), the iron's thud under it and the
+  // strike's click; the ring is a fixed pitch like a real anvil.
+  anvil: (k, d, t, f, v) =>
+    Math.max(
+      k.bell(d, t, { f: 1318, ratio: 2.92, index: 1.6, d: 0.45, gain: v * 0.32 }),
+      k.tone(d, t, { f0: 2093, a: 0.001, d: 0.22, gain: v * 0.08 }),
+      k.tone(d, t, { f0: 140, f1: 70, d: 0.16, gain: v * 0.8 }),
+      k.noise(d, t, { type: 'bandpass', f0: 3600, q: 1.2, d: 0.025, gain: v * 0.45 })
+    ),
+  // Act VI: the forge's string — a dark struck string with a metal ping on
+  // the attack (a hammer on a bell-bronze bar), short enough to run.
+  forge: (k, d, t, f, v) =>
+    Math.max(
+      k.pluck(d, t, { f, d: 0.55, gain: v * 0.85, bright: 2200, dark: 520 }),
+      k.bell(d, t, { f: f * 2, ratio: 3.01, index: 0.7, d: 0.3, gain: v * 0.14 })
+    ),
+  // Act VI: the bellows' breath — a slow swell of low filtered noise that
+  // opens and closes (one pump of the bellows).
+  breath: (k, d, t, f, v) =>
+    Math.max(
+      k.noise(d, t, { src: 'brown', type: 'bandpass', f0: 240, f1: 520, q: 1.1, a: 0.45, d: 0.6, gain: v * 0.9 }),
+      k.noise(d, t + 0.2, { type: 'lowpass', f0: 900, f1: 380, q: 0.7, a: 0.3, d: 0.5, gain: v * 0.22 })
+    ),
+  // Act VI: a bronze bell — a cast bell's partials (the octave strike, its
+  // minor-third tierce and fifth, the hum an octave under), warmer and
+  // longer than the Spire's chime: the bells were made here.
+  bronze: (k, d, t, f, v) =>
+    Math.max(
+      k.bell(d, t, { f, ratio: 2, index: 1.5, d: 1.9, gain: v * 0.62 }),
+      k.tone(d, t, { f0: f * 1.19, a: 0.003, d: 1.2, gain: v * 0.13 }),
+      k.tone(d, t, { f0: f * 1.5, a: 0.003, d: 0.8, gain: v * 0.06 }),
+      k.tone(d, t, { f0: f * 0.5, a: 0.01, d: 2.0, gain: v * 0.2 })
+    ),
+  // Act VI boss: a great bell new from the mould — struck hard, dark FM, a
+  // long hum and a raw, slightly flat tierce beating against it.
+  cast: (k, d, t, f, v) =>
+    Math.max(
+      k.bell(d, t, { f, ratio: 2.01, index: 2.8, d: 2.6, gain: v * 0.75 }),
+      k.tone(d, t, { f0: f * 0.5, a: 0.01, d: 2.2, gain: v * 0.4 }),
+      k.tone(d, t, { f0: f * 1.18, a: 0.004, d: 1.4, gain: v * 0.14 }),
+      k.noise(d, t, { type: 'bandpass', f0: 2600, q: 1.5, d: 0.04, gain: v * 0.25 })
     ),
 };
 
@@ -349,6 +419,9 @@ const MOTIFS = {
   heart: [[0, 0, 6], [6, 1, 2], [8, 0, 8], [16, 4, 4], [20, 3, 4], [24, -1, 8]],
   // A climb to the lydian sharp fourth (from the I chord, degree 3) and a slow fall.
   spire: [[0, 4, 4], [4, 3, 2], [6, 4, 2], [8, 7, 8], [16, 6, 4], [20, 4, 4], [24, 2, 8]],
+  // Bells rung in the forge: the flat second leaning on the tonic, a leap to
+  // the fifth, a fall through the major third (phrygian dominant's colour).
+  kiln: [[0, 0, 4], [4, 1, 2], [6, 0, 2], [8, 4, 6], [14, 3, 2], [16, 2, 4], [20, 1, 4], [24, 0, 8]],
 };
 
 // Boss identity: the second boss of each act plays its own variant of the
@@ -512,6 +585,9 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
         ...base, ...th, state, bpm: th.combatBpm, prog: th.prog,
         layers: [
           padLayer(0.32, { oct: th.padOct ?? 0 }),
+          // Act VI: the forge's drone and the bellows' breath under it all.
+          ...(th.combatDrone ? [droneLayer(th.combatDrone)] : []),
+          ...(th.breath ? [drumLayer('breath', 0.35, 'breath', th.breath, { fill: false })] : []),
           bassLayer(0.5, [0, 3, 6, 8, 11, 14], { lenSteps: 2 }),
           drumLayer('drum', 0.55, th.drum, th.drumHits ?? { 0: 1, 4: 0.5, 7: 0.6, 8: 0.85, 10: 0.4, 12: 0.55, 14: 0.45 }, { min: 0.12 }),
           arpLayer('ostinato', 0.45, ost, { every: 1, oct: 1, pattern: [0, 1, 2, 1, 3, 2, 1, 2], min: 0.32 }),
@@ -530,7 +606,8 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
             padLayer(0.25, { oct: 0, every: 32 }),
             drumLayer('taiko', 0.62, 'taiko', v.drum),
             ...(th.bossDrumHits ? [drumLayer(th.drum, 0.45, th.drum, th.bossDrumHits)] : []),
-            ...(th.bossToll ? [tollLayer(0.5, 'knell', th.bossToll)] : []),
+            ...(th.bossToll ? [tollLayer(0.5, th.tollInstr || 'knell', th.bossToll)] : []),
+            ...(th.breath ? [drumLayer('breath', 0.3, 'breath', th.breath, { fill: false })] : []),
             bassLayer(0.45, [0, 2, 4, 6, 8, 10, 12, 14], { lenSteps: 1.6 }),
             arpLayer('ostinato', 0.4, v.arp.instr, { every: 1, oct: 1, pattern: v.arp.pattern, min: 0.25 }),
             ...(v.shaker ? [shakerLayer(0.16, { min: 0.4, every: 2 })] : []),
@@ -548,9 +625,11 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
           // Act IV: the heartbeat quickens under the boss (Act V: the toms).
           ...(th.bossDrumHits ? [drumLayer(th.drum, 0.5, th.drum, th.bossDrumHits)] : []),
           // Act V: the heavy bronze toll.
-          ...(th.bossToll ? [tollLayer(0.5, 'knell', th.bossToll)] : []),
+          ...(th.bossToll ? [tollLayer(0.5, th.tollInstr || 'knell', th.bossToll)] : []),
+          // Act VI: the bellows keep breathing under the boss.
+          ...(th.breath ? [drumLayer('breath', 0.3, 'breath', th.breath, { fill: false })] : []),
           bassLayer(0.45, [0, 2, 4, 6, 8, 10, 12, 14], { lenSteps: 1.6 }),
-          arpLayer('ostinato', 0.4, th.ostinato === 'bell' || th.ostinato === 'glass' || th.ostinato === 'chime' ? th.ostinato : 'lute', { every: 1, oct: 1, pattern: [0, 1, 0, 2, 0, 1, 3, 2], min: 0.25 }),
+          arpLayer('ostinato', 0.4, th.ostinato === 'bell' || th.ostinato === 'glass' || th.ostinato === 'chime' || th.ostinato === 'forge' ? th.ostinato : 'lute', { every: 1, oct: 1, pattern: [0, 1, 0, 2, 0, 1, 3, 2], min: 0.25 }),
           stabLayer(0.4, [0, 6, 12], { min: 0.5 }),
           leadLayer(0.38, th.lead, MOTIFS[th.id], { min: 0.75, oct: 1 }),
         ],
@@ -618,7 +697,7 @@ const LEN_INSTR = new Set(['lute', 'flute', 'reed', 'choir', 'bass', 'air']);
 // pitch x velocity x length keys (~2.5-3 MB of samples per state). The calm
 // states (menu, camp, lobby, stingers: 5-56 notes per cycle, long harp/bell
 // tails) stay live; pads and drones always do (long, rare).
-const BAKED_INSTR = new Set(['hand', 'frame', 'taiko', 'shaker', 'heartbeat', 'tom']);
+const BAKED_INSTR = new Set(['hand', 'frame', 'taiko', 'shaker', 'heartbeat', 'tom', 'anvil', 'breath']);
 const BAKED_STATES = new Set(['combat', 'boss']);
 const bakesNote = (state, instr) => BAKED_INSTR.has(instr) || BAKED_STATES.has(state);
 const noteKey = (instr, f, v, len) => `n:${instr}:${Math.round(f * 100)}:${Math.round(v * 100)}:${LEN_INSTR.has(instr) ? Math.round(len * 1000) : 0}`;

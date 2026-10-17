@@ -95,6 +95,7 @@ export const VFX_BIOME = Object.freeze({
   3: '#5E5450',
   4: '#4E4458', // Act IV, the Hollow Heart: bruised violet dusk
   5: '#6A7488', // Act V, the Still Spire: cold slate-blue high air
+  6: '#5C4A40', // the Ember Kiln: smoky umber kiln air (docs/KILN.md)
 });
 
 // Enemy debris materials (design-VFX.md §5). The threat colour is always
@@ -154,6 +155,20 @@ export const VFX_MATTER = Object.freeze({
   gravebronze: '#6E6248', // the Gravebell Ringer's bell: ash-dulled bronze
   // The Still Spire's second champion (content plan 5 slice 2).
   habit: '#4A5263', // the Bell Abbess's habit: a dark vespers slate under her white wimple (never Bright Heal)
+  // The Ember Kiln (docs/KILN.md). A fire land beside a red-orange threat
+  // colour: the Kiln's own fire is KILN GOLD (hue 36-46, the colour of heat
+  // inside a kiln) and its coals deep crimson (hue 350-358), both outside
+  // Ember's 5-25 band, so every Ember telegraph still reads as the only
+  // red-orange on the floor. Brick and slag stay low-chroma.
+  kilnbrick: '#584640', // fire brick, smoke-darkened (low chroma: never Ember)
+  slag: '#3A3532', // Slag Golem's crust, the slag heaps: cooled grey-black slag
+  kilngold: '#FFC24A', // the Kiln's heat: molten cores, the vents' glow, the Golem's core
+  kilnheat: '#FFE6A8', // its white-hot peak
+  coal: '#7A1E2A', // banked coals, the vents' grates at rest: deep crimson
+  newthide: '#4A3B30', // Ember Newt: sooty lizard hide
+  bellows: '#5E4A3A', // Bellows Imp: scorched leather
+  sparks: '#FFD27A', // the Imp's fan, the vents' cinders: gold sparks
+  mothash: '#A39C92', // Cinder Moth: pale ash wings (spent: the same, unlit)
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

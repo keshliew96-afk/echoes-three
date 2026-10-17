@@ -99,7 +99,7 @@ function installStyle() {
   document.head.appendChild(s);
 }
 
-const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'V']; // 6: the Ember Kiln is the other Level V (docs/KILN.md)
 
 // "Act II · Room 3/8 · Choosing a boon" — where the player is, so a pause that
 // lasted a coffee break still lands them back in context.

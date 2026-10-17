@@ -40,11 +40,11 @@
 // screen's writes. All go through commit() (atomic, multi-tab safe); a
 // records reset keeps `meta`.
 import { PROFILE_KEY } from './storage.js';
-import { CAMPAIGN_LEVELS, FIRST_LEVEL, nextLevel } from '../data/campaign.js';
+import { CAMPAIGN_LEVELS, ALL_LEVELS, FIRST_LEVEL, nextLevels } from '../data/campaign.js';
 import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet, FEATS, featsOf, marksAfter, vowBestAfter } from '../data/unlocks.js';
 import { VOW_MAX_RANK } from '../data/vows.js';
 
-export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5, 5: 3.0 });
+export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5, 5: 3.0, 6: 3.0 }); // 6: the Ember Kiln, the other Level V
 export const CHALLENGE_MUL = Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 });
 const MAX_SCORES = 10;
 
@@ -69,7 +69,7 @@ export function scoreCampaign({ levels = [], challenge = 'standard', complete = 
   return Math.round(sum * chMul) + (complete ? Math.max(0, 900 * played - Math.round(timeSec)) : 0);
 }
 
-const perLevel = (v) => Object.fromEntries(CAMPAIGN_LEVELS.map((l) => [l, v]));
+const perLevel = (v) => Object.fromEntries(ALL_LEVELS.map((l) => [l, v]));
 
 export function freshProfile() {
   return {
@@ -357,14 +357,14 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // Unlock `level` in `p` (idempotent). Returns true when it was newly unlocked.
   function unlockIn(p, level) {
     const n = Number(level);
-    if (!CAMPAIGN_LEVELS.includes(n) || p.unlocks.acts.includes(n)) return false;
+    if (!ALL_LEVELS.includes(n) || p.unlocks.acts.includes(n)) return false;
     p.unlocks.acts.push(n);
     p.unlocks.acts.sort((a, b) => a - b);
     return true;
   }
   function unlockLevel(level) {
     const n = Number(level);
-    if (!CAMPAIGN_LEVELS.includes(n)) return false;
+    if (!ALL_LEVELS.includes(n)) return false;
     sync();
     if (profile.unlocks.acts.includes(n)) return false;
     return commit((p) => unlockIn(p, n)).result === true;
@@ -376,13 +376,16 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // Quit to Lobby or a reload never loses the unlock.
   function noteLevelClear(level) {
     const n = Number(level);
-    if (!CAMPAIGN_LEVELS.includes(n)) return { ok: false };
-    const nx = nextLevel(n);
+    if (!ALL_LEVELS.includes(n)) return { ok: false };
+    // THE LEVEL V ROADS: the Level IV clear opens every road's Level V.
+    const opens = nextLevels(n);
+    const nx = opens.length ? opens[opens.length - 1] : null;
     const { result, w } = commit((p) => {
       const r = p.records;
       r.levelClears[n] = (r.levelClears[n] ?? 0) + 1;
       if (n > (r.furthestLevel ?? 0)) r.furthestLevel = n;
-      const unlocked = nx !== null ? unlockIn(p, nx) : false;
+      let unlocked = false;
+      for (const o of opens) unlocked = unlockIn(p, o) || unlocked;
       return { unlocked, clears: r.levelClears[n] };
     });
     return { ok: w.ok, level: n, next: nx, unlocked: result.unlocked, clears: result.clears };
@@ -423,7 +426,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // A level entered (run start / level start): the furthest level reached.
   function noteLevelReached(level) {
     const n = Number(level);
-    if (!CAMPAIGN_LEVELS.includes(n)) return false;
+    if (!ALL_LEVELS.includes(n)) return false;
     if (n > (profile.records.furthestLevel ?? 0)) {
       deferred.furthest = Math.max(deferred.furthest, n);
       rebuild();
@@ -492,8 +495,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
           const sec = Math.round((l.ticks || 0) / 60);
           const cur = r.fastestVictorySec[a];
           if (sec > 0 && (cur === null || cur === undefined || sec < cur)) r.fastestVictorySec[a] = sec;
-          const nx = nextLevel(a);
-          if (nx !== null) unlockIn(p, nx);
+          for (const o of nextLevels(a)) unlockIn(p, o);
         }
         if (a > (r.furthestLevel ?? 0)) r.furthestLevel = a;
       });

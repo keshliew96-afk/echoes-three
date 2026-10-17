@@ -8,7 +8,7 @@
 import { esc } from './style.js';
 import { SKILLS } from '../../sim/skills.js';
 import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save service's run record
-import { levelFor, bossNameOfRun } from '../../data/levels.js';
+import { levelFor, bossNameOfRun, roadOfAct } from '../../data/levels.js';
 import { chorusLine, endingFor } from '../../data/story.js';
 import { verseLine } from './transit.js';
 import { t } from '../../i18n/index.js';
@@ -21,6 +21,8 @@ const WIN_FLAVOUR = {
   4: () => t('The Heart\'s warden falls. Below the Barrow, the old beat falters.'),
   // Act V preview (docs/ACT_V.md): the Spire's borrowed warden.
   5: () => t('The Spire\'s warden falls. High above, the bells hang still.'),
+  // The Ember Kiln preview (docs/KILN.md): its borrowed warden.
+  6: () => t('The Kiln\'s warden falls. The great fire gutters, then burns clean.'),
 };
 const BOSS_WIN_FLAVOUR = {
   thornmother: () => t('The Thornmother falls. The briars let the wood go.'),
@@ -51,7 +53,7 @@ import { placeLine, dayLabel } from './daily.js';
 import { clockOf } from '../../data/daily.js';
 import { vowLevelOf } from '../../data/vows.js';
 
-const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'V']; // 6: the Ember Kiln is the other Level V (docs/KILN.md)
 
 // fix-INT-r5 (J5-F2, benchmark B14): the end card is a FIXED-WIDTH plate.
 // Its width used to be whatever its content asked for — with a built party
@@ -259,7 +261,7 @@ export function createEndScreen({ run }) {
       : chorus(view, s);
     // THE HEARTH SONG (docs/STORY.md): a won level hands the bell its verse;
     // a complete campaign closes on the story's ending for its length.
-    verseEl.textContent = rush || deep || !win ? '' : complete ? `${verseLine(view.act)} ${t(endingFor(CAMPAIGN_LEVELS.length).text)}` : verseLine(view.act);
+    verseEl.textContent = rush || deep || !win ? '' : complete ? `${verseLine(view.act)} ${t(endingFor(CAMPAIGN_LEVELS.length, roadOfAct(view.act)).text)}` : verseLine(view.act);
     {
       const c = run().campaign ? run().campaign() : null;
       const secs = c && c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? Math.ceil(c.autoReturnInTicks / 60) : null;

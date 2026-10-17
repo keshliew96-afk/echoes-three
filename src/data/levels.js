@@ -266,6 +266,46 @@ export const LEVELS = Object.freeze({
     ]),
     unlock: Object.freeze({ afterVictory: 4 }),
   }),
+  // THE EMBER KILN (docs/KILN.md, content plan 5 slice 7): the gods' kiln,
+  // where the first bells were fired. Act 6 in data, but not a sixth level
+  // in a row: it is the OTHER Level V (`level: 5`), a second road after the
+  // Hollow Heart beside the Still Spire (`road: 'kiln'`; Kesh's fork,
+  // 2026-10-17). It plays only behind the ?act6=1 preview below, which also
+  // sends the campaign down the Kiln road; slice 8 gives it its own bosses
+  // and lets the party pick the road at the Level IV clear. Until then the
+  // Heart's Geode Colossus and the Barrow's Lich Ram stand in, like the
+  // Spire's stand-ins did, with the Kiln's own creatures as their adds.
+  6: Object.freeze({
+    id: 'ember_kiln',
+    act: 6,
+    level: 5,
+    road: 'kiln',
+    name: 'The Ember Kiln',
+    blurb: 'The gods\' kiln, where the first bells were fired. The fire never went out.',
+    tier: 5,
+    biome: 'kiln',
+    layouts: Object.freeze([36, 37, 38, 39, 40, 41]),
+    legacyLayouts: Object.freeze([36, 37, 38]),
+    bossLayout: 39,
+    music: 'kiln',
+    // The Kiln's four creatures from room 1, with a few of the Heart's and
+    // the Barrow's that followed the party up out of the dark.
+    roster: Object.freeze({ newt: 0.2, slag: 0.13, bellows: 0.14, cindermoth: 0.16, husk: 0.1, lancer: 0.09, crow: 0.07, knight: 0.05 }),
+    introduce: Object.freeze({ newt: 1, cindermoth: 1, husk: 1, crow: 1, bellows: 2, slag: 2, lancer: 3, knight: 4 }),
+    hazards: Object.freeze(['vent', 'rockfall', 'gravefire']),
+    interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'bell']),
+    boss: 'colossus',
+    bossName: 'The Geode Colossus',
+    bossAdds: Object.freeze([
+      ['newt', 2],
+      ['slag', 1],
+    ]),
+    bosses: Object.freeze([
+      Object.freeze({ kind: 'colossus', name: 'The Geode Colossus', adds: Object.freeze([Object.freeze(['newt', 2]), Object.freeze(['slag', 1])]) }),
+      Object.freeze({ kind: 'lichram', name: 'The Lich Ram', adds: Object.freeze([Object.freeze(['cindermoth', 2]), Object.freeze(['bellows', 1])]) }),
+    ]),
+    unlock: Object.freeze({ afterVictory: 4 }),
+  }),
 });
 
 // NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): kinds that roll only in a
@@ -297,8 +337,38 @@ export const ACT5_PREVIEW = (() => {
   }
 })();
 const PLAYED_ACTS = Math.max(CAMPAIGN_ACTS, ACT5_PREVIEW ? 5 : 0);
-export const ENDLESS_ACTS = Object.freeze([1, 2, 3, 4, 5].slice(0, Math.max(4, PLAYED_ACTS)));
-export const ACT_IDS = Object.freeze([1, 2, 3, 4, 5].slice(0, PLAYED_ACTS));
+// THE EMBER KILN PREVIEW (docs/KILN.md): `?act6=1` in the page address (or
+// ECHOES_ACT6=1 for a Node probe) adds the Kiln (act 6) to the lands that
+// play, and sends the campaign down the Kiln road: Levels I to IV, then the
+// Kiln as Level V instead of the Spire (data/campaign.js). Without it nothing
+// anywhere reads act 6, so every run plays exactly as before.
+export const ACT6_PREVIEW = (() => {
+  try {
+    if (typeof location !== 'undefined' && location && typeof location.search === 'string' && /[?&]act6=1(&|$)/.test(location.search)) return true;
+  } catch {
+    /* no location */
+  }
+  try {
+    return typeof process !== 'undefined' && !!process.env && process.env.ECHOES_ACT6 === '1';
+  } catch {
+    return false;
+  }
+})();
+// THE LEVEL V ROADS (Kesh's fork, 2026-10-17): after the Hollow Heart a
+// campaign takes one road to its fifth and last level. Each road names the
+// act it ends on. A fifth-level act is one whose row says `level: 5` (the
+// Kiln) or act 5 itself (the Spire). Slice 8 lets the party pick; until then
+// the road is the Spire, or the Kiln behind ?act6=1.
+export const ROADS = Object.freeze({ spire: 5, kiln: 6 });
+export const DEFAULT_ROAD = ACT6_PREVIEW ? 'kiln' : 'spire';
+const EXTRA_ACTS = ACT6_PREVIEW ? [6] : [];
+export const ENDLESS_ACTS = Object.freeze([...[1, 2, 3, 4, 5].slice(0, Math.max(4, PLAYED_ACTS)), ...EXTRA_ACTS]);
+export const ACT_IDS = Object.freeze([...[1, 2, 3, 4, 5].slice(0, PLAYED_ACTS), ...EXTRA_ACTS]);
+// The campaign level an act plays as (the Kiln, act 6, is a Level V), for
+// every "Level N" a player reads.
+export const levelNumberOf = (act) => (LEVELS[act] && LEVELS[act].level) || Number(act) || 1;
+// The road an act ends ('spire' / 'kiln'), or null for Levels I to IV.
+export const roadOfAct = (act) => Object.keys(ROADS).find((r) => ROADS[r] === Number(act)) ?? null;
 
 export function levelFor(act) {
   return LEVELS[act] ?? LEVELS[1];

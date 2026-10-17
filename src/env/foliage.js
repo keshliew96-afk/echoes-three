@@ -78,6 +78,17 @@ function featherGeometry() {
   return mergeGeometries([vane, quill.toNonIndexed(), down]);
 }
 
+// The Ember Kiln (`spec.tuft: 'cinder'`): fallen ash and cinders on the fire
+// brick instead of a grass tuft — a lumpy cinder, two chips beside it and a
+// curled flake of pale ash, all low so they read as litter, not growth.
+function cinderGeometry() {
+  const lump = new IcosahedronGeometry(0.05, 0).scale(1.2, 0.62, 1).rotateY(0.4).translate(0, 0.022, 0);
+  const chipA = new IcosahedronGeometry(0.028, 0).scale(1, 0.6, 1.2).translate(0.07, 0.012, 0.03);
+  const chipB = new IcosahedronGeometry(0.022, 0).scale(1.3, 0.55, 1).translate(-0.05, 0.01, 0.06);
+  const flake = new IcosahedronGeometry(0.06, 0).scale(1, 0.08, 0.6).rotateZ(0.18).rotateY(1.1).translate(-0.03, 0.02, -0.07);
+  return mergeGeometries([lump, chipA, chipB, flake]);
+}
+
 function blockedBy(footprints, x, z) {
   for (let i = 0; i < footprints.length; i++) {
     const f = footprints[i];
@@ -141,8 +152,9 @@ export function buildFoliage(root, spec, cosmetic, footprints = []) {
   // --- Grass tufts.
   const shard = spec.tuft === 'shard';
   const feather = spec.tuft === 'feather';
+  const cinder = spec.tuft === 'cinder';
   const grass = new InstancedMesh(
-    shard ? shardGeometry() : feather ? featherGeometry() : tuftGeometry(),
+    shard ? shardGeometry() : feather ? featherGeometry() : cinder ? cinderGeometry() : tuftGeometry(),
     shard ? toonMaterial({ color: '#FFFFFF', emissive: hslColor(bl.h, 0.5, 0.3), emissiveIntensity: 0.16 }) : toonMaterial({ color: '#FFFFFF' }),
     spec.grass
   );

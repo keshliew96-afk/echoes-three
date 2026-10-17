@@ -57,10 +57,20 @@ const SPIRE_ROWS = [
   ['vane', 'Vane Cock', 'Volley', 'A brass weathercock torn off a steeple. It still turns to face whatever is coming.', 'Keeps its distance, then swings into the wind and marks a long, narrow warning lane through a hero. Three gust darts fly down it for 7 each: step out of the lane and they all miss.'],
   ['sacristan', 'Bell Sacristan', 'Warder', 'A stone acolyte of the belfry who still rings the hours for gods who stopped listening.', 'Hangs back behind its kin and rings a pale ring round itself: every other enemy inside is hushed and takes 40% less damage for 5 s. Kill it first, or stun it mid-ring. Alone, it raps you with its bell for 7.'],
 ];
-const ROWS = ACT_IDS.includes(5) ? [...ENEMY_ROWS, ...SPIRE_ROWS] : ENEMY_ROWS;
+// The Ember Kiln (docs/KILN.md, content plan 5 slice 7): listed only while
+// the Kiln plays (the ?act6=1 preview until slice 8 opens its road), so the
+// Journal never shows pages a player cannot fill.
+const KILN_ROWS = [
+  ['newt', 'Ember Newt', 'Skitterer', 'A fire lizard that basked on the kiln floor while the bells were fired. It never left the warmth.', 'Skitters in fast and low, crouches and marks a short warning lane through a hero, then shoots down it for 7 to every hero it crosses. It rests a beat where it stops. One good hit kills it: watch for three lunging together.'],
+  ['slag', 'Slag Golem', 'Furnace', 'The kiln\'s waste, raked out and heaped up until the hollow song found it and stood it up.', 'Its crust turns blows: it takes 40% less damage. In close it rears and slams a warning ring in front of it for 14, splashing a pool of slag that slows. The slam cracks its crust: for 2 s its core glows and it takes 40% more. Hit it then.'],
+  ['bellows', 'Bellows Imp', 'Stoker', 'A stoker of the gods\' kiln with its bellows still strapped on. It keeps every fire roaring.', 'Keeps its distance, plants its feet and pumps its bellows behind a wide warning cone. The fan blows a sheet of sparks down the cone for 8. Step out to the side, or close in: it scurries back from a hero up close, and a stun chokes the fan.'],
+  ['cindermoth', 'Cinder Moth', 'Kindler', 'A moth of glowing ash. Where it settles, something starts to burn.', 'Flutters straight at a hero and kindles in a small warning ring round itself, then flares for 6. The flare burns it out: for 2.5 s it is a grey husk drifting away, and it takes double damage. They come several at once.'],
+];
+const ROWS = [...ENEMY_ROWS, ...(ACT_IDS.includes(5) ? SPIRE_ROWS : []), ...(ACT_IDS.includes(6) ? KILN_ROWS : [])];
 // The same pages as display data, exported so tools/i18n-extract.mjs collects
 // their text with or without the flag.
 export const SPIRE_PAGES = Object.freeze(SPIRE_ROWS.map(([id, name, role, lore, text]) => Object.freeze({ id, name, role, lore, text })));
+export const KILN_PAGES = Object.freeze(KILN_ROWS.map(([id, name, role, lore, text]) => Object.freeze({ id, name, role, lore, text })));
 
 // CHAMPION ROOMS (docs/CHAMPIONS.md): one row per champion, keyed by kind;
 // its land is its act. They are counted like enemies (met, felled).

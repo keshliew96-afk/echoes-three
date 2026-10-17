@@ -9,25 +9,56 @@
 // level by number.
 //
 // Pure data + pure helpers (sim-importable): no DOM, no three, no wall clock.
-import { ACT_IDS, levelFor } from './levels.js';
+import { ACT_IDS, ROADS, DEFAULT_ROAD, levelFor, roadOfAct } from './levels.js';
 
-// The campaign's level order (ascending level ids).
-export const CAMPAIGN_LEVELS = Object.freeze([...ACT_IDS].sort((a, b) => a - b));
+// THE LEVEL V ROADS (docs/KILN.md): the levels of the campaign that ends on
+// `road`'s land: every played act that is not another road's Level V. Today
+// there is one road a campaign takes (DEFAULT_ROAD: the Spire, or the Kiln
+// behind ?act6=1); slice 8 lets the party pick at the Level IV clear and
+// passes the run's road to nextLevel().
+const ROAD_END = new Set(Object.values(ROADS));
+export function roadLevels(road = DEFAULT_ROAD) {
+  const end = ROADS[road] ?? ROADS[DEFAULT_ROAD];
+  return Object.freeze([...ACT_IDS].filter((a) => !ROAD_END.has(a) || a === end).sort((a, b) => a - b));
+}
+// The road a level belongs to: a Level V land's own road, else `road`.
+const roadAt = (level, road) => roadOfAct(level) ?? road ?? DEFAULT_ROAD;
+
+// The campaign's level order (ascending level ids) on its road.
+export const CAMPAIGN_LEVELS = roadLevels(DEFAULT_ROAD);
+// Every level a campaign can play on any road (both Level Vs behind the
+// ?act6=1 preview): the profile keeps records and unlocks for all of them.
+export const ALL_LEVELS = Object.freeze([...ACT_IDS].sort((a, b) => a - b));
 export const FIRST_LEVEL = CAMPAIGN_LEVELS[0];
 export const FINAL_LEVEL = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.length - 1];
 
-export const isLevel = (n) => CAMPAIGN_LEVELS.includes(Number(n));
+export const isLevel = (n) => ALL_LEVELS.includes(Number(n));
 
-// The level after `level` in campaign order, or null after the final one.
-export function nextLevel(level) {
-  const i = CAMPAIGN_LEVELS.indexOf(Number(level));
-  return i >= 0 && i < CAMPAIGN_LEVELS.length - 1 ? CAMPAIGN_LEVELS[i + 1] : null;
+// The level after `level` in campaign order on `road`, or null after the
+// road's final one (a Level V land ends its own road).
+export function nextLevel(level, road = null) {
+  const list = roadLevels(roadAt(level, road));
+  const i = list.indexOf(Number(level));
+  return i >= 0 && i < list.length - 1 ? list[i + 1] : null;
 }
 
-// The level before `level`, or null for the first one (the unlock chain).
+// Every level a clear of `level` opens on any road (the Level IV clear opens
+// both Level Vs behind the preview), for the profile's unlocks.
+export function nextLevels(level) {
+  const out = new Set();
+  for (const r of Object.keys(ROADS)) {
+    const n = nextLevel(level, r);
+    if (n !== null && ALL_LEVELS.includes(n)) out.add(n);
+  }
+  return [...out].sort((a, b) => a - b);
+}
+
+// The level before `level` on its own road, or null for the first one (the
+// unlock chain).
 export function prevLevel(level) {
-  const i = CAMPAIGN_LEVELS.indexOf(Number(level));
-  return i > 0 ? CAMPAIGN_LEVELS[i - 1] : null;
+  const list = roadLevels(roadAt(level, null));
+  const i = list.indexOf(Number(level));
+  return i > 0 ? list[i - 1] : null;
 }
 
 // "Clear The Hollow Wood to unlock" — the one lock line every surface uses.
@@ -106,6 +137,8 @@ export const STARTER_GRANT = Object.freeze({
   4: Object.freeze({ skills: 2, nodes: 40, legendaries: 3, glint: 80, allies: Object.freeze({ swaps: 4, nodes: 26, legendaries: 3, glint: 56 }) }),
   // Act V preview (docs/ACT_V.md): one more Level's worth on top of Level IV's.
   5: Object.freeze({ skills: 2, nodes: 48, legendaries: 4, glint: 96, allies: Object.freeze({ swaps: 4, nodes: 32, legendaries: 4, glint: 68 }) }),
+  // The Ember Kiln (docs/KILN.md): the other Level V, the same grant.
+  6: Object.freeze({ skills: 2, nodes: 48, legendaries: 4, glint: 96, allies: Object.freeze({ swaps: 4, nodes: 32, legendaries: 4, glint: 68 }) }),
 });
 
 export function grantFor(level) {

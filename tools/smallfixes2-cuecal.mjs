@@ -42,6 +42,7 @@ const FILES = [
   { file: 'src/audio/bellcues.js', match: (id) => id.startsWith('bw_') },
   { file: 'src/audio/duskcues.js', match: (id) => id.startsWith('dk_') },
   { file: 'src/audio/shrinecues.js', match: (id) => /^(hz_spur|sh_)/.test(id) },
+  { file: 'src/audio/kilncues.js', match: (id) => id.startsWith('kn_') },
 ].filter((f) => !argv.includes('--only') || argv[argv.indexOf('--only') + 1].split(',').some((stem) => f.file.includes(stem)));
 const { browser, page, errors } = await openAudio(`${BASE}?menu=0&seed=7`);
 try {
