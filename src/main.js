@@ -313,6 +313,9 @@ registerBarrowHeartCues(service('audio'));
 // ACT V (the Still Spire): the belfry's creatures and its gust vents.
 import { registerSpireCues } from './audio/spirecues.js';
 registerSpireCues(service('audio'));
+// ACT VI (the Ember Kiln): the kiln's creatures and its cinder vents.
+import { registerKilnCues } from './audio/kilncues.js';
+registerKilnCues(service('audio'));
 // Hit feedback: the heavy / soft / downed hit sounds on your own character
 // (src/audio/hitcues.js).
 import { registerHitCues } from './audio/hitcues.js';

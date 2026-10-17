@@ -19,7 +19,7 @@ try {
   dressFor = (id) => VARIANTS[id] ?? null;
 }
 
-const FOOT = { bramble: null, slip: null, puffcap: 0.35, millrace: null, gravefire: 0.7, dewfont: 0.55, barricade: 0.75, keg: 0.3, sluice: 0.45, bell: 0.45 };
+const FOOT = { bramble: null, slip: null, puffcap: 0.35, millrace: null, gravefire: 0.7, vent: 1.2, dewfont: 0.55, barricade: 0.75, keg: 0.3, sluice: 0.45, bell: 0.45 };
 const segDist = (px, pz, ax, az, bx, bz) => {
   const dx = bx - ax;
   const dz = bz - az;

@@ -38,6 +38,12 @@
 //              blue air (VFX_MATTER.gust): a torrent of wind lines, a pressure
 //              front run down the lane, dust, feathers and leaves blown along;
 //              then calm (see buildGust)
+//   vent       a cinder vent (the Ember Kiln, docs/KILN.md): an iron grate in a
+//              brick kerb over banked crimson coals breathing kiln gold; the
+//              shared Ember ring for the 60-tick telegraph while the coals heat
+//              to white; a roaring kiln-gold column with heat shimmer, sparks
+//              and a pool of light on the eruption; then a bed of cinders out
+//              to the full radius that cools for 150 ticks (see buildVent)
 //   spur       crystal spurs (Act IV, docs/SHRINES.md): the Ember ring on the
 //              hero's last spot with violet hairline cracks spreading under
 //              it and crystal tips nosing up through the floor in the last
@@ -76,7 +82,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { PALETTE, VFX_BIOME, VFX_MATTER } from '../../data/palette.js';
 import { CAMERA } from '../../core/constants.js';
 import { toonMaterial } from '../toon.js';
-import { makeGlowSprite } from '../glow.js';
+import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { sharedGeo, markShared, releaseTree } from '../geocache.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { impactFx } from '../vfx/hub.js';
@@ -1580,7 +1586,444 @@ function buildGust(h) {
   };
 }
 
-const BUILD = { slip: buildSlip, bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire, gust: buildGust, spur: buildSpur };
+// Cinder vent (the Ember Kiln, docs/KILN.md). Read-only on the sim's vent
+// entity: x, z, radius (1.2), phase idle | telegraph (60 t) | active (the bed
+// of cinders, 150 t), telegraphStartTick / resolveTick / phaseUntilTick. The
+// group sits at the vent (the layer places it). Layers:
+//   grate     an iron grate in a ring kerb of fire brick, over a bed of
+//             banked CRIMSON coals that breathes KILN GOLD at idle (unlit,
+//             biome palette, never Ember); a little heat shimmer over it
+//   telegraph the shared Ember ring at the full 1.2 u with its progress sweep
+//             (it lands on the black scorch the floor painter laid round every
+//             vent, so it reads against the glow); under it the coals heat
+//             from crimson through gold to white, the glow swells inside the
+//             ring, sparks spit up faster, the grate rattles as it closes
+//   eruption  a roaring column of KILN-GOLD fire with a white-hot core out of
+//             the grate (stacked flame billboards that surge and lick), a hot
+//             halo, a pool of gold light flung across the floor (the "light":
+//             no PointLight, by the boss layer's measurement), heat shimmer
+//             thrown wide, a burst of gold sparks and a smoke cough
+//   bed       the bed of cinders it leaves (the 150-tick slow): a disc of
+//             smouldering cinders out to 1.2 u with a crisp ash rim, its
+//             embers cooling gold -> crimson -> dark as the bed runs out,
+//             smoke wisps and the odd spark off it; it fades out on vent_cool
+const KILN_GOLD = new Color(VFX_MATTER.kilngold);
+const KILN_HEAT = new Color(VFX_MATTER.kilnheat);
+const KILN_SPARK = new Color(VFX_MATTER.sparks);
+const KILN_COAL = new Color(VFX_MATTER.coal);
+const VENT_BRICK = hslColor(14, 0.16, 0.3);
+const VENT_BRICK_DARK = hslColor(20, 0.08, 0.14);
+const VENT_IRON = hslColor(24, 0.05, 0.15);
+const VENT_SMOKE = hslColor(24, 0.05, 0.16);
+
+// The coal bed under the grate: banked crimson coals packed edge to edge, a
+// few gold-hot hearts. White-keyed channels: R = the coal body, G = the hot
+// hearts (the material mixes them by heat).
+function ventCoalTex() {
+  return tex('vent-coals', 128, (ctx, S) => {
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, S, S);
+    let s = 0x5eed;
+    const rnd = () => {
+      s = (Math.imul(s ^ (s >>> 15), 2246822519) + 0x9e3779b9) >>> 0;
+      return s / 4294967296;
+    };
+    for (let i = 0; i < 70; i++) {
+      const x = rnd() * S;
+      const y = rnd() * S;
+      const r = 4 + rnd() * 9;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, `rgba(255,${Math.round(rnd() * 60)},0,1)`);
+      g.addColorStop(0.7, 'rgba(150,0,0,0.9)');
+      g.addColorStop(1, 'rgba(40,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'lighter';
+    for (let i = 0; i < 16; i++) {
+      const x = S * 0.15 + rnd() * S * 0.7;
+      const y = S * 0.15 + rnd() * S * 0.7;
+      const r = 5 + rnd() * 10;
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, 'rgba(0,255,0,1)');
+      g.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // Round mask (the bed sits in a round grate).
+    ctx.globalCompositeOperation = 'destination-in';
+    const m = ctx.createRadialGradient(S / 2, S / 2, S * 0.36, S / 2, S / 2, S / 2);
+    m.addColorStop(0, 'rgba(0,0,0,1)');
+    m.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = m;
+    ctx.fillRect(0, 0, S, S);
+  });
+}
+
+// The coal bed's shader: R channel = coal body, G = hot hearts; uHeat 0..1
+// takes the body from banked crimson to gold and the hearts to white-hot.
+function makeVentCoalMaterial() {
+  return new ShaderMaterial({
+    uniforms: {
+      uMap: { value: ventCoalTex() },
+      uCoal: { value: new Color(KILN_COAL).multiplyScalar(2.6) },
+      uGold: { value: KILN_GOLD.clone() },
+      uHot: { value: KILN_HEAT.clone() },
+      uHeat: { value: 0 },
+      uBreath: { value: 1 },
+    },
+    transparent: true,
+    depthWrite: false,
+    toneMapped: false,
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D uMap; uniform vec3 uCoal; uniform vec3 uGold; uniform vec3 uHot;
+      uniform float uHeat; uniform float uBreath;
+      varying vec2 vUv;
+      void main() {
+        vec4 t = texture2D(uMap, vUv);
+        float body = t.r; float heart = t.g;
+        vec3 c = mix(uCoal, uGold * 0.85, uHeat * 0.9) * body;
+        c += mix(uGold * 0.7, uHot, uHeat) * heart * (0.55 + 0.45 * uBreath);
+        float a = clamp(t.a * (0.25 + body + heart), 0.0, 1.0);
+        gl_FragColor = vec4(c * (0.75 + 0.25 * uBreath), a);
+      }
+    `,
+  });
+}
+
+// The bed of cinders: a ragged disc of grey ash with an ash rim (alpha
+// blended), and its embers in a second channel lit additively by heat.
+function ventBedTex() {
+  return tex('vent-bed', 256, (ctx, S) => {
+    let s = 0xbed5;
+    const rnd = () => {
+      s = (Math.imul(s ^ (s >>> 15), 2246822519) + 0x9e3779b9) >>> 0;
+      return s / 4294967296;
+    };
+    ctx.clearRect(0, 0, S, S);
+    const c = S / 2;
+    const R = S * 0.47;
+    // Ash body (R channel = ash darkness, A = coverage), ragged edge.
+    ctx.beginPath();
+    for (let k = 0; k <= 48; k++) {
+      const a = (k / 48) * Math.PI * 2;
+      const rr = R * (0.94 + 0.06 * Math.sin(a * 5 + 1) + rnd() * 0.04);
+      if (k === 0) ctx.moveTo(c + Math.cos(a) * rr, c + Math.sin(a) * rr);
+      else ctx.lineTo(c + Math.cos(a) * rr, c + Math.sin(a) * rr);
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(200,0,0,0.92)';
+    ctx.fill();
+    // The ash rim: a pale crisp ring (B channel = rim).
+    ctx.lineWidth = S * 0.03;
+    ctx.strokeStyle = 'rgba(200,0,255,1)';
+    ctx.stroke();
+    // Cinder lumps (darker) and embers (G channel).
+    for (let i = 0; i < 260; i++) {
+      const a = rnd() * Math.PI * 2;
+      const d = Math.sqrt(rnd()) * R * 0.92;
+      const x = c + Math.cos(a) * d;
+      const y = c + Math.sin(a) * d;
+      const ember = rnd() < 0.42;
+      const r = ember ? 1.2 + rnd() * 2.6 : 1.5 + rnd() * 3.5;
+      ctx.fillStyle = ember ? `rgba(120,255,0,1)` : 'rgba(255,0,0,1)';
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+function makeVentBedMaterial() {
+  return new ShaderMaterial({
+    uniforms: {
+      uMap: { value: ventBedTex() },
+      uAsh: { value: hslColor(26, 0.06, 0.1) },
+      uRim: { value: hslColor(30, 0.05, 0.42) },
+      uGold: { value: KILN_GOLD.clone() },
+      uCoal: { value: new Color(KILN_COAL).multiplyScalar(2.2) },
+      uHeat: { value: 1 },
+      uFade: { value: 0 },
+      uT: { value: 0 },
+    },
+    transparent: true,
+    depthWrite: false,
+    toneMapped: false,
+    vertexShader: /* glsl */ `
+      varying vec2 vUv;
+      void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform sampler2D uMap; uniform vec3 uAsh; uniform vec3 uRim; uniform vec3 uGold; uniform vec3 uCoal;
+      uniform float uHeat; uniform float uFade; uniform float uT;
+      varying vec2 vUv;
+      void main() {
+        vec4 t = texture2D(uMap, vUv);
+        float ash = t.r; float ember = t.g; float rim = t.b;
+        vec3 c = uAsh * (1.25 - 0.6 * ash);
+        c = mix(c, uRim, rim * 0.8);
+        // Embers: gold while hot, crimson as they cool, dark when spent; each
+        // flickers on its own (a hash of its texel).
+        float fl = 0.7 + 0.3 * sin(uT * 6.0 + dot(vUv, vec2(91.7, 57.3)) * 6.2831);
+        vec3 ec = mix(uCoal, uGold, smoothstep(0.35, 0.95, uHeat));
+        c += ec * ember * fl * smoothstep(0.0, 0.25, uHeat) * 1.4;
+        gl_FragColor = vec4(c, t.a * uFade);
+      }
+    `,
+  });
+}
+
+// Heat shimmer: a soft streaky veil (white, additive at a whisper) that wobbles.
+function shimmerTex() {
+  return tex('vent-shimmer', 64, (ctx, S) => {
+    ctx.clearRect(0, 0, S, S);
+    for (let i = 0; i < 7; i++) {
+      const x = 6 + i * 8.5;
+      const g = ctx.createLinearGradient(0, S, 0, 0);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.3, 'rgba(255,255,255,0.5)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.strokeStyle = g;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.moveTo(x, S);
+      ctx.bezierCurveTo(x + 5, S * 0.66, x - 5, S * 0.33, x + 2, 0);
+      ctx.stroke();
+    }
+  });
+}
+
+function buildVent(h) {
+  const g = new Group();
+  const R = h.radius ?? 1.2;
+  const GR = 0.78; // the grate's radius
+  // --- Kerb: a ring of fire bricks round the grate, two of them scorched.
+  const kerbMat = toonMaterial({ color: VENT_BRICK });
+  const kerbDark = toonMaterial({ color: VENT_BRICK_DARK });
+  const kerbG = (pick) =>
+    mergeGeometries(
+      Array.from({ length: 14 }, (_, i) => i)
+        .filter(pick)
+        .map((i) => {
+          const a = (i / 14) * Math.PI * 2;
+          return new BoxGeometry(0.34, 0.09, 0.17).rotateY(-a + Math.PI / 2).translate(Math.cos(a) * (GR + 0.13), 0.045, Math.sin(a) * (GR + 0.13));
+        })
+    );
+  const kerb = new Mesh(sharedGeo('hz-vent-kerb', () => kerbG((i) => i % 5 !== 2)), kerbMat);
+  addInk(kerb, 1.15);
+  g.add(kerb);
+  const kerb2 = new Mesh(sharedGeo('hz-vent-kerb-dark', () => kerbG((i) => i % 5 === 2)), kerbDark);
+  addInk(kerb2, 1.15);
+  g.add(kerb2);
+  // --- The coal bed and its dark throat.
+  const throat = new Mesh(sharedGeo('hz-vent-throat', () => new CircleGeometry(GR, 28).rotateX(-Math.PI / 2)), new MeshBasicMaterial({ color: hslColor(14, 0.3, 0.03) }));
+  throat.position.y = 0.012;
+  throat.renderOrder = 3;
+  g.add(throat);
+  const coalMat = makeVentCoalMaterial();
+  const coals = new Mesh(sharedGeo('hz-vent-coals', () => new CircleGeometry(GR * 0.98, 28).rotateX(-Math.PI / 2)), coalMat);
+  coals.position.y = 0.026;
+  coals.renderOrder = 4;
+  g.add(coals);
+  // --- The grate: a round iron frame, bars both ways (chords of the circle).
+  const ironMat = toonMaterial({ color: VENT_IRON });
+  const grate = new Mesh(
+    sharedGeo('hz-vent-grate', () => {
+      const parts = [new TorusGeometry(GR, 0.05, 4, 28).rotateX(Math.PI / 2).translate(0, 0.07, 0)];
+      for (const t of [-0.6, -0.3, 0, 0.3, 0.6]) {
+        const c = 2 * Math.sqrt(Math.max(0, 1 - t * t)) * GR;
+        parts.push(new BoxGeometry(0.045, 0.05, c).translate(t * GR, 0.06, 0));
+        parts.push(new BoxGeometry(c, 0.04, 0.04).translate(0, 0.075, t * GR));
+      }
+      return mergeGeometries(parts);
+    }),
+    ironMat
+  );
+  addInk(grate, 1.15);
+  grate.renderOrder = 5;
+  g.add(grate);
+  // --- Idle glow (kiln gold, kept inside the ring).
+  const glow = makeGlowSprite({ color: VFX_MATTER.kilngold, size: 1.2, opacity: 0.14 });
+  glow.material.toneMapped = false;
+  glow.position.y = 0.22;
+  g.add(glow);
+  // --- Heat shimmer veils.
+  const shim = [];
+  for (let i = 0; i < 3; i++) {
+    const sp = new Sprite(new SpriteMaterial({ map: shimmerTex(), color: KILN_HEAT.clone(), transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, opacity: 0 }));
+    sp.center.set(0.5, 0);
+    sp.position.set((i - 1) * 0.3, 0.1, (i % 2) * 0.1);
+    sp.renderOrder = 7;
+    g.add(sp);
+    shim.push(sp);
+  }
+  // --- The eruption: stacked flame billboards (gold body, white-hot core),
+  // a core glow, a wide halo and the pool of light on the floor.
+  const col = new Group();
+  col.visible = false;
+  const flames = [];
+  for (let k = 0; k < 4; k++) {
+    const f = makeFlameSprite(1, 1, 0.96);
+    f.center.set(0.5, 0.06);
+    f.material.color.copy(k === 0 ? KILN_GOLD : KILN_HEAT).lerp(new Color('#FFFFFF'), k * 0.12);
+    f.position.set([0, -0.22, 0.24, 0.02][k], 0.02, [0.04, 0.0, -0.02, 0.08][k]);
+    f.renderOrder = 9;
+    col.add(f);
+    flames.push(f);
+  }
+  const core = makeGlowSprite({ color: VFX_MATTER.kilnheat, size: 1.3, opacity: 0.7 });
+  core.material.toneMapped = false;
+  core.position.y = 0.7;
+  col.add(core);
+  const halo = makeGlowSprite({ color: VFX_MATTER.kilngold, size: 3.2, opacity: 0.32 });
+  halo.material.toneMapped = false;
+  halo.position.y = 1.2;
+  col.add(halo);
+  g.add(col);
+  const lightMat = new MeshBasicMaterial({ map: getRadialTexture(), color: KILN_GOLD.clone(), transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false, opacity: 0 });
+  const light = new Mesh(sharedGeo('hz-vent-light', () => new PlaneGeometry(1, 1).rotateX(-Math.PI / 2)), lightMat);
+  light.scale.set(6.4, 1, 6.4);
+  light.position.y = 0.016;
+  light.renderOrder = -4;
+  g.add(light);
+  // --- The bed of cinders.
+  const bedMat = makeVentBedMaterial();
+  const bed = new Mesh(sharedGeo('hz-vent-bed', () => new PlaneGeometry(1, 1).rotateX(-Math.PI / 2)), bedMat);
+  bed.scale.set(R * 2.12, 1, R * 2.12);
+  bed.position.y = 0.03;
+  bed.renderOrder = 6;
+  bed.visible = false;
+  g.add(bed);
+
+  let tele = null;
+  let was = h.phase ?? 'idle';
+  let eruptAge = 99; // seconds since the eruption
+  let coolAge = 99; // seconds since the bed went out
+  let heat = 0; // eased coal heat
+  let sparkDebt = 0;
+  let smokeDebt = 0;
+  const ph0 = (h.id ?? 0) * 1.7;
+  return {
+    group: g,
+    update(e, tSec, ctx, dt) {
+      const tick = ctx.tick;
+      const ph = e.phase;
+      const x = e.x;
+      const z = e.z;
+      if (ph === 'active' && was !== 'active') {
+        eruptAge = 0;
+        impactFx.spray('spark', x, 0.4, z, 26, { color: KILN_SPARK, speed: [1.5, 4.5], up: [3.5, 7.5], size: [0.035, 0.08], life: [0.6, 1.3], gravity: -6, drag: 0.6, jitter: 0.5, opacity: 1 });
+        impactFx.spray('smoke', x, 0.6, z, 6, { color: VENT_SMOKE, speed: [0.4, 1.4], up: [1.5, 3.0], size: [0.6, 1.0], grow: 1.6, life: [0.9, 1.5], opacity: 0.4, jitter: 0.6 });
+      }
+      if (ph !== 'active' && was === 'active') coolAge = 0;
+      was = ph;
+      eruptAge += dt;
+      coolAge += dt;
+      const breathe = 0.5 + 0.5 * Math.sin(tSec * 1.3 + ph0) * Math.sin(tSec * 0.53 + ph0 * 0.7);
+
+      // ---- telegraph: the shared Ember ring at the full radius
+      let prog = 0;
+      if (ph === 'telegraph') {
+        if (!tele) tele = ctx.shapes.acquire('ring');
+        const end = e.resolveTick ?? e.phaseUntilTick ?? tick;
+        const span = Math.max(1, end - (e.telegraphStartTick ?? end - 60));
+        prog = Math.min(1, Math.max(0, 1 - (end - tick) / span));
+        tele.set({ x, z, radius: R }, tSec, prog);
+        ctx.live.push({ x, z });
+      } else if (tele) {
+        ctx.shapes.release(tele);
+        tele = null;
+      }
+
+      // ---- the coals' heat
+      const bedProg = ph === 'active' ? Math.min(1, Math.max(0, 1 - ((e.phaseUntilTick ?? tick) - tick) / 150)) : 1;
+      const target = ph === 'telegraph' ? 0.25 + 0.75 * prog * prog : ph === 'active' ? Math.max(0.2, 1 - bedProg * 1.4) : 0.12 + 0.12 * breathe;
+      heat += (target - heat) * Math.min(1, dt * (ph === 'telegraph' ? 10 : 2.5));
+      coalMat.uniforms.uHeat.value = heat;
+      coalMat.uniforms.uBreath.value = ph === 'telegraph' ? 0.7 + 0.3 * Math.sin(tSec * (8 + 18 * prog)) : 0.55 + 0.45 * breathe;
+      glow.material.opacity = ph === 'telegraph' ? 0.16 + 0.3 * prog : 0.1 + 0.08 * breathe + (ph === 'active' ? 0.12 * (1 - bedProg) : 0);
+      glow.scale.setScalar(ph === 'telegraph' ? 1.2 + 0.4 * prog : 1.1 + 0.15 * breathe);
+      // Bars rattle as the telegraph closes.
+      grate.position.y = ph === 'telegraph' && prog > 0.55 ? 0.006 * Math.sin(tSec * 74) * (prog - 0.55) * 2.2 : 0;
+      grate.position.x = ph === 'telegraph' && prog > 0.55 ? 0.004 * Math.sin(tSec * 53) * (prog - 0.55) * 2.2 : 0;
+
+      // ---- the eruption column (the first ~0.9 s of the active phase)
+      const erupt = eruptAge < 0.08 ? eruptAge / 0.08 : eruptAge < 0.5 ? 1 : Math.max(0, 1 - (eruptAge - 0.5) / 0.45);
+      col.visible = erupt > 0.001;
+      if (col.visible) {
+        const n = Math.sin(tSec * 29 + ph0) * 0.5 + Math.sin(tSec * 17.3) * 0.3 + Math.sin(tSec * 41) * 0.2;
+        const H = 2.9 * (0.35 + 0.65 * erupt);
+        flames.forEach((f, k) => {
+          const hk = H * [1, 0.82, 0.7, 0.5][k] * (1 + 0.16 * n * (k % 2 ? -1 : 1));
+          f.scale.set(hk * [0.5, 0.42, 0.4, 0.34][k] * (0.85 + 0.3 * erupt), hk, 1);
+          f.material.opacity = erupt;
+        });
+        core.material.opacity = 0.75 * erupt;
+        core.scale.setScalar(1.3 * (0.9 + 0.15 * n));
+        halo.material.opacity = 0.34 * erupt;
+        halo.scale.setScalar(3.2 * (0.9 + 0.1 * n));
+        if (eruptAge < 0.6) {
+          sparkDebt += dt * 60;
+          while (sparkDebt >= 1) {
+            sparkDebt -= 1;
+            impactFx.spray('spark', x + ctx.cosmetic.range(-0.3, 0.3), ctx.cosmetic.range(0.6, 2.2), z + ctx.cosmetic.range(-0.3, 0.3), 1, { color: KILN_SPARK, speed: [0.5, 2.5], up: [2.5, 5.5], size: [0.03, 0.06], life: [0.5, 1.0], gravity: -4, drag: 0.8, jitter: 0.2, opacity: 1 });
+          }
+        }
+      }
+      lightMat.opacity = 0.62 * erupt + (ph === 'active' ? 0.1 * Math.max(0, 1 - bedProg * 1.5) : 0) + (ph === 'telegraph' ? 0.08 * prog : 0);
+      light.scale.setScalar(1);
+      light.scale.set(6.4 * (0.8 + 0.2 * erupt), 1, 6.4 * (0.8 + 0.2 * erupt));
+
+      // ---- heat shimmer: a whisper at idle, thrown wide in the eruption
+      const shimK = ph === 'telegraph' ? 0.05 + 0.08 * prog : col.visible ? 0.16 * erupt : ph === 'active' ? 0.05 * (1 - bedProg) : 0.035;
+      shim.forEach((sp, i) => {
+        const w = Math.sin(tSec * (2.1 + i * 0.7) + i * 2.0 + ph0);
+        sp.material.opacity = shimK * (0.75 + 0.25 * w);
+        const big = col.visible ? 1 + 1.4 * erupt : 1;
+        sp.scale.set(0.7 * big * (1 + 0.12 * w), 1.2 * big * (1 + 0.1 * Math.sin(tSec * 3.1 + i)), 1);
+        sp.position.x = (i - 1) * 0.3 + 0.05 * w;
+      });
+
+      // ---- the bed of cinders
+      const bedOn = ph === 'active' || coolAge < 0.6;
+      bed.visible = bedOn;
+      if (bedOn) {
+        bedMat.uniforms.uT.value = tSec;
+        bedMat.uniforms.uHeat.value = ph === 'active' ? 1 - bedProg : 0;
+        bedMat.uniforms.uFade.value = ph === 'active' ? Math.min(1, eruptAge / 0.25) : Math.max(0, 1 - coolAge / 0.6);
+      }
+      // Sparks and smoke off the grate (idle) or the bed (active).
+      const sparkRate = ph === 'telegraph' ? 3 + 14 * prog : ph === 'active' ? 3 * (1 - bedProg) : 0.6 + 0.6 * breathe;
+      const smokeRate = ph === 'active' ? 2.2 * (1 - bedProg * 0.6) : 0.25;
+      if (!col.visible) sparkDebt += dt * sparkRate;
+      smokeDebt += dt * smokeRate;
+      while (sparkDebt >= 1 && !col.visible) {
+        sparkDebt -= 1;
+        const a = ctx.cosmetic.range(0, Math.PI * 2);
+        const d = ctx.cosmetic.range(0, ph === 'active' ? R * 0.9 : GR * 0.8);
+        impactFx.spray('spark', x + Math.cos(a) * d, 0.1, z + Math.sin(a) * d, 1, { color: KILN_SPARK, speed: [0.05, 0.3], up: [0.8, 2.0], size: [0.025, 0.05], life: [0.5, 1.1], gravity: -0.6, drag: 1.2, jitter: 0.05, opacity: 0.9 });
+      }
+      while (smokeDebt >= 1) {
+        smokeDebt -= 1;
+        const a = ctx.cosmetic.range(0, Math.PI * 2);
+        const d = ctx.cosmetic.range(0, ph === 'active' ? R * 0.8 : GR * 0.5);
+        impactFx.spray('smoke', x + Math.cos(a) * d, 0.15, z + Math.sin(a) * d, 1, { color: VENT_SMOKE, speed: [0.05, 0.25], up: [0.4, 0.9], size: [0.3, 0.55], grow: 1.5, life: [1.0, 1.8], opacity: ph === 'active' ? 0.3 : 0.16, jitter: 0.1 });
+      }
+    },
+    dispose(ctx) {
+      if (tele) ctx.shapes.release(tele);
+    },
+  };
+}
+
+const BUILD = { slip: buildSlip, bramble: buildBramble, puffcap: buildPuffcap, millrace: buildMillrace, rockfall: buildRockfall, gravefire: buildGravefire, gust: buildGust, vent: buildVent, spur: buildSpur };
 
 // ------------------------------------------------------------------ layer --
 export function createHazardLayer({ stage, world, bus, cosmetic, slide = null }) {
@@ -1692,6 +2135,7 @@ export function createHazardLayer({ stage, world, bus, cosmetic, slide = null })
       slipGlass: { id: 3, radius: 1.4, skin: 'glass' },
       gravefireVein: { id: 1, vents: [{ x: 0, z: 0 }], skin: 'vein' },
       gust: { id: 1, x: 0, z: 0, len: 4, dirX: 1, dirZ: 0, lane: { x0: -2, z0: 0, x1: 2, z1: 0, w: 1.6 } },
+      vent: { id: 1, x: 0, z: 0, radius: 1.2, phase: 'idle' },
       spur: {},
     };
     const kindOf = (k) => (k.startsWith('slip') ? 'slip' : k.startsWith('gravefire') ? 'gravefire' : k);

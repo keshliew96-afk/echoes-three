@@ -5,7 +5,7 @@
 //              colour — this water IS heal output) with rising motes; drinking
 //              drains it to a dry cracked bowl
 //   barricade  destructible cover in three skins (timber planks / a crate row /
-//              a bone-stone cairn wall / a violet crystal ridge): hit flash, a cracked lean below half
+//              a bone-stone cairn wall / a violet crystal ridge / stacked fire bricks): hit flash, a cracked lean below half
 //              HP, a splinter burst when it breaks
 //   keg        a hooped powder keg; lit, its fuse spits Ember sparks, it shakes,
 //              and the Ember ring shows the 1.6 u blast for the whole 60-tick
@@ -68,6 +68,13 @@ const POWDER = mix(PALETTE.voidCharcoal, PALETTE.warmGrey, 0.18);
 const CRYSTAL = hslColor(268, 0.48, 0.46);
 const CRYSTAL_LIT = hslColor(262, 0.44, 0.7);
 const CRYSTAL_ROCK = hslColor(282, 0.12, 0.17);
+// Fire-brick wall (the Ember Kiln): low-chroma brick, a scorched one, mortar.
+const KILN_BRICK = hslColor(14, 0.16, 0.32);
+const KILN_BRICK_LIT = hslColor(22, 0.18, 0.42);
+const KILN_BRICK_BURNT = hslColor(20, 0.08, 0.13);
+const KILN_MORTAR = hslColor(26, 0.08, 0.08);
+let brickParts = null;
+const brickWallParts = (make) => (brickParts = brickParts ?? make());
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 
@@ -245,6 +252,49 @@ function buildBarricade(e) {
     glow.material.toneMapped = false;
     glow.position.y = 0.45;
     yawG.add(glow);
+  } else if (skin === 'brick') {
+    // Fire-brick wall (the Ember Kiln): stacked fire bricks in running bond on
+    // a soot-dark footing course, the top course ragged (bricks missing, one
+    // knocked askew), a few bricks scorched black, dark mortar joints between
+    // the courses. Low chroma (never Ember).
+    const brick = track(flashable(KILN_BRICK));
+    const lit = track(flashable(KILN_BRICK_LIT));
+    const burnt = track(flashable(KILN_BRICK_BURNT));
+    const parts = brickWallParts(() => {
+      const plain = [];
+      const light = [];
+      const dark = [];
+      const BL = 0.3;
+      const BH = 0.14;
+      const BD = 0.3;
+      let n = 0;
+      for (let row = 0; row < 5; row++) {
+        const off = row % 2 ? BL / 2 : 0;
+        const y = 0.02 + BH / 2 + row * (BH + 0.012);
+        for (let i = -3; i <= 3; i++) {
+          const bx = i * (BL + 0.012) + off;
+          if (Math.abs(bx) > 0.68) continue;
+          if (row === 4 && (i === -2 || i === 1 || i === 3)) continue; // the ragged top
+          n += 1;
+          const g = new BoxGeometry(BL, BH, BD).translate(bx, y, ((n * 7) % 3 - 1) * 0.008);
+          (n % 6 === 2 || n % 11 === 0 ? dark : n % 4 === 1 ? light : plain).push(g);
+        }
+      }
+      // One brick knocked askew on top and one fallen at the foot.
+      light.push(new BoxGeometry(BL, BH, BD).rotateZ(0.32).rotateY(0.3).translate(-0.18, 0.86, 0.04));
+      dark.push(new BoxGeometry(BL, BH, BD).rotateY(0.9).translate(0.62, 0.07, 0.28));
+      return { plain: mergeGeometries(plain), light: mergeGeometries(light), dark: mergeGeometries(dark) };
+    });
+    for (const [key, mat] of [['plain', brick], ['light', lit], ['dark', burnt]]) {
+      const m = new Mesh(sharedGeo(`ix-brick-wall-${key}`, () => parts[key]), mat);
+      addInk(m);
+      yawG.add(m);
+    }
+    const mortar = new Mesh(
+      sharedGeo('ix-brick-mortar', () => mergeGeometries([0, 1, 2, 3].map((row) => new BoxGeometry(1.36, 0.016, 0.26).translate(0, 0.02 + 0.152 * (row + 1) - 0.006, 0)))),
+      track(flashable(KILN_MORTAR))
+    );
+    yawG.add(mortar);
   } else {
     // Bone-stone cairn wall (Act III): stacked pale blocks, a dark chink course.
     const bone = track(flashable(BONE_STONE));
@@ -285,7 +335,7 @@ function buildBarricade(e) {
       yawG.position.y = -0.04 * dmg;
     },
     onBreak(e) {
-      const debris = skin === 'crystal' ? PALETTE.godstuffViolet : PALETTE.bone;
+      const debris = skin === 'crystal' ? PALETTE.godstuffViolet : skin === 'brick' ? KILN_BRICK_LIT : PALETTE.bone;
       impactFx.hit(e.x, e.z, { color: debris, scale: 2.2 });
       impactFx.impact(e.x, e.z, { color: debris, n: 14 });
       impactFx.splat(e.x, e.z);
@@ -662,7 +712,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
   function prewarm() {
     warmed = true;
     warmPark(root, buildDewfont().group);
-    for (const skin of ['timber', 'crates', 'cairn', 'crystal']) warmPark(root, buildBarricade({ skin, collider: { yaw: 0 } }).group);
+    for (const skin of ['timber', 'crates', 'cairn', 'crystal', 'brick']) warmPark(root, buildBarricade({ skin, collider: { yaw: 0 } }).group);
     warmPark(root, buildKeg().group);
     warmPark(root, buildSluice({ laneIds: [] }, world).group);
     warmPark(root, buildBell().group);

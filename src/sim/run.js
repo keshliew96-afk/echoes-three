@@ -338,8 +338,18 @@ export function createRunSystem({
   // The Daily plays the campaign's own CAMPAIGN_ACTS levels (five since the
   // Spire's bosses, docs/ACT_V_BOSSES.md), the same count the server's depth
   // check reads, so a won Daily is Depth 40.
+  // THE EMBER KILN PREVIEW (docs/KILN.md): the Daily keeps the Spire road even
+  // when ?act6=1 sends the campaign down the Kiln's, so its board never meets it.
   const nextOf = (c, level) =>
-    c && c.mode === 'campaign' ? (c.rush ? rushNextLevel(c.index) : c.endless ? endlessNextLevel(level) : c.daily && level >= CAMPAIGN_ACTS ? null : nextLevel(level)) : null;
+    c && c.mode === 'campaign'
+      ? c.rush
+        ? rushNextLevel(c.index)
+        : c.endless
+        ? endlessNextLevel(level)
+        : c.daily && level >= CAMPAIGN_ACTS
+        ? null
+        : nextLevel(level, c.daily ? 'spire' : null)
+      : null;
   // The room a level opens in: room 1, or in the rush the boss room for the
   // first fight and the Peddler's clearing (then the boss) for the others.
   const firstRoom = () => (campaign && campaign.rush ? (campaign.index === 1 ? RUN.bossRoom : RUN.shopRoom) : 1);

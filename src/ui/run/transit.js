@@ -19,13 +19,13 @@ import { endlessBossIndex, beyondCampaign, CYCLE } from '../../data/endless.js';
 import { t, tn } from '../../i18n/index.js';
 import { chapterFor, RILL_CLEAR, TOLLY_CLEAR, SABLE_CLEAR } from '../../data/story.js';
 import { activeLineup } from '../../data/lineup.js';
-import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
+import { CAMPAIGN_LEVELS, isLevel } from '../../data/campaign.js';
 
 // THE HEARTH SONG (docs/STORY.md): the verse the bell catches on a level's
 // clear ('' past the campaign's own levels, deep in the Endless Descent).
 export function verseLine(level, depth = null) {
   const ch = chapterFor(level);
-  if (!ch || !CAMPAIGN_LEVELS.includes(ch.level)) return '';
+  if (!ch || !isLevel(ch.level)) return '';
   if (depth !== null && depth > CAMPAIGN_LEVELS.length) return '';
   return t('The bell catches a verse: {verse}.', { verse: t(ch.name) });
 }
@@ -54,7 +54,7 @@ export function sableLine(level, depth = null) {
 
 const skillCount = (b) => (b.skills || []).filter(Boolean).length;
 
-const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'V']; // 6: the Ember Kiln is the other Level V (docs/KILN.md)
 const FLAVOUR = {
   1: () => t('The Hollow Stag falls. The wood breathes out.'),
   2: () => t('The Drowned Heron sinks. The water runs clear again.'),
@@ -63,6 +63,8 @@ const FLAVOUR = {
   4: () => t('The Heart\'s warden falls. Below the Barrow, the old beat falters.'),
   // Act V preview (docs/ACT_V.md): the Spire's borrowed warden.
   5: () => t('The Spire\'s warden falls. High above, the bells hang still.'),
+  // The Ember Kiln preview (docs/KILN.md): its borrowed warden.
+  6: () => t('The Kiln\'s warden falls. The great fire gutters, then burns clean.'),
 };
 // Slice 2: the second boss of each act has its own line.
 const BOSS_FLAVOUR = {

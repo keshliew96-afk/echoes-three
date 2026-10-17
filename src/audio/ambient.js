@@ -13,6 +13,10 @@
 //   spire  — Act V: high wind round the belfry (band-passed noise that
 //            swells and gusts), a cold open-fifth drone, and a faint far
 //            bell every 5-9 s
+//   kiln   — Act VI: the furnace's deep roar (low brown noise that heaves
+//            like a draught), a dense hot crackle, a low hum of the kiln
+//            mouth, and now and then (every 4-8 s) a distant hammer on an
+//            anvil or a cooling bell ticking as it settles
 // Crossfades between beds are equal-power over 2.5 s. BED_TRIM levels each
 // bed to about -18 dBFS RMS pre-bus (decision D18, docs/gauntlet/build-M3.md:
 // PLAN §3.5 says -24; the beds carry part of the combat master level G3.4
@@ -23,6 +27,7 @@ export const BED_TRIM = {
   barrow: -3.2,
   camp: -0.3,
   heart: -3.4,
+  kiln: -4.7,
   mill: 0.5,
   spire: 3.0,
   wood: 3.1,
@@ -200,6 +205,66 @@ const BEDS = {
           return Math.max(
             kit.bell(out, t, { f, ratio: 2, index: 0.9, d: 3.0, gain: 0.045 }),
             kit.tone(out, t, { f0: f * 0.5, a: 0.02, d: 2.4, gain: 0.02 })
+          );
+        },
+      },
+    };
+  },
+  kiln(ctx, kit, out) {
+    const srcs = [];
+    // The furnace roar: low brown noise under a lowpass that heaves with the
+    // draught (two slow LFOs on the cutoff and the gain beating).
+    const roar = loop(ctx, kit.buffers.brown, 0.55);
+    const rf = filt(ctx, 'lowpass', 230, 1.1);
+    const rg = gainN(ctx, 0.85);
+    roar.connect(rf).connect(rg).connect(out);
+    srcs.push(roar, lfo(ctx, rf.frequency, 0.09, 70), lfo(ctx, rg.gain, 0.17, 0.2), lfo(ctx, rg.gain, 0.043, 0.15));
+    // The fire's body: a mid band of brown noise breathing faster (flames).
+    const body = loop(ctx, kit.buffers.brown, 1.1);
+    const bf = filt(ctx, 'bandpass', 700, 0.9);
+    const bg = gainN(ctx, 0.22);
+    body.connect(bf).connect(bg).connect(out);
+    srcs.push(body, lfo(ctx, bg.gain, 0.61, 0.08), lfo(ctx, bf.frequency, 0.13, 180));
+    // The crackle: coals spitting, brighter and denser than the camp hearth.
+    const crk = loop(ctx, kit.buffers.crackle, 1.25);
+    const cf = filt(ctx, 'bandpass', 3000, 0.8);
+    const cg = gainN(ctx, 0.42);
+    crk.connect(cf).connect(cg).connect(out);
+    srcs.push(crk, lfo(ctx, cg.gain, 0.27, 0.14));
+    // The kiln mouth's hum: B-flat and its fifth, very low, barely there.
+    for (const [f, v] of [[58.27, 0.07], [87.31, 0.03]]) {
+      const o = ctx.createOscillator();
+      o.type = 'triangle';
+      o.frequency.value = f;
+      const g = gainN(ctx, v);
+      o.connect(g).connect(out);
+      o.start();
+      srcs.push(o, lfo(ctx, g.gain, 0.031 + f / 4000, v * 0.4));
+    }
+    return {
+      srcs,
+      details: {
+        every: [4, 8],
+        // A far hammer on an anvil (two blows) or a bell left to cool,
+        // ticking as the bronze settles (a faint high ring and a tick).
+        play: (t) => {
+          if (Math.random() < 0.55) {
+            const n = 1 + Math.floor(Math.random() * 2);
+            let end = t;
+            for (let i = 0; i < n; i++) {
+              const at = t + i * 0.42;
+              end = Math.max(
+                end,
+                kit.bell(out, at, { f: 1318, ratio: 2.92, index: 1.2, d: 0.6, gain: 0.03 }),
+                kit.tone(out, at, { f0: 120, f1: 70, d: 0.12, gain: 0.06 })
+              );
+            }
+            return end;
+          }
+          const f = [932.33, 1174.66, 1396.91][Math.floor(Math.random() * 3)];
+          return Math.max(
+            kit.noise(out, t, { type: 'bandpass', f0: 4200, q: 3, d: 0.02, gain: 0.06 }),
+            kit.bell(out, t + 0.01, { f, ratio: 2, index: 0.6, d: 1.8, gain: 0.025 })
           );
         },
       },

@@ -87,7 +87,7 @@ export const duskwingFreed = (meta, records) => featsOf(meta, records).includes(
 // -------------------------------------------------------------- earning --
 export const EMBER_RULES = Object.freeze({
   perRoom: 3, // every room left behind (combat + shop)
-  perLevelClear: Object.freeze({ 1: 20, 2: 40, 3: 60, 4: 80, 5: 100 }), // the level's boss killed
+  perLevelClear: Object.freeze({ 1: 20, 2: 40, 3: 60, 4: 80, 5: 100, 6: 100 }), // the level's boss killed (6: the Kiln, the other Level V)
   campaignComplete: 50,
   // The Endless Descent (docs/ENDLESS.md): a depth past the first cycle (4)
   // cleared pays the Act IV clear plus this much per depth beyond 4.
@@ -116,8 +116,10 @@ export const BOSSES = Object.freeze(
 //   arena     every act's arena fought in (the layouts flagged `arena`)
 //   daily     { last: 'YYYY-MM-DD' | null, streak, best }: Daily Descent days in a row
 // (Only the arenas of the levels a campaign plays: Level V's Windward Court
-// joins with the Act V preview, docs/ACT_V.md, never the deed's count before.)
-export const ARENA_IDS = Object.freeze(LAYOUT_IDS.filter((id) => LAYOUTS[id] && LAYOUTS[id].arena && ACT_IDS.includes(LAYOUTS[id].act)));
+// joins with the Act V preview, docs/ACT_V.md, never the deed's count before.
+// The Ember Kiln's Kiln Mouth stays out behind the ?act6=1 preview too, so
+// the deed never widens before the Kiln opens: docs/KILN.md.)
+export const ARENA_IDS = Object.freeze(LAYOUT_IDS.filter((id) => LAYOUTS[id] && LAYOUTS[id].arena && ACT_IDS.includes(LAYOUTS[id].act) && LAYOUTS[id].act !== 6));
 export const MARK_KINDS = Object.freeze({ event: ENCOUNTER_IDS, affix: AFFIX_IDS, champion: CHAMPION_IDS, arena: ARENA_IDS });
 export const OBJECTIVE_DEED_MODES = Object.freeze(['hunt', 'purge', 'escort', 'hold']);
 export function freshMarks() {

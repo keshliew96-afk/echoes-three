@@ -23,6 +23,9 @@
 //   Hit      a light / heavy / over-time / downed hit on your character
 //   Gust     an Act V gust vent laid across the party, its wind-up and gust
 //            forced, with a kite in the lane so a flier is shoved too
+//   Kiln     the Ember Kiln's four (a newt pack, a slag golem, bellows imps,
+//            a cloud of cinder moths, or all of them) and a cinder vent laid
+//            beside the party
 //   Spurs    an Act IV crystal spur forced under the party (wind-up, burst,
 //            the pillar it leaves)
 //   Shrines  a campaign room of each land with its shrine beside the party;
@@ -31,7 +34,8 @@
 //
 // Off unless the URL asks for it; touches nothing else in the UI. The Act V
 // rows play in a Level V room with ?act5=1, and in an Act IV room without
-// it (the Spire's creatures and hazards exist either way).
+// it (the Spire's creatures and hazards exist either way). The Kiln row
+// likewise plays in a Level V Kiln room with ?act6=1.
 import { ACT_IDS } from '../data/levels.js';
 
 const HEALER_SETS = [
@@ -91,6 +95,8 @@ const ENEMIES = [
   ['Mill, new', 2, ['leech', 'miller']],
   // Act V, the Still Spire (docs/ACT_V.md).
   ['Act V', 5, ['kite', 'chime', 'gargoyle', 'hanger', 'vane', 'sacristan']],
+  // The Ember Kiln (docs/KILN.md; act 6 in data, Level V behind ?act6=1).
+  ['Kiln', 6, ['newt', 'slag', 'bellows', 'cindermoth', 'kiln pack', 'vent']],
 ];
 // The room an act's row plays in: Level V only exists behind ?act5=1.
 const roomAct = (act) => (ACT_IDS.includes(act) ? act : 4);
@@ -473,6 +479,38 @@ export function mountVfxLab() {
           X().cmd('spawn', 'hanger', f.x - 1.4, f.z - 3.0);
           X().cmd('spawn', 'hanger', f.x + 1.4, f.z - 3.6);
           return say('hanger x2: it grips the rope and leans back, swings down the lane (throws you aside), then dangles at the end');
+        }
+        // The Ember Kiln (docs/KILN.md): each spawned where its beat reads.
+        if (k === 'newt') {
+          for (const dx of [-1.6, 0, 1.6]) X().cmd('spawn', 'newt', f.x + dx, f.z - 3.0 - Math.abs(dx) * 0.3);
+          return say('newt x3: they skitter in, crouch (belly heating white), dart down the Ember lane and skid; hit one while it pants at the end');
+        }
+        if (k === 'slag') {
+          X().cmd('spawn', 'slag', f.x, f.z - 2.6);
+          return say('slag golem: it rears for the slam (Ember ring), splashes a slag pool, and its core cracks open: hit it then (x1.4), before the crust knits');
+        }
+        if (k === 'bellows') {
+          X().cmd('spawn', 'bellows', f.x - 1.5, f.z - 3.2);
+          X().cmd('spawn', 'bellows', f.x + 1.5, f.z - 3.6);
+          return say('bellows x2: it plants and pumps (Ember cone), then the fan blows a sheet of sparks; stun it mid-pump to choke it');
+        }
+        if (k === 'cindermoth') {
+          for (const dx of [-1.4, -0.4, 0.6, 1.6]) X().cmd('spawn', 'cindermoth', f.x + dx, f.z - 2.6 - (dx > 0 ? 0.6 : 0));
+          return say('cindermoth x4: they flutter in, hang and kindle (Ember ring), flare, then drift off as grey husks (x2 damage) until they relight');
+        }
+        if (k === 'kiln pack') {
+          X().cmd('spawn', 'slag', f.x, f.z - 3.2);
+          X().cmd('spawn', 'newt', f.x - 1.8, f.z - 2.4);
+          X().cmd('spawn', 'newt', f.x + 1.8, f.z - 2.4);
+          X().cmd('spawn', 'bellows', f.x - 1.2, f.z - 4.2);
+          X().cmd('spawn', 'cindermoth', f.x + 1.0, f.z - 3.0);
+          X().cmd('spawn', 'cindermoth', f.x - 0.4, f.z - 2.2);
+          return say('the Kiln together: golem, two newts, an imp and two moths; read every Ember telegraph against the Kiln gold');
+        }
+        if (k === 'vent') {
+          const p = X().content.world().player;
+          const id = X().cmd('spawnHazard', 'vent', (p ? p.x : 0) + 1.6, (p ? p.z : 0) - 1.2);
+          return say(id == null ? 'no cinder vent (hazard missing)' : 'cinder vent beside the party: its grate, its Ember wind-up and its burst');
         }
         // Husks surge on one shared heartbeat: show a pack of four.
         if (k === 'husk') {

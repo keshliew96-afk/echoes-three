@@ -20,7 +20,7 @@ import {
 } from 'three';
 import { toonMaterial } from '../render/toon.js';
 import { ENV } from '../env/colors.js';
-import { PALETTE } from '../data/palette.js';
+import { PALETTE, VFX_MATTER } from '../data/palette.js';
 import { cap, onHintsChange } from '../app/controls.js';
 import { t } from '../i18n/index.js';
 import { ACT_IDS } from '../data/levels.js';
@@ -63,33 +63,46 @@ function paintMap(canvas, unlocked) {
   g.fillRect(0, 0, W, H);
   // Four waymarks for the four-level campaign (unchanged); with Level V
   // played (data/levels.js ACT_IDS, the ?act5=1 preview) the route bends on
-  // to a fifth mark, the Still Spire, at the top right of the sheet.
-  const pts =
-    ACT_IDS.length >= 5
+  // to a fifth mark, the Still Spire, at the top right of the sheet. With the
+  // Ember Kiln played (act 6, the ?act6=1 preview: the OTHER Level V) the
+  // route FORKS after the fourth mark: the Spire's road climbs to the top
+  // right, the Kiln's runs down to the bottom right, both marked V; the Kiln's
+  // mark carries a small kiln-gold flame so the two Vs read apart.
+  const kiln = ACT_IDS.includes(6);
+  const spire = ACT_IDS.includes(5);
+  const marks =
+    kiln || ACT_IDS.length >= 5
       ? [
-          [W * 0.11, H * 0.76],
-          [W * 0.3, H * 0.5],
-          [W * 0.5, H * 0.66],
-          [W * 0.68, H * 0.4],
-          [W * 0.88, H * 0.2],
+          { act: 1, x: W * 0.11, y: H * 0.76 },
+          { act: 2, x: W * 0.3, y: H * 0.5 },
+          { act: 3, x: W * 0.5, y: H * 0.66 },
+          { act: 4, x: W * 0.68, y: H * 0.4 },
         ]
       : [
-          [W * 0.14, H * 0.74],
-          [W * 0.38, H * 0.46],
-          [W * 0.62, H * 0.26],
-          [W * 0.86, H * 0.5],
+          { act: 1, x: W * 0.14, y: H * 0.74 },
+          { act: 2, x: W * 0.38, y: H * 0.46 },
+          { act: 3, x: W * 0.62, y: H * 0.26 },
+          { act: 4, x: W * 0.86, y: H * 0.5 },
         ];
+  const forks = [];
+  if (spire && (kiln || ACT_IDS.length >= 5)) forks.push({ act: 5, x: W * 0.88, y: kiln ? H * 0.17 : H * 0.2, label: 'V' });
+  if (kiln) forks.push({ act: 6, x: W * 0.88, y: spire ? H * 0.7 : H * 0.62, label: 'V', flame: true });
   g.strokeStyle = '#6B5A45';
   g.lineWidth = 5;
   g.setLineDash([10, 10]);
   g.beginPath();
-  g.moveTo(pts[0][0], pts[0][1]);
-  for (const p of pts.slice(1)) g.lineTo(p[0], p[1]);
+  g.moveTo(marks[0].x, marks[0].y);
+  for (const p of marks.slice(1)) g.lineTo(p.x, p.y);
+  const last = marks[marks.length - 1];
+  for (const f of forks) {
+    g.moveTo(last.x, last.y);
+    g.lineTo(f.x, f.y);
+  }
   g.stroke();
   g.setLineDash([]);
-  const five = pts.length > 4;
-  pts.forEach(([x, y], i) => {
-    const open = unlocked.includes(i + 1);
+  const five = marks.length + forks.length > 4;
+  [...marks.map((m, i) => ({ ...m, label: ['I', 'II', 'III', 'IV'][i] })), ...forks].forEach(({ act, x, y, label, flame }) => {
+    const open = unlocked.includes(act);
     g.beginPath();
     g.arc(x, y, five ? 18 : 20, 0, Math.PI * 2);
     g.fillStyle = open ? PALETTE.hearthAmber : '#B9B0A0';
@@ -101,7 +114,27 @@ function paintMap(canvas, unlocked) {
     g.font = five ? 'bold 19px serif' : 'bold 22px serif';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText(['I', 'II', 'III', 'IV', 'V'][i] ?? String(i + 1), x, y + 1);
+    g.fillText(label ?? String(act), x, y + 1);
+    if (flame) {
+      // The Kiln's flame over its mark: kiln gold over a banked-crimson root
+      // (data/palette.js VFX_MATTER, never Ember), greyed while locked.
+      const fx = x + 21;
+      const fy = y - 14;
+      g.beginPath();
+      g.moveTo(fx - 6, fy + 7);
+      g.quadraticCurveTo(fx - 8, fy - 2, fx, fy - 11);
+      g.quadraticCurveTo(fx + 8, fy - 2, fx + 6, fy + 7);
+      g.closePath();
+      g.fillStyle = open ? VFX_MATTER.coal : '#8A8174';
+      g.fill();
+      g.beginPath();
+      g.moveTo(fx - 3.5, fy + 6);
+      g.quadraticCurveTo(fx - 4.5, fy, fx, fy - 6);
+      g.quadraticCurveTo(fx + 4.5, fy, fx + 3.5, fy + 6);
+      g.closePath();
+      g.fillStyle = open ? VFX_MATTER.kilngold : '#B9B0A0';
+      g.fill();
+    }
   });
 }
 

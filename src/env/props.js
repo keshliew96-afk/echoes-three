@@ -56,6 +56,7 @@ import {
   PlaneGeometry,
   Quaternion,
   ShaderMaterial,
+  SphereGeometry,
   SRGBColorSpace,
   TorusGeometry,
   Vector2,
@@ -64,11 +65,11 @@ import {
 import { mergeGeometries, mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
 import { ARENA } from '../core/constants.js';
 import { toonMaterial, getGradientMap } from '../render/toon.js';
-import { PALETTE } from '../data/palette.js';
+import { PALETTE, VFX_MATTER } from '../data/palette.js';
 import { COOL, ENV, hslColor, mix, shade } from './colors.js';
 import { pathClearance } from './variants.js';
 import { buildRoomDressing } from './dressing.js';
-import { veinNetwork } from './ground.js';
+import { veinNetwork, kilnCrackNetwork } from './ground.js';
 
 // Ground-plane render order band. The additive warm light pools draw FIRST, the
 // contact shadows draw on top of them: a black blob under an additive pool that
@@ -1677,6 +1678,279 @@ function propTypes(mats, spec) {
       };
     }
   }
+  // ---------------------------------------------------------------------
+  // The Ember Kiln (env/biomes/kiln.js): fire-brick stack on a pallet, clay
+  // bell mould on its sand bed, a half-cast bell cooling in sand (its sand
+  // line still gold-hot), slag heap with hot cracks, coal heap with banked
+  // crimson coals and a shovel, tool rack (tongs, rake, ladle), rack of
+  // glazed tiles, crucible with its melt, clay heap with a spade. Low-chroma
+  // brick, clay and slag bodies; the heat is KILN GOLD and the coals deep
+  // CRIMSON, unlit (never Ember). All under the ~1.05 u Tank height.
+  // ---------------------------------------------------------------------
+  if (mats.kbrick) {
+    // --- Brick stack: fire bricks stacked crosswise on a timber pallet, the
+    // top course half gone, a few bricks scorched black.
+    {
+      const BL = 0.38;
+      const BH = 0.095;
+      const BD = 0.18;
+      const lit = [];
+      const plain = [];
+      const burnt = [];
+      let n = 0;
+      for (let L = 0; L < 4; L++) {
+        const y = 0.07 + BH / 2 + L * BH;
+        for (let i = 0; i < 4; i++) {
+          if (L === 3 && (i === 1 || i === 2)) continue;
+          const g =
+            L % 2 === 0
+              ? new BoxGeometry(BL, BH * 0.96, BD).translate((i < 2 ? -1 : 1) * (BL / 2 + 0.005), y, (i % 2 ? 1 : -1) * (BD / 2 + 0.005))
+              : new BoxGeometry(BD, BH * 0.96, BL).translate(-0.29 + i * 0.195, y, 0);
+          n += 1;
+          (n % 5 === 0 ? burnt : n % 3 === 0 ? lit : plain).push(g);
+        }
+      }
+      // Two loose bricks leaning on the stack and lying at its foot.
+      burnt.push(new BoxGeometry(BL, BH, BD).rotateZ(0.9).translate(0.5, 0.17, 0.12));
+      lit.push(new BoxGeometry(BL, BH, BD).rotateY(0.7).translate(-0.34, 0.05, 0.36));
+      const pallet = mergeGeometries([
+        new BoxGeometry(0.86, 0.035, 0.46).translate(0, 0.055, 0),
+        ...[-0.36, 0, 0.36].map((x) => new BoxGeometry(0.08, 0.04, 0.46).translate(x, 0.02, 0)),
+      ]);
+      T.brickstack = {
+        layers: [
+          { geo: mergeGeometries(plain), mat: mats.kbrick, ink: PROP_INK_PX },
+          { geo: mergeGeometries(lit), mat: mats.kbrickLit, ink: DETAIL_INK_PX },
+          { geo: mergeGeometries(burnt), mat: mats.kbrickDark, ink: DETAIL_INK_PX },
+          { geo: pallet, mat: mats.ktimberDark, ink: 1.15 },
+        ],
+        foot: 0.5,
+        rz: 0.32,
+      };
+    }
+    // --- Mould: a clay bell mould (the cope) on a sand bed, iron bands round
+    // it, the sprue cup on top, dry cracks in the clay.
+    {
+      const prof = [[0.001, 0.66], [0.07, 0.65], [0.15, 0.6], [0.22, 0.5], [0.27, 0.36], [0.3, 0.2], [0.33, 0.05], [0.34, 0.0], [0.001, 0.0]];
+      const cope = new LatheGeometry(prof.map(([x, y]) => new Vector2(x, y)), 14).translate(0, 0.05, 0);
+      const bands = mergeGeometries([
+        new TorusGeometry(0.32, 0.022, 4, 16).rotateX(Math.PI / 2).translate(0, 0.16, 0),
+        new TorusGeometry(0.255, 0.02, 4, 16).rotateX(Math.PI / 2).translate(0, 0.44, 0),
+      ]);
+      const cup = mergeGeometries([new CylinderGeometry(0.08, 0.05, 0.1, 9).translate(0, 0.74, 0), new CylinderGeometry(0.025, 0.025, 0.08, 6).translate(0.1, 0.68, 0.02)]);
+      const sand = new IcosahedronGeometry(0.46, 1).scale(1, 0.12, 1).translate(0, 0.03, 0);
+      const cracks = mergeGeometries([
+        new BoxGeometry(0.018, 0.2, 0.02).rotateZ(0.25).translate(0.06, 0.32, 0.27),
+        new BoxGeometry(0.016, 0.12, 0.02).rotateZ(-0.4).translate(-0.12, 0.4, 0.22),
+        new BoxGeometry(0.02, 0.16, 0.02).rotateZ(0.1).rotateY(1.9).translate(-0.27, 0.22, -0.08),
+      ]);
+      T.mould = {
+        layers: [
+          { geo: cope, mat: mats.clay, ink: PROP_INK_PX },
+          { geo: bands, mat: mats.kiron, ink: 1.15 },
+          { geo: cup, mat: mats.clayDark, ink: 1.15 },
+          { geo: sand, mat: mats.sand },
+          { geo: cracks, mat: mats.clayDark },
+        ],
+        foot: 0.44,
+      };
+    }
+    // --- Cooling bell: a half-cast bronze bell standing mouth-down in a
+    // mound of casting sand, its canons up; where it meets the sand the metal
+    // is still gold-hot (unlit KILN GOLD), cooling to bronze above.
+    {
+      const R = 0.25;
+      const Hh = 0.46;
+      const y0 = -0.1;
+      const bell = mergeGeometries([bellLathe(R, Hh, 14).translate(0, y0, 0), new BoxGeometry(0.06, 0.07, 0.05).translate(0, y0 + Hh + 0.03, 0)]);
+      const canons = mergeGeometries([
+        new TorusGeometry(0.045, 0.014, 4, 10, Math.PI).translate(0.03, y0 + Hh + 0.04, 0),
+        new TorusGeometry(0.045, 0.014, 4, 10, Math.PI).rotateY(Math.PI / 2).translate(0, y0 + Hh + 0.04, 0.03),
+      ]);
+      const sandY = 0.1;
+      const tS = (sandY - y0) / Hh;
+      const ring = new TorusGeometry(bellRadiusAt(R, tS) * 1.02, 0.016, 4, 18).rotateX(Math.PI / 2).translate(0, sandY + 0.004, 0);
+      const band = new TorusGeometry(bellRadiusAt(R, tS + 0.07) * 1.01, 0.012, 4, 18).rotateX(Math.PI / 2).translate(0, sandY + Hh * 0.07, 0);
+      const sand = mergeMixed([new IcosahedronGeometry(0.4, 1).scale(1, 0.3, 1).translate(0, 0.0, 0), new IcosahedronGeometry(0.14, 0).scale(1, 0.5, 1).translate(0.3, 0.02, 0.18)]);
+      T.coolbell = {
+        layers: [
+          { geo: sand, mat: mats.sand, ink: 1.15 },
+          { geo: bell, mat: mats.kbronze, ink: PROP_INK_PX },
+          { geo: canons, mat: mats.kbronzeLit, ink: 1.0 },
+          { geo: band, mat: mats.kbronzeLit },
+          { geo: ring, mat: mats.heat },
+        ],
+        foot: 0.4,
+      };
+    }
+    // --- Slag heap: raked-out slag in black glassy lumps, a pale crust on
+    // the crowns, a few hot cracks (gold) and banked coals (crimson) inside.
+    {
+      const body = mergeGeometries([
+        lumpyGeo(0.36, 1, 1.2, 0.62, 1.0, 0.22, 2.3).translate(0, 0.16, 0),
+        lumpyGeo(0.22, 1, 1.1, 0.7, 1.0, 0.25, 4.1).translate(0.38, 0.1, 0.16),
+        lumpyGeo(0.18, 0, 1.0, 0.6, 1.1, 0.2, 1.3).translate(-0.36, 0.07, -0.14),
+      ]);
+      const crust = mergeGeometries([
+        lumpyGeo(0.2, 0, 1.2, 0.35, 1.0, 0.2, 5.7).translate(-0.05, 0.36, -0.04),
+        lumpyGeo(0.1, 0, 1.0, 0.4, 1.0, 0.2, 3.1).translate(0.4, 0.22, 0.14),
+      ]);
+      const hot = mergeGeometries([
+        new BoxGeometry(0.2, 0.02, 0.022).rotateY(0.4).rotateZ(-0.3).translate(0.12, 0.33, 0.2),
+        new BoxGeometry(0.14, 0.02, 0.02).rotateY(-0.8).rotateZ(0.5).translate(-0.18, 0.26, 0.22),
+        new BoxGeometry(0.1, 0.018, 0.018).rotateY(1.2).rotateZ(0.2).translate(0.42, 0.2, 0.26),
+      ]);
+      const coals = mergeGeometries([
+        new IcosahedronGeometry(0.04, 0).translate(0.22, 0.05, 0.36),
+        new IcosahedronGeometry(0.035, 0).translate(-0.3, 0.05, 0.12),
+        new IcosahedronGeometry(0.03, 0).translate(0.02, 0.04, 0.4),
+      ]);
+      T.slagheap = {
+        layers: [
+          { geo: body, mat: mats.slag, ink: PROP_INK_PX },
+          { geo: crust, mat: mats.slagLit, ink: 1.0 },
+          { geo: hot, mat: mats.heat },
+          { geo: coals, mat: mats.coalGlow },
+        ],
+        foot: 0.5,
+        rz: 0.4,
+      };
+    }
+    // --- Coal heap: soot-black coal in a heap, a few banked crimson coals
+    // glowing in it, a shovel stuck in the top.
+    {
+      const lumps = [];
+      for (let i = 0; i < 9; i++) {
+        const a = i * 2.39;
+        const d = (i % 3) * 0.11 + 0.04;
+        lumps.push(new IcosahedronGeometry(0.11 - (i % 3) * 0.015, 0).translate(Math.cos(a) * d * 1.6, 0.08 + (2 - (i % 3)) * 0.06, Math.sin(a) * d * 1.3));
+      }
+      lumps.push(new IcosahedronGeometry(0.3, 1).scale(1.2, 0.5, 1).translate(0, 0.06, 0));
+      const glow = mergeGeometries([
+        new IcosahedronGeometry(0.05, 0).translate(0.16, 0.12, 0.2),
+        new IcosahedronGeometry(0.045, 0).translate(-0.18, 0.1, 0.18),
+        new IcosahedronGeometry(0.04, 0).translate(0.02, 0.2, 0.12),
+        new IcosahedronGeometry(0.035, 0).translate(0.3, 0.05, 0.02),
+      ]);
+      const shovel = mergeGeometries([
+        new CylinderGeometry(0.018, 0.02, 0.62, 5).rotateZ(-0.5).translate(-0.12, 0.42, -0.04),
+        new BoxGeometry(0.05, 0.03, 0.08).rotateZ(-0.5).translate(-0.27, 0.69, -0.04),
+      ]);
+      const blade = new BoxGeometry(0.16, 0.2, 0.025).rotateZ(-0.5).translate(0.06, 0.16, -0.04);
+      T.coalheap = {
+        layers: [
+          { geo: mergeGeometries(lumps), mat: mats.soot, ink: PROP_INK_PX },
+          { geo: glow, mat: mats.coalGlow },
+          { geo: shovel, mat: mats.ktimber, ink: 1.15 },
+          { geo: blade, mat: mats.kiron, ink: 1.15 },
+        ],
+        foot: 0.4,
+      };
+    }
+    // --- Tool rack: a timber A-frame with the kiln's long iron tools hung on
+    // it — tongs, a rake, a casting ladle.
+    {
+      const frame = mergeGeometries([
+        new BoxGeometry(0.06, 0.92, 0.06).rotateX(0.18).translate(-0.4, 0.45, 0.06),
+        new BoxGeometry(0.06, 0.92, 0.06).rotateX(0.18).translate(0.4, 0.45, 0.06),
+        new BoxGeometry(0.06, 0.92, 0.06).rotateX(-0.18).translate(-0.4, 0.45, -0.1),
+        new BoxGeometry(0.06, 0.92, 0.06).rotateX(-0.18).translate(0.4, 0.45, -0.1),
+        new BoxGeometry(0.96, 0.06, 0.07).translate(0, 0.86, -0.02),
+      ]);
+      const tools = mergeGeometries([
+        // tongs: two crossed jaws
+        new BoxGeometry(0.025, 0.78, 0.02).rotateZ(0.06).translate(-0.24, 0.45, 0.06),
+        new BoxGeometry(0.025, 0.78, 0.02).rotateZ(-0.06).translate(-0.18, 0.45, 0.06),
+        new BoxGeometry(0.1, 0.03, 0.02).translate(-0.21, 0.08, 0.06),
+        // rake
+        new CylinderGeometry(0.014, 0.014, 0.82, 5).translate(0.04, 0.46, 0.06),
+        new BoxGeometry(0.24, 0.05, 0.03).translate(0.04, 0.06, 0.06),
+        // ladle
+        new CylinderGeometry(0.014, 0.014, 0.66, 5).translate(0.26, 0.52, 0.06),
+        new SphereGeometry(0.08, 8, 5, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2).translate(0.26, 0.16, 0.06),
+      ]);
+      T.toolrack = {
+        layers: [
+          { geo: frame, mat: mats.ktimber, ink: PROP_INK_PX },
+          { geo: tools, mat: mats.kiron, ink: 1.15 },
+        ],
+        foot: 0.46,
+        rz: 0.22,
+      };
+    }
+    // --- Tile rack: a timber drying rack, three shelves of glazed tiles
+    // standing in slots — slate blue, cream, ochre, deep teal.
+    {
+      const frame = mergeGeometries([
+        ...[-0.44, 0.44].flatMap((x) => [-0.13, 0.13].map((z) => new BoxGeometry(0.05, 0.9, 0.05).translate(x, 0.45, z))),
+        ...[0.08, 0.38, 0.68].map((y) => new BoxGeometry(0.94, 0.03, 0.3).translate(0, y, 0)),
+        new BoxGeometry(0.96, 0.05, 0.05).translate(0, 0.9, -0.13),
+      ]);
+      const glazes = [[], [], [], []];
+      [0.08, 0.38, 0.68].forEach((y, row) => {
+        for (let k = 0; k < 7; k++) {
+          const c = (k + row * 2 + (k > 3 ? 1 : 0)) % 4;
+          glazes[c].push(new BoxGeometry(0.1, 0.17, 0.022).rotateX(-0.12).translate(-0.36 + k * 0.12, y + 0.1, 0.02 + (k % 2) * 0.02));
+        }
+      });
+      T.tilerack = {
+        layers: [
+          { geo: frame, mat: mats.ktimber, ink: PROP_INK_PX },
+          { geo: mergeGeometries(glazes[0]), mat: mats.glazeBlue, ink: 1.0 },
+          { geo: mergeGeometries(glazes[1]), mat: mats.glazeCream, ink: 1.0 },
+          { geo: mergeGeometries(glazes[2]), mat: mats.glazeOchre, ink: 1.0 },
+          { geo: mergeGeometries(glazes[3]), mat: mats.glazeTeal, ink: 1.0 },
+        ],
+        foot: 0.5,
+        rz: 0.22,
+      };
+    }
+    // --- Crucible: a clay crucible on a brick plinth, its melt still gold,
+    // a dark crust ring on the melt, tongs leaning on it.
+    {
+      const plinth = mergeGeometries([new BoxGeometry(0.42, 0.14, 0.42).translate(0, 0.07, 0), new BoxGeometry(0.3, 0.05, 0.3).translate(0, 0.165, 0)]);
+      const pot = new LatheGeometry([[0.001, 0], [0.11, 0], [0.15, 0.06], [0.17, 0.22], [0.16, 0.34], [0.13, 0.36], [0.12, 0.33]].map(([x, y]) => new Vector2(x, y)), 12).translate(0, 0.19, 0);
+      const melt = new CylinderGeometry(0.12, 0.12, 0.02, 12).translate(0, 0.5, 0);
+      const crust = new TorusGeometry(0.1, 0.02, 4, 12).rotateX(Math.PI / 2).translate(0, 0.51, 0);
+      const tongs = mergeGeometries([new BoxGeometry(0.02, 0.6, 0.02).rotateZ(0.42).translate(0.3, 0.28, 0.1), new BoxGeometry(0.02, 0.6, 0.02).rotateZ(0.5).translate(0.32, 0.28, 0.14)]);
+      T.crucible = {
+        layers: [
+          { geo: plinth, mat: mats.kbrick, ink: PROP_INK_PX },
+          { geo: pot, mat: mats.clayDark, ink: PROP_INK_PX },
+          { geo: melt, mat: mats.heat },
+          { geo: crust, mat: mats.slag },
+          { geo: tongs, mat: mats.kiron, ink: 1.0 },
+        ],
+        foot: 0.32,
+      };
+    }
+    // --- Clay heap: lumps of wet clay, a few green (unfired) bricks drying
+    // beside it and a spade.
+    {
+      const clay = mergeGeometries([
+        lumpyGeo(0.3, 1, 1.2, 0.55, 1.0, 0.2, 3.3).translate(0, 0.12, 0),
+        lumpyGeo(0.17, 1, 1.0, 0.6, 1.1, 0.2, 6.1).translate(0.3, 0.07, 0.16),
+      ]);
+      const wet = lumpyGeo(0.14, 0, 1.2, 0.5, 1.0, 0.2, 1.9).translate(-0.12, 0.26, 0.04);
+      const green = mergeGeometries([
+        new BoxGeometry(0.3, 0.08, 0.14).translate(-0.34, 0.04, 0.26),
+        new BoxGeometry(0.3, 0.08, 0.14).translate(-0.34, 0.04, 0.42),
+        new BoxGeometry(0.3, 0.08, 0.14).rotateY(0.2).translate(-0.34, 0.12, 0.34),
+      ]);
+      const spade = mergeGeometries([new CylinderGeometry(0.016, 0.018, 0.6, 5).rotateZ(0.4).rotateX(-0.2).translate(0.16, 0.42, -0.06), new BoxGeometry(0.05, 0.03, 0.08).rotateZ(0.4).translate(0.29, 0.69, -0.12)]);
+      const blade = new BoxGeometry(0.14, 0.18, 0.02).rotateZ(0.4).translate(0.03, 0.14, -0.02);
+      T.clayheap = {
+        layers: [
+          { geo: clay, mat: mats.clay, ink: PROP_INK_PX },
+          { geo: wet, mat: mats.clayDark },
+          { geo: green, mat: mats.clayPale, ink: 1.0 },
+          { geo: spade, mat: mats.ktimber, ink: 1.0 },
+          { geo: blade, mat: mats.kiron, ink: 1.0 },
+        ],
+        foot: 0.44,
+      };
+    }
+  }
   void spec;
   return T;
 }
@@ -2022,6 +2296,7 @@ function meshInk(root, geo, mat, x, z, yaw, ink = PROP_INK_PX) {
 
 function buildLandmark(root, [x, z, rad = 1, kind = 'heart', yaw = 0], shadows, emitters, footprints, mats, cosmetic) {
   if (mats.lime) return buildSpireLandmark(root, [x, z, rad, kind, yaw], shadows, emitters, footprints, mats);
+  if (mats.kbrick) return buildKilnLandmark(root, [x, z, rad, kind, yaw], shadows, emitters, footprints, mats);
   if (!mats.crystal) return null;
   const S = rad;
   if (kind === 'heart' || kind === 'heartnode') {
@@ -2642,6 +2917,429 @@ function buildSpireLandmark(root, [x, z, rad = 1, kind = 'bellframe', yaw = 0], 
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// The Ember Kiln's built pieces (env/biomes/kiln.js `landmarks`). Local +z
+// faces into the room (yaw 0 = the north wall, +-PI/2 the side walls).
+//   kilnmouth   a fire-brick kiln face straddling a wall: two coursed piers,
+//               an arch of voussoirs and a keystone round the MOUTH (a dark
+//               throat whose fire bed glows kiln gold up into banked crimson),
+//               fire bars across the sill, coals on it, soot climbing the face
+//               above the arch, a chimney stack behind. One `flame` emitter
+//               at the mouth (fire, pool, embers; `lightIdx` may light it).
+//   greatmouth  the kiln's great mouth (41): the same, half again as big,
+//               twin chimneys, a heavier sill of coals.
+//   flue        a chimney breast in a side wall with a small arched firebox
+//               glowing at its foot, an iron damper rod, soot up the breast.
+//   castbell    THE TELL: a bell cast in a brick-kerbed bed of casting sand,
+//               sitting mouth-down, an iron gantry over it with the chain
+//               still hooked to its crown; the crack down its face glows
+//               indigo. The bell and its crack always face the camera (+z);
+//               only the gantry takes the yaw.
+//   greatcast   THE TELL, great (39): the great bell hung from a brick-and-
+//               iron casting gantry over the north wall, a casting pit under
+//               it still faintly gold.
+// ---------------------------------------------------------------------------
+let mouthTexture = null;
+export function kilnMouthTexture() {
+  if (mouthTexture || typeof document === 'undefined') return mouthTexture;
+  const c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 128;
+  const g = c.getContext('2d');
+  // The throat seen through the arch: white-gold fire bed at the sill, kiln
+  // gold, banked crimson, then the dark of the kiln's back wall above.
+  const gr = g.createLinearGradient(0, 128, 0, 0);
+  gr.addColorStop(0, 'rgb(255,236,180)');
+  gr.addColorStop(0.16, 'rgb(255,196,84)');
+  gr.addColorStop(0.42, 'rgb(150,40,52)');
+  gr.addColorStop(0.72, 'rgb(40,12,16)');
+  gr.addColorStop(1, 'rgb(10,6,6)');
+  g.fillStyle = gr;
+  g.fillRect(0, 0, 64, 128);
+  // Licks of fire up the back wall.
+  for (let i = 0; i < 9; i++) {
+    const x = 4 + i * 7 + (i % 2) * 3;
+    const h = 30 + ((i * 37) % 30);
+    const lg = g.createLinearGradient(0, 128, 0, 128 - h);
+    lg.addColorStop(0, 'rgba(255,214,122,0.85)');
+    lg.addColorStop(1, 'rgba(255,190,80,0)');
+    g.fillStyle = lg;
+    g.beginPath();
+    g.moveTo(x - 4, 128);
+    g.quadraticCurveTo(x - 3, 128 - h * 0.6, x, 128 - h);
+    g.quadraticCurveTo(x + 3, 128 - h * 0.6, x + 4, 128);
+    g.fill();
+  }
+  mouthTexture = new CanvasTexture(c);
+  mouthTexture.colorSpace = SRGBColorSpace;
+  return mouthTexture;
+}
+
+function buildKilnLandmark(root, [x, z, rad = 1, kind = 'kilnmouth', yaw = 0], shadows, emitters, footprints, mats) {
+  const put = (geo, mat, ink = PROP_INK_PX) => meshInk(root, geo, mat, x, z, yaw, ink);
+  const wx = (lx, lz) => x + Math.cos(yaw) * lx + Math.sin(yaw) * lz;
+  const wz = (lx, lz) => z - Math.sin(yaw) * lx + Math.cos(yaw) * lz;
+  // The live mouth fire: the throat breathes with the kiln (cosmetic only).
+  const breathing = (mesh, mat, rate, ph) => {
+    const base = mat.color.clone();
+    mesh.onBeforeRender = () => {
+      const t = nowSec();
+      mat.color.copy(base).multiplyScalar(0.86 + 0.1 * Math.sin(t * rate + ph) + 0.05 * Math.sin(t * rate * 2.7 + ph * 1.9));
+    };
+  };
+
+  if (kind === 'kilnmouth' || kind === 'greatmouth') {
+    const great = kind === 'greatmouth';
+    const k = (great ? 1.5 : 1.0) * (rad / (great ? 0.8 : 1.0));
+    const OW = (great ? 1.5 : 0.62) * k; // half the mouth's width
+    const OH = 0.78 * k; // the mouth's springing height (the arch sits on it)
+    const PW = 0.55 * k; // pier width
+    const FH = (great ? 2.3 : 2.1) * k; // face height
+    const ZF = 0.28; // the face, into the room
+    const ZB = -0.9; // the back of the kiln, outside the wall
+    const D = ZF - ZB;
+    // Body: two piers either side of the mouth, the mass above the arch, the
+    // kiln's sides running back over the wall.
+    const body = [];
+    for (const sx of [-1, 1]) {
+      body.push(new BoxGeometry(PW, FH, D).translate(sx * (OW + PW / 2), FH / 2, (ZF + ZB) / 2));
+      body.push(new BoxGeometry(PW * 1.25, 0.22 * k, D + 0.12).translate(sx * (OW + PW / 2), 0.11 * k, (ZF + ZB) / 2 + 0.04));
+    }
+    const crown = OH + OW; // the arch's crown
+    body.push(new BoxGeometry(OW * 2 + 0.02, FH - crown + 0.12, D).translate(0, (FH + crown) / 2 - 0.06, (ZF + ZB) / 2));
+    // Spandrels: fill the corners between the round arch and the square face.
+    for (const sx of [-1, 1]) body.push(new BoxGeometry(OW * 0.5, OW * 0.62, D - 0.06).translate(sx * OW * 0.78, OH + OW * 0.5, (ZF + ZB) / 2 - 0.03));
+    put(mergeGeometries(body), mats.kbrick);
+    // Brick courses across the face (darker joints) and a few scorched bricks.
+    const courses = [];
+    const nC = Math.floor(FH / 0.16);
+    for (let c = 1; c < nC; c++) {
+      const y = c * 0.16;
+      if (y < crown) for (const sx of [-1, 1]) courses.push(new BoxGeometry(PW * 1.01, 0.02, 0.02).translate(sx * (OW + PW / 2), y, ZF + 0.005));
+      else courses.push(new BoxGeometry((OW + PW) * 2 * 1.005, 0.02, 0.02).translate(0, y, ZF + 0.005));
+    }
+    put(mergeGeometries(courses), mats.soot, false);
+    const scorched = [];
+    for (let i = 0; i < (great ? 14 : 8); i++) {
+      const sx = i % 2 ? 1 : -1;
+      const by = 0.24 + ((i * 0.37) % 1) * (FH - 0.4);
+      const bx = by > crown ? ((i * 0.61) % 1 - 0.5) * (OW + PW) * 1.8 : sx * (OW + PW * (0.25 + ((i * 0.29) % 1) * 0.5));
+      scorched.push(new BoxGeometry(0.22, 0.13, 0.03).translate(bx, by, ZF + 0.012));
+    }
+    put(mergeGeometries(scorched), mats.kbrickDark, false);
+    // The arch: voussoirs round the mouth, a keystone, a brick sill.
+    put(new TorusGeometry(OW + 0.08 * k, 0.13 * k, 5, great ? 20 : 14, Math.PI).scale(1, 1, 0.9).translate(0, OH, ZF + 0.02), mats.kbrickLit, DETAIL_INK_PX);
+    put(new BoxGeometry(0.26 * k, 0.34 * k, 0.2).translate(0, crown + 0.1 * k, ZF + 0.06), mats.kbrickLit, DETAIL_INK_PX);
+    put(new BoxGeometry(OW * 2 + 0.3, 0.12 * k, 0.34).translate(0, 0.06 * k, ZF + 0.02), mats.kbrickDark, DETAIL_INK_PX);
+    // Soot climbing the face above the arch: a dark tongue widening upward.
+    put(
+      mergeGeometries([
+        new BoxGeometry(OW * 1.1, 0.5 * k, 0.02).translate(0, crown + 0.3 * k, ZF + 0.022),
+        new BoxGeometry(OW * 1.6, (FH - crown) * 0.55, 0.02).translate(0, crown + 0.55 * k + (FH - crown) * 0.27, ZF + 0.02),
+      ]),
+      mats.soot,
+      false
+    );
+    // The throat: the glowing fire bed, unlit, breathing.
+    const tex = kilnMouthTexture();
+    const throatMat = new MeshBasicMaterial({ map: tex, toneMapped: false });
+    throatMat.color.setRGB(0.6, 0.44, 0.28, LinearSRGBColorSpace); // under the bloom threshold: the mouth glows, never blows out white
+    const throatGeo = mergeGeometries([
+      new PlaneGeometry(OW * 2, OH).translate(0, OH / 2, 0),
+      new CircleGeometry(OW, great ? 18 : 12, 0, Math.PI).translate(0, OH, 0),
+    ]);
+    // The circle's uv runs 0-1 over its bounding square; squash it onto the
+    // top of the gradient so the arch stays dark.
+    const throat = meshInk(root, throatGeo, throatMat, x, z, yaw, false);
+    throat.position.set(wx(0, ZF - 0.2), 0, wz(0, ZF - 0.2));
+    breathing(throat, throatMat, great ? 1.1 : 1.4, x + z);
+    // Fire bars across the sill and coals heaped on it.
+    const bars = [];
+    for (let i = 0; i < (great ? 9 : 5); i++) bars.push(new BoxGeometry(0.035, 0.32 * k, 0.035).translate(-OW + 0.1 + (i * (OW * 2 - 0.2)) / ((great ? 9 : 5) - 1), 0.28 * k, ZF - 0.08));
+    bars.push(new BoxGeometry(OW * 2, 0.04, 0.05).translate(0, 0.42 * k, ZF - 0.08));
+    put(mergeGeometries(bars), mats.kiron, 1.15);
+    const coals = [];
+    const hot = [];
+    for (let i = 0; i < (great ? 16 : 8); i++) {
+      const cxp = -OW * 0.85 + ((i * 0.618) % 1) * OW * 1.7;
+      const g = new IcosahedronGeometry(0.06 + ((i * 0.37) % 1) * 0.05, 0).translate(cxp, 0.14 * k, ZF - 0.2 + ((i * 0.41) % 1) * 0.14);
+      (i % 3 === 0 ? hot : coals).push(g);
+    }
+    put(mergeGeometries(coals), mats.coalGlow, false);
+    put(mergeGeometries(hot), mats.heat, false);
+    // The chimney behind (outside the wall), soot-capped.
+    const chim = [];
+    const cap = [];
+    for (const cxp of great ? [-OW * 0.7, OW * 0.7] : [0]) {
+      chim.push(new BoxGeometry(0.8 * k, 2.6 * k, 0.8).translate(cxp, FH + 1.3 * k, ZB + 0.5));
+      cap.push(new BoxGeometry(0.98 * k, 0.16 * k, 0.98).translate(cxp, FH + 2.6 * k + 0.08 * k, ZB + 0.5));
+      cap.push(new BoxGeometry(0.82 * k, 0.5 * k, 0.04).translate(cxp, FH + 2.2 * k, ZB + 0.92)); // soot streak
+    }
+    put(mergeGeometries(chim), mats.kbrick);
+    put(mergeGeometries(cap), mats.soot, DETAIL_INK_PX);
+    // The fire (the arena's flame family: flame, halo, pool, embers, maybe a
+    // real light) sits in the mouth, just over the sill.
+    emitters.push({ kind: 'flame', x: wx(0, ZF + 0.05), y: 0.08 * k, z: wz(0, ZF + 0.05) });
+    shadows.push({ x: wx(0, ZF * 0.5), z: wz(0, ZF * 0.5), rx: OW + PW, rz: 0.5, yaw });
+    for (const sx of [-1, 1]) footprints.push({ x: wx(sx * (OW + PW / 2), 0), z: wz(sx * (OW + PW / 2), 0), r: PW * 0.8 });
+    footprints.push({ x: wx(0, ZF), z: wz(0, ZF), r: OW * 0.9 });
+    return null;
+  }
+
+  if (kind === 'flue') {
+    const k = rad / 0.8;
+    const BW = 0.62 * k; // half the breast's width
+    const BHh = 2.9 * k;
+    const ZF = 0.34;
+    const ZB = -0.7;
+    const OW = 0.3 * k;
+    const OH = 0.32 * k;
+    const body = [];
+    for (const sx of [-1, 1]) body.push(new BoxGeometry(BW - OW, BHh, ZF - ZB).translate(sx * (OW + (BW - OW) / 2), BHh / 2, (ZF + ZB) / 2));
+    body.push(new BoxGeometry(OW * 2 + 0.02, BHh - OH - OW, ZF - ZB).translate(0, (BHh + OH + OW) / 2, (ZF + ZB) / 2));
+    for (const sx of [-1, 1]) body.push(new BoxGeometry(OW * 0.45, OW * 0.6, ZF - ZB - 0.04).translate(sx * OW * 0.78, OH + OW * 0.45, (ZF + ZB) / 2));
+    // The breast steps in near the top (a corbel) and runs on up.
+    body.push(new BoxGeometry(BW * 2 + 0.16, 0.14 * k, ZF - ZB + 0.12).translate(0, BHh * 0.62, (ZF + ZB) / 2 + 0.06));
+    put(mergeGeometries(body), mats.kbrick);
+    put(new BoxGeometry(BW * 2 + 0.12, 0.2 * k, ZF - ZB + 0.1).translate(0, BHh + 0.1 * k, (ZF + ZB) / 2), mats.soot, DETAIL_INK_PX);
+    const courses = [];
+    for (let c = 1; c < Math.floor(BHh / 0.16); c++) {
+      const y = c * 0.16;
+      if (y < OH + OW) for (const sx of [-1, 1]) courses.push(new BoxGeometry(BW - OW, 0.02, 0.02).translate(sx * (OW + (BW - OW) / 2), y, ZF + 0.005));
+      else courses.push(new BoxGeometry(BW * 2, 0.02, 0.02).translate(0, y, ZF + 0.005));
+    }
+    put(mergeGeometries(courses), mats.soot, false);
+    put(new TorusGeometry(OW + 0.05, 0.08 * k, 4, 10, Math.PI).translate(0, OH, ZF + 0.02), mats.kbrickLit, DETAIL_INK_PX);
+    put(mergeGeometries([new BoxGeometry(BW * 0.9, BHh * 0.5, 0.02).translate(0, OH + OW + BHh * 0.25, ZF + 0.012)]), mats.soot, false);
+    put(new CylinderGeometry(0.02, 0.02, BW * 2.3, 5).rotateZ(Math.PI / 2).translate(0, BHh * 0.5, ZF + 0.07), mats.kiron, 1.15);
+    const tex = kilnMouthTexture();
+    const throatMat = new MeshBasicMaterial({ map: tex, toneMapped: false });
+    throatMat.color.setRGB(0.58, 0.42, 0.27, LinearSRGBColorSpace);
+    const throat = meshInk(root, mergeGeometries([new PlaneGeometry(OW * 2, OH).translate(0, OH / 2, 0), new CircleGeometry(OW, 10, 0, Math.PI).translate(0, OH, 0)]), throatMat, x, z, yaw, false);
+    throat.position.set(wx(0, ZF - 0.12), 0, wz(0, ZF - 0.12));
+    breathing(throat, throatMat, 1.7, x * 0.7 + z);
+    put(mergeGeometries([0, 1, 2, 3].map((i) => new IcosahedronGeometry(0.045, 0).translate(-OW * 0.6 + i * OW * 0.4, 0.06, ZF - 0.1))), mats.coalGlow, false);
+    emitters.push({ kind: 'flame', x: wx(0, ZF + 0.08), y: 0.0, z: wz(0, ZF + 0.08) });
+    shadows.push({ x: wx(0, ZF * 0.5), z: wz(0, ZF * 0.5), rx: BW + 0.1, rz: 0.4, yaw });
+    footprints.push({ x: wx(0, ZF * 0.5), z: wz(0, ZF * 0.5), r: BW });
+    return null;
+  }
+
+  if (kind === 'castbell' || kind === 'greatcast') {
+    const great = kind === 'greatcast';
+    const k = rad / (great ? 0.8 : 0.7);
+    const crackGroup = (geo, under, gain) => {
+      const m = crackMaterial(gain);
+      const mesh = new Mesh(geo, m);
+      mesh.position.set(x, 0, z);
+      mesh.renderOrder = 2;
+      root.add(mesh);
+      const u = new Mesh(under, crackMaterial(gain * 0.32));
+      u.position.copy(mesh.position);
+      u.renderOrder = 1;
+      root.add(u);
+      const base = m.color.clone();
+      mesh.onBeforeRender = () => {
+        // Still cooling: a slow swell, like the bell's last hum.
+        const t = nowSec();
+        m.color.copy(base).multiplyScalar(0.84 + 0.16 * Math.sin(t * 0.8 + x) + 0.05 * Math.sin(t * 2.3));
+      };
+      return m;
+    };
+    const plain = (geo, mat, ink = PROP_INK_PX) => meshInk(root, geo, mat, x, z, 0, ink);
+    if (!great) {
+      const BR = 0.42 * k;
+      const BH = 0.72 * k;
+      const LIP = -0.12 * k; // the mouth sunk in the sand
+      // The casting bed: a ring kerb of fire bricks round a bed of sand.
+      const kerb = [];
+      const KR = 0.72 * k;
+      for (let i = 0; i < 14; i++) {
+        const a = (i / 14) * Math.PI * 2;
+        kerb.push(new BoxGeometry(0.3 * k, 0.12 * k, 0.15 * k).rotateY(-a).translate(Math.cos(a) * KR, 0.06 * k, Math.sin(a) * KR));
+      }
+      plain(mergeGeometries(kerb), mats.kbrick, DETAIL_INK_PX);
+      plain(new CylinderGeometry(KR - 0.04, KR - 0.02, 0.1 * k, 20).translate(0, 0.05 * k, 0), mats.sand, false);
+      plain(new IcosahedronGeometry(BR * 1.25, 1).scale(1, 0.26, 1).translate(0, 0.1 * k, 0), mats.sand, false);
+      plain(mergeGeometries([bellLathe(BR, BH, 18).translate(0, LIP, 0), new BoxGeometry(0.1 * k, 0.1 * k, 0.08 * k).translate(0, LIP + BH + 0.04 * k, 0)]), mats.kbronze);
+      plain(
+        mergeGeometries([
+          new TorusGeometry(bellRadiusAt(BR, 0.62) * 1.01, 0.022 * k, 4, 18).rotateX(Math.PI / 2).translate(0, LIP + BH * 0.62, 0),
+          new TorusGeometry(bellRadiusAt(BR, 0.36) * 1.01, 0.018 * k, 4, 18).rotateX(Math.PI / 2).translate(0, LIP + BH * 0.36, 0),
+          new TorusGeometry(0.06 * k, 0.018 * k, 4, 10, Math.PI).translate(0, LIP + BH + 0.1 * k, 0),
+        ]),
+        mats.kbronzeLit,
+        false
+      );
+      // The gantry: two iron-shod timber posts, a beam, the chain down to
+      // the crown (this part takes the yaw).
+      const GX = 0.86 * k;
+      const GH = 1.55 * k;
+      put(
+        mergeGeometries([
+          new BoxGeometry(0.1 * k, GH, 0.1 * k).translate(-GX, GH / 2, 0),
+          new BoxGeometry(0.1 * k, GH, 0.1 * k).translate(GX, GH / 2, 0),
+          new BoxGeometry(GX * 2 + 0.24 * k, 0.12 * k, 0.12 * k).translate(0, GH, 0),
+          new BoxGeometry(0.06 * k, 0.5 * k, 0.06 * k).rotateZ(0.7).translate(-GX + 0.16 * k, GH - 0.18 * k, 0),
+          new BoxGeometry(0.06 * k, 0.5 * k, 0.06 * k).rotateZ(-0.7).translate(GX - 0.16 * k, GH - 0.18 * k, 0),
+        ]),
+        mats.ktimber
+      );
+      put(mergeGeometries([new BoxGeometry(0.16 * k, 0.12 * k, 0.16 * k).translate(-GX, 0.06 * k, 0), new BoxGeometry(0.16 * k, 0.12 * k, 0.16 * k).translate(GX, 0.06 * k, 0)]), mats.kiron, DETAIL_INK_PX);
+      const chain = [];
+      const top = GH - 0.06 * k;
+      const bot = LIP + BH + 0.14 * k;
+      for (let i = 0; i < 6; i++) {
+        const y = top - ((top - bot) * (i + 0.5)) / 6;
+        chain.push(new TorusGeometry(0.035 * k, 0.01 * k, 3, 8).rotateY(i % 2 ? Math.PI / 2 : 0).translate(0, y, 0));
+      }
+      plain(mergeGeometries(chain), mats.kiron, false);
+      // THE TELL.
+      const w = 0.036 * k;
+      const seed = 0x4b1 + Math.round(x * 13 + z * 7);
+      const tiltY = (g) => g; // the crack runs down the camera-facing (+z) side
+      const core = tiltY(bellCrackGeo(BR, BH, LIP, seed, w, 2));
+      const under = tiltY(bellCrackGeo(BR, BH, LIP, seed, w * 2.6, 2));
+      const m = crackGroup(core, under, 0.9);
+      shadows.push({ x, z, rx: KR + 0.2, rz: KR, yaw: 0 });
+      footprints.push({ x, z, r: KR + 0.1 });
+      emitters.push({ kind: 'monolith', x, y: LIP + BH * 0.55, z: z + BR * 1.1, size: 0.85, halo: 0.28, pool: 1.0 });
+      return m;
+    }
+    // The great cast: brick piers straddling the north wall, an iron-strapped
+    // headstock, the great bell hung over the casting pit.
+    const PX = 1.62 * k;
+    const PH = 2.9 * k;
+    const BR = 0.95 * k;
+    const BH = 1.6 * k;
+    const LIP = 1.02;
+    const pw = 0.62 * k;
+    const pd = 0.86 * k;
+    const piers = [];
+    const courses = [];
+    const soots = [];
+    for (const sx of [-1, 1]) {
+      piers.push(new BoxGeometry(pw * 1.4, 0.2 * k, pd * 1.25).translate(sx * PX, 0.1 * k, 0));
+      piers.push(new BoxGeometry(pw, PH, pd).translate(sx * PX, PH / 2, 0));
+      piers.push(new BoxGeometry(pw * 1.3, 0.14 * k, pd * 1.15).translate(sx * PX, PH + 0.07 * k, 0));
+      for (let c = 1; c < 12; c++) courses.push(new BoxGeometry(pw * 1.02, 0.025, pd * 1.02).translate(sx * PX, (PH * c) / 12, 0));
+      soots.push(new BoxGeometry(pw * 0.7, PH * 0.4, 0.02).translate(sx * PX, PH * 0.75, pd / 2 + 0.01));
+    }
+    put(mergeGeometries(piers), mats.kbrick);
+    put(mergeGeometries(courses), mats.soot, false);
+    put(mergeGeometries(soots), mats.kbrickDark, false);
+    const HS = PH - 0.18 * k;
+    put(new BoxGeometry(PX * 2 + pw * 0.6, 0.22 * k, 0.26 * k).translate(0, HS, 0), mats.ktimber);
+    put(mergeGeometries([-0.62, -0.2, 0.2, 0.62].map((f) => new BoxGeometry(0.05 * k, 0.26 * k, 0.3 * k).translate(f * PX, HS, 0))), mats.kiron, false);
+    // The arch over it and a soot-capped keystone.
+    put(new TorusGeometry(PX, 0.26 * k, 6, 22, Math.PI).scale(1, 0.92, 1.6).translate(0, PH + 0.14 * k, 0), mats.kbrickLit);
+    put(new BoxGeometry(0.34 * k, 0.46 * k, 0.6 * k).translate(0, PH + PX * 0.92 + 0.14 * k, 0), mats.kbrickDark, DETAIL_INK_PX);
+    // The bell, its bands, the yoke into the headstock.
+    const bellMesh = (geo, mat, ink) => meshInk(root, geo, mat, x, z, yaw, ink);
+    bellMesh(bellLathe(BR, BH, 22).translate(0, LIP, 0), mats.kbronze, PROP_INK_PX);
+    bellMesh(new TorusGeometry(BR * 0.97, 0.035 * k, 5, 30).rotateX(Math.PI / 2).translate(0, LIP + 0.03 * k, 0), mats.kbronzeLit, false);
+    bellMesh(
+      mergeGeometries([
+        new TorusGeometry(bellRadiusAt(BR, 0.62) * 1.01, 0.03 * k, 4, 28).rotateX(Math.PI / 2).translate(0, LIP + BH * 0.62, 0),
+        new TorusGeometry(bellRadiusAt(BR, 0.3) * 1.01, 0.022 * k, 4, 28).rotateX(Math.PI / 2).translate(0, LIP + BH * 0.3, 0),
+      ]),
+      mats.kbronzeDeep,
+      false
+    );
+    bellMesh(new BoxGeometry(0.26 * BR, HS - (LIP + BH) + 0.04, 0.26 * BR).translate(0, (LIP + BH + HS) / 2, 0), mats.kiron, DETAIL_INK_PX);
+    // The casting pit under it: a brick kerb round sand, still faintly gold.
+    const kerb = [];
+    for (let i = 0; i < 18; i++) {
+      const a = (i / 18) * Math.PI * 2;
+      kerb.push(new BoxGeometry(0.34 * k, 0.12 * k, 0.16 * k).rotateY(-a).translate(Math.cos(a) * BR * 1.05, 0.06 * k, Math.sin(a) * BR * 1.05));
+    }
+    put(mergeGeometries(kerb), mats.kbrick, DETAIL_INK_PX);
+    put(new CylinderGeometry(BR, BR, 0.08 * k, 22).translate(0, 0.04 * k, 0), mats.sand, false);
+    const pitMat = new MeshBasicMaterial({ map: getContactTexture(), transparent: true, depthWrite: false, blending: AdditiveBlending, toneMapped: false });
+    const gold = new Color(VFX_MATTER.kilngold);
+    pitMat.color.copy(gold).multiplyScalar(0.22);
+    const pit = new Mesh(new CircleGeometry(BR * 0.9, 20).rotateX(-Math.PI / 2), pitMat);
+    pit.position.set(x, 0.09 * k, z);
+    pit.renderOrder = 1;
+    root.add(pit);
+    // THE TELL.
+    const w = 0.05 * k;
+    const core = bellCrackGeo(BR, BH, LIP, 0x6b1d, w, 4);
+    const under = bellCrackGeo(BR, BH, LIP, 0x6b1d, w * 2.6, 4);
+    const m = crackGroup(core, under, 1.0);
+    shadows.push({ x, z, rx: PX + pw, rz: pd * 0.9, yaw });
+    footprints.push({ x: wx(-PX, 0), z: wz(-PX, 0), r: pw });
+    footprints.push({ x: wx(PX, 0), z: wz(PX, 0), r: pw });
+    emitters.push({ kind: 'monolith', x: wx(0, BR * 1.05), y: LIP + BH * 0.3, z: wz(0, BR * 1.05), size: 1.3, halo: 0.34, pool: 1.6 });
+    return m;
+  }
+  return null;
+}
+
+// The hot crack network's light (env/ground.js kilnCrackNetwork): the same
+// strokes the floor painter laid, drawn again on a black canvas in opaque
+// greys and laid over the floor ADDITIVELY in kiln gold. It breathes slowly,
+// and drives the shared heat / coal materials' breath with it.
+function buildKilnCracks(root, spec, mats) {
+  if (typeof document === 'undefined') return null;
+  const segs = kilnCrackNetwork(spec);
+  if (segs.length === 0) return null;
+  const W = 1024;
+  const H = Math.round(W * (ARENA.halfD / ARENA.halfW));
+  const ppu = W / (ARENA.halfW * 2);
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const cx = (wx) => (wx + ARENA.halfW) * ppu;
+  const cz = (wz) => (wz + ARENA.halfD) * ppu;
+  for (const [mul, grey, minPx] of [[4.0, 14, 3], [2.2, 40, 2], [1.0, 120, 1.2], [0.45, 230, 0.8]]) {
+    ctx.strokeStyle = `rgb(${grey},${grey},${grey})`;
+    for (const sg of segs) {
+      ctx.lineWidth = Math.max(minPx, sg.w * mul * ppu);
+      ctx.beginPath();
+      ctx.moveTo(cx(sg.ax), cz(sg.az));
+      ctx.lineTo(cx(sg.bx), cz(sg.bz));
+      ctx.stroke();
+    }
+  }
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  tex.anisotropy = 4;
+  const mat = new MeshBasicMaterial({
+    map: tex,
+    transparent: true,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    toneMapped: false,
+    polygonOffset: true,
+    polygonOffsetFactor: -2,
+    polygonOffsetUnits: -2,
+  });
+  const base = new Color(VFX_MATTER.kilngold).multiplyScalar(0.62);
+  mat.color.copy(base);
+  const mesh = new Mesh(new PlaneGeometry(ARENA.halfW * 2, ARENA.halfD * 2), mat);
+  mesh.rotation.x = -Math.PI / 2;
+  mesh.position.y = 0.004;
+  mesh.renderOrder = ORDER.pool - 1;
+  mesh.name = 'kiln-cracks';
+  const heat0 = mats.heat.color.clone();
+  const coal0 = mats.coalGlow.color.clone();
+  mesh.onBeforeRender = () => {
+    const t = nowSec();
+    const b = 0.5 + 0.5 * Math.sin(t * 0.9) * Math.sin(t * 0.37 + 1.3);
+    mat.color.copy(base).multiplyScalar(0.72 + 0.36 * b);
+    mats.heat.color.copy(heat0).multiplyScalar(0.84 + 0.2 * b);
+    mats.coalGlow.color.copy(coal0).multiplyScalar(0.8 + 0.32 * (0.5 + 0.5 * Math.sin(t * 1.7 + 0.6)));
+  };
+  root.add(mesh);
+  return mat;
+}
+
 // A flat ring lying on the floor (the well's slow sheen).
 function RingGeometryLite(r0, r1) {
   const segs = 28;
@@ -2852,6 +3550,32 @@ export function buildProps(root, spec, cosmetic) {
     mats.feather = toonMaterial({ color: hslColor(210, 0.06, 0.82) });
     mats.featherDark = toonMaterial({ color: hslColor(222, 0.1, 0.28) });
   }
+  if (spec.propFamily === 'kiln') {
+    // The Ember Kiln (env/biomes/kiln.js): low-chroma fire brick, clay, slag
+    // and soot; the heat unlit KILN GOLD, the banked coals unlit CRIMSON.
+    mats.kbrick = toonMaterial({ color: hslColor(14, 0.16, 0.3) });
+    mats.kbrickLit = toonMaterial({ color: hslColor(22, 0.18, 0.4) });
+    mats.kbrickDark = toonMaterial({ color: hslColor(20, 0.08, 0.13) });
+    mats.soot = toonMaterial({ color: hslColor(24, 0.05, 0.08) });
+    mats.clay = toonMaterial({ color: hslColor(30, 0.22, 0.42) });
+    mats.clayDark = toonMaterial({ color: hslColor(26, 0.18, 0.26) });
+    mats.clayPale = toonMaterial({ color: hslColor(36, 0.18, 0.56) });
+    mats.sand = toonMaterial({ color: hslColor(38, 0.2, 0.44) });
+    mats.slag = toonMaterial({ color: hslColor(24, 0.05, 0.15) });
+    mats.slagLit = toonMaterial({ color: hslColor(30, 0.06, 0.3) });
+    mats.kbronze = toonMaterial({ color: hslColor(38, 0.4, 0.38) });
+    mats.kbronzeLit = toonMaterial({ color: hslColor(42, 0.45, 0.56) });
+    mats.kbronzeDeep = toonMaterial({ color: hslColor(34, 0.3, 0.14) });
+    mats.ktimber = toonMaterial({ color: hslColor(26, 0.14, 0.22) });
+    mats.ktimberDark = toonMaterial({ color: hslColor(22, 0.1, 0.13) });
+    mats.kiron = toonMaterial({ color: hslColor(24, 0.04, 0.2) });
+    mats.glazeBlue = toonMaterial({ color: hslColor(208, 0.34, 0.42) });
+    mats.glazeCream = toonMaterial({ color: hslColor(44, 0.22, 0.7) });
+    mats.glazeOchre = toonMaterial({ color: hslColor(40, 0.46, 0.44) });
+    mats.glazeTeal = toonMaterial({ color: hslColor(186, 0.3, 0.34) });
+    mats.heat = new MeshBasicMaterial({ color: new Color(VFX_MATTER.kilngold).multiplyScalar(0.95), toneMapped: false });
+    mats.coalGlow = new MeshBasicMaterial({ color: new Color(VFX_MATTER.coal).multiplyScalar(2.4), toneMapped: false });
+  }
   if (spec.propFamily === 'barrow') {
     mats.boneStone = toonMaterial({ color: shade(mix(PALETTE.bone, COOL.mist, 0.18), 0.62) });
     mats.boneStoneLit = toonMaterial({ color: shade(mix(PALETTE.bone, PALETTE.parchment, 0.2), 0.72) });
@@ -2975,6 +3699,7 @@ export function buildProps(root, spec, cosmetic) {
   }
   if (spec.veinNet) buildVeinGlow(root, spec);
   if (mats.lime && spec.ropes) buildRopes(root, spec.ropes, mats, footprints);
+  if (mats.kbrick && spec.ground?.kiln) buildKilnCracks(root, spec, mats);
 
   // Per-room dressing (boss ring, shop stall) -- hidden groups the run's
   // `room_enter` events reveal; see env/dressing.js. Placement continues the

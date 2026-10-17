@@ -1923,6 +1923,12 @@
   ],
   "data": true
  },
+ "A fire lizard that basked on the kiln floor while the bells were fired. It never left the warmth.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "A fissure at the target for 4 s: 10 per second to enemies inside.": {
   "files": [
    "src/ui/run/cards.js"
@@ -2068,6 +2074,12 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "A moth of glowing ash. Where it settles, something starts to burn.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "A name needs at least one visible character": {
   "files": [
@@ -2360,6 +2372,12 @@
  "A squall over the target for 6 s: 3 per second to enemies inside, who are soaked and slowed 25%.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A stoker of the gods' kiln with its bellows still strapped on. It keeps every fire roaring.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -3785,6 +3803,12 @@
   ],
   "data": true
  },
+ "Bellows Imp": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "bells toll +2 s.": {
   "files": [
    "src/ui/run/cards.js"
@@ -4593,6 +4617,12 @@
   ],
   "data": true
  },
+ "Chapter V · The Ember Kiln": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Chapter V · The Still Spire": {
   "files": [
    "src/data/story.js"
@@ -4739,6 +4769,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Cinder Moth": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Cinder Pact": {
   "files": [
    "src/data/unlocks.js",
@@ -4790,6 +4826,12 @@
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
+ },
+ "Clay Pits": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
  },
  "Clear {level} to unlock": {
   "files": [
@@ -6330,6 +6372,12 @@
   ],
   "data": true
  },
+ "Ember Newt": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Ember Tooth": {
   "files": [
    "src/data/unlocks.js",
@@ -7124,6 +7172,12 @@
   ],
   "data": true
  },
+ "Firing Floor": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "first hit per enemy crits.": {
   "files": [
    "src/ui/run/cards.js"
@@ -7229,6 +7283,12 @@
   ],
   "data": true
  },
+ "Flame@@verse": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Fletcher's Knot": {
   "files": [
    "src/data/unlocks.js",
@@ -7293,6 +7353,12 @@
  "Flurry": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Flutters straight at a hero and kindles in a small warning ring round itself, then flares for 6. The flare burns it out: for 2.5 s it is a grey husk drifting away, and it takes double damage. They come several at once.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -7603,6 +7669,12 @@
    "src/ui/menu/tabs/display.js"
   ]
  },
+ "Furnace": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Furthest level": {
   "files": [
    "src/ui/menu/records.js"
@@ -7774,6 +7846,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Glaze Gallery": {
+  "files": [
+   "src/data/layouts.js"
   ],
   "data": true
  },
@@ -8942,6 +9020,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Its crust turns blows: it takes 40% less damage. In close it rears and slams a warning ring in front of it for 14, splashing a pool of slag that slows. The slam cracks its crust: for 2 s its core glows and it takes 40% more. Hit it then.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Its horns block arrows and bolts from the front. Grave Call cracks three graves around a hero and raises a Grave Mole. Bone Rush charges along its horns.": {
   "files": [
    "src/data/journal.js"
@@ -9074,6 +9158,12 @@
   ],
   "data": true
  },
+ "Keeps its distance, plants its feet and pumps its bellows behind a wide warning cone. The fan blows a sheet of sparks down the cone for 8. Step out to the side, or close in: it scurries back from a hero up close, and a stun chokes the fan.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Keeps its distance, then swings into the wind and marks a long, narrow warning lane through a hero. Three gust darts fly down it for 7 each: step out of the lane and they all miss.": {
   "files": [
    "src/data/journal.js"
@@ -9150,10 +9240,22 @@
   ],
   "data": true
  },
+ "Kiln Mouth": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
  "Kind": {
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Kindler": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Kindling Coal": {
   "files": [
@@ -13239,6 +13341,18 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Skitterer": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Skitters in fast and low, crouches and marks a short warning lane through a hero, then shoots down it for 7 to every hero it crosses. It rests a beat where it stops. One good hit kills it: watch for three lunging together.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Skulls stacked to the roof, each one a name nobody says any more.": {
   "files": [
    "src/sim/encounters.js"
@@ -13260,6 +13374,18 @@
  "Skyward": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Slag Golem": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Slag Run": {
+  "files": [
+   "src/data/layouts.js"
   ],
   "data": true
  },
@@ -13687,6 +13813,18 @@
   ]
  },
  "Still Note: a warning ring for 11 that slows. Unringing: a warning lane for 15. At each Stillness it calls the Spire's creatures, then the Great Hush: a huge ring round it for 20. Walk to the walls, then hit it while it sinks.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Stoke Hall": {
+  "files": [
+   "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Stoker": {
   "files": [
    "src/data/journal.js"
   ],
@@ -14500,6 +14638,12 @@
   ],
   "data": true
  },
+ "The bell rings out over the gods’ own kiln, and every bell ever cast there rings back. Five verses burn in the hearth. Two are still missing, and the oldest fire in the world burns true again.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "The bell still rings true. Take it into the Hollow Wood, and listen for the warden.": {
   "files": [
    "src/data/story.js"
@@ -14813,6 +14957,13 @@
    "src/ui/run/index.js"
   ]
  },
+ "The Ember Kiln": {
+  "files": [
+   "src/data/levels.js",
+   "src/ui/menu/records.js"
+  ],
+  "data": true
+ },
  "The Endless Descent": {
   "files": [
    "src/ui/run/levels.js"
@@ -15074,6 +15225,12 @@
   "data": true
  },
  "The gods' high belfry, where they sat down to watch and never rose.": {
+  "files": [
+   "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "The gods' kiln, where the first bells were fired. The fire never went out.": {
   "files": [
    "src/data/levels.js"
   ],
@@ -15417,6 +15574,18 @@
   "data": true
  },
  "The keeper of the mill race, iron-shod and patient as the water.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "The Kiln's warden falls. The great fire gutters, then burns clean.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The kiln's waste, raked out and heaped up until the hollow song found it and stood it up.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -17555,6 +17724,12 @@
   ]
  },
  "Where no warden stood, I grew one.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Where the Heart’s road forks below the Spire, the other way climbs to the Ember Kiln, where the gods fired the first bells. Every bell was tuned to the note of its fire, and the fire never went out. The hollow song found it still burning and learned to keep it. Whatever keeps the Kiln now, felling it frees the Verse of Flame, the note every bell was tuned to.": {
   "files": [
    "src/data/story.js"
   ],

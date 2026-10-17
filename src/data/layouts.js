@@ -24,6 +24,7 @@
 //     spur         (no position — rises under a hero's last spot; Act IV from room 2)
 //     gravefire    vents [[x, z] x3], offset (ticks into its 420-tick cycle)
 //     gust         x0 z0 x1 z1 (blows from the vent at 0 toward 1), w (1.6), offset (ticks into its 420-tick cycle)
+//     vent         offset (ticks into its 420-tick cycle)  a cinder vent (the Kiln): erupts r 1.2, leaves cinders
 //     slip         r (1.1-1.9), skin ('wet' Mill | 'frost' Barrow, Spire)  slick floor:
 //                  bodies keep sliding (Acts II and III only, never Level 1)
 //   interactables:  { type, x, z, yaw?, ...params }
@@ -883,9 +884,143 @@ export const LAYOUTS = Object.freeze({
       { type: 'keg', x: 9.6, z: -6.0 },
     ]),
   }),
+
+  // ------------------------------------ The Ember Kiln (KILN.md)
+  // Content plan 5 slice 7. The gods' kiln, where the first bells were
+  // fired: brick floors baked black and orange, clay moulds and cooling
+  // bells, slag heaps and the kiln mouths glowing in the walls. Its hazard is
+  // the CINDER VENT (sim/hazards.js 'vent'): a grate over the fire that
+  // erupts on a beat and leaves a bed of cinders that slows. Gravefire lines
+  // where the flues break the floor, falling brick (rockfall), stacked fire
+  // bricks for barricades (skin 'brick') and the Barrow's bell. Act 6 in
+  // data, the other Level V road; played only behind the ?act6=1 preview,
+  // never in legacyLayouts' golden runs.
+
+  // Kiln · 36 — the stoke hall where the climb comes out of the Heart: two
+  // vents in the west and east bays, the bell in the north arch.
+  36: Object.freeze({
+    id: 36,
+    act: 6,
+    biome: 'kiln',
+    name: 'Stoke Hall',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'vent', x: -7.0, z: 0.0, offset: 0 },
+      { type: 'vent', x: 7.0, z: 0.0, offset: 210 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'bell', x: 0.0, z: -5.6 },
+      { type: 'barricade', x: -3.6, z: -3.4, yaw: 0.4, skin: 'brick' },
+      { type: 'barricade', x: 3.6, z: -3.4, yaw: -0.4, skin: 'brick' },
+      { type: 'dewfont', x: -4.2, z: 4.6 },
+      { type: 'keg', x: 4.4, z: 4.4 },
+    ]),
+  }),
+  // Kiln · 37 — the clay pits where the moulds were dug: two vents in the
+  // north quarters, a gravefire line where a flue cracked the south floor.
+  37: Object.freeze({
+    id: 37,
+    act: 6,
+    biome: 'kiln',
+    name: 'Clay Pits',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'vent', x: -4.4, z: -3.6, offset: 0 },
+      { type: 'vent', x: 4.4, z: -3.6, offset: 210 },
+      { type: 'gravefire', vents: [[-1.6, 6.4], [0.0, 6.8], [1.6, 6.4]], offset: 140 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'barricade', x: -7.0, z: 1.0, yaw: 1.2, skin: 'brick' },
+      { type: 'barricade', x: 7.0, z: 1.0, yaw: -1.2, skin: 'brick' },
+      { type: 'dewfont', x: -7.0, z: 4.6 },
+      { type: 'keg', x: 7.0, z: -4.6 },
+      { type: 'bell', x: 6.8, z: 4.6 },
+    ]),
+  }),
+  // Kiln · 38 — a gallery of glazed tiles drying on racks: one vent at the
+  // north wall, one in the east bay, a bell on the west wall.
+  38: Object.freeze({
+    id: 38,
+    act: 6,
+    biome: 'kiln',
+    name: 'Glaze Gallery',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'vent', x: 0.0, z: -5.4, offset: 60 },
+      { type: 'vent', x: 7.0, z: 0.0, offset: 270 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'bell', x: -7.0, z: -1.0 },
+      { type: 'barricade', x: -3.8, z: -2.8, yaw: 0.6, skin: 'brick' },
+      { type: 'dewfont', x: 3.6, z: 5.0 },
+      { type: 'keg', x: -4.0, z: 4.4 },
+    ]),
+  }),
+  // Kiln · 39 — the firing floor before the great kiln mouth (also the Kiln's
+  // boss room dressing): vents in both bays, a gravefire line at the north.
+  39: Object.freeze({
+    id: 39,
+    act: 6,
+    biome: 'kiln',
+    name: 'Firing Floor',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'vent', x: -7.0, z: 0.0, offset: 0 },
+      { type: 'vent', x: 7.0, z: 0.0, offset: 210 },
+      { type: 'gravefire', vents: [[-1.6, -6.0], [0.0, -6.4], [1.6, -6.0]], offset: 100 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 0.0, z: 5.4 },
+      { type: 'barricade', x: -3.6, z: 2.6, yaw: 0.5, skin: 'brick' },
+      { type: 'barricade', x: 3.6, z: 2.6, yaw: -0.5, skin: 'brick' },
+      { type: 'keg', x: -9.4, z: 0.0 },
+      { type: 'keg', x: 9.4, z: 0.0 },
+    ]),
+  }),
+  // Kiln · 40 — a run of slag heaps where the furnaces were raked out: vents
+  // in the north-west and south-east, a bell at the north rail.
+  40: Object.freeze({
+    id: 40,
+    act: 6,
+    biome: 'kiln',
+    name: 'Slag Run',
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'vent', x: -4.4, z: -3.6, offset: 0 },
+      { type: 'vent', x: 4.0, z: 4.0, offset: 210 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'bell', x: 0.0, z: -6.2 },
+      { type: 'barricade', x: -5.6, z: 2.4, yaw: 0.3, skin: 'brick' },
+      { type: 'barricade', x: 5.6, z: -2.4, yaw: 0.3, skin: 'brick' },
+      { type: 'keg', x: -7.6, z: -1.0 },
+      { type: 'dewfont', x: 6.8, z: 4.8 },
+    ]),
+  }),
+  // Kiln · 41 — ARENA. The open floor before the kiln's great mouth: vents in
+  // both side bays, a gravefire line under the mouth, the floor between clear.
+  41: Object.freeze({
+    id: 41,
+    act: 6,
+    biome: 'kiln',
+    name: 'Kiln Mouth',
+    arena: true,
+    spawns: Object.freeze([[-6.0, -7.0], [6.0, -7.0], [-10.8, -4.4], [10.8, -4.4], [-10.8, 4.4], [10.8, 4.4], [-6.0, 7.0], [6.0, 7.0]]),
+    hazards: Object.freeze([
+      { type: 'rockfall' },
+      { type: 'vent', x: -7.0, z: 0.0, offset: 0 },
+      { type: 'vent', x: 7.0, z: 0.0, offset: 210 },
+      { type: 'gravefire', vents: [[-1.6, -6.0], [0.0, -6.4], [1.6, -6.0]], offset: 100 },
+    ]),
+    interactables: Object.freeze([
+      { type: 'dewfont', x: 0.0, z: 5.8 },
+      { type: 'keg', x: -6.4, z: 3.6 },
+      { type: 'keg', x: 6.4, z: 3.6 },
+    ]),
+  }),
 });
 
-export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35]);
+export const LAYOUT_IDS = Object.freeze([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41]);
 
 // Plan 3 slice 8: the act's arena (the layout flagged `arena`), or null.
 export function arenaOf(table) {
@@ -902,7 +1037,7 @@ export function actOfLayout(id) {
   return LAYOUTS[id] ? LAYOUTS[id].act : 1;
 }
 
-export const BIOME_OF_ACT = Object.freeze({ 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart', 5: 'spire' });
+export const BIOME_OF_ACT = Object.freeze({ 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart', 5: 'spire', 6: 'kiln' });
 
 // §11 spawn ring + the constraints tools/gntM4b-layoutcheck.mjs audits.
 export const PLACEMENT_RULES = Object.freeze({

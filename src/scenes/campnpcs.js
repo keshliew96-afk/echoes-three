@@ -32,7 +32,7 @@ import { PALETTE } from '../data/palette.js';
 import { t } from '../i18n/index.js';
 import { createNpc } from '../render/npcs/index.js';
 import { NPCS, KEEPER_LINES, PEDDLER_LINES, CHRONICLER_LINES, WARDENS, versesHeld, RILL_LINES, rillLineFor, KEEPER_RILL_LINE, TOLLY_LINES, tollyLineFor, KEEPER_TOLLY_LINE, SABLE_LINES, sableLineFor, KEEPER_SABLE_LINE } from '../data/story.js';
-import { CAMPAIGN_LEVELS } from '../data/campaign.js';
+import { ALL_LEVELS } from '../data/campaign.js';
 import { HEARTH, CAMP_SPOTS } from '../env/camp/spec.js';
 import { MAP_TABLE } from '../campaign/maptable.js';
 import { cap } from '../app/controls.js';
@@ -160,7 +160,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
   let verses = 0;
   function refresh() {
     const p = profile();
-    verses = versesHeld(p, CAMPAIGN_LEVELS).length;
+    verses = versesHeld(p, ALL_LEVELS).length;
     syncWardens(p && p.meta);
   }
 

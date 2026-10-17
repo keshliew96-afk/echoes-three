@@ -35,7 +35,7 @@ const TAB_BLURB = {
   tint: () => t('Recolour a class’s effects. Cosmetic, and only on your screen.'),
   deed: () => t('One-off feats. Each pays its {currency} once, on the run that does it.', { currency: t(CURRENCY) }),
 };
-const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'V']; // 6: the Ember Kiln is the other Level V (docs/KILN.md)
 const theName = (name) => t(name).replace(/^The /, 'the ');
 
 // The requirement line (data/unlocks.js reqText), built here so each form is

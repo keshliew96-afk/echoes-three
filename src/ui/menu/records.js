@@ -15,6 +15,7 @@ const ACT_NAME = {
   get 3() { return t('The Ashen Barrow'); },
   get 4() { return t('The Hollow Heart'); },
   get 5() { return t('The Still Spire'); },
+  get 6() { return t('The Ember Kiln'); },
 };
 const CHALLENGE_NAME = {
   get relaxed() { return t('Relaxed'); },
@@ -81,7 +82,7 @@ const day = (iso) => {
 };
 const cap = (s) => (s ? CHALLENGE_NAME[s] || s[0].toUpperCase() + s.slice(1) : '');
 // CAMPAIGN (PLAN §12.8) record cells.
-const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
+const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'V']; // 6: the Ember Kiln is the other Level V (docs/KILN.md)
 function levelCell(h) {
   if (h.campaign) {
     const from = h.startLevel ?? 1;

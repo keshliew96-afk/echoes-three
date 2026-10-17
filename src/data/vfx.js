@@ -234,6 +234,14 @@ export const ENEMY_VFX = Object.freeze({
   // on what it wards is render/enemies/spire.js).
   vane: Object.freeze({ matter: 'bellbronze', family: 'shooter', shard: 'needle', chunk: 4, dust: 1, shot: Object.freeze({ look: 'dart', trail: 0.22 }) }),
   sacristan: Object.freeze({ matter: 'spirestone', family: 'support', shard: null, chunk: 6, dust: 3 }),
+  // The Ember Kiln (docs/KILN.md). Their beats (the lunge and the skid; the
+  // slam, its slag splash and the crust knitting; the fan and the choke; the
+  // flare, the snuff and the relight) are director recipes keyed by the sim
+  // event. Their own heat is Kiln Gold, never Ember (render/enemies/kiln.js).
+  newt: Object.freeze({ matter: 'newthide', family: 'charger', shard: null, chunk: 3, dust: 2, wakeEvery: 0.14 }),
+  slag: Object.freeze({ matter: 'slag', family: 'brute', shard: null, chunk: 8, dust: 3 }),
+  bellows: Object.freeze({ matter: 'bellows', family: 'support', shard: null, chunk: 4, dust: 2 }),
+  cindermoth: Object.freeze({ matter: 'mothash', family: 'flyer', shard: 'petal', chunk: 0, dust: 3 }),
   // CHAMPIONS (docs/CHAMPIONS.md): the four lords. Their move beats and
   // deaths are director recipes keyed by champion_* events.
   briar_knight: Object.freeze({ matter: 'bramble', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),

@@ -674,6 +674,11 @@ export function* paintGroundSteps(spec, cosmetic) {
     paintRime(ctx, spec, g.rime, W, H, ppu);
     yield;
   }
+  // The Ember Kiln: soot blooms, scorched vent halos, flagstone walks, clay,
+  // slag, glaze chips, cinders and the hot crack network. Its own stream.
+  if (g.kiln) {
+    yield* paintKilnSteps(ctx, spec, g.kiln, W, H, ppu, cx, cz);
+  }
 
   // 8 — corruption blight: a desaturated cool stain under the monolith (part
   // of the §11/§19.3 "one corruption tell" — the violet itself stays on the
@@ -769,6 +774,261 @@ export function veinNetwork(spec) {
   for (const [x, z, deg, len, w] of spec.veinNet.seeds ?? []) walk(x, z, (deg * Math.PI) / 180, len, w, 0);
   veinCache.set(key, segs);
   return segs;
+}
+
+// The Ember Kiln's hot crack network (env/biomes/kiln.js): hairline cracks
+// in the fire brick where the heat comes through from below, radiating out of
+// every vent's scorch, fanning out of every kiln mouth and flue, and a few
+// strays. A pure function of the layout (its own mulberry32 per layout id),
+// so the floor painter (worker or main thread) and the gold glow decal
+// (props.js buildKilnCracks) land on exactly the same strokes.
+const kilnCrackCache = new Map();
+export function kilnCrackNetwork(spec) {
+  const K = spec && spec.ground && spec.ground.kiln;
+  if (!K) return [];
+  const key = spec.id;
+  if (kilnCrackCache.has(key)) return kilnCrackCache.get(key);
+  const rnd = veinRng(0x6b1c3a5 ^ (((spec.id | 0) + 17) * 0x85ebca6b));
+  const R = (a, b) => a + rnd() * (b - a);
+  const segs = [];
+  const heat = K.heat ?? [];
+  const lim = (x, z) => Math.abs(x) < ARENA.halfW - 0.15 && Math.abs(z) < ARENA.halfD - 0.15;
+  // A crack never runs back over a vent's own grate (the vent rig owns it).
+  const inVent = (x, z) => heat.some(([hx, hz, hr]) => Math.hypot(x - hx, z - hz) < hr * 0.95);
+  const walk = (x, z, ang, len, w, depth) => {
+    const step = 0.16;
+    const n = Math.max(2, Math.round(len / step));
+    let a = ang;
+    for (let i = 0; i < n; i++) {
+      const t = i / n;
+      // A crack in brick is angular: per-step jags, a bias to run along the
+      // courses (multiples of 90 deg), tapering to a hair.
+      a += R(-0.5, 0.5);
+      const snap = Math.round(a / (Math.PI / 2)) * (Math.PI / 2);
+      a += (snap - a) * 0.18;
+      const wi = w * (1 - t * 0.85);
+      const nx = x + Math.cos(a) * step * R(0.7, 1.3);
+      const nz = z + Math.sin(a) * step * R(0.7, 1.3);
+      if (!lim(nx, nz) || inVent(nx, nz)) break;
+      segs.push({ ax: x, az: z, bx: nx, bz: nz, w: wi });
+      x = nx;
+      z = nz;
+      if (depth < 1 && i > 2 && rnd() < 0.12) walk(x, z, a + (rnd() < 0.5 ? -1 : 1) * R(0.6, 1.3), len * (1 - t) * R(0.35, 0.7), wi * 0.7, depth + 1);
+    }
+  };
+  for (const [hx, hz, hr] of heat) {
+    const n = hr > 1 ? 5 : 3;
+    for (let k = 0; k < n; k++) {
+      const a = (k / n) * Math.PI * 2 + R(-0.4, 0.4);
+      walk(hx + Math.cos(a) * hr * 1.02, hz + Math.sin(a) * hr * 1.02, a + R(-0.3, 0.3), R(1.2, 2.6), R(0.05, 0.07), 0);
+    }
+  }
+  for (const [mx, mz] of K.mouths ?? []) {
+    // Into the room from the wall the mouth stands in.
+    const inward = Math.abs(mz) > ARENA.halfD - 0.5 ? (mz < 0 ? Math.PI / 2 : -Math.PI / 2) : mx < 0 ? 0 : Math.PI;
+    const sx = Math.max(-ARENA.halfW + 0.3, Math.min(ARENA.halfW - 0.3, mx));
+    const sz = Math.max(-ARENA.halfD + 0.3, Math.min(ARENA.halfD - 0.3, mz));
+    for (let k = 0; k < 3; k++) walk(sx + R(-0.8, 0.8) * Math.abs(Math.sin(inward)), sz + R(-0.8, 0.8) * Math.abs(Math.cos(inward)), inward + R(-0.7, 0.7), R(1.6, 3.2), R(0.05, 0.075), 0);
+  }
+  for (let i = 0; i < (K.cracks ?? 0); i++) {
+    walk(R(-ARENA.halfW + 1, ARENA.halfW - 1), R(-ARENA.halfD + 1, ARENA.halfD - 1), R(0, Math.PI * 2), R(0.8, 2.0), R(0.03, 0.05), 1);
+  }
+  kilnCrackCache.set(key, segs);
+  return segs;
+}
+
+// The kiln pass. Every layer runs off its own per-layout mulberry32 (never the
+// layout stream), heaviest layers first:
+//   soot     soft soot blooms, half of them out of the kiln mouths
+//   heat     a scorched halo under every vent and flue crack: a charcoal
+//            disc, a baked ring; kept DARK so the vent's Ember telegraph ring
+//            (r 1.2) always lands on a black floor
+//   walks    flagstone walks laid down every path (fire brick and flagstone)
+//   clay     pale clay spills; slag: glassy black crusts with a pale rim
+//   glaze    glazed tile chips (slate, cream, ochre, deep teal: never the
+//            heal band, never violet)
+//   cracks   the hot crack network (kilnCrackNetwork): a dark channel, a
+//            baked halo, a warm hairline (the gold glow decal lights it)
+//   cinders  coal, ash and a few banked-crimson cinders
+function* paintKilnSteps(ctx, spec, K, W, H, ppu, cx, cz) {
+  const rnd = veinRng(0x2f6e2b1 ^ (((spec.id | 0) + 61) * 0xc2b2ae35));
+  const R = (a, b) => a + rnd() * (b - a);
+  const mouths = K.mouths ?? [];
+  const heat = K.heat ?? [];
+  // Soot.
+  for (let i = 0; i < (K.soot ?? 0); i++) {
+    let x;
+    let z;
+    if (mouths.length && rnd() < 0.55) {
+      const [mx, mz] = mouths[Math.floor(rnd() * mouths.length)];
+      x = cx(Math.max(-ARENA.halfW, Math.min(ARENA.halfW, mx + R(-2.2, 2.2))));
+      z = cz(Math.max(-ARENA.halfD, Math.min(ARENA.halfD, mz + R(-2.2, 2.2))));
+    } else {
+      x = R(0, W);
+      z = R(0, H);
+    }
+    const n = 2 + Math.floor(R(0, 4));
+    for (let b = 0; b < n; b++) blob(ctx, x + R(-60, 60), z + R(-50, 50), R(50, 150), hsl(26 + R(-4, 4), 0.08, 0.04, R(0.16, 0.3)));
+  }
+  yield;
+  // Scorched halos.
+  if (K.scorch) {
+    for (const [hx, hz, hr] of heat) {
+      const px = cx(hx);
+      const pz = cz(hz);
+      const rp = hr * ppu;
+      blob(ctx, px, pz, rp * 1.9, hsl(28, 0.18, 0.12, 0.28)); // baked ring
+      plateauBlob(ctx, px, pz, rp * 1.5, hsl(24, 0.1, 0.03, 0.62), 0.62); // charcoal
+      for (let k = 0; k < 14; k++) {
+        const a = R(0, Math.PI * 2);
+        const d = rp * R(0.9, 1.6);
+        blob(ctx, px + Math.cos(a) * d, pz + Math.sin(a) * d, R(10, 28), hsl(24, 0.08, 0.05, 0.4));
+      }
+    }
+  }
+  // Flagstone walks down every path.
+  if (K.walks) {
+    ctx.lineJoin = 'miter';
+    for (const path of spec.paths ?? []) {
+      const pts = path.pts;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const [ax, az] = pts[i];
+        const [bx, bz] = pts[i + 1];
+        const L = Math.hypot(bx - ax, bz - az);
+        const ang = Math.atan2(bz - az, bx - ax);
+        const n = Math.max(1, Math.round(L / 0.78));
+        for (let k = 0; k < n; k++) {
+          const t = (k + R(0.3, 0.7)) / n;
+          const wx = ax + (bx - ax) * t;
+          const wz = az + (bz - az) * t;
+          const across = path.w * 0.5;
+          for (const side of [-0.5, 0.5]) {
+            if (rnd() < 0.12) continue; // a flag missing, the brick under it
+            const ox = -Math.sin(ang) * across * side;
+            const oz = Math.cos(ang) * across * side;
+            const fw = R(0.62, 0.78) * ppu;
+            const fh = across * R(0.86, 1.0) * ppu;
+            ctx.save();
+            ctx.translate(cx(wx + ox) + R(-3, 3), cz(wz + oz) + R(-3, 3));
+            ctx.rotate(ang + R(-0.06, 0.06));
+            ctx.fillStyle = hsl(32 + R(-4, 4), 0.05, R(0.26, 0.34), 0.88);
+            ctx.fillRect(-fw / 2, -fh / 2, fw, fh);
+            ctx.fillStyle = hsl(36, 0.06, 0.4, 0.22); // a worn pale centre
+            ctx.fillRect(-fw * 0.3, -fh * 0.3, fw * 0.6, fh * 0.5);
+            ctx.strokeStyle = hsl(26, 0.1, 0.05, 0.75);
+            ctx.lineWidth = 2.4;
+            ctx.strokeRect(-fw / 2, -fh / 2, fw, fh);
+            if (rnd() < 0.3) {
+              ctx.beginPath();
+              ctx.moveTo(-fw * 0.3, -fh / 2);
+              ctx.lineTo(fw * 0.05, fh * 0.05);
+              ctx.lineTo(fw * 0.2, fh / 2);
+              ctx.stroke();
+            }
+            ctx.restore();
+          }
+        }
+      }
+    }
+  }
+  yield;
+  // Clay spills.
+  for (let i = 0; i < (K.clay ?? 0); i++) {
+    const x = R(0.04 * W, 0.96 * W);
+    const z = R(0.04 * H, 0.96 * H);
+    const n = 3 + Math.floor(R(0, 4));
+    for (let b = 0; b < n; b++) {
+      const bx = x + R(-50, 50);
+      const bz = z + R(-36, 36);
+      const br = R(16, 46);
+      blob(ctx, bx, bz, br, hsl(32 + R(-3, 3), 0.2, R(0.34, 0.42), 0.42));
+      blob(ctx, bx + br * 0.15, bz + br * 0.1, br * 0.55, hsl(28, 0.18, 0.24, 0.3)); // the wet core
+    }
+  }
+  // Slag crusts.
+  for (let i = 0; i < (K.slag ?? 0); i++) {
+    const x = R(0.04 * W, 0.96 * W);
+    const z = R(0.04 * H, 0.96 * H);
+    const nv = 9;
+    const rr = R(18, 52);
+    ctx.save();
+    ctx.translate(x, z);
+    ctx.rotate(R(0, Math.PI));
+    ctx.beginPath();
+    for (let k = 0; k < nv; k++) {
+      const t = (k / nv) * Math.PI * 2;
+      const j = R(0.6, 1.15);
+      if (k === 0) ctx.moveTo(Math.cos(t) * rr * 1.4 * j, Math.sin(t) * rr * j);
+      else ctx.lineTo(Math.cos(t) * rr * 1.4 * j, Math.sin(t) * rr * j);
+    }
+    ctx.closePath();
+    ctx.fillStyle = hsl(26, 0.05, 0.08, 0.86);
+    ctx.fill();
+    ctx.strokeStyle = hsl(30, 0.06, 0.3, 0.55);
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    ctx.fillStyle = hsl(34, 0.08, 0.42, 0.4); // a glassy glint
+    ctx.beginPath();
+    ctx.ellipse(-rr * 0.3, -rr * 0.25, rr * 0.3, rr * 0.12, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+  // Glaze chips.
+  // Earth glazes only (tenmoku, ash cream, amber, iron, slate): a blue glaze
+  // under the warm pools and the cool lift read as violet specks, and violet
+  // belongs to the corruption tell alone.
+  const GLAZE = [[30, 0.36, 0.2], [44, 0.24, 0.72], [40, 0.46, 0.46], [32, 0.28, 0.3], [36, 0.05, 0.4]];
+  for (let i = 0; i < (K.glaze ?? 0); i++) {
+    const x = R(0.03 * W, 0.97 * W);
+    const z = R(0.03 * H, 0.97 * H);
+    const [gh, gs, gl] = GLAZE[Math.floor(rnd() * GLAZE.length)];
+    const sz = R(4, 10);
+    ctx.save();
+    ctx.translate(x, z);
+    ctx.rotate(R(0, Math.PI));
+    ctx.fillStyle = 'rgba(10,8,6,0.4)';
+    ctx.fillRect(-sz / 2 + 1, -sz * 0.35 + 1.5, sz, sz * 0.7);
+    ctx.fillStyle = hsl(gh, gs, gl, 0.9);
+    ctx.beginPath();
+    ctx.moveTo(-sz / 2, -sz * 0.35);
+    ctx.lineTo(sz / 2, -sz * 0.3);
+    ctx.lineTo(sz * 0.3, sz * 0.35);
+    ctx.lineTo(-sz * 0.45, sz * 0.25);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = hsl(gh, gs * 0.6, Math.min(0.9, gl + 0.22), 0.6);
+    ctx.fillRect(-sz * 0.3, -sz * 0.25, sz * 0.3, sz * 0.12);
+    ctx.restore();
+  }
+  yield;
+  // The hot cracks.
+  const segs = kilnCrackNetwork(spec);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  const pass = (wMul, minPx, style) => {
+    ctx.strokeStyle = style;
+    for (const sg of segs) {
+      ctx.lineWidth = Math.max(minPx, sg.w * wMul * ppu);
+      ctx.beginPath();
+      ctx.moveTo(cx(sg.ax), cz(sg.az));
+      ctx.lineTo(cx(sg.bx), cz(sg.bz));
+      ctx.stroke();
+    }
+  };
+  pass(4.2, 4, hsl(26, 0.16, 0.08, 0.26)); // baked halo
+  pass(1.5, 2, hsl(22, 0.18, 0.035, 0.95)); // the channel
+  pass(0.55, 1, hsl(38, 0.56, 0.36, 0.85)); // warm hairline
+  yield;
+  // Cinders: coal, ash, a few banked-crimson ones.
+  for (let i = 0; i < (K.cinders ?? 0); i++) {
+    const x = R(0, W);
+    const z = R(0, H);
+    const k = rnd();
+    ctx.fillStyle = k < 0.58 ? hsl(24, 0.05, 0.05, 0.85) : k < 0.92 ? hsl(30, 0.04, R(0.46, 0.6), 0.55) : hsl(354, 0.42, 0.2, 0.8);
+    ctx.beginPath();
+    ctx.ellipse(x, z, R(1.2, 3.4), R(1.0, 2.6), R(0, Math.PI), 0, Math.PI * 2);
+    ctx.fill();
+  }
 }
 
 // Painted veins: a dark rose root channel sunk into the stone, a raised flesh
@@ -1163,6 +1423,35 @@ export function* paintApronSteps(spec, cosmetic) {
         const br = Rr * R(0.45, 0.8);
         blob(ctx, bx, bz, br, hsl(C.h + R(-8, 8), C.s, C.l * R(0.55, 0.8), 0.5));
         blob(ctx, bx - br * 0.18, bz - br * 0.3, br * 0.62, hsl(C.litH + R(-10, 10), C.litS, C.litL * R(0.7, 0.95), 0.32));
+      }
+    }
+    yield;
+  }
+  // The Ember Kiln: the yard lit from below (`apron.glow`) — soft pools of
+  // kiln-gold furnace light and banked-crimson coal glow lying on the soot,
+  // thickest a few strides past the wall. Own stream: no layout draw moves.
+  if (A && A.glow) {
+    const G = A.glow;
+    const rnd = veinRng(0x1d4e9a7 ^ (((spec.id | 0) + 43) * 0x2545f491));
+    const R = (a, b) => a + rnd() * (b - a);
+    for (let i = 0; i < (G.n ?? 30); i++) {
+      // A point in the band 1-9 u past the wall.
+      const side = Math.floor(R(0, 4));
+      const d = (1 + Math.pow(rnd(), 1.4) * 8) * ppu;
+      let px;
+      let pz;
+      if (side === 0) { px = R(inner.x0 - 6 * ppu, inner.x1 + 6 * ppu); pz = inner.z0 - d; }
+      else if (side === 1) { px = R(inner.x0 - 6 * ppu, inner.x1 + 6 * ppu); pz = inner.z1 + d; }
+      else if (side === 2) { px = inner.x0 - d; pz = R(inner.z0 - 6 * ppu, inner.z1 + 6 * ppu); }
+      else { px = inner.x1 + d; pz = R(inner.z0 - 6 * ppu, inner.z1 + 6 * ppu); }
+      const coal = rnd() < 0.4;
+      const Rr = R(40, 120);
+      if (coal) {
+        blob(ctx, px, pz, Rr * 0.7, hsl(G.coalH + R(-4, 4), G.coalS, G.coalL, 0.3));
+        for (let k = 0; k < 6; k++) blob(ctx, px + R(-Rr, Rr) * 0.5, pz + R(-Rr, Rr) * 0.4, R(4, 12), hsl(G.coalH, G.coalS + 0.1, G.coalL + 0.12, 0.5));
+      } else {
+        blob(ctx, px, pz, Rr * 1.3, hsl(G.h + R(-3, 4), G.s * 0.6, G.l * 0.6, 0.12));
+        blob(ctx, px, pz, Rr * 0.6, hsl(G.h + R(-2, 4), G.s, G.l, 0.16));
       }
     }
     yield;

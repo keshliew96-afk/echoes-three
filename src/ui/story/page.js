@@ -14,7 +14,8 @@
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
-import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
+import { ALL_LEVELS } from '../../data/campaign.js';
+import { levelNumberOf } from '../../data/levels.js';
 import { CHAPTERS, PROLOGUE, TOTAL_VERSES, NPCS, PEOPLE, versesHeld } from '../../data/story.js';
 import { featsOf } from '../../data/unlocks.js';
 import { t, tn } from '../../i18n/index.js';
@@ -90,13 +91,13 @@ function profile() {
 
 // What the page shows, from the profile (also the probe's view of it).
 export function storyInfo(p = profile()) {
-  const held = versesHeld(p, CAMPAIGN_LEVELS);
+  const held = versesHeld(p, ALL_LEVELS);
   const story = (p && p.story) || { seen: [], met: {} };
   const heldLevels = new Set(held.map((c) => c.level));
   const chapters = CHAPTERS.map((c) => ({
     level: c.level,
     verse: c.verse,
-    inGame: CAMPAIGN_LEVELS.includes(c.level),
+    inGame: ALL_LEVELS.includes(c.level),
     held: heldLevels.has(c.level),
   }));
   const people = PEOPLE.map((x) => ({
@@ -228,9 +229,9 @@ export function createStoryScreen(ctx) {
         div.querySelector('.st-cs').textContent = t(c.summary);
       } else {
         div.innerHTML = `<div class="st-ct"></div><div class="st-cs"></div>`;
-        div.querySelector('.st-ct').textContent = t('Chapter {n} · ???', { n: ROMAN[ch.level] ?? ch.level });
+        div.querySelector('.st-ct').textContent = t('Chapter {n} · ???', { n: ROMAN[levelNumberOf(ch.level)] ?? ch.level });
         div.querySelector('.st-cs').textContent = ch.inGame
-          ? t('Clear Level {n} to read on.', { n: ROMAN[ch.level] ?? ch.level })
+          ? t('Clear Level {n} to read on.', { n: ROMAN[levelNumberOf(ch.level)] ?? ch.level })
           : t('The road below the Barrow is not on the map yet.');
       }
       chapEl.appendChild(div);

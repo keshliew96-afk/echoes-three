@@ -39,6 +39,13 @@
 //              whatever lies down the lane (a rockfall, another hero's
 //              telegraph, the wall). Idle, the vent only breathes
 //
+//   vent       a cinder vent (the Ember Kiln, docs/KILN.md): a grate over the
+//              kiln's fire. Every 420 ticks a 60-tick Ember ring r 1.2, then it
+//              ERUPTS: a column of fire for 12 to every body inside once, fliers
+//              too (it is a plume), any faction. It leaves a BED OF CINDERS on
+//              the grate for 150 ticks that slows ground bodies inside by 30 %
+//              (bosses never); then it cools to idle. Idle, it only glows
+//
 //   spur       crystal spurs (Act IV, the Hollow Heart; docs/SHRINES.md): a
 //              room-long schedule like rockfall's (every 300-420 ticks, a pure
 //              hash of seed, room and layout) that marks the spot a hero stood
@@ -114,6 +121,15 @@ export const HAZARD_TYPES = Object.freeze({
     telegraphTicks: 60,
     gustTicks: 36,
     pushSpeed: 5.2, // u/s
+    affects: 'all',
+  }),
+  vent: Object.freeze({
+    radius: 1.2,
+    cycleTicks: 420,
+    telegraphTicks: 60,
+    damage: 12,
+    bedTicks: 150,
+    bedSlow: 0.3,
     affects: 'all',
   }),
   spur: Object.freeze({
@@ -312,6 +328,15 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         resolveTick: null,
         gusts: 0,
       });
+    } else if (htype === 'vent') {
+      const off = Math.max(0, Math.min(T.cycleTicks - T.telegraphTicks, params.offset ?? 0));
+      h = registry.spawn({
+        ...base,
+        radius: T.radius,
+        nextEruptTick: tick + T.cycleTicks - off,
+        resolveTick: null,
+        erupts: 0,
+      });
     } else if (htype === 'rockfall') {
       const seed = hash(getSeed() >>> 0, 0x70ccf011 ^ ((params.room ?? 0) * 977) ^ ((params.layoutId ?? 0) * 131));
       const schedule = [];
@@ -442,6 +467,14 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
           if (!laneLocal(h, e.x, e.z).inside) continue;
           walkStep(e, h.dirX * step, h.dirZ * step, e.radius);
         }
+      } else if (h.htype === 'vent') {
+        // The bed of cinders: a slow while it smoulders (bosses never).
+        if (h.phase !== 'active') continue;
+        for (const e of all) {
+          if (!isMobile(e) || !isGround(e) || e.kind === 'stag' || e.boss === true) continue;
+          if (Math.hypot(e.x - h.x, e.z - h.z) > h.radius) continue;
+          lease(e, 'slow', HAZARD_TYPES.vent.bedSlow, tick, h.id);
+        }
       } else if (h.htype === 'gust') {
         if (h.phase !== 'active') continue;
         const step = HAZARD_TYPES.gust.pushSpeed * TICK_DT;
@@ -500,6 +533,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
       else if (h.htype === 'rockfall') stepRockfall(h, tick);
       else if (h.htype === 'gravefire') stepGravefire(h, tick);
       else if (h.htype === 'gust') stepGust(h, tick);
+      else if (h.htype === 'vent') stepVent(h, tick);
       else if (h.htype === 'spur') stepSpur(h, tick);
     }
   }
@@ -624,6 +658,42 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
       h.phase = 'idle';
       h.resolveTick = null;
       events.emit(tick, 'gust_calm', { id: h.id });
+    }
+  }
+
+  // Cinder vent: idle -> 60-tick Ember ring -> eruption (12 once, every body
+  // inside) -> 150-tick bed of cinders (the slow lives in continuous()) ->
+  // idle. The eruption is reserved on the shared clock.
+  function stepVent(h, tick) {
+    const T = HAZARD_TYPES.vent;
+    if (h.phase === 'idle' && tick >= h.nextEruptTick - T.telegraphTicks) {
+      const r = reserve(tick, Math.max(h.nextEruptTick, tick + T.telegraphTicks));
+      h.phase = 'telegraph';
+      h.resolveTick = r;
+      h.phaseUntilTick = r;
+      h.telegraphStartTick = tick;
+      emitTelegraph(h, tick, h.x, h.z, h.radius, r);
+    } else if (h.phase === 'telegraph' && tick >= h.resolveTick) {
+      const victims = hurt(h, h.x, h.z, h.radius, T.damage);
+      h.phase = 'active';
+      h.phaseUntilTick = tick + T.bedTicks;
+      h.erupts += 1;
+      events.emit(tick, 'hazard_resolve', {
+        id: h.id,
+        htype: h.htype,
+        x: r2(h.x),
+        z: r2(h.z),
+        radius: h.radius,
+        victims,
+        telegraphTicks: tick - (h.telegraphStartTick ?? tick),
+        erupt: true,
+      });
+      events.emit(tick, 'screenshake', { cause: 'vent', amp: SCREENSHAKE.amp * 0.5, durationSec: SCREENSHAKE.durationSec, x: r2(h.x), z: r2(h.z) });
+      h.nextEruptTick = tick + T.cycleTicks;
+    } else if (h.phase === 'active' && tick >= h.phaseUntilTick) {
+      h.phase = 'idle';
+      h.resolveTick = null;
+      events.emit(tick, 'vent_cool', { id: h.id });
     }
   }
 
@@ -941,6 +1011,22 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         h.resolveTick = null;
         h.nextGustTick = tick + T.cycleTicks;
       }
+    } else if (h.htype === 'vent') {
+      const T = HAZARD_TYPES.vent;
+      if (phase === 'telegraph') {
+        h.phase = 'idle';
+        h.nextEruptTick = tick + T.telegraphTicks;
+        stepVent(h, tick);
+      } else if (phase === 'active') {
+        h.phase = 'telegraph';
+        h.resolveTick = tick;
+        h.telegraphStartTick = tick;
+        stepVent(h, tick);
+      } else {
+        h.phase = 'idle';
+        h.resolveTick = null;
+        h.nextEruptTick = tick + T.cycleTicks;
+      }
     } else if (h.htype === 'rockfall') {
       if (phase === 'telegraph' || phase === 'active') {
         h.telegraph = null;
@@ -1006,6 +1092,7 @@ export function createHazardSystem({ registry, events, combat, getTick, getSeed 
         resolveTick: h.resolveTick ?? null,
         ...(h.lane && h.htype !== 'gust' ? { lane: { ...h.lane }, stopped: tick < h.stoppedUntilTick, stoppedUntilTick: h.stoppedUntilTick, nextSurgeTick: h.nextSurgeTick } : {}),
         ...(h.htype === 'gust' ? { lane: { ...h.lane }, nextGustTick: h.nextGustTick, gusts: h.gusts } : {}),
+        ...(h.htype === 'vent' ? { nextEruptTick: h.nextEruptTick, erupts: h.erupts } : {}),
         ...(h.vents ? { vents: h.vents.map((v) => ({ x: v.x, z: v.z, phase: v.phase })), cycleStart: h.cycleStart } : {}),
         ...(h.htype === 'rockfall' ? { next: h.schedule[h.next] ?? null, drops: h.drops, telegraph: h.telegraph ? { ...h.telegraph } : null } : {}),
         ...(h.htype === 'spur' ? { next: h.schedule[h.next] ?? null, spurs: h.spurs, telegraph: h.telegraph ? { ...h.telegraph } : null } : {}),

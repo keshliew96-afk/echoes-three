@@ -9,10 +9,23 @@
 // Hearth-Fire. The song has SEVEN verses and the story so far recovers five
 // (Levels I to V; the Sky verse since the Spire's bosses), so a future Act adds a chapter, a verse and its two
 // bosses here without rewriting what came before (docs/STORY.md "Hooks").
+import { ACT_IDS } from './levels.js';
 
 // The number of verses the whole song has. Verses beyond the levels that
 // exist stay blank on the Story so far page: the room left for future Acts.
 export const TOTAL_VERSES = 7;
+
+// THE EMBER KILN's chapter (docs/KILN.md, content plan 5 slice 7): the other
+// Level V road, act 6 in data. A scaffold until slice 8 names its bosses;
+// exported so tools/i18n-extract.mjs collects it with or without the flag.
+export const KILN_CHAPTER = Object.freeze({
+  level: 6,
+  verse: 'flame',
+  name: 'Flame@@verse',
+  title: 'Chapter V · The Ember Kiln',
+  summary:
+    'Where the Heart’s road forks below the Spire, the other way climbs to the Ember Kiln, where the gods fired the first bells. Every bell was tuned to the note of its fire, and the fire never went out. The hollow song found it still burning and learned to keep it. Whatever keeps the Kiln now, felling it frees the Verse of Flame, the note every bell was tuned to.',
+});
 
 // One chapter per campaign level. A level's verse is held once that level
 // has been cleared (profile records.levelClears). `name` carries an @@
@@ -59,6 +72,9 @@ export const CHAPTERS = Object.freeze([
     summary:
       'Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.',
   },
+  // THE EMBER KILN: its chapter joins only while the Kiln plays (the ?act6=1
+  // preview), so the Story so far page never shows it before then.
+  ...(ACT_IDS.includes(6) ? [KILN_CHAPTER] : []),
 ]);
 
 export const chapterFor = (level) => CHAPTERS.find((c) => c.level === Number(level)) ?? null;
@@ -339,8 +355,12 @@ export const ENDING = Object.freeze({
   barrow: { text: 'Wick, at the hearth: “Below the Barrow, something is still singing.”' },
   heart: { text: 'The Heart is quiet. Four verses burn in the hearth. Three are still missing, and somewhere above the world, the gods have stopped clapping.' },
   spire: { text: 'The bell rings in the gods’ own belfry, and the silence breaks. Five verses burn in the hearth. Two are still missing, and above the Spire, for the first time, the gods stand up.' },
+  // THE EMBER KILN (docs/KILN.md): the Kiln road's ending, a scaffold until
+  // slice 8 gives the road its bosses.
+  kiln: { text: 'The bell rings out over the gods’ own kiln, and every bell ever cast there rings back. Five verses burn in the hearth. Two are still missing, and the oldest fire in the world burns true again.' },
 });
-export const endingFor = (levels) => (levels >= 5 ? ENDING.spire : levels >= 4 ? ENDING.heart : ENDING.barrow);
+// `road`: the Level V road the campaign took ('kiln' ends on the Kiln's line).
+export const endingFor = (levels, road = null) => (levels >= 5 ? (road === 'kiln' ? ENDING.kiln : ENDING.spire) : levels >= 4 ? ENDING.heart : ENDING.barrow);
 
 // The Chorus on a defeat card: the gods are an audience. Picked by how the
 // party fell; the seed picks among the general lines so a re-render is stable.
