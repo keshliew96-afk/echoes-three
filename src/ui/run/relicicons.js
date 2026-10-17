@@ -13,6 +13,10 @@ const RELIC_SVG = {
   // round tongue and two rings of sound.
   bell_rope: `<path d="M16 3 Q11 6 16 9 Q21 12 16 15" ${STROKE}/><path d="M10 25 Q10 16 16 16 Q22 16 22 25 Z" ${STROKE}/><path d="M8 25 L24 25" ${STROKE}/><circle cx="16" cy="28" r="2" ${FILL}/>`,
   verdigris_clapper: `<path d="M16 4 L16 19" ${STROKE}/><circle cx="16" cy="23" r="4" ${FILL}/><path d="M8 16 Q5 23 8 30 M24 16 Q27 23 24 30" ${STROKE}/>`,
+  // THE DUSKWING: a fig split open with its seeds; a crescent moon with a
+  // fang hanging from its horn.
+  ripe_fig: `<path d="M16 4 Q15 7 16 9 Q8 12 8 20 Q8 28 16 28 Q24 28 24 20 Q24 12 16 9" ${STROKE}/><path d="M16 13 Q11 17 12 22 Q16 26 20 22 Q21 17 16 13 Z" ${FILL}/>`,
+  moonless_fang: `<path d="M20 4 A12 12 0 1 0 20 28 A9 9 0 1 1 20 4 Z" ${STROKE}/><path d="M22 18 L25 27 L28 18" ${STROKE}/>`,
   // A whetstone bar with a blade edge sliding across it.
   whetstone: `<rect x="6" y="17" width="20" height="8" rx="2" ${STROKE}/><path d="M9 13 L24 6" ${STROKE}/><path d="M11 12 L13 15" ${STROKE}/>`,
   // A curved fang with an ember at its tip.

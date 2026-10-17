@@ -1,6 +1,7 @@
 # The Duskwing (Sable)
 
-v0.5.293 (slice 4), v0.5.294 (slice 5). Content plan 5, slices 4 and 5
+v0.5.293 (slice 4), v0.5.294 (slice 5), in the world v0.5.295 (slice 6).
+Content plan 5, slices 4, 5 and 6
 (`/mnt/project-files/plan/CONTENT_PLAN_5.md`, "Duskwing playable"). Sable is
 a fruit bat from the dark under the roads and a **melee diver**: he drops
 onto a pack from out of reach, bites the life out of it and puts its lights
@@ -32,9 +33,9 @@ All numbers are first guesses, in the units of the skill table
 
 ## Who gets him
 
-- **Free from the start** in this slice (`DUSKWING_FREE` in
-  `src/data/lineup.js`); slice 6 swaps in the real unlock. `?sable=1` opens
-  him the way slice 6's unlock will (`forceDuskwing`).
+- **Freed with the Verse of Heart** since slice 6: the first Level IV clear
+  on this player's profile, or any Level IV boss felled (see "Unlock"
+  below). Slices 4 and 5 had him free from the start.
 - Campaigns only (Endless, Daily and Boss Rush included). The tutorial, the
   legacy single-level run and `?room=` stay the default four.
 - Four seats, now up to seven classes (docs/LINEUP.md). The picker chooses
@@ -213,6 +214,70 @@ gate, every node's verdicts, each new skill on training dummies, each node
 on a skill it works on, the AI playing all nine actives, pulling out and
 going back in, and a mid-fight save that continues bit-identically.
 
+## Unlock (slice 6)
+
+- `DUSKWING_FREE` in `src/data/lineup.js` is now `false`. He is a choice
+  once the profile holds the `duskwing` feat (`meta.feats`, FEATS in
+  `src/data/unlocks.js`): the first campaign Level IV clear stores it
+  mid-run (`save/index.js`, with a toast: "The Duskwing joins the party.
+  Sable perches by the hearth."), and `featsOf` also counts a recorded
+  Level IV clear or any Level IV boss felled (the Hollow Cantor, the Geode
+  Colossus, the Vein Weaver; `HEART_BOSSES`), so a save from before this
+  build that has done either frees him on load. `main.js` sets the gate
+  from the profile (`setDuskwingUnlocked`); `?sable=1` opens him on a
+  harness boot (`forceDuskwing`).
+- A profile that picked him while he was free (v0.5.293 and v0.5.294) and
+  has not cleared Level IV is locked again, exactly as Tolly was in her
+  slice 6: the gate reads only the Verse of Heart. A lineup or team setting
+  that already holds him stays valid (`normalizeLineup` never reads the
+  gate); the picker and the team view just stop offering him.
+- Exactly Rill's and Tolly's rules: the flag gates only CHOOSING him (the
+  class picker, the team view, the lobby roster), so the sim never depends
+  on a profile. Locked, his card shows LOCKED with "How to free him"; the
+  team view and the lobby leave him out; at camp his rig is hidden.
+- Co-op: each player frees him on their own profile (a guest hears the
+  host's Level IV clear and frees him too).
+
+## Sable in the world (slice 6)
+
+All of it is profile data, presentation, or campaign-only relics, so the
+nine goldens are untouched.
+
+- **Camp talk.** Once freed, walk up to him at his perch on the east side of
+  the fire (while he does not join the run) and E talks (the hero-talk path
+  in `src/scenes/campnpcs.js`, beside Rill and Tolly). His first line is for
+  four verses or fewer (he joins with Heart), then one for five verses
+  (`SABLE_LINES` in `src/data/story.js`), with a tip line on further talks.
+  Wick gains a line about him.
+- **Story.** The Hollow Voice speaks to him the first time he stands in a
+  Heart boss room (after its boss line; seen key `voice_sable`); the
+  Level IV clear card adds his line (freed, or flying along when he is in
+  the party); he joins the People list on the Journal's Story page once
+  freed. His relics and deeds fill the Journal's Relics and Deeds pages
+  like everyone's.
+- **Kit.** Night Roost, 80 Embers once he is freed: Echo Screech, Talon
+  Rake, Bat Swarm and Flit.
+- **Tints.** Gloaming (30 Embers once freed: the blue of the last light)
+  and Heartblood (free for felling the Hollow Cantor with him in the party:
+  the Heart's own red). Feat `sable_cantor`.
+- **Deeds.** Sable's Night (25): clear a level with the Duskwing in the
+  party. Lights Out (30): blind 6 enemies with one cast (`blindBest`,
+  counted by `src/save/deedrun.js` from `status_apply` blinds that share a
+  tick and a caster; blind is his status alone).
+- **Class relics** (offered only while he stands in the party, so never to
+  the default four; no dice, so holding them never moves the relic stream):
+  - Ripe Fig (common): his Dusk Dive heals him 3 HP for every enemy its
+    landing strikes.
+  - Moonless Fang (rare): every fourth blow he lands on a blinded enemy
+    bites again for 8 (`fangHits` saved with the run).
+  Both have heirlooms. Effects in `src/render/vfx/signature.js`: Ripe Fig
+  bursts rose at his chest and closes one pale ring on him per enemy struck,
+  a beat apart, with juice drops falling; Moonless Fang crosses two pale
+  crescents over the blinded enemy with a rose flash and a puff of ink.
+  Sounds reuse `sparkle` and his own `dk_bite`.
+- **Tip.** The first enemy blinded in a fight opens a "Dive, then darken"
+  tip.
+
 ## Checks
 
 - `node tools/duskwing-probe.mjs` (headless, 51 checks): his data and gate,
@@ -226,4 +291,14 @@ going back in, and a mid-fight save that continues bit-identically.
 - `node tools/duskwing-browser.mjs` (needs `npm run dev`): the seven cards,
   "Who joins the team?", the camp, and a real room where he dives, blinds
   and bites; `--lang <code>` takes only the picker in that language.
+- `node tools/duskwing-world-probe.mjs` (headless, 54 checks, slice 6): the
+  unlock (locked fresh, the first Level IV clear frees him once, old saves
+  and the Level IV bosses free him, Rill's and Tolly's gates untouched), his
+  kit and tints, his deeds and the blind tracker, his two relics in a real
+  fight (and never offered to the default four) with a mid-fight save
+  continuing bit-identically, and the story data.
+- `node tools/duskwing-world-browser.mjs` (needs Vite on 5199) takes the
+  slice 6 screenshots under `/mnt/project-files/duskwing-world/`.
+- The older Duskwing, Bellwright and Tidecaller browser probes boot with
+  `?sable=1` since slice 6.
 - The nine goldens (`tools/gntM2-goldens.mjs`) stay byte-identical.

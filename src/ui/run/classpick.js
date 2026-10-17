@@ -20,9 +20,11 @@
 // THE BELLWRIGHT (docs/BELLWRIGHT.md): a sixth card, Tolly the beetle, marked
 // NEW. Since slice 6 she is locked the same way until the profile frees the
 // Verse of Stone (the first Level III clear, docs/BELLWRIGHT.md "Unlock").
-// THE DUSKWING (docs/DUSKWING.md): a seventh card, Sable the bat, marked NEW
-// and free from the start in this slice (content plan 5, slice 4). Seven
-// cards set the grid tighter (.cs-many) so the names still fit one line.
+// THE DUSKWING (docs/DUSKWING.md): a seventh card, Sable the bat, marked NEW.
+// Since content plan 5 slice 6 he is locked the same way until the profile
+// frees the Verse of Heart (the first Level IV clear, docs/DUSKWING.md
+// "Unlock"). Seven cards set the grid tighter (.cs-many) so the names still
+// fit one line.
 // Blocking: the single-player sim pauses while it is open.
 import { px } from '../../app/style.js';
 import { PALETTE as P, CLASS_ACCENTS } from '../../data/palette.js';
@@ -47,10 +49,13 @@ const ROLE = Object.freeze({
   bellwright: () => t('Holds ground with bells: hang up to three that toll on the beat, then ring them all at once.'),
   duskwing: () => t('Dives into the pack from the dark: fast bites that steal life, and a night that blinds them. Light on health, so keep moving.'),
 });
-// What frees a locked class (its card's "How to free her" panel).
+// What frees a locked class (its card's "How to free her" panel; "him" for
+// THE DUSKWING).
+const FREE_HIM = new Set(['duskwing']);
 const FREE_HER = {
   tidecaller: () => t('Rill was singing the sluices shut when the hollow song took the Mill. Fell the Level II boss, the Drowned Heron or the Millwheel, and she joins the party.'),
   bellwright: () => t('Tolly was ringing the Barrow\'s hours when the hollow song cracked its bells. Fell the Level III boss, the Barrow Wyrm or the Lich Ram, and she joins the party.'),
+  duskwing: () => t('Sable was roosting over the Heart when the hollow song began to beat through it. Fell the Level IV boss, the Hollow Cantor or the Geode Colossus, and he joins the party.'),
 };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
@@ -286,7 +291,7 @@ export function createClassesScreen(ctx) {
           head +
           `<div class="cs-role">${esc(ROLE[cls]())}</div>` +
           `<div class="cs-stats"><span>${t('Health <b>{hp}</b>', { hp: st.maxHp })}</span><span>${t('Speed <b>{speed}</b>', { speed: st.moveSpeed })}</span></div>` +
-          `<div class="cs-kit"><h4>${esc(t('HOW TO FREE HER'))}</h4>${esc(FREE_HER[cls] ? FREE_HER[cls]() : '')}</div>` +
+          `<div class="cs-kit"><h4>${esc(FREE_HIM.has(cls) ? t('HOW TO FREE HIM') : t('HOW TO FREE HER'))}</h4>${esc(FREE_HER[cls] ? FREE_HER[cls]() : '')}</div>` +
           `<div class="cs-foot">${esc(t('🔒 Locked'))}</div>`;
       } else {
         const kit = wornKit(cls);

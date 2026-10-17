@@ -45,7 +45,7 @@ import {
   metaOf,
 } from './slots.js';
 import { createProfileStore, scoreRun } from './profile.js';
-import { loadoutBoons, loadoutTints, tidecallerFreed, bellwrightFreed } from '../data/unlocks.js';
+import { loadoutBoons, loadoutTints, tidecallerFreed, bellwrightFreed, duskwingFreed } from '../data/unlocks.js';
 import { createDeedRunTracker } from './deedrun.js';
 import { JOURNAL_ALIAS, ENEMY_JOURNAL_IDS, BOSS_JOURNAL_IDS } from '../data/journal.js';
 import { createThumbnailer } from './thumbnail.js';
@@ -1125,6 +1125,18 @@ export function createSaveSystem({
         }
       }
     }
+    // THE DUSKWING (docs/DUSKWING.md "Unlock"): the first Level IV clear
+    // frees the Verse of Heart, and Sable joins.
+    if (ev.level === 4 && ev.campaign && profileStore.noteFeat('duskwing')) {
+      notify(profileListeners, 'feat');
+      if (app && typeof app.toast === 'function') {
+        try {
+          app.toast(t('The Duskwing joins the party. Sable perches by the hearth.'), { tone: 'good', ms: 6000 });
+        } catch {
+          /* UI only */
+        }
+      }
+    }
   });
   // THE TIDECALLER: High Water (a deed) wants the most soaked enemies one
   // cast crashed. A cast's crashes share its tick, seat and skill.
@@ -1587,6 +1599,11 @@ export function createSaveSystem({
       const p = profileStore.get();
       return bellwrightFreed(p.meta, p.records);
     },
+    // THE DUSKWING: has this profile freed Sable (the Verse of Heart)?
+    duskwingFreed: () => {
+      const p = profileStore.get();
+      return duskwingFreed(p.meta, p.records);
+    },
     noteFeat: (id) => {
       const ok = profileStore.noteFeat(id);
       if (ok) notify(profileListeners, 'feat');
@@ -1642,6 +1659,7 @@ export function createSaveSystem({
     // THE TIDECALLER probes: free Rill (what the first Level II clear does).
     tidecallerFreed: () => api.tidecallerFreed(),
     bellwrightFreed: () => api.bellwrightFreed(),
+    duskwingFreed: () => api.duskwingFreed(),
     noteFeat: (id) => api.noteFeat(id),
     // UNLOCKS round two probes: record and award a made-up run (its level
     // clears and records, then its Embers, deeds and marks), as a finished

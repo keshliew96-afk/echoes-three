@@ -81,6 +81,10 @@ export const RELICS = Object.freeze({
   // relics, offered only while she stands in the party. No dice either.
   bell_rope: { name: 'Bell-Rope', rarity: 'common', cls: 'bellwright', text: "The Bellwright's Peals and Carillons heal her for 3 HP for every bell they ring.", rope: Object.freeze({ heal: 3 }) },
   verdigris_clapper: { name: 'Verdigris Clapper', rarity: 'rare', cls: 'bellwright', text: "Every fourth toll of the Bellwright's bells that strikes an enemy rings again: 6 damage to every enemy in that bell's ring.", clapper: Object.freeze({ every: 4, dmg: 6 }) },
+  // THE DUSKWING (docs/DUSKWING.md "Sable in the world"): his two class
+  // relics, offered only while he stands in the party. No dice either.
+  ripe_fig: { name: 'Ripe Fig', rarity: 'common', cls: 'duskwing', text: "The Duskwing's Dusk Dive heals him for 3 HP for every enemy it strikes where he lands.", fig: Object.freeze({ heal: 3 }) },
+  moonless_fang: { name: 'Moonless Fang', rarity: 'rare', cls: 'duskwing', text: 'Every fourth blow the Duskwing lands on a blinded enemy bites again for 8.', fang: Object.freeze({ every: 4, dmg: 8 }) },
   // Batch 4 (docs/RELICS.md "Batch 4"): relics that answer the rooms of
   // content plan 3 (Escort, Hold, champions, keys, vaults, objective rooms,
   // event rooms) and the curses themselves.
@@ -248,6 +252,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let oathCount = 0;
   let charmHits = 0; // THE TIDECALLER: Millrace Charm's count of soaked hits
   let tollHits = 0; // THE BELLWRIGHT: Verdigris Clapper's count of striking tolls
+  let fangHits = 0; // THE DUSKWING: Moonless Fang's count of blows on the blind
   let ring = null; // batch 4: the live Hold ring { x, z, r } (Warding Chalk)
   let later = []; // batch 5: procs that land on a later tick ({ at, ... })
   let trophies = 0; // batch 5: champions the party felled this run (Trophy Cord)
@@ -292,6 +297,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     oathCount = 0;
     charmHits = 0;
     tollHits = 0;
+    fangHits = 0;
     ring = null;
     later = [];
     trophies = 0;
@@ -437,6 +443,14 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         pending.push({ kind: 'charm', from: t.id, x: t.x, z: t.z, src: atk ? atk.id : null });
       }
     }
+    // THE DUSKWING: Moonless Fang, his own blows on a blinded enemy.
+    if (cls === 'duskwing' && has('moonless_fang') && STATUS.isBlinded(t, getTick())) {
+      fangHits += 1;
+      if (fangHits >= RELICS.moonless_fang.fang.every) {
+        fangHits = 0;
+        pending.push({ kind: 'fang', target: t.id, src: atk.id });
+      }
+    }
   });
   // Batch 5: Dulled Edge's beat. A party crit under the curse emits a
   // cosmetic curse_proc (a blunted spark, a dull clink) at most once every
@@ -465,6 +479,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     if (!on || !live() || !has('bell_rope') || ev.classId !== 'bellwright' || !Array.isArray(ev.bells)) return;
     const n = ev.bells.filter((b) => b && b.id !== null && b.id !== undefined).length;
     if (n > 0 && registry.byId(ev.id)) pending.push({ kind: 'rope', target: ev.id, bells: n });
+  });
+  // THE DUSKWING: Ripe Fig, one heal per enemy his Dusk Dive's landing struck.
+  events.on('ally_cast', (ev) => {
+    if (!on || !live() || !has('ripe_fig') || ev.classId !== 'duskwing' || ev.skill !== 'dusk_dive' || !Array.isArray(ev.targets)) return;
+    if (ev.targets.length > 0 && registry.byId(ev.id)) pending.push({ kind: 'fig', target: ev.id, struck: ev.targets.length });
   });
   // ... and Verdigris Clapper: a toll of one of her bells that struck someone.
   events.on('azone_tick', (ev) => {
@@ -758,6 +777,20 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         if (!t || !(t.hp > 0)) continue;
         combat.applyHeal(t, RELICS.bell_rope.rope.heal * p.bells, { healer: t.id, source: 'bell_rope' });
         events.emit(getTick(), 'relic_proc', { relic: 'bell_rope', target: t.id, bells: p.bells, x: r2(t.x), z: r2(t.z) });
+      } else if (p.kind === 'fig') {
+        const t = registry.byId(p.target);
+        if (!t || !(t.hp > 0)) continue;
+        combat.applyHeal(t, RELICS.ripe_fig.fig.heal * p.struck, { healer: t.id, source: 'ripe_fig' });
+        events.emit(getTick(), 'relic_proc', { relic: 'ripe_fig', target: t.id, struck: p.struck, x: r2(t.x), z: r2(t.z) });
+      } else if (p.kind === 'fang') {
+        const e = registry.byId(p.target);
+        const s = registry.byId(p.src);
+        if (!hostileLive(e)) continue;
+        const dx = s ? e.x - s.x : 0;
+        const dz = s ? e.z - s.z : 0;
+        const l = Math.hypot(dx, dz) || 1;
+        const r = combat.applyDamage(e, RELICS.moonless_fang.fang.dmg, { delivery: 'skill', shape: 'melee_arc', dirX: dx / l, dirZ: dz / l, attacker: null, source: 'moonless_fang' });
+        events.emit(getTick(), 'relic_proc', { relic: 'moonless_fang', target: e.id, from: s ? s.id : null, amount: r ? r2(r.amount) : 0, x: r2(e.x), z: r2(e.z) });
       } else if (p.kind === 'clapper') {
         const K = RELICS.verdigris_clapper.clapper;
         const near = registry
@@ -1179,6 +1212,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       ...(Object.keys(oathAt).length ? { oathAt: { ...oathAt } } : {}),
       ...(charmHits ? { charmHits } : {}),
       ...(tollHits ? { tollHits } : {}),
+      ...(fangHits ? { fangHits } : {}),
       ...(ring ? { ring: { ...ring } } : {}),
       ...(later.length ? { later: later.map((p) => ({ ...p })) } : {}),
       ...(trophies ? { trophies } : {}),
@@ -1209,6 +1243,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     oathAt = d.oathAt && typeof d.oathAt === 'object' ? { ...d.oathAt } : {};
     charmHits = Number.isFinite(d.charmHits) ? d.charmHits : 0;
     tollHits = Number.isFinite(d.tollHits) ? d.tollHits : 0;
+    fangHits = Number.isFinite(d.fangHits) ? d.fangHits : 0;
     ring = d.ring && Number.isFinite(d.ring.x) && Number.isFinite(d.ring.z) ? { x: d.ring.x, z: d.ring.z, r: Number(d.ring.r) || 0, t0: Number(d.ring.t0) || 0 } : null;
     pending = Array.isArray(d.pending) ? d.pending.filter((p) => p && typeof p.kind === 'string').map((p) => ({ ...p })) : [];
     later = Array.isArray(d.later) ? d.later.filter((p) => p && typeof p.kind === 'string' && Number.isFinite(p.at)).map((p) => ({ ...p })) : [];

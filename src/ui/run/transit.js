@@ -17,7 +17,7 @@ import { service } from '../../app/registry.js';
 import { bossFor, levelFor } from '../../data/levels.js';
 import { endlessBossIndex, beyondCampaign, CYCLE } from '../../data/endless.js';
 import { t, tn } from '../../i18n/index.js';
-import { chapterFor, RILL_CLEAR, TOLLY_CLEAR } from '../../data/story.js';
+import { chapterFor, RILL_CLEAR, TOLLY_CLEAR, SABLE_CLEAR } from '../../data/story.js';
 import { activeLineup } from '../../data/lineup.js';
 import { CAMPAIGN_LEVELS } from '../../data/campaign.js';
 
@@ -43,6 +43,13 @@ export function tollyLine(level, depth = null) {
   const ch = chapterFor(level);
   if (!ch || ch.verse !== 'stone' || (depth !== null && depth > CAMPAIGN_LEVELS.length)) return '';
   return t(activeLineup().includes('bellwright') ? TOLLY_CLEAR.along.text : TOLLY_CLEAR.freed.text);
+}
+// THE DUSKWING (docs/DUSKWING.md): the Level IV clear card's line about
+// Sable, the same way.
+export function sableLine(level, depth = null) {
+  const ch = chapterFor(level);
+  if (!ch || ch.verse !== 'heart' || (depth !== null && depth > CAMPAIGN_LEVELS.length)) return '';
+  return t(activeLineup().includes('duskwing') ? SABLE_CLEAR.along.text : SABLE_CLEAR.freed.text);
 }
 
 const skillCount = (b) => (b.skills || []).filter(Boolean).length;
@@ -216,7 +223,7 @@ export function createTransitScreen({ run }) {
           ? t('The campaign is won. The road does not end; it turns back into the dark wood, deeper than before.')
           : boss ? boss() : t('The way ahead opens.');
       const vd = depth !== null ? depth - 1 : null;
-      verseEl.textContent = [verseLine(card.from, vd), rillLine(card.from, vd), tollyLine(card.from, vd)].filter(Boolean).join(' ');
+      verseEl.textContent = [verseLine(card.from, vd), rillLine(card.from, vd), tollyLine(card.from, vd), sableLine(card.from, vd)].filter(Boolean).join(' ');
       nextRow.style.display = '';
       const name = card.name ? t(card.name) : card.name;
       nextName.textContent =

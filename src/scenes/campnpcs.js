@@ -19,6 +19,9 @@
 //   Tolly, the Bellwright     the same (docs/BELLWRIGHT.md), from her spot on
 //                             the west side of the fire, once the Verse of
 //                             Stone frees her.
+//   Sable, the Duskwing       the same (docs/DUSKWING.md), from his perch on
+//                             the east side of the fire, once the Verse of
+//                             Heart frees him.
 //
 // Presentation only: nothing here writes the sim except the peddler's
 // collider, which the camp hands the sim with its own (camp mode only, so a
@@ -28,7 +31,7 @@ import { Group } from 'three';
 import { PALETTE } from '../data/palette.js';
 import { t } from '../i18n/index.js';
 import { createNpc } from '../render/npcs/index.js';
-import { NPCS, KEEPER_LINES, PEDDLER_LINES, CHRONICLER_LINES, WARDENS, versesHeld, RILL_LINES, rillLineFor, KEEPER_RILL_LINE, TOLLY_LINES, tollyLineFor, KEEPER_TOLLY_LINE } from '../data/story.js';
+import { NPCS, KEEPER_LINES, PEDDLER_LINES, CHRONICLER_LINES, WARDENS, versesHeld, RILL_LINES, rillLineFor, KEEPER_RILL_LINE, TOLLY_LINES, tollyLineFor, KEEPER_TOLLY_LINE, SABLE_LINES, sableLineFor, KEEPER_SABLE_LINE } from '../data/story.js';
 import { CAMPAIGN_LEVELS } from '../data/campaign.js';
 import { HEARTH, CAMP_SPOTS } from '../env/camp/spec.js';
 import { MAP_TABLE } from '../campaign/maptable.js';
@@ -52,6 +55,8 @@ const RILL_SEATED = 0.9; // her rig within this of her spot (not trailing the pa
 const HERO_TALK = Object.freeze({
   rill: Object.freeze({ cls: 'tidecaller', lineFor: rillLineFor, extra: RILL_LINES.extra.text }),
   tolly: Object.freeze({ cls: 'bellwright', lineFor: tollyLineFor, extra: TOLLY_LINES.extra.text }),
+  // THE DUSKWING's Sable.
+  sable: Object.freeze({ cls: 'duskwing', lineFor: sableLineFor, extra: SABLE_LINES.extra.text }),
 });
 const TALK_MS = 1600;
 
@@ -164,7 +169,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
     if (n.id === 'keeper') {
       const base = KEEPER_LINES.byVerses.text[Math.min(verses, KEEPER_LINES.byVerses.text.length - 1)];
       if (n.talkIdx < 0) return base;
-      const all = [base, ...KEEPER_LINES.extra.text, ...(heroOpen('tidecaller') ? [KEEPER_RILL_LINE.text] : []), ...(heroOpen('bellwright') ? [KEEPER_TOLLY_LINE.text] : [])];
+      const all = [base, ...KEEPER_LINES.extra.text, ...(heroOpen('tidecaller') ? [KEEPER_RILL_LINE.text] : []), ...(heroOpen('bellwright') ? [KEEPER_TOLLY_LINE.text] : []), ...(heroOpen('duskwing') ? [KEEPER_SABLE_LINE.text] : [])];
       return all[(n.talkIdx + 1) % all.length]; // each E moves on a line
     }
     if (n.id === 'peddler') {

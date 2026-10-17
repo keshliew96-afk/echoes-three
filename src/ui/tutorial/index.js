@@ -44,7 +44,7 @@ import { tidecallerOpen, bellwrightOpen, duskwingOpen, rosterGrown } from '../..
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked', 'escort', 'hold', 'bells', 'secret']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked', 'escort', 'hold', 'bells', 'secret', 'night']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -148,6 +148,9 @@ function tipText(id) {
     // SECRET ROOMS (docs/SECRET_ROOMS.md): mid-fight, the first cracked wall.
     case 'secret':
       return { title: t('The cracked wall'), body: t('A cold draught leaks through a cracked wall. Break it with a bomb or a heavy skill before the last foe falls, and once the room is clear a hidden chamber opens: treasure, a relic, tonics, a page for the Journal, or something rarer.') };
+    // THE DUSKWING (docs/DUSKWING.md): mid-fight, the first enemy blinded.
+    case 'night':
+      return { title: t('Dive, then darken'), body: t('Sable\'s Nightfall blinds the enemies round him for 2 s: a blinded enemy starts no attack and gropes about at half speed (never a boss). Dive into a pack, put its lights out at once, then bite through it while his Night Hunger keeps him standing.') };
     case 'bells':
       return { title: t('Hang, then ring'), body: t('Tolly\'s bells toll once a second and slow whatever stands in their ring; she can hang three. Her Peal rings every bell at once, and her Clapper hits half again as hard inside a ring, so hang the bells where the fight will be, then ring them.') };
     case 'relic':
@@ -525,6 +528,11 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
   });
   // THE BELLWRIGHT: the bells tip waits for the first bell it sees hung.
   let bellSeen = false;
+  // THE DUSKWING: the night tip waits for the first enemy it sees blinded.
+  let blindSeen = false;
+  bus.on('status_apply', (ev) => {
+    if (ev && ev.status === 'blind') blindSeen = true;
+  });
   bus.on('azone_spawn', (ev) => {
     if (ev && ev.bell && ev.classId === 'bellwright') bellSeen = true;
   });
@@ -645,7 +653,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       return;
     }
     if (!tipsOn || step || shown) return;
-    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : !tipsSeen().includes('soaked') && crashSeen ? 'soaked' : !tipsSeen().includes('bells') && bellSeen ? 'bells' : !tipsSeen().includes('secret') && shutWall() ? 'secret' : null;
+    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : !tipsSeen().includes('soaked') && crashSeen ? 'soaked' : !tipsSeen().includes('bells') && bellSeen ? 'bells' : !tipsSeen().includes('secret') && shutWall() ? 'secret' : !tipsSeen().includes('night') && blindSeen ? 'night' : null;
     if (!id) return;
     floorTip = { id, until: performance.now() + FLOOR_TIP_MS };
     markTip(id);

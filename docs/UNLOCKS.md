@@ -43,6 +43,8 @@ A run that is abandoned (Quit to Lobby) still pays for what it cleared. A whole 
 | High Water | Crash 5 soaked enemies with one cast | 30 |
 | Tolly's Toll | Clear a level with the Bellwright in the party | 25 |
 | Full Peal | Ring three bells with one Peal or Carillon and strike 6 enemies | 30 |
+| Sable's Night | Clear a level with the Duskwing in the party | 25 |
+| Lights Out | Blind 6 enemies with one cast | 30 |
 
 ## The unlocks (34)
 
@@ -64,8 +66,11 @@ A run that is abandoned (Quit to Lobby) still pays for what it cleared. A whole 
 | Kit | Belltower (Bellwright) | 80 | Tolly freed (the Verse of Stone) | Hang Bell, Peal, Clapper, Tuning Fork |
 | Tint | Silver Peal (Bellwright) | 30 | Tolly freed | Same |
 | Tint | Wyrm Bronze (Bellwright) | free | Fell the Barrow Wyrm with the Bellwright in the party | Same |
+| Kit | Night Roost (Duskwing) | 80 | Sable freed (the Verse of Heart) | Echo Screech, Talon Rake, Bat Swarm, Flit |
+| Tint | Gloaming (Duskwing) | 30 | Sable freed | Same |
+| Tint | Heartblood (Duskwing) | free | Fell the Hollow Cantor with the Duskwing in the party | Same |
 
-**Feats** (docs/TIDECALLER.md): `meta.feats` holds one-off facts that pay nothing but open unlocks (`{ feat: id }` requirements): `tidecaller` (Rill freed: the first Level II clear, or a Level II boss felled) and `rill_heron`; since v0.5.281 also `bellwright` (Tolly freed: the first Level III clear, or a Level III boss felled) and `tolly_wyrm` (docs/BELLWRIGHT.md). Loadouts have a kit and a tint slot for every class that can join the team, the Tidecaller included.
+**Feats** (docs/TIDECALLER.md): `meta.feats` holds one-off facts that pay nothing but open unlocks (`{ feat: id }` requirements): `tidecaller` (Rill freed: the first Level II clear, or a Level II boss felled) and `rill_heron`; since v0.5.281 also `bellwright` (Tolly freed: the first Level III clear, or a Level III boss felled) and `tolly_wyrm` (docs/BELLWRIGHT.md); since v0.5.295 also `duskwing` (Sable freed: the first Level IV clear, or a Level IV boss felled) and `sable_cantor` (docs/DUSKWING.md). Loadouts have a kit and a tint slot for every class that can join the team, the Tidecaller included.
 
 Kits use each class's skills outside its starting pool (CLASS_SKILLS in `src/data/classes.js`; the Healer's from its draft pool), so a kit changes how the opening rooms play without new skill data. Vows reuse the four room curses that reshape a room's numbers (Famine, which works through the relic system's healing factor, is left out). Only one kit per class, one heirloom and one purse tier are worn at a time; vows stack.
 

@@ -58,6 +58,9 @@ function reqLabel(req) {
   // THE BELLWRIGHT (docs/BELLWRIGHT.md).
   if (req.feat === 'bellwright') return t('Free Tolly: fell the Level III boss');
   if (req.feat === 'tolly_wyrm') return t('Fell the Barrow Wyrm with the Bellwright in the party');
+  // THE DUSKWING (docs/DUSKWING.md).
+  if (req.feat === 'duskwing') return t('Free Sable: fell the Level IV boss');
+  if (req.feat === 'sable_cantor') return t('Fell the Hollow Cantor with the Duskwing in the party');
   // ROUND TWO: an unlock a deed opens.
   if (req.deed) return t('Earn the deed {deed}', { deed: DEEDS[req.deed] ? t(DEEDS[req.deed].name) : req.deed });
   return '';

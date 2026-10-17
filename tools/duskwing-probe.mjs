@@ -121,7 +121,7 @@ function secondRoom(W, kit) {
   check(KIT.every((id) => !C.CAMPAIGN_ONLY_NODES.includes(id)) && new Set(abbr).size >= abbr.length - 1 && ids.length === new Set(ids).size, 'no id or key letter collides (the gatedPool node-id gotcha)');
   check(C.MELEE_CLASSES.includes('duskwing') && C.AI_PRIORITY.duskwing && C.CLASS_TECH.duskDrain === 0.08, 'a melee seat with an equip order and Night Hunger at 8%');
   check(same(L.DEFAULT_LINEUP, ['healer', 'tank', 'swordsman', 'archer']) && same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller', 'bellwright', 'duskwing']), 'the default lineup is the old four (Rill, Tolly and Sable at camp)');
-  check(L.DUSKWING_FREE === true && L.duskwingOpen() && L.classOpen('duskwing'), 'free from the start in this slice');
+  check(L.DUSKWING_FREE === false && !L.duskwingOpen() && !L.classOpen('duskwing') && L.forceDuskwing(true) && L.classOpen('duskwing'), 'locked on a fresh profile since slice 6; ?sable=1 opens him for this probe');
   check(!L.tidecallerOpen() && !L.bellwrightOpen() && same(L.parseTeam('tank,tidecaller,duskwing,bellwright'), ['tank', 'duskwing']), 'Rill and Tolly stay locked on a fresh profile; Sable may join');
   check(L.rosterGrown(), 'four open joiners for three ally seats: the team view has a choice');
   check(same(L.plannedLineup('duskwing', ''), SABLE), 'playing him with no team chosen: he joins in the Archer\'s place');
@@ -133,7 +133,7 @@ function secondRoom(W, kit) {
   check(same(L.plannedLineup('healer', 'tidecaller,bellwright,duskwing'), ['healer', 'tidecaller', 'bellwright', 'duskwing']), 'with Rill and Tolly freed all three newcomers can join together');
   L.setTidecallerUnlocked(false);
   L.forceBellwright(false);
-  check(L.forceDuskwing(true) && L.forceDuskwing(false) === true, '?sable=1 (slice 6) opens him; the free flag keeps him open');
+  check(L.forceDuskwing(false) === false && L.forceDuskwing(true), '?sable=1 opens him; without it a fresh profile keeps him locked (slice 6)');
   const PC = await import(u('src/app/playclass.js'));
   check(PC.PLAY_CLASSES.length === 7 && PC.playable('duskwing') && !PC.playable('tidecaller'), 'the picker shows seven cards; Sable playable');
   const MSGS = await import(u('src/net/protocol/messages.js'));

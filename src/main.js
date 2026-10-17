@@ -585,7 +585,7 @@ if (bootParams.slot && bootParams.menuSkip) {
 // whenever the profile changes, another tab's write included).
 import { createUnlocksScreen } from './ui/run/unlocks.js';
 import { setClassTints } from './data/vfx.js';
-import { setTidecallerUnlocked, forceTidecaller, setBellwrightUnlocked, forceBellwright, forceDuskwing } from './data/lineup.js';
+import { setTidecallerUnlocked, forceTidecaller, setBellwrightUnlocked, forceBellwright, setDuskwingUnlocked, forceDuskwing } from './data/lineup.js';
 registerScreen('unlocks', createUnlocksScreen);
 // CLASS SELECT (docs/CLASS_SELECT.md): the camp's class picker (C / the portal prompt's Class chip).
 import { createClassesScreen } from './ui/run/classpick.js';
@@ -639,9 +639,18 @@ if (PLAYABLE) createStory({ app, world, scene: activeScene, params: bootParams }
   };
   applyTolly();
   saveSystem.onProfileChanged(applyTolly);
-  // THE DUSKWING (docs/DUSKWING.md): free from the start in this slice
-  // (DUSKWING_FREE); ?sable=1 opens him on a harness boot once slice 6 locks him.
+  // THE DUSKWING (docs/DUSKWING.md "Unlock"): Sable is a choice once this
+  // profile has freed the Verse of Heart. ?sable=1 opens him on a harness boot.
   if (bootParams.sable) forceDuskwing(true);
+  const applySable = () => {
+    try {
+      setDuskwingUnlocked(saveSystem.duskwingFreed());
+    } catch {
+      /* he stays locked */
+    }
+  };
+  applySable();
+  saveSystem.onProfileChanged(applySable);
 }
 // @gnt:UNLOCKS end
 
