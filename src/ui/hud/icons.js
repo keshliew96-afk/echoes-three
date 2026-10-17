@@ -558,6 +558,49 @@ const ICONS = {
     ['path', { d: 'M5 22 L12 6 C14 10 18 12 26 12 C24 15 24 17 25 19 C22 18 19 18.5 17.5 21 C15 19 12.5 19.5 11 22 C9 20.5 7 21 5 22 Z', fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M24 23 Q28 26 25 30 M19 25 Q22 27 20 30', 'stroke-width': 1.5 }],
   ],
+  // THE DUSKWING, the rest of his kit (content plan 5, slice 5).
+  // Echo Screech: an open mouth throwing a cone of sound arcs.
+  echo_screech: [
+    ['path', { d: 'M3 16 L9 12 L9 20 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M13 10 Q16 16 13 22 M18 7 Q22.5 16 18 25 M23 4 Q29 16 23 28', 'stroke-width': 1.8 }],
+    ['path', { d: 'M9 12 L29 3 M9 20 L29 29', 'stroke-width': 1, 'stroke-dasharray': '2 2' }],
+  ],
+  // Talon Rake: three claw marks under a sweeping arc.
+  talon_rake: [
+    ['path', { d: 'M4 13 A14 14 0 0 1 28 13', 'stroke-width': 1.6, 'stroke-dasharray': '3 2' }],
+    ...[9, 16, 23].map((x) => ['path', { d: `M${x - 3} 13 Q${x + 1} 20 ${x - 1} 29 Q${x + 3} 21 ${x + 1} 13 Z`, fill: 'currentColor', stroke: 'none' }]),
+  ],
+  // Bat Swarm: three small bats over a ring on the ground.
+  bat_swarm: [
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(1 1) scale(0.5)' }],
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(15 -1) scale(0.5)' }],
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(8 8) scale(0.5)' }],
+    ['ellipse', { cx: 16, cy: 26, rx: 13, ry: 4, 'stroke-width': 1.6, 'stroke-dasharray': '3 2' }],
+  ],
+  // Shadow Veil: folded wings closed round a shield.
+  shadow_veil: [
+    ['path', { d: 'M11 9 H21 V16 C21 21 16 24 16 24 C16 24 11 21 11 16 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M9 4 C3 9 3 21 9 28 C8 23 6.5 22 7.5 19 C6 17 6 14 7.5 12 C6.5 9 8 7 9 4 Z M23 4 C29 9 29 21 23 28 C24 23 25.5 22 24.5 19 C26 17 26 14 24.5 12 C25.5 9 24 7 23 4 Z', fill: 'currentColor', stroke: 'none', 'fill-opacity': 0.75 }],
+  ],
+  // Flit: a bat darting off along an arc, a puff of night left behind.
+  flit: [
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(14 1) scale(0.55)' }],
+    ['path', { d: 'M7 22 Q10 10 19 8', 'stroke-width': 1.6, 'stroke-dasharray': '3 2' }],
+    ['circle', { cx: 7, cy: 25, r: 4.5, fill: 'currentColor', stroke: 'none', 'fill-opacity': 0.6 }],
+    ['circle', { cx: 12, cy: 27, r: 3, fill: 'currentColor', stroke: 'none', 'fill-opacity': 0.6 }],
+  ],
+  // Blood Scent: a nose's three curls of scent rising to a drop.
+  blood_scent: [
+    ['path', { d: 'M16 3 C19 7.5 19.5 9.5 18 11.2 C17.2 12 14.8 12 14 11.2 C12.5 9.5 13 7.5 16 3 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M9 28 Q5 23 9 19 Q13 15 9 11 M16 29 Q12 24 16 20 Q20 16 16 14 M23 28 Q27 23 23 19 Q19 15 23 11', 'stroke-width': 1.6 }],
+  ],
+  // Blood Moon: a full moon behind a bat, a rim of drops beneath.
+  blood_moon: [
+    ['circle', { cx: 16, cy: 13, r: 10, 'stroke-width': 2 }],
+    ['circle', { cx: 16, cy: 13, r: 6.5, fill: 'currentColor', stroke: 'none', 'fill-opacity': 0.4 }],
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(4 4) scale(0.75)' }],
+    ['path', { d: 'M6 27 L6 30 M11 26 L11 30 M16 25.5 L16 30 M21 26 L21 30 M26 27 L26 30', 'stroke-width': 1.4 }],
+  ],
   // THE BELLWRIGHT (docs/BELLWRIGHT.md).
   // Hang Bell: a bell hung from a hook, with a ring on the ground beneath.
   hang_bell: [
@@ -672,6 +715,52 @@ const ICONS = {
     ['path', { d: 'M8 10 C4.97 10 4.42 14.95 4.42 17.7 C4.42 19.35 3.6 20.23 2.5 21 H13.5 C12.4 20.23 11.57 19.35 11.57 17.7 C11.57 14.95 11.03 10 8 10 Z', fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M24 10 C20.98 10 20.43 14.95 20.43 17.7 C20.43 19.35 19.6 20.23 18.5 21 H29.5 C28.4 20.23 27.57 19.35 27.57 17.7 C27.57 14.95 27.02 10 24 10 Z', 'stroke-width': 1.6 }],
     ['path', { d: 'M12 6 L16 9 L14 11 L20 14', 'stroke-width': 1.6 }],
+  ],
+  // THE DUSKWING's nodes (docs/DUSKWING.md).
+  // Deep Dive (node): a stooping arrow down past a floor line.
+  deep_dive: [
+    ['path', { d: 'M8 3 L22 23', 'stroke-width': 2.4 }],
+    ['path', { d: 'M15 22 L23 25 L23 16', 'stroke-width': 2.2 }],
+    ['path', { d: 'M3 28 H29', 'stroke-width': 1.6 }],
+  ],
+  // Thirst (node): a drop over an empty cup.
+  thirst: [
+    ['path', { d: 'M16 3 C19.5 8 20 10.5 18.2 12.4 C17.2 13.4 14.8 13.4 13.8 12.4 C12 10.5 12.5 8 16 3 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M7 16 H25 L22 28 H10 Z', 'stroke-width': 1.8 }],
+  ],
+  // Gloom (node): an eye shut under a dark cloud.
+  gloom: [
+    ['path', { d: 'M6 15 C3 15 2 12 4.5 10.5 C4 7 8 5.5 10 7.5 C11.5 4 17 4 18.5 7.5 C21 5.5 25.5 7 25 10.5 C28.5 11 28.5 15 25.5 15 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M6 23 Q16 30 26 23', 'stroke-width': 2 }],
+    ['path', { d: 'M10 25.5 L8.5 28.5 M16 27 V30 M22 25.5 L23.5 28.5', 'stroke-width': 1.4 }],
+  ],
+  // Ambush (node): fangs over a shut eye.
+  ambush: [
+    ['path', { d: 'M5 10 Q16 16 27 10', 'stroke-width': 2 }],
+    ['path', { d: 'M10 12 L12 20 L14 13 Z M18 13 L20 20 L22 12 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M8 26 Q16 30 24 26', 'stroke-width': 1.6 }],
+  ],
+  // Echolocate (node): rings sounding out from a point onto a mark.
+  echolocate: [
+    ['circle', { cx: 6, cy: 16, r: 2.5, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M11 10 Q14 16 11 22 M15 7 Q19.5 16 15 25', 'stroke-width': 1.6 }],
+    ['path', { d: 'M24 12 L28 16 L24 20 L20 16 Z', fill: 'currentColor', stroke: 'none' }],
+  ],
+  // Frenzy (node): three strokes and a speed streak.
+  frenzy: [
+    ['path', { d: 'M5 24 L12 6 M12 26 L19 8 M19 28 L26 10', 'stroke-width': 2.2 }],
+    ['path', { d: 'M3 16 H9 M2 20 H7', 'stroke-width': 1.4 }],
+  ],
+  // Vampire (node): a bat over a shield.
+  vampire: [
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(4 -2) scale(0.75)' }],
+    ['path', { d: 'M9 15 H23 V21 C23 26 16 29 16 29 C16 29 9 26 9 21 Z', 'stroke-width': 1.8 }],
+  ],
+  // Eclipse (node): a moon swallowed by a dark disc, rays round it.
+  eclipse: [
+    ['circle', { cx: 16, cy: 16, r: 8, 'stroke-width': 1.8 }],
+    ['circle', { cx: 19, cy: 14, r: 7, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 2 V5 M16 27 V30 M2 16 H5 M27 16 H30 M6 6 L8 8 M24 24 L26 26 M26 6 L24 8 M6 26 L8 24', 'stroke-width': 1.4 }],
   ],
   // Rampart (node): a tower wall with crenels.
   rampart: [

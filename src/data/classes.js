@@ -38,9 +38,9 @@ export const CLASS_SKILLS = Object.freeze({
   // THE BELLWRIGHT (docs/BELLWRIGHT.md): the beetle's four base skills, then
   // the seven of her whole kit (content plan 4, slice 5).
   bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum', 'great_bell', 'knell', 'bell_swing', 'wing_hop', 'vesper_chime', 'tuning_fork', 'carillon']),
-  // THE DUSKWING (docs/DUSKWING.md): the bat's four base skills. The other
-  // seven join with the rest of his kit (content plan 5, slice 5).
-  duskwing: Object.freeze(['dusk_dive', 'blood_bite', 'nightfall', 'night_wings']),
+  // THE DUSKWING (docs/DUSKWING.md): the bat's four base skills, then the
+  // seven of his whole kit (content plan 5, slice 5).
+  duskwing: Object.freeze(['dusk_dive', 'blood_bite', 'nightfall', 'night_wings', 'echo_screech', 'talon_rake', 'bat_swarm', 'shadow_veil', 'flit', 'blood_scent', 'blood_moon']),
 });
 
 // MORE CLASS SKILLS: what joined the pools on 2026-10-08 — nine class skills,
@@ -62,6 +62,7 @@ export const CAMPAIGN_ONLY_SKILLS = Object.freeze([
   'great_bell', 'knell', 'bell_swing', 'wing_hop', 'vesper_chime', 'tuning_fork', 'carillon',
   // THE DUSKWING: his too.
   'dusk_dive', 'blood_bite', 'nightfall', 'night_wings',
+  'echo_screech', 'talon_rake', 'bat_swarm', 'shadow_veil', 'flit', 'blood_scent', 'blood_moon',
 ]);
 export const CAMPAIGN_ONLY_NODES = Object.freeze([
   'rampart', 'crush', 'gale_step', 'duel', 'longshot', 'prey',
@@ -69,6 +70,8 @@ export const CAMPAIGN_ONLY_NODES = Object.freeze([
   'wellspring', 'deluge', 'current', 'ebb', 'spring_tide', 'undercurrent', 'riptide', 'confluence',
   // THE BELLWRIGHT: hers too.
   'bronze', 'clangour', 'resound', 'aftertone', 'tuned', 'cloister', 'belfry', 'sympathy',
+  // THE DUSKWING: his too.
+  'deep_dive', 'thirst', 'gloom', 'ambush', 'echolocate', 'frenzy', 'vampire', 'eclipse',
 ]);
 // The pool a draft draws from: everything, or the old pool outside a campaign.
 export function gatedPool(ids, campaign) {
@@ -105,8 +108,8 @@ export const CLASS_NODES = Object.freeze({
   tidecaller: Object.freeze(['wellspring', 'deluge', 'current', 'ebb', 'spring_tide', 'undercurrent', 'riptide', 'confluence']),
   // THE BELLWRIGHT (content plan 4, slice 5): six common, two rare.
   bellwright: Object.freeze(['bronze', 'clangour', 'resound', 'aftertone', 'tuned', 'cloister', 'belfry', 'sympathy']),
-  // THE DUSKWING: his eight class nodes come with the rest of his kit.
-  duskwing: Object.freeze([]),
+  // THE DUSKWING (content plan 5, slice 5): six common, two rare.
+  duskwing: Object.freeze(['deep_dive', 'thirst', 'gloom', 'ambush', 'echolocate', 'frenzy', 'vampire', 'eclipse']),
 });
 
 // §25.3 shared-node access per class (the Healer: all 17, unchanged).
@@ -160,8 +163,12 @@ export const AI_PRIORITY = Object.freeze({
     'vesper_chime', 'bell_swing', 'tuning_fork', 'wing_hop', 'hum',
   ]),
   // THE DUSKWING (docs/DUSKWING.md): the dive that starts a fight, the bite
-  // that feeds him, the dark that blinds the pack, then his wings.
-  duskwing: Object.freeze(['dusk_dive', 'blood_bite', 'nightfall', 'night_wings']),
+  // that feeds him, the dark that blinds the pack, his capstone, the swings,
+  // then the ways out and his wings.
+  duskwing: Object.freeze([
+    'dusk_dive', 'blood_bite', 'nightfall', 'blood_moon', 'talon_rake', 'echo_screech',
+    'bat_swarm', 'flit', 'shadow_veil', 'blood_scent', 'night_wings',
+  ]),
 });
 
 const rankOf = (list, id) => {
@@ -357,7 +364,27 @@ export const CLASS_TECH = Object.freeze({
   // least `drainSip` HP so the numerals stay readable.
   duskDrain: 0.08,
   drainSip: 1.5,
+  // His eight class nodes (content plan 5, slice 5).
+  deepDiveU: 0.8, // Deep Dive: a dash or a vault from this skill goes 0.8 u farther, per copy
+  thirstDrain: 0.15, // Thirst: this skill's blows feed him 15% more, per copy
+  gloomTicks: 60, // Gloom: what this skill hits is blinded 1 s (not the bosses)
+  ambushMul: 1.4, // Ambush: +40% on a blinded enemy
+  echolocateMag: 0.15, // Echolocate: what this skill hits takes +15% for 2 s
+  echolocateTicks: 120,
+  frenzyHits: 3, // Frenzy: landing on 3 or more enemies makes him 25% faster for 2 s
+  frenzyHaste: 0.25,
+  frenzyTicks: 120,
+  vampireMul: 2, // Vampire: Night Hunger on this skill's blows doubled...
+  vampireShieldCap: 15, // ...and at full health it banks as a shield, up to 15
+  eclipseU: 1.4, // Eclipse: an enemy this skill fells bursts into darkness, blinding 1 s within 1.4 u
+  eclipseTicks: 60,
 });
+
+// THE DUSKWING's AI seat (docs/DUSKWING.md §AI, content plan 5 slice 5): when
+// to dive and when to pull out. Below pullOutFrac of his health he stops
+// diving and steps back off the pack (to backU from the nearest enemy, inside
+// his ring) until Night Hunger and the Healer bring him back over backInFrac.
+export const AI_DUSK = Object.freeze({ pullOutFrac: 0.35, backInFrac: 0.6, backU: 2.4, diveFloorFrac: 0.35 });
 
 // §25.10 MAX-STRESS build (GP.10 / GP.15 precondition; `?partygrant=max`,
 // cmd('partyStress')): deterministic loadouts, and the socket fill order —

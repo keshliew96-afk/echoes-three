@@ -28,6 +28,7 @@ import { TICK_HZ, KNOCKBACK } from '../core/constants.js';
 import { clampPlacement, countFinal, fanDirections, selectDirect, createSkillBolts } from './shapes.js';
 import { sweptStep } from './movement.js';
 import { CLASS_TECH, AI_ENGAGE } from '../data/classes.js';
+import { isBlinded } from './status.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
@@ -48,6 +49,13 @@ function unit(dx, dz, fx = 0, fz = 1) {
   return fl > 1e-6 ? { x: fx / fl, z: fz / fl } : { x: 0, z: 1 };
 }
 
+// THE DUSKWING: Deep Dive — a dash or a vault goes farther, per copy (a
+// socketed technique, so the guest's predictor sees the same list).
+function deepDiveU(techs) {
+  if (!Array.isArray(techs) || !techs.includes('deep_dive')) return 0;
+  return techs.filter((x) => x === 'deep_dive').length * CLASS_TECH.deepDiveU;
+}
+
 // ---------------------------------------------------------------------------
 // seatDisplacement — the HUMAN-seat rule (BUILD_BRIEF §25.2, PLAN §16.5). A
 // pure function of the seat's own input: its position, its aim point at the
@@ -64,14 +72,15 @@ export function seatDisplacement(body, def, techs, aim, phase = 'pre') {
   const toAim = unit(ax, az, face.x, face.z);
   const aimDist = Math.hypot(ax, az);
   const has = (id) => Array.isArray(techs) && techs.includes(id);
+  const deep = deepDiveU(techs);
   if (phase === 'pre') {
     if (def.vault) {
-      const dist = def.vault.dist + (has('disengage') ? CLASS_TECH.disengageVaultBonusU : 0);
+      const dist = def.vault.dist + (has('disengage') ? CLASS_TECH.disengageVaultBonusU : 0) + deep;
       const ticks = Math.max(1, def.vault.ticks | 0);
       return { vx: (-toAim.x * dist) / ticks, vz: (-toAim.z * dist) / ticks, ticks, iframes: !!def.vault.iframes, cause: 'vault' };
     }
     let dash = null;
-    if (def.dash) dash = { dist: def.dash.dist + (has('pursuit') ? CLASS_TECH.pursuitFoxBonusU : 0), speed: def.dash.speed, iframes: !!def.dash.iframes, cause: 'dash' };
+    if (def.dash) dash = { dist: def.dash.dist + (has('pursuit') ? CLASS_TECH.pursuitFoxBonusU : 0) + deep, speed: def.dash.speed, iframes: !!def.dash.iframes, cause: 'dash' };
     else if (has('pursuit') && !def.parry && (def.shape === 'melee_arc' || def.shape === 'nova'))
       dash = { dist: CLASS_TECH.pursuitDashU, speed: 10, iframes: true, cause: 'pursuit' }; // Fox Step's dash rules
     if (!dash) return null;
@@ -164,13 +173,13 @@ export function createAllyCaster(ctx) {
     };
     if (phase === 'pre') {
       if (def.vault) {
-        const dist = def.vault.dist + (has('disengage') ? CLASS_TECH.disengageVaultBonusU : 0);
+        const dist = def.vault.dist + (has('disengage') ? CLASS_TECH.disengageVaultBonusU : 0) + deepDiveU(techs);
         const h = nearestHostile();
         const away = h ? unit(a.x - h.x, a.z - h.z, -(a.faceX ?? 0), -(a.faceZ ?? 1)) : unit(-(a.faceX ?? 0), -(a.faceZ ?? 1));
         return build(away.x, away.z, dist, def.vault.ticks, false, !!def.vault.iframes, 'vault');
       }
       let dash = null;
-      if (def.dash) dash = { dist: def.dash.dist + (has('pursuit') ? CLASS_TECH.pursuitFoxBonusU : 0), speed: def.dash.speed, iframes: !!def.dash.iframes, cause: 'dash' };
+      if (def.dash) dash = { dist: def.dash.dist + (has('pursuit') ? CLASS_TECH.pursuitFoxBonusU : 0) + deepDiveU(techs), speed: def.dash.speed, iframes: !!def.dash.iframes, cause: 'dash' };
       else if (has('pursuit') && !def.parry && (def.shape === 'melee_arc' || def.shape === 'nova'))
         dash = { dist: CLASS_TECH.pursuitDashU, speed: 10, iframes: true, cause: 'pursuit' };
       // fix-M4a-r5 (GP.8): an overdue melee delivery cast at a hostile just
@@ -427,6 +436,7 @@ export function createAllyCaster(ctx) {
   function hitList(a, def, power, targets, shape, M, castId, echoFlag, srcLabel = null) {
     const T = tech();
     const seat = a.partyIndex;
+    let landed = 0; // THE DUSKWING: Frenzy counts the enemies the cast reached
     for (const t of targets) {
       if (!registry.byId(t.id) || !(t.hp > 0)) continue;
       const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
@@ -442,6 +452,8 @@ export function createAllyCaster(ctx) {
       // THE BELLWRIGHT: a swing with the ring bonus (Tuned) lands harder in a ring.
       const rung = def.ringBonus && !srcLabel ? ringOf(a.id, t) : null;
       if (rung) p *= def.ringMul ?? CLASS_TECH.ringMul;
+      // THE DUSKWING: Ambush — harder on a blinded enemy.
+      if (def.ambush && t.faction === 'hostile' && isBlinded(t, getTick())) p *= CLASS_TECH.ambushMul;
       if (M) {
         if (M.critMul) opts.critMul = M.critMul;
         if (M.kbScale !== undefined) opts.kbScale = M.kbScale;
@@ -450,13 +462,66 @@ export function createAllyCaster(ctx) {
         if (M.crush && crushable(t)) p *= CLASS_TECH.crushMul;
         if (M.heartseeker && T && T.firstHit(castId, t.id)) opts.forceCrit = true;
       }
-      if (T && !srcLabel) T.instance({ seat, castId, echo: echoFlag, skill: def.id }, () => combat.applyDamage(t, p, opts));
-      else if (T && srcLabel) T.suppressed(seat, () => combat.applyDamage(t, p, opts));
-      else combat.applyDamage(t, p, opts);
+      let r;
+      if (T && !srcLabel) r = T.instance({ seat, castId, echo: echoFlag, skill: def.id }, () => combat.applyDamage(t, p, opts));
+      else if (T && srcLabel) r = T.suppressed(seat, () => combat.applyDamage(t, p, opts));
+      else r = combat.applyDamage(t, p, opts);
       if (crashed) spendSoak(a.id, t, def.id, castId, !!(M && M.riptide));
       if (rung) ringHit(seat, def.id, t, rung, !!def.sympathy, getTick());
+      if (def.frenzy || def.eclipse) {
+        if (t.faction === 'hostile' && !(r && (r.immune || r.blocked))) landed += 1;
+        if (def.eclipse && t.faction === 'hostile' && !(t.hp > 0)) eclipseBurst(a, t, getTick());
+      }
     }
     applySkillStatus(a, def, targets);
+    if (def.frenzy && landed >= CLASS_TECH.frenzyHits && combat.status && a.hp > 0) {
+      const tick = getTick();
+      combat.status.apply(a, 'haste', CLASS_TECH.frenzyHaste, CLASS_TECH.frenzyTicks, tick, a.id);
+      events.emit(tick, 'dusk_frenzy', { seat, id: a.id, skill: def.id, n: landed, x: r2(a.x), z: r2(a.z) });
+    }
+  }
+
+  // THE DUSKWING's nodes on one of his skills (docs/DUSKWING.md): the
+  // resolved def with what they change. A skill with none of them comes back
+  // as the very same object, so every other class's cast is untouched. Deep
+  // Dive rides the displacement, Thirst and Vampire his Night Hunger
+  // (sim/duskwing.js).
+  function duskDef(a, def) {
+    if (a.classId !== 'duskwing' || a.partyIndex === undefined) return def;
+    const b = buildOf(a.partyIndex);
+    const techs = b ? b.tech.liveTechs(def.id) : [];
+    if (techs.length === 0) return def;
+    const has = (id) => techs.includes(id);
+    const strike = def.archetype === 'damage' && def.shape !== 'aura';
+    if (!strike) return def;
+    const out = { ...def };
+    let any = false;
+    const set = (k, v) => {
+      out[k] = v;
+      any = true;
+    };
+    // Gloom blinds, Echolocate marks: a second status on what it hits.
+    const extras = [];
+    if (has('gloom') && !(def.status && def.status.kind === 'blind')) extras.push({ kind: 'blind', mag: 1, ticks: CLASS_TECH.gloomTicks });
+    if (has('echolocate') && !(def.status && def.status.kind === 'exposed')) extras.push({ kind: 'exposed', mag: CLASS_TECH.echolocateMag, ticks: CLASS_TECH.echolocateTicks });
+    if (extras.length) set('extraStatus', extras);
+    if (has('ambush') && def.shape !== 'projectile') set('ambush', true);
+    if (def.shape === 'nova' || def.shape === 'melee_arc') {
+      if (has('frenzy')) set('frenzy', true);
+      if (has('eclipse')) set('eclipse', true);
+    }
+    return any ? out : def;
+  }
+  // Eclipse: an enemy felled bursts into darkness round where it fell.
+  function eclipseBurst(a, t, tick) {
+    const S = combat.status;
+    const R2 = CLASS_TECH.eclipseU * CLASS_TECH.eclipseU;
+    const hit = [];
+    for (const e of [...hostiles()].sort((p, q) => p.id - q.id)) {
+      if (e.id === t.id || !(e.hp > 0) || (e.x - t.x) ** 2 + (e.z - t.z) ** 2 > R2) continue;
+      if (S && S.apply(e, 'blind', 1, CLASS_TECH.eclipseTicks, tick, a.id)) hit.push(e.id);
+    }
+    events.emit(tick, 'dusk_eclipse', { seat: a.partyIndex, id: a.id, target: t.id, hit, x: r2(t.x), z: r2(t.z) });
   }
 
   // THE TIDECALLER (docs/TIDECALLER.md): a Crash skill on a soaked enemy
@@ -656,12 +721,15 @@ export function createAllyCaster(ctx) {
 
   function applySkillStatus(a, def, targets) {
     const st = def.status;
-    if (!st || def.archetype === 'guard') return;
+    if ((!st && !def.extraStatus) || def.archetype === 'guard') return;
     const S = combat.status;
     if (!S) return;
     const tick = getTick();
     for (const t of targets) {
       if (!t || !(t.hp > 0) || t.faction !== 'hostile') continue;
+      // THE DUSKWING: Gloom's blind and Echolocate's mark ride along.
+      if (def.extraStatus) for (const x of def.extraStatus) S.apply(t, x.kind, x.mag, x.ticks, tick, a.id);
+      if (!st) continue;
       if (st.kind === 'taunt') {
         const T = tech();
         if (T && !T.mayTaunt(a, t)) continue;
@@ -675,7 +743,7 @@ export function createAllyCaster(ctx) {
   // M, extra }. Returns the emitted cast payload.
   function deliver(a, def0, power, c) {
     const { tick, human, target, f, tag, echo, castId, M, extra } = c;
-    const def = bellDef(a, tideDef(a, def0));
+    const def = duskDef(a, bellDef(a, tideDef(a, def0)));
     let d = c.d;
     const seat = a.partyIndex;
     const T = tech();
@@ -924,6 +992,9 @@ export function createAllyCaster(ctx) {
         spec.fullTicks = totalTicks;
         if (def.bellSize) spec.bellSize = def.bellSize;
       }
+      // THE DUSKWING: Gloom / Echolocate and Ambush on a zone of his.
+      if (def.extraStatus) spec.extras = def.extraStatus.map((x) => ({ kind: x.kind, mag: x.mag, ticks: x.ticks }));
+      if (def.ambush) spec.ambush = true;
       zones.push(registry.spawn(spec));
     }
     const z0 = zones[0];
@@ -1091,10 +1162,12 @@ export function createAllyCaster(ctx) {
     // THE TIDECALLER: the Maelstrom's burst is a Crash.
     const crashed = z.crash ? crashOn(t) : false;
     if (crashed) p *= CLASS_TECH.crashMul;
+    if (z.ambush && t.faction === 'hostile' && isBlinded(t, getTick())) p *= CLASS_TECH.ambushMul;
     const r = T ? T.instance({ seat, castId: m.castId ?? -1, echo: !!m.echo, skill: z.skill, zone: z.id }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
     if (crashed) spendSoak(z.sourceId, t, z.skill, m.castId ?? null, !!m.riptide);
     if (z.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) soakApply(t, z.applies, getTick(), z.sourceId);
     if (z.also && t.hp > 0 && t.faction === 'hostile' && combat.status) combat.status.apply(t, z.also.kind, z.also.mag, z.also.ticks, getTick(), z.sourceId);
+    if (z.extras && t.hp > 0 && t.faction === 'hostile' && combat.status) for (const x of z.extras) combat.status.apply(t, x.kind, x.mag, x.ticks, getTick(), z.sourceId);
     return r;
   }
 

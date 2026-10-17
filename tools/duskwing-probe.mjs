@@ -113,7 +113,7 @@ function secondRoom(W, kit) {
   const row = ALLY_CLASSES.duskwing;
   check(row && row.maxHp === 80 && row.basicShape === 'melee_arc' && row.basicPower === 7 && row.basicRange === 0.8 && row.moveSpeed === 2.9 && row.attackIntervalTicks === 18, 'his class row: 80 HP, speed 2.9 (the fastest), Nip a 7-power bite every 0.3 s, reach 0.8');
   check(ALLY_CLASSES.duskwing.moveSpeed > Math.max(...Object.values(ALLY_CLASSES).filter((r) => r.classId !== 'duskwing').map((r) => r.moveSpeed)), 'he is the quickest on his feet');
-  check(same(C.CLASS_BASE_KIT.duskwing, KIT) && same(C.CLASS_SKILLS.duskwing, KIT) && KIT.every((id) => SKILLS[id] && SKILLS[id].cls === 'duskwing'), 'his four base skills are his pool, all his');
+  check(same(C.CLASS_BASE_KIT.duskwing, KIT) && same(C.CLASS_SKILLS.duskwing.slice(0, 4), KIT) && KIT.every((id) => SKILLS[id] && SKILLS[id].cls === 'duskwing'), 'his four base skills open his pool, all his');
   check(KIT.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.gatedPool(KIT, false).length === 0 && C.gatedPool(KIT, true).length === 4, 'all four are campaign-only');
   check(SKILLS.dusk_dive.dash && SKILLS.dusk_dive.dash.iframes && SKILLS.dusk_dive.shape === 'nova' && SKILLS.blood_bite.drain === 0.5 && SKILLS.nightfall.status.kind === 'blind' && SKILLS.night_wings.shape === 'aura', 'Dive dashes untouchable and bursts, Bloodbite drains, Nightfall blinds, Night Wings is a passive');
   const ids = Object.keys(SKILLS);
@@ -157,7 +157,7 @@ let saved = null;
   const sable = ally(W, 3);
   check(same(p.lineup(), SABLE) && sable.classId === 'duskwing' && sable.maxHp === 80 && sable.hp === 80, `seat 3 is Sable (${sable.classId}, ${sable.maxHp} HP)`);
   const pool = p.pools(3);
-  check(same([...pool.classSkills].sort(), [...KIT].sort()), `his draft pool is his kit (${pool.classSkills.length})`);
+  check(same([...pool.classSkills].sort(), [...C.CLASS_SKILLS.duskwing].sort()), `his draft pool is his kit (${pool.classSkills.length})`);
   check(L.classOfSeat(3) === 'duskwing' && L.seatOfClass('archer') === -1, 'the UI lookup: Sable on seat 3, the Archer at camp');
 
   secondRoom(W, { 3: KIT });

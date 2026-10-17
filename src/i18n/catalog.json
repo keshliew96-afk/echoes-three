@@ -1275,6 +1275,12 @@
   ],
   "data": true
  },
+ "+40% on the blinded.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "+40% power when the Archer stood still for half a second before the cast.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1631,6 +1637,12 @@
   ],
   "data": true
  },
+ "3 hit: 25% faster.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "3 zones · a spent bolt bursts.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1893,6 +1905,12 @@
   ],
   "data": true
  },
+ "a dive or a flit from this skill goes 0.8 u farther, per copy.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A falling dew at the cursor for 5 s: 7 per second to allies inside.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1999,6 +2017,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "a kill blinds round it.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "A kit replaces one class’s starting skills. One kit per class.": {
   "files": [
@@ -2161,6 +2185,12 @@
   ],
   "data": true
  },
+ "A passive scent of blood: every second, the 2 nearest enemies within 2.6 u take 2 and are marked (15% more damage taken).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A pinning arrow: 20 and a 0.75 s stun (not the Stag).": {
   "files": [
    "src/ui/run/cards.js"
@@ -2248,6 +2278,12 @@
   "files": [
    "src/save/index.js"
   ]
+ },
+ "A screech in a 70° cone 2.6 u out: 10 to up to 6 enemies, found out for 3 s (they take 25% more).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "a second soak drenches (30% slow).": {
   "files": [
@@ -2340,6 +2376,12 @@
   "data": true
  },
  "A struck note: 15 to every enemy along a 5.5 u line, +50% on each one standing in one of your bells' rings.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A swarm of small bats at the target for 4 s: 5 per second to enemies inside, slowing them 20%, and a quarter of it comes back to the bat as health.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -2700,6 +2742,12 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Ambush": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Ambush! Win the fight to open the chest.": {
   "files": [
    "src/ui/run/index.js"
@@ -2739,6 +2787,12 @@
    "src/ui/hud/index.js",
    "src/ui/run/encounter.js"
   ]
+ },
+ "an enemy this skill fells bursts into darkness, blinding those within 1.4 u for 1 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "An heirloom you have not found yet.": {
   "files": [
@@ -3246,6 +3300,12 @@
   "files": [
    "src/ui/run/classpick.js"
   ]
+ },
+ "Bat Swarm": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "BC": {
   "files": [
@@ -3867,6 +3927,12 @@
   ],
   "data": true
  },
+ "blinds 1 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Blinking": {
   "files": [
    "src/sim/affixes.js"
@@ -3890,6 +3956,18 @@
   ],
   "data": true
  },
+ "Blood Moon": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Blood Scent": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Blood Shrine": {
   "files": [
    "src/sim/encounters.js"
@@ -3899,6 +3977,12 @@
  "Bloodbite": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "BM": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -4016,6 +4100,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "BR": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -5537,6 +5627,12 @@
   ],
   "data": true
  },
+ "Deep Dive": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "DEEPEST EVER": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -5804,6 +5900,12 @@
  "Diver": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "dives +0.8 u.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -6089,9 +6191,21 @@
   ],
   "data": true
  },
+ "EC": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Echo": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Echo Screech": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -6099,6 +6213,18 @@
   "files": [
    "src/ui/menu/title.js"
   ]
+ },
+ "Echolocate": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Eclipse": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
  },
  "Effects": {
   "files": [
@@ -6429,6 +6555,12 @@
   ],
   "data": true
  },
+ "every blow from this skill feeds the bat 15% more of its damage, per copy.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "every cast shields the Tank +8 per copy (4 s) · on Iron Stance +2 per pulse (up to 12).": {
   "files": [
    "src/ui/run/cards.js"
@@ -6647,6 +6779,18 @@
  "Feather Fan": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "feeds ×2 · full: a shield.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "feeds 15% more.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -7038,6 +7182,12 @@
   ],
   "data": true
  },
+ "Flit": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "Flooded Cellar": {
   "files": [
    "src/data/layouts.js"
@@ -7258,6 +7408,12 @@
   ],
   "data": true
  },
+ "Frenzy": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "Friends on your network open {link} — no settings needed": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -7311,6 +7467,12 @@
   "data": true
  },
  "FS": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "FT": {
   "files": [
    "src/sim/skills.js"
   ],
@@ -7570,6 +7732,12 @@
  "Gloamfang tint": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Gloom": {
+  "files": [
+   "src/sim/nodes.js"
   ],
   "data": true
  },
@@ -8086,6 +8254,12 @@
   "data": true
  },
  "hits slow · heals haste · fields slow.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "hits take +15%.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -9845,6 +10019,12 @@
   "files": [
    "src/ui/hud/index.js"
   ]
+ },
+ "Night Hunger on this skill's blows is doubled, and at full health it gathers as a shield (up to 15).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "Night Wings": {
   "files": [
@@ -12418,6 +12598,12 @@
    "src/ui/menu/settings.js"
   ]
  },
+ "SE": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "SECRETS FOUND": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -12580,6 +12766,12 @@
   ]
  },
  "SG": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Shadow Veil": {
   "files": [
    "src/sim/skills.js"
   ],
@@ -13386,6 +13578,12 @@
   ],
   "data": true
  },
+ "SV": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
+ },
  "SW": {
   "files": [
    "src/sim/skills.js"
@@ -13590,6 +13788,12 @@
   "files": [
    "src/scenes/campnpcs.js"
   ]
+ },
+ "Talon Rake": {
+  "files": [
+   "src/sim/skills.js"
+  ],
+  "data": true
  },
  "Tank": {
   "files": [
@@ -14065,6 +14269,18 @@
   ],
   "data": true
  },
+ "The bat flits 2.8 u away (untouchable) and leaves a puff of night where he was for 2 s: 4 per second, and it blinds for 1 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "The bat rakes with his wing claws in a 150° arc: 15 to up to 5 enemies within 1.2 u, knocked back.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "The beetle hops 2.4 u away (untouchable) and leaves a handbell where she stood for 4 s: 5 a toll, and each toll slows. It counts as one of your bells.": {
   "files": [
    "src/ui/run/cards.js"
@@ -14326,6 +14542,12 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "The dark folds round the bat: an 18 shield for 3 s, and its edge cuts up to 4 enemies within 1.2 u for 8.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
  },
  "The dead remember every song. Mine they remember best.": {
   "files": [
@@ -15135,6 +15357,12 @@
   ],
   "data": true
  },
+ "The moon turns red over the bat: 30 to up to 10 enemies within 2.4 u, blinded for 1.5 s (not the bosses), and over a third of it comes back to him as health.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "The Moss Hart": {
   "files": [
    "src/data/journal.js",
@@ -15859,6 +16087,12 @@
   ],
   "data": true
  },
+ "Thirst": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
+ },
  "This abandons the campaign for the whole party — everyone returns to camp. Unlocks and records are kept.": {
   "files": [
    "src/ui/menu/pause.js"
@@ -15998,6 +16232,12 @@
   "data": true
  },
  "this skill drags enemies 40% farther · a pushing skill pulls them in instead.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "this skill lands +40% on a blinded enemy.": {
   "files": [
    "src/ui/run/cards.js"
   ],
@@ -16202,6 +16442,12 @@
  "Tithe Shrine": {
   "files": [
    "src/sim/shrines.js"
+  ],
+  "data": true
+ },
+ "TK": {
+  "files": [
+   "src/sim/skills.js"
   ],
   "data": true
  },
@@ -16555,6 +16801,12 @@
   "files": [
    "src/ui/menu/tabs/display.js"
   ]
+ },
+ "Vampire": {
+  "files": [
+   "src/sim/nodes.js"
+  ],
+  "data": true
  },
  "Vampiric": {
   "files": [
@@ -17049,6 +17301,18 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "what this skill hits is blinded for 1 s (not the bosses).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "what this skill hits takes 15% more damage for 2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "Whatever waits in the Heart Chamber wears a warden’s shape, but the song in it is the Heart’s own. Don’t listen too closely.": {
   "files": [
    "src/data/story.js"
@@ -17064,6 +17328,12 @@
  "When an enemy falls in this room, enemies within 2.5 u heal 10% of their max HP.": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "when this skill reaches 3 or more enemies, the bat runs 25% faster for 2 s.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },

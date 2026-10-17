@@ -235,7 +235,16 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   events.on('room_start', () => allySys.onRoomBoundary('room_start'));
   events.on('hit', (ev) => allySys.onHit(ev));
   // THE DUSKWING (docs/DUSKWING.md): Night Hunger, his life steal.
-  installNightHunger({ registry, events, getTick: () => currentTick });
+  installNightHunger({
+    registry,
+    events,
+    getTick: () => currentTick,
+    // His Thirst and Vampire nodes: the techniques on the skill a blow came from.
+    techsOf: (seat, skill) => {
+      const b = partySys ? partySys.build(seat) : null;
+      return b ? b.tech.liveTechs(skill) : [];
+    },
+  });
 
   // --- Build system (nodes block, §15): the 8-node pool, sockets/bench, the
   // flat->pct->mult->technique->clamp resolver and the depth-1 technique
