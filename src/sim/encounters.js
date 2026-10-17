@@ -284,6 +284,13 @@ export function createEncounterSystem({ events, getTick }) {
     armed[room] = id;
     events.emit(getTick(), 'event_door_taken', { room, encounter: id });
   }
+  // SECRET ROOMS: a hidden chamber's rare event waits in `room` (no door
+  // was walked through, so no door event).
+  function armHidden(room, id) {
+    if (!on || !ENCOUNTERS[id]) return false;
+    armed[room] = id;
+    return true;
+  }
   const armedAt = (room) => (on && armed[room] ? armed[room] : null);
 
   function enter(room) {
@@ -374,6 +381,7 @@ export function createEncounterSystem({ events, getTick }) {
     enabled: () => on,
     rollDoor,
     arm,
+    armHidden,
     armedAt,
     enter,
     open,

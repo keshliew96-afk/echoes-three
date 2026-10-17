@@ -96,7 +96,10 @@ import { crownFor, crownSide, championPick, championById, CHAMPION_RULES, isCham
 // door and its treasure room.
 import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES, VAULT_SPOTS, VAULT_CHEST } from './vaults.js';
 import { createConsumableSystem, eliteDropsTonic, chestTonic, standKind, CONSUMABLES } from './consumables.js';
-import { staticClearance } from './movement.js';
+import { staticClearance, blockerClearance } from './movement.js';
+// SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and its hidden chamber.
+import { createSecretSystem, wallRolls, wallPref, chamberContent, chamberPage, chamberEvent, SECRET_RULES, SECRET_BODY } from './secrets.js';
+import { refreshBlockers } from './interactables.js';
 import { SPAWN_POINTS } from './waves.js';
 import { SHRINES, SHRINE_RULES, shrineOfBiome, shrineRoomFor, shrineSpotStart, shrineCurseFor, shrineSpec, bless } from './shrines.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
@@ -350,6 +353,9 @@ export function createRunSystem({
   // the Daily; never the tutorial or the legacy single-level run).
   const championsOn = () => objectivesOn();
   let forcedCrown = null; // probe: the next path screen's crown ({ room, side })
+  // SECRET ROOMS probes: a wall in room n of this level / a chamber's content.
+  let forcedWall = null;
+  let forcedHolds = null;
   let forcedChampion = null; // probe: this level's champion ({ index, id })
   // SECOND CHAMPIONS: the level's champion (one of its act's, by seed).
   const levelChampion = () => {
@@ -386,6 +392,30 @@ export function createRunSystem({
     const id = eliteDropsTonic(frame.seed, campaign.index, roomIndex, e.id);
     if (id) tonics.drop(id, 'elite', ev.x ?? e.x, ev.z ?? e.z);
   });
+  // SECRET ROOMS (docs/SECRET_ROOMS.md): on with the keys. A bomb bursting
+  // beside a cracked wall, or a heavy hit on it, from a hero a person plays
+  // (or the autopilot's Healer) breaks it open while the fight is on.
+  const secrets = createSecretSystem({ registry, events, getTick });
+  const humanSeat = (seat) => seat === 0 || controllers()[seat] === 'human';
+  const wallBody = () => registry.all().find((e) => e.kind === 'secret_wall');
+  events.on('wall_blow', (ev) => {
+    if (!active || !secrets.shut() || phase !== 'combat') return;
+    const by = ev.attacker != null ? registry.byId(ev.attacker) : null;
+    if (!by || by.partyIndex === undefined) return;
+    const heavy = ev.delivery === 'skill' && ev.base >= SECRET_RULES.heavyMin && humanSeat(by.partyIndex);
+    if (heavy) openWall('hit', by.partyIndex);
+    else if (secrets.knock()) {
+      const w = secrets.wall();
+      events.emit(getTick(), 'secret_knock', { id: w.id, seat: by.partyIndex, base: ev.base, x: r2(w.x), z: r2(w.z) });
+    }
+  });
+  events.on('tonic_burst', (ev) => {
+    if (!active || !secrets.shut() || phase !== 'combat' || !humanSeat(ev.seat)) return;
+    const w = secrets.wall();
+    if (Math.hypot(ev.x - w.x, ev.z - w.z) <= (ev.radius ?? 0) + SECRET_RULES.bombReach) openWall('bomb', ev.seat);
+  });
+  events.on('secret_touch', () => openSecret());
+
   // The quarry is marked for the whole party the moment it breaks cover.
   events.on('quarry_spawn', (ev) => {
     if (active && allySys && typeof allySys.cmd === 'function') allySys.cmd('mark', [ev.id]);
@@ -564,6 +594,7 @@ export function createRunSystem({
     encounters.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
     vaults.reset(championsOn());
     tonics.reset(championsOn());
+    secrets.reset(championsOn());
     shrineReset();
     if (campaign.daily) relics.grantDaily(campaign.daily.relic, campaign.daily.curse);
     // Payload unchanged since v0.5.x (the goldens hash every event).
@@ -739,6 +770,15 @@ export function createRunSystem({
     layout = null;
     // KEYS AND VAULTS: the vault's piles and platter stay in their room.
     for (const e of registry.all()) if (e.kind === 'vault_pile' || e.kind === 'vault_platter') registry.despawn(e.id);
+    // SECRET ROOMS: the wall, the chamber and what it held stay here.
+    let walled = false;
+    for (const e of registry.all()) {
+      if (!isSecretBody(e)) continue;
+      if (e.collider) walled = true;
+      registry.despawn(e.id);
+    }
+    if (walled) refreshBlockers(registry);
+    secrets.leaveRoom();
     // TONICS AND BOMBS: what lies on the floor, flies or burns stays here.
     tonics.clearRoom();
   }
@@ -829,6 +869,9 @@ export function createRunSystem({
     // hashed room on (never the boss room); the Grave Shrine's curse lands
     // on the next fight.
     if (combatRoom && shrinesOn() && mode !== 'boss') placeShrine(n, mode, level.biome, tick);
+    // SECRET ROOMS: from room 4 on, a plain fight may hide a cracked wall.
+    if (combatRoom && secrets.canPlace() && frame && campaign && !tutorialOn() && !rushFight() && (forcedWall === n || wallRolls(frame.seed, campaign.index, n, mode))) placeWall(n, mode, tick);
+    if (forcedWall === n) forcedWall = null;
     events.emit(tick, 'room_enter', {
       index: n,
       mode,
@@ -1242,6 +1285,12 @@ export function createRunSystem({
     return taken;
   }
   function afterRelic() {
+    // SECRET ROOMS: a wall broken open in this room: the party steps through
+    // the breach before the doors.
+    if (secrets.chamberDue(roomIndex)) {
+      enterSecret(getTick());
+      return;
+    }
     // BOSS RUSH: the fight's draft and pick are done; on to the next land.
     if (rushFight() && roomIndex === RUN.bossRoom) {
       onLevelCleared(getTick());
@@ -1903,6 +1952,230 @@ export function createRunSystem({
     return { opened: true, room: roomIndex, glint: v.glint, healed: v.healed, relic: !!owed };
   }
 
+  // ---------------------------------------------------- secret rooms --
+  // SECRET ROOMS (docs/SECRET_ROOMS.md). The cracked wall stands flush with
+  // the room's edge at its hashed spot (the first clear one after it). Broken
+  // open in the fight, it leads to phase 'secret' once the room's reward and
+  // relic pick are done: the hidden chamber stands in the same clearing (no
+  // layout draw), dark but for its own light. Its body pays on E (the hoard
+  // by walking); then the doors, as after any room.
+  const SECRET_KINDS = ['secret_wall', 'secret_chamber', 'secret_pile', 'secret_body'];
+  const isSecretBody = (e) => SECRET_KINDS.includes(e.kind) || (e.itype === 'encounter' && e.secret === true);
+  function placeWall(n, mode, tick) {
+    const R = SECRET_RULES;
+    const W = R.wall;
+    const pref = wallPref(frame.seed, campaign.index, n);
+    const near = registry.all().filter((e) => e.kind === 'hazard' || e.interactable || e.kind === 'barricade' || e.kind === 'keg' || e.kind === 'shrine');
+    let spot = null;
+    for (let k = 0; k < R.spots.length && !spot; k++) {
+      const [x, z, yaw] = R.spots[(pref + k) % R.spots.length];
+      // The slab's face, 0.6 u into the room, must be clear of props and of
+      // the room's own content, so the party can reach it.
+      const fx = x + Math.sin(yaw) * 0.6;
+      const fz = z + Math.cos(yaw) * 0.6;
+      if (blockerClearance(fx, fz, 0.5) < 0.1) continue;
+      if (near.some((e) => Math.hypot(e.x - x, e.z - z) < 1.7)) continue;
+      if (SPAWN_POINTS.some(([sx, sz]) => Math.hypot(sx - x, sz - z) < 1.2)) continue;
+      spot = [x, z, yaw];
+    }
+    if (!spot) return null;
+    const [x, z, yaw] = spot;
+    const holds = forcedHolds ?? chamberContent(frame.seed, campaign.index, n);
+    forcedHolds = null;
+    const e = registry.spawn({
+      kind: 'secret_wall',
+      faction: 'neutral',
+      x,
+      z,
+      px: x,
+      pz: z,
+      yaw,
+      hittable: true,
+      hp: 1,
+      maxHp: 1,
+      lifecycle: 'break',
+      knockbackable: false,
+      radius: W.hx,
+      collider: { hx: W.hx, hz: W.hz, yaw },
+      blocksMovement: true,
+      blocksProjectiles: true,
+      shut: true,
+      biome: layout ? layout.biome : null,
+    });
+    refreshBlockers(registry);
+    secrets.placed({ id: e.id, room: n, x, z, yaw, content: holds });
+    events.emit(tick, 'secret_wall', { id: e.id, room: n, mode, x: r2(x), z: r2(z), yaw: r2(yaw) });
+    return e;
+  }
+  // The wall breaks open: its collider goes, the breach stays dark until
+  // the party walks through.
+  function openWall(how, seat) {
+    const w = secrets.open(how, seat);
+    if (!w) return null;
+    const e = registry.byId(w.id);
+    if (e) {
+      e.shut = false;
+      e.hittable = false;
+      delete e.collider;
+      e.blocksMovement = false;
+      e.blocksProjectiles = false;
+      refreshBlockers(registry);
+    }
+    events.emit(getTick(), 'secret_open', { id: w.id, room: w.room, how, seat: seat ?? null, content: w.content, x: r2(w.x), z: r2(w.z), yaw: r2(w.yaw) });
+    return w;
+  }
+  function secretBodySpec(content, x, z) {
+    const B = SECRET_BODY[content];
+    return {
+      kind: 'secret_body',
+      itype: 'secret_body',
+      content,
+      faction: 'neutral',
+      x,
+      z,
+      px: x,
+      pz: z,
+      yaw: 0,
+      interactable: true,
+      interactRadius: B.interactRadius,
+      radius: B.radius,
+      verb: B.verb,
+      spentLabel: B.spentLabel,
+      uses: 1,
+      cooldownUntilTick: 0,
+      activeUntilTick: 0,
+      usedTick: -1,
+      usedBy: null,
+      collider: { r: B.radius },
+      blocksMovement: true,
+    };
+  }
+  function enterSecret(tick) {
+    const w = secrets.wall();
+    const n = roomIndex;
+    const S = SECRET_RULES.spotsIn;
+    const level = levelFor(act);
+    const land = encCtx().land ?? level.biome;
+    let content = w.content;
+    let extra = {};
+    // The rare event: one of the land's encounters (the travellers too).
+    if (content === 'event') {
+      const ids = Object.keys(ENCOUNTERS).filter((id) => !ENCOUNTERS[id].land || ENCOUNTERS[id].land === land);
+      const id = encounters.enabled() ? chamberEvent(frame.seed, campaign.index, n, ids) : null;
+      if (id) extra = { encounter: id };
+      else content = 'hoard';
+    }
+    if (content === 'lore') extra = { page: chamberPage(frame.seed, campaign.index, n, land) };
+    positionParty();
+    phase = 'secret';
+    const c = secrets.enterChamber(n, content, extra);
+    const [lx, lz] = S.light;
+    registry.spawn({ kind: 'secret_chamber', faction: 'neutral', content, x: lx, z: lz, px: lx, pz: lz, yaw: 0, wallX: w.x, wallZ: w.z, biome: layout ? layout.biome : level.biome });
+    const bodies = [];
+    if (content === 'hoard') {
+      S.piles.forEach((row, i) => {
+        const [x, z] = clearSpot(row, 0.4);
+        const e = registry.spawn({ kind: 'secret_pile', faction: 'neutral', pile: i, x, z, px: x, pz: z, yaw: i * 2.3 });
+        bodies.push({ id: e.id, x: r2(x), z: r2(z) });
+      });
+    } else if (content === 'event') {
+      const sp = EVENT_RULES.spot;
+      encounters.armHidden(n, extra.encounter);
+      const enc = encounters.enter(n);
+      const e = registry.spawn({ ...encounterSpec(enc.id, sp.x, sp.z, EVENT_RULES.bodyRadius), secret: true });
+      events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'encounter', x: r2(e.x), z: r2(e.z) });
+      bodies.push({ id: e.id, x: r2(e.x), z: r2(e.z) });
+    } else {
+      const [x, z] = clearSpot(S.body, SECRET_BODY[content].radius + 0.3);
+      const e = registry.spawn(secretBodySpec(content, x, z));
+      events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'secret_body', x: r2(x), z: r2(z) });
+      bodies.push({ id: e.id, x: r2(x), z: r2(z) });
+    }
+    refreshBlockers(registry);
+    events.emit(tick, 'secret_enter', { room: n, content, ...extra, bodies, x: r2(w.x), z: r2(w.z) });
+    // The rare event plays as a "?" room does (its card ends at the doors).
+    if (content === 'event') {
+      c.state = 'open';
+      phase = 'event';
+    }
+    return c;
+  }
+  function takeSecretPile(e, by) {
+    const R = SECRET_RULES;
+    const g = R.hoardGlint;
+    gainGlint(g, 'secret_pile');
+    if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, R.hoardPurse, 'secret_pile');
+    const c = secrets.chamber();
+    if (c) c.glint += g;
+    events.emit(getTick(), 'secret_pile', { id: e.id, pile: e.pile, by, glint: g, x: r2(e.x), z: r2(e.z) });
+    registry.despawn(e.id);
+  }
+  function stepSecret() {
+    const c = secrets.chamber();
+    if (!c) return;
+    if (c.state === 'open') {
+      if (!c.paid && getTick() >= c.payAt) {
+        c.paid = true;
+        c.state = 'done';
+        roomsDone = Math.max(roomsDone, roomIndex);
+        // The reliquary's pick, else on to the doors.
+        if (relics.presentDue(gainGlint)) phase = 'relic';
+        else afterRelic();
+      }
+      return;
+    }
+    if (c.content !== 'hoard') return;
+    for (const e of registry.all()) {
+      if (e.kind !== 'secret_pile') continue;
+      const h = secrets.toucher(e);
+      if (h) takeSecretPile(e, h.id);
+    }
+    // The last pile taken: the hoard is the party's.
+    if (!registry.all().some((e) => e.kind === 'secret_pile')) openSecret();
+  }
+  // E on the chamber's body (any hero), the autopilot, or cmd('secretTake').
+  function openSecret() {
+    if (phase !== 'secret') return null;
+    const c = secrets.chamber();
+    if (!c || c.state !== 'shut') return null;
+    const tick = getTick();
+    const R = SECRET_RULES;
+    const body = registry.all().find((e) => e.kind === 'secret_body');
+    if (body && body.uses > 0) body.uses = 0;
+    const at = body ?? player;
+    const out = { content: c.content };
+    if (c.content === 'hoard') {
+      for (const e of registry.all()) if (e.kind === 'secret_pile') takeSecretPile(e, null);
+      out.glint = c.glint;
+    } else if (c.content === 'relic') {
+      out.relic = relics.owe(roomIndex, R.relicSource);
+      if (!out.relic) {
+        gainGlint(R.loreGlint, 'secret_relic');
+        c.glint += R.loreGlint;
+      }
+    } else if (c.content === 'tonics') {
+      const items = [chestTonic(frame.seed, campaign.index, roomIndex, 'secret'), chestTonic(frame.seed, campaign.index, roomIndex, 'secret2')];
+      out.tonics = [];
+      for (const id of items) {
+        const free = [0, 1, 2, 3].some((s) => tonics.slot(s) === null && registry.all().some((e) => e.partyIndex === s && e.hp > 0));
+        if (tonics.enabled() && free && tonics.grant(id, 'secret', null, at.x, at.z) >= 0) out.tonics.push(id);
+        else {
+          gainGlint(R.tonicGlint, 'secret_cache');
+          c.glint += R.tonicGlint;
+        }
+      }
+    } else if (c.content === 'lore') {
+      gainGlint(R.loreGlint, 'secret_lore');
+      c.glint += R.loreGlint;
+      secrets.notePage(c.page);
+      out.page = c.page;
+    }
+    c.state = 'open';
+    c.payAt = tick + Math.round(R.revealSec * TICK_HZ);
+    events.emit(tick, 'secret_take', { room: roomIndex, content: c.content, glint: c.glint, ...(out.page ? { page: out.page } : {}), ...(out.tonics ? { tonics: [...out.tonics] } : {}), ...(c.content === 'relic' ? { relic: !!out.relic } : {}), x: r2(at.x), z: r2(at.z) });
+    return { taken: true, ...out };
+  }
+
   // The trapped chest: two short elite-heavy waves in the event room.
   function startAmbush(tick) {
     const depth = endlessDepth();
@@ -2004,6 +2277,7 @@ export function createRunSystem({
     relics.levelReset(); // RELICS: the relics ride on; curse / pick do not
     encounters.levelReset(); // EVENT ROOMS: two "?" doors a level
     vaults.levelReset(act); // KEYS AND VAULTS: a key lasts its level
+    secrets.levelReset(); // SECRET ROOMS: one wall a level
     shrineLevelReset(); // SHRINES: one shrine a level
     if (party && CARRY_RULES.resetEntities) party.resetLevelState();
     reward = null;
@@ -2560,6 +2834,14 @@ export function createRunSystem({
     const live = phase === 'combat';
     for (const u of [...list].sort((a, b) => a.seat - b.seat)) tonics.use(u.seat, u.aim ?? null, live);
     const c = controllers();
+    // SECRET ROOMS: the autopilot's Healer throws a bomb it holds at a cracked
+    // wall in reach (so the probes can reach a chamber).
+    if (live && autopilot.active() && secrets.shut()) {
+      const w = secrets.wall();
+      const id = tonics.slot(0);
+      const row = id ? CONSUMABLES[id] : null;
+      if (row && row.type === 'bomb' && Math.hypot(player.x - w.x, player.z - w.z) <= 6) tonics.use(0, { x: w.x + Math.sin(w.yaw) * 0.5, z: w.z + Math.cos(w.yaw) * 0.5 }, live);
+    }
     const ai = [0, 1, 2, 3].filter((s) => (s === 0 ? autopilot.active() : c[s] !== 'human'));
     tonics.aiStep(ai, live);
   }
@@ -2678,6 +2960,8 @@ export function createRunSystem({
         .map((s) => s.id),
       ...(party ? { builds: partyBuilds() } : {}),
       ...(relics.enabled() ? { relics: relics.owned(), curses: relics.view().cursesTaken } : {}),
+      // SECRET ROOMS: the walls found of the walls seen (present only once one showed).
+      ...(secrets.enabled() && secrets.summary().seen > 0 ? { secrets: secrets.summary() } : {}),
       // UNLOCKS: what the run was started with (present only when something was).
       ...(campaign && campaign.boons ? { boons: cloneData(campaign.boons) } : {}),
       nodes: {
@@ -2877,6 +3161,7 @@ export function createRunSystem({
       vaults.step();
       if (phase === 'vault') stepVault();
     }
+    if (active && phase === 'secret') stepSecret();
     if (active && roomIndex === RUN.bossRoom && phase === 'combat') boss.endOfTick();
     // Status bookkeeping for the tick that just resolved (announce + prune),
     // before a fade can walk into the next room.
@@ -3060,6 +3345,8 @@ export function createRunSystem({
       ...(active && vaults.enabled() ? { vaults: vaults.view() } : {}),
       // TONICS AND BOMBS: present only in a run with tonics (hash-stable).
       ...(active && tonics.enabled() ? { tonics: tonics.view() } : {}),
+      // SECRET ROOMS: present only in a run with secrets (hash-stable).
+      ...(active && secrets.enabled() ? { secrets: secrets.view() } : {}),
       // SHRINES: present only in a run with shrines.
       ...(active && shrine ? { shrine: shrineView() } : {}),
       // UNLOCKS: the run's boons (present only when the player picked some).
@@ -3412,6 +3699,26 @@ export function createRunSystem({
       }
       case 'vaultOpen':
         return openVault();
+      // SECRET ROOMS probes.
+      case 'secretWall':
+        // ('secretWall', n?, holds?) — room n of this level (default: the
+        // live room, placed now) hides a wall; `holds` forces its content.
+        if (!active || !frame || !secrets.enabled()) return null;
+        if (args[1] !== undefined) forcedHolds = String(args[1]);
+        if (args[0] === undefined || Number(args[0]) === roomIndex) {
+          if (phase !== 'combat' || !secrets.canPlace()) return null;
+          const e = placeWall(roomIndex, frame.modes[roomIndex - 1], getTick());
+          return e ? secrets.view().wall : null;
+        }
+        forcedWall = Number(args[0]);
+        return forcedWall;
+      case 'secretOpen':
+        // ('secretOpen') — the live room's wall breaks open now.
+        return active && secrets.shut() ? openWall('probe', 0) : null;
+      case 'secretTake':
+        return openSecret();
+      case 'secretState':
+        return secrets.enabled() ? secrets.view() : null;
       case 'vaultState':
         return vaults.enabled() ? vaults.view() : null;
       case 'relicDoor':
@@ -3615,6 +3922,7 @@ export function createRunSystem({
       // KEYS AND VAULTS: present only in a run with keys.
       ...(active && vaults.enabled() ? { vaults: vaults.saveState() } : {}),
       ...(active && tonics.enabled() ? { tonics: tonics.saveState() } : {}),
+      ...(active && secrets.enabled() ? { secrets: secrets.saveState() } : {}),
       ...(active && shrine ? { shrine: cloneData(shrine) } : {}),
       ...(bossPick ? { bossPick } : {}),
       ...(thirdOpen.length ? { thirdBosses: thirdOpen.slice() } : {}),
@@ -3675,6 +3983,7 @@ export function createRunSystem({
     encounters.loadState(d.encounters ?? null);
     vaults.loadState(d.vaults ?? null);
     tonics.loadState(d.tonics ?? null);
+    secrets.loadState(d.secrets ?? null);
     shrine = d.shrine ? cloneData(d.shrine) : null;
   }
 
@@ -3758,6 +4067,7 @@ export function createRunSystem({
     chooseEncounter,
     // KEYS AND VAULTS: the chest (E does the same through the interactables).
     openVault,
+    openSecret,
     // TONICS AND BOMBS: the stand, the slot presses and the system (probes).
     buyTonic,
     useTonics,

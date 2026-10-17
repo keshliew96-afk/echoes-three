@@ -1134,6 +1134,11 @@
    "src/save/index.js"
   ]
  },
+ "+{n} Glint for what no slot could hold.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "＋0 inert": {
   "files": [
    "src/ui/socket/index.js"
@@ -1813,6 +1818,11 @@
   ],
   "data": true
  },
+ "A cold draught leaks through a cracked wall. Break it with a bomb or a heavy skill before the last foe falls, and once the room is clear a hidden chamber opens: treasure, a relic, tonics, a page for the Journal, or something rarer.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "a connect cuts other cooldowns.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1852,6 +1862,12 @@
  "A crushing overhead arc: 34 to up to 3 enemies in reach.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "A Crystal Rubbing": {
+  "files": [
+   "src/sim/secrets.js"
   ],
   "data": true
  },
@@ -1918,6 +1934,12 @@
    "src/ui/run/draft.js"
   ]
  },
+ "A Grave Inscription": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "A great bell with no tongue, wrapped in the Hush. It drinks every sound, and it is still thirsty.": {
   "files": [
    "src/sim/encounters.js"
@@ -1950,6 +1972,16 @@
    "src/ui/run/cards.js"
   ],
   "data": true
+ },
+ "A HIDDEN CHAMBER": {
+  "files": [
+   "src/ui/hud/index.js"
+  ]
+ },
+ "A hidden chamber! The way in opens once the room is clear.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
  },
  "A Hold room's sigil ring takes twice as long to go out, and party members inside it heal 2 HP a second.": {
   "files": [
@@ -2042,6 +2074,17 @@
    "src/ui/run/path.js"
   ]
  },
+ "A Note in a Bottle": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
+ "A page for the Journal: {name}. +{n} Glint.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "A pale light that will not let the dead be hurt.": {
   "files": [
    "src/data/journal.js"
@@ -2120,6 +2163,11 @@
  "A private room — friends join with its code": {
   "files": [
    "src/ui/menu/mpmenu.js"
+  ]
+ },
+ "A RARE ENCOUNTER": {
+  "files": [
+   "src/ui/hud/index.js"
   ]
  },
  "A rare or legendary relic for the run. Choose one.": {
@@ -2340,6 +2388,12 @@
  "A ward makes it immune for a few seconds at a time.": {
   "files": [
    "src/sim/affixes.js"
+  ],
+  "data": true
+ },
+ "A Warden's Tally": {
+  "files": [
+   "src/sim/secrets.js"
   ],
   "data": true
  },
@@ -6817,6 +6871,12 @@
   ],
   "data": true
  },
+ "First the gods sit. Then the bells are rung. Then the gods sing. Someone has struck out the last line and written beside it: then they listen.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "Fissure: a warning lane for 17 that leaves crystal behind. Geode Rain drops four warning rings. Too close, it bursts round itself for 20.": {
   "files": [
    "src/data/journal.js"
@@ -6990,6 +7050,18 @@
    "src/sim/encounters.js"
   ],
   "data": true
+ },
+ "Found {n} time": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Found {n} times": {
+  "files": [
+   "src/ui/story/journal.js"
+  ],
+  "plural": true,
+  "one": "Found {n} time"
  },
  "Found only in {land}.": {
   "files": [
@@ -7883,6 +7955,12 @@
   ],
   "data": true
  },
+ "Here lies one who sang along. Do not answer if you hear him. He will only ever sing back what you say.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "Heron Mist tint": {
   "files": [
    "src/data/unlocks.js"
@@ -8205,6 +8283,12 @@
   ],
   "data": true
  },
+ "I built them a clock so they would know when to stand. They never looked at it. I am sorry the hours ran on without them.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "I sang the sluices shut to keep the hollow song out. It came in with the river anyway. Thank you for bringing the water back.": {
   "files": [
    "src/data/story.js"
@@ -8245,6 +8329,12 @@
   "files": [
    "src/ui/net/hud.js"
   ]
+ },
+ "If the sluices close, the river will remember the old way round. Let it. Water that is kept too long forgets what it was for.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
  },
  "impact ricochets to the nearest other enemy within {r} u — full power, 1 hop per copy": {
   "files": [
@@ -9213,6 +9303,16 @@
   ],
   "data": true
  },
+ "LORE PAGE": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Lore pages": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Lost Pilgrim": {
   "files": [
    "src/sim/encounters.js"
@@ -9618,6 +9718,12 @@
   ],
   "data": true
  },
+ "Never grind when the race runs backwards. Never grind after dark. Never grind if the wheel starts to hum. Below it, in a wetter hand: it hums every night now.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "Never strikes in person. It kneels and buries bone snares on the floor, three at most. Step on one and its jaws rise in a warning ring, then snap for 11 and hold you with a 60% slow. Step off before they close. Kill it and its snares crumble.": {
   "files": [
    "src/data/journal.js"
@@ -9958,6 +10064,11 @@
    "src/ui/story/journal.js"
   ]
  },
+ "Not found yet. It lies in a hidden chamber in {land}.": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Not found yet. Look behind a door marked ?.": {
   "files": [
    "src/ui/story/journal.js"
@@ -10029,6 +10140,12 @@
   "files": [
    "src/ui/run/unlocks.js"
   ]
+ },
+ "Notched into a slate in a careful hand: one cut for every beast the Stag turned back at the treeline. The last row of notches is violet, and none of them is finished.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
  },
  "nothing in the {cls}'s kit uses this yet": {
   "files": [
@@ -10297,6 +10414,7 @@
  },
  "Open": {
   "files": [
+   "src/sim/secrets.js",
    "src/sim/vaults.js"
   ],
   "data": true
@@ -10332,6 +10450,7 @@
  },
  "Opened": {
   "files": [
+   "src/sim/secrets.js",
    "src/sim/vaults.js"
   ],
   "data": true
@@ -10848,6 +10967,12 @@
    "src/ui/menu/tabs/controls.js"
   ]
  },
+ "Pressed into the violet crystal like a leaf in a book: the shape of a bell, and under it one word, home.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "preview": {
   "files": [
    "src/ui/socket/index.js"
@@ -11151,6 +11276,12 @@
  "Reach Depth 8 of the Endless Descent.": {
   "files": [
    "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Read": {
+  "files": [
+   "src/sim/secrets.js"
   ],
   "data": true
  },
@@ -12198,6 +12329,11 @@
    "src/ui/menu/settings.js"
   ]
  },
+ "SECRETS FOUND": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
  "Sedge": {
   "files": [
    "src/data/story.js"
@@ -12809,6 +12945,11 @@
   ],
   "data": true
  },
+ "Something was hidden here for a reason. Choose one.": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
+ },
  "Somewhere above, a god throws a flower.": {
   "files": [
    "src/data/story.js"
@@ -13312,6 +13453,11 @@
  "Take off": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "TAKE WHAT IT HOLDS": {
+  "files": [
+   "src/ui/hud/index.js"
   ]
  },
  "Taken": {
@@ -13956,6 +14102,12 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "The Cantor's Draft": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "the cast repeats 1.0 s later — 50% damage, 100% heal.": {
   "files": [
    "src/ui/run/cards.js"
@@ -13978,6 +14130,12 @@
   ],
   "data": true
  },
+ "The Clockmaker's Apology": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "THE CORRUPTION TOOK ROOT · NO REWARD": {
   "files": [
    "src/ui/hud/banner.js"
@@ -13986,6 +14144,16 @@
  "the counter answers an attacker already in reach": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "The cracked wall": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "The cracked wall stays shut. Break it with a bomb or a heavy skill before the last foe falls.": {
+  "files": [
+   "src/ui/run/index.js"
   ]
  },
  "The crown door": {
@@ -14201,6 +14369,12 @@
   "files": [
    "src/ui/run/index.js"
   ]
+ },
+ "The foresters kept the oldest seeds here, out of the rain and out of the song. The jars are empty now. Something took them out one at a time and planted them in rows.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
  },
  "the fox dashes up to 1.2 u toward the target before an arc or burst · Fox Step dashes 1.0 u further.": {
   "files": [
@@ -14474,6 +14648,26 @@
    "src/data/story.js"
   ],
   "data": true
+ },
+ "The hidden cache: {names}.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The hidden cache: +{n} Glint, every slot was full.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The hidden hoard: +{n} Glint, and some for each ally.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "THE HIDDEN RELIQUARY": {
+  "files": [
+   "src/ui/run/relic.js"
+  ]
  },
  "THE HOARD IS YOURS": {
   "files": [
@@ -14767,6 +14961,12 @@
   ],
   "data": true
  },
+ "The Miller's Rule": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "The millpond's old toad, grown vast on silt and crowned with the mill's grate.": {
   "files": [
    "src/data/journal.js"
@@ -14862,6 +15062,12 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "The Order of Service": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
  },
  "The otter sang my river shut once. Sing for me now, little Tidecaller.": {
   "files": [
@@ -15021,6 +15227,12 @@
   ],
   "data": true
  },
+ "The Ringers' Roster": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "The river carries my song now. Drink.": {
   "files": [
    "src/data/story.js"
@@ -15058,6 +15270,12 @@
    "src/ui/run/levels.js"
   ]
  },
+ "The same verse, copied out a hundred times, each copy a little more hollow than the last. In the margin: if I sing it enough, it will be mine.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
+ },
  "The save from {date} ({where}) will be replaced.": {
   "files": [
    "src/ui/menu/saves.js"
@@ -15078,6 +15296,12 @@
    "src/net/session.js",
    "src/ui/menu/mpmenu.js"
   ]
+ },
+ "The Seed Ledger": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
  },
  "The server can’t be reached right now — go Back and Retry.": {
   "files": [
@@ -16092,6 +16316,12 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "Twelve names, each with an hour beside it. Eleven are struck through in violet. The twelfth hour is left blank, as if whoever wrote it meant to come back.": {
+  "files": [
+   "src/sim/secrets.js"
+  ],
+  "data": true
  },
  "Twin Fuse": {
   "files": [

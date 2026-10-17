@@ -89,7 +89,8 @@ export function createInteractPrompts({ stage, world, runUi = null }) {
     // EVENT ROOMS: a "?" room's encounter answers E outside combat too.
     // KEYS AND VAULTS: so does the vault's chest.
     const ph = run && run.isActive() ? run.view().phase : null;
-    if (ph !== null && ph !== 'combat' && ph !== 'event' && ph !== 'vault') return null;
+    // SECRET ROOMS: and the hidden chamber's body.
+    if (ph !== null && ph !== 'combat' && ph !== 'event' && ph !== 'vault' && ph !== 'secret') return null;
     if (runUi && typeof runUi.isOpen === 'function' && runUi.isOpen()) return null;
     let best = null;
     let bestD = Infinity;
@@ -97,7 +98,7 @@ export function createInteractPrompts({ stage, world, runUi = null }) {
     for (const e of world.entities()) {
       if (e.partyIndex !== undefined && e.id !== p.id && !(e.hp > 0) && Math.hypot(e.x - p.x, e.z - p.z) <= REVIVE_RANGE) downed = true;
       if (e.interactable !== true) continue;
-      if ((e.itype === 'encounter' || e.itype === 'vault_chest') && e.uses === 0) continue; // a settled encounter has nothing left to press
+      if ((e.itype === 'encounter' || e.itype === 'vault_chest' || e.itype === 'secret_body') && e.uses === 0) continue; // a settled encounter has nothing left to press
       const d = Math.hypot(e.x - p.x, e.z - p.z) - (e.radius ?? 0);
       if (d <= (e.interactRadius ?? REACH) && d < bestD) {
         bestD = d;

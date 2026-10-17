@@ -1250,6 +1250,9 @@ export function createSaveSystem({
   bus.on('relic_gain', (ev) => journalNote('relic', ev.relic, 1));
   bus.on('curse_taken', (ev) => journalNote('curse', ev.curse, 1));
   bus.on('event_enter', (ev) => journalNote('event', ev.encounter, 1));
+  bus.on('secret_take', (ev) => {
+    if (ev.content === 'lore' && ev.page) journalNote('lore', ev.page, 1);
+  });
   bus.on('room_cleared', journalFlush);
   bus.on('level_clear', journalFlush);
   bus.on('run_end', journalFlush);

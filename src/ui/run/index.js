@@ -61,6 +61,8 @@ import { createRelicStrip, RELIC_STRIP_CSS } from './relicstrip.js';
 import { createEncounterScreen, createEventPlate, ENCOUNTER_CSS } from './encounter.js';
 import { ENCOUNTERS } from '../../sim/encounters.js';
 import { RELICS, CURSES } from '../../sim/relics.js';
+import { CONSUMABLES } from '../../sim/consumables.js';
+import { LORE_BY_ID } from '../../sim/secrets.js';
 import { SHRINES, BLESSINGS } from '../../sim/shrines.js';
 // @gnt:M3 RUN-NAV-SOUND (fix-M3-r5): selection ticks for the build pages.
 import { createSelectionSound } from '../../audio/uiselect.js';
@@ -924,6 +926,29 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (!a || typeof a.toast !== 'function' || !c) return;
     if (c.major) a.toast(t('Bound for the run: {name}. {text} Clear this room for a greater relic.', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 6000 });
     else a.toast(t('Cursed room: {name}. {text} Clear it for a relic.', { name: t(c.name), text: t(c.text) }), { tone: 'info', ms: 5200 });
+  });
+  // SECRET ROOMS (docs/SECRET_ROOMS.md): the wall breaking, a wall the fight
+  // ended with still shut, and what the chamber paid (the room stays in view
+  // a moment before the doors, as after an encounter's Take).
+  bus.on('secret_open', () => {
+    const a = service('app');
+    if (a && typeof a.toast === 'function') a.toast(t('A hidden chamber! The way in opens once the room is clear.'), { tone: 'good', ms: 4600 });
+  });
+  bus.on('room_cleared', () => {
+    const r = typeof world.runSystem === 'function' ? world.runSystem() : null;
+    const w = r && r.isActive() ? r.view().secrets?.wall : null;
+    const a = service('app');
+    if (w && w.state === 'shut' && a && typeof a.toast === 'function') a.toast(t('The cracked wall stays shut. Break it with a bomb or a heavy skill before the last foe falls.'), { tone: 'info', ms: 5200 });
+  });
+  bus.on('secret_take', (ev) => {
+    takeHoldUntil = performance.now() + TAKE_HOLD_MS;
+    const a = service('app');
+    if (!a || typeof a.toast !== 'function') return;
+    const page = ev.page ? LORE_BY_ID[ev.page] : null;
+    if (ev.content === 'lore' && page) a.toast(t('A page for the Journal: {name}. +{n} Glint.', { name: t(page.name), n: ev.glint ?? 0 }), { tone: 'good', ms: 5200 });
+    else if (ev.content === 'hoard') a.toast(t('The hidden hoard: +{n} Glint, and some for each ally.', { n: ev.glint ?? 0 }), { tone: 'good', ms: 4200 });
+    else if (ev.content === 'tonics' && ev.tonics && ev.tonics.length) a.toast(t('The hidden cache: {names}.', { names: ev.tonics.map((id) => (CONSUMABLES[id] ? t(CONSUMABLES[id].name) : id)).join(', ') }) + (ev.glint ? ` ${t('+{n} Glint for what no slot could hold.', { n: ev.glint })}` : ''), { tone: 'good', ms: 4600 });
+    else if (ev.content === 'tonics') a.toast(t('The hidden cache: +{n} Glint, every slot was full.', { n: ev.glint ?? 0 }), { tone: 'good', ms: 4200 });
   });
   // EVENT ROOMS: what an encounter paid out when no page follows it, and
   // what it took (the spirit's relic, the altar's curse).

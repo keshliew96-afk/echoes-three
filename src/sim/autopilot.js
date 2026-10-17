@@ -61,6 +61,9 @@ const CHASE_U = 3.0;
 // closest to them.
 const ESCORT_KEEP_U = 2.6;
 const HOLD_KEEP = 0.5;
+// SECRET ROOMS (sim/secrets.js SECRET_RULES.heavyMin): a bolt this heavy
+// breaks a cracked wall.
+const WALL_HEAVY = 12;
 const DEFAULT_CFG = Object.freeze({ seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto' });
 
 const d2 = (ax, az, bx, bz) => (ax - bx) * (ax - bx) + (az - bz) * (az - bz);
@@ -222,6 +225,11 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
     if (v.phase === 'vault') {
       if (typeof r.openVault === 'function') r.openVault();
       stats.vaults = (stats.vaults ?? 0) + 1;
+      return true;
+    }
+    // SECRET ROOMS: take what the hidden chamber holds (no walk needed).
+    if (v.phase === 'secret') {
+      if (typeof r.openSecret === 'function' && r.openSecret()) stats.secrets = (stats.secrets ?? 0) + 1;
       return true;
     }
     if (v.phase === 'encounter') {
@@ -427,6 +435,22 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
     } else if (Math.hypot(cx - player.x, cz - player.z) > FOLLOW_U) s.move = norm(cx - player.x, cz - player.z);
     else if (nearFoe && nearFoe.d < 1.4) s.move = norm(player.x - nearFoe.e.x, player.z - nearFoe.e.z);
 
+    // SECRET ROOMS: a cracked wall in the room and a way to break it (a bomb
+    // in the slot, a ready heavy bolt): walk toward it while no foe is close
+    // (the bomb flies from the run's slot rule, the bolt below).
+    const wall = registry.all().find((e) => e.kind === 'secret_wall' && e.shut);
+    let wallTool = null;
+    if (wall && !(nearFoe && nearFoe.d < 2.5) && !inside) {
+      const rv = run() ? run().view() : null;
+      const slot = rv && rv.tonics ? rv.tonics.slots[0] : null;
+      const sv = skills.slotsView();
+      const bolt = sv.findIndex((sl) => sl && !sl.passive && sl.remainingTicks <= 0 && SKILLS[sl.id].archetype === 'damage' && SKILLS[sl.id].shape === 'projectile' && SKILLS[sl.id].power >= WALL_HEAVY);
+      if (slot === 'fire_bomb' || slot === 'frost_bomb') wallTool = { reach: 5.5 };
+      else if (bolt >= 0) wallTool = { reach: Math.min(4.4, SKILLS[sv[bolt].id].range ?? 4.4), slot: bolt };
+      const wd = wallTool ? Math.hypot(wall.x - player.x, wall.z - player.z) : 0;
+      if (wallTool && wd > wallTool.reach) s.move = norm(wall.x - player.x, wall.z - player.z);
+    }
+
     // 4. Casts. Heals go to members below the heal line (self included) that
     // they reach; an aimed heal (bolt, arc, zone) takes the aim only for an
     // ally it reaches (a heal bolt cannot land on its own caster). Whenever
@@ -509,6 +533,12 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
         s.aim = { x: alt.x, z: alt.z };
         s.basicAttackHeld = Math.hypot(alt.x - player.x, alt.z - player.z) <= BASIC_RANGE;
       }
+    }
+    // SECRET ROOMS: the heavy bolt goes at the wall once it is in reach.
+    if (wallTool && wallTool.slot !== undefined && !aimHeals && pressed.size === healPresses && Math.hypot(wall.x - player.x, wall.z - player.z) <= wallTool.reach) {
+      s.aim = { x: wall.x, z: wall.z };
+      s.basicAttackHeld = false;
+      press(wallTool.slot);
     }
     return s;
   }

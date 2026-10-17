@@ -146,6 +146,10 @@ export function createRelicScreen({ run }) {
       // KEYS AND VAULTS (docs/VAULTS.md): the vault's chest.
       titleEl.textContent = t("THE VAULT'S CHEST");
       subEl.textContent = t('A relic from the hoard. Choose one.');
+    } else if (o.source === 'secret') {
+      // SECRET ROOMS (docs/SECRET_ROOMS.md): the hidden chamber's reliquary.
+      titleEl.textContent = t('THE HIDDEN RELIQUARY');
+      subEl.textContent = t('Something was hidden here for a reason. Choose one.');
     } else if (o.source === 'shrine') {
       // SHRINES (docs/SHRINES.md): the Geode Shrine's answer for a key.
       titleEl.textContent = t("THE GEODE SHRINE'S ANSWER");

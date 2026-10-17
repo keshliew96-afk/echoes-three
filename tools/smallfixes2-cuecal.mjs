@@ -32,6 +32,7 @@ const FILES = [
   { file: 'src/audio/hitcues.js', match: (id) => /^hurt_(heavy|soft|down)$/.test(id) },
   { file: 'src/audio/championcues.js', match: (id) => id.startsWith('ch_') },
   { file: 'src/audio/vaultcues.js', match: (id) => id.startsWith('vk_') },
+  { file: 'src/audio/secretcues.js', match: (id) => id.startsWith('sr_') },
   { file: 'src/audio/woodmillcues.js', match: (id) => id.startsWith('wm_') },
   { file: 'src/audio/barrowheartcues.js', match: (id) => id.startsWith('bh_') },
   { file: 'src/audio/tidecues.js', match: (id) => id.startsWith('td_') },

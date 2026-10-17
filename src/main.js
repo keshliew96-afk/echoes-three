@@ -285,6 +285,9 @@ registerChampionCues(service('audio'));
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the vault and its hoard.
 import { registerVaultCues } from './audio/vaultcues.js';
 registerVaultCues(service('audio'));
+// SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and the chamber.
+import { registerSecretCues } from './audio/secretcues.js';
+registerSecretCues(service('audio'));
 // HAZARDS AND SHRINES (docs/SHRINES.md): crystal spurs and the land shrines.
 import { registerShrineCues } from './audio/shrinecues.js';
 registerShrineCues(service('audio'));

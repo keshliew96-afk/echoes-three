@@ -44,7 +44,7 @@ import { tidecallerOpen, bellwrightOpen, rosterGrown } from '../../data/lineup.j
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked', 'escort', 'hold', 'bells']);
+export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked', 'escort', 'hold', 'bells', 'secret']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step
@@ -132,6 +132,9 @@ function tipText(id) {
     case 'soaked':
       return { title: t('Soak, then crash'), body: t('Rill\'s water soaks enemies: they drip and move slower. Her Crash skills hit a soaked enemy 60% harder and use the soak up, so soak a pack first, then crash a wave through it.') };
     // THE BELLWRIGHT (docs/BELLWRIGHT.md): mid-fight, the first bell she hangs.
+    // SECRET ROOMS (docs/SECRET_ROOMS.md): mid-fight, the first cracked wall.
+    case 'secret':
+      return { title: t('The cracked wall'), body: t('A cold draught leaks through a cracked wall. Break it with a bomb or a heavy skill before the last foe falls, and once the room is clear a hidden chamber opens: treasure, a relic, tonics, a page for the Journal, or something rarer.') };
     case 'bells':
       return { title: t('Hang, then ring'), body: t('Tolly\'s bells toll once a second and slow whatever stands in their ring; she can hang three. Her Peal rings every bell at once, and her Clapper hits half again as hard inside a ring, so hang the bells where the fight will be, then ring them.') };
     case 'relic':
@@ -615,6 +618,13 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
     for (const e of world.entities()) if (Array.isArray(e.affixes) && e.affixes.length && e.state === 'active') return true;
     return false;
   }
+  // SECRET ROOMS: is a shut cracked wall in the live fight?
+  function shutWall() {
+    if (app.state !== 'playing' || screensOpen()) return false;
+    const v = view();
+    if (!v || !v.active || v.tutorial || v.phase !== 'combat') return false;
+    return !!(v.secrets && v.secrets.wall && v.secrets.wall.state === 'shut');
+  }
   function pollFloorTip() {
     if (floorTip) {
       if (performance.now() >= floorTip.until || step) closeFloorTip();
@@ -622,7 +632,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
       return;
     }
     if (!tipsOn || step || shown) return;
-    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : !tipsSeen().includes('soaked') && crashSeen ? 'soaked' : !tipsSeen().includes('bells') && bellSeen ? 'bells' : null;
+    const id = !tipsSeen().includes('slick') && onSlick() ? 'slick' : !tipsSeen().includes('affix') && affixElite() ? 'affix' : !tipsSeen().includes('soaked') && crashSeen ? 'soaked' : !tipsSeen().includes('bells') && bellSeen ? 'bells' : !tipsSeen().includes('secret') && shutWall() ? 'secret' : null;
     if (!id) return;
     floorTip = { id, until: performance.now() + FLOOR_TIP_MS };
     markTip(id);

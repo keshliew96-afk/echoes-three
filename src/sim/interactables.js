@@ -278,7 +278,8 @@ export function createInteractableSystem({ registry, events, combat, getTick, pl
     // EVENT ROOMS: an encounter is never a combat asset, so a cleared room's
     // dormancy never reaches it.
     // KEYS AND VAULTS: nor is the vault's chest.
-    if (dormant && e.itype !== 'dewfont' && e.itype !== 'encounter' && e.itype !== 'vault_chest') return 'dormant';
+    // SECRET ROOMS: nor are a hidden chamber's bodies.
+    if (dormant && e.itype !== 'dewfont' && e.itype !== 'encounter' && e.itype !== 'vault_chest' && e.itype !== 'secret_body') return 'dormant';
     if (e.uses !== null && e.uses <= 0) return 'used';
     if (tick < e.cooldownUntilTick) return 'cooldown';
     if (e.itype === 'sluice' && (!e.laneIds || e.laneIds.length === 0)) return 'no_lane';
@@ -319,6 +320,9 @@ export function createInteractableSystem({ registry, events, combat, getTick, pl
     } else if (e.itype === 'vault_chest') {
       // KEYS AND VAULTS: the run system opens the vault's chest (sim/run.js).
       events.emit(tick, 'vault_touch', { id: e.id, by: actor.id });
+    } else if (e.itype === 'secret_body') {
+      // SECRET ROOMS: the run system opens the chamber's body (sim/run.js).
+      events.emit(tick, 'secret_touch', { id: e.id, by: actor.id });
     } else if (e.itype === 'shrine') {
       // SHRINES: the run system takes the price and lays the blessing
       // (sim/run.js); a price the party cannot pay gives the use back.

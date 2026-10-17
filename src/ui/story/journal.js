@@ -14,6 +14,8 @@ const CHAMPION_SET = new Set(BESTIARY.filter((b) => b.champion).map((b) => b.id)
 import { RELICS, RELIC_IDS, CURSES } from '../../sim/relics.js';
 import { ENCOUNTERS, ENCOUNTER_IDS } from '../../sim/encounters.js';
 import { DEEDS, DEED_IDS } from '../../data/unlocks.js';
+import { LORE_IDS, LORE_BY_ID } from '../../sim/secrets.js';
+import { SECRET_COLORS } from '../../data/palette.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { RARITY_COLOR } from '../run/cards.js';
 import { relicIconHtml, curseIconHtml } from '../run/relicicons.js';
@@ -45,12 +47,15 @@ export function journalInfo(p) {
   for (const id of meta.relicsSeen || []) relic[id] = Math.max(relic[id] ?? 0, 1);
   const curse = { ...(seen.curse || {}) };
   const event = { ...(seen.event || {}) };
+  const lore = { ...(seen.lore || {}) };
   const deeds = new Set(meta.deeds || []);
   const row = (map, id) => ({ id, seen: id in map, count: map[id] ?? 0 });
   const bestiary = BESTIARY.map((b) => ({ ...row(b.boss ? boss : enemy, b.id), boss: b.boss }));
   const relics = RELIC_IDS.map((id) => row(relic, id));
   const curses = Object.keys(CURSES).map((id) => row(curse, id));
   const events = ENCOUNTER_IDS.map((id) => row(event, id));
+  // SECRET ROOMS (docs/SECRET_ROOMS.md): the lore pages, on the Events page.
+  const pages = LORE_IDS.map((id) => row(lore, id));
   const deedRows = DEED_IDS.map((id) => ({ id, done: deeds.has(id) }));
   const met = (list) => list.filter((x) => x.seen).length;
   return {
@@ -58,11 +63,12 @@ export function journalInfo(p) {
     relics,
     curses,
     events,
+    pages,
     deeds: deedRows,
     totals: {
       bestiary: { met: met(bestiary), of: bestiary.length },
       relics: { met: met(relics) + met(curses), of: relics.length + curses.length },
-      events: { met: met(events), of: events.length },
+      events: { met: met(events) + met(pages), of: events.length + pages.length },
       deeds: { met: deedRows.filter((d) => d.done).length, of: deedRows.length },
     },
   };
@@ -123,6 +129,10 @@ export const JOURNAL_CSS = `
 `;
 
 const landName = (lv) => t(LEVELS[lv].name);
+// SECRET ROOMS: a lore page's tile, a curled leaf with lines of script.
+function pageIconHtml(size) {
+  return `<svg class="rl-icon" viewBox="0 0 48 48" width="${size}" height="${size}" aria-hidden="true"><path d="M13 6h17l7 7v27c0 1.1-.9 2-2 2H13c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2z" fill="currentColor" fill-opacity="0.16" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M30 6v7h7" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linejoin="round"/><path d="M17 20h14M17 26h14M17 32h9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+}
 const landsLine = (lands) => lands.map(landName).join(' · ');
 
 // One page (Bestiary / Relics / Events): grid + detail. `getInfo` reads the
@@ -142,7 +152,7 @@ export function createJournalPage(kind, getInfo) {
     const info = getInfo();
     if (kind === 'bestiary') return info.bestiary.map((r) => ({ ...r, kind: r.boss ? 'boss' : 'enemy' }));
     if (kind === 'relics') return [...info.relics.map((r) => ({ ...r, kind: 'relic' })), ...info.curses.map((r) => ({ ...r, kind: 'curse' }))];
-    return info.events.map((r) => ({ ...r, kind: 'event' }));
+    return [...info.events.map((r) => ({ ...r, kind: 'event' })), ...(info.pages || []).map((r) => ({ ...r, kind: 'lore' }))];
   }
   const keyOf = (e) => `${e.kind}:${e.id}`;
 
@@ -155,6 +165,7 @@ export function createJournalPage(kind, getInfo) {
     }
     if (e.kind === 'relic') return relicIconHtml(e.id, 48);
     if (e.kind === 'curse') return curseIconHtml(48, !!CURSES[e.id].major);
+    if (e.kind === 'lore') return pageIconHtml(48);
     return encounterSigil(e.id, 48);
   }
   function rimOf(e) {
@@ -163,6 +174,7 @@ export function createJournalPage(kind, getInfo) {
     if (e.kind === 'relic') return RARITY_COLOR[RELICS[e.id].rarity] ?? P.bone;
     if (e.kind === 'curse') return P.godstuffViolet;
     if (e.kind === 'event') return ENCOUNTER_COLOR[e.id] ?? P.bone;
+    if (e.kind === 'lore') return SECRET_COLORS.glow;
     return P.hearthAmber;
   }
 
@@ -180,7 +192,10 @@ export function createJournalPage(kind, getInfo) {
     } else if (kind === 'relics') {
       groups.push([t('Relics'), all.filter((e) => e.kind === 'relic')]);
       groups.push([t('Curses'), all.filter((e) => e.kind === 'curse')]);
-    } else groups.push([t('Event rooms'), all]);
+    } else {
+      groups.push([t('Event rooms'), all.filter((e) => e.kind === 'event')]);
+      groups.push([t('Lore pages'), all.filter((e) => e.kind === 'lore')]);
+    }
     list.innerHTML = '';
     for (const [title, rows] of groups) {
       if (!rows.length) continue;
@@ -212,6 +227,7 @@ export function createJournalPage(kind, getInfo) {
     if (e.kind === 'enemy' || e.kind === 'boss') return BESTIARY.find((b) => b.id === e.id).name;
     if (e.kind === 'relic') return RELICS[e.id].name;
     if (e.kind === 'curse') return CURSES[e.id].name;
+    if (e.kind === 'lore') return LORE_BY_ID[e.id].name;
     return ENCOUNTERS[e.id].name;
   }
 
@@ -275,6 +291,15 @@ export function createJournalPage(kind, getInfo) {
         parts.push(`<div class="jr-text">${esc(t(c.text))}</div>`);
         parts.push(`<div class="jr-count">${esc(tn(e.count, 'Borne {n} time', 'Borne {n} times'))}</div>`);
       } else parts.push(`<div class="jr-text jr-dim">${esc(t('Not borne yet.'))}</div>`);
+    } else if (e.kind === 'lore') {
+      const pg = LORE_BY_ID[e.id];
+      parts.push(stage(pageIconHtml(96)));
+      parts.push(`<div class="jr-tag">${esc(t('LORE PAGE'))} · ${esc(t(LAND_NAME[pg.land] ?? '').toUpperCase())}</div>`);
+      parts.push(`<div class="jr-name">${name}</div>`);
+      if (e.seen) {
+        parts.push(`<div class="jr-lore">${esc(t(pg.text))}</div>`);
+        parts.push(`<div class="jr-count">${esc(tn(e.count, 'Found {n} time', 'Found {n} times'))}</div>`);
+      } else parts.push(`<div class="jr-text jr-dim">${esc(t('Not found yet. It lies in a hidden chamber in {land}.', { land: t(LAND_NAME[pg.land] ?? '') }))}</div>`);
     } else {
       const v = ENCOUNTERS[e.id];
       parts.push(stage(encounterSigil(e.id, 96)));
