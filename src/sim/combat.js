@@ -117,6 +117,13 @@ export function createCombat({
   ) {
     const tick = getTick();
     if (!target || !(target.hp > 0)) return null; // outside the pipeline
+    // SECRET ROOMS (docs/SECRET_ROOMS.md): a cracked wall never enters the HP
+    // pipeline (no crit draw, no numeral): the run hears the blow and decides
+    // whether it was heavy enough to break it open.
+    if (target.kind === 'secret_wall') {
+      events.emit(tick, 'wall_blow', { id: target.id, attacker, base: Math.round(base * 100) / 100, delivery, shape, source });
+      return { immune: true };
+    }
     if (isIframed(target)) {
       stats.immune += 1;
       events.emit(tick, 'hit_immune', {

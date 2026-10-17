@@ -33,6 +33,12 @@ export const TONIC_COLORS = Object.freeze({
   bell_charm: Object.freeze({ glow: '#D9B872', core: '#F7E7C0' }),
 });
 
+// SECRET ROOMS (docs/SECRET_ROOMS.md): the cold light leaking out of a
+// cracked wall and filling the hidden chamber behind it: moonlit silver, clear
+// of the reserved hues and apart from the hoard's Pale Gold, so a secret reads
+// as found light, not as money.
+export const SECRET_COLORS = Object.freeze({ glow: '#B9CCE6', core: '#F4F8FF', deep: '#4E6688', dark: '#07080C' });
+
 // SHRINES (docs/SHRINES.md): each land's shrine and the blessing it lays,
 // clear of the reserved hues (Ember the enemy's, Violet the gods'): moss gold
 // for the Antler Shrine's Swiftness, ward silver-blue for the Tithe Shrine,

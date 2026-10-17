@@ -361,6 +361,8 @@ export function createEndScreen({ run }) {
       ? builds.reduce((n, b) => n + (b.filled || 0) + (Number.isFinite(b.bench) ? b.bench : 0), 0)
       : s.nodes.bench.length + s.nodes.socketed.length;
     if (!rush) pairs.push([t('ROOMS CLEARED'), rooms[0]]);
+    // SECRET ROOMS (docs/SECRET_ROOMS.md): once a cracked wall has shown.
+    if (s.secrets && s.secrets.seen > 0) pairs.push([t('SECRETS FOUND'), `${s.secrets.found} / ${s.secrets.seen}`]);
     pairs.push([t('GLINT EARNED'), String(s.glint)]);
     pairs.push([t('SKILLS CARRIED'), String(skillsHeld)], [t('NODES HELD'), String(nodesHeld)]);
     pairs.push([t('RUN SEED'), String(s.seed ?? '—')], [rush ? t('RUSH LENGTH') : deep ? t('DESCENT LENGTH') : camp ? t('CAMPAIGN LENGTH') : t('RUN LENGTH'), t('{secs} s', { secs: Math.round(s.ticks / 60) })]);

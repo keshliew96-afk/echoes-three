@@ -114,7 +114,10 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       resolve: () => {
         const t = registry.byId(targetId);
         if (!t) return; // died to an earlier same-tick maturation
-        combat.applyDamage(t, power, { delivery, shape: 'projectile', dirX, dirZ });
+        // SECRET ROOMS: a party bolt's blow on a cracked wall names the
+        // player, so the run can tell a hero's knock from a stray one.
+        if (t.kind === 'secret_wall') combat.applyDamage(t, power, { delivery, shape: 'projectile', dirX, dirZ, ...(bolt.faction === 'party' ? { attacker: player.id } : {}) });
+        else combat.applyDamage(t, power, { delivery, shape: 'projectile', dirX, dirZ });
       },
     });
   }

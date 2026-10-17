@@ -51,6 +51,8 @@ import { buildEncounter, ENCOUNTER_KINDS } from './encounters.js';
 // KEYS AND VAULTS (docs/VAULTS.md): the key, the hoard and the vault.
 import { buildVaultRig, VAULT_KINDS } from './vaults.js';
 import { buildTonicRig, TONIC_KINDS } from './tonics.js';
+// SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and the chamber.
+import { buildSecretRig, SECRET_KINDS } from './secrets.js';
 // SHRINES (docs/SHRINES.md): the five land shrines.
 import { buildShrineRig, SHRINE_KINDS } from './shrines.js';
 
@@ -519,6 +521,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
       default:
         if (SHRINE_KINDS.includes(e.kind)) return buildShrineRig(e);
         if (TONIC_KINDS.includes(e.kind)) return buildTonicRig(e);
+        if (SECRET_KINDS.includes(e.kind)) return buildSecretRig(e, { stage });
         return VAULT_KINDS.includes(e.kind) ? buildVaultRig(e) : null;
     }
   }
@@ -561,6 +564,19 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
   bus.on('vault_open', () => {
     for (const rec of rigs.values()) if (rec.kind === 'vault_chest' && rec.r.onEvent) rec.r.onEvent('vault_open');
   });
+  // SECRET ROOMS: a light knock flares the seam; the break opens the breach;
+  // the chamber's body opening.
+  bus.on('secret_knock', (ev) => {
+    const r = rigs.get(ev.id);
+    if (r && r.r.onEvent) r.r.onEvent('knock');
+  });
+  bus.on('secret_open', (ev) => {
+    const r = rigs.get(ev.id);
+    if (r && r.r.onEvent) r.r.onEvent('open');
+  });
+  bus.on('secret_take', () => {
+    for (const rec of rigs.values()) if (rec.kind === 'secret_body' && rec.r.onEvent) rec.r.onEvent('take');
+  });
   bus.on('keg_blast', (ev) => {
     // White-hot flash + fire burst + scorch at the blast (the §19.4 layers).
     impactFx.kill(ev.x, ev.z, { color: PALETTE.emberDanger });
@@ -587,7 +603,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     const ctx = { tick: world.tick, cosmetic, camQuat: stage.camera.quaternion, asleep: roomAsleep };
     const seen = new Set();
     for (const e of world.entities()) {
-      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter' && !VAULT_KINDS.includes(e.kind) && !TONIC_KINDS.includes(e.kind) && !SHRINE_KINDS.includes(e.kind)) continue;
+      if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter' && !VAULT_KINDS.includes(e.kind) && !TONIC_KINDS.includes(e.kind) && !SHRINE_KINDS.includes(e.kind) && !SECRET_KINDS.includes(e.kind)) continue;
       seen.add(e.id);
       let rec = rigs.get(e.id);
       if (!rec) {
@@ -656,6 +672,8 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
     warmPark(root, buildTonicRig({ kind: 'tonic_bomb', item: 'frost_bomb', launchTick: 0, landTick: 27 }).group);
     warmPark(root, buildTonicRig({ kind: 'tonic_fire', radius: 2.1, untilTick: 0 }).group);
     for (const shrine of ['wood', 'mill', 'barrow', 'heart', 'spire']) warmPark(root, buildShrineRig({ kind: 'shrine', shrine, uses: 1 }).group);
+    warmPark(root, buildSecretRig({ kind: 'secret_wall', biome: 'wood', shut: true }).group);
+    for (const content of ['relic', 'tonics', 'lore']) warmPark(root, buildSecretRig({ kind: 'secret_body', content, uses: 1 }).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);
   }

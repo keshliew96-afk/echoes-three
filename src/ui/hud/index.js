@@ -101,6 +101,8 @@ function locationCopy(scene, rv, short = false) {
     if (rv.phase === 'shop' || rv.mode === 'shop') return { name: t("THE PEDDLER'S CLEARING"), sub: roomLine(short, room, total, MODE_WORD.shop) };
     // EVENT ROOMS: a "?" room (the chest's ambush keeps the name).
     if (rv.mode === 'event') return { name: place ?? t('UNEASY WOODLAND'), sub: roomLine(short, room, total, t('AN ENCOUNTER')) };
+    // SECRET ROOMS: the hidden chamber behind a broken wall.
+    if (rv.secrets && rv.secrets.chamber && (rv.phase === 'secret' || rv.phase === 'event' || rv.phase === 'encounter')) return { name: t('A HIDDEN CHAMBER'), sub: roomLine(short, room, total, rv.phase === 'secret' ? t('TAKE WHAT IT HOLDS') : t('A RARE ENCOUNTER')) };
     // KEYS AND VAULTS: the vault the party's key opened.
     if (rv.mode === 'vault') return { name: t('THE VAULT'), sub: roomLine(short, room, total, rv.phase === 'vault' ? t('OPEN THE CHEST') : t('THE HOARD IS YOURS')) };
     const mode = rv.mode === 'kill_all' && place ? t('CLEAR THE ROOM') : MODE_WORD[rv.mode] ?? t('ON THE ROAD');

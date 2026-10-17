@@ -35,6 +35,7 @@ import { createTideFx } from './tidefx.js';
 import { createBellFx } from './bellfx.js';
 import { createTonicFx } from './tonicfx.js';
 import { createShrineFx } from './shrinefx.js';
+import { createSecretFx } from './secretfx.js';
 
 const EMBER = PALETTE.emberDanger;
 const PARCH = PALETTE.parchment;
@@ -846,6 +847,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark });
   // HAZARDS AND SHRINES (docs/SHRINES.md): crystal spurs, shrines, blessings.
   const shrineFx = createShrineFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world });
+  // SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and the chamber.
+  createSecretFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, rnd, mark, player });
   bus.on('ally_cast', (ev) => {
     const fn = SKILL_SIG[ev.skill];
     if (!fn || ev.x == null) return;
