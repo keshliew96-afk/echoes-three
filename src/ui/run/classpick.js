@@ -54,6 +54,24 @@ const FREE_HER = {
 };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
+// Long one-word class names in other languages get a soft hyphen at a
+// syllable break, so on the seven narrow cards they wrap with a hyphen
+// ("Заклина-тельница") instead of shrinking to a tiny font. Invisible when
+// the word fits; the picker only (the translations stay as they are).
+const NAME_BREAKS = {
+  Заклинательница: 'Заклина\u00adтельница',
+  Gezeitenruferin: 'Gezeiten\u00adruferin',
+  Schwertkämpfer: 'Schwert\u00adkämpfer',
+  Bogenschütze: 'Bogen\u00adschütze',
+  Dämmerflügel: 'Dämmer\u00adflügel',
+  Glöcknerin: 'Glöck\u00adnerin',
+  Сумеречник: 'Сумереч\u00adник',
+  Carillonneuse: 'Carillon\u00adneuse',
+  Alacrepúsculo: 'Ala\u00adcrepúsculo',
+  Llamamareas: 'Llama\u00admareas',
+};
+const breakName = (name) => String(name).replace(/\S+/g, (w) => NAME_BREAKS[w] ?? w);
+
 function installStyle() {
   if (document.getElementById(STYLE_ID)) return;
   const st = document.createElement('style');
@@ -95,9 +113,10 @@ function installStyle() {
 .cs-classes .cs-lineup { align-self: center; font: inherit; font-size: ${px(20)}; font-weight: 700; color: ${P.parchment}; cursor: pointer;
   padding: ${px(8)} ${px(18)}; border-radius: ${px(10)}; border: max(2px, ${px(2)}) solid ${P.warmGrey}88; background: ${P.voidCharcoal}; }
 .cs-classes .cs-lineup.ap-focus { outline: max(2px, ${px(2)}) solid ${P.hearthAmber}; outline-offset: ${px(3)}; }
-.cs-classes .cs-grid.cs-many { gap: ${px(10)}; }
-.cs-classes .cs-grid.cs-many .cs-card { padding: ${px(16)} ${px(13)} ${px(12)}; min-width: 0; }
-.cs-classes .cs-grid.cs-many .cs-card .cs-name { font-size: ${px(27)}; overflow-wrap: normal; } /* fitNames() shrinks a long one */
+.cs-classes .cs-wrap:has(.cs-many) { width: min(98vw, ${px(1600)}); padding-left: ${px(22)}; padding-right: ${px(22)}; }
+.cs-classes .cs-grid.cs-many { gap: ${px(8)}; }
+.cs-classes .cs-grid.cs-many .cs-card { padding: ${px(16)} ${px(11)} ${px(12)}; min-width: 0; }
+.cs-classes .cs-grid.cs-many .cs-card .cs-name { font-size: ${px(27)}; overflow-wrap: normal; hyphens: manual; } /* NAME_BREAKS, then fitNames() */
 .cs-classes .cs-grid.cs-many .cs-new { position: static; align-self: flex-start; margin-bottom: ${px(2)}; } /* in flow: seven cards leave no room for a corner badge */
 .cs-classes .cs-grid.cs-many .cs-card .cs-role { font-size: ${px(17)}; }
 .cs-classes .cs-grid.cs-many .cs-card .cs-stats { flex-wrap: wrap; gap: ${px(4)} ${px(12)}; font-size: ${px(17)}; }
@@ -181,15 +200,14 @@ export function createClassesScreen(ctx) {
     return b;
   }
 
-  // Seven narrow cards: a class name whose longest word is wider than its
-  // card (Dämmerflügel, Заклинательница) steps its font down until it fits,
-  // so no name is cut mid-word.
+  // Seven narrow cards: a class name whose longest word is still wider than
+  // its card after NAME_BREAKS steps its font down a little until it fits.
   function fitNames() {
     if (!gridEl.classList.contains('cs-many')) return;
     for (const el of gridEl.querySelectorAll('.cs-name')) {
       el.style.fontSize = '';
       let size = parseFloat(getComputedStyle(el).fontSize);
-      const floor = size * 0.6;
+      const floor = size * 0.8;
       while (el.scrollWidth > el.clientWidth + 1 && size > floor) {
         size -= 1;
         el.style.fontSize = `${size}px`;
@@ -248,7 +266,7 @@ export function createClassesScreen(ctx) {
       const head =
         (locked ? `<span class="cs-new cs-lock">${esc(t('LOCKED'))}</span>` : cls === 'duskwing' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
         `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(CLASS_CRITTER[cls]).toUpperCase() }))}</div>` +
-        `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>`;
+        `<div class="cs-name">${esc(breakName(t(CLASS_NAME[cls])))}</div>`;
       if (team0) {
         const healer = cls === 'healer';
         const you = cls === on && !healer;

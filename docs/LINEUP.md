@@ -102,7 +102,10 @@ The seventh character, Sable the Duskwing (docs/DUSKWING.md), joins
 on seat 0, the class you play always joins, and the picker chooses who joins
 the team, never who stays at camp. Picking him with no team chosen seats him
 in the Archer's place. The class picker lays seven cards out in one narrower
-row (`.cs-many`).
+row (`.cs-many`, a little wider panel); a long one-word name in another
+language (Заклинательница, Gezeitenruferin) wraps at a soft hyphen from
+`NAME_BREAKS` in `src/ui/run/classpick.js`, and `fitNames()` shrinks a
+name a little only if a word still does not fit.
 
 ## Checks
 
