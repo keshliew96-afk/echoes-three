@@ -857,6 +857,10 @@ ${Object.entries({
   skyhorn: mix(VFX_MATTER.bellbronze, VFX_MATTER.spirestone, 0.35),
   // Plan 5 slice 1: the Hourwarden in bronze and its dial's pale light.
   hourwarden: mix(VFX_MATTER.bellbronze, VFX_MATTER.hushpale, 0.3),
+  // Plan 5 slice 8: the Bellfounder in bronze over its kiln's gold, the
+  // Cinderback in soot hide over live coals.
+  founder: mix(VFX_MATTER.bellbronze, VFX_MATTER.kilngold, 0.35),
+  cinderback: mix(VFX_MATTER.salamander, VFX_MATTER.coal, 0.4),
 })
   .map(
     ([k, tint]) => `.hud-bn-medal[data-boss="${k}"] {

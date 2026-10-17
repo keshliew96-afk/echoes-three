@@ -1014,6 +1014,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (ev.affix) return; // ELITE AFFIXES: no lob, the burst swells in place
     if (ev.sack) return millerToss(ev); // the Drowned Miller's flour sack
     if (ev.weight) return; // the Hourwarden's weights fall, they are not thrown
+    if (ev.ember) return; // the Cinderback's gobbets fly off its spit
     // The spore burst, the seed volley and the grave call are their own recipes.
     if (kind === 'rotcap' || kind === 'thornmother' || kind === 'lichram' || kind === 'geode') return; // (the geode's shards fly off its slam)
     const es = vfxEnemyStyle(owner?.kind ?? 'toad', 'lobber');
@@ -1025,6 +1026,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (ev.affix) return affixBurst(ev); // ELITE AFFIXES: Molten / Frozen
     if (ev.sack) return sackLand(ev);
     if (ev.weight) return weightLand(ev); // the Hourwarden's clock weights
+    if (ev.ember) return emberLand(ev); // the Cinderback's gobbets
     if (kind === 'rotcap') {
       sporeCloud(ev.x, ev.z, ev.radius ?? 1.2);
       return;
@@ -1496,6 +1498,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (byId(ev.id)?.kind === 'veinweaver') return weaverEnrage(ev);
     if (byId(ev.id)?.kind === 'skyhorn') return skyhornEnrage(ev);
     if (byId(ev.id)?.kind === 'hourwarden') return hourwardenEnrage(ev);
+    if (byId(ev.id)?.kind === 'cinderback') return cinderbackEnrage(ev);
     mark('wyrm_enrage');
     const { x, z } = ev;
     kit.pillar({ x, z, radius: 0.5, height: 2.6, color: WYRM.corruption, life: 0.7, opacity: 0.5 });
@@ -3216,6 +3219,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     else if (b.kind === 'ashraven' || b.kind === 'veinweaver') slice11Windup(b, ev);
     else if (b.kind === 'hush' || b.kind === 'skyhorn') spireWindup(b, ev);
     else if (b.kind === 'hourwarden') hourwardenWindup(b, ev);
+    else if (b.kind === 'founder') founderWindup(b, ev);
+    else if (b.kind === 'cinderback') cinderbackWindup(b, ev);
   });
   bus.on('boss_charge', (ev) => {
     mark('thorn_charge');
@@ -3715,6 +3720,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (e.kind === 'ashraven' || e.kind === 'veinweaver') return slice11Frame(e, rec);
     if (e.kind === 'hush' || e.kind === 'skyhorn') return spireFrame(e, rec);
     if (e.kind === 'hourwarden') return hourwardenFrame(e, rec);
+    if (e.kind === 'founder') return founderFrame(e, rec);
+    if (e.kind === 'cinderback') return cinderbackFrame(e, rec);
     if (e.kind === 'keener' || e.kind === 'sexton' || e.kind === 'bloom' || e.kind === 'siphon') return barrowHeartFrame(e, rec);
     if (e.kind === 'thornmother') {
       if (e.mode !== 'charge' || rec.clock < THORN.charge.every) return;
@@ -5468,6 +5475,358 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
   }
 
+  // ------------------------------- The Kiln's bosses (plan 5 slice 8) --
+  // (docs/KILN_BOSSES.md) The Bellfounder and the Cinderback, in the Kiln's
+  // light: KILN GOLD and white heat over COAL crimson, slag and soot after;
+  // Ember only ever on the frame that hurts (the pour's lane, the bell's and
+  // the Firing's rings, the surfacing ring, the lash's cone, each gobbet's
+  // ring); the hollow song's violet a thread in each.
+  const FOUND = vfxBossStyle('founder');
+  const CBACK = vfxBossStyle('cinderback');
+  const FBRONZE = vfxMatterColor('bellbronze');
+  const FBRICK = vfxMatterColor('kilnbrick');
+  const FGOLD = vfxMatterColor('kilngold');
+  const FHEAT = vfxMatterColor('kilnheat');
+  const FCOAL = vfxMatterColor('coal');
+  const FSLAG = vfxMatterColor('slag');
+  const FSPARK = vfxMatterColor('sparks');
+  const FASH = vfxMatterColor('mothash');
+  const FOUNDER_CHEST_Y = 1.45; // its kiln door (render/boss/kiln.js)
+  const FOUNDER_HEAD_Y = 2.7;
+  // The Molten Pour: the crucible tips (a white-hot gush at its lip), and a
+  // river of molten bronze runs down the lane — a white-gold streak laid
+  // fast along the floor with the Ember edge on the full lane (the hit),
+  // drops splashing gold off it, the bronze cooling into gold-seamed slag
+  // where the three pools settle, steam and soot rolling off.
+  bus.on('boss_molten_pour', (ev) => {
+    mark('founder_pour');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const len = ev.len ?? 6;
+    const ang = Math.atan2(d.z, d.x);
+    const SPEED = 16;
+    const sweep = len / SPEED;
+    const ex = ev.x + d.x * len;
+    const ez = ev.z + d.z * len;
+    const lipX = ev.x + d.x * 1.1;
+    const lipZ = ev.z + d.z * 1.1;
+    flare(lipX, 1.1, lipZ, FGOLD, 1.4, { kind: 'burst', life: 0.2, core: FHEAT });
+    kit.streak({ a: { x: lipX, y: 1.1, z: lipZ }, b: { x: lipX + d.x * 0.6, y: 0.1, z: lipZ + d.z * 0.6 }, width: 0.5, tailW: 0.3, core: FHEAT, glow: FGOLD, life: sweep + 0.3, fall: 1.0, opacity: 0.9 });
+    kit.streak({ a: { x: ev.x, y: 0.08, z: ev.z }, b: { x: ex, y: 0.08, z: ez }, width: 1.4, tailW: 1.2, core: EMBER, glow: EMBER, life: sweep + 0.16, fall: 2.2, opacity: 0.45 });
+    kit.streak({ a: { x: ev.x, y: 0.12, z: ev.z }, b: { x: ex, y: 0.12, z: ez }, width: 0.8, tailW: 0.5, core: FHEAT, glow: FGOLD, life: sweep + 0.9, fall: 0.8, opacity: 0.8, delay: 0.02 });
+    kit.streak({ a: { x: ev.x, y: 0.16, z: ev.z }, b: { x: ev.x + d.x * 0.6, y: 0.16, z: ev.z + d.z * 0.6 }, width: 0.3, tailW: 0.7, core: PARCH, glow: FGOLD, life: sweep, travel: { x: d.x * SPEED, y: 0, z: d.z * SPEED }, fall: 0.3 });
+    const drops = FOUND.pour.drops;
+    for (let i = 0; i < drops; i++) {
+      const k = (i + 0.5) / drops;
+      const px = ev.x + d.x * len * k;
+      const pz = ev.z + d.z * len * k;
+      after(sweep * k, () => {
+        spray('spark', px, 0.15, pz, Math.round(FOUND.pour.sparks / drops), { color: FSPARK, speed: [0.6, 1.8], up: [0.8, 2.0], size: [0.04, 0.07], life: [0.3, 0.6], gravity: 4, drag: 0.6, jitter: 0.4 });
+        spray('shard', px, 0.2, pz, 2, { color: FHEAT, tile: SHARD_TILE.drop, speed: [0.3, 0.9], up: [1.0, 1.8], size: [0.08, 0.12], life: [0.35, 0.55], gravity: 6, spin: [-2, 2] });
+        spray('smoke', px, 0.15, pz, 1, { color: FASH, speed: [0.1, 0.3], up: [0.3, 0.6], size: [0.4, 0.55], grow: 1.5, life: [0.9, 1.4], opacity: 0.22, gravity: -0.3, drag: 1.8, jitter: 0.4 });
+      });
+    }
+    for (let k = 0; k < 3; k++) {
+      const s = len * ((k + 0.5) / 3);
+      kit.mark({ x: ev.x + d.x * s, z: ev.z + d.z * s, radius: 0.85, kind: 'splash', stain: FSLAG, glow: FGOLD, glowOpacity: 0.6, cool: 2.4, life: 3.4, opacity: 0.5, delay: sweep * ((k + 0.5) / 3) });
+    }
+    kit.mark({ x: (ev.x + ex) / 2, z: (ev.z + ez) / 2, radius: len * 0.45, kind: 'gouge', angle: ang, stretch: 3.2, stain: INK, glow: FGOLD, glowOpacity: 0.35, cool: 1.6, life: 3.0, opacity: 0.3 });
+    kit.light({ x: (ev.x + ex) / 2, z: (ev.z + ez) / 2, radius: Math.min(3.4, len * 0.45), color: FGOLD, opacity: 0.5, life: 0.7, attack: 0.03 });
+    camfx.kick(d.x, d.z, FOUND.camera.kick * 0.5, 0.12);
+  });
+  // The Bell Drop: a fresh-cast bell falls out of the dark (a gold streak
+  // dropping onto the ring), lands — the Ember ring flashes (the hit), a ring
+  // of bronze sound rolls out in waves, flagstone chips, a crater with a
+  // ring-shaped gold seam — and the bell shatters into bronze shards.
+  bus.on('boss_bell_drop', (ev) => {
+    mark('founder_bell');
+    const r = ev.radius ?? 1.9;
+    kit.streak({ a: { x: ev.x, y: 5.5, z: ev.z }, b: { x: ev.x, y: 4.6, z: ev.z }, width: 0.5, tailW: 0.2, core: FHEAT, glow: FBRONZE, life: 0.12, travel: { x: 0, y: -36, z: 0 }, fall: 0.3 });
+    flare(ev.x, 0.5, ev.z, EMBER, 2.0, { kind: 'burst', life: 0.22, core: PARCH });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.3, width: 0.14 });
+    kit.flash({ x: ev.x, y: 0.8, z: ev.z, color: FHEAT, size: 1.4, life: 0.14 });
+    for (let i = 0; i < FOUND.bell.rings; i++) kit.ring({ x: ev.x, z: ev.z, r0: 0.4, r1: r * (1.3 + i * 0.5), width: 0.09, life: 0.5 + i * 0.14, core: PARCH, glow: i === 1 ? FOUND.corruption : FBRONZE, soft: 0.55, y: 0.5 + i * 0.35, delay: i * 0.09 });
+    spray('shard', ev.x, 0.6, ev.z, 14, { color: FBRONZE, tile: SHARD_TILE.needle, speed: [1.0, 2.6], up: [1.2, 2.6], size: [0.09, 0.15], life: [0.6, 0.9], gravity: 6, spin: [-10, 10], jitter: 0.4 });
+    spray('chunk', ev.x, 0.2, ev.z, FOUND.bell.chunk, { color: FBRICK, speed: [0.8, 2.0], up: [1.0, 2.2], size: [0.05, 0.11], life: [0.5, 0.8], jitter: r * 0.4 });
+    spray('spark', ev.x, 0.3, ev.z, 10, { color: FSPARK, speed: [0.8, 2.2], up: [0.4, 1.2], size: [0.03, 0.06], life: [0.25, 0.45], gravity: 3, drag: 0.6, jitter: 0.3 });
+    spray('smoke', ev.x, 0.15, ev.z, 4, { color: FBRICK, speed: [0.6, 1.4], up: [0.05, 0.25], size: [0.4, 0.55], grow: 1.4, life: [0.7, 1.0], opacity: 0.3, gravity: 0, drag: 2.4, jitter: r * 0.4 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 0.9, kind: 'crater', stain: FBRICK, glow: FGOLD, glowOpacity: 0.4, cool: 1.4, life: 3.4, opacity: 0.5 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.5, color: FBRONZE, opacity: 0.5, life: 0.4, attack: 0.02 });
+    camfx.kick(0, 1, FOUND.camera.kick * 0.6, 0.12);
+  });
+  // A Casting: a mould cracks open at its feet — gold light floods out of
+  // the cracks, molten bronze spills, and the violet of the hollow song
+  // flickers through it as the Kiln's creatures crawl out.
+  bus.on('boss_casting', (ev) => {
+    mark('founder_casting');
+    const { x, z } = ev;
+    anticipate(x, z, 1.8, FGOLD, { y: 0.3, lines: 10, core: FHEAT });
+    after(ANTICIP, () => {
+      kit.crack({ x, z, radius: 2.4, glow: FGOLD, life: 2.6, cool: 1.4 });
+      flare(x, 0.4, z, FGOLD, 2.2, { kind: 'burst', life: 0.3, core: FHEAT });
+      flare(x, 1.2, z, FOUND.corruption, 1.4, { life: 0.3, core: FOUND.peak });
+      shock(x, z, 2.6, FGOLD, { life: 0.4, width: 0.1, core: FHEAT });
+      spray('chunk', x, 0.2, z, 12, { color: FBRICK, speed: [0.8, 2.0], up: [1.0, 2.2], size: [0.06, 0.12], life: [0.5, 0.8], jitter: 1.0 });
+      spray('spark', x, 0.2, z, 18, { color: FSPARK, speed: [0.6, 1.8], up: [0.8, 2.0], size: [0.04, 0.07], life: [0.4, 0.7], gravity: 3, drag: 0.6, jitter: 1.2 });
+      embersUp(x, z, FOUND.corruption, 8, { radius: 1.2 });
+      kit.light({ x, z, radius: 3.2, color: FGOLD, opacity: 0.55, life: 0.7 });
+    });
+  });
+  // The Firing: its chest doors fly open and the kiln's heat pours out — a
+  // white-hot flash at the door, a dome of heat (gold rings climbing and
+  // rolling out to the ring's edge), the Ember ring flashing (the hit), rays
+  // of light thrown across the floor, sparks in a storm, a scorched floor.
+  bus.on('boss_firing', (ev) => {
+    mark('founder_firing');
+    const { x, z } = ev;
+    const r = ev.radius ?? 4.4;
+    kit.flash({ x, y: FOUNDER_CHEST_Y, z, color: FHEAT, size: 3.0, life: 0.22 });
+    flare(x, FOUNDER_CHEST_Y, z, FGOLD, 3.6, { kind: 'burst', life: 0.36, core: FHEAT, spin: 0.6 });
+    shock(x, z, r, EMBER, { life: 0.36, width: 0.18 });
+    for (let i = 0; i < 4; i++) kit.ring({ x, z, r0: 0.6, r1: r * (0.75 + i * 0.12), width: 0.14 - i * 0.02, life: 0.5 + i * 0.12, core: FHEAT, glow: i === 2 ? FOUND.corruption : FGOLD, soft: 0.5, y: 0.08 + i * 0.55, delay: i * 0.06 });
+    for (let i = 0; i < N(FOUND.firing.rays); i++) {
+      const a = (i / FOUND.firing.rays) * TAU + rnd(-0.1, 0.1);
+      kit.streak({ a: { x: x + Math.cos(a) * 0.8, y: 0.1, z: z + Math.sin(a) * 0.8 }, b: { x: x + Math.cos(a) * r, y: 0.1, z: z + Math.sin(a) * r }, width: 0.18, tailW: 0.04, core: FHEAT, glow: FGOLD, life: 0.5, fall: 1.4, opacity: 0.6 });
+    }
+    spray('spark', x, FOUNDER_CHEST_Y, z, FOUND.firing.sparks, { color: FSPARK, speed: [1.5, 4.0], up: [0.2, 1.4], size: [0.04, 0.08], life: [0.4, 0.8], gravity: 2, drag: 0.6, jitter: 0.4 });
+    spray('smoke', x, 0.3, z, 10, { color: FBRICK, speed: [1.0, 2.4], up: [0.1, 0.4], size: [0.5, 0.7], grow: 1.6, life: [0.8, 1.2], opacity: 0.3, gravity: -0.1, drag: 2.0, jitter: 1.0 });
+    kit.mark({ x, z, radius: r * 0.85, kind: 'scorch', stain: INK, glow: FGOLD, glowOpacity: 0.35, cool: 1.8, life: 4.0, opacity: 0.4 });
+    kit.light({ x, z, radius: r * 1.1, color: FGOLD, opacity: 0.75, life: 0.8, attack: 0.02 });
+    camfx.dolly(x, z, FOUND.camera.dolly * 0.6, 0.35);
+  });
+  // Rekindled: the bellows draw breath, and its seams catch again from the
+  // feet up — a gold ring climbing it, a puff of sparks off the flue.
+  bus.on('boss_founder_rekindle', (ev) => {
+    mark('founder_rekindle');
+    const { x, z } = ev;
+    for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 1.0, r1: 0.7, width: 0.07, life: 0.4, core: FHEAT, glow: FGOLD, soft: 0.6, y: 0.4 + i * 0.8, delay: i * 0.1 });
+    spray('spark', x, FOUNDER_HEAD_Y + 0.2, z, 10, { color: FSPARK, speed: [0.2, 0.8], up: [1.0, 2.0], size: [0.04, 0.07], life: [0.5, 0.9], gravity: 0.5, drag: 1.0, jitter: 0.3 });
+    flare(x, FOUNDER_CHEST_Y, z, FGOLD, 1.4, { life: 0.3, core: FHEAT });
+  });
+  function founderDeath(x, z) {
+    // Its last bell rings true: the fire inside it flares white and dies, its
+    // brick courses burst outward, the crucible spills one last gold flood,
+    // a clean bronze bell-ring rolls out, and the violet spirals away.
+    mark('founder_death');
+    kit.pillar({ x, z, radius: 1.0, height: 4.6, color: FOUND.corruption, life: 1.4, opacity: 0.6 });
+    kit.flash({ x, y: FOUNDER_CHEST_Y, z, color: PARCH, size: 2.8, life: 0.26 });
+    flare(x, FOUNDER_CHEST_Y, z, FGOLD, 4.0, { kind: 'burst', life: 0.5, core: FHEAT, spin: 0.8 });
+    for (let i = 0; i < 4; i++) kit.ring({ x, z, r0: 0.5, r1: 3.6 + i * 1.3, width: 0.22, life: 0.9 + i * 0.25, core: PARCH, glow: i % 2 ? FOUND.corruption : FBRONZE, soft: 0.5, y: 0.06 + i * 0.7, delay: i * 0.1 });
+    kit.mark({ x, z, radius: 3.0, kind: 'splash', stain: FSLAG, glow: FGOLD, glowOpacity: 0.55, cool: 3.0, life: 6, opacity: 0.5 });
+    kit.crack({ x, z, radius: 3.0, glow: FGOLD, life: 3.0, cool: 2.0 });
+    for (let i = 0; i < N(12); i++) {
+      const a = (i / 12) * TAU;
+      kit.streak({ a: { x: x + Math.cos(a) * 0.4, y: 2.0, z: z + Math.sin(a) * 0.4 }, b: { x: x + Math.cos(a) * 0.6, y: 2.1, z: z + Math.sin(a) * 0.6 }, width: 0.08, tailW: 0, core: FHEAT, glow: i % 3 === 0 ? FOUND.corruption : FGOLD, life: 0.8, travel: { x: Math.cos(a) * 3.2, y: 2.0, z: Math.sin(a) * 3.2 }, fall: 0.25 });
+    }
+    spray('chunk', x, 1.4, z, 22, { color: FBRICK, speed: [1.0, 2.6], up: [1.2, 2.8], size: [0.08, 0.16], life: [0.8, 1.2], jitter: 0.6 });
+    spray('shard', x, 1.2, z, 14, { color: FBRONZE, tile: SHARD_TILE.needle, speed: [1.0, 2.4], up: [1.2, 2.6], size: [0.09, 0.15], life: [0.8, 1.2], gravity: 5, spin: [-10, 10], jitter: 0.5 });
+    spray('spark', x, 0.6, z, 40, { color: FSPARK, speed: [0.4, 1.6], up: [0.8, 2.6], size: [0.05, 0.1], life: [1.2, 2.0], gravity: -0.2, drag: 1.2, jitter: 1.0 });
+    embersUp(x, z, FOUND.corruption, 24, { radius: 1.0, life: [1.4, 2.2] });
+    spray('smoke', x, 0.4, z, 10, { color: FBRICK, speed: [0.4, 1.2], up: [0.3, 0.8], size: [0.5, 0.7], grow: 1.6, life: [1.3, 1.9], opacity: 0.34, gravity: -0.2, drag: 2.0, jitter: 1.0 });
+    kit.light({ x, z, radius: 4.6, color: FGOLD, opacity: 0.65, life: 1.4 });
+    camfx.dolly(x, z, FOUND.camera.dolly, 0.55);
+  }
+  // Wind-ups: the crucible tipping (heat gathers at its lip), the bell
+  // heaved up (gold motes rising to it), the Firing (heat drawn in from the
+  // whole ring to its chest door).
+  function founderWindup(b, ev) {
+    const f = faceOf(b);
+    if (ev.attack === 'pour') {
+      mark('founder_pour_windup');
+      anticipate(b.x + f.x * 1.1, b.z + f.z * 1.1, 0.7, FGOLD, { y: 1.1, lines: 8, core: FHEAT });
+      flare(b.x + f.x * 1.1, 1.2, b.z + f.z * 1.1, FGOLD, 0.9, { life: 0.5, core: FHEAT });
+    } else if (ev.attack === 'bell') {
+      mark('founder_bell_windup');
+      flare(b.x, 3.0, b.z, FBRONZE, 1.1, { life: 0.5, core: PARCH });
+      embersUp(b.x, b.z, FGOLD, 6, { radius: 0.6, y: 1.6, life: [0.5, 0.8] });
+    } else if (ev.attack === 'firing') {
+      mark('founder_firing_windup');
+      anticipate(b.x, b.z, 4.4, FGOLD, { y: 0.4, lines: 16, core: FHEAT });
+      flare(b.x, FOUNDER_CHEST_Y, b.z + 0.8, FOUND.corruption, 1.2, { life: 0.5, core: FOUND.peak });
+    }
+  }
+  // Per frame: stoking for the Firing, heat motes stream in from the ring's
+  // edge to its chest door; quenched, grey steam and ash sift off it; at
+  // rest, a slow thread of smoke and sparks rises from its flue.
+  function founderFrame(e, rec) {
+    const t = e.telegraph;
+    if (e.mode === 'stoke' && t && rec.clock >= 0.04) {
+      rec.clock = 0;
+      const a = rnd(0, TAU);
+      const r0 = (t.radius ?? 4.4) * rnd(0.85, 1.1);
+      const sx = e.x + Math.cos(a) * r0;
+      const sz = e.z + Math.sin(a) * r0;
+      const tt = 0.45;
+      kit.streak({ a: { x: sx, y: rnd(0.2, 1.2), z: sz }, b: { x: sx - Math.cos(a) * 0.4, y: 1.0, z: sz - Math.sin(a) * 0.4 }, width: 0.06, tailW: 0, core: FHEAT, glow: FGOLD, life: tt, travel: { x: (e.x - sx) / tt, y: 1.0, z: (e.z - sz) / tt }, fall: 0.6, opacity: 0.85 });
+    } else if (e.mode === 'quenched' && rec.clock >= 0.07) {
+      rec.clock = 0;
+      spray('smoke', e.x + rnd(-0.6, 0.6), rnd(1.0, 2.4), e.z + rnd(-0.5, 0.5), 1, { color: FASH, speed: [0.05, 0.2], up: [0.6, 1.1], size: [0.4, 0.6], grow: 1.4, life: [1.0, 1.5], opacity: 0.26, gravity: -0.4, drag: 1.4, jitter: 0.3 });
+    } else if (rec.clock >= 0.22) {
+      rec.clock = 0;
+      const f = unit2(e.faceX ?? 0, e.faceZ ?? 1);
+      spray('smoke', e.x - f.x * 0.45, 3.0, e.z - f.z * 0.45, 1, { color: FBRICK, speed: [0.05, 0.15], up: [0.5, 0.9], size: [0.3, 0.45], grow: 1.6, life: [1.2, 1.6], opacity: 0.24, gravity: -0.3, drag: 1.2 });
+      if (rnd(0, 1) < 0.4) spray('spark', e.x - f.x * 0.45, 3.0, e.z - f.z * 0.45, 1, { color: FSPARK, speed: [0.05, 0.25], up: [0.6, 1.2], size: [0.03, 0.06], life: [0.6, 1.0], gravity: -0.2, drag: 1.0, opacity: 0.9 });
+    }
+  }
+
+  // The Magma Dive surfaces: the floor in the ring bursts up — the Ember
+  // ring flashes (the hit), a crown of molten slag thrown up gold and raining
+  // back, gold seams racing out through the flags, dark slag chunks, a pool
+  // of slag left glowing (the slick), and the camera punches.
+  bus.on('boss_magma_dive', (ev) => {
+    mark('cinderback_surface');
+    const r = ev.radius ?? 2.0;
+    flare(ev.x, 0.6, ev.z, EMBER, 2.2, { kind: 'burst', life: 0.24, core: PARCH });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.32, width: 0.16 });
+    kit.flash({ x: ev.x, y: 0.6, z: ev.z, color: FHEAT, size: 1.8, life: 0.16 });
+    for (let i = 0; i < 2; i++) kit.ring({ x: ev.x, z: ev.z, r0: 0.3, r1: r * (1.2 + i * 0.4), width: 0.12, life: 0.45 + i * 0.12, core: FHEAT, glow: i ? CBACK.corruption : FGOLD, soft: 0.5, y: 0.08 + i * 0.4, delay: i * 0.06 });
+    spray('shard', ev.x, 0.4, ev.z, 16, { color: FHEAT, tile: SHARD_TILE.drop, speed: [0.6, 1.8], up: [2.0, 3.6], size: [0.1, 0.16], life: [0.6, 0.9], gravity: 7, spin: [-2, 2], jitter: 0.4 });
+    spray('chunk', ev.x, 0.3, ev.z, CBACK.dive.chunk, { color: FSLAG, speed: [0.8, 2.2], up: [1.2, 2.6], size: [0.07, 0.14], life: [0.6, 0.9], jitter: 0.5 });
+    spray('spark', ev.x, 0.3, ev.z, CBACK.dive.sparks, { color: FSPARK, speed: [0.8, 2.6], up: [1.0, 2.6], size: [0.04, 0.08], life: [0.4, 0.8], gravity: 3, drag: 0.6, jitter: 0.5 });
+    spray('smoke', ev.x, 0.2, ev.z, 5, { color: FBRICK, speed: [0.6, 1.4], up: [0.2, 0.5], size: [0.45, 0.6], grow: 1.5, life: [0.8, 1.2], opacity: 0.3, gravity: -0.2, drag: 2.2, jitter: 0.6 });
+    for (let i = 0; i < N(CBACK.dive.seams); i++) {
+      const a = (i / CBACK.dive.seams) * TAU + rnd(-0.2, 0.2);
+      kit.streak({ a: { x: ev.x + Math.cos(a) * 0.5, y: 0.05, z: ev.z + Math.sin(a) * 0.5 }, b: { x: ev.x + Math.cos(a) * r * 1.3, y: 0.05, z: ev.z + Math.sin(a) * r * 1.3 }, width: 0.08, tailW: 0.02, core: FHEAT, glow: FGOLD, life: 0.9, fall: 1.2, opacity: 0.7 });
+    }
+    kit.crack({ x: ev.x, z: ev.z, radius: r * 1.2, glow: FGOLD, life: 2.4, cool: 1.4 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.6, color: FGOLD, opacity: 0.65, life: 0.6, attack: 0.02 });
+    camfx.kick(0, 1, CBACK.camera.kick, 0.14);
+  });
+  // The Tail Lash: a gold arc whipped round through the cone with the Ember
+  // edge on the cut, coals flung off the tail, grit sprayed with it.
+  bus.on('boss_tail_lash', (ev) => {
+    mark('cinderback_lash');
+    const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+    const ang = Math.atan2(d.z, d.x);
+    const r = ev.radius ?? 3.2;
+    kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: r * 0.85, width: 0.5, span: 2.27, sweep: 0.1, life: 0.32, core: PARCH, glow: EMBER, soft: 0.5, jag: 0.12, lift: 0.08, y: 0.5, gain: 1.1 });
+    kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: r * 0.65, width: 0.28, span: 2.1, sweep: 0.12, life: 0.4, core: FHEAT, glow: FGOLD, soft: 0.6, lift: 0.04, y: 0.35, gain: 0.8, delay: 0.03 });
+    spray('spark', ev.x + d.x * r * 0.7, 0.4, ev.z + d.z * r * 0.7, CBACK.lash.sparks, { color: FSPARK, speed: [1.2, 3.0], up: [0.3, 1.0], size: [0.04, 0.07], life: [0.3, 0.5], gravity: 3, drag: 0.6, dir: d, dirBias: 0.5, jitter: 0.8 });
+    spray('chunk', ev.x + d.x * r * 0.5, 0.1, ev.z + d.z * r * 0.5, 6, { color: FBRICK, speed: [0.8, 1.8], up: [0.6, 1.2], size: [0.05, 0.09], life: [0.4, 0.6], dir: d, dirBias: 0.6, jitter: 0.6 });
+    kit.mark({ x: ev.x + d.x * r * 0.55, z: ev.z + d.z * r * 0.55, radius: r * 0.5, kind: 'gouge', angle: ang + Math.PI / 2, stretch: 2.8, stain: INK, glow: FGOLD, glowOpacity: 0.35, cool: 0.8, life: 2.2, opacity: 0.35 });
+    camfx.kick(d.x, d.z, CBACK.camera.kick * 0.5, 0.1);
+  });
+  // The Ember Spit: its throat flashes white and three gobbets arc out, each
+  // trailing gold (the gobbets themselves are the globs); each lands in a
+  // splash of molten slag on its Ember ring.
+  bus.on('boss_ember_spit', (ev) => {
+    mark('cinderback_spit');
+    const b = byId(ev.id);
+    const f = faceOf(b);
+    const mx = ev.x + f.x * 1.2;
+    const mz = ev.z + f.z * 1.2;
+    kit.flash({ x: mx, y: 1.2, z: mz, color: FHEAT, size: 1.0, life: 0.16 });
+    flare(mx, 1.2, mz, FGOLD, 1.3, { kind: 'burst', life: 0.2, core: FHEAT });
+    const spots = Array.isArray(ev.spots) ? ev.spots : [];
+    spots.forEach(([sx, sz], i) => {
+      const dx = sx - mx;
+      const dz = sz - mz;
+      const tt = 0.9 + i * 0.2;
+      kit.streak({ a: { x: mx, y: 1.2, z: mz }, b: { x: mx + dx * 0.05, y: 1.3, z: mz + dz * 0.05 }, width: 0.22, tailW: 0.4, core: FHEAT, glow: FGOLD, life: tt * 0.6, travel: { x: dx / tt, y: 0.6, z: dz / tt }, fall: 0.6, opacity: 0.8, delay: i * 0.04 });
+    });
+    spray('spark', mx, 1.2, mz, CBACK.spit.sparks, { color: FSPARK, speed: [0.6, 1.6], up: [0.4, 1.0], size: [0.03, 0.06], life: [0.25, 0.45], gravity: 3, drag: 0.6, dir: f, dirBias: 0.6 });
+  });
+  function emberLand(ev) {
+    mark('cinderback_gobbet');
+    const r = ev.radius ?? 1.1;
+    flare(ev.x, 0.3, ev.z, EMBER, 1.4, { kind: 'burst', life: 0.18, core: PARCH });
+    shock(ev.x, ev.z, r, EMBER, { life: 0.24, width: 0.1 });
+    spray('shard', ev.x, 0.3, ev.z, 6, { color: FHEAT, tile: SHARD_TILE.drop, speed: [0.5, 1.4], up: [1.2, 2.2], size: [0.08, 0.12], life: [0.4, 0.6], gravity: 6, spin: [-2, 2] });
+    spray('spark', ev.x, 0.2, ev.z, 8, { color: FSPARK, speed: [0.6, 1.6], up: [0.4, 1.2], size: [0.03, 0.06], life: [0.25, 0.45], gravity: 3, drag: 0.6 });
+    spray('smoke', ev.x, 0.15, ev.z, 2, { color: FASH, speed: [0.2, 0.5], up: [0.3, 0.6], size: [0.36, 0.5], grow: 1.4, life: [0.8, 1.1], opacity: 0.24, gravity: -0.3, drag: 2.0 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 0.85, kind: 'splash', stain: FSLAG, glow: FGOLD, glowOpacity: 0.5, cool: 1.6, life: 2.6, opacity: 0.45 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: FGOLD, opacity: 0.4, life: 0.3, attack: 0.02 });
+  }
+  // Spent and back: it shakes the ash off its gills and its coals catch.
+  bus.on('boss_cinder_recover', (ev) => {
+    mark('cinderback_recover');
+    spray('smoke', ev.x, 0.6, ev.z, 4, { color: FASH, speed: [0.4, 1.0], up: [0.3, 0.7], size: [0.36, 0.5], grow: 1.4, life: [0.7, 1.0], opacity: 0.28, gravity: -0.2, drag: 2.0, jitter: 0.6 });
+    embersUp(ev.x, ev.z, FGOLD, 10, { radius: 0.8, life: [0.6, 1.0] });
+  });
+  bus.on('boss_cinderback_phase', (ev) => {
+    mark('cinderback_phase');
+    anticipate(ev.x, ev.z, 1.8, CBACK.corruption, { y: 0.6, lines: 10, core: CBACK.peak });
+    after(ANTICIP, () => {
+      flare(ev.x, 0.8, ev.z, FGOLD, 2.0, { kind: 'burst', life: 0.3, core: FHEAT });
+      flare(ev.x, 1.0, ev.z, CBACK.corruption, 1.4, { life: 0.3, core: CBACK.peak });
+      shock(ev.x, ev.z, 2.6, FGOLD, { life: 0.4, width: 0.1, core: FHEAT });
+      embersUp(ev.x, ev.z, FGOLD, 12, { radius: 1.0 });
+    });
+  });
+  function cinderbackEnrage(ev) {
+    mark('cinderback_enrage');
+    const { x, z } = ev;
+    kit.pillar({ x, z, radius: 0.7, height: 3.0, color: FGOLD, life: 0.8, opacity: 0.45 });
+    flare(x, 1.0, z, CBACK.corruption, 2.4, { kind: 'burst', life: 0.3, core: CBACK.peak, spin: 1.2 });
+    for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.5, r1: 2.6 + i * 0.8, width: 0.12, life: 0.6 + i * 0.12, core: FHEAT, glow: i % 2 ? CBACK.corruption : FGOLD, soft: 0.5, y: 0.06 + i * 0.5, delay: i * 0.08 });
+    kit.crack({ x, z, radius: 1.8, glow: FGOLD, life: 2.2, cool: 0.9 });
+    spray('spark', x, 0.6, z, 24, { color: FSPARK, speed: [0.8, 2.2], up: [0.8, 2.0], size: [0.04, 0.08], life: [0.4, 0.8], gravity: 2, drag: 0.6, jitter: 0.6 });
+    kit.light({ x, z, radius: 3, color: FGOLD, opacity: 0.55, life: 0.8 });
+  }
+  function cinderbackDeath(x, z) {
+    // The warden sinks into the coals for good: a last gout of magma, its
+    // coals flaring white and then going out one by one, a pool of cooling
+    // slag where it lay, ash drifting up, and the violet spiralling away.
+    mark('cinderback_death');
+    kit.pillar({ x, z, radius: 0.9, height: 4.0, color: CBACK.corruption, life: 1.3, opacity: 0.6 });
+    kit.flash({ x, y: 0.8, z, color: PARCH, size: 2.4, life: 0.24 });
+    flare(x, 0.8, z, FGOLD, 3.6, { kind: 'burst', life: 0.5, core: FHEAT, spin: 0.8 });
+    for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.5, r1: 3.2 + i * 1.2, width: 0.2, life: 0.9 + i * 0.25, core: FHEAT, glow: i % 2 ? CBACK.corruption : FGOLD, soft: 0.5, y: 0.06 + i * 0.5, delay: i * 0.1 });
+    kit.mark({ x, z, radius: 2.8, kind: 'splash', stain: FSLAG, glow: FGOLD, glowOpacity: 0.55, cool: 3.2, life: 6, opacity: 0.5 });
+    kit.crack({ x, z, radius: 2.6, glow: FGOLD, life: 3.0, cool: 2.0 });
+    for (let i = 0; i < N(10); i++) {
+      const a = (i / 10) * TAU;
+      const px = x + Math.cos(a) * rnd(0.4, 1.6);
+      const pz = z + Math.sin(a) * rnd(0.4, 1.6);
+      after(0.08 * i, () => flare(px, 0.5, pz, FGOLD, 0.8, { life: 0.3, core: FHEAT }));
+    }
+    spray('shard', x, 0.5, z, 18, { color: FHEAT, tile: SHARD_TILE.drop, speed: [0.6, 1.8], up: [2.0, 3.4], size: [0.1, 0.16], life: [0.7, 1.0], gravity: 7, spin: [-2, 2], jitter: 0.6 });
+    spray('chunk', x, 0.4, z, 16, { color: FSLAG, speed: [0.8, 2.2], up: [1.0, 2.4], size: [0.07, 0.14], life: [0.7, 1.1], jitter: 0.8 });
+    spray('spark', x, 0.4, z, 36, { color: FSPARK, speed: [0.4, 1.6], up: [0.8, 2.4], size: [0.05, 0.1], life: [1.2, 2.0], gravity: -0.2, drag: 1.2, jitter: 1.0 });
+    embersUp(x, z, CBACK.corruption, 20, { radius: 1.0, life: [1.4, 2.2] });
+    spray('smoke', x, 0.3, z, 10, { color: FASH, speed: [0.4, 1.2], up: [0.3, 0.8], size: [0.5, 0.7], grow: 1.6, life: [1.3, 1.9], opacity: 0.32, gravity: -0.2, drag: 2.0, jitter: 1.0 });
+    kit.light({ x, z, radius: 4.2, color: FGOLD, opacity: 0.6, life: 1.4 });
+    camfx.dolly(x, z, CBACK.camera.dolly, 0.55);
+  }
+  // Wind-ups: nosing down for the dive (gold seams start to glow in the
+  // ring, the floor there going molten), coiling for the lash (coals flare
+  // along its tail), rearing to spit (its throat lights).
+  function cinderbackWindup(b, ev) {
+    if (ev.attack === 'dive') {
+      mark('cinderback_dive_windup');
+      const t = b.telegraph;
+      const tx = t?.x ?? b.x;
+      const tz = t?.z ?? b.z;
+      anticipate(tx, tz, t?.radius ?? 2.0, FGOLD, { y: 0.1, lines: 10, core: FHEAT });
+      kit.mark({ x: tx, z: tz, radius: (t?.radius ?? 2.0) * 0.9, kind: 'crater', stain: FCOAL, glow: FGOLD, glowOpacity: 0.5, cool: 1.6, life: 1.6, opacity: 0.35 });
+      spray('chunk', b.x, 0.1, b.z, 5, { color: FBRICK, speed: [0.4, 1.0], up: [0.8, 1.6], size: [0.05, 0.1], life: [0.4, 0.6] });
+    } else if (ev.attack === 'lash') {
+      mark('cinderback_lash_windup');
+      const f = faceOf(b);
+      flare(b.x - f.x * 1.6, 0.6, b.z - f.z * 1.6, FGOLD, 0.9, { life: 0.45, core: FHEAT });
+    }
+  }
+  // Per frame: nosing and under, a trail of molten floor and sparks marks
+  // where it swims (so the party can read it under the flags); spent, ash
+  // sifts off its back; rearing, white heat drips from its jaw; at rest, a
+  // slow drift of sparks off its coals.
+  function cinderbackFrame(e, rec) {
+    if ((e.mode === 'under' || e.mode === 'nose') && rec.clock >= 0.05) {
+      rec.clock = 0;
+      spray('spark', e.x + rnd(-0.4, 0.4), 0.08, e.z + rnd(-0.4, 0.4), 2, { color: FSPARK, speed: [0.2, 0.8], up: [0.6, 1.4], size: [0.04, 0.07], life: [0.3, 0.6], gravity: 2, drag: 0.8 });
+      if (e.mode === 'under') kit.mark({ x: e.x, z: e.z, radius: 0.7, kind: 'scorch', stain: FCOAL, glow: FGOLD, glowOpacity: 0.55, cool: 1.0, life: 1.6, opacity: 0.4 });
+    } else if (e.mode === 'spent' && rec.clock >= 0.09) {
+      rec.clock = 0;
+      spray('smoke', e.x + rnd(-0.6, 0.6), 0.7, e.z + rnd(-0.6, 0.6), 1, { color: FASH, speed: [0.05, 0.2], up: [0.4, 0.8], size: [0.34, 0.5], grow: 1.3, life: [0.8, 1.2], opacity: 0.24, gravity: -0.3, drag: 1.4 });
+    } else if (e.mode === 'rear' && rec.clock >= 0.05) {
+      rec.clock = 0;
+      const f = unit2(e.faceX ?? 0, e.faceZ ?? 1);
+      spray('spark', e.x + f.x * 1.2, 1.1, e.z + f.z * 1.2, 1, { color: FHEAT, speed: [0.05, 0.2], up: [-0.4, 0.0], size: [0.05, 0.08], life: [0.3, 0.5], gravity: 3, drag: 0.6, opacity: 0.95 });
+    } else if (rec.clock >= (e.enraged ? 0.12 : 0.28)) {
+      rec.clock = 0;
+      embersUp(e.x, e.z, e.enraged ? FHEAT : FGOLD, 1, { radius: 0.6, y: 0.8, life: [0.6, 1.0] });
+    }
+  }
+
   // Wind-ups: the Hush's Great Hush draws the room in (handled per frame for
   // its whole warning); its note gathers at the raised finger. The Skyhorn
   // paws grit up before a rush and its horns glint before a toll.
@@ -5538,13 +5897,13 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
   }
 
-  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath, gloamwolf: gloamwolfDeath, mireking: mirekingDeath, ashraven: ashravenDeath, veinweaver: veinweaverDeath, hush: hushDeath, skyhorn: skyhornDeath, hourwarden: hourwardenDeath };
+  const KIT_BOSS_DEATH = { heron: heronDeath, wyrm: wyrmDeath, thornmother: thornmotherDeath, millwheel: millwheelDeath, lichram: lichramDeath, cantor: cantorDeath, colossus: colossusDeath, gloamwolf: gloamwolfDeath, mireking: mirekingDeath, ashraven: ashravenDeath, veinweaver: veinweaverDeath, hush: hushDeath, skyhorn: skyhornDeath, hourwarden: hourwardenDeath, founder: founderDeath, cinderback: cinderbackDeath };
 
   // Per frame: the Heron's drive throws spray off its legs and stops in a
   // splash; the burrowed Wyrm leaves a trail of turned earth so the party can
   // read where it is tunnelling.
   const bossMode = new Map(); // boss id -> { mode, clock }
-  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus', 'keener', 'sexton', 'bloom', 'siphon', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden']);
+  const S2_FRAME = new Set(['thornmother', 'millwheel', 'lichram', 'gravewisp', 'cantor', 'colossus', 'keener', 'sexton', 'bloom', 'siphon', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden', 'founder', 'cinderback']);
   function bossFrame(dt) {
     for (const e of world.entities()) {
       if (S2_FRAME.has(e.kind)) {

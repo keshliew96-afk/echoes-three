@@ -16,15 +16,15 @@ import { ACT_IDS } from './levels.js';
 export const TOTAL_VERSES = 7;
 
 // THE EMBER KILN's chapter (docs/KILN.md, content plan 5 slice 7): the other
-// Level V road, act 6 in data. A scaffold until slice 8 names its bosses;
-// exported so tools/i18n-extract.mjs collects it with or without the flag.
+// Level V road, act 6 in data; its bosses since slice 8 (docs/KILN_BOSSES.md).
+// Exported so tools/i18n-extract.mjs collects it.
 export const KILN_CHAPTER = Object.freeze({
   level: 6,
   verse: 'flame',
   name: 'Flame@@verse',
   title: 'Chapter V · The Ember Kiln',
   summary:
-    'Where the Heart’s road forks below the Spire, the other way climbs to the Ember Kiln, where the gods fired the first bells. Every bell was tuned to the note of its fire, and the fire never went out. The hollow song found it still burning and learned to keep it. Whatever keeps the Kiln now, felling it frees the Verse of Flame, the note every bell was tuned to.',
+    'Where the Heart’s road forks below the Spire, the other way climbs to the Ember Kiln, where the gods fired the first bells. Every bell was tuned to the note of its fire, and the fire never went out. The Bellfounder, who poured every bell the gods ever rang, still stands at its casting pit, and the hollow song taught it to cast them hollow. The Cinderback, the great salamander that kept the fire fed, swims through the coals beneath it. Felling either frees the Verse of Flame, the note every bell was tuned to.',
 });
 
 // One chapter per campaign level. A level's verse is held once that level
@@ -72,8 +72,7 @@ export const CHAPTERS = Object.freeze([
     summary:
       'Above the world stands the Still Spire, the belfry where the gods sat down to watch. The Skyhorn kept its stair, and the hollow song turned it at the top. Beside the gods sits the Hush, the silence that stopped them: the quiet the Hollow Cantor sang into. Behind the great dial the Hourwarden, the gods’ own clock, counts down the hours the song wound back into it. Felling any of them frees the Verse of Sky, and the bell rings where the gods can hear it.',
   },
-  // THE EMBER KILN: its chapter joins only while the Kiln plays (the ?act6=1
-  // preview), so the Story so far page never shows it before then.
+  // THE EMBER KILN: the other Chapter V, on the Kiln's road.
   ...(ACT_IDS.includes(6) ? [KILN_CHAPTER] : []),
 ]);
 
@@ -145,8 +144,12 @@ export const KEEPER_LINES = Object.freeze({
       'Three verses home. Yet below the Barrow, something is still singing.',
       'Four verses burn. Three are still missing, out where the map runs blank.',
       'Five verses. Sky came home ringing, and the fire leaned up to meet it. Two are still missing.',
+      'Six verses. Sky and Flame both, and the hearth burns like the gods’ own kiln. Only one is still missing.',
     ],
   },
+  // THE LEVEL V FORK (docs/KILN_BOSSES.md): five verses with Flame and not
+  // yet Sky (a Kiln road taken first).
+  flameFive: { text: 'Five verses. Flame came home roaring, and the hearth burns hotter for it. Two are still missing.' },
   extra: {
     text: [
       'The gods are still watching. They always are. Don’t play to them.',
@@ -231,8 +234,11 @@ export const CHRONICLER_LINES = Object.freeze({
       'Three lands. Below the Barrow there is no map at all. Yet.',
       'Four lands, and the edges are still blank. The road goes further than we have.',
       'Five lands. I inked the Spire at the very top of the page, and there is still paper above it.',
+      'Six lands. The road forks after the Heart now, and I have inked both ways: the Spire up top, the Kiln down the right.',
     ],
   },
+  // THE LEVEL V FORK: five lands with the Kiln and not yet the Spire.
+  flameFive: { text: 'Five lands. I inked the Kiln down the right of the page, where the road forks after the Heart. The other way is still blank.' },
 });
 
 // The peddler's rumour on her shelf (room 7): which boss waits behind the
@@ -256,6 +262,9 @@ export const RUMOURS = Object.freeze({
   hush: { text: 'The Hush waits in the Belfry Crown, where the gods sat down. When the air goes still round it, walk to the walls, then hit it while it sinks.' },
   skyhorn: { text: 'The Skyhorn guards the belfry ahead. When it paws the floor, step out of its line and let it meet the wall.' },
   hourwarden: { text: 'The Hourwarden keeps the clock loft ahead. When its pendulum swings, stay out of the line until it has come back. When it strikes the hours, keep moving, then hit it while it winds down.' },
+  // The Ember Kiln's own bosses (docs/KILN_BOSSES.md).
+  founder: { text: 'The Bellfounder still works the casting pit ahead. When it opens its chest, get to the walls. When it has poured out its heat, go and hit it.' },
+  cinderback: { text: 'The Cinderback swims in the coals under the Firing Floor. When the ground glows under you, run. When it comes up steaming, hit it.' },
   other: { text: 'Something old waits beyond the next door. I haven’t seen its like before.' },
 });
 // Level IV (the Hollow Heart): the peddler names its own two bosses; a boss
@@ -317,6 +326,9 @@ export const BOSS_VOICE = Object.freeze({
   hush: { text: 'You silenced my song. Now hear what I was singing into.' },
   skyhorn: { text: 'It kept the stair to the gods. I taught it to keep you off it.' },
   hourwarden: { text: 'The gods stopped their clock to watch. I wound it again. Now it counts you down.' },
+  // The Ember Kiln: the founder of every bell, and the kiln's warden.
+  founder: { text: 'It poured every bell the gods ever rang. I taught it to pour them hollow.' },
+  cinderback: { text: 'It kept the gods’ fire fed. Now it feeds mine.' },
   // A boss from another land standing in the Heart Chamber.
   heart: { text: 'You carried three verses all the way down. Sing them for me.' },
 });
@@ -355,8 +367,8 @@ export const ENDING = Object.freeze({
   barrow: { text: 'Wick, at the hearth: “Below the Barrow, something is still singing.”' },
   heart: { text: 'The Heart is quiet. Four verses burn in the hearth. Three are still missing, and somewhere above the world, the gods have stopped clapping.' },
   spire: { text: 'The bell rings in the gods’ own belfry, and the silence breaks. Five verses burn in the hearth. Two are still missing, and above the Spire, for the first time, the gods stand up.' },
-  // THE EMBER KILN (docs/KILN.md): the Kiln road's ending, a scaffold until
-  // slice 8 gives the road its bosses.
+  // THE EMBER KILN (docs/KILN.md, docs/KILN_BOSSES.md): the Kiln road's
+  // ending.
   kiln: { text: 'The bell rings out over the gods’ own kiln, and every bell ever cast there rings back. Five verses burn in the hearth. Two are still missing, and the oldest fire in the world burns true again.' },
 });
 // `road`: the Level V road the campaign took ('kiln' ends on the Kiln's line).
@@ -398,6 +410,9 @@ export const WARDENS = Object.freeze({
   // ACT V: the Spire's warden, freed by the Skyhorn, the Hush or the
   // Hourwarden.
   skyhorn: { model: 'warden_ibex', also: ['hush', 'hourwarden'], x: -9.8, z: 4.4, yaw: 2.3, text: 'The Skyhorn stands where it can see the most sky. Its bronze horns are quiet at last.' },
+  // THE EMBER KILN (docs/KILN_BOSSES.md): the Kiln's warden, freed by the
+  // Cinderback or the Bellfounder.
+  cinderback: { model: 'warden_salamander', also: ['founder'], x: 9.6, z: 0.6, yaw: -1.6, text: 'The Cinderback curls up as close to the hearth as it dares. For the first time in an age, it sleeps.' },
 });
 
 // How many verses a profile holds: one per campaign level cleared at least once.

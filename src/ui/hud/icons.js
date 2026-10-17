@@ -1063,6 +1063,24 @@ const ICONS = {
     ['path', { d: 'M16 19.4 L10.6 19.4 M16 19.4 L18.6 13.4', 'stroke-width': 2 }],
     ['path', { d: 'M20.4 21.6 L22.4 23.8 L21.2 25 L23.6 27.6', 'stroke-width': 1 }],
   ],
+  // Content plan 5 slice 8. The Bellfounder: a bell, mouth down, on a
+  // crucible's pour (three drops falling from the lip), a crack in the bell.
+  boss_founder: [
+    ['path', { d: 'M10 18.6 C10 9.4 11.6 4.6 16 4.6 C20.4 4.6 22 9.4 22 18.6 L24 21 H8 Z M15.2 2 H16.8 V4.6 H15.2 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M17.4 7.6 L16.2 10.6 L17.6 12.2 L16.4 15', 'stroke-width': 1.1 }],
+    ['circle', { cx: 16, cy: 23.4, r: 1.6, fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M4.6 25.6 C6.8 28.4 10.6 29.6 16 29.6 C21.4 29.6 25.2 28.4 27.4 25.6', 'stroke-width': 2 }],
+    ['path', { d: 'M10.6 26.4 V27.8 M21.4 26.4 V27.8', 'stroke-width': 1.4 }],
+  ],
+  // The Cinderback: a salamander from above, its S-curve body with two rows
+  // of coals down its back, four splayed legs and a broad head.
+  boss_cinderback: [
+    ['path', { d: 'M16 2.4 C19.4 2.4 21 4.4 20.4 7 C19.8 9.2 18.4 10.4 18.4 13 C18.4 16 21.6 17.6 21.6 21 C21.6 24.6 18 26 16.8 28 C16.2 29 15.4 30 14.4 30.4 C15.4 28.6 15.8 27 15.4 25.6 C14.8 23.6 12 22.6 12 19.8 C12 16.8 14.4 15.4 14.4 12.6 C14.4 10.2 11.6 9.2 11.6 6.4 C11.6 4 13.4 2.4 16 2.4 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M12.4 9 L7.6 7.6 L6.4 9.4 M19.8 9.4 L24.4 8 L25.6 9.8 M13 20.6 L8.2 22.6 L7.6 24.6 M21 19.8 L25.6 21.4 L26.4 23.4', 'stroke-width': 1.6 }],
+    ['circle', { cx: 16.4, cy: 13.4, r: 1, fill: 'none', 'stroke-width': 0.9 }],
+    ['circle', { cx: 16.8, cy: 17.4, r: 1, fill: 'none', 'stroke-width': 0.9 }],
+    ['circle', { cx: 16.2, cy: 21.4, r: 0.9, fill: 'none', 'stroke-width': 0.9 }],
+  ],
   // Glint coin: rim, inner ring, a glint stroke.
   coin: [
     ['circle', { cx: 16, cy: 16, r: 12.5 }],

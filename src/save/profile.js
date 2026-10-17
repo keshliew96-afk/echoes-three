@@ -175,6 +175,10 @@ function sane(p) {
   // on the eight-fight rush.
   if (out.records.rushBestSec != null && !Number.isFinite(out.records.rushBestFights)) out.records.rushBestFights = 8;
   out.unlocks = { acts: Array.isArray(p.unlocks && p.unlocks.acts) ? [...new Set([1, ...p.unlocks.acts])].sort((a, b) => a - b) : [1] };
+  // THE LEVEL V FORK (docs/KILN_BOSSES.md): the Level IV clear opens both
+  // Level Vs, so a profile that opened the Spire before the Kiln existed
+  // holds the Kiln too.
+  if (out.unlocks.acts.includes(5) && !out.unlocks.acts.includes(6)) out.unlocks.acts.push(6);
   out.playtimeSec = Number.isFinite(p.playtimeSec) ? p.playtimeSec : 0;
   out.meta = saneMeta(p.meta);
   out.story = saneStory(p.story);

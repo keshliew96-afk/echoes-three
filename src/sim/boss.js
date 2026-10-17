@@ -50,6 +50,9 @@ import hush from './bosses/hush.js';
 import skyhorn from './bosses/skyhorn.js';
 // Content plan 5, slice 1: the Spire's third boss (docs/THIRD_BOSSES.md).
 import hourwarden from './bosses/hourwarden.js';
+// Content plan 5, slice 8: the Ember Kiln's two bosses (docs/KILN_BOSSES.md).
+import founder from './bosses/founder.js';
+import cinderback from './bosses/cinderback.js';
 
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
@@ -94,7 +97,7 @@ export const STAG = Object.freeze({
 // and view shapes are hashed by the golden traces); every other boss is a
 // plain-data kit module (src/sim/bosses/<id>.js) driven through `kctx`, and
 // its body carries `boss: true` (status.isBoss) instead of kind 'stag'.
-export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram, cantor, colossus, gloamwolf, mireking, ashraven, veinweaver, hush, skyhorn, hourwarden });
+export const BOSS_KITS = Object.freeze({ heron, wyrm, thornmother, millwheel, lichram, cantor, colossus, gloamwolf, mireking, ashraven, veinweaver, hush, skyhorn, hourwarden, founder, cinderback });
 export const BOSS_KINDS = Object.freeze(['stag', ...Object.keys(BOSS_KITS)]);
 export const isBossKind = (k) => k === 'stag' || !!BOSS_KITS[k];
 // Display names per boss kind (HUD banner, end screens, path text).

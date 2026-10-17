@@ -262,7 +262,10 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
     // untilTick — the same moment a ready presentation advances it.
     if (v.phase === 'transit') {
       const c = typeof r.campaign === 'function' ? r.campaign() : null;
-      if (c && c.card && c.card.due) r.campaignAdvance('autopilot');
+      // THE LEVEL V FORK (docs/KILN_BOSSES.md): it picks a road at once
+      // (cfg.road, else the Spire's), then the card sets out as usual.
+      if (c && c.card && c.card.fork && !c.card.fork.pick && typeof r.pickRoad === 'function') r.pickRoad(c.card.fork.roads.includes(cfg.road) ? cfg.road : 'spire', 'autopilot');
+      else if (c && c.card && c.card.due) r.campaignAdvance('autopilot');
       return true;
     }
     // One shopping trip per LEVEL's shop (a campaign visits room 7 once per

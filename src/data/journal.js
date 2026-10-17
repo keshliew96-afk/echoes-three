@@ -57,9 +57,8 @@ const SPIRE_ROWS = [
   ['vane', 'Vane Cock', 'Volley', 'A brass weathercock torn off a steeple. It still turns to face whatever is coming.', 'Keeps its distance, then swings into the wind and marks a long, narrow warning lane through a hero. Three gust darts fly down it for 7 each: step out of the lane and they all miss.'],
   ['sacristan', 'Bell Sacristan', 'Warder', 'A stone acolyte of the belfry who still rings the hours for gods who stopped listening.', 'Hangs back behind its kin and rings a pale ring round itself: every other enemy inside is hushed and takes 40% less damage for 5 s. Kill it first, or stun it mid-ring. Alone, it raps you with its bell for 7.'],
 ];
-// The Ember Kiln (docs/KILN.md, content plan 5 slice 7): listed only while
-// the Kiln plays (the ?act6=1 preview until slice 8 opens its road), so the
-// Journal never shows pages a player cannot fill.
+// The Ember Kiln (docs/KILN.md, content plan 5 slice 7): listed while the
+// Kiln plays (its road opened with its bosses, docs/KILN_BOSSES.md).
 const KILN_ROWS = [
   ['newt', 'Ember Newt', 'Skitterer', 'A fire lizard that basked on the kiln floor while the bells were fired. It never left the warmth.', 'Skitters in fast and low, crouches and marks a short warning lane through a hero, then shoots down it for 7 to every hero it crosses. It rests a beat where it stops. One good hit kills it: watch for three lunging together.'],
   ['slag', 'Slag Golem', 'Furnace', 'The kiln\'s waste, raked out and heaped up until the hollow song found it and stood it up.', 'Its crust turns blows: it takes 40% less damage. In close it rears and slams a warning ring in front of it for 14, splashing a pool of slag that slows. The slam cracks its crust: for 2 s its core glows and it takes 40% more. Hit it then.'],
@@ -109,6 +108,9 @@ const BOSS_ROWS = {
   skyhorn: ['The Spire\'s warden, an ibex of the high ledges with horns cast in bell bronze.', 'Horn Rush: paws, then charges down a warning lane for 12 and throws you aside. Into a wall it stands dazed. Bell Toll: a ring round it for 12. From half health it leaps onto the farthest hero.'],
   // Content plan 5 slice 1 (docs/THIRD_BOSSES.md): the Spire's third.
   hourwarden: ['The gods\' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.', 'Pendulum: a warning lane for 14, then it swings back down the same lane for 10. Hand Sweep: a warning cone at its hands for 13 that throws you back. Toll of the Hours: weights fall on warning rings round it for 11 each, one hour after another; then it runs down and takes more damage.'],
+  // Content plan 5 slice 8 (docs/KILN_BOSSES.md): the Ember Kiln's two.
+  founder: ['The gods\' bell-founder, still at its casting pit in their kiln. Every bell the gods ever rang came out of its crucible. Now it casts them hollow.', 'Molten Pour: a warning lane for 14 that cools into pools of slag. Bell Drop: a bell falls on a warning ring at you for 16. At each Casting the Kiln\'s creatures crawl out of a mould, then the Firing: a huge ring round it for 20. Walk to the walls, then hit it while it is quenched.'],
+  cinderback: ['The Kiln\'s warden, a great fire salamander that basked in the kiln\'s mouth and kept the fire fed. The Ember Newts are its brood.', 'Magma Dive: it sinks into the floor and bursts up under a warning ring at you for 16, leaving slag, then lies spent: hit it then. Tail Lash: a cone at its flank for 12 that throws you. From half health it spits fire onto every hero.'],
 };
 
 // The lands, in campaign order, and which of them each enemy lives in (its

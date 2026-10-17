@@ -72,6 +72,9 @@ export const BOSS_MEDAL = Object.freeze({
   hush: 'boss_hush',
   skyhorn: 'boss_skyhorn',
   hourwarden: 'boss_hourwarden',
+  // The Ember Kiln (docs/KILN_BOSSES.md).
+  founder: 'boss_founder',
+  cinderback: 'boss_cinderback',
 });
 
 const el = (tag, cls, parent) => {

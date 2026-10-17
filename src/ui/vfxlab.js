@@ -35,7 +35,7 @@
 // Off unless the URL asks for it; touches nothing else in the UI. The Act V
 // rows play in a Level V room with ?act5=1, and in an Act IV room without
 // it (the Spire's creatures and hazards exist either way). The Kiln row
-// likewise plays in a Level V Kiln room with ?act6=1.
+// likewise plays in a Level V Kiln room (the Kiln road, act 6 in data).
 import { ACT_IDS } from '../data/levels.js';
 
 const HEALER_SETS = [
@@ -95,7 +95,7 @@ const ENEMIES = [
   ['Mill, new', 2, ['leech', 'miller']],
   // Act V, the Still Spire (docs/ACT_V.md).
   ['Act V', 5, ['kite', 'chime', 'gargoyle', 'hanger', 'vane', 'sacristan']],
-  // The Ember Kiln (docs/KILN.md; act 6 in data, Level V behind ?act6=1).
+  // The Ember Kiln (docs/KILN.md; act 6 in data, Level V on the Kiln road).
   ['Kiln', 6, ['newt', 'slag', 'bellows', 'cindermoth', 'kiln pack', 'vent']],
 ];
 // The room an act's row plays in: Level V only exists behind ?act5=1.
@@ -117,6 +117,8 @@ const BOSSES = [
   ['The Hush', 5, 'hush'],
   ['Skyhorn', 5, 'skyhorn'],
   ['Hourwarden', 5, 'hourwarden'],
+  ['Bellfounder', 6, 'founder'],
+  ['Cinderback', 6, 'cinderback'],
 ];
 
 export function mountVfxLab() {
@@ -321,6 +323,34 @@ export function mountVfxLab() {
     await thirdBoss('hourwarden', 5);
     X().cmd('bossHp', 0.39);
     say('Hourwarden: enraged (six hours, the hands spin)');
+  }, 'cut to 39%');
+
+  // The Ember Kiln's bosses (docs/KILN_BOSSES.md): the Bellfounder and the
+  // Cinderback.
+  const kilnb = section('Kiln bosses');
+  button(kilnb, 'Founder pour', () => standAt('founder', 6, 5, 'Bellfounder: stand off for a Molten Pour; step out of the lane, and off the slag'), 'stand 5 u away');
+  button(kilnb, 'bell', () => standAt('founder', 6, 3.2, 'Bellfounder: a Bell Drop falls on you; step out of the ring'), 'stand 3 u away');
+  button(kilnb, 'casting', async () => {
+    await thirdBoss('founder', 6);
+    X().cmd('bossHp', 0.74);
+    say('Bellfounder: the First Casting, then the Firing (walk out of the ring, then hit it while quenched)');
+  }, 'cut to 74%');
+  button(kilnb, 'third casting', async () => {
+    await thirdBoss('founder', 6);
+    X().cmd('bossHp', 0.24);
+    say('Bellfounder: the Third Casting (wider bells, a faster pour and Firing)');
+  }, 'cut to 24%');
+  button(kilnb, 'Cinder dive', () => standAt('cinderback', 6, 4, 'Cinderback: stand off for a Magma Dive; leave the ring before it surfaces, then hit it while spent'), 'stand 4 u away');
+  button(kilnb, 'lash', () => standAt('cinderback', 6, 2.0, 'Cinderback: crowd it for a Tail Lash'), 'stand next to it');
+  button(kilnb, 'spit', async () => {
+    await thirdBoss('cinderback', 6);
+    X().cmd('bossHp', 0.49);
+    say('Cinderback: phase two, the Ember Spit (three gobbets, each a ring)');
+  }, 'cut to 49%');
+  button(kilnb, 'enrage', async () => {
+    await thirdBoss('cinderback', 6);
+    X().cmd('bossHp', 0.39);
+    say('Cinderback: enraged (faster dives, a shorter spent window)');
   }, 'cut to 39%');
 
   // ---------------------------------------------------------------- party --

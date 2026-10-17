@@ -35,6 +35,9 @@ const BOSS_WIN_FLAVOUR = {
   hush: () => t('The Hush breaks. In the gods’ belfry, a bell rings again.'),
   skyhorn: () => t('The Skyhorn falls. The stair to the gods’ belfry stands open.'),
   hourwarden: () => t('The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.'),
+  // The Ember Kiln (docs/KILN_BOSSES.md).
+  founder: () => t('The Bellfounder’s crucible cracks. In the gods’ kiln, the last bell rings true.'),
+  cinderback: () => t('The Cinderback sinks into the coals. The kiln’s fire burns clean again.'),
   // Third bosses (docs/THIRD_BOSSES.md).
   gloamwolf: () => t('The Gloam Wolf lies down at last. The wood’s long night is over.'),
   mireking: () => t('The Mire King sinks into the silt. The millpond goes still.'),

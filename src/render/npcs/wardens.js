@@ -1,6 +1,6 @@
 // THE WARDENS — the cleansed spirits of the land bosses (the Hollow Stag,
-// the Drowned Heron, the Barrow Wyrm, the Spire's Skyhorn), resting at the
-// camp's edge.
+// the Drowned Heron, the Barrow Wyrm, the Spire's Skyhorn, the Kiln's
+// Cinderback), resting at the camp's edge.
 //
 // They keep their boss silhouettes (render/boss/stag.js, heron.js, wyrm.js)
 // so the player recognises who they were, but everything that made them
@@ -80,6 +80,7 @@ export function buildWarden(kind, rig) {
     kind === 'stag' ? buildStag(body, g, closedEye)
     : kind === 'heron' ? buildHeron(body, g, closedEye)
     : kind === 'ibex' ? buildIbex(body, g, closedEye)
+    : kind === 'salamander' ? buildSalamander(body, g, closedEye)
     : buildWyrm(body, g, closedEye);
 
   // Ground: faint shadow + a cold moon pool, both on the floor (not on the
@@ -517,6 +518,77 @@ function buildIbex(body, g, closedEye) {
       head.rotation.y = 0.1 * Math.sin(t * 0.21);
       bell.rotation.z = 0.06 * Math.sin(t * 0.8);
       barrel.scale.y = 0.42 * (1 + 0.025 * Math.sin(t * 0.85));
+    },
+  };
+}
+
+// --- The Cinderback: the Kiln's salamander, curled nose to tail by the
+// hearth, its broad head resting on its forefeet and its gill stalks laid
+// flat. Long and low, so it reads apart from the standing wardens.
+function buildSalamander(body, g, closedEye) {
+  const sph = new SphereGeometry(1, 16, 11);
+  // The body: a chain of segments round an arc (a loose curl, head and tail
+  // meeting at the front).
+  const segs = [];
+  const N = 9;
+  const R0 = 0.78;
+  for (let i = 0; i < N; i++) {
+    const u = i / (N - 1);
+    const a = -0.4 + u * 4.6; // radians round the curl
+    const r = (0.36 - 0.27 * u) * (i < 3 ? 1.05 : 1);
+    const m = g(sph);
+    m.scale.set(r * 1.1, r * 0.72, r * 1.5);
+    const rr = R0 - 0.12 * u;
+    m.position.set(Math.sin(a) * rr, r * 0.7, Math.cos(a) * rr);
+    m.rotation.y = a + Math.PI / 2;
+    body.add(m);
+    segs.push({ m, r });
+  }
+  // Four splayed legs tucked under it.
+  const legGeo = new CylinderGeometry(0.08, 0.06, 0.34, 8);
+  for (const i of [1, 3]) {
+    const s = segs[i].m;
+    for (const side of [-1, 1]) {
+      const l = g(legGeo);
+      const out = new Vector3(Math.cos(s.rotation.y), 0, -Math.sin(s.rotation.y)).multiplyScalar(side * segs[i].r * 0.95);
+      l.position.set(s.position.x + out.x, 0.14, s.position.z + out.z);
+      l.rotation.set(0, s.rotation.y, side * 1.1);
+      body.add(l);
+    }
+  }
+  // The head, resting forward of the first segment, with gill stalks laid back.
+  const head = new Group();
+  const a0 = -0.4 - 0.55;
+  head.position.set(Math.sin(a0) * R0, 0.26, Math.cos(a0) * R0);
+  head.rotation.y = a0 + Math.PI / 2 + 0.25;
+  body.add(head);
+  const skull = g(sph);
+  skull.scale.set(0.42, 0.2, 0.34);
+  head.add(skull);
+  const gills = [];
+  const gillGeo = new ConeGeometry(0.035, 0.32, 6);
+  for (const side of [-1, 1]) {
+    for (let k = 0; k < 3; k++) {
+      const gl = g(gillGeo);
+      gl.position.set(side * (0.34 + k * 0.02), 0.05, -0.1 - k * 0.08);
+      gl.rotation.set(-1.2, 0, side * (1.5 + k * 0.15));
+      head.add(gl);
+      gills.push({ gl, k, side });
+    }
+  }
+  for (const side of [-1, 1]) closedEye(head, side * 0.27, 0.12, 0.14, side * 0.9, 0.85);
+
+  return {
+    topY: 0.75,
+    hover: 0.06,
+    footR: 1.05,
+    footWide: 1.1,
+    footDeep: 1.1,
+    update(t) {
+      // Slow breathing down the body, the gills stirring in the warm air.
+      for (let i = 0; i < segs.length; i++) segs[i].m.scale.y = segs[i].r * 0.72 * (1 + 0.04 * Math.sin(t * 0.7 - i * 0.4));
+      for (const q of gills) q.gl.rotation.x = -1.2 + 0.08 * Math.sin(t * 0.9 + q.k);
+      head.rotation.x = 0.03 * Math.sin(t * 0.4);
     },
   };
 }
