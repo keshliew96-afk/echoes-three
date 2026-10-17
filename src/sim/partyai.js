@@ -462,6 +462,42 @@ function ruleFor(a, id, def, target, tick, ctx, u) {
       if (party.length < 2) return null;
       return party.some((m) => near(m.x, m.z, 3).length > 0) ? a : null;
     }
+    // ------------------------------------------------------ Duskwing --
+    // THE DUSKWING (docs/DUSKWING.md): a first pass (slice 5 teaches him
+    // when to pull out). He dives onto a pack, bites when hurt, and throws
+    // the dark over a crowd.
+    case 'dusk_dive': {
+      // The densest pack in reach, two or more, else his target from a gap.
+      let best = null;
+      let bestN = 0;
+      for (const e of hostiles) {
+        const d = dist(e);
+        if (d > def.dash.dist + def.area || d < 0.6) continue;
+        const n = near(e.x, e.z, def.area).length;
+        if (n > bestN || (n === bestN && best && e.id < best.id)) {
+          bestN = n;
+          best = e;
+        }
+      }
+      if (best && bestN >= 2) return best;
+      if (!target) return null;
+      const d = dist(target);
+      return d > 1.0 && d <= def.dash.dist + def.area ? target : null;
+    }
+    case 'blood_bite': {
+      // In reach; at once when he is hurt below 70%, else on his target.
+      const close = near(a.x, a.z, def.range).sort((p, q) => dist(p) - dist(q) || p.id - q.id);
+      if (close.length === 0) return null;
+      if (a.hp < a.maxHp * 0.7) return close[0];
+      return inRange ? target : close[0];
+    }
+    case 'nightfall': {
+      // Three enemies round him, or one champion or elite on top of him.
+      const around = near(a.x, a.z, def.area);
+      if (around.length >= 3) return target ?? around[0];
+      const big = around.find((e) => (e.elite || e.champion) && !(e.boss === true || e.kind === 'stag'));
+      return big ?? null;
+    }
     default:
       // The 12 starting skills: §7 — target in shape range.
       return inRange ? target : null;

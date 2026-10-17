@@ -93,6 +93,17 @@ the camp's Team chip, the lineup tip and the lobby roster read them. In
 co-op each human picks their own character from the roster first, then the
 host fills the empty seats with AI.
 
+## The Duskwing (v0.5.293)
+
+The seventh character, Sable the Duskwing (docs/DUSKWING.md), joins
+`LINEUP_CLASSES` after the Bellwright and is free from the start
+(`DUSKWING_FREE`, until content plan 5 slice 6 brings his unlock;
+`?sable=1` forces him open). The rules are unchanged: four seats, the Healer
+on seat 0, the class you play always joins, and the picker chooses who joins
+the team, never who stays at camp. Picking him with no team chosen seats him
+in the Archer's place. The class picker lays seven cards out in one narrower
+row (`.cs-many`).
+
 ## Checks
 
 - `node tools/lineup-probe.mjs` (headless, 33 checks):

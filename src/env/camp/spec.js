@@ -61,6 +61,9 @@ export const CAMP_SPOTS = Object.freeze({
   // THE BELLWRIGHT: the west side between the Tank and the Archer, facing
   // the fire (clear of the bench colliders).
   bellwright: Object.freeze({ x: -2.75, z: -1.05, yaw: 1.25 }),
+  // THE DUSKWING: the east side between the Swordsman and the Tidecaller,
+  // the Bellwright's mirror, facing the fire.
+  duskwing: Object.freeze({ x: 2.85, z: -1.1, yaw: -1.25 }),
 });
 
 export const CAMP_SPEC = Object.freeze({

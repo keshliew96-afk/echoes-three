@@ -12,7 +12,8 @@
 // and vaults adds src/audio/vaultcues.js (vk_*); New enemies, Wood and Mill
 // adds src/audio/woodmillcues.js (wm_*); the Tidecaller's kit adds
 // src/audio/tidecues.js (td_*); Act V adds src/audio/spirecues.js (sp_*);
-// the Bellwright adds src/audio/bellcues.js (bw_*); hazards and shrines
+// the Bellwright adds src/audio/bellcues.js (bw_*), the Duskwing
+// src/audio/duskcues.js (dk_*); hazards and shrines
 // adds src/audio/shrinecues.js (hz_spur*, sh_*); the Act V champion,
 // the Vane Cock and Sacristan and the Spire's event rooms (plan 4 slice 7)
 // add to championcues, spirecues and encountercues;
@@ -39,6 +40,7 @@ const FILES = [
   { file: 'src/audio/tonicues.js', match: (id) => id.startsWith('tn_') },
   { file: 'src/audio/spirecues.js', match: (id) => id.startsWith('sp_') },
   { file: 'src/audio/bellcues.js', match: (id) => id.startsWith('bw_') },
+  { file: 'src/audio/duskcues.js', match: (id) => id.startsWith('dk_') },
   { file: 'src/audio/shrinecues.js', match: (id) => /^(hz_spur|sh_)/.test(id) },
 ].filter((f) => !argv.includes('--only') || argv[argv.indexOf('--only') + 1].split(',').some((stem) => f.file.includes(stem)));
 const { browser, page, errors } = await openAudio(`${BASE}?menu=0&seed=7`);

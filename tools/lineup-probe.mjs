@@ -120,7 +120,7 @@ function secondRoom(W, kit) {
   check(L.normalizeLineup(['healer', 'tank', 'tank', 'archer']) === L.DEFAULT_LINEUP, 'a class twice is refused');
   check(L.normalizeLineup(['healer', 'tank', 'swordsman', 'wizard']) === L.DEFAULT_LINEUP, 'an unknown class is refused');
   check(L.normalizeLineup(['healer', 'tank', 'swordsman']) === L.DEFAULT_LINEUP, 'three seats are refused');
-  check(same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller', 'bellwright']), 'the default four leave the Tidecaller and the Bellwright at camp');
+  check(same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller', 'bellwright', 'duskwing']), 'the default four leave the Tidecaller, the Bellwright and the Duskwing at camp');
 }
 
 // ------------------------------------------------------------- 2. default --

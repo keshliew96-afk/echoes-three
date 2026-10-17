@@ -1887,6 +1887,12 @@
    "src/ui/run/cards.js"
   ]
  },
+ "A deep bite: 20 to up to 2 enemies in reach, and half of what it deals comes back to the bat as health.": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "A falling dew at the cursor for 5 s: 7 per second to allies inside.": {
   "files": [
    "src/ui/run/cards.js"
@@ -2094,6 +2100,12 @@
  "A pale shape that trades in old things.": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "A passive beat of the wings: every second, the 3 nearest enemies within 1.3 u take 3.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -3801,6 +3813,12 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "BI": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
  "Bill Spear: drives down a warning lane for 16. Wingbeat punishes crowding it. During add waves it hides under the water and resurfaces in a burst.": {
   "files": [
    "src/data/journal.js"
@@ -3875,6 +3893,12 @@
  "Blood Shrine": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Bloodbite": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -5444,6 +5468,12 @@
    "src/ui/run/levels.js"
   ]
  },
+ "Darkness falls round the bat: 6 to up to 8 enemies within 2 u, blinded for 2 s (they start no attack and grope at half speed; not the bosses).": {
+  "files": [
+   "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
  "dash to the target first.": {
   "files": [
    "src/ui/run/cards.js"
@@ -5777,6 +5807,11 @@
   ],
   "data": true
  },
+ "Dives into the pack from the dark: fast bites that steal life, and a night that blinds them. Light on health, so keep moving.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
  "Dodge": {
   "files": [
    "src/ui/menu/tabs/controls.js",
@@ -5935,6 +5970,26 @@
  "Dulled Edge": {
   "files": [
    "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Dusk Dive": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Duskwing": {
+  "files": [
+   "src/data/classes.js",
+   "src/ui/menu/saves.js",
+   "src/ui/run/transit.js"
+  ],
+  "data": true
+ },
+ "DV": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -6912,6 +6967,11 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Five heroes now, Sable the Duskwing among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Five heroes now, Tolly the Bellwright among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
   "files": [
    "src/ui/tutorial/index.js"
@@ -7087,6 +7147,11 @@
   "data": true
  },
  "Four seats, five friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Four seats, seven friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -9770,10 +9835,22 @@
    "src/ui/run/unlocks.js"
   ]
  },
+ "NF": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
+ },
  "NIGHT · BEFORE THE ROAD": {
   "files": [
    "src/ui/hud/index.js"
   ]
+ },
+ "Night Wings": {
+  "files": [
+   "src/sim/allies.js"
+  ],
+  "data": true
  },
  "Night woodland": {
   "files": [
@@ -9784,6 +9861,12 @@
  "Night-dark woodland where the beasts first turned.": {
   "files": [
    "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "Nightfall": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -10203,6 +10286,12 @@
  "Nova Bloom": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "NW": {
+  "files": [
+   "src/sim/allies.js"
   ],
   "data": true
  },
@@ -12485,6 +12574,11 @@
   ],
   "data": true
  },
+ "Seven heroes now, Rill the Tidecaller, Tolly the Bellwright and Sable the Duskwing among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "SG": {
   "files": [
    "src/sim/skills.js"
@@ -12684,7 +12778,17 @@
   ],
   "data": true
  },
+ "Six heroes now, Rill the Tidecaller and Sable the Duskwing among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
  "Six heroes now, Rill the Tidecaller and Tolly the Bellwright among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
+  "files": [
+   "src/ui/tutorial/index.js"
+  ]
+ },
+ "Six heroes now, Tolly the Bellwright and Sable the Duskwing among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
@@ -13952,6 +14056,12 @@
  "The barrow's carrion bird, grown huge on the ash of the pyres and masked in bone.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "The bat dives up to 3.6 u onto the target, untouchable, and lands with a burst: 16 to up to 5 enemies within 1.2 u.": {
+  "files": [
+   "src/ui/run/cards.js"
   ],
   "data": true
  },
@@ -17363,6 +17473,11 @@
   ]
  },
  "You play one of the four. The AI plays the rest of the party, so it is always whole.": {
+  "files": [
+   "src/ui/run/classpick.js"
+  ]
+ },
+ "You play one of the seven. The AI plays the rest of the party of four, so it is always whole.": {
   "files": [
    "src/ui/run/classpick.js"
   ]

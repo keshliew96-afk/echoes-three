@@ -92,3 +92,10 @@ Tolly's eleven skills and eight class nodes (all campaign-only) are listed in
 docs/BELLWRIGHT.md, with her AI rules, VFX and sounds;
 `node tools/bellwright-kit-probe.mjs` checks them (the base four and her
 place in the team stay with `node tools/bellwright-probe.mjs`).
+
+## The Duskwing
+
+Sable's four base skills (all campaign-only), his Night Hunger life steal and
+the new blind status are listed in docs/DUSKWING.md, with his AI rules, VFX
+and sounds; `node tools/duskwing-probe.mjs` checks them. His full kit and
+class nodes come in content plan 5, slice 5.

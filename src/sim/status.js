@@ -21,6 +21,9 @@
 //   soaked    move speed × (1 − mag)        hostile (THE TIDECALLER, docs/TIDECALLER.md): its own
 //             kind, so it stacks with a slow; a boss takes at most 5%; a Frozen elite refuses it.
 //             Crash skills deal +60% to a soaked enemy and consume the soak.
+//   blind     darkness: no attack starts, a live wind-up is interrupted,
+//             move speed × (1 − blindSlow)   non-boss hostiles only (THE DUSKWING,
+//             docs/DUSKWING.md); ≤ 120 ticks; the enemy gropes, it does not freeze
 // Refresh rule (§23.8): re-applying a kind keeps max(mag) and max(untilTick) —
 // never stacks. The one accumulating writer is addShield() (Bulwark), which
 // adds to a live shield up to its own cap; it is still bounded by the 50%
@@ -36,7 +39,7 @@
 // a tick or between ticks from a probe), is visible on the bus exactly once
 // per application.
 
-const KINDS = Object.freeze(['slow', 'stun', 'haste', 'shield', 'ward', 'exposed', 'inspired', 'taunt', 'soaked']);
+const KINDS = Object.freeze(['slow', 'stun', 'haste', 'shield', 'ward', 'exposed', 'inspired', 'taunt', 'soaked', 'blind']);
 export const STATUS_KINDS = KINDS;
 
 // §23.8 caps and immunity windows (frozen; BUILD_BRIEF is the source).
@@ -51,12 +54,16 @@ export const STATUS_RULES = Object.freeze({
   tauntBossImmuneTicks: 300,
   // THE TIDECALLER: a boss is slowed at most this much by a soak.
   soakedBossCap: 0.05,
+  // THE DUSKWING: darkness never lasts longer than 2 s, and the blinded
+  // enemy moves at half speed.
+  blindMaxTicks: 120,
+  blindSlow: 0.5,
 });
 
 // Kind -> which side may carry it. The boss (the Hollow Stag, kind 'stag', or
 // any entity flagged `boss: true`) is immune to slow and stun.
 const PARTY_ONLY = new Set(['haste', 'shield', 'ward', 'inspired']);
-const HOSTILE_ONLY = new Set(['stun', 'exposed', 'taunt', 'soaked']);
+const HOSTILE_ONLY = new Set(['stun', 'exposed', 'taunt', 'soaked', 'blind']);
 const IMMUNE_KEY = 'stunImmune'; // internal record (not a public kind)
 const TAUNT_IMMUNE_KEY = 'tauntImmune'; // internal record: the boss after a taunt
 
@@ -96,6 +103,7 @@ function speedMulRaw(e, tick) {
   if (sl) m *= 1 - Math.min(STATUS_RULES.slowCap, sl.mag);
   const so = e.status.soaked ? live(e, 'soaked', tick) : null;
   if (so) m *= 1 - (isBoss(e) ? Math.min(STATUS_RULES.soakedBossCap, so.mag) : so.mag);
+  if (e.status.blind && live(e, 'blind', tick)) m *= 1 - STATUS_RULES.blindSlow;
   const ha = live(e, 'haste', tick);
   if (ha) m *= 1 + ha.mag;
   return am === undefined ? m : m * am;
@@ -103,6 +111,11 @@ function speedMulRaw(e, tick) {
 
 export function isStunned(e, tick) {
   return !!live(e, 'stun', tick);
+}
+
+// THE DUSKWING: a blinded enemy starts no attack (it still walks, slower).
+export function isBlinded(e, tick) {
+  return !!(e && e.status && e.status.blind && live(e, 'blind', tick));
 }
 
 export function damageDealtMul(attacker, tick) {
@@ -168,7 +181,7 @@ export function refusal(e, kind, tick) {
   const party = isParty(e);
   if (PARTY_ONLY.has(kind) && !party) return 'party_only';
   if (HOSTILE_ONLY.has(kind) && party) return 'hostile_only';
-  if ((kind === 'slow' || kind === 'stun') && isBoss(e)) return 'boss_immune';
+  if ((kind === 'slow' || kind === 'stun' || kind === 'blind') && isBoss(e)) return 'boss_immune';
   if (kind === 'stun' && live(e, IMMUNE_KEY, tick)) return 'stun_immune';
   // A Frozen elite is ice already (elite affixes): it cannot be soaked.
   if (kind === 'soaked' && Array.isArray(e.affixes) && e.affixes.includes('frozen')) return 'frozen';
@@ -188,6 +201,7 @@ export function apply(e, kind, mag, ticks, tick, srcId = null) {
   if (kind === 'stun') t = Math.min(STATUS_RULES.stunMaxTicks, t);
   if (kind === 'taunt') t = Math.min(isBoss(e) ? STATUS_RULES.tauntBossMaxTicks : STATUS_RULES.tauntMaxTicks, t);
   if (kind === 'slow') m = Math.min(STATUS_RULES.slowCap, m);
+  if (kind === 'blind') t = Math.min(STATUS_RULES.blindMaxTicks, t);
   if (kind === 'shield') m = Math.min(m, shieldCap(e));
   const prev = live(e, kind, tick);
   const rec = {

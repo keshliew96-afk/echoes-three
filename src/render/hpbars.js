@@ -30,7 +30,7 @@ import { classOfSeat } from '../data/lineup.js';
 
 // World height of the bar's anchor over each rig's feet (measured top of the
 // head / hat / helm at the 12 u / 52° gameplay rig, plus a little air).
-const HEAD_Y = Object.freeze({ healer: 1.42, tank: 1.5, swordsman: 1.38, archer: 1.42, tidecaller: 1.3, bellwright: 1.4 });
+const HEAD_Y = Object.freeze({ healer: 1.42, tank: 1.5, swordsman: 1.38, archer: 1.42, tidecaller: 1.3, bellwright: 1.4, duskwing: 1.36 });
 const LIFT_PX = 6; // screen-space air between the anchor and the bar's bottom edge
 
 // Bar size at the 1920x1080 reference; scaled with the window like the HUD.

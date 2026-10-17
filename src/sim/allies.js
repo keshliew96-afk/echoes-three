@@ -180,6 +180,22 @@ export const ALLY_CLASSES = Object.freeze({
     basicSpeed: 5.4,
     standRange: 4.2 * 0.8,
   }),
+  // THE DUSKWING (docs/DUSKWING.md, not a §7 row): the bat. Nip is the
+  // fastest blow in the party and the shortest reach; light on health,
+  // quickest on his feet, and every blow feeds him (Night Hunger,
+  // sim/duskwing.js).
+  duskwing: Object.freeze({
+    classId: 'duskwing',
+    partyIndex: 3, // the seat he takes by default (the Archer stays at camp)
+    maxHp: 80,
+    moveSpeed: 2.9,
+    attackIntervalTicks: secTicks(0.3),
+    basicPower: 7,
+    basicShape: 'melee_arc',
+    basicRange: 0.8, // arc reach 0.80
+    basicHalfAngle: 45, // half-angle 45°
+    standRange: 0.8 * 0.85,
+  }),
 });
 
 const BOLT_RADIUS = 0.05; // same swept-vs-wall scaffold radius as every other bolt
@@ -198,6 +214,7 @@ export const ALLY_KITS = Object.freeze({
   archer: Object.freeze(CLASS_BASE_KIT.archer.map((id) => SKILLS[id])),
   tidecaller: Object.freeze(CLASS_BASE_KIT.tidecaller.map((id) => SKILLS[id])),
   bellwright: Object.freeze(CLASS_BASE_KIT.bellwright.map((id) => SKILLS[id])),
+  duskwing: Object.freeze(CLASS_BASE_KIT.duskwing.map((id) => SKILLS[id])),
 });
 
 // The v0.5.150 kit table, verbatim (reference only — the SKILLS rows above

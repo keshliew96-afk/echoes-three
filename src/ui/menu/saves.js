@@ -68,6 +68,7 @@ const CLASS_NAME = {
   get archer() { return t('Archer'); },
   get tidecaller() { return t('Tidecaller'); },
   get bellwright() { return t('Bellwright'); },
+  get duskwing() { return t('Duskwing'); },
 };
 
 // A player-facing reason for a damaged file (the raw detail stays in the

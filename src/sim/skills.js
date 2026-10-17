@@ -471,6 +471,32 @@ export const SKILLS = Object.freeze({
     rehang: true, // and every bell it rings starts its time over
     status: Object.freeze({ kind: 'stun', mag: 1, ticks: 36 }), // a 0.6 s daze (not the bosses)
   }),
+
+  // THE DUSKWING (docs/DUSKWING.md): the bat's four base skills. His rhythm
+  // is dive, bite, blind: the Dive reuses the Swordsman's untouchable `dash`
+  // and bursts where he lands, `drain` heals him this share of the damage the
+  // skill deals on top of his Night Hunger (CLASS_TECH.duskDrain, every blow
+  // he lands), and `status: blind` is darkness (sim/status.js: a blinded
+  // enemy starts no attack and gropes at half speed; not the bosses).
+  dusk_dive: Object.freeze({
+    id: 'dusk_dive', name: 'Dusk Dive', abbrev: 'DV', cls: 'duskwing', archetype: 'damage', shape: 'nova',
+    power: 16, cd: 6, area: 1.2, count: 5,
+    dash: Object.freeze({ dist: 3.6, speed: 13, iframes: true }), // he drops out of the dark onto the aim, untouchable
+  }),
+  blood_bite: Object.freeze({
+    id: 'blood_bite', name: 'Bloodbite', abbrev: 'BI', cls: 'duskwing', archetype: 'damage', shape: 'melee_arc',
+    power: 20, cd: 4, range: 0.95, area: 40, count: 2,
+    drain: 0.5, // half of what it deals comes back to him as health
+  }),
+  nightfall: Object.freeze({
+    id: 'nightfall', name: 'Nightfall', abbrev: 'NF', cls: 'duskwing', archetype: 'damage', shape: 'nova',
+    power: 6, cd: 11, area: 2.0, count: 8,
+    status: Object.freeze({ kind: 'blind', mag: 1, ticks: 120 }), // 2 s of darkness (not the bosses)
+  }),
+  night_wings: Object.freeze({
+    id: 'night_wings', name: 'Night Wings', abbrev: 'NW', cls: 'duskwing', archetype: 'passive', field: 'hostile', output: 'damage', shape: 'aura',
+    power: 3, area: 1.3, count: 3, cadenceSec: 1.0, knockback: 0, // each second the 3 nearest enemies within 1.3 u, never pushed
+  }),
 });
 
 // A skill's class (Healer rows carry no `cls`).

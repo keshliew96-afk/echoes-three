@@ -26,8 +26,9 @@ export const PLAY_CLASS_KEY = 'gameplay.playClass';
 // THE TIDECALLER (docs/TIDECALLER.md): five classes for four seats. Who
 // joins the Healer is `gameplay.team` (comma list; '' = today's party).
 export const TEAM_KEY = 'gameplay.team';
-// THE BELLWRIGHT (docs/BELLWRIGHT.md) makes it six.
-export const PLAY_CLASSES = Object.freeze([...SEAT_CLASSES, 'tidecaller', 'bellwright']);
+// THE BELLWRIGHT (docs/BELLWRIGHT.md) makes it six, THE DUSKWING
+// (docs/DUSKWING.md) seven.
+export const PLAY_CLASSES = Object.freeze([...SEAT_CLASSES, 'tidecaller', 'bellwright', 'duskwing']);
 export const playable = (c) => PLAY_CLASSES.includes(c) && classOpen(c);
 // The lineup the next campaign takes from the two settings.
 export const lineupFromSettings = (settings) => plannedLineup(settings.get(PLAY_CLASS_KEY), settings.get(TEAM_KEY));

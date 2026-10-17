@@ -309,6 +309,11 @@ export const SKILL_BODY = {
   vesper_chime: 'A soft chime over the two allies enemies are after: a 12 shield each for 4 s.',
   tuning_fork: 'Every ally within 3 u, the beetle too: a 6 shield and 25% faster for 3 s.',
   carillon: 'Ring every bell you have hung, harder: 24 to up to 8 enemies round each bell and a 0.6 s daze (not the bosses). Every bell it rings starts its time over.',
+  // THE DUSKWING (docs/DUSKWING.md).
+  dusk_dive: 'The bat dives up to 3.6 u onto the target, untouchable, and lands with a burst: 16 to up to 5 enemies within 1.2 u.',
+  blood_bite: 'A deep bite: 20 to up to 2 enemies in reach, and half of what it deals comes back to the bat as health.',
+  nightfall: 'Darkness falls round the bat: 6 to up to 8 enemies within 2 u, blinded for 2 s (they start no attack and grope at half speed; not the bosses).',
+  night_wings: 'A passive beat of the wings: every second, the 3 nearest enemies within 1.3 u take 3.',
   // THE TIDECALLER, the rest of her kit (slice 3).
   torrent: 'Crash. A jet of water: 18 to every enemy along a 5.5 u line. +60% on a soaked enemy, which spends the soak.',
   whirlpool: 'A whirlpool at the target for 5 s: 4 per second, soaks, slows 30% and drags enemies inside toward its centre.',

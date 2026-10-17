@@ -532,6 +532,32 @@ const ICONS = {
     ['ellipse', { cx: 16, cy: 18, rx: 3.6, ry: 2.4, fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M16 3 C18.5 6.5 19.5 8.5 17.8 10.2 C16.8 11 15.2 11 14.2 10.2 C12.5 8.5 13.5 6.5 16 3 Z', fill: 'currentColor', stroke: 'none' }],
   ],
+  // THE DUSKWING (docs/DUSKWING.md).
+  // Dusk Dive: a bat stooping down a streak onto a burst ring.
+  dusk_dive: [
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(2 -1) scale(0.8) rotate(28 16 12)' }],
+    ['path', { d: 'M4 4 L13 15 M9 3 L16 12', 'stroke-width': 1.4 }],
+    ['ellipse', { cx: 21, cy: 26, rx: 9, ry: 3.2, 'stroke-width': 1.8 }],
+    ['path', { d: 'M21 20 V23 M15 21 L17 23.5 M27 21 L25 23.5', 'stroke-width': 1.4 }],
+  ],
+  // Bloodbite: two fangs closing, a drop between them.
+  blood_bite: [
+    ['path', { d: 'M5 6 Q16 12 27 6', 'stroke-width': 2.2 }],
+    ['path', { d: 'M9 8 L11.5 17 L14 9 Z M18 9 L20.5 17 L23 8 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M16 19 C18.5 22.5 19 24.5 17.5 26 C16.8 26.7 15.2 26.7 14.5 26 C13 24.5 13.5 22.5 16 19 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M5 27 Q16 22 27 27', 'stroke-width': 1.4 }],
+  ],
+  // Nightfall: spread wings under a crescent moon, the dark falling.
+  nightfall: [
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(0 6)' }],
+    ['path', { d: 'M20 2.5 A6 6 0 1 0 25.5 10 A4.6 4.6 0 1 1 20 2.5 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M5 27 L5 30 M11 26 L11 30 M16 25 L16 30 M21 26 L21 30 M27 27 L27 30', 'stroke-width': 1.4 }],
+  ],
+  // Night Wings: one wing beating, gust arcs off its edge.
+  night_wings: [
+    ['path', { d: 'M5 22 L12 6 C14 10 18 12 26 12 C24 15 24 17 25 19 C22 18 19 18.5 17.5 21 C15 19 12.5 19.5 11 22 C9 20.5 7 21 5 22 Z', fill: 'currentColor', stroke: 'none' }],
+    ['path', { d: 'M24 23 Q28 26 25 30 M19 25 Q22 27 20 30', 'stroke-width': 1.5 }],
+  ],
   // THE BELLWRIGHT (docs/BELLWRIGHT.md).
   // Hang Bell: a bell hung from a hook, with a ring on the ground beneath.
   hang_bell: [
@@ -805,6 +831,11 @@ const ICONS = {
     ['path', { d: 'M16 4 C10.5 4 9 9 9 14 C9 18 7.5 20 6 22 H26 C24.5 20 23 18 23 14 C23 9 21.5 4 16 4 Z', fill: 'currentColor', stroke: 'none' }],
     ['circle', { cx: 16, cy: 25.5, r: 2.4, fill: 'currentColor', stroke: 'none' }],
     ['path', { d: 'M3 10 Q1.5 14 3 18 M29 10 Q30.5 14 29 18', 'stroke-width': 1.6 }],
+  ],
+  // The Duskwing: a bat with its wings spread.
+  cls_duskwing: [
+    ['path', { d: 'M16 9 L13.5 6 L12.5 10 C9 9 6 7 2 8 C4 10 4.5 12 4 14 C6 13 8 13.5 9.5 15 C11 13.5 13 13.5 14 15 L16 17 L18 15 C19 13.5 21 13.5 22.5 15 C24 13.5 26 13 28 14 C27.5 12 28 10 30 8 C26 7 23 9 19.5 10 L18.5 6 Z', fill: 'currentColor', stroke: 'none', transform: 'translate(0 4)' }],
+    ['path', { d: 'M3 27 Q16 22 29 27', 'stroke-width': 1.4 }],
   ],
   // The Tidecaller: her reed staff with the shell cup and a water drop.
   cls_tidecaller: [

@@ -125,6 +125,8 @@ const ALLY_SPOTS = [
   ['tidecaller', 0.9, -2.4],
   // THE BELLWRIGHT: the sixth.
   ['bellwright', -1.2, -2.6],
+  // THE DUSKWING: the seventh.
+  ['duskwing', 2.1, -2.5],
 ];
 // Healer clip arbitration (downed > hurt > cast > walk/idle):
 const CAST_PHASE = 0.45; // s into the cast clip = the release pop (§6 instant cast)

@@ -135,7 +135,7 @@ const freed = (prof) => U.bellwrightFreed(prof.get().meta, prof.get().records);
 // ------------------------------------------------------------ 1. unlock --
 {
   check(L.BELLWRIGHT_FREE === false && !L.bellwrightOpen() && !L.classOpen('bellwright'), 'a fresh page: Tolly is locked');
-  check(!L.rosterGrown() && L.plannedLineup('bellwright', '') === L.DEFAULT_LINEUP && same(L.parseTeam('tank,bellwright'), ['tank']), 'locked: no team choice, and naming her changes nothing (the default four)');
+  check(!L.classOpen('bellwright') && L.plannedLineup('bellwright', '') === L.DEFAULT_LINEUP && same(L.parseTeam('tank,bellwright'), ['tank']), 'locked: she is not offered, and naming her changes nothing (the default four)');
   check(same(L.normalizeLineup(TOLLY), TOLLY), 'a lineup that already holds her stays valid (a save, a host seen by a guest)');
   const prof = freshStore();
   check(!freed(prof) && prof.get().meta.feats.length === 0, 'a fresh profile has not freed her');
