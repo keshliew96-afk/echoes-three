@@ -7,6 +7,8 @@
 //   level    at most one wall a level (autopilot campaigns over 8 seeds)
 //   break    a bomb opens it; a heavy skill hit opens it; a basic hit only
 //            knocks; an AI seat's bomb only knocks
+//   guest    a co-op guest's heavy melee skill opens it, a light one only
+//            knocks; an AI seat's swing never strikes it
 //   chamber  after the reward and the relic pick, the party stands in the
 //            chamber; each content pays: the hoard, the reliquary's relic
 //            pick, the cache's two tonics, the lectern's page (Journal), the
@@ -35,6 +37,7 @@ const { hashState } = await import(u('src/core/hash.js'));
 const { canonicalJSON } = await import(u('src/core/canonical.js'));
 const { createStateIO } = await import(u('src/save/capture.js'));
 const { clonePlain } = await import(u('src/save/codec.js'));
+const { frameFromSnapshot, seatInputOf } = await import(u('src/sim/netseats.js'));
 const S = await import(u('src/sim/secrets.js'));
 
 const argv = process.argv.slice(2);
@@ -312,6 +315,45 @@ const snapAt = (e, extra) => ({ ...emptySnapshot(), aim: { x: e.x, z: e.z }, ...
   // A wall left shut at the clear: no chamber.
   const left = toPath(ai);
   check('break', 'a wall still shut at the clear leads nowhere: reward, relic, doors', !left.includes('secret') && ss(ai).seen === 1 && ss(ai).found === 0, { left });
+}
+
+// --------------------------------------------------------------- guest --
+{
+  // Seats 1-3 held by (silent) humans, as a co-op host sees its guests.
+  const stepGuests = (w, on = true) =>
+    w.clock.stepOnce((t) => {
+      const f = () => seatInputOf([frameFromSnapshot(emptySnapshot(), { seq: t, tick: t, viewTick: t })]);
+      w.world.step(t, emptySnapshot(), on ? { seats: { 1: f(), 2: f(), 3: f() }, reasons: {}, player: 'human', rewind: null } : undefined);
+    });
+  // A room cleared, `skill` on the seat's first key, then room 4 with a wall.
+  const guestRoom = (seat, skill, guests) => {
+    const w = campaign(SEED);
+    stepGuests(w, guests);
+    for (let i = 0; i < 3000 && w.run().view().phase === 'combat'; i++) {
+      w.world.cmd('killAllEnemies');
+      stepGuests(w, guests);
+    }
+    const sw = w.world.cmd('partySwap', seat, skill, 0);
+    w.run().cmd('secretWall', [4, 'hoard']);
+    w.world.cmd('skipToRoom', 4);
+    for (let i = 0; i < 5; i++) stepGuests(w, guests);
+    const e = live(w);
+    const a = heroes(w).find((x) => x.partyIndex === seat);
+    a.x = a.px = e.x + 0.7;
+    a.z = a.pz = e.z + 0.9;
+    const cast = w.world.cmd('partyCast', seat, 0, { x: e.x, z: e.z });
+    for (let i = 0; i < 3; i++) stepGuests(w, guests);
+    return { w, sw, cast, blows: w.log.filter((x) => x.type === 'secret_open' || x.type === 'secret_knock') };
+  };
+  {
+    const heavy = guestRoom(1, 'heavy_slam', true);
+    const op = heavy.blows.find((x) => x.type === 'secret_open');
+    check('guest', "a co-op guest's heavy melee skill (Heavy Slam) breaks it open", !!op && op.how === 'hit' && op.seat === 1, { sw: heavy.sw, cast: heavy.cast, blows: heavy.blows });
+    const light = guestRoom(2, 'flurry', true);
+    check('guest', "a guest's light melee skill (Flurry, 11) only knocks", light.blows.some((x) => x.type === 'secret_knock' && x.seat === 2) && !light.blows.some((x) => x.type === 'secret_open'), { sw: light.sw, cast: light.cast, blows: light.blows });
+    const ai = guestRoom(1, 'heavy_slam', false);
+    check('guest', "an AI seat's swing never strikes it", !!ai.cast && ai.cast.ok !== false && ai.blows.length === 0 && live(ai.w).shut, { cast: ai.cast, blows: ai.blows });
+  }
 }
 
 // ------------------------------------------------------------- chamber --

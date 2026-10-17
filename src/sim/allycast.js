@@ -404,6 +404,26 @@ export function createAllyCaster(ctx) {
   // One damage instance per target (arc / nova / counter), then the skill's
   // own status on the hostiles hit. `srcLabel` overrides the source (a
   // technique counter).
+  // SECRET ROOMS: the shut cracked wall a melee arc reaches, measured to the
+  // nearest point of its slab (its collider is a long, thin box).
+  function wallInArc(a, dirX, dirZ, reach, halfAngleDeg) {
+    const w = registry.all().find((e) => e.kind === 'secret_wall' && e.shut && e.hittable && e.hp > 0);
+    if (!w || !w.collider) return null;
+    const ux = Math.cos(w.yaw ?? 0);
+    const uz = -Math.sin(w.yaw ?? 0);
+    const along = Math.max(-w.collider.hx, Math.min(w.collider.hx, (a.x - w.x) * ux + (a.z - w.z) * uz));
+    const px = w.x + ux * along;
+    const pz = w.z + uz * along;
+    const dx = px - a.x;
+    const dz = pz - a.z;
+    const d = Math.hypot(dx, dz);
+    if (d > reach + w.collider.hz + (a.radius ?? 0.3)) return null;
+    if (d < 1e-4) return w;
+    const alen = Math.hypot(dirX, dirZ) || 1;
+    const half = (Math.min(180, Math.max(0, halfAngleDeg)) * Math.PI) / 180;
+    return (dx / d) * (dirX / alen) + (dz / d) * (dirZ / alen) >= Math.cos(half) ? w : null;
+  }
+
   function hitList(a, def, power, targets, shape, M, castId, echoFlag, srcLabel = null) {
     const T = tech();
     const seat = a.partyIndex;
@@ -713,6 +733,10 @@ export function createAllyCaster(ctx) {
       Object.assign(cast, extra);
       events.emit(tick, 'ally_cast', cast);
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
+      // SECRET ROOMS: a guest's swing that reaches a shut cracked wall
+      // strikes it too (the run decides whether the blow opens it).
+      const wall = human ? wallInArc(a, d.x, d.z, def.range, def.area) : null;
+      if (wall) combat.applyDamage(wall, power, { delivery: 'skill', shape: def.shape, dirX: d.x, dirZ: d.z, attacker: a.id, source: def.id });
       return cast;
     }
 

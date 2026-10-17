@@ -29,8 +29,11 @@ Journal, or a rare event.
 - **Breaking it.** It opens to a bomb burst within the bomb's radius plus
   0.9 u, or to a single skill hit of base damage 12 or more
   (`heavyMin`), from a hero a person plays (seat 0 always counts, so the
-  autopilot can too). Basic hits, light skills and AI seats only knock dust
-  from it, at most every 12 ticks, with a hollow knock.
+  autopilot can too). A co-op guest's melee skill strikes the wall when its
+  arc reaches the slab (`wallInArc` in `src/sim/allycast.js`), so a guest's
+  heavy swing opens it like the host's; guest bolts already hit it. Basic
+  hits, light skills and AI seats only knock dust from it, at most every 12
+  ticks, with a hollow knock (an AI seat's swing does not strike it at all).
 - It can open only while the fight is live. A wall still shut when the last
   foe falls stays shut, and a toast says so.
 - A first-time floor tip ("The cracked wall") explains it the first time one
