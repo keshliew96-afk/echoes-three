@@ -974,7 +974,10 @@ function* paintKilnSteps(ctx, spec, K, W, H, ppu, cx, cz) {
     ctx.restore();
   }
   // Glaze chips.
-  const GLAZE = [[208, 0.32, 0.46], [44, 0.24, 0.72], [40, 0.46, 0.46], [188, 0.28, 0.36], [214, 0.3, 0.3]];
+  // Earth glazes only (tenmoku, ash cream, amber, iron, slate): a blue glaze
+  // under the warm pools and the cool lift read as violet specks, and violet
+  // belongs to the corruption tell alone.
+  const GLAZE = [[30, 0.36, 0.2], [44, 0.24, 0.72], [40, 0.46, 0.46], [32, 0.28, 0.3], [36, 0.05, 0.4]];
   for (let i = 0; i < (K.glaze ?? 0); i++) {
     const x = R(0.03 * W, 0.97 * W);
     const z = R(0.03 * H, 0.97 * H);

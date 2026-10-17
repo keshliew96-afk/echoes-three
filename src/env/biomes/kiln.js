@@ -158,7 +158,7 @@ const SHARED = {
 
 // Darker than the Spire (the kiln is lit by its fires): a dimmer key, the
 // fires' pools a deep kiln gold.
-const MOOD = Object.freeze({ key: 0.52, fill: 0.8, warmth: 0.0, keyWhite: 0.0, poolGain: 0.92, poolTint: '#F0B44C', poolR: 1.0, torchLightGain: 0.9 });
+const MOOD = Object.freeze({ key: 0.52, fill: 0.8, warmth: 0.0, keyWhite: 0.0, poolGain: 0.92, poolTint: '#F0B44C', poolR: 1.0, torchLightGain: 0.55 });
 
 const ROOMS = Object.freeze({
   boss: {

@@ -3043,7 +3043,7 @@ function buildKilnLandmark(root, [x, z, rad = 1, kind = 'kilnmouth', yaw = 0], s
     // The throat: the glowing fire bed, unlit, breathing.
     const tex = kilnMouthTexture();
     const throatMat = new MeshBasicMaterial({ map: tex, toneMapped: false });
-    throatMat.color.setRGB(0.86, 0.66, 0.42, LinearSRGBColorSpace);
+    throatMat.color.setRGB(0.6, 0.44, 0.28, LinearSRGBColorSpace); // under the bloom threshold: the mouth glows, never blows out white
     const throatGeo = mergeGeometries([
       new PlaneGeometry(OW * 2, OH).translate(0, OH / 2, 0),
       new CircleGeometry(OW, great ? 18 : 12, 0, Math.PI).translate(0, OH, 0),
@@ -3114,7 +3114,7 @@ function buildKilnLandmark(root, [x, z, rad = 1, kind = 'kilnmouth', yaw = 0], s
     put(new CylinderGeometry(0.02, 0.02, BW * 2.3, 5).rotateZ(Math.PI / 2).translate(0, BHh * 0.5, ZF + 0.07), mats.kiron, 1.15);
     const tex = kilnMouthTexture();
     const throatMat = new MeshBasicMaterial({ map: tex, toneMapped: false });
-    throatMat.color.setRGB(0.82, 0.62, 0.4, LinearSRGBColorSpace);
+    throatMat.color.setRGB(0.58, 0.42, 0.27, LinearSRGBColorSpace);
     const throat = meshInk(root, mergeGeometries([new PlaneGeometry(OW * 2, OH).translate(0, OH / 2, 0), new CircleGeometry(OW, 10, 0, Math.PI).translate(0, OH, 0)]), throatMat, x, z, yaw, false);
     throat.position.set(wx(0, ZF - 0.12), 0, wz(0, ZF - 0.12));
     breathing(throat, throatMat, 1.7, x * 0.7 + z);
