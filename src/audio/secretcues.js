@@ -24,12 +24,12 @@ const hz = (m) => 440 * Math.pow(2, (m - 69) / 12);
 // tools/smallfixes2-cuecal.mjs --only secretcues --write.
 export const SECRET_CUE_CAL = {
   // @cal begin
-  sr_draught: 0,
-  sr_knock: 0,
-  sr_open: 0,
-  sr_enter: 0,
-  sr_pile: 0,
-  sr_relic: 0,
+  sr_draught: -19.7,
+  sr_knock: -1.2,
+  sr_open: 4.3,
+  sr_enter: -2.1,
+  sr_pile: -8.9,
+  sr_relic: -3.3,
   sr_cache: 0,
   sr_page: 0,
   // @cal end
@@ -59,7 +59,7 @@ const CUES = {
       k.tone(d, t + 0.01, { type: 'triangle', f0: P(p, 316), d: 0.32, gain: 0.14 }),
       ...[0.06, 0.11, 0.17].map((o, i) => k.noise(d, t + o, { src: 'crackle', type: 'bandpass', f0: P(p, 3200 + i * 500), q: 2, d: 0.05, gain: 0.25 }))
     ), { maxVoices: 2, cooldownMs: 160 }),
-  sr_open: sfx(-5, (k, t, d, p) =>
+  sr_open: sfx(-6.5, (k, t, d, p) =>
     Math.max(
       k.noise(d, t, { type: 'highpass', f0: 2600, q: 0.8, d: 0.06, gain: 0.7 }),
       k.tone(d, t, { f0: P(p, 110), f1: P(p, 48), d: 0.35, gain: 0.95 }),
