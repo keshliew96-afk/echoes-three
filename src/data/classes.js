@@ -21,7 +21,7 @@
 // Seat = party index = class (fixed).
 export const CLASS_OF_SEAT = Object.freeze(['healer', 'tank', 'swordsman', 'archer']);
 export const SEAT_OF_CLASS = Object.freeze({ healer: 0, tank: 1, swordsman: 2, archer: 3 });
-export const CLASS_NAME = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer', tidecaller: 'Tidecaller', bellwright: 'Bellwright' });
+export const CLASS_NAME = Object.freeze({ healer: 'Healer', tank: 'Tank', swordsman: 'Swordsman', archer: 'Archer', tidecaller: 'Tidecaller', bellwright: 'Bellwright', duskwing: 'Duskwing' });
 export const ALLY_CLASS_IDS = Object.freeze(['tank', 'swordsman', 'archer']);
 
 // §25.2 class skill pools, in the §25.2 table order (the 4 starting rows
@@ -38,6 +38,9 @@ export const CLASS_SKILLS = Object.freeze({
   // THE BELLWRIGHT (docs/BELLWRIGHT.md): the beetle's four base skills, then
   // the seven of her whole kit (content plan 4, slice 5).
   bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum', 'great_bell', 'knell', 'bell_swing', 'wing_hop', 'vesper_chime', 'tuning_fork', 'carillon']),
+  // THE DUSKWING (docs/DUSKWING.md): the bat's four base skills. The other
+  // seven join with the rest of his kit (content plan 5, slice 5).
+  duskwing: Object.freeze(['dusk_dive', 'blood_bite', 'nightfall', 'night_wings']),
 });
 
 // MORE CLASS SKILLS: what joined the pools on 2026-10-08 — nine class skills,
@@ -57,6 +60,8 @@ export const CAMPAIGN_ONLY_SKILLS = Object.freeze([
   // THE BELLWRIGHT: hers too.
   'hang_bell', 'peal', 'clapper', 'hum',
   'great_bell', 'knell', 'bell_swing', 'wing_hop', 'vesper_chime', 'tuning_fork', 'carillon',
+  // THE DUSKWING: his too.
+  'dusk_dive', 'blood_bite', 'nightfall', 'night_wings',
 ]);
 export const CAMPAIGN_ONLY_NODES = Object.freeze([
   'rampart', 'crush', 'gale_step', 'duel', 'longshot', 'prey',
@@ -81,13 +86,14 @@ export const CLASS_BASE_KIT = Object.freeze({
   archer: Object.freeze(['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova']),
   tidecaller: Object.freeze(['riverbolt', 'undertow', 'breaker', 'tidepool']),
   bellwright: Object.freeze(['hang_bell', 'peal', 'clapper', 'hum']),
+  duskwing: Object.freeze(['dusk_dive', 'blood_bite', 'nightfall', 'night_wings']),
 });
 
 // Every class starts a run with its four skill slots EMPTY (v0.5.227): skills
 // come only from wave rewards (or an equipped Unlocks kit). The basic attack
 // and the dodge are not skills and stay.
 const EMPTY_KIT = Object.freeze([null, null, null, null]);
-export const STARTING_LOADOUT = Object.freeze({ tank: EMPTY_KIT, swordsman: EMPTY_KIT, archer: EMPTY_KIT, tidecaller: EMPTY_KIT, bellwright: EMPTY_KIT });
+export const STARTING_LOADOUT = Object.freeze({ tank: EMPTY_KIT, swordsman: EMPTY_KIT, archer: EMPTY_KIT, tidecaller: EMPTY_KIT, bellwright: EMPTY_KIT, duskwing: EMPTY_KIT });
 
 // §25.3 class nodes (6 per class, all techniques) — the rows live in
 // sim/nodes.js NODES (cls-tagged).
@@ -99,6 +105,8 @@ export const CLASS_NODES = Object.freeze({
   tidecaller: Object.freeze(['wellspring', 'deluge', 'current', 'ebb', 'spring_tide', 'undercurrent', 'riptide', 'confluence']),
   // THE BELLWRIGHT (content plan 4, slice 5): six common, two rare.
   bellwright: Object.freeze(['bronze', 'clangour', 'resound', 'aftertone', 'tuned', 'cloister', 'belfry', 'sympathy']),
+  // THE DUSKWING: his eight class nodes come with the rest of his kit.
+  duskwing: Object.freeze([]),
 });
 
 // §25.3 shared-node access per class (the Healer: all 17, unchanged).
@@ -108,6 +116,8 @@ export const SHARED_ACCESS = Object.freeze({
   archer: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'reach', 'linger', 'keen', 'bounce', 'split', 'snare', 'detonate', 'echo', 'resonance']),
   tidecaller: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'linger', 'bounce', 'split', 'snare', 'echo', 'resonance', 'siphon']),
   bellwright: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'linger', 'bounce', 'snare', 'echo', 'resonance', 'siphon']),
+  // THE DUSKWING: the Swordsman's close-quarter set, Siphon included.
+  duskwing: Object.freeze(['sharpen', 'quicken', 'multiply', 'ascend', 'widen', 'reach', 'keen', 'siphon', 'echo', 'snare', 'galvanize', 'resonance']),
 });
 
 // A class's node pool, sorted ascending id (the §16 draw order).
@@ -149,6 +159,9 @@ export const AI_PRIORITY = Object.freeze({
     'hang_bell', 'great_bell', 'peal', 'carillon', 'knell', 'clapper',
     'vesper_chime', 'bell_swing', 'tuning_fork', 'wing_hop', 'hum',
   ]),
+  // THE DUSKWING (docs/DUSKWING.md): the dive that starts a fight, the bite
+  // that feeds him, the dark that blinds the pack, then his wings.
+  duskwing: Object.freeze(['dusk_dive', 'blood_bite', 'nightfall', 'night_wings']),
 });
 
 const rankOf = (list, id) => {
@@ -226,7 +239,7 @@ export const AI_IDLE_FALLBACK_TICKS = 480;
 //     with a short lunge (the Pursuit dash machinery, cause 'lunge', no
 //     iframes) instead of swinging at air.
 export const AI_ENGAGE = Object.freeze({ vanguardU: 2.0, lungeU: 1.2, lungeSpeed: 9, commitStandFrac: 0.8, firstUseTicks: 240 });
-export const MELEE_CLASSES = Object.freeze(['tank', 'swordsman']);
+export const MELEE_CLASSES = Object.freeze(['tank', 'swordsman', 'duskwing']);
 
 // Balance pass (2026-10-05): a ranged AI seat (the Archer) steps out of a
 // lobbed glob's landing ring (the Mire Toad's, the Thornmother's, the Lich
@@ -338,6 +351,12 @@ export const CLASS_TECH = Object.freeze({
   cloisterMul: 1.5, // Cloister: +50% shield on a member inside one of her rings
   belfryCap: 4, // Belfry: while she hangs with this skill, four bells
   sympathyGapTicks: 60, // Sympathy: a ring hit tolls that bell at once, once a second per bell
+  // THE DUSKWING (docs/DUSKWING.md): Night Hunger, his own life steal. Every
+  // blow he lands on an enemy feeds him this share of the damage (a skill
+  // with `drain` adds its own share on top); the heal pays out in sips of at
+  // least `drainSip` HP so the numerals stay readable.
+  duskDrain: 0.08,
+  drainSip: 1.5,
 });
 
 // §25.10 MAX-STRESS build (GP.10 / GP.15 precondition; `?partygrant=max`,

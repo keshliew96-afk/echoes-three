@@ -113,6 +113,23 @@ export const CLASS_VFX = Object.freeze({
     bolt: Object.freeze({ look: 'orb', trail: 0.3, width: 0.1 }),
     camera: Object.freeze({ kick: 0.025, dolly: 0.01 }),
   }),
+  // THE DUSKWING (docs/DUSKWING.md): a bat in the dark. Sharp, quick cuts in
+  // Dusk Rose with a Pale Moon edge, Wing Leather grit; his dive, his bite
+  // and the dark of Nightfall are render/vfx/duskfx.js.
+  duskwing: Object.freeze({
+    id: 'duskwing',
+    shape: 'sharp',
+    core: PALETTE.parchment,
+    glow: VFX_SIGNATURE.duskwing.glow,
+    second: VFX_SIGNATURE.duskwing.second,
+    debrisColor: VFX_SIGNATURE.duskwing.debris,
+    slash: Object.freeze({ width: 0.15, sweep: 0.08, life: 0.24, arcs: 2, soft: 0.25 }),
+    ring: Object.freeze({ width: 0.12, life: 0.36, jag: 0.1, soft: 0.25 }),
+    light: Object.freeze({ scale: 0.8, opacity: 0.32, life: 0.2 }),
+    debris: Object.freeze({ chunk: 0, dust: 0, spark: 6, shard: 3, shardKind: 'glint', rise: true }),
+    bolt: Object.freeze({ look: 'blade', trail: 0.22, width: 0.1 }),
+    camera: Object.freeze({ kick: 0.035, dolly: 0.01 }),
+  }),
 });
 
 // Unknown class ids (a future fifth character) borrow the Healer's soft look
@@ -144,7 +161,7 @@ const SKILL_OWNER = new Map();
 for (const cls of Object.keys(CLASS_SKILLS)) for (const id of CLASS_SKILLS[cls]) SKILL_OWNER.set(id, cls);
 export function vfxSkillClass(skillId) {
   if (!skillId) return null;
-  const m = /^(tank|swordsman|archer|healer|tidecaller|bellwright)_basic$/.exec(skillId);
+  const m = /^(tank|swordsman|archer|healer|tidecaller|bellwright|duskwing)_basic$/.exec(skillId);
   if (m) return m[1];
   return SKILL_OWNER.get(skillId) ?? 'healer';
 }

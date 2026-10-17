@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // THE TIDECALLER browser check (docs/TIDECALLER.md): the class picker shows
-// six cards (five before v0.5.278), picking Rill opens "Who joins the team?", the player swaps who
+// seven cards (six before v0.5.293, five before v0.5.278), picking Rill opens "Who joins the team?", the player swaps who
 // joins, the camp shows that team at the fire, and the player's own Level 1
 // start seats her, where she fights and soaks.
 // Screenshots under captures/ (or --out <dir>).
@@ -46,13 +46,13 @@ await page.goto(`${URL0}?seed=3&rill=1&tolly=1`, { waitUntil: 'domcontentloaded'
 await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
 await settle(1500);
 
-// The class picker: six cards now.
+// The class picker: seven cards now.
 await page.keyboard.press('KeyC');
 await page.waitForFunction(() => !!document.querySelector('.cs-classes .cs-card'), { timeout: 60000, polling: 250 });
 await settle(800);
 let cs = await cards();
-// THE BELLWRIGHT (v0.5.278) is the sixth card and carries the NEW badge now.
-check(cs.map((c) => c.cls).join(',') === 'healer,tank,swordsman,archer,tidecaller,bellwright', `six class cards (${cs.map((c) => c.cls).join(',')})`);
+// THE DUSKWING (v0.5.293) is the seventh card and carries the NEW badge now.
+check(cs.map((c) => c.cls).join(',') === 'healer,tank,swordsman,archer,tidecaller,bellwright,duskwing', `seven class cards (${cs.map((c) => c.cls).join(',')})`);
 await page.screenshot({ path: `${OUT}/tidecaller-1-five-cards.png` });
 
 // Picking her opens "Who joins the team?": the Healer and Rill locked in,
@@ -62,7 +62,7 @@ await settle(900);
 cs = await cards();
 const on = (list) => list.filter((c) => c.on).map((c) => c.cls).join(',');
 check((await title()) === 'Who joins the team?', `the team view opens (${await title()})`);
-check(cs.map((c) => c.cls).join(',') === 'healer,tank,swordsman,archer,tidecaller,bellwright', `all six on the team view (${cs.map((c) => c.cls).join(',')})`);
+check(cs.map((c) => c.cls).join(',') === 'healer,tank,swordsman,archer,tidecaller,bellwright,duskwing', `all seven on the team view (${cs.map((c) => c.cls).join(',')})`);
 check(on(cs) === 'healer,tank,swordsman,tidecaller', `Rill joins in the Archer's place (${on(cs)})`);
 check(cs.find((c) => c.cls === 'healer').disabled && cs.find((c) => c.cls === 'tidecaller').disabled, 'the Healer and the class you play are locked in');
 

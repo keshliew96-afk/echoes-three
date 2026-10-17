@@ -112,7 +112,7 @@ function secondRoom(W, kit) {
   check(same(C.CLASS_BASE_KIT.bellwright, KIT) && same(C.CLASS_SKILLS.bellwright.slice(0, 4), KIT) && C.CLASS_SKILLS.bellwright.every((id) => SKILLS[id] && SKILLS[id].cls === 'bellwright'), 'her four base skills lead her pool, all hers');
   check(KIT.every((id) => C.CAMPAIGN_ONLY_SKILLS.includes(id)) && C.gatedPool(KIT, false).length === 0 && C.gatedPool(KIT, true).length === 4, 'all four are campaign-only');
   check(SKILLS.hang_bell.bell === true && SKILLS.peal.peal === true && SKILLS.clapper.ringBonus === true && SKILLS.hum.shape === 'aura', 'Hang Bell hangs a bell, Peal rings them, the Clapper reads the ring, Hum is a passive');
-  check(same(L.DEFAULT_LINEUP, ['healer', 'tank', 'swordsman', 'archer']) && same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller', 'bellwright']), 'the default lineup is the old four (Rill and Tolly at camp)');
+  check(same(L.DEFAULT_LINEUP, ['healer', 'tank', 'swordsman', 'archer']) && same(L.benchOf(L.DEFAULT_LINEUP), ['tidecaller', 'bellwright', 'duskwing']), 'the default lineup is the old four (Rill, Tolly and Sable at camp)');
   // Slice 6 locks her until the first Level III clear (tools/bellwright-world-probe.mjs);
   // this probe opens her the way ?tolly=1 does.
   check(L.BELLWRIGHT_FREE === false && !L.bellwrightOpen(), 'a fresh page: she is locked (slice 6)');
@@ -129,7 +129,7 @@ function secondRoom(W, kit) {
   check(same(L.normalizeLineup(['healer', 'bellwright', 'tidecaller', 'archer']), ['healer', 'bellwright', 'tidecaller', 'archer']), 'any three of the five may hold the ally seats');
   L.setTidecallerUnlocked(false);
   const PC = await import(u('src/app/playclass.js'));
-  check(PC.PLAY_CLASSES.length === 6 && PC.playable('bellwright') && !PC.playable('tidecaller'), 'the picker shows six cards; Tolly playable, Rill locked');
+  check(PC.PLAY_CLASSES.length === 7 && PC.playable('bellwright') && !PC.playable('tidecaller'), 'the picker shows seven cards; Tolly playable, Rill locked');
   const MSGS = await import(u('src/net/protocol/messages.js'));
   check(MSGS.ROSTER.includes('bellwright'), 'the lobby roster offers her (co-op select_class / set_team)');
 }

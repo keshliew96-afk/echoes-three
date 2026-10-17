@@ -47,6 +47,7 @@ const FRAMING = {
   archer: { xBias: 0.19, earPad: 0.1 },
   tidecaller: { xBias: 0.05, earPad: 0.0 },
   bellwright: { xBias: 0.04, earPad: 0.06 },
+  duskwing: { xBias: 0.0, earPad: 0.1 },
 };
 
 // PARTY: the rendered heads, cached for every build page's party strip.

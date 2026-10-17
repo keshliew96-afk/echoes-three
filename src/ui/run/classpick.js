@@ -20,6 +20,9 @@
 // THE BELLWRIGHT (docs/BELLWRIGHT.md): a sixth card, Tolly the beetle, marked
 // NEW. Since slice 6 she is locked the same way until the profile frees the
 // Verse of Stone (the first Level III clear, docs/BELLWRIGHT.md "Unlock").
+// THE DUSKWING (docs/DUSKWING.md): a seventh card, Sable the bat, marked NEW
+// and free from the start in this slice (content plan 5, slice 4). Seven
+// cards set the grid tighter (.cs-many) so the names still fit one line.
 // Blocking: the single-player sim pauses while it is open.
 import { px } from '../../app/style.js';
 import { PALETTE as P, CLASS_ACCENTS } from '../../data/palette.js';
@@ -42,6 +45,7 @@ const ROLE = Object.freeze({
   archer: () => t('Damage from range: arrows, volleys and traps. Keep your distance.'),
   tidecaller: () => t('Bends the fight with water: soak enemies, drag them together, then crash a wave into the soaked.'),
   bellwright: () => t('Holds ground with bells: hang up to three that toll on the beat, then ring them all at once.'),
+  duskwing: () => t('Dives into the pack from the dark: fast bites that steal life, and a night that blinds them. Light on health, so keep moving.'),
 });
 // What frees a locked class (its card's "How to free her" panel).
 const FREE_HER = {
@@ -49,6 +53,24 @@ const FREE_HER = {
   bellwright: () => t('Tolly was ringing the Barrow\'s hours when the hollow song cracked its bells. Fell the Level III boss, the Barrow Wyrm or the Lich Ram, and she joins the party.'),
 };
 const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+
+// Long one-word class names in other languages get a soft hyphen at a
+// syllable break, so on the seven narrow cards they wrap with a hyphen
+// ("Заклина-тельница") instead of shrinking to a tiny font. Invisible when
+// the word fits; the picker only (the translations stay as they are).
+const NAME_BREAKS = {
+  Заклинательница: 'Заклина\u00adтельница',
+  Gezeitenruferin: 'Gezeiten\u00adruferin',
+  Schwertkämpfer: 'Schwert\u00adkämpfer',
+  Bogenschütze: 'Bogen\u00adschütze',
+  Dämmerflügel: 'Dämmer\u00adflügel',
+  Glöcknerin: 'Glöck\u00adnerin',
+  Сумеречник: 'Сумереч\u00adник',
+  Carillonneuse: 'Carillon\u00adneuse',
+  Alacrepúsculo: 'Ala\u00adcrepúsculo',
+  Llamamareas: 'Llama\u00admareas',
+};
+const breakName = (name) => String(name).replace(/\S+/g, (w) => NAME_BREAKS[w] ?? w);
 
 function installStyle() {
   if (document.getElementById(STYLE_ID)) return;
@@ -91,6 +113,14 @@ function installStyle() {
 .cs-classes .cs-lineup { align-self: center; font: inherit; font-size: ${px(20)}; font-weight: 700; color: ${P.parchment}; cursor: pointer;
   padding: ${px(8)} ${px(18)}; border-radius: ${px(10)}; border: max(2px, ${px(2)}) solid ${P.warmGrey}88; background: ${P.voidCharcoal}; }
 .cs-classes .cs-lineup.ap-focus { outline: max(2px, ${px(2)}) solid ${P.hearthAmber}; outline-offset: ${px(3)}; }
+.cs-classes .cs-wrap:has(.cs-many) { width: min(98vw, ${px(1600)}); padding-left: ${px(22)}; padding-right: ${px(22)}; }
+.cs-classes .cs-grid.cs-many { gap: ${px(8)}; }
+.cs-classes .cs-grid.cs-many .cs-card { padding: ${px(16)} ${px(11)} ${px(12)}; min-width: 0; }
+.cs-classes .cs-grid.cs-many .cs-card .cs-name { font-size: ${px(27)}; overflow-wrap: normal; hyphens: manual; } /* NAME_BREAKS, then fitNames() */
+.cs-classes .cs-grid.cs-many .cs-new { position: static; align-self: flex-start; margin-bottom: ${px(2)}; } /* in flow: seven cards leave no room for a corner badge */
+.cs-classes .cs-grid.cs-many .cs-card .cs-role { font-size: ${px(17)}; }
+.cs-classes .cs-grid.cs-many .cs-card .cs-stats { flex-wrap: wrap; gap: ${px(4)} ${px(12)}; font-size: ${px(17)}; }
+.cs-classes .cs-grid.cs-many .cs-card .cs-kit { font-size: ${px(16)}; }
 @media (max-width: 1100px) { .cs-classes .cs-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 @media (max-width: 760px) { .cs-classes .cs-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 `;
@@ -170,6 +200,21 @@ export function createClassesScreen(ctx) {
     return b;
   }
 
+  // Seven narrow cards: a class name whose longest word is still wider than
+  // its card after NAME_BREAKS steps its font down a little until it fits.
+  function fitNames() {
+    if (!gridEl.classList.contains('cs-many')) return;
+    for (const el of gridEl.querySelectorAll('.cs-name')) {
+      el.style.fontSize = '';
+      let size = parseFloat(getComputedStyle(el).fontSize);
+      const floor = size * 0.8;
+      while (el.scrollWidth > el.clientWidth + 1 && size > floor) {
+        size -= 1;
+        el.style.fontSize = `${size}px`;
+      }
+    }
+  }
+
   function show(next) {
     view = next;
     gridEl.innerHTML = '';
@@ -178,6 +223,7 @@ export function createClassesScreen(ctx) {
     // view only the ones that can join.
     const list = view === 'team' ? PLAY_CLASSES.filter(playable) : PLAY_CLASSES;
     gridEl.style.setProperty('--cs-cols', String(list.length));
+    gridEl.classList.toggle('cs-many', list.length >= 7);
     if (view === 'team') draft = [...teamNow()];
     for (const cls of list) {
       const b = card(cls, CLASS_ACCENTS[cls]);
@@ -185,6 +231,7 @@ export function createClassesScreen(ctx) {
       gridEl.appendChild(b);
     }
     render();
+    fitNames();
     const cur = gridEl.querySelector('.cs-card[data-on="true"]:not([disabled])') || gridEl.querySelector('.cs-card:not([disabled])');
     if (cur && manager && typeof manager.focusElement === 'function') manager.focusElement(cur);
   }
@@ -197,6 +244,7 @@ export function createClassesScreen(ctx) {
     el.querySelector('.cs-blurb').textContent = team0
       ? t('Four seats: the Healer always comes, you play your class, and you choose who fills the rest. The AI plays everyone you do not.')
       : {
+          7: () => t('You play one of the seven. The AI plays the rest of the party of four, so it is always whole.'),
           6: () => t('You play one of the six. The AI plays the rest of the party of four, so it is always whole.'),
           5: () => t('You play one of the five. The AI plays the rest of the party of four, so it is always whole.'),
         }[PLAY_CLASSES.filter(playable).length]?.() ?? t('You play one of the four. The AI plays the rest of the party, so it is always whole.');
@@ -216,9 +264,9 @@ export function createClassesScreen(ctx) {
       const locked = !playable(cls);
       b.classList.toggle('cs-locked', locked);
       const head =
-        (locked ? `<span class="cs-new cs-lock">${esc(t('LOCKED'))}</span>` : cls === 'bellwright' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
+        (locked ? `<span class="cs-new cs-lock">${esc(t('LOCKED'))}</span>` : cls === 'duskwing' ? `<span class="cs-new">${esc(t('NEW'))}</span>` : '') +
         `<div class="cs-crit">${esc(t('THE {critter}', { critter: t(CLASS_CRITTER[cls]).toUpperCase() }))}</div>` +
-        `<div class="cs-name">${esc(t(CLASS_NAME[cls]))}</div>`;
+        `<div class="cs-name">${esc(breakName(t(CLASS_NAME[cls])))}</div>`;
       if (team0) {
         const healer = cls === 'healer';
         const you = cls === on && !healer;

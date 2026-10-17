@@ -39,6 +39,7 @@ import { createWaveDirector } from './waves.js';
 import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES, SKILLS as SKILLS_REF } from './skills.js';
 import { createBuildSystem } from './nodes.js';
 import { createAllySystem } from './allies.js';
+import { installNightHunger } from './duskwing.js';
 import { createBossSystem } from './boss.js';
 import { createRunSystem } from './run.js';
 // PARTY (docs/gauntlet/PLAN.md §16.3): the three ally builds + their
@@ -233,6 +234,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   events.on('room_cleared', () => allySys.onRoomBoundary('room_clear'));
   events.on('room_start', () => allySys.onRoomBoundary('room_start'));
   events.on('hit', (ev) => allySys.onHit(ev));
+  // THE DUSKWING (docs/DUSKWING.md): Night Hunger, his life steal.
+  installNightHunger({ registry, events, getTick: () => currentTick });
 
   // --- Build system (nodes block, §15): the 8-node pool, sockets/bench, the
   // flat->pct->mult->technique->clamp resolver and the depth-1 technique

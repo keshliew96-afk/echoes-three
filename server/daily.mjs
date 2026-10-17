@@ -25,7 +25,7 @@ import { VERSION } from '../src/version.js';
 
 const KEEP_DAYS = 30;
 const MAX_ENTRIES = 5000; // per day, in memory
-const CLASSES = new Set(['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright']);
+const CLASSES = new Set(['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright', 'duskwing']);
 const RATE = { score: 30, board: 120, windowMs: 10 * 60 * 1000 };
 const MAX_TICKS = 60 * 60 * 60 * 6; // six hours of play
 // Every room of every level (a won run).

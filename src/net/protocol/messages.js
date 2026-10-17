@@ -13,7 +13,7 @@ export const CLASS_BY_SEAT = Object.freeze(['healer', 'tank', 'swordsman', 'arch
 export const SEAT_NAMES = Object.freeze(['Healer', 'Tank', 'Swordsman', 'Archer']);
 // THE TIDECALLER: every character a lobby player may pick (data/lineup.js
 // decides which of them are open and how a team is made).
-export const ROSTER = Object.freeze(['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright']);
+export const ROSTER = Object.freeze(['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright', 'duskwing']);
 
 // Extra (non-join) error reasons the server may answer with `error { reason }`.
 export const ERR = Object.freeze({

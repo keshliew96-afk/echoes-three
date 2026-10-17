@@ -40,7 +40,7 @@ import { PALETTE as P } from '../../data/palette.js';
 import { t } from '../../i18n/index.js';
 import { bindings, PAD, MOUSE_BUTTON_CODE } from '../../core/bindings.js';
 import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../../app/controls.js';
-import { tidecallerOpen, bellwrightOpen, rosterGrown } from '../../data/lineup.js';
+import { tidecallerOpen, bellwrightOpen, duskwingOpen, rosterGrown } from '../../data/lineup.js';
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
@@ -116,6 +116,16 @@ function tipText(id) {
     case 'classes':
       // THE TIDECALLER: once Rill has joined, the tip names five heroes.
       // THE BELLWRIGHT: Tolly makes five, or six with Rill.
+      // THE DUSKWING: Sable makes one more.
+      if (duskwingOpen()) {
+        if (tidecallerOpen() && bellwrightOpen())
+          return { title: t('Choose who you play'), body: t('Seven heroes now, Rill the Tidecaller, Tolly the Bellwright and Sable the Duskwing among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
+        if (bellwrightOpen())
+          return { title: t('Choose who you play'), body: t('Six heroes now, Tolly the Bellwright and Sable the Duskwing among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
+        if (tidecallerOpen())
+          return { title: t('Choose who you play'), body: t('Six heroes now, Rill the Tidecaller and Sable the Duskwing among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
+        return { title: t('Choose who you play'), body: t('Five heroes now, Sable the Duskwing among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
+      }
       if (tidecallerOpen() && bellwrightOpen())
         return { title: t('Choose who you play'), body: t('Six heroes now, Rill the Tidecaller and Tolly the Bellwright among them. Each has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
       if (bellwrightOpen())
@@ -125,7 +135,10 @@ function tipText(id) {
         : { title: t('Choose who you play'), body: t('Each hero has its own health, speed and basic attack, and every one starts without skills. Switch here in camp before any run.') };
     // THE TIDECALLER (docs/TIDECALLER.md): the first time the team view opens.
     case 'lineup':
-      return tidecallerOpen() && bellwrightOpen()
+      // THE DUSKWING: with all three newcomers free, seven friends.
+      if (tidecallerOpen() && bellwrightOpen() && duskwingOpen())
+        return { title: t('Who joins the team'), body: t('Four seats, seven friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.') };
+      return [tidecallerOpen(), bellwrightOpen(), duskwingOpen()].filter(Boolean).length >= 2
         ? { title: t('Who joins the team'), body: t('Four seats, six friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.') }
         : { title: t('Who joins the team'), body: t('Four seats, five friends. The Healer always comes and so does the hero you play; you choose who fills the other seats, and whoever you leave out waits at the hearth.') };
     // ... and mid-fight, the first time a soaked enemy is crashed.

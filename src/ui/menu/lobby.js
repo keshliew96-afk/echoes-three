@@ -65,7 +65,7 @@ function installLobbyStyle() {
   s.textContent = CSS;
   document.head.appendChild(s);
 }
-const CLASS_TINT = { healer: '#33513C', tank: '#6B6157', swordsman: '#6B2E3A', archer: '#6E7A3F', tidecaller: '#2F5F8F', bellwright: '#7A5530' };
+const CLASS_TINT = { healer: '#33513C', tank: '#6B6157', swordsman: '#6B2E3A', archer: '#6E7A3F', tidecaller: '#2F5F8F', bellwright: '#7A5530', duskwing: '#55304F' };
 
 // fix-DEPLOY-r6 (DEP6-F2): who plays and who builds what, told to THIS
 // viewer. PER-CHARACTER BUILDS (PLAN §16, BUILD_BRIEF §25.7): every human

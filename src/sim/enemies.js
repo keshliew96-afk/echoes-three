@@ -870,6 +870,12 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
         cancelTelegraph(e, tick, 'stun');
         continue;
       }
+      // THE DUSKWING (docs/DUSKWING.md): darkness, the same no-attack rule
+      // (the body still gropes about at half speed, sim/status.js).
+      if (e.status && e.status.blind && statusMod.isBlinded(e, tick)) {
+        cancelTelegraph(e, tick, 'blind');
+        continue;
+      }
       if (e.quarry) continue; // ROOM OBJECTIVES: prey, never a threat
       const A = ARCHETYPES[e.kind];
       if (A) {

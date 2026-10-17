@@ -303,6 +303,9 @@ registerTideCues(service('audio'));
 // THE BELLWRIGHT (docs/BELLWRIGHT.md): Tolly's bells.
 import { registerBellCues } from './audio/bellcues.js';
 registerBellCues(service('audio'));
+// THE DUSKWING (docs/DUSKWING.md): Sable's wings and teeth.
+import { registerDuskCues } from './audio/duskcues.js';
+registerDuskCues(service('audio'));
 // NEW ENEMIES (docs/NEW_ENEMIES_BARROW_HEART.md): the Keener, Sexton, Bloom
 // and Siphon voices.
 import { registerBarrowHeartCues } from './audio/barrowheartcues.js';
@@ -582,7 +585,7 @@ if (bootParams.slot && bootParams.menuSkip) {
 // whenever the profile changes, another tab's write included).
 import { createUnlocksScreen } from './ui/run/unlocks.js';
 import { setClassTints } from './data/vfx.js';
-import { setTidecallerUnlocked, forceTidecaller, setBellwrightUnlocked, forceBellwright } from './data/lineup.js';
+import { setTidecallerUnlocked, forceTidecaller, setBellwrightUnlocked, forceBellwright, forceDuskwing } from './data/lineup.js';
 registerScreen('unlocks', createUnlocksScreen);
 // CLASS SELECT (docs/CLASS_SELECT.md): the camp's class picker (C / the portal prompt's Class chip).
 import { createClassesScreen } from './ui/run/classpick.js';
@@ -636,6 +639,9 @@ if (PLAYABLE) createStory({ app, world, scene: activeScene, params: bootParams }
   };
   applyTolly();
   saveSystem.onProfileChanged(applyTolly);
+  // THE DUSKWING (docs/DUSKWING.md): free from the start in this slice
+  // (DUSKWING_FREE); ?sable=1 opens him on a harness boot once slice 6 locks him.
+  if (bootParams.sable) forceDuskwing(true);
 }
 // @gnt:UNLOCKS end
 

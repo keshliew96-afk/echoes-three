@@ -33,6 +33,7 @@ import { createVfxKit } from './kit.js';
 import { createCameraFx } from './camerafx.js';
 import { createTideFx } from './tidefx.js';
 import { createBellFx } from './bellfx.js';
+import { createDuskFx } from './duskfx.js';
 import { createTonicFx } from './tonicfx.js';
 import { createShrineFx } from './shrinefx.js';
 import { createSecretFx } from './secretfx.js';
@@ -843,6 +844,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // THE BELLWRIGHT (docs/BELLWRIGHT.md): her hung bells, the Peal and the
   // Clapper's ring hit live in bellfx.js.
   const bellFx = createBellFx({ kit, bus, byId, spray, flare, shock, after, anticipate, camfx, N, rnd, mark, stage });
+  // THE DUSKWING (docs/DUSKWING.md): his dive, his bite, the dark of
+  // Nightfall and the blind over each enemy live in duskfx.js.
+  const duskFx = createDuskFx({ kit, bus, byId, spray, flare, shock, after, camfx, N, rnd, mark, world });
   // TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot's beats.
   const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark });
   // HAZARDS AND SHRINES (docs/SHRINES.md): crystal spurs, shrines, blessings.
@@ -5533,6 +5537,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (globKind.size > 64) globKind.clear();
     tide.frame(dt, world.entities());
     bellFx.frame(dt);
+    duskFx.frame(dt, world.entities());
     tonicFx.frame(dt, world.entities());
     shrineFx.frame(dt, world.entities());
     kit.update(dt);
@@ -5656,6 +5661,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     healer: vfxClassStyle('healer'),
     tidecaller: vfxClassStyle('tidecaller'),
     bellwright: vfxClassStyle('bellwright'),
+    duskwing: vfxClassStyle('duskwing'),
   };
   const GOLD = PALETTE.hearthAmber;
   bus.on('relic_proc', (ev) => {

@@ -71,6 +71,9 @@ const CLASS_SETS = {
     ['great_bell', 'knell', 'carillon', 'bell_swing'],
     ['hang_bell', 'vesper_chime', 'tuning_fork', 'wing_hop'],
   ],
+  // THE DUSKWING (docs/DUSKWING.md): his four base skills — the Dive onto
+  // the targets, Bloodbite, Nightfall blinding the pack, Night Wings.
+  duskwing: [['dusk_dive', 'blood_bite', 'nightfall', 'night_wings']],
 };
 const ENEMIES = [
   ['Act I', 1, ['boar', 'mantis', 'quillback', 'toad', 'moth', 'ram', 'mole', 'wasp', 'thornling']],
@@ -350,7 +353,7 @@ export function mountVfxLab() {
   // between rooms: start a Level 1 campaign with her on seat 3 (if she is
   // not in the party), clear the room, put the set on her keys, walk into
   // the next room, then play it at the training targets.
-  // THE BELLWRIGHT joins the same way (Tolly on seat 3).
+  // THE BELLWRIGHT joins the same way (Tolly on seat 3), and THE DUSKWING.
   async function tideReel(set, cls = 'tidecaller') {
     if (seatOf(cls) == null) {
       say(`starting a campaign with the ${cls} on the team...`);
@@ -420,6 +423,7 @@ export function mountVfxLab() {
   const party = section('Party skills (reels)');
   CLASS_SETS.tidecaller.forEach((set, i) => button(party, `Tidecaller ${'ABC'[i]}`, () => tideReel(set), set.join(', ')));
   CLASS_SETS.bellwright.forEach((set, i) => button(party, `Bellwright ${'ABC'[i]}`, () => tideReel(set, 'bellwright'), set.join(', ')));
+  CLASS_SETS.duskwing.forEach((set, i) => button(party, `Duskwing ${'ABC'[i]}`, () => tideReel(set, 'duskwing'), set.join(', ')));
   for (const cls of ['tank', 'swordsman', 'archer']) CLASS_SETS[cls].forEach((set, i) => button(party, `${cls[0].toUpperCase()}${cls.slice(1)} ${'ABC'[i]}`, () => classReel(cls, set), set.join(', ')));
   HEALER_SETS.forEach((set, i) => button(party, `Healer ${'ABCD'[i]}`, () => healerReel(set), set.join(', ')));
 

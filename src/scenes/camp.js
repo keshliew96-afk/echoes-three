@@ -286,7 +286,7 @@ export function createCampScene(stage, toggles, ctx) {
   // A rig follows the seat its class holds in the lineup (`partyIndex` is
   // read live); the class at camp stands at its own spot by the fire.
   // THE BELLWRIGHT (docs/BELLWRIGHT.md) makes it five critters.
-  const allyRigs = ['tank', 'swordsman', 'archer', 'tidecaller', 'bellwright'].map((classId) => ({
+  const allyRigs = ['tank', 'swordsman', 'archer', 'tidecaller', 'bellwright', 'duskwing'].map((classId) => ({
     classId,
     get partyIndex() {
       const i = seatOfClass(classId);

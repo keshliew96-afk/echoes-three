@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // THE BELLWRIGHT browser check (docs/BELLWRIGHT.md): the class picker shows
-// six cards with Tolly playable from the start, picking her opens "Who joins
+// seven cards (six before v0.5.293) with Tolly playable from the start, picking her opens "Who joins
 // the team?" with her in the Archer's place, the camp shows that team, and
 // the player's own Level 1 start seats her, where her three bells hang, toll
 // and are rung by the Peal. Screenshots under captures/ (or --out <dir>);
@@ -49,15 +49,15 @@ await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60,
 await settle(1500);
 const tag = LANG ? `-${LANG}` : '';
 
-// The class picker: six cards (Rill locked on a fresh profile), the NEW
-// badge on Tolly's.
+// The class picker: seven cards (Rill locked on a fresh profile); the NEW
+// badge moved to Sable's in v0.5.293.
 await page.keyboard.press('KeyC');
 await page.waitForFunction(() => !!document.querySelector('.cs-classes .cs-card'), { timeout: 60000, polling: 250 });
 await settle(800);
 let cs = await cards();
-check(cs.map((c) => c.cls).join(',') === 'healer,tank,swordsman,archer,tidecaller,bellwright', `six class cards (${cs.map((c) => c.cls).join(',')})`);
+check(cs.map((c) => c.cls).join(',') === 'healer,tank,swordsman,archer,tidecaller,bellwright,duskwing', `seven class cards (${cs.map((c) => c.cls).join(',')})`);
 check(!cs.find((c) => c.cls === 'bellwright').disabled && cs.find((c) => c.cls === 'tidecaller').disabled, 'Tolly is playable from the start, Rill still locked');
-check(await page.evaluate(() => !!document.querySelector('.cs-card[data-cls="bellwright"] .cs-new')), 'her card carries the NEW badge');
+check(await page.evaluate(() => !document.querySelector('.cs-card[data-cls="bellwright"] .cs-new') && !!document.querySelector('.cs-card[data-cls="duskwing"] .cs-new')), 'the NEW badge sits on Sable\'s card now');
 await page.screenshot({ path: `${OUT}/bellwright-1-six-cards${tag}.png` });
 if (LANG) {
   check(errors.length === 0, `no page errors (${errors.slice(0, 3).join(' | ')})`);
