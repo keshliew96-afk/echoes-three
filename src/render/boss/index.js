@@ -35,6 +35,7 @@ import { buildWyrm } from './wyrm.js';
 import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
 import { buildCantor, buildColossus } from './heart.js';
 import { buildHush, buildSkyhorn, buildHourwarden } from './spire.js';
+import { buildFounder, buildCinderback } from './kiln.js';
 import { buildGloamWolf, buildMireKing, buildAshRaven, buildVeinWeaver } from './third.js';
 import { createTelegraphShapes } from '../enemies/shapes.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
@@ -45,7 +46,7 @@ import { impactFx } from '../vfx/hub.js';
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
-const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden };
+const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
@@ -106,7 +107,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   // and one burst are built and COMPILED a few frames after boot, parked far
   // under the floor, and then pooled for reuse.
   const spareRigs = []; // Stag rigs
-  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [], cantor: [], colossus: [], gloamwolf: [], mireking: [], ashraven: [], veinweaver: [], hush: [], skyhorn: [], hourwarden: [] };
+  const spareByKind = { heron: [], wyrm: [], thornmother: [], millwheel: [], lichram: [], cantor: [], colossus: [], gloamwolf: [], mireking: [], ashraven: [], veinweaver: [], hush: [], skyhorn: [], hourwarden: [], founder: [], cinderback: [] };
   // Lane / cone telegraphs (the Heron's spear, the Wyrm's breath) reuse the
   // enemy layer's pooled Ember shapes; rings stay the Stag's quake ring.
   const shapes = createTelegraphShapes(root);
@@ -215,6 +216,10 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   // Slice 11: the Ash Raven's Omen, the Vein Weaver's Heartbeat Slam.
   bus.on('boss_omen', burstAt);
   bus.on('boss_vein_slam', burstAt);
+  // The Kiln: the Bellfounder's Bell Drop and Firing, the Cinderback's surfacing.
+  bus.on('boss_bell_drop', burstAt);
+  bus.on('boss_firing', burstAt);
+  bus.on('boss_magma_dive', (ev) => burstAt({ ...ev, radius: ev.radius ?? 2.0 }));
   bus.on('death', (ev) => {
     if (!rec || ev.id !== rec.id) return;
     rec.rig.setFlash(BOSS_FLASH.peak);

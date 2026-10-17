@@ -100,9 +100,12 @@ export const EMBER_RULES = Object.freeze({
 });
 
 // Every boss of every level, in level order ({ kind, name, level }).
-// (Each boss is listed once, at the first level it belongs to.)
+// (Each boss is listed once, at the first level it belongs to.) The Ember
+// Kiln's own bosses (docs/KILN_BOSSES.md) stay out until the Kiln's deeds
+// come (content plan 5 slice 9), so no boss deed appears and Kingslayer's
+// count does not widen when the Kiln opens.
 export const BOSSES = Object.freeze(
-  ACT_IDS.flatMap((a) => (LEVELS[a].bosses ?? []).map((b) => Object.freeze({ kind: b.kind, name: b.name, level: a }))).filter(
+  ACT_IDS.filter((a) => a !== 6).flatMap((a) => (LEVELS[a].bosses ?? []).map((b) => Object.freeze({ kind: b.kind, name: b.name, level: a }))).filter(
     (b, i, all) => all.findIndex((o) => o.kind === b.kind) === i
   )
 );
@@ -117,8 +120,8 @@ export const BOSSES = Object.freeze(
 //   daily     { last: 'YYYY-MM-DD' | null, streak, best }: Daily Descent days in a row
 // (Only the arenas of the levels a campaign plays: Level V's Windward Court
 // joins with the Act V preview, docs/ACT_V.md, never the deed's count before.
-// The Ember Kiln's Kiln Mouth stays out behind the ?act6=1 preview too, so
-// the deed never widens before the Kiln opens: docs/KILN.md.)
+// The Ember Kiln's Kiln Mouth stays out too, so the deed does not widen when
+// the Kiln opens: docs/KILN.md, docs/KILN_BOSSES.md.)
 export const ARENA_IDS = Object.freeze(LAYOUT_IDS.filter((id) => LAYOUTS[id] && LAYOUTS[id].arena && ACT_IDS.includes(LAYOUTS[id].act) && LAYOUTS[id].act !== 6));
 export const MARK_KINDS = Object.freeze({ event: ENCOUNTER_IDS, affix: AFFIX_IDS, champion: CHAMPION_IDS, arena: ARENA_IDS });
 export const OBJECTIVE_DEED_MODES = Object.freeze(['hunt', 'purge', 'escort', 'hold']);

@@ -19,7 +19,7 @@
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
-import { CAMPAIGN_LEVELS, FIRST_LEVEL, FINAL_LEVEL, grantFor, prevLevel } from '../../data/campaign.js';
+import { CAMPAIGN_LEVELS, ALL_LEVELS, FIRST_LEVEL, FINAL_LEVEL, grantFor, prevLevel, nextLevel } from '../../data/campaign.js';
 import { levelFor } from '../../data/levels.js';
 import { endlessUnlockedFrom } from '../../data/endless.js';
 import { rushUnlockedFrom, RUSH_RULES } from '../../data/rush.js';
@@ -190,7 +190,9 @@ export function levelInfo() {
     profile = null;
   }
   const rec = profile && profile.records ? profile.records : {};
-  return CAMPAIGN_LEVELS.map((level) => {
+  // THE LEVEL V FORK (docs/KILN_BOSSES.md): both Level Vs have a card; a
+  // campaign from Levels I to IV picks its road on the Level IV clear card.
+  return ALL_LEVELS.map((level) => {
     const lv = levelFor(level);
     return {
       level,
@@ -424,7 +426,7 @@ export function createLevelsScreen(ctx) {
       if (!info.unlocked) card.setAttribute('aria-disabled', 'true');
       if (info.unlocked && info.level === preselect) card.setAttribute('data-nav-default', '');
       const pips = CAMPAIGN_LEVELS.map((i) => `<i class="cg-pip${i <= info.level ? ' cg-on' : ''}"></i>`).join('');
-      const span = info.level === FINAL_LEVEL ? t('Level {level} only', { level: ROMAN[info.level] }) : t('Level {from} → {to}', { from: ROMAN[info.level], to: ROMAN[FINAL_LEVEL] });
+      const span = nextLevel(info.level) === null ? t('Level {level} only', { level: ROMAN[info.level] }) : t('Level {from} → {to}', { from: ROMAN[info.level], to: ROMAN[FINAL_LEVEL] });
       card.innerHTML = `
         <div class="cg-lvl">${t('LEVEL {level}', { level: ROMAN[info.level] ?? info.level })}</div>
         <div class="cg-name"></div>

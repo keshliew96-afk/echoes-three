@@ -158,16 +158,21 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
   }
   // (The camp calls refresh() once its services are up, then twice a second.)
   let verses = 0;
+  // THE LEVEL V FORK: five verses with Flame and not Sky (the Kiln road
+  // first) have their own Wick and Quill lines.
+  let flameFive = false;
   function refresh() {
     const p = profile();
-    verses = versesHeld(p, ALL_LEVELS).length;
+    const held = versesHeld(p, ALL_LEVELS);
+    verses = held.length;
+    flameFive = verses === 5 && held.some((c) => c.verse === 'flame') && !held.some((c) => c.verse === 'sky');
     syncWardens(p && p.meta);
   }
 
   // The line an NPC says on approach, and on each further E.
   function lineFor(n) {
     if (n.id === 'keeper') {
-      const base = KEEPER_LINES.byVerses.text[Math.min(verses, KEEPER_LINES.byVerses.text.length - 1)];
+      const base = flameFive ? KEEPER_LINES.flameFive.text : KEEPER_LINES.byVerses.text[Math.min(verses, KEEPER_LINES.byVerses.text.length - 1)];
       if (n.talkIdx < 0) return base;
       const all = [base, ...KEEPER_LINES.extra.text, ...(heroOpen('tidecaller') ? [KEEPER_RILL_LINE.text] : []), ...(heroOpen('bellwright') ? [KEEPER_TOLLY_LINE.text] : []), ...(heroOpen('duskwing') ? [KEEPER_SABLE_LINE.text] : [])];
       return all[(n.talkIdx + 1) % all.length]; // each E moves on a line
@@ -182,7 +187,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
       const all = [base, ...HERO_TALK[n.id].extra];
       return all[(n.talkIdx + 1) % all.length];
     }
-    return CHRONICLER_LINES.byVerses.text[Math.min(verses, CHRONICLER_LINES.byVerses.text.length - 1)];
+    return flameFive ? CHRONICLER_LINES.flameFive.text : CHRONICLER_LINES.byVerses.text[Math.min(verses, CHRONICLER_LINES.byVerses.text.length - 1)];
   }
   function keysFor(n) {
     if (n.id === 'keeper') return [['interact', t('Talk'), () => talk('keeper')], ['unlocks', t('Offerings to the hearth'), () => openUnlocks('npc')]];

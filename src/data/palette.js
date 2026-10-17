@@ -169,6 +169,8 @@ export const VFX_MATTER = Object.freeze({
   bellows: '#5E4A3A', // Bellows Imp: scorched leather
   sparks: '#FFD27A', // the Imp's fan, the vents' cinders: gold sparks
   mothash: '#A39C92', // Cinder Moth: pale ash wings (spent: the same, unlit)
+  // The Kiln's bosses (docs/KILN_BOSSES.md).
+  salamander: '#4B3A3A', // the Cinderback's hide: soot over a banked-coal red (low chroma)
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

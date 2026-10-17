@@ -121,7 +121,7 @@ const spawn = (W, kind, x, z, o = { hpMul: 30 }) => W.registry.byId(W.world.cmd(
 // ---------------------------------------------------------------- 1. wiring --
 {
   // Act V bosses (docs/ACT_V_BOSSES.md): Level V follows the Heart now.
-  check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5' && CAMPAIGN_LEVELS.length === 5, `the campaign is five levels (${ACT_IDS.join(', ')})`);
+  check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5,6' && CAMPAIGN_LEVELS.length === 5, `the campaign is five levels (acts ${ACT_IDS.join(', ')}; the Kiln, act 6, is the other Level V)`);
   check(nextLevel(3) === 4 && nextLevel(4) === 5, 'Level IV follows the Barrow and leads on to the Spire');
   const lv = LEVELS[4];
   check(lv && lv.name === 'The Hollow Heart' && lv.biome === 'heart' && lv.unlock && lv.unlock.afterVictory === 3, `Level IV is the Hollow Heart in the heart biome, unlocked by clearing Level III`);

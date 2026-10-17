@@ -375,7 +375,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (v.phase !== 'transit' && v.phase !== 'victory') return '-';
     const c = run().campaign ? run().campaign() : null;
     if (!c) return '-';
-    if (v.phase === 'transit') return c.card ? `${c.card.kind}:${c.card.from}:${c.card.to}:${c.card.startTick}` : '-';
+    if (v.phase === 'transit') return c.card ? `${c.card.kind}:${c.card.from}:${c.card.to}:${c.card.startTick}:${c.card.fork ? c.card.fork.pick ?? 'f' : ''}` : '-';
     return c.autoReturnInTicks !== null && c.autoReturnInTicks !== undefined ? `r${Math.ceil(c.autoReturnInTicks / 60)}` : '-';
   }
 

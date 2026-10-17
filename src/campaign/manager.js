@@ -141,6 +141,16 @@ export function createCampaignManager({ world, bus, scene, stage, app, registry,
     reportedReady = null;
   });
 
+  // THE LEVEL V FORK (docs/KILN_BOSSES.md): the party's road changes the
+  // card's next level, so that land becomes the resident one and the card
+  // waits for it from here.
+  bus.on('road_pick', (ev) => {
+    if (!Number.isFinite(ev.to)) return;
+    if (current && current.advanceTick === null) current.to = current.next = ev.to;
+    setResident(ev.to, true);
+    waitedMs = 0;
+  });
+
   bus.on('level_start', (ev) => {
     if (current && current.advanceTick === null) {
       current.advanceTick = ev.tick;

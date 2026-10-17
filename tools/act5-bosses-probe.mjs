@@ -122,7 +122,7 @@ const addKinds = (W, from) => W.log.slice(from).filter((e) => e.type === 'boss_a
 
 // ---------------------------------------------------------------- 1. wiring --
 {
-  check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5', `the campaign has five levels (${CAMPAIGN_ACTS}; acts ${ACT_IDS.join()})`);
+  check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5,6', `the campaign has five levels (${CAMPAIGN_ACTS}; acts ${ACT_IDS.join()}, the Kiln the other Level V)`);
   const lv = LEVELS[5];
   const kinds = (lv.bosses || []).filter((b) => !b.endlessOnly).map((b) => b.kind);
   check(kinds.slice(0, 2).join() === 'hush,skyhorn' && lv.boss === 'hush', `Level V's bosses open with the Hush and the Skyhorn (${kinds.join(', ')})`);

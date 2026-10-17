@@ -1,16 +1,16 @@
 #!/usr/bin/env node
 // THE EMBER KILN probe (docs/KILN.md, content plan 5 slice 7) — headless
-// Node, the sim built like src/main.js, with the ?act6=1 preview turned on
-// through ECHOES_ACT6=1.
+// Node, the sim built like src/main.js. Since content plan 5 slice 8 the
+// Kiln is no longer a preview: it is the other road after Level IV
+// (docs/KILN_BOSSES.md), and the kiln-bosses probe covers the fork itself.
 //
 //   node tools/act6-probe.mjs
 //
 // Checks:
-//   0. Without the flag (a child process): five levels on the Spire road,
-//      the Level IV clear opens the Spire only, Endless five, Boss Rush five,
-//      no Kiln page, chapter or arena.
-//   1. Wiring under the flag: both Level V lands play, the campaign takes the
-//      Kiln road (1-4 then act 6), the roads fork after Level IV, layouts
+//   0. The preview flag is gone: both Level V lands play without it, and
+//      the campaign's default road is still the Spire (1-5).
+//   1. Wiring: the roads fork after Level IV (the Spire by default, the Kiln
+//      when picked), layouts
 //      36-41 in the kiln biome, Spire numbers, Endless cycles six, Boss Rush
 //      unchanged, four Journal rows, no Ringwalker widening, the Kiln chapter
 //      and ending.
@@ -23,14 +23,13 @@
 //      then it cools.
 //   7. Governor: five Kiln attackers keep at most two player-targeted
 //      telegraphs live, starts >= 72 ticks apart.
-//   8. Kiln runs: kiln rooms and creatures, a stand-in boss on the Firing
-//      Floor, the Kiln clear wins; a Level IV start runs on to the Kiln; a
-//      Spire start still ends on the Spire; the Daily keeps the Spire road.
+//   8. Kiln runs: kiln rooms and creatures, the Kiln's own boss on the
+//      Firing Floor, the Kiln clear wins; a Level IV start that picks the
+//      Kiln runs on to it; a Spire start still ends on the Spire; the Daily
+//      keeps the Spire road.
 //   9. Saves and co-op: a world mid-fight with all four enemies continues
 //      bit-identically after a capture round trip.
 // Exit code 1 on any failure.
-import { spawnSync } from 'node:child_process';
-process.env.ECHOES_ACT6 = '1';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -137,13 +136,15 @@ function inLaneOf(t, p) {
   return Math.abs(px * t.dirZ - pz * t.dirX) <= t.width / 2 + r;
 }
 // Clear levels boss by boss until the run ends; returns the level_clear events.
-function runThrough(W, opts, maxLevels = 6) {
+function runThrough(W, opts, maxLevels = 6, road = null) {
   W.run.startCampaign({ harness: true, ...opts });
   const clears = [];
   for (let lv = 0; lv < maxLevels && W.run.view().phase !== 'victory'; lv++) {
     for (let i = 0; i < 4000 && W.run.view().phase !== 'combat'; i++) {
       W.step();
       const v = W.run.view();
+      const card = (W.run.campaign() || {}).card;
+      if (road && card && card.fork && !card.fork.pick) W.run.pickRoad(road);
       if (['transit', 'reward', 'relic', 'socket'].includes(v.phase) || (W.world.cmd('campaignState') || {}).phase === 'transit') W.world.cmd('campaignAdvance', 'probe');
     }
     W.world.cmd('skipToRoom', 8);
@@ -167,33 +168,16 @@ function runThrough(W, opts, maxLevels = 6) {
 
 const NEW = ['newt', 'slag', 'bellows', 'cindermoth'];
 
-// ------------------------------------------------------- 0. without the flag --
+// ------------------------------------------------------ 0. the flag is gone --
 {
-  const code = `
-    const L = await import(${JSON.stringify(u('src/data/levels.js'))});
-    const C = await import(${JSON.stringify(u('src/data/campaign.js'))});
-    const { BESTIARY } = await import(${JSON.stringify(u('src/data/journal.js'))});
-    const { CHAPTERS } = await import(${JSON.stringify(u('src/data/story.js'))});
-    const { ARENA_IDS } = await import(${JSON.stringify(u('src/data/unlocks.js'))});
-    const R = await import(${JSON.stringify(u('src/data/rush.js'))});
-    const E = await import(${JSON.stringify(u('src/data/endless.js'))});
-    console.log(JSON.stringify({ flag: L.ACT6_PREVIEW, road: L.DEFAULT_ROAD, acts: L.ACT_IDS, endless: L.ENDLESS_ACTS, levels: C.CAMPAIGN_LEVELS, all: C.ALL_LEVELS, next4: C.nextLevel(4), opens: C.nextLevels(4), best: BESTIARY.length, kiln: BESTIARY.filter((b) => ${JSON.stringify(NEW)}.includes(b.id)).length, chapters: CHAPTERS.length, arenas: ARENA_IDS, lap: R.LAP, cycle: E.CYCLE }));`;
-  const env = { ...process.env };
-  delete env.ECHOES_ACT6;
-  const r = spawnSync(process.execPath, ['--input-type=module', '-e', code], { env, encoding: 'utf8' });
-  let o = null;
-  try { o = JSON.parse(r.stdout.trim().split('\n').pop()); } catch { o = null; }
-  check(!!o && o.flag === false && o.road === 'spire' && o.acts.join() === '1,2,3,4,5' && o.levels.join() === '1,2,3,4,5' && o.all.join() === '1,2,3,4,5', `without the flag the campaign is unchanged: five levels on the Spire road (${o ? o.acts.join(', ') : r.stderr.slice(0, 300)})`);
-  check(!!o && o.next4 === 5 && o.opens.join() === '5', 'without the flag the Level IV clear opens the Spire only');
-  check(!!o && o.endless.join() === '1,2,3,4,5' && o.cycle === 5 && o.lap === 5, `without the flag Endless cycles five and Boss Rush laps five (${o ? `${o.cycle}, ${o.lap}` : '-'})`);
-  check(!!o && o.kiln === 0 && o.best === 60 && o.chapters === 5 && !o.arenas.includes(41), `without the flag no Kiln page, chapter or arena shows (${o ? `${o.best} entries, ${o.chapters} chapters` : '-'})`);
+  const L = await import(u('src/data/levels.js'));
+  check(L.ACT6_PREVIEW === false && ACT_IDS.join() === '1,2,3,4,5,6' && ALL_LEVELS.join() === '1,2,3,4,5,6', `without any flag both Level V lands play (${ACT_IDS.join(', ')})`);
+  check(DEFAULT_ROAD === 'spire' && CAMPAIGN_LEVELS.join() === '1,2,3,4,5' && FINAL_LEVEL === 5 && CAMPAIGN_ACTS === 5, `the campaign's default road is still the Spire: ${CAMPAIGN_LEVELS.join(', ')} (CAMPAIGN_ACTS ${CAMPAIGN_ACTS})`);
 }
 
 // ---------------------------------------------------------------- 1. wiring --
 {
-  check(DEFAULT_ROAD === 'kiln' && ACT_IDS.join() === '1,2,3,4,5,6' && ALL_LEVELS.join() === '1,2,3,4,5,6', `under the flag both Level V lands play (${ACT_IDS.join(', ')})`);
-  check(CAMPAIGN_LEVELS.join() === '1,2,3,4,6' && FINAL_LEVEL === 6 && CAMPAIGN_ACTS === 5, `the campaign takes the Kiln road: ${CAMPAIGN_LEVELS.join(', ')} (CAMPAIGN_ACTS ${CAMPAIGN_ACTS})`);
-  check(nextLevel(4) === 6 && nextLevel(6) === null && nextLevel(4, 'spire') === 5 && nextLevel(5) === null && prevLevel(6) === 4 && prevLevel(5) === 4, 'the roads fork after Level IV: the Kiln or the Spire, each final, each unlocked by Level IV');
+  check(nextLevel(4) === 5 && nextLevel(4, 'kiln') === 6 && nextLevel(6) === null && nextLevel(4, 'spire') === 5 && nextLevel(5) === null && prevLevel(6) === 4 && prevLevel(5) === 4, 'the roads fork after Level IV: the Spire by default or the Kiln, each final, each unlocked by Level IV');
   check(nextLevels(4).join() === '5,6', `a Level IV clear opens both Level Vs (${nextLevels(4).join(', ')})`);
   const lv = LEVELS[6];
   check(lv && lv.name === 'The Ember Kiln' && lv.biome === 'kiln' && lv.level === 5 && lv.road === 'kiln' && ROADS.kiln === 6 && levelNumberOf(6) === 5, 'the Kiln is act 6 in data and plays as Level V on the kiln road');
@@ -204,9 +188,9 @@ const NEW = ['newt', 'slag', 'bellows', 'cindermoth'];
   let same = true;
   for (let r = 1; r <= 6; r++) for (const k of ['hpMul', 'dmgMul', 'budget', 'eliteChance', 'bossHp']) if (difficulty(6, r)[k] !== difficulty(5, r)[k]) same = false;
   check(same, `the Kiln plays on the Spire's numbers (room 6 hp ${difficulty(6, 6).hpMul})`);
-  check(ENDLESS_ACTS.join() === '1,2,3,4,5,6' && E.CYCLE === 6 && E.levelOfDepth(6) === 6 && E.endlessNextLevel(6) === 1, `the Endless Descent cycles six lands under the flag (cycle ${E.CYCLE})`);
+  check(ENDLESS_ACTS.join() === '1,2,3,4,5' && E.CYCLE === 5 && E.levelOfDepth(6) === 1, `the Endless Descent keeps its five lands (cycle ${E.CYCLE})`);
   check(RUSH.LAP === 5, `Boss Rush still laps the five campaign lands (${RUSH.LAP})`);
-  check(NEW.every((k) => BESTIARY.some((b) => b.id === k)) && new Set(BESTIARY.map((b) => b.id)).size === BESTIARY.length && BESTIARY.length === 64, `the Journal adds four Kiln rows, no duplicates (${BESTIARY.length} entries)`);
+  check(NEW.every((k) => BESTIARY.some((b) => b.id === k)) && new Set(BESTIARY.map((b) => b.id)).size === BESTIARY.length && BESTIARY.length === 66, `the Journal holds the four Kiln creatures (and its two bosses), no duplicates (${BESTIARY.length} entries)`);
   check(!ARENA_IDS.includes(41), 'the Ringwalker deed does not count the Kiln Mouth');
   check(CHAPTERS.length === 6 && CHAPTERS[5].verse === 'flame' && endingFor(5, 'kiln') === ENDING.kiln && endingFor(5) === ENDING.spire, 'the story gains the Kiln chapter (the Verse of Flame) and its own ending');
 }
@@ -415,7 +399,7 @@ const NEW = ['newt', 'slag', 'bellows', 'cindermoth'];
   steps(W, 60);
   const v = W.run.view();
   const boss = v.actBoss && v.actBoss.kind;
-  check(['colossus', 'lichram'].includes(boss) && v.layout?.layoutId === 39, `the Firing Floor holds a stand-in, ${boss} (layout ${v.layout?.layoutId})`);
+  check(['founder', 'cinderback'].includes(boss) && v.layout?.layoutId === 39, `the Firing Floor holds the Kiln's own boss, ${boss} (layout ${v.layout?.layoutId})`);
   W.run.cmd('killBoss');
   let won = null;
   for (let i = 0; i < 4000 && !won; i++) {
@@ -426,11 +410,11 @@ const NEW = ['newt', 'slag', 'bellows', 'cindermoth'];
   }
   for (let i = 0; i < 3000 && W.run.view().phase !== 'victory'; i++) W.step();
   check(!!won && won.final === true && W.run.view().phase === 'victory', `clearing the Kiln ends the campaign in victory (final ${won ? won.final : '-'}, phase ${W.run.view().phase})`);
-  // From Level IV the campaign takes the Kiln road: its fifth level is act 6.
+  // From Level IV, picking the Kiln at the fork: its fifth level is act 6.
   const X = makeWorld(6);
-  const xc = runThrough(X, { level: 4 });
-  check(xc.length === 2 && xc[0].level === 4 && xc[0].final === false && xc[1].level === 6 && xc[1].final === true, `a campaign from Level IV runs on to the Kiln and ends there (${xc.map((c) => `${c.level}${c.final ? '!' : ''}`).join(' ')})`);
-  // A Spire start under the flag still ends on the Spire.
+  const xc = runThrough(X, { level: 4 }, 6, 'kiln');
+  check(xc.length === 2 && xc[0].level === 4 && xc[0].final === false && xc[1].level === 6 && xc[1].final === true, `a campaign from Level IV that picks the Kiln runs on to it and ends there (${xc.map((c) => `${c.level}${c.final ? '!' : ''}`).join(' ')})`);
+  // A Spire start still ends on the Spire.
   const S = makeWorld(8);
   const sc = runThrough(S, { level: 5 });
   check(sc.length === 1 && sc[0].level === 5 && sc[0].final === true, `a Level V start on the Spire still ends there (${sc.map((c) => `${c.level}${c.final ? '!' : ''}`).join(' ')})`);

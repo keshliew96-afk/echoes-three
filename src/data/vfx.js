@@ -508,6 +508,43 @@ export const BOSS_VFX = Object.freeze({
     hours: Object.freeze({ chunk: 8, rings: 2 }),
     camera: Object.freeze({ dolly: 0.1, kick: 0.07 }),
   }),
+  // Content plan 5 slice 8 (docs/KILN_BOSSES.md): the Ember Kiln's two. The
+  // Kiln's light rule holds: their fire is KILN GOLD over COAL crimson, and
+  // Ember is only ever the frame that hurts.
+  //   founder     the gods' bell-founder: fire brick, bell bronze, kiln gold.
+  //               The Molten Pour runs a river of white-gold bronze down its
+  //               lane that cools to slag; the Bell Drop is a bronze bell
+  //               falling out of the dark with a ring of sound off it; a
+  //               Casting cracks a mould and spills gold; the Firing throws a
+  //               dome of heat off its open chest; quenched, it steams grey.
+  //   cinderback  the Kiln's warden salamander: soot hide over live coals.
+  //               It sinks into a ring of molten floor (gold seams racing in)
+  //               and bursts up through it in a crown of magma; its tail
+  //               whips a gold arc; its spit lobs three white-hot gobbets.
+  founder: Object.freeze({
+    id: 'founder',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'bellbronze',
+    second: 'kilnbrick',
+    pour: Object.freeze({ drops: 6, sparks: 16 }),
+    bell: Object.freeze({ chunk: 10, rings: 3 }),
+    firing: Object.freeze({ rays: 14, sparks: 40 }),
+    camera: Object.freeze({ dolly: 0.12, kick: 0.08 }),
+  }),
+  cinderback: Object.freeze({
+    id: 'cinderback',
+    corruption: PALETTE.godstuffViolet,
+    peak: PALETTE.godstuffVioletPeak,
+    threat: PALETTE.emberDanger,
+    matter: 'salamander',
+    second: 'slag',
+    dive: Object.freeze({ seams: 10, chunk: 14, sparks: 30 }),
+    lash: Object.freeze({ sparks: 14 }),
+    spit: Object.freeze({ sparks: 6 }),
+    camera: Object.freeze({ dolly: 0.1, kick: 0.09 }),
+  }),
 });
 export function isVfxBoss(kind) {
   return Object.prototype.hasOwnProperty.call(BOSS_VFX, kind);

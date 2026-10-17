@@ -25,8 +25,8 @@
 // payloads and entity kinds, so the goldens cannot move.
 import { midiHz } from './voices.js';
 
-export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden']);
-const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden']);
+export const BOSS_IDS = Object.freeze(['stag', 'thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden', 'founder', 'cinderback']);
+const KIT_BOSSES = new Set(['thornmother', 'heron', 'millwheel', 'wyrm', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden', 'founder', 'cinderback']);
 
 // Measured design peaks (dBFS at unity gain) — tools/boss-identity-cuecal.mjs.
 export const BOSS_CUE_CAL = {
@@ -153,6 +153,26 @@ export const BOSS_CUE_CAL = {
   bx_hourwarden_weight: 2.5,
   bx_hourwarden_rundown: -1,
   bx_hourwarden_wind: -2,
+  // Content plan 5 slice 8 (docs/KILN_BOSSES.md): the Kiln's bosses.
+  // Measured with tools/boss-identity-cuecal.mjs (max of 3, software audio).
+  bx_founder_sting: 5.9,
+  bx_founder_phase: 6.5,
+  bx_founder_fall: 7.6,
+  bx_cinderback_sting: 4.2,
+  bx_cinderback_phase: 5.8,
+  bx_cinderback_fall: 6.2,
+  bx_founder_tell: -7.9,
+  bx_founder_pour: 2,
+  bx_founder_bell: 4.3,
+  bx_founder_casting: 0,
+  bx_founder_firing: 3.9,
+  bx_founder_rekindle: -5.1,
+  bx_cinderback_tell: 0.8,
+  bx_cinderback_sink: 3.7,
+  bx_cinderback_surface: 2.7,
+  bx_cinderback_lash: -2.7,
+  bx_cinderback_spit: -4.2,
+  bx_cinderback_recover: -10.9,
   // @cal end
 };
 
@@ -201,6 +221,20 @@ const I = {
       k.tone(d, t, { f0: 66, f1: 44, d: 0.5, gain: v * 0.7 }),
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 260, q: 0.8, d: 0.2, gain: v * 0.5 })
     ),
+  // Act VI (the kiln theme's own): the hammer on the anvil and the great
+  // cast bell, struck in the forge.
+  anvil: (k, d, t, f, v) =>
+    Math.max(
+      k.bell(d, t, { f: 1240, ratio: 2.76, index: 1.6, d: 0.5, gain: v * 0.55 }),
+      k.tone(d, t, { f0: 160, f1: 70, d: 0.18, gain: v * 0.8 }),
+      k.noise(d, t, { f0: 3600, q: 2.5, d: 0.03, gain: v * 0.5 })
+    ),
+  cast: (k, d, t, f, v, len) =>
+    Math.max(
+      k.bell(d, t, { f, ratio: 1.41, index: 2.4, d: Math.max(1.6, len + 1.2), gain: v * 0.8 }),
+      k.bell(d, t + 0.02, { f: f * 2, ratio: 2.76, index: 1.0, d: Math.max(0.8, len + 0.5), gain: v * 0.3 }),
+      k.tone(d, t, { f0: f * 0.5, a: 0.01, d: 1.0, gain: v * 0.3 })
+    ),
   breath: (k, d, t, f, v, len) =>
     Math.max(
       k.noise(d, t, { f0: f * 2, q: 6, a: 0.12, hold: Math.max(0, len), d: 0.4, gain: v * 0.55 }),
@@ -233,6 +267,8 @@ const VOICE = {
   hush: { root: 53, lead: 'breath', drum: 'knell' }, // the Spire, F aeolian
   skyhorn: { root: 53, lead: 'horn', drum: 'knell' }, // the Spire, F aeolian
   hourwarden: { root: 53, lead: 'clank', drum: 'knell' }, // the Spire, F aeolian
+  founder: { root: 46, lead: 'cast', drum: 'anvil' }, // the Kiln, B-flat harmonic minor
+  cinderback: { root: 46, lead: 'horn', drum: 'anvil' }, // the Kiln, B-flat harmonic minor
 };
 
 // Signatures (~1.6-2.4 s): a phrase in the boss's own act key.
@@ -277,6 +313,13 @@ const STINGS = {
   // even grid, tick-tock F C, then the hour struck three times on the
   // bronze, falling F C D-flat, the knell under the last.
   hourwarden: [[0, 65, 'clank', 0.7], [0.16, 60, 'clank', 0.65], [0.32, 65, 'clank', 0.7], [0.48, 60, 'clank', 0.65], [0, 29, 'low', 0.8, 0.6], [0.66, 53, 'toll', 1], [0.66, 41, 'low', 0.9, 1.0], [1.06, 48, 'toll', 0.95], [1.46, 49, 'toll', 1], [1.46, 0, 'knell', 1], [1.46, 77, 'bell', 0.3, 1.2], [1.46, 53, 'choir', 0.35, 1.0]],
+  // The Kiln (content plan 5 slice 8). The Bellfounder: three hammer blows
+  // on the anvil, then a fresh-cast bell rung three times, B-flat, the raised
+  // seventh A, B-flat again, over a low drone and a held choir.
+  founder: [[0, 0, 'anvil', 0.9], [0.18, 0, 'anvil', 0.8], [0.36, 0, 'anvil', 1], [0, 34, 'low', 0.9, 1.8], [0.62, 58, 'cast', 1, 0.6], [1.0, 57, 'cast', 0.9, 0.5], [1.38, 58, 'cast', 1, 0.9], [0.62, 46, 'choir', 0.4, 1.4], [0.62, 53, 'choir', 0.35, 1.4], [1.38, 0, 'knell', 0.9]],
+  // The Cinderback: a hiss, a quick scuttle on the anvil, then a low horn
+  // growl climbing B-flat F to the flat sixth, the cast bell under it.
+  cinderback: [[0, 82, 'breath', 0.6, 0.5], [0.3, 0, 'anvil', 0.7], [0.4, 0, 'anvil', 0.6], [0.5, 0, 'anvil', 0.8], [0.3, 34, 'low', 0.9, 1.5], [0.62, 46, 'horn', 0.85, 0.3], [0.95, 53, 'horn', 0.9, 0.28], [1.28, 54, 'horn', 1, 0.7], [1.28, 46, 'cast', 0.8, 0.8], [1.28, 0, 'taiko', 1]],
 };
 
 // Add phase / enrage: the boss's lead rises a half step over its drum.
@@ -725,6 +768,84 @@ Object.assign(CUES, {
   // Wound again: a ratchet climbing.
   bx_hourwarden_wind: sfx(-11, (k, t, d, p) =>
     Math.max(...[0, 0.06, 0.12, 0.18, 0.24].map((dt, i) => k.noise(d, t + dt, { f0: P(p, 2200 + i * 360), q: 5, d: 0.03, gain: 0.8 }))), { maxVoices: 1, cooldownMs: 300 }),
+  // --- The Bellfounder (content plan 5 slice 8): bellows, bronze, fire.
+  // Its tell: the bellows wheeze and a hammer taps the anvil.
+  bx_founder_tell: sfx(-10, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'lowpass', f0: P(p, 400), f1: P(p, 1200), q: 1.1, a: 0.12, d: 0.22, gain: 0.8 }),
+      k.bell(d, t + 0.2, { f: P(p, 1240), ratio: 2.76, index: 1.4, d: 0.35, gain: 0.4 })
+    )),
+  // The Molten Pour: bronze glugs out and sizzles down the floor.
+  bx_founder_pour: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.1, 0.2].map((dt, i) => k.tone(d, t + dt, { f0: P(p, 180 - i * 20), f1: P(p, 90), d: 0.14, gain: 0.6 })),
+      k.noise(d, t + 0.1, { type: 'highpass', f0: P(p, 3000), f1: P(p, 6000), q: 0.7, a: 0.05, hold: 0.3, d: 0.6, gain: 0.7 })
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // The Bell Drop: a falling whistle, then the bell lands and rings.
+  bx_founder_bell: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 140), f1: P(p, 38), d: 0.45, gain: 0.95 }),
+      k.bell(d, t, { f: P(p, midiHz(58)), ratio: 1.41, index: 2.6, d: 1.6, gain: 0.8 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 200), q: 0.8, d: 0.35, gain: 0.8 })
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // A Casting: a mould cracks open.
+  bx_founder_casting: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.05, 0.12].map((dt, i) => k.noise(d, t + dt, { f0: P(p, 1400 + i * 600), q: 1.6, d: 0.06, gain: 0.8 })),
+      k.tone(d, t, { f0: P(p, 100), f1: P(p, 45), d: 0.4, gain: 0.8 })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // The Firing: the furnace door thrown open, a roar of heat.
+  bx_founder_firing: sfx(-6, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 300), f1: P(p, 2200), q: 0.7, a: 0.08, hold: 0.3, d: 0.8, gain: 1 }),
+      k.tone(d, t, { f0: P(p, 70), f1: P(p, 38), d: 0.9, gain: 0.8 }),
+      k.bell(d, t + 0.05, { f: P(p, midiHz(46)), ratio: 1.41, index: 2.2, d: 1.8, gain: 0.5 })
+    ), { maxVoices: 1, cooldownMs: 400 }),
+  // Rekindled: the bellows draw a long breath and the fire catches.
+  bx_founder_rekindle: sfx(-10, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'lowpass', f0: P(p, 200), f1: P(p, 1500), q: 1, a: 0.3, d: 0.4, gain: 0.8 }),
+      k.tone(d, t + 0.3, { type: 'triangle', f0: P(p, 80), f1: P(p, 120), d: 0.4, gain: 0.4 })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // --- The Cinderback (content plan 5 slice 8): hiss, magma, the tail.
+  // Its tell: a hiss through the gills.
+  bx_cinderback_tell: sfx(-10, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'highpass', f0: P(p, 2600), f1: P(p, 4200), q: 0.8, a: 0.04, hold: 0.12, d: 0.2, gain: 0.8 }),
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 90), f1: P(p, 70), d: 0.25, gain: 0.3, filter: { f0: 500, q: 1 } })
+    )),
+  // The dive: it sinks hissing into the coals.
+  bx_cinderback_sink: sfx(-9, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'highpass', f0: P(p, 4000), f1: P(p, 1500), q: 0.7, a: 0.03, hold: 0.25, d: 0.5, gain: 0.8 }),
+      k.tone(d, t, { f0: P(p, 120), f1: P(p, 50), d: 0.6, gain: 0.5 })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // It bursts up: a thump from under the floor and molten stone thrown up.
+  bx_cinderback_surface: sfx(-6, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 85), f1: P(p, 30), d: 0.6, gain: 1 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 1100), f1: P(p, 220), q: 0.8, d: 0.5, gain: 0.9 }),
+      ...[0.08, 0.16, 0.27].map((dt, i) => k.noise(d, t + dt, { type: 'highpass', f0: P(p, 3200 + i * 400), q: 1, d: 0.12, gain: 0.35 }))
+    ), { maxVoices: 1, cooldownMs: 200 }),
+  // The Tail Lash: a heavy whip.
+  bx_cinderback_lash: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'lowpass', f0: P(p, 400), f1: P(p, 2600), q: 1, a: 0.06, d: 0.16, gain: 0.9 }),
+      k.noise(d, t + 0.14, { f0: P(p, 2400), q: 2, d: 0.05, gain: 0.8 }),
+      k.tone(d, t + 0.14, { f0: P(p, 140), f1: P(p, 60), d: 0.2, gain: 0.6 })
+    ), { maxVoices: 1, cooldownMs: 150 }),
+  // The Ember Spit: three wet spits, a little apart.
+  bx_cinderback_spit: sfx(-9, (k, t, d, p) =>
+    Math.max(...[0, 0.12, 0.24].map((dt, i) => Math.max(
+      k.noise(d, t + dt, { type: 'bandpass', f0: P(p, 1800 - i * 200), q: 2, d: 0.08, gain: 0.8 }),
+      k.tone(d, t + dt, { f0: P(p, 420 - i * 40), f1: P(p, 160), d: 0.1, gain: 0.4 })
+    ))), { maxVoices: 1, cooldownMs: 200 }),
+  // Spent and back: a snort and a shake of the gills.
+  bx_cinderback_recover: sfx(-10, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'lowpass', f0: P(p, 700), f1: P(p, 300), q: 1, a: 0.02, d: 0.25, gain: 0.8 }),
+      ...[0.2, 0.26, 0.32].map((dt) => k.noise(d, t + dt, { f0: P(p, 3000), q: 4, d: 0.03, gain: 0.3 }))
+    ), { maxVoices: 1, cooldownMs: 300 }),
   // The sacs: soft wet lobs.
   bx_veinweaver_brood: sfx(-11, (k, t, d, p) =>
     Math.max(...[0, 0.08, 0.16].map((dt, i) => k.tone(d, t + dt, { f0: P(p, 260 + i * 40), f1: P(p, 120), d: 0.12, gain: 0.5 }))), { maxVoices: 1, cooldownMs: 200 }),
@@ -754,12 +875,17 @@ const SPAWN_VOICE = {
   hush: [{ cue: 'bx_hush_still' }, { cue: 'bx_hush_tell', pitch: 0.75 }],
   skyhorn: [{ cue: 'bx_skyhorn_toll', gainDb: -4 }, { cue: 'bx_skyhorn_tell', pitch: 0.8 }],
   hourwarden: [{ cue: 'bx_hourwarden_hour', gainDb: -4 }, { cue: 'bx_hourwarden_tell', pitch: 0.8 }],
+  founder: [{ cue: 'bx_founder_bell', gainDb: -4 }, { cue: 'bx_founder_tell', pitch: 0.8 }],
+  cinderback: [{ cue: 'bx_cinderback_surface', gainDb: -4 }, { cue: 'bx_cinderback_tell', pitch: 0.8 }],
 };
 // Per-attack tell pitch (boss_telegraph_start.attack).
-const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1, dive: 1, gust: 0.85, omen: 1.2, bind: 1.1, slam: 0.8, unring: 1.1, great: 0.7, toll: 0.85, leap: 1.15, pendulum: 0.9, backswing: 0.75, sweep: 1.15 };
+const TELL_PITCH = { spear: 1.12, wingbeat: 0.9, surface: 0.8, emerge: 0.8, breath: 1, charge: 1, crosscut: 1, shards: 1.25, rush: 1, note: 1, lance: 1.19, pulse: 0.75, fissure: 1, burst: 0.8, pounce: 1, rend: 1.2, howl: 0.8, lash: 1.1, flop: 0.85, swallow: 1, dive: 1, gust: 0.85, omen: 1.2, bind: 1.1, slam: 0.8, unring: 1.1, great: 0.7, toll: 0.85, leap: 1.15, pendulum: 0.9, backswing: 0.75, sweep: 1.15, pour: 0.95, bell: 1.1, firing: 0.7 };
 
 // An attack with a tell of its own (the Mire King's gape draws breath in).
 const TELL_CUE = { swallow: 'bx_mireking_gape' };
+// ...and by boss (an attack name another boss shares): the Cinderback's dive
+// sinks it hissing into the coals.
+const KIND_TELL_CUE = { 'cinderback:dive': 'bx_cinderback_sink' };
 
 export function createBossEventCues() {
   // The boss in the room (boss_adds carries no id; there is one boss a room).
@@ -789,6 +915,8 @@ export function createBossEventCues() {
     boss_telegraph_start: (ev, h) => {
       const k = kindOf(ev, h);
       if (!k || !KIT_BOSSES.has(k)) return null;
+      const own = KIND_TELL_CUE[`${k}:${ev.attack}`];
+      if (own) return [{ cue: own, ...at(ev, h, ev.id) }];
       return [{ cue: TELL_CUE[ev.attack] ?? `bx_${k}_tell`, ...at(ev, h, ev.id), pitch: TELL_PITCH[ev.attack] ?? 1 }];
     },
     telegraph_start: (ev, h) => {
@@ -850,8 +978,19 @@ export function createBossEventCues() {
     boss_toll_hours: beat('bx_hourwarden_hour'),
     boss_run_down: beat('bx_hourwarden_rundown'),
     boss_wound: beat('bx_hourwarden_wind'),
-    // Its clock weights: they fall, they are not lobbed (no lob whoosh).
-    enemy_lob: (ev) => (ev.weight ? [] : null),
+    boss_molten_pour: beat('bx_founder_pour'),
+    boss_bell_drop: beat('bx_founder_bell'),
+    boss_casting: beat('bx_founder_casting'),
+    boss_firing: beat('bx_founder_firing'),
+    boss_founder_rekindle: beat('bx_founder_rekindle'),
+    boss_magma_dive: beat('bx_cinderback_surface'),
+    boss_tail_lash: beat('bx_cinderback_lash'),
+    boss_ember_spit: beat('bx_cinderback_spit'),
+    boss_cinder_recover: beat('bx_cinderback_recover'),
+    boss_cinderback_phase: (ev, h) => [{ cue: 'bx_cinderback_tell', ...at(ev, h, ev.id), pitch: 0.7 }],
+    // Its clock weights: they fall, they are not lobbed (no lob whoosh); the
+    // Cinderback's gobbets are spat (the spit carries the sound).
+    enemy_lob: (ev) => (ev.weight || ev.ember ? [] : null),
     enemy_glob_land: (ev, h) => (ev.weight ? [{ cue: 'bx_hourwarden_weight', ...at(ev, h) }] : null),
   };
 }

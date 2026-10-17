@@ -5,6 +5,10 @@
 //                   ("party restored"), a progress bar, "Enter — set out now";
 //   kind 'depart' — a Level-N start from the Level Select: "SETTING OUT",
 //                   the level, the starter grant.
+// THE LEVEL V FORK (docs/KILN_BOSSES.md): the Level IV clear card of a
+// campaign shows the two roads, the Still Spire and the Ember Kiln; the party
+// leader picks one (arrows / A D / 1 2 / the pad, then Enter, or a click),
+// and the card sets out on it. Nobody picking takes the Spire's road.
 // The card is a Void Charcoal plate over a WARM veil (never a black
 // full-screen, PLAN §12.5): the cleared arena stays faintly visible under it
 // until the next level's first room replaces it. It never advances the sim by
@@ -18,6 +22,7 @@ import { bossFor, levelFor } from '../../data/levels.js';
 import { endlessBossIndex, beyondCampaign, CYCLE } from '../../data/endless.js';
 import { t, tn } from '../../i18n/index.js';
 import { chapterFor, RILL_CLEAR, TOLLY_CLEAR, SABLE_CLEAR } from '../../data/story.js';
+import { ROADS } from '../../data/levels.js';
 import { activeLineup } from '../../data/lineup.js';
 import { CAMPAIGN_LEVELS, isLevel } from '../../data/campaign.js';
 
@@ -63,7 +68,7 @@ const FLAVOUR = {
   4: () => t('The Heart\'s warden falls. Below the Barrow, the old beat falters.'),
   // Act V preview (docs/ACT_V.md): the Spire's borrowed warden.
   5: () => t('The Spire\'s warden falls. High above, the bells hang still.'),
-  // The Ember Kiln preview (docs/KILN.md): its borrowed warden.
+  // The Ember Kiln (docs/KILN.md): its warden, whichever held the Firing Floor.
   6: () => t('The Kiln\'s warden falls. The great fire gutters, then burns clean.'),
 };
 // Slice 2: the second boss of each act has its own line.
@@ -78,6 +83,9 @@ const BOSS_FLAVOUR = {
   hush: () => t('The Hush breaks. In the gods’ belfry, a bell rings again.'),
   skyhorn: () => t('The Skyhorn falls. The stair to the gods’ belfry stands open.'),
   hourwarden: () => t('The Hourwarden runs down for good. In the loft, the gods’ clock stops at the hour you came.'),
+  // The Ember Kiln (docs/KILN_BOSSES.md).
+  founder: () => t('The Bellfounder’s crucible cracks. In the gods’ kiln, the last bell rings true.'),
+  cinderback: () => t('The Cinderback sinks into the coals. The kiln’s fire burns clean again.'),
   // Third bosses (docs/THIRD_BOSSES.md).
   gloamwolf: () => t('The Gloam Wolf lies down at last. The wood’s long night is over.'),
   mireking: () => t('The Mire King sinks into the silt. The millpond goes still.'),
@@ -112,6 +120,21 @@ export const TRANSIT_CSS = `
   .rn-builds { display: grid; grid-template-columns: auto auto auto auto; gap: 2px 16px; margin-top: 8px; font-size: 16px; color: #C9C2B3; }
   .rn-builds .rn-bn { color: #F4EFE6; font-weight: 800; }
   .rn-builds .rn-bv { font-variant-numeric: tabular-nums; text-align: right; }
+  /* THE LEVEL V FORK: the two roads after the Hollow Heart. */
+  .rn-fork { display: flex; gap: 18px; margin: 12px 0 4px; }
+  .rn-fork:empty { display: none; }
+  .rn-road { width: 300px; padding: 12px 16px 10px; border-radius: 10px; cursor: pointer; text-align: center;
+    background: #221F1Bcc; border: 2px solid #9C918655; color: #C9C2B3; transition: border-color 120ms, transform 120ms; }
+  .rn-road .rn-rk { font-size: 15px; letter-spacing: 0.24em; color: #9C9186; }
+  .rn-road .rn-rn { margin: 4px 0 2px; font-size: 24px; font-weight: 800; letter-spacing: 0.04em; color: #F4EFE6; }
+  .rn-road .rn-rb { font-size: 16px; line-height: 1.3; min-height: 42px; }
+  .rn-road .rn-rv { margin-top: 6px; font-size: 15px; letter-spacing: 0.1em; }
+  .rn-road[data-road="spire"] .rn-rv { color: #C9D2E6; }
+  .rn-road[data-road="kiln"] .rn-rv { color: #FFC24A; }
+  .rn-road.rn-on { border-color: #E8A23D; transform: translateY(-2px); }
+  .rn-road.rn-taken { border-color: #E8A23D; background: #3A2E22e0; }
+  .rn-road.rn-left { opacity: 0.35; }
+  .rn-fork.rn-guest .rn-road { cursor: default; }
 `;
 
 // PARTY (BUILD_BRIEF §25.6): "Tank · 4 skills · 12/32 · ◉ 30" × 4.
@@ -136,6 +159,7 @@ export function createTransitScreen({ run }) {
     <div class="rn-sub rn-flavour"></div>
     <div class="rn-verse"></div>
     <div class="rn-next"><span class="rn-lab">${esc(t('NEXT'))}</span><b class="rn-nextname"></b></div>
+    <div class="rn-fork"></div>
     <div class="rn-carry"></div>
     <div class="rn-kit"></div>
     <div class="rn-builds"></div>
@@ -154,6 +178,35 @@ export function createTransitScreen({ run }) {
   const barFill = el.querySelector('.rn-bar i');
   const readyEl = el.querySelector('.rn-ready');
   const hintEl = el.querySelector('.rn-hint');
+  const forkEl = el.querySelector('.rn-fork');
+  // THE LEVEL V FORK: the road the leader's keys point at (0 Spire, 1 Kiln).
+  let roadFocus = 0;
+  const roadBlurb = {
+    spire: () => t('The gods’ high belfry, where they sat down to watch and never rose.'),
+    kiln: () => t('The gods’ kiln, where the first bells were fired. The fire never went out.'),
+  };
+  forkEl.addEventListener('click', (e) => {
+    const card = e.target && e.target.closest ? e.target.closest('.rn-road') : null;
+    if (!card || guest()) return;
+    pick(card.dataset.road);
+  });
+  function pick(road) {
+    const sys = run();
+    if (!sys || typeof sys.pickRoad !== 'function') return false;
+    const r = sys.pickRoad(road);
+    if (r && r.ok) render(sys.view());
+    return !!(r && r.ok);
+  }
+  function forkHtml(fork) {
+    return fork.roads
+      .map((road, i) => {
+        const act = ROADS[road];
+        const ch = chapterFor(act);
+        const cls = fork.pick ? (fork.pick === road ? ' rn-taken' : ' rn-left') : i === roadFocus ? ' rn-on' : '';
+        return `<div class="rn-road${cls}" data-road="${esc(road)}"><div class="rn-rk">${esc(t('LEVEL {level}', { level: 'V' }))}</div><div class="rn-rn">${esc(t(levelFor(act).name))}</div><div class="rn-rb">${esc(roadBlurb[road] ? roadBlurb[road]() : '')}</div><div class="rn-rv">${esc(ch ? t('Verse of {verse}', { verse: t(ch.name) }) : '')}</div></div>`;
+      })
+      .join('');
+  }
 
   const row = (k, v) => `<div class="rn-k">${esc(k)}</div><div class="rn-v">${esc(v)}</div>`;
   const guest = () => {
@@ -184,6 +237,7 @@ export function createTransitScreen({ run }) {
       const bossName = (n) => (line[n - 1] ? t(line[n - 1].name) : '');
       const landOf = (n) => (line[n - 1] ? t(levelFor(line[n - 1].act).name) : '');
       verseEl.textContent = '';
+      forkEl.innerHTML = '';
       nextRow.style.display = '';
       nextName.textContent = t('Fight {n} of {total} · {boss} · {land}', { n: fight, total, boss: bossName(fight), land: landOf(fight) });
       if (card.kind === 'clear') {
@@ -228,7 +282,10 @@ export function createTransitScreen({ run }) {
       verseEl.textContent = [verseLine(card.from, vd), rillLine(card.from, vd), tollyLine(card.from, vd), sableLine(card.from, vd)].filter(Boolean).join(' ');
       nextRow.style.display = '';
       const name = card.name ? t(card.name) : card.name;
-      nextName.textContent =
+      const fork = card.fork && Array.isArray(card.fork.roads) ? card.fork : null;
+      forkEl.innerHTML = fork ? forkHtml(fork) : '';
+      forkEl.classList.toggle('rn-guest', guest());
+      nextName.textContent = fork && !fork.pick ? t('Choose your road') :
         depth !== null
           ? beyondCampaign(depth)
             ? t('Depth {depth} · {name} · danger rises', { depth, name })
@@ -242,6 +299,7 @@ export function createTransitScreen({ run }) {
         row(t('PARTY'), t('restored to full')),
       ].join('');
     } else {
+      forkEl.innerHTML = '';
       kicker.textContent = depth !== null ? t('THE ENDLESS DESCENT') : t('SETTING OUT');
       headline.textContent = t('LEVEL {level} · {name}', { level: ROMAN[to] ?? to, name: (card.name ? t(String(card.name)) : '').toUpperCase() });
       flavour.textContent = depth !== null ? t('Through all four lands and down again, until the party falls.') : t('The campaign begins here and runs on to the final level.');
@@ -255,7 +313,8 @@ export function createTransitScreen({ run }) {
     const names = (s.skills || []).map((id) => (SKILLS[id] ? t(SKILLS[id].name) : id));
     // (a network guest sees the party leader's build — it says whose it is)
     kitEl.textContent = guest() && names.length ? t('The Healer carries · {skills}', { skills: names.join(' · ') }) : names.join(' · ');
-    hintEl.innerHTML = guest() ? t('The Healer leads on…') : t('<b>Enter</b> set out now');
+    const choosing = card.fork && !card.fork.pick;
+    hintEl.innerHTML = guest() ? (choosing ? t('The Healer chooses the road…') : t('The Healer leads on…')) : choosing ? t('<b>← →</b> choose a road · <b>Enter</b> take it') : t('<b>Enter</b> set out now');
     // PARTY: all four builds carry (skills in slot order, sockets, bench, purse).
     buildsEl.innerHTML = buildsHtml(s.builds);
     buildsEl.style.display = s.builds ? '' : 'none';
@@ -271,7 +330,10 @@ export function createTransitScreen({ run }) {
     const mgr = service('campaign');
     const st = mgr && typeof mgr.status === 'function' ? mgr.status() : null;
     let line = '';
-    if (st && st.level === card.to) {
+    if (card.fork && !card.fork.pick) {
+      const secs = Math.max(1, Math.ceil((card.untilTick - card.startTick - card.elapsedTicks) / 60));
+      line = t('No road chosen in {secs} s: the party takes the Spire', { secs });
+    } else if (st && st.level === card.to) {
       const name = card.name ? t(card.name) : card.name;
       if (!st.ready) line = t('Preparing {name}… {built}/{total}', { name, built: st.built, total: st.total });
       else if (card.due) line = t('Setting out…');
@@ -280,7 +342,29 @@ export function createTransitScreen({ run }) {
     if (readyEl.textContent !== line) readyEl.textContent = line;
   }
 
+  // THE LEVEL V FORK: the road under the leader's keys (true when the card
+  // is choosing).
+  function forkKey(code) {
+    const card = liveCard(null);
+    if (!card || !card.fork || card.fork.pick || guest()) return false;
+    const n = card.fork.roads.length;
+    if (code === 'ArrowLeft' || code === 'KeyA') roadFocus = (roadFocus + n - 1) % n;
+    else if (code === 'ArrowRight' || code === 'KeyD') roadFocus = (roadFocus + 1) % n;
+    else if (code === 'Digit1' || code === 'Digit2') return pick(card.fork.roads[code === 'Digit1' ? 0 : 1]) || true;
+    else if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') return pick(card.fork.roads[roadFocus]) || true;
+    else return false;
+    forkEl.innerHTML = forkHtml(card.fork);
+    return true;
+  }
+  function pad(action) {
+    if (action === 'left') return forkKey('ArrowLeft');
+    if (action === 'right') return forkKey('ArrowRight');
+    if (action === 'confirm') return forkKey('Enter');
+    return false;
+  }
+
   function key(code, fresh) {
+    if (fresh && forkKey(code)) return true;
     if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
       if (!fresh) return true;
       const mgr = service('campaign');
@@ -290,5 +374,5 @@ export function createTransitScreen({ run }) {
     return false;
   }
 
-  return { el, render, key, tick, name: 'transit' };
+  return { el, render, key, pad, tick, name: 'transit' };
 }

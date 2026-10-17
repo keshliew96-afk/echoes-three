@@ -11,11 +11,11 @@
 // Pure data + pure helpers (sim-importable): no DOM, no three, no wall clock.
 import { ACT_IDS, ROADS, DEFAULT_ROAD, levelFor, roadOfAct } from './levels.js';
 
-// THE LEVEL V ROADS (docs/KILN.md): the levels of the campaign that ends on
-// `road`'s land: every played act that is not another road's Level V. Today
-// there is one road a campaign takes (DEFAULT_ROAD: the Spire, or the Kiln
-// behind ?act6=1); slice 8 lets the party pick at the Level IV clear and
-// passes the run's road to nextLevel().
+// THE LEVEL V ROADS (docs/KILN.md, docs/KILN_BOSSES.md): the levels of the
+// campaign that ends on `road`'s land: every played act that is not another
+// road's Level V. The party picks the road on the Level IV clear card; the
+// run carries it (sim/run.js `campaign.road`) and passes it to nextLevel().
+// A campaign that has not picked is on DEFAULT_ROAD, the Spire.
 const ROAD_END = new Set(Object.values(ROADS));
 export function roadLevels(road = DEFAULT_ROAD) {
   const end = ROADS[road] ?? ROADS[DEFAULT_ROAD];
@@ -26,8 +26,8 @@ const roadAt = (level, road) => roadOfAct(level) ?? road ?? DEFAULT_ROAD;
 
 // The campaign's level order (ascending level ids) on its road.
 export const CAMPAIGN_LEVELS = roadLevels(DEFAULT_ROAD);
-// Every level a campaign can play on any road (both Level Vs behind the
-// ?act6=1 preview): the profile keeps records and unlocks for all of them.
+// Every level a campaign can play on any road (both Level Vs): the profile
+// keeps records and unlocks for all of them.
 export const ALL_LEVELS = Object.freeze([...ACT_IDS].sort((a, b) => a - b));
 export const FIRST_LEVEL = CAMPAIGN_LEVELS[0];
 export const FINAL_LEVEL = CAMPAIGN_LEVELS[CAMPAIGN_LEVELS.length - 1];
@@ -43,7 +43,7 @@ export function nextLevel(level, road = null) {
 }
 
 // Every level a clear of `level` opens on any road (the Level IV clear opens
-// both Level Vs behind the preview), for the profile's unlocks.
+// both Level Vs), for the profile's unlocks and the fork on the clear card.
 export function nextLevels(level) {
   const out = new Set();
   for (const r of Object.keys(ROADS)) {
@@ -104,6 +104,11 @@ export const TRANSIT = Object.freeze({
   hardTicks: 600, // the sim advances on its own after 10 s whatever the presentation does
   readyTimeoutMs: 6000, // presentation: stop waiting for the preload 6 s (wall) after the card appeared
   victoryReturnTicks: 600, // CAMPAIGN COMPLETE card -> camp automatically after 10 s of sim time
+  // THE LEVEL V FORK (docs/KILN_BOSSES.md): the Level IV clear card waits
+  // this long for the party's road before it takes the Spire's, and sets out
+  // this soon after a pick.
+  forkTicks: 1800, // 30 s
+  forkSettleTicks: 60,
 });
 
 // ---------------------------------------------------------------------------
