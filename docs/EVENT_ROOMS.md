@@ -67,6 +67,14 @@ Glint, say) the card opens on Leave and says why.
 - **Silent Bell** (Spire): every hero gives 15% of max HP; the bell lifts your
   newest major curse for the rest of the run. Needs a major curse. AI-safe.
 
+### The Ember Kiln's one (content plan 5 slice 9)
+
+- **Molten Bell** (Kiln): pour Glint into the half-cast bell, 40 for each relic,
+  up to three (`pourStep`, `pourMax`); the rest stays in the purse. Needs at
+  least 40. If the relic pool runs dry, each missing relic pays the empty-pool
+  Glint. AI-safe. It does not count toward **Wayfarer**, which keeps the
+  sixteen events it counted before (`WAYFARER_IDS`).
+
 ## Co-op, AI and autopilot
 
 - The host decides, like the doors. Guests see the card and their pick is

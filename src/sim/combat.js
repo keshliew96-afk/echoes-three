@@ -199,7 +199,7 @@ export function createCombat({
     if (target.takenMul !== undefined) amount *= target.takenMul;
     // ... and a Bell Sacristan's Vesper Hush on its kin (plan 4 slice 7).
     if (target.hushUntil > tick) amount *= target.hushMul ?? 1;
-    if (partyHit) amount *= M.takenMul();
+    if (partyHit) amount *= M.takenMul(delivery);
     let absorbed = 0;
     let shieldSrc = null;
     if (target.status && target.status.shield) {

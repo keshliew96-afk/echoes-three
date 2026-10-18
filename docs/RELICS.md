@@ -211,6 +211,17 @@ Both have heirlooms. The Silent Bell event lifts a major curse
 (`liftMajor`, event `curse_lifted`); the Gods' Seat pays a legendary pick
 (source `seat`).
 
+## The Kiln's pair (content plan 5 slice 9)
+
+- **Slag Greaves** (common): hazards hurt the party 35% less: vents, falling
+  rock, gravefire, spurs and the rest (`takenMul('hazard')`).
+- **Founder's Ingot** (rare): each combat room the party clears heats it, +5%
+  party damage a room up to +25% (`heat`, saved with the run). It cools when a
+  new level begins; a boss room or a forfeited room adds nothing.
+
+Both have heirlooms. The Molten Bell event grants relics with source `molten`;
+the Forge Shrine takes one with `loseNewestOf('forge', 'common')`.
+
 ## Batch 5: relics for plan 4's content, three curses
 
 Content plan 4, slice 11 (v0.5.287). Eight relics answer what plan 4 added

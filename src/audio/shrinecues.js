@@ -31,18 +31,20 @@ export const SHRINE_CUE_CAL = {
   sh_offer_barrow: -2.5,
   sh_offer_heart: -2.4,
   sh_offer_spire: -2.7,
+  sh_offer_kiln: -2.5,
   // @cal end
 };
 
 // Each land's figure (MIDI), rising: the Wood's open fifths, the Mill's
 // plain major, the Barrow's minor, the Heart's whole-tone, the Spire's high
-// lydian.
+// lydian, the Kiln's harmonic minor rising to its raised seventh.
 const FIGURES = {
   wood: [62, 69, 74, 81],
   mill: [60, 64, 67, 72],
   barrow: [57, 60, 64, 69],
   heart: [61, 65, 69, 73],
   spire: [67, 71, 73, 78],
+  kiln: [58, 61, 65, 69],
 };
 
 const CUES = {

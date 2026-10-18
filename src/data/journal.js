@@ -64,6 +64,9 @@ const KILN_ROWS = [
   ['slag', 'Slag Golem', 'Furnace', 'The kiln\'s waste, raked out and heaped up until the hollow song found it and stood it up.', 'Its crust turns blows: it takes 40% less damage. In close it rears and slams a warning ring in front of it for 14, splashing a pool of slag that slows. The slam cracks its crust: for 2 s its core glows and it takes 40% more. Hit it then.'],
   ['bellows', 'Bellows Imp', 'Stoker', 'A stoker of the gods\' kiln with its bellows still strapped on. It keeps every fire roaring.', 'Keeps its distance, plants its feet and pumps its bellows behind a wide warning cone. The fan blows a sheet of sparks down the cone for 8. Step out to the side, or close in: it scurries back from a hero up close, and a stun chokes the fan.'],
   ['cindermoth', 'Cinder Moth', 'Kindler', 'A moth of glowing ash. Where it settles, something starts to burn.', 'Flutters straight at a hero and kindles in a small warning ring round itself, then flares for 6. The flare burns it out: for 2.5 s it is a grey husk drifting away, and it takes double damage. They come several at once.'],
+  // Content plan 5 slice 9: two more of the Kiln's own.
+  ['hurler', 'Coal Hurler', 'Mortar', 'A stoker who learned the fire could be thrown. It has been throwing it ever since.', 'Keeps its distance, swings its sack back and lobs a live coal at a warning ring on a hero for 9. The coal bursts into cinders that slow. Close in and it scurries back; a stun mid-swing makes it drop the coal.'],
+  ['ashwraith', 'Ash Wraith', 'Stalker', 'The ash of a bell that cracked in the firing, still warm, still looking for its mould.', 'Fades into the ash and is gone, while a warning ring opens behind a hero. It rises there and rakes for 11. Then it stands spent for 1.5 s, slowed and taking 30% more damage. Watch your back.'],
 ];
 const ROWS = [...ENEMY_ROWS, ...(ACT_IDS.includes(5) ? SPIRE_ROWS : []), ...(ACT_IDS.includes(6) ? KILN_ROWS : [])];
 // The same pages as display data, exported so tools/i18n-extract.mjs collects
@@ -86,6 +89,9 @@ const CHAMPION_ROWS = {
   vein_matron: ['The mother of the Heart\'s veins, crowned in crystal, who feeds every root that grows through the dark.', 'Vein Lash: a warning lane at a hero cuts for 13, and she drinks some health for every hero it cuts. Heart Pulse: a ring round her beats for 14, then eight crystal shards fly out all round, 7 each. Below half health she rages.'],
   // The Still Spire's second (content plan 5 slice 2).
   bell_abbess: ['The abbess of the gods\' belfry, who rang the hours for them until they fell still, and keeps the vigil still. She has never let go of the rope.', 'Rope Swing: a warning lane at a hero; she swings down it on the great bell\'s rope for 14 and knocks you aside. Vesper Peal: a warning cone in front of her hand-bell rings for 11 and rings you still, slowing you hard. Below half health she rages.'],
+  // The Ember Kiln's two (content plan 5 slice 9).
+  furnace_knight: ['The gods\' furnace-warden, riveted out of kiln iron with the fire still burning in its chest. It tended the hottest kiln, and it still will not let anyone near.', 'Molten Rush: a warning lane at the farthest hero; it charges down it for 15 and its feet leave slag that slows. Grate Blast: a warning cone at its chest roars out for 16 and throws you back. Below half health it rages.'],
+  glassblower: ['The gods\' glassblower, who blew the moulds every bell was cast in. Its breath is still hot enough to melt sand.', 'Glass Bubble: a warning ring under a hero; a molten bubble floats over and bursts for 15, leaving shards that slow. Glass Gout: a warning lane at a hero sprays molten glass for 12 that hardens on you and slows you. It keeps its distance, and below half health it rages.'],
 };
 
 // One row per boss kind, in level order.

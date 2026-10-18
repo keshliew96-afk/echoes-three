@@ -141,6 +141,18 @@ Tints: **Still Air** (Swordsman, 40, Level V cleared) and **Gale Bronze**
 (Bellwright, free with Windfall). Heirlooms of the Weathercock Plume and the
 Hushbell come with the relics.
 
+## The Ember Kiln (content plan 5 slice 9)
+
+Listed while the Kiln is played. Deeds: **Through the Fire** (clear Level V on
+the Kiln road, 60), **Kiln Crowns** (fell the Furnace Knight and the
+Glassblower, across runs, 40, with an N of 2 bar) and **Quench the Founder**
+(fell the Bellfounder on Harrowing, 80). Tints: **Quench Steam** (Tidecaller,
+40, the Kiln cleared) and **Cinderwing** (Duskwing, free with Kiln Crowns).
+Heirlooms of Slag Greaves and Founder's Ingot come with the relics.
+Kingslayer, Ringwalker, Five Crowns and Windfall are unchanged; Wayfarer counts
+the sixteen events it counted before (`WAYFARER_IDS`), so the Molten Bell does
+not widen it.
+
 ## Vow ranks (plan 4 slice 10)
 
 Every vow is sworn at **rank I, II or III**. On the Unlocks screen (U) a vow

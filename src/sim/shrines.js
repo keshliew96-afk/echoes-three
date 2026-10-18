@@ -12,13 +12,17 @@
 //                           legendary) when the room clears; no blessing
 //   spire   Wind Shrine     the offering hero's tonic or bomb -> Tailwind:
 //                           +20% move speed and +15% damage
+//   kiln    Forge Shrine    the party's newest common relic, melted down ->
+//                           Tempered: +25% damage and 20% less damage taken
+//                           (content plan 5 slice 9)
 //
 // Rules: a shrine stands in ONE combat room a level, the first combat room
 // from a hashed room in 4-6 on (never the boss room, the vault, the shop or a
 // "?" room). E uses it once (any human seat; the AI seats leave it alone,
 // they never press E). It answers only while the room is live: the clear
 // puts it to sleep with the other combat assets. A trade the party cannot
-// pay (too little Glint, no key, no tonic) is refused and the shrine stays.
+// pay (too little Glint, no key, no tonic, no common relic) is refused and
+// the shrine stays.
 // A new blessing replaces the old one. Campaign runs only (Endless and the
 // Daily included), never the tutorial or the legacy single-level run, so the
 // nine goldens never see one. Sim only: no DOM, no i18n.
@@ -43,6 +47,7 @@ export const SHRINES = Object.freeze({
   barrow: Object.freeze({ id: 'barrow', name: 'Grave Shrine', cost: 'curse', gift: 'fury', trade: 'A cursed next fight → Fury, 60 s', text: 'Take a curse on your next fight for Fury: the party deals 30% more damage for 60 s.' }),
   heart: Object.freeze({ id: 'heart', name: 'Geode Shrine', cost: 'key', gift: 'relic', trade: 'Your vault key → a greater relic', text: 'Give your vault key for a rare or legendary relic pick when this room clears.' }),
   spire: Object.freeze({ id: 'spire', name: 'Wind Shrine', cost: 'tonic', gift: 'tailwind', trade: 'Your tonic → Tailwind, 60 s', text: 'Give your tonic or bomb for a Tailwind: +20% move speed and +15% damage for 60 s.' }),
+  kiln: Object.freeze({ id: 'kiln', name: 'Forge Shrine', cost: 'relic', gift: 'tempered', trade: 'A common relic → Tempered, 60 s', text: 'Melt down your newest common relic for Tempered: the party deals 25% more damage and takes 20% less for 60 s.' }),
 });
 export const SHRINE_IDS = Object.freeze(Object.keys(SHRINES));
 
@@ -52,6 +57,7 @@ export const BLESSINGS = Object.freeze({
   ward: Object.freeze({ id: 'ward', name: 'Ward', text: '25% less damage taken', ward: 0.25 }),
   fury: Object.freeze({ id: 'fury', name: 'Fury', text: '+30% damage', might: 0.3 }),
   tailwind: Object.freeze({ id: 'tailwind', name: 'Tailwind', text: '+20% move speed, +15% damage', haste: 0.2, might: 0.15 }),
+  tempered: Object.freeze({ id: 'tempered', name: 'Tempered', text: '+25% damage, 20% less damage taken', might: 0.25, ward: 0.2 }),
 });
 
 // The curse the Grave Shrine lays on the next fight: a room curse by a hash

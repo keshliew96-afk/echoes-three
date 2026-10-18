@@ -16,6 +16,8 @@ import { SECOND_CHAMPION_BUILDERS } from '../src/render/enemies/champions2.js';
 const q = new URLSearchParams(location.search);
 const kind = q.get('kind') || 'moss_hart';
 const POSES = {
+  furnace_knight: [['idle', null, 0], ['walk', null, 0, 1], ['rush crouch', 'molten_rush', 0.8], ['rush run', 'charge', 0, 0], ['blast rear', 'grate_blast', 0.85], ['blast roar', 'grate_blast', -0.06], ['blast after', 'grate_blast', -0.3], ['rage', null, 0, 0, true]],
+  glassblower: [['idle', null, 0], ['walk', null, 0, 1], ['bubble swell', 'glass_bubble', 0.5], ['bubble full', 'glass_bubble', 0.95], ['bubble loosed', 'glass_bubble', -0.06], ['gout aim', 'glass_gout', 0.9], ['gout spray', 'glass_gout', -0.06], ['rage', null, 0, 0, true]],
   // [label, move, warning progress 0..1 | -(seconds since it landed), walking, raged]
   moss_hart: [['idle', null, 0], ['walk', null, 0, 1], ['antler_toss wind', 'antler_toss', 0.9], ['antler_toss fling', 'antler_toss', -0.08], ['leap crouch', 'harts_leap', 0.38], ['leap aloft', 'harts_leap', 0.62], ['leap fall', 'harts_leap', 0.86], ['leap land', 'harts_leap', -0.06]],
   lockkeeper: [['idle', null, 0], ['walk', null, 0, 1], ['hook wind', 'chain_hook', 0.85], ['hook thrown', 'chain_hook', -0.25], ['hook reel', 'chain_hook', -0.45], ['lock raise', 'lock_turn', 0.9], ['lock drive', 'lock_turn', -0.05], ['lock turned', 'lock_turn', -0.25]],
@@ -54,6 +56,7 @@ const cells = poses.map((p, i) => {
 function entity(p, tick) {
   const [, move, prog, walk, rage] = p;
   const e = { id: 1, x: 0, z: 0, mode: 'stalk', rage: !!rage, lastMove: null, moveTick: -1, telegraph: null, flight: null };
+  if (move === 'charge') { e.mode = 'charge'; e.charge = { vx: 0, vz: 0.1 }; return e; }
   if (move && prog >= 0) {
     e.telegraph = { move, startTick: 0, resolveTick: 100, length: 6, dirX: 0, dirZ: 1 };
     if (move === 'harts_leap' || move === 'rope_swing') e.flight = { x0: 0, z0: 0, x1: 0, z1: 0 };

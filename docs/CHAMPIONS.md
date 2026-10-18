@@ -161,6 +161,45 @@ Deeds: **Five Crowns** lost its "the Gale Herald included" clause and takes
 either Spire champion; **Windfall** stays the Gale Herald's alone. She adds no relic, tint, deed or story line
 of her own, as with the other second champions.
 
+## The Ember Kiln's two (content plan 5 slice 9)
+
+Content plan 5 slice 9 (v0.5.299) gave the Ember Kiln its own champions: the
+**Furnace Knight** (`CHAMPIONS[6]`) and the **Glassblower**
+(`SECOND_CHAMPIONS[6]`). Level V's crown door on the Kiln road rolls one of
+them by the same `championPick` hash (it met the Spire's two before). Both
+use the champion frame's rage, plate, sting, chest and HP.
+
+The Furnace Knight is a top-heavy suit of riveted iron with a barred furnace
+grate for a chest and a two-handed sledge; a crack across the helm is its
+indigo tell. It keeps close.
+
+| Move | Shape | What it does |
+|---|---|---|
+| Molten Rush | a lane at a hero 2.2 to 6.5 u off; 62 ticks, cooldown 160 | It charges down the lane at 8.6 u/s, 15 to each hero it runs through, and drops up to four slag pools (r 0.9, 35 % slow, 3 s) behind it. A wall stops it short. |
+| Grate Blast | a cone r 3.8, half-angle 40°; 66 ticks, cooldown 165 | The grate swings open and the furnace roars out: 16 and a 1.6 u throw to every hero in the cone. |
+
+The Glassblower is a lanky imp in an apron and goggles with a long blowpipe;
+its right goggle lens is its indigo tell. It keeps 3.4 to 5.6 u off and
+backs away.
+
+| Move | Shape | What it does |
+|---|---|---|
+| Glass Bubble | a ring r 2.1 on a hero's spot 1.2 to 8 u off; 84 ticks, cooldown 175 | A bubble of molten glass lands and bursts: 15, and a glass patch (35 % slow, 4 s) where it fell. |
+| Glass Gout | a lane 6.5 u long, 1.0 wide; 54 ticks, cooldown 150 | A spray of molten glass down the lane: 12 and a 50 % slow for 1 s. |
+
+Heat is Kiln Gold on both, never Ember (Ember stays on the telegraphs). Look:
+`buildFurnaceKnight` and `buildGlassblower` in
+`src/render/enemies/champions2.js`; VFX in `src/render/vfx/signature.js`
+(`molten_rush`, `grate_blast`, `glass_bubble`, `glass_gout`, the rush's end
+and both deaths); the glass patch in `src/render/enemies/extras.js`. Sound:
+`ch_furnace_knight_sting` and `ch_glassblower_sting` in B-flat harmonic minor,
+plus `ch_rush_dig`, `ch_molten_rush`, `ch_grate_open`, `ch_grate_blast`,
+`ch_glass_swell`, `ch_glass_bubble` and `ch_glass_gout`. Lab: `?vfxlab=1`,
+Champions, Furnace Knight and Glassblower.
+
+Deeds: **Kiln Crowns** (fell both, across runs). **Five Crowns** stays acts I to
+V and **Windfall** stays the Gale Herald's.
+
 ## Debug and probes
 
 - `cmd('crownDoor'[, side])`: the next path screen carries the crown door.

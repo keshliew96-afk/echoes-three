@@ -190,7 +190,7 @@ const NEW = ['newt', 'slag', 'bellows', 'cindermoth'];
   check(same, `the Kiln plays on the Spire's numbers (room 6 hp ${difficulty(6, 6).hpMul})`);
   check(ENDLESS_ACTS.join() === '1,2,3,4,5' && E.CYCLE === 5 && E.levelOfDepth(6) === 1, `the Endless Descent keeps its five lands (cycle ${E.CYCLE})`);
   check(RUSH.LAP === 5, `Boss Rush still laps the five campaign lands (${RUSH.LAP})`);
-  check(NEW.every((k) => BESTIARY.some((b) => b.id === k)) && new Set(BESTIARY.map((b) => b.id)).size === BESTIARY.length && BESTIARY.length === 66, `the Journal holds the four Kiln creatures (and its two bosses), no duplicates (${BESTIARY.length} entries)`);
+  check(NEW.every((k) => BESTIARY.some((b) => b.id === k)) && new Set(BESTIARY.map((b) => b.id)).size === BESTIARY.length && BESTIARY.length === 70, `the Journal holds the four Kiln creatures (and its two bosses; slice 9 adds two creatures and two champions), no duplicates (${BESTIARY.length} entries)`);
   check(!ARENA_IDS.includes(41), 'the Ringwalker deed does not count the Kiln Mouth');
   check(CHAPTERS.length === 6 && CHAPTERS[5].verse === 'flame' && endingFor(5, 'kiln') === ENDING.kiln && endingFor(5) === ENDING.spire, 'the story gains the Kiln chapter (the Verse of Flame) and its own ending');
 }

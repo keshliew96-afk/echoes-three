@@ -760,6 +760,11 @@
    "src/net/session.js"
   ]
  },
+ "{name} melts down {relic}: {blessing} for 60 s ({text}).": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "{name} points at card {n}": {
   "files": [
    "src/ui/net/hud.js"
@@ -1212,6 +1217,12 @@
  "+25% area on this skill.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "+25% damage, 20% less damage taken": {
+  "files": [
+   "src/sim/shrines.js"
   ],
   "data": true
  },
@@ -1840,6 +1851,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "A common relic → Tempered, 60 s": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "a connect cuts other cooldowns.": {
   "files": [
    "src/ui/run/cards.js"
@@ -1978,6 +1995,12 @@
  "A Grave Inscription": {
   "files": [
    "src/sim/secrets.js"
+  ],
+  "data": true
+ },
+ "A great bell half-cast in its mould, still glowing. The founder never finished pouring it.": {
+  "files": [
+   "src/sim/encounters.js"
   ],
   "data": true
  },
@@ -2381,6 +2404,12 @@
   "data": true
  },
  "A stoker of the gods' kiln with its bellows still strapped on. It keeps every fire roaring.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "A stoker who learned the fire could be thrown. It has been throwing it ever since.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -3042,6 +3071,12 @@
   ],
   "data": true
  },
+ "Ash Wraith": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Ashen Crown": {
   "files": [
    "src/data/unlocks.js",
@@ -3435,6 +3470,12 @@
   ],
   "data": true
  },
+ "Begin every run holding Founder's Ingot. Each combat room the party clears heats it: +5% party damage, up to +25%. It cools when a new level begins.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Fox Ribbon. The Swordsman's critical hits cut again for half the damage.": {
   "files": [
    "src/data/unlocks.js"
@@ -3585,6 +3626,12 @@
   "data": true
  },
  "Begin every run holding Shepherd's Crook. The pilgrim you escort has 50% more health, and bringing it home pays 15 Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Slag Greaves. Hazards hurt the party 35% less: vents, falling rock, gravefire, spurs and the rest.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -4792,6 +4839,12 @@
   ],
   "data": true
  },
+ "Cinderwing tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Circles a hero, then swoops down a long warning lane for 9 to every hero it crosses. Flies over hazards and blockers.": {
   "files": [
    "src/data/journal.js"
@@ -4901,6 +4954,12 @@
   "data": true
  },
  "Clear Level IV, the Hollow Heart.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Clear Level V, the Ember Kiln, and bring the Verse of Flame home.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5031,6 +5090,12 @@
   "files": [
    "src/ui/run/levels.js"
   ]
+ },
+ "Coal Hurler": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Code copied: {code}": {
   "files": [
@@ -6182,6 +6247,12 @@
   ],
   "data": true
  },
+ "Duskwing effects burn in Cinderwing colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Duskwing effects burn in Gloaming colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
@@ -6197,6 +6268,12 @@
  "DV": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Each combat room the party clears heats it: +5% party damage, up to +25%. It cools when a new level begins.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -6859,6 +6936,12 @@
    "src/ui/menu/tabs/audio.js"
   ]
  },
+ "Fades into the ash and is gone, while a warning ring opens behind a hero. It rises there and rakes for 11. Then it stands spent for 1.5 s, slowed and taking 30% more damage. Watch your back.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Fallen Oak": {
   "files": [
    "src/data/layouts.js"
@@ -6935,6 +7018,12 @@
   ],
   "data": true
  },
+ "Fell both champions of the Ember Kiln: the Furnace Knight and the Glassblower.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Fell every boss at least once, the Vein Weaver included.": {
   "files": [
    "src/data/unlocks.js"
@@ -6957,6 +7046,12 @@
   "files": [
    "src/data/unlocks.js",
    "src/ui/run/unlocks.js"
+  ],
+  "data": true
+ },
+ "Fell the Bellfounder on the Harrowing challenge.": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -7428,6 +7523,12 @@
    "src/ui/run/partystrip.js"
   ]
  },
+ "Forge Shrine": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "Forget the custom server address and connect to the Echoes server of the site you opened the game from — what every player gets without touching a setting.": {
   "files": [
    "src/ui/menu/tabs/network.js"
@@ -7455,6 +7556,13 @@
   "files": [
    "src/ui/story/journal.js"
   ]
+ },
+ "Founder's Ingot": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "four bells at once.": {
   "files": [
@@ -7882,6 +7990,12 @@
   ],
   "data": true
  },
+ "Glass Bubble: a warning ring under a hero; a molten bubble floats over and bursts for 15, leaving shards that slow. Glass Gout: a warning lane at a hero sprays molten glass for 12 that hardens on you and slows you. It keeps its distance, and below half health it rages.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Glass Heart": {
   "files": [
    "src/data/unlocks.js",
@@ -8156,6 +8270,12 @@
  "Hawk Feather": {
   "files": [
    "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
+ "Hazards hurt the party 35% less: vents, falling rock, gravefire, spurs and the rest.": {
+  "files": [
    "src/sim/relics.js"
   ],
   "data": true
@@ -9216,6 +9336,12 @@
   ],
   "data": true
  },
+ "Keeps its distance, swings its sack back and lobs a live coal at a warning ring on a hero for 9. The coal bursts into cinders that slow. Close in and it scurries back; a stun mid-swing makes it drop the coal.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Keeps its distance, then swings into the wind and marks a long, narrow warning lane through a hero. Three gust darts fly down it for 7 each: step out of the lane and they all miss.": {
   "files": [
    "src/data/journal.js"
@@ -9289,6 +9415,12 @@
  "kills explode · full heals burst — 50% within 1.2 u.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Kiln Crowns": {
+  "files": [
+   "src/data/unlocks.js"
   ],
   "data": true
  },
@@ -9932,6 +10064,12 @@
   ],
   "data": true
  },
+ "Melt down your newest common relic for Tempered: the party deals 25% more damage and takes 20% less for 60 s.": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "Mender": {
   "files": [
    "src/data/journal.js"
@@ -10040,7 +10178,19 @@
   ],
   "data": true
  },
+ "Molten Bell": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "Molten Pour: a warning lane for 14 that cools into pools of slag. Bell Drop: a bell falls on a warning ring at you for 16. At each Casting the Kiln's creatures crawl out of a mould, then the Firing: a huge ring round it for 20. Walk to the walls, then hit it while it is quenched.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Molten Rush: a warning lane at the farthest hero; it charges down it for 15 and its feet leave slag that slows. Grate Blast: a warning cone at its chest roars out for 16 and throws you back. Below half health it rages.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -10080,6 +10230,12 @@
  "Moonwell": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Mortar": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -11489,6 +11645,12 @@
   ],
   "data": true
  },
+ "Pour Glint into the mould: 40 for each relic, up to three (at least 40).": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
  "power": {
   "files": [
    "src/ui/socket/index.js"
@@ -11665,6 +11827,18 @@
   "files": [
    "src/ui/hud/banner.js"
   ]
+ },
+ "Quench Steam tint": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Quench the Founder": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
  },
  "Quick": {
   "files": [
@@ -13465,6 +13639,13 @@
   ],
   "data": true
  },
+ "Slag Greaves": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Slag Run": {
   "files": [
    "src/data/layouts.js"
@@ -13774,6 +13955,12 @@
  "Stake 20 Glint and roll two dice.": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Stalker": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -14278,6 +14465,12 @@
   ],
   "data": true
  },
+ "Tempered": {
+  "files": [
+   "src/sim/shrines.js"
+  ],
+  "data": true
+ },
  "Ten Oaths": {
   "files": [
    "src/data/unlocks.js"
@@ -14577,6 +14770,12 @@
   ],
   "data": true
  },
+ "The ash of a bell that cracked in the firing, still warm, still looking for its mould.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The Ash Raven": {
   "files": [
    "src/data/journal.js",
@@ -14710,6 +14909,22 @@
   ]
  },
  "The bell drinks {name}. The curse is lifted.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The bell is cast for {n} Glint and rings out: {names}.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
+ "The bell is cast, and it rings out one relic for every 40 Glint poured.": {
+  "files": [
+   "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "The bell is cast, but no relic is left for it to ring: +{n} Glint.": {
   "files": [
    "src/ui/run/index.js"
   ]
@@ -15205,6 +15420,13 @@
   ],
   "data": true
  },
+ "The Furnace Knight": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
+ },
  "The Gale Herald": {
   "files": [
    "src/data/journal.js",
@@ -15271,6 +15493,13 @@
   "files": [
    "src/ui/run/relic.js"
   ]
+ },
+ "The Glassblower": {
+  "files": [
+   "src/data/journal.js",
+   "src/sim/champions.js"
+  ],
+  "data": true
  },
  "The Gloam Wolf": {
   "files": [
@@ -15364,6 +15593,18 @@
   "data": true
  },
  "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "The gods' furnace-warden, riveted out of kiln iron with the fire still burning in its chest. It tended the hottest kiln, and it still will not let anyone near.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "The gods' glassblower, who blew the moulds every bell was cast in. Its breath is still hot enough to melt sand.": {
   "files": [
    "src/data/journal.js"
   ],
@@ -16233,6 +16474,11 @@
    "src/ui/run/index.js"
   ]
  },
+ "The shrine asks for a common relic to melt down.": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "The shrine asks for a tonic or bomb.": {
   "files": [
    "src/ui/run/index.js"
@@ -16879,6 +17125,12 @@
    "src/ui/run/transit.js"
   ]
  },
+ "Through the Fire": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Throw: bursts at the aim and leaves fire burning for 3 s.": {
   "files": [
    "src/sim/consumables.js"
@@ -16912,6 +17164,12 @@
   "data": true
  },
  "Tidecaller effects burn in Hollow Tide colours. Cosmetic.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Tidecaller effects burn in Quench Steam colours. Cosmetic.": {
   "files": [
    "src/data/unlocks.js"
   ],

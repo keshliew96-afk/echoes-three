@@ -193,7 +193,7 @@ const across = (p, t) => Math.abs((p.x - t.fromX) * -t.dirZ + (p.z - t.fromZ) * 
   check('pick', "the Spire's first champion is still the Gale Herald", C.championFor(5).id === 'gale_herald');
   const pairs = { 1: 'briar_knight,moss_hart', 2: 'sluice_warden,lockkeeper', 3: 'bone_reeve,gravebell_ringer', 4: 'hollow_choir,vein_matron' };
   check('pick', "the other lands' pairs are unchanged", [1, 2, 3, 4].every((a) => C.championsOfAct(a).map((c) => c.id).join() === pairs[a]));
-  check('pick', 'ten champions in all, the Abbess last', C.CHAMPION_IDS.length === 10 && C.CHAMPION_IDS[9] === 'bell_abbess' && C.isChampionKind('bell_abbess') && C.championById('bell_abbess').act === 5);
+  check('pick', 'twelve champions in all (the Kiln two since plan 5 slice 9), the Abbess tenth', C.CHAMPION_IDS.length === 12 && C.CHAMPION_IDS[9] === 'bell_abbess' && C.isChampionKind('bell_abbess') && C.championById('bell_abbess').act === 5);
   let agree = 0;
   let tried = 0;
   const met = new Set();
@@ -315,7 +315,7 @@ if (swingSave) {
 {
   const champs = BESTIARY.filter((b) => b.champion);
   const row = champs.find((c) => c.id === 'bell_abbess');
-  check('deeds', 'the Journal lists ten champions, the Bell Abbess in the Spire with lore and text', champs.length === 10 && !!row && row.lands.join() === '5' && row.name === 'The Bell Abbess' && !!row.lore && !!row.text, champs.map((c) => c.id));
+  check('deeds', 'the Journal lists twelve champions, the Bell Abbess in the Spire with lore and text', champs.length === 12 && !!row && row.lands.join() === '5' && row.name === 'The Bell Abbess' && !!row.lore && !!row.text, champs.map((c) => c.id));
   const get = (id) => DEEDS[id] ?? (DEEDS.get ? DEEDS.get(id) : null) ?? (Array.isArray(DEEDS) ? DEEDS.find((d) => d.id === id || d[0] === id) : null);
   const five = get('five_crowns');
   const wind = get('windfall');
@@ -323,7 +323,7 @@ if (swingSave) {
   const fr = { cleared: [], bosses: [], champions: [] };
   check('deeds', 'Five Crowns takes the Bell Abbess for the Spire as well as the Herald', !!five && five.test(fr, life([...C.FIRST_CROWNS, 'bell_abbess'])) && five.test(fr, life([...C.FIRST_CROWNS, 'gale_herald'])) && !five.test(fr, life([...C.FIRST_CROWNS])) && five.goal(life(['bell_abbess', 'gale_herald']))[0] === 1);
   check('deeds', 'Windfall stays the Gale Herald\'s alone', !!wind && !wind.test({ ...fr, champions: ['bell_abbess'] }, life([])) && wind.test({ ...fr, champions: ['gale_herald'] }, life([])) && !wind.test({ ...fr, champions: ['moss_hart', 'vein_matron'] }, life([])));
-  check('deeds', 'champion marks record the Bell Abbess', MARK_KINDS.champion.length === 10 && MARK_KINDS.champion.includes('bell_abbess'));
+  check('deeds', 'champion marks record the Bell Abbess', MARK_KINDS.champion.length === 12 && MARK_KINDS.champion.includes('bell_abbess'));
 }
 
 // ----------------------------------------------------------------- text --

@@ -147,7 +147,9 @@ function combatRoom(seed, level = 1) {
 
 // --------------------------------------------------------- 4. Major curses --
 {
-  const W = makeWorld(21);
+  // Seed 22 since plan 5 slice 9: the Kiln's two relics reshuffle the
+  // pool, and seed 21's autopilot party now falls in Level I.
+  const W = makeWorld(22);
   const { run, step, log } = W;
   const ap = run.autopilot;
   run.startCampaign({ level: 1, harness: true });

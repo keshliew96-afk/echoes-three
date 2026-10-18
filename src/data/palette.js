@@ -51,6 +51,7 @@ export const SHRINE_COLORS = Object.freeze({
   barrow: Object.freeze({ glow: '#E8A23D', core: '#FFF1C9', stone: '#5E5652' }),
   heart: Object.freeze({ glow: '#D9B872', core: '#F7E7C0', stone: '#4A3F57' }),
   spire: Object.freeze({ glow: '#BFE4F4', core: '#F6FCFF', stone: '#8A8F99' }),
+  kiln: Object.freeze({ glow: '#FFC24A', core: '#FFE6A8', stone: '#584640' }), // Kiln Gold on fire brick, never Ember
 });
 // The blessing each shrine lays (HUD plate, hero aura).
 export const BLESSING_COLORS = Object.freeze({
@@ -58,6 +59,7 @@ export const BLESSING_COLORS = Object.freeze({
   ward: SHRINE_COLORS.mill,
   fury: SHRINE_COLORS.barrow,
   tailwind: SHRINE_COLORS.spire,
+  tempered: SHRINE_COLORS.kiln,
 });
 
 // Class accents (BUILD_BRIEF §19.1) — rings, HP bars, cloak trim.
@@ -171,6 +173,13 @@ export const VFX_MATTER = Object.freeze({
   mothash: '#A39C92', // Cinder Moth: pale ash wings (spent: the same, unlit)
   // The Kiln's bosses (docs/KILN_BOSSES.md).
   salamander: '#4B3A3A', // the Cinderback's hide: soot over a banked-coal red (low chroma)
+  // Content plan 5 slice 9: two more creatures and the Kiln's two champions.
+  // Bodies low-chroma; their heat is Kiln Gold (kilngold / kilnheat), never Ember.
+  hurlerhide: '#3E3632', // Coal Hurler: soot-black imp skin, a touch warmer than slag
+  coalsack: '#4A3E34', // its sack: sooty, coal-scorched sack leather
+  ashgrey: '#8E8984', // Ash Wraith: drifting grey ash (spent: the same, unlit)
+  kilniron: '#3C3B3D', // the Furnace Knight: dark riveted kiln iron, cool grey
+  moltenglass: '#FFB43C', // the Glassblower's gather: molten amber glass (Kiln Gold family, hue ~37)
 });
 
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): each power's own hue on the elite's

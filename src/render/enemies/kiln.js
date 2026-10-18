@@ -41,6 +41,20 @@
 //               trembling, heating to white; the flare flashes it open; spent
 //               it is a dull grey husk sagging low on slow beats, until the
 //               coals creep back into its veins just before it relights
+//   hurler      (content plan 5 slice 9) a squat soot-black imp, a stockier
+//               cousin of the Bellows Imp, with big hands and a lumpy sack of
+//               live coals over its left shoulder, gold showing through the
+//               holes in the sack. It sidles; for the throw it plants, heaves
+//               the sack back over its head (the coals heating to white),
+//               then hurls it forward on the throw; a fumble drops it. An
+//               indigo stitch on the sack
+//   ashwraith   (content plan 5 slice 9) a tall, thin, hunched shape of grey
+//               ash round a last gold ember in its chest, long cinder claws,
+//               a ragged ash skirt trailing where legs would be; it hovers.
+//               Fading it collapses into a turning swirl of ash and is gone
+//               (only a faint swirl where it went); it rises whole at the
+//               mark, claws already raking; spent it slumps, the ember dim,
+//               until the heat creeps back. Indigo pin-eyes
 // Faces +Z; the layer drives `pose({ t, tick, walkPhase, moveK, telegraphK,
 // fireK, e })` (`e` = the sim entity, READ ONLY; the Journal's viewer passes
 // an idle stand-in, so every field read here has a default).
@@ -214,6 +228,14 @@ const C = Object.freeze({
   mothSpent: new Color(VFX_MATTER.mothash).lerp(new Color(PALETTE.voidCharcoal), 0.5).lerp(slate, 0.15),
   mothBody: body(VFX_MATTER.mothash, 0.2, 0.42),
   mothBodySpent: new Color(VFX_MATTER.mothash).lerp(new Color(PALETTE.voidCharcoal), 0.72),
+  // Coal Hurler: soot-black skin lifted off the floor, a sooty sack.
+  hurlerSkin: body(VFX_MATTER.hurlerhide, 0.25, 1.18),
+  hurlerDark: body(VFX_MATTER.hurlerhide, 0.3, 0.66),
+  sack: body(VFX_MATTER.coalsack, 0.15, 1.1),
+  // Ash Wraith: pale-grey ash, darker cinder claws.
+  ash: body(VFX_MATTER.ashgrey, 0.1, 1.0),
+  ashDark: body(VFX_MATTER.ashgrey, 0.2, 0.5),
+  claw: new Color(VFX_MATTER.ashgrey).lerp(new Color(PALETTE.voidCharcoal), 0.55),
   // The heat ramp.
   coal: new Color(VFX_MATTER.coal),
   coalDim: new Color(VFX_MATTER.coal).multiplyScalar(0.55),
@@ -1124,6 +1146,412 @@ export function buildCindermoth() {
       const sk = 1 - 0.3 * clamp01(hgt / 1.4);
       shadow.scale.setScalar(sk);
       shadow.material.opacity = 0.18 + 0.14 * (1 - clamp01(hgt / 1.4));
+    },
+  };
+}
+
+// ------------------------------------------------------------- HURLER --
+const SACK_HOLES = [
+  [0.1, 0.05, 0.11],
+  [-0.08, 0.1, 0.1],
+  [0.02, -0.06, 0.13],
+  [0.12, -0.04, -0.04],
+  [-0.1, -0.02, -0.08],
+];
+export function buildHurler() {
+  const s = shell('hurler');
+  const { rig, track } = s;
+  const skin = track(flashable(C.hurlerSkin));
+  const dark = track(flashable(C.hurlerDark));
+  const sackM = track(flashable(C.sack));
+  const holeHot = heatMat(C.coal);
+  // Squat and stocky, it read too small at play distance (Kesh's "fix
+  // hurler size first" on PR #84): the whole rig plays 1.45x, with its
+  // shadow, and the sack keeps a faint glow at rest so it reads at range.
+  rig.scale.setScalar(1.45);
+  const bodyG = new Group();
+  bodyG.position.y = 0.24;
+  rig.add(bodyG);
+  // Legs: short, thick, bowed; broad feet.
+  const legs = [];
+  const thighG = shared('hu-thigh', () => new CylinderGeometry(0.07, 0.055, 0.15, 5).translate(0, -0.075, 0));
+  const footG = shared('hu-foot', () => new BoxGeometry(0.12, 0.05, 0.17).translate(0, -0.02, 0.04));
+  for (const side of [-1, 1]) {
+    const hip = new Group();
+    hip.position.set(side * 0.12, 0.02, 0);
+    bodyG.add(hip);
+    hip.add(new Mesh(thighG, dark));
+    const foot = new Mesh(footG, dark);
+    foot.position.y = -0.19;
+    hip.add(foot);
+    legs.push({ hip, side });
+  }
+  // A barrel body, a hunched neck, a broad head sunk in the shoulders.
+  const torso = new Group();
+  bodyG.add(torso);
+  const trunk = new Mesh(shared('hu-trunk', () => new IcosahedronGeometry(0.24, 1)), skin);
+  trunk.scale.set(1.15, 1.0, 0.95);
+  trunk.position.set(0, 0.2, 0);
+  addInk(trunk);
+  torso.add(trunk);
+  const head = new Group();
+  head.position.set(0, 0.47, 0.07);
+  torso.add(head);
+  const skull = new Mesh(shared('hu-skull', () => new IcosahedronGeometry(0.14, 1)), skin);
+  skull.scale.set(1.2, 0.85, 1.0);
+  addInk(skull);
+  head.add(skull);
+  const brow = new Mesh(shared('hu-brow', () => new BoxGeometry(0.22, 0.045, 0.06)), dark);
+  brow.position.set(0, 0.04, 0.11);
+  head.add(brow);
+  const jaw = new Mesh(shared('hu-jaw', () => new BoxGeometry(0.2, 0.06, 0.12)), dark);
+  jaw.position.set(0, -0.07, 0.07);
+  head.add(jaw);
+  for (const side of [-1, 1]) {
+    const hn = new Mesh(shared('hu-horn', () => new ConeGeometry(0.03, 0.12, 4).translate(0, 0.06, 0)), dark);
+    hn.position.set(side * 0.1, 0.07, -0.01);
+    hn.rotation.set(-0.3, 0, side * -0.7);
+    head.add(hn);
+  }
+  slitEyes(head, { x: 0.05, y: 0.012, z: 0.125, len: 0.05, slant: -0.3, mat: heatMat(C.gold), thick: 0.022 });
+  // Arms: long and heavy, hands like shovels. The left holds the sack's
+  // neck over the shoulder; the right swings free (both heave on the throw).
+  const arms = [];
+  const upperG = shared('hu-upper', () => new CylinderGeometry(0.055, 0.045, 0.2, 5).translate(0, -0.1, 0));
+  const handG = shared('hu-hand', () => new IcosahedronGeometry(0.075, 0));
+  for (const side of [-1, 1]) {
+    const sh = new Group();
+    sh.position.set(side * 0.25, 0.33, 0);
+    torso.add(sh);
+    sh.add(new Mesh(upperG, skin));
+    const fore = new Group();
+    fore.position.y = -0.2;
+    sh.add(fore);
+    fore.add(new Mesh(upperG, dark));
+    const hand = new Mesh(handG, dark);
+    hand.scale.set(1.1, 0.8, 1.2);
+    hand.position.y = -0.22;
+    addInk(hand);
+    fore.add(hand);
+    arms.push({ sh, fore, side });
+  }
+  // The sack: a lumpy bag pivoting on the left shoulder, coals glowing
+  // through its holes; the tell an indigo stitch across its mouth.
+  const sackP = new Group();
+  sackP.position.set(-0.12, 0.44, -0.04);
+  torso.add(sackP);
+  const sackG = new Group();
+  sackG.position.set(0, 0.02, -0.26);
+  sackP.add(sackG);
+  const bag = new Mesh(shared('hu-bag', () => new DodecahedronGeometry(0.2, 0)), sackM);
+  bag.scale.set(1.0, 0.88, 1.1);
+  addInk(bag);
+  sackG.add(bag);
+  const lump = new Mesh(shared('hu-lump', () => new DodecahedronGeometry(0.12, 0)), sackM);
+  lump.position.set(0.08, -0.08, -0.1);
+  sackG.add(lump);
+  const neck = new Mesh(shared('hu-neck', () => new CylinderGeometry(0.04, 0.07, 0.12, 5)), sackM);
+  neck.position.set(0, 0.18, 0.07);
+  neck.rotation.x = 0.5;
+  sackG.add(neck);
+  const holeG = shared('hu-hole', () => new IcosahedronGeometry(0.035, 0));
+  const holes = SACK_HOLES.map(([x, y, z]) => {
+    const h = new Mesh(holeG, holeHot);
+    h.position.set(x * 1.45, y * 1.3, z * 1.5);
+    sackG.add(h);
+    return h;
+  });
+  const stitch = new Mesh(shared('hu-stitch', () => new BoxGeometry(0.12, 0.02, 0.02)), tellMat());
+  stitch.position.set(0, 0.22, 0.1);
+  stitch.rotation.x = 0.5;
+  sackG.add(stitch);
+  const stitchGlow = tellGlow(0.26, 0.18);
+  stitchGlow.position.set(0, 0.24, 0.12);
+  sackG.add(stitchGlow);
+  const sackGlow = heatGlow(0.7, 0.2);
+  sackG.add(sackGlow);
+  const floor = floorLight(C.gold, 0.08);
+  floor.scale.setScalar(1.1);
+  rig.add(floor);
+  const shadow = groundShadow(0.52, 0.5);
+  s.group.add(shadow);
+  const dtOf = clock();
+  const throwAge = clip();
+  let windK = 0;
+  const _sp = new Color();
+  return {
+    group: s.group,
+    mats: s.mats,
+    setYaw: s.setYaw,
+    pose({ t, tick, walkPhase = 0, moveK = 0, e }) {
+      const dt = dtOf(t);
+      const id = e ? e.id ?? 0 : 0;
+      const mode = e && e.mode ? e.mode : 'sidle';
+      const winding = mode === 'wind';
+      const prog = winding ? teleProg(e, tick) : 0;
+      const ta = throwAge(e ? e.throwTick : -1, dt);
+      // The hurl: a fast forward heave and a slow recovery.
+      const hurl = ta < 0.7 ? (ta < 0.12 ? ta / 0.12 : Math.exp(-(ta - 0.12) * 5)) : 0;
+      windK = approach(windK, winding ? 1 : 0, 12, dt);
+      const back = windK * smooth(prog * 1.6);
+      // Sack: on the shoulder at rest, heaved back over the head through the
+      // wind-up (trembling at the top), flung forward on the throw.
+      // (+x swings the sack up over the head from behind the shoulder; past
+      // ~1.6 rad it comes over the top and forward.)
+      sackP.rotation.x = 0.1 + 0.08 * Math.sin(walkPhase * 1.4) * moveK + 1.25 * back + 1.5 * hurl * (1 - 0.3 * back);
+      sackP.rotation.z = -0.15 + 0.15 * back;
+      sackG.position.y = -0.04 + 0.04 * back * Math.sin(t * 30) * prog;
+      // After the throw the sack is empty: limp and dim for a beat.
+      const empty = ta < 1.6 ? 1 - smooth((ta - 0.4) / 1.2) : 0;
+      sackG.scale.set(1, 1 - 0.3 * empty, 1 - 0.15 * empty);
+      // Heat in the holes: banked coal, gold through the wind-up, white at
+      // the top; out while the sack is empty.
+      const flick = 0.07 * Math.sin(t * 9 + id) + 0.05 * Math.sin(t * 23 + id * 2);
+      const hot = (0.3 + flick + back * 0.7) * (1 - 0.85 * empty);
+      heatColor(holeHot.color, Math.min(1, hot));
+      for (let i = 0; i < holes.length; i++) holes[i].scale.setScalar(0.85 + 0.25 * Math.sin(t * 7 + i * 1.9 + id) * 0.5 + 0.3 * back);
+      heatColor(_sp, Math.min(0.9, hot));
+      sackGlow.material.color.copy(_sp);
+      sackGlow.material.opacity = clamp01(0.2 + 0.4 * hot);
+      sackGlow.scale.setScalar(0.65 + 0.5 * hot);
+      floor.material.opacity = clamp01(0.04 + 0.16 * hot);
+      floor.position.set(-0.15 * (1 - back), 0.03, -0.25 + 0.2 * back);
+      // Body: a heavy sidle; leaning back into the heave, pitching forward
+      // on the hurl.
+      const go = moveK * (1 - windK);
+      const wad = Math.sin(walkPhase * 1.5);
+      bodyG.position.y = 0.24 + 0.03 * Math.abs(wad) * go - 0.03 * windK;
+      rig.rotation.x = -0.25 * back + 0.35 * hurl;
+      rig.rotation.z = 0.12 * wad * go;
+      rig.position.z = 0.08 * hurl;
+      for (const { hip, side } of legs) {
+        hip.rotation.x = side * 0.5 * wad * go + 0.2 * hurl * side;
+        hip.rotation.z = side * (0.08 + 0.12 * windK);
+      }
+      // Arms: both hands up over the head on the sack through the wind-up,
+      // thrown forward together on the hurl.
+      for (const { sh, fore, side } of arms) {
+        const holder = side < 0;
+        // At rest the left hand steadies the sack from behind, the right
+        // swings; both go up over the head for the heave and come
+        // down forward on the hurl.
+        let x = holder ? 0.7 : side * 0.35 * wad * go - 0.15;
+        x += (-3.3 - x) * back;
+        x += (-1.3 - x) * hurl;
+        sh.rotation.x = x;
+        sh.rotation.z = side * (holder ? 0.15 : 0.3) * (1 - back) + side * 0.12 * back;
+        fore.rotation.x = holder ? -1.0 * (1 - back) * (1 - hurl) - 0.2 : -0.5 * (1 - back) - 0.2;
+      }
+      head.rotation.x = -0.25 * back + 0.25 * hurl;
+      stitchGlow.material.opacity = 0.14 + 0.06 * Math.sin(t * 2 + id);
+    },
+  };
+}
+
+// ---------------------------------------------------------- ASH WRAITH --
+const WRAITH_SKIRT = 8;
+const WRAITH_MOTES = 4;
+const SWIRL = 6;
+export function buildAshWraith() {
+  const s = shell('ashwraith');
+  const { rig, track } = s;
+  const ashM = track(flashable(C.ash));
+  const darkM = track(flashable(C.ashDark));
+  const clawM = track(flashable(C.claw));
+  const emberM = heatMat(C.gold);
+  const hover = new Group();
+  hover.position.y = 0.35;
+  rig.add(hover);
+  const form = new Group(); // everything that collapses into the ash
+  hover.add(form);
+  // The ragged skirt: tattered ash strips hanging from the hips to the floor.
+  const skirt = [];
+  // A cone of ash for the mass of it, torn strips flaring off it.
+  const core = new Mesh(shared('aw-core', () => new ConeGeometry(0.22, 0.6, 7).rotateX(Math.PI).translate(0, -0.08, 0)), darkM);
+  core.position.y = 0.25;
+  core.scale.set(1, 1, 0.85);
+  addInk(core);
+  form.add(core);
+  const stripG = shared('aw-strip', () => new ConeGeometry(0.09, 0.6, 3).translate(0, -0.3, 0));
+  for (let i = 0; i < WRAITH_SKIRT; i++) {
+    const a = (i / WRAITH_SKIRT) * Math.PI * 2;
+    const p = new Group();
+    p.position.set(Math.sin(a) * 0.13, 0.27, Math.cos(a) * 0.11);
+    form.add(p);
+    const m = new Mesh(stripG, i % 2 ? darkM : ashM);
+    m.scale.set(1, 0.75 + 0.3 * (((i * 7) % 3) / 2), 0.5);
+    p.add(m);
+    skirt.push({ p, a, i });
+  }
+  // Torso: a long, hunched column of ash leaning forward.
+  const spine = new Group();
+  spine.position.y = 0.25;
+  form.add(spine);
+  const chest = new Mesh(shared('aw-chest', () => new CylinderGeometry(0.2, 0.12, 0.58, 6).translate(0, 0.29, 0)), ashM);
+  chest.scale.set(1.15, 1, 0.8);
+  addInk(chest);
+  spine.add(chest);
+  // A hunched back: a hump of ash over the shoulders, the head slung low
+  // in front of it.
+  const shoulders = new Mesh(shared('aw-shoulders', () => new IcosahedronGeometry(0.17, 1)), darkM);
+  shoulders.scale.set(1.7, 0.55, 1.05);
+  shoulders.position.set(0, 0.56, -0.05);
+  addInk(shoulders);
+  spine.add(shoulders);
+  // The last ember, deep in the chest, seen through a crack.
+  const ember = new Mesh(shared('aw-ember', () => new IcosahedronGeometry(0.06, 0)), emberM);
+  ember.position.set(0, 0.36, 0.15);
+  spine.add(ember);
+  const crack = new Mesh(shared('aw-crack', () => mergeGeometries([rod([0, 0.27, 0.16], [0.03, 0.36, 0.17], 0.01, 3), rod([0.0, 0.36, 0.17], [-0.035, 0.45, 0.15], 0.01, 3)])), emberM);
+  spine.add(crack);
+  const emberGlow = heatGlow(0.8, 0.35);
+  emberGlow.position.set(0, 0.36, 0.22);
+  spine.add(emberGlow);
+  // Head: a hooded skull-shape of ash, jutting forward; indigo pin-eyes.
+  const head = new Group();
+  head.position.set(0, 0.62, 0.2);
+  spine.add(head);
+  // A cowl of darker ash, open at the front, a pale ash face sunk in it.
+  const hood = new Mesh(shared('aw-hood', () => new IcosahedronGeometry(0.13, 0)), darkM);
+  hood.scale.set(1.0, 1.15, 1.2);
+  hood.position.set(0, 0.03, -0.03);
+  addInk(hood);
+  head.add(hood);
+  const face = new Mesh(shared('aw-face', () => new IcosahedronGeometry(0.085, 0)), ashM);
+  face.scale.set(0.85, 1.1, 0.8);
+  face.position.set(0, -0.02, 0.07);
+  head.add(face);
+  const eyeG = shared('aw-eye', () => new IcosahedronGeometry(0.016, 0));
+  const eyeM = tellMat();
+  for (const side of [-1, 1]) {
+    const eye = new Mesh(eyeG, eyeM);
+    eye.position.set(side * 0.032, 0.0, 0.135);
+    head.add(eye);
+  }
+  const eyeGlow = tellGlow(0.24, 0.2);
+  eyeGlow.position.set(0, 0.0, 0.16);
+  head.add(eyeGlow);
+  // Arms: long and thin, hanging, three cinder claws each.
+  const arms = [];
+  const armG = shared('aw-arm', () => new CylinderGeometry(0.04, 0.026, 0.38, 4).translate(0, -0.19, 0));
+  const clawG = shared('aw-claw', () => new ConeGeometry(0.024, 0.3, 3).translate(0, -0.15, 0));
+  for (const side of [-1, 1]) {
+    const sh = new Group();
+    sh.position.set(side * 0.27, 0.56, 0.02);
+    spine.add(sh);
+    sh.add(new Mesh(armG, ashM));
+    const fore = new Group();
+    fore.position.y = -0.38;
+    sh.add(fore);
+    fore.add(new Mesh(armG, darkM));
+    const hand = new Group();
+    hand.position.y = -0.38;
+    fore.add(hand);
+    for (let k = -1; k <= 1; k++) {
+      const c = new Mesh(clawG, clawM);
+      c.position.x = k * 0.025;
+      c.rotation.set(0.25, 0, k * 0.18);
+      hand.add(c);
+    }
+    arms.push({ sh, fore, side });
+  }
+  // Ash drifting off it (pale motes rising); and the swirl it leaves.
+  const ashCol = new Color(C.ash).multiplyScalar(0.55);
+  const motes = [];
+  for (let i = 0; i < WRAITH_MOTES; i++) {
+    const m = makeGlowSprite({ color: ashCol, size: 0.12, opacity: 0 });
+    m.material.toneMapped = false;
+    rig.add(m);
+    motes.push(m);
+  }
+  const swirl = [];
+  for (let i = 0; i < SWIRL; i++) {
+    const m = makeGlowSprite({ color: ashCol, size: 0.32, opacity: 0 });
+    m.material.toneMapped = false;
+    rig.add(m);
+    swirl.push(m);
+  }
+  const floor = floorLight(C.gold, 0.06);
+  floor.scale.setScalar(0.9);
+  rig.add(floor);
+  const shadow = groundShadow(0.3, 0.3, { wide: 1.2 });
+  s.group.add(shadow);
+  const dtOf = clock();
+  const rakeAge = clip();
+  let goneK = 0; // 0 whole -> 1 gone into the ash
+  let spentK = 0;
+  let wasGone = false;
+  return {
+    group: s.group,
+    mats: s.mats,
+    setYaw: s.setYaw,
+    pose({ t, tick, moveK = 0, e }) {
+      const dt = dtOf(t);
+      const id = e ? e.id ?? 0 : 0;
+      const mode = e && e.mode ? e.mode : 'drift';
+      const gone = !!(e && e.veiled) || mode === 'gone';
+      const ra = rakeAge(e ? e.rakeTick : -1, dt);
+      const rake = ra < 0.5 ? Math.exp(-ra * 6) : 0;
+      // Fading: it collapses into the ash over a few frames; rising, it is
+      // back whole at once (the rake reads as a surprise).
+      if (gone) goneK = Math.min(1, goneK + dt * 5);
+      else goneK = 0;
+      if (wasGone && !gone) goneK = 0;
+      wasGone = gone;
+      const spent = mode === 'spent';
+      const until = e && e.spentUntil ? e.spentUntil : 0;
+      const creep = spent && tick != null && until > 0 ? clamp01(1 - (until - tick) / 40) : 1;
+      spentK = approach(spentK, spent ? 1 - creep : 0, 8, dt);
+      const g = smooth(goneK);
+      form.scale.set(1 - 0.85 * g, 1 - 0.95 * g, 1 - 0.85 * g);
+      form.rotation.y = g * 5.0;
+      form.visible = g < 0.97;
+      // Hover: a slow drifting bob; low and sagging spent.
+      hover.position.y = 0.35 + 0.06 * Math.sin(t * 1.7 + id) * (1 - spentK) - 0.12 * spentK;
+      spine.rotation.x = 0.18 + 0.15 * moveK + 0.4 * spentK - 0.15 * rake;
+      spine.rotation.z = 0.06 * Math.sin(t * 1.3 + id);
+      for (const { p, a, i } of skirt) {
+        // Flared out round the hips, trailing back as it drifts.
+        p.rotation.x = -0.3 * moveK + 0.12 * Math.sin(t * 3 + i * 1.3 + id) - 0.32 * Math.cos(a);
+        p.rotation.z = 0.12 * Math.sin(t * 2.5 + i * 2.1) + 0.32 * Math.sin(a);
+      }
+      // Arms: hanging and swaying; the rake swings both claws across; spent
+      // they dangle.
+      for (const { sh, fore, side } of arms) {
+        sh.rotation.x = -0.35 - 0.2 * Math.sin(t * 1.9 + side + id) * (1 - spentK) + 0.3 * spentK - 1.6 * rake;
+        sh.rotation.z = side * (0.25 + 0.6 * rake * (side > 0 ? 1 : 0.6)) - side * 0.1 * spentK;
+        fore.rotation.x = -0.4 - 0.5 * rake + 0.3 * spentK;
+      }
+      head.rotation.x = -0.15 + 0.3 * spentK;
+      // The ember: a steady smoulder, white-hot on the rake, dim spent.
+      const flick = 0.06 * Math.sin(t * 8 + id) + 0.04 * Math.sin(t * 19 + id * 2);
+      const heat = (0.55 + flick) * (1 - 0.8 * spentK) + 0.5 * rake;
+      heatColor(emberM.color, Math.min(1, heat));
+      heatColor(emberGlow.material.color, Math.min(0.9, heat));
+      emberGlow.material.opacity = clamp01(0.12 + 0.35 * heat) * (1 - g);
+      emberGlow.scale.setScalar(0.45 + 0.4 * heat);
+      floor.material.opacity = clamp01(0.03 + 0.1 * heat) * (1 - g);
+      eyeGlow.material.opacity = (0.16 + 0.06 * Math.sin(t * 2 + id)) * (1 - g);
+      // Motes rising off it while it is whole.
+      for (let i = 0; i < motes.length; i++) {
+        const u = (t * 0.45 + i / WRAITH_MOTES + id * 0.17) % 1;
+        const m = motes[i];
+        m.position.set(0.18 * Math.sin(i * 2.3 + t * 0.6), 0.4 + u * 1.4, -0.1 + 0.15 * Math.cos(i * 1.9 + t * 0.5));
+        m.material.opacity = 0.35 * (1 - u) * (1 - g) * (1 - 0.6 * spentK);
+      }
+      // The swirl: a turning column of ash, thick as it fades, thinning to a
+      // faint wisp while it is gone; a burst of it when it rises.
+      const sw = gone ? 0.25 + 0.75 * (1 - g) * g * 4 : 0.9 * rake;
+      for (let i = 0; i < swirl.length; i++) {
+        const a = t * 4.5 + (i / SWIRL) * Math.PI * 2;
+        const h = (i / SWIRL + t * 0.35) % 1;
+        const r = 0.18 + 0.2 * h + 0.3 * rake;
+        const m = swirl[i];
+        m.position.set(Math.cos(a) * r, 0.1 + h * 0.9, Math.sin(a) * r);
+        m.material.opacity = clamp01(sw * (1 - h) * 0.55);
+        m.scale.setScalar(0.25 + 0.25 * h);
+      }
+      shadow.material.opacity = 0.22 * (1 - g);
     },
   };
 }

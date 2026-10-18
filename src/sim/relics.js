@@ -103,6 +103,11 @@ export const RELICS = Object.freeze({
   // relic once found (data/unlocks.js builds one per relic).
   weathercock_plume: { name: 'Weathercock Plume', rarity: 'common', text: 'Dodges recover 15% faster, and party hits knock enemies back 30% farther.', dodgeCd: -0.15, kb: 0.3 },
   hushbell: { name: 'Hushbell', rarity: 'rare', text: 'The party deals 25% more damage to an enemy while its attack warning is up.', hush: Object.freeze({ dealt: 0.25 }) },
+  // THE EMBER KILN (content plan 5 slice 9, docs/RELICS.md "The Kiln's
+  // pair"): greaves for the kiln floor, and an ingot that heats as the
+  // party goes deeper. No dice either.
+  slag_greaves: { name: 'Slag Greaves', rarity: 'common', text: 'Hazards hurt the party 35% less: vents, falling rock, gravefire, spurs and the rest.', greaves: Object.freeze({ taken: -0.35 }) },
+  founders_ingot: { name: "Founder's Ingot", rarity: 'rare', text: 'Each combat room the party clears heats it: +5% party damage, up to +25%. It cools when a new level begins.', ingot: Object.freeze({ per: 0.05, max: 5 }) },
   // Batch 5 (docs/RELICS.md "Batch 5"): relics that answer content plan 4
   // (tonics and bombs, shrines, the second champions, the Spire's gust
   // vents, the bells and the vows). No dice: every one reads the bus or a
@@ -259,6 +264,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let tenorKills = 0; // batch 5: Tenor Bell's count of this room's kills
   let flaskUsed = []; // batch 5: seats whose flask already refilled this room
   let stormNext = -1; // small fixes 5: the tick Stormglass gathers its own gust (-1: none this room)
+  let heat = 0; // the Ember Kiln: Founder's Ingot's combat rooms cleared this level
 
   const has = (id) => owned.includes(id);
   const sum = (key) => owned.reduce((s, id) => s + (RELICS[id][key] ?? 0), 0);
@@ -304,6 +310,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     tenorKills = 0;
     flaskUsed = [];
     stormNext = -1;
+    heat = 0;
     if (combat && typeof combat.setMods === 'function') combat.setMods(on ? mods : null);
   }
 
@@ -335,13 +342,17 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       // Vow level).
       if (has('trophy_cord')) m += RELICS.trophy_cord.trophy.per * Math.min(RELICS.trophy_cord.trophy.max, trophies);
       if (has('oathkeepers_brand')) m += RELICS.oathkeepers_brand.brand.per * Math.min(RELICS.oathkeepers_brand.brand.max, vowLevel());
+      // THE EMBER KILN: Founder's Ingot (combat rooms cleared this level).
+      if (has('founders_ingot')) m += RELICS.founders_ingot.ingot.per * Math.min(RELICS.founders_ingot.ingot.max, heat);
       return m;
     },
-    takenMul: () =>
+    // `delivery`: the hit's (THE EMBER KILN: Slag Greaves turns hazards).
+    takenMul: (delivery = null) =>
       Math.max(
         0.1,
         1 +
           sum('taken') +
+          (delivery === 'hazard' && has('slag_greaves') ? RELICS.slag_greaves.greaves.taken : 0) +
           majorSum('taken') +
           (has('cinder_pact') && cursedHere() ? RELICS.cinder_pact.pact.taken : 0) +
           (has('vigil_candle') && (roomMode === 'escort' || roomMode === 'hold') ? RELICS.vigil_candle.vigil.taken : 0),
@@ -1017,6 +1028,12 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       events.emit(tick, 'relic_proc', { relic: 'huntsmans_horn', room, mode: objective, stage: 'won', glint: RELICS.huntsmans_horn.horn.glint, x: r2(player.x), z: r2(player.z) });
     }
     if (has('grave_coin')) gainGlint(RELICS.grave_coin.glint, 'relic_grave_coin');
+    // THE EMBER KILN: Founder's Ingot heats with each combat room cleared
+    // (never the boss room, never a forfeited one).
+    if (has('founders_ingot') && !boss && !forfeited && heat < RELICS.founders_ingot.ingot.max) {
+      heat += 1;
+      events.emit(tick, 'relic_proc', { relic: 'founders_ingot', room, heat, dealt: r2(RELICS.founders_ingot.ingot.per * heat), x: r2(player.x), z: r2(player.z) });
+    }
     if (has('hearthstone')) {
       for (const e of partyBodies()) if (e.hp > 0 && e.hp < e.maxHp) combat.applyHeal(e, e.maxHp * RELICS.hearthstone.clearHeal, { source: 'hearthstone' });
       events.emit(tick, 'relic_proc', { relic: 'hearthstone', x: r2(player.x), z: r2(player.z) });
@@ -1163,6 +1180,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     tenorKills = 0;
     flaskUsed = [];
     stormNext = -1;
+    heat = 0; // the Ingot cools
   }
 
   // Shop: the Healer's shelf prices with Peddler's Seal.
@@ -1219,6 +1237,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       ...(tenorKills ? { tenorKills } : {}),
       ...(flaskUsed.length ? { flaskUsed: [...flaskUsed] } : {}),
       ...(stormNext >= 0 && has('stormglass') ? { stormNext } : {}),
+      ...(heat ? { heat } : {}),
       ...(pending.length ? { pending: pending.map((p) => ({ ...p })) } : {}),
     };
   }
@@ -1251,6 +1270,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     tenorKills = Number.isFinite(d.tenorKills) ? d.tenorKills : 0;
     flaskUsed = Array.isArray(d.flaskUsed) ? d.flaskUsed.filter(Number.isInteger) : [];
     stormNext = Number.isFinite(d.stormNext) ? d.stormNext : -1;
+    heat = Number.isFinite(d.heat) ? d.heat : 0;
   }
 
   return {
@@ -1402,6 +1422,17 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (pool.length === 0) return null;
       const id = weightedTake(stream, pool);
       gain(id, source, at);
+      return id;
+    },
+    // THE EMBER KILN (content plan 5 slice 9): the newest relic of a rarity
+    // (the Forge Shrine melts down the newest common one).
+    newestOf: (rarity) => (on ? [...owned].reverse().find((id) => RELICS[id].rarity === rarity) ?? null : null),
+    loseNewestOf(source, rarity) {
+      if (!on) return null;
+      const i = owned.map((id) => RELICS[id].rarity).lastIndexOf(rarity);
+      if (i < 0) return null;
+      const [id] = owned.splice(i, 1);
+      events.emit(getTick(), 'relic_lose', { relic: id, rarity: RELICS[id].rarity, source, owned: owned.length, x: r2(player.x), z: r2(player.z) });
       return id;
     },
     loseNewest(source) {

@@ -318,7 +318,7 @@ const trade = (level, prep) => {
   const s = X.run.cmd('shrineState', []);
   check(s?.used === true && s.id === 'spire' && heroes(X)[0].blessing?.id === 'tailwind', 'a capture keeps the shrine spent and the blessing on');
 }
-check(Object.keys(SHRINES).length === 5 && Object.values(SHRINES).every((S) => S.gift === 'relic' || BLESSINGS[S.gift]), 'five shrines, every gift a blessing or the relic pick');
+check(Object.keys(SHRINES).length === 6 && Object.values(SHRINES).every((S) => S.gift === 'relic' || BLESSINGS[S.gift]), 'six shrines (the Kiln Forge Shrine since plan 5 slice 9), every gift a blessing or the relic pick');
 
 console.log(`\n${passes.length} passed, ${fails.length} failed`);
 process.exit(fails.length ? 1 : 0);

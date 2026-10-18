@@ -724,6 +724,8 @@ const RELIC_PROC_CUE = Object.freeze({
   trophy_cord: { cue: 'reward', pitch: 0.8 },
   oathkeepers_brand: { cue: 'zone_spawn', pitch: 0.8 },
   tenor_bell: { cue: 'bw_great', pitch: 0.7 },
+  // THE EMBER KILN (content plan 5 slice 9): the ingot heating, an anvil ring.
+  founders_ingot: { cue: 'kn_crust', pitch: 1.3 },
 });
 // Twin Fuse's lit fuse and the flask's pour stay quiet: their payoff speaks.
 const RELIC_PROC_QUIET = new Set(['lit', 'pour']);

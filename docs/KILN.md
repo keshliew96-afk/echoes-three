@@ -30,7 +30,7 @@ With the flag on:
 | Difficulty | the Spire's numbers (difficulty.js index 6 copies index 5) |
 | Boss room | the Firing Floor meets the Bellfounder or the Cinderback (slice 8, docs/KILN_BOSSES.md) |
 | Starter kit (starting there) | the Spire's: +2 skills, 48 nodes, 4 legendaries, 96 Glint |
-| Other | a Hunt room's quarry is a husk; the champion room meets the Spire's champions (slice 9 brings its own); Embers per clear 100, score multiplier 3.0 |
+| Other | a Hunt room's quarry is a husk; the champion room meets the Kiln's own two (slice 9, docs/CHAMPIONS.md); Embers per clear 100, score multiplier 3.0 |
 
 ## Enemies
 
@@ -42,6 +42,20 @@ All four are plain entity data with no RNG of their own, so saves, co-op snapsho
 | **Slag Golem** (`slag`) | brute | A slag heap round a molten core (64 hp), crusted: x0.6 damage taken and x0.3 knockback. In close it slams a ring r 1.4 in front of itself (56 ticks, 14 damage) and leaves a slag pool (r 1.3, 30 % slow, 4 s). The slam cracks the crust: for 2 s it takes x1.4. Every 210 ticks. |
 | **Bellows Imp** (`bellows`) | stoker | Keeps 2.6-3.8 u off and pumps its bellows behind a cone r 3.4, half-angle 30°, for 60 ticks, then fans sparks down it for 8. It backs off from a hero up close, and a stun mid-pump chokes the fan. hp 26, every 260 ticks. |
 | **Cinder Moth** (`cindermoth`) | kindler | A flier (12 hp) that flutters straight in, kindles a ring r 1.2 round itself for 48 ticks and flares for 6. The flare burns it out: 2.5 s spent, drifting away at x2 damage taken, then it relights. |
+
+Slice 9 (v0.5.299) added two more, from room 3 on (campaign only, like the four):
+
+| Enemy | Role | What it does |
+| --- | --- | --- |
+| **Coal Hurler** (`hurler`) | mortar | A soot imp (22 hp) with a sack of coals that keeps 3.6-5.2 u off and lobs it at a hero 2.4-6.8 u away: a ring r 1.3 on their spot for 66 ticks, then 9 and an ash patch (r 1.0, 30 % slow, 2.5 s). Every 240 ticks. A stun mid-heave makes it drop the sack. |
+| **Ash Wraith** (`ashwraith`) | stalker | A shape of ash (24 hp) that scatters (untouchable, no knockback) and opens a ring r 1.3 1.4 u behind a hero for 60 ticks, then reforms there and rakes for 11. Then it is spent for 1.5 s: half speed and x1.3 damage taken. Every 260 ticks. |
+
+## The Kiln's event, shrine and relics (slice 9)
+
+- **Molten Bell** (event, Kiln only): pour Glint into a half-cast bell, 40 for each relic, up to three (docs/EVENT_ROOMS.md).
+- **Forge Shrine**: melts the party's newest common relic for Tempered, +25 % damage and 20 % less damage taken for 60 s (docs/SHRINES.md).
+- **Slag Greaves** and **Founder's Ingot** (docs/RELICS.md).
+- Deeds **Through the Fire**, **Kiln Crowns** and **Quench the Founder**, and the tints **Quench Steam** and **Cinderwing** (docs/UNLOCKS.md).
 
 ## Cinder vents
 
@@ -61,4 +75,5 @@ A new hazard, `vent` in src/sim/hazards.js: a grate over the fire. Every 420 tic
 
 - `node tools/act6-probe.mjs` (headless): 41 checks over the wiring, the roads, the four enemies, the vent, the governor, Kiln runs and the campaign won there, the Daily on the Spire road, and save and snapshot round trips.
 - `node tools/gntM4b-layoutcheck.mjs`: the six layouts' placements are clear.
+- `node tools/kiln-champions-events-probe.mjs` (headless): slice 9's champions, enemies, event, shrine, relics, deeds and tints.
 - The nine goldens (`node tools/gntM2-goldens.mjs`) match: nothing outside the flag changed.
