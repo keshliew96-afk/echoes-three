@@ -313,8 +313,11 @@ How they hook in:
   `endOfTick` lands eight licks through the pipeline (`source: 'kiln_coal'`,
   shape `burn`). Rekindled Heart's burst lights through the same map.
 - Pumice Soles: enemies.js `stepSlicks` asks `mods.slickProof(body, slick)`
-  before slowing a party body (a throttled `relic_proc` for its beat). Ice
-  slip floors are not slicks and still slide.
+  before slowing a party body (a throttled `relic_proc` for its beat). Since
+  Small fixes 8 it covers the slip floors too (wet flagstone, grave frost,
+  heart crystal): `mods.slipProof(body)` lets world.js and the human seats'
+  `stepHumanMove` (host and guest predictor, `slipProof` option) skip the
+  slide, with the same beat while the seat stands on a patch.
 - Wing Bone reads `dash_end` (the player) and `ally_dodge` (an AI seat,
   queued through `later` at the dodge's end).
 - Crown Shard reads `mods.onKill` beside Bounty Writ (both pay on the same

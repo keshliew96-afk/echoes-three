@@ -68,14 +68,15 @@ export function moveOf(index) {
 // Slick floor (sim/movement.js slipFollow): the step is followed by the slip
 // rule, per input frame, on the host and in the guest's predictor alike. A
 // dash is taken as is and becomes the momentum it slides on afterwards.
-export function stepHumanMove(body, move, speed) {
+// `slipProof`: the body never slides (Small fixes 8: Pumice Soles).
+export function stepHumanMove(body, move, speed, { slipProof = false } = {}) {
   const x0 = body.x;
   const z0 = body.z;
   if (body.dashTicksLeft > 0) {
     const { hit } = sweptStep(body, body.dashVel.x, body.dashVel.z, body.radius);
     body.dashTicksLeft -= 1;
     if (hit) body.dashTicksLeft = 0;
-    if (body.slipVx !== undefined || hasSlip()) slipFollow(body, x0, z0, { snap: body.dashTicksLeft > 0 });
+    if (body.slipVx !== undefined || hasSlip()) slipFollow(body, x0, z0, { snap: body.dashTicksLeft > 0, proof: slipProof });
     return { dashed: true, ended: body.dashTicksLeft === 0, wall: hit, moved: true };
   }
   let moved = false;
@@ -84,7 +85,7 @@ export function stepHumanMove(body, move, speed) {
     moved = true;
   }
   // A slide is not a walk (`moved` stays the body's own step: idle pose).
-  if (body.slipVx !== undefined || hasSlip()) slipFollow(body, x0, z0);
+  if (body.slipVx !== undefined || hasSlip()) slipFollow(body, x0, z0, { proof: slipProof });
   return { dashed: false, ended: false, wall: false, moved };
 }
 

@@ -37,7 +37,9 @@ const MAX_CORRECTION_PER_FRAME = 0.1;
 // (sim/allycast.js seatDisplacement: own position, own aim at the press, the
 // resolved skill, the walls; never a hostile position), started on the
 // press frame and stepped per input frame exactly like the dodge.
-export function createOwnSeat({ seat, kit = null, dodgeCd = () => HUMAN_DODGE.cooldownTicks }) {
+// `slipProof`: the party owns Pumice Soles (Small fixes 8), so the predicted
+// body never slides on a slip floor, as on the host.
+export function createOwnSeat({ seat, kit = null, dodgeCd = () => HUMAN_DODGE.cooldownTicks, slipProof = () => false }) {
   // PARTY LINEUP (data/lineup.js): the seat's class follows the run's lineup.
   const baseSpeed = () => {
     const classId = classOfSeat(seat);
@@ -153,7 +155,8 @@ export function createOwnSeat({ seat, kit = null, dodgeCd = () => HUMAN_DODGE.co
   // One input frame on body b at host tick t (host order: move, then the
   // discrete dodge start for the next frame).
   function applyFrame(b, si, t) {
-    for (const mv of si.moves) stepHumanMove(b, mv, speedAt(b, t));
+    const proof = !!slipProof();
+    for (const mv of si.moves) stepHumanMove(b, mv, speedAt(b, t), { slipProof: proof });
     if (b.hp > 0 && si.aim) {
       const d = aimDir(b, si.aim, { x: b.faceX, z: b.faceZ });
       b.faceX = d.x;

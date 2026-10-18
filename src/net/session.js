@@ -700,6 +700,18 @@ export function createNetSession(ctx) {
     return dodgeCooldownTicks(HUMAN_DODGE.cooldownTicks, ids, vowDodge);
   }
 
+  // Small fixes 8: does the party own this relic (read from the replicated
+  // run view; Pumice Soles keeps the guest's predicted body off the slide)?
+  function partyOwns(id) {
+    try {
+      const R = rawRunSystem();
+      const rl = R && typeof R.relics === 'function' ? R.relics() : R && R.view ? R.view().relics : null;
+      return !!(rl && Array.isArray(rl.owned) && rl.owned.some((o) => o.id === id));
+    } catch {
+      return false;
+    }
+  }
+
   // ---------------------------------------------------- audio cue hooks --
   // New sim events (a human seat's dodge / denial): spatial dodge whoosh;
   // the deny beep only for the seat that pressed (never the host's Healer).
@@ -845,7 +857,7 @@ export function createNetSession(ctx) {
       dec: createSnapshotClient(),
       replica: createReplica({ world, registry, bus, scene, restoreShapes, restoreMovement, log }),
       interp: createInterpClock({ snapshotEveryTicks: net.snapshotEveryTicks || SNAPSHOT_EVERY_TICKS }),
-      own: createOwnSeat({ seat, kit: () => seatKit(seat), dodgeCd: () => partyDodgeCd() }),
+      own: createOwnSeat({ seat, kit: () => seatKit(seat), dodgeCd: () => partyDodgeCd(), slipProof: () => partyOwns('pumice_soles') }),
       shadow: null,
       seq: 0,
       frames: [],

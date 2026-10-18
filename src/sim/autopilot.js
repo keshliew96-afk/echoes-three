@@ -35,9 +35,7 @@
 import { SKILLS } from './skills.js';
 import { emptySnapshot } from '../core/intents.js';
 import { SKILL_SLOTS, DODGE } from '../core/constants.js';
-import { STEER_OFF_POOLS } from '../data/classes.js';
-
-const STEER_OFF = new Set(STEER_OFF_POOLS);
+import { steersOff } from '../data/classes.js';
 
 const FOLLOW_U = 1.5; // hold within 1.5 u of the party centroid
 const HEAL_BELOW = 0.7; // cast heals when the neediest member is below 70%
@@ -127,8 +125,9 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
         else out.push({ kind: 'ring', x: e.x, z: e.z, r: (e.radius ?? 1.0) + 0.3, left });
       }
       // Small fixes 7: a Cinder patch, a Molten death pool, a Furnace Knight
-      // slag pool. Never a dodge (no landing tick): the bot walks out of it.
-      if (e.kind === 'slick' && STEER_OFF.has(e.variant)) out.push({ kind: 'ring', x: e.x, z: e.z, r: e.radius + 0.3, left: Infinity });
+      // slag pool; Small fixes 8: a champion's thorn, moss, ash or glass.
+      // Never a dodge (no landing tick): the bot walks out of it.
+      if (steersOff(e)) out.push({ kind: 'ring', x: e.x, z: e.z, r: e.radius + 0.3, left: Infinity });
     }
     return out;
   }

@@ -35,6 +35,7 @@ import { CONSUMABLES, shareFor } from './consumables.js';
 import { isChampionKind } from './champions.js';
 import { DODGE } from '../core/constants.js';
 import { hash32 } from './affixes.js';
+import { slipAt } from './movement.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -395,6 +396,15 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         solesAt[seat] = tick;
         events.emit(tick, 'relic_proc', { relic: 'pumice_soles', target: t.id, seat, variant: s.variant ?? null, x: r2(t.x), z: r2(t.z) });
       }
+      return true;
+    },
+    // Small fixes 8: Pumice Soles keeps a slip floor (wet flagstone, grave
+    // frost, heart crystal) from sliding the party too. sim/world.js and the
+    // human seats' step (sim/allies.js) ask before the slide; the beat shows
+    // while the seat stands on a patch.
+    slipProof(t) {
+      if (!has('pumice_soles')) return false;
+      if (slipAt(t.x, t.z)) mods.slickProof(t, { variant: 'slip' });
       return true;
     },
     // `delivery`: the hit's (THE EMBER KILN: Slag Greaves turns hazards).

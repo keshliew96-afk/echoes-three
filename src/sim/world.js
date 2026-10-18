@@ -553,6 +553,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // a knockback is taken whole and slides on after it ends. Rooms without
     // a patch skip this entirely (no field is ever written).
     if (slick) {
+      // Small fixes 8: Pumice Soles, the party never slides.
+      const M = combat.getMods ? combat.getMods() : null;
+      const soles = M && M.active() && M.slipProof ? M : null;
       for (const e of registry.all()) {
         if (e.flier || e.burrowed || e.boss === true || e.kind === 'stag') continue;
         const party = e.partyIndex !== undefined;
@@ -562,7 +565,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
         const snap = kb || e.dashTicksLeft > 0 || !!(e.skillDash && e.skillDash.ticksLeft > 0);
         // AI party members step carefully: they slide, but recover fast.
         const gripMul = party && e !== player && e.controller !== 'human' ? SLIP.aiGripMul : 1;
-        slipFollow(e, e.px, e.pz, { snap, gripMul });
+        const proof = party && soles !== null && soles.slipProof(e);
+        slipFollow(e, e.px, e.pz, { snap, gripMul, proof });
       }
     } else {
       for (const e of registry.all()) if (e.slipVx !== undefined && e.controller !== 'human') slipFollow(e, e.px, e.pz);

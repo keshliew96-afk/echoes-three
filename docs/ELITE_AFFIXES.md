@@ -69,7 +69,12 @@ elite carries and how often elites appear are unchanged.
   a Molten death pool or a Furnace Knight slag pool (`STEER_OFF_POOLS` in
   `src/data/classes.js`, `cinderClear` in `src/sim/allies.js`, keeping
   inside the leash) and the autopilot walks out of one (a zone with no
-  landing tick, so never a dodge); a human seat is never steered.
+  landing tick, so never a dodge); a human seat is never steered. Small
+  fixes 8 adds a champion's slow-only patches (thorn, moss, ash, glass:
+  `STEER_OFF_CHAMPION_POOLS`, read through `steersOff`; spawnSlick stamps
+  `champion` on a champion's patch, so a Thornling's or a Coal Hurler's is
+  still walked through) and keeps a seat's chosen way out (`poolExit`)
+  while it stays dry, so a wide pool no longer flips it between two turns.
 - Colours: gale aqua, rose quartz, cold bell iron (kept off the Bellwright's
   verdigris), banked-coal red (darker than Ember and never the Kiln's gold).
 - The **Signbreaker** deed still counts the first eight only.

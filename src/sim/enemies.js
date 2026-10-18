@@ -367,6 +367,8 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       untilTick: tick + o.ticks,
       ownerId: owner ? owner.id : null,
       ...(o.variant ? { variant: o.variant } : {}),
+      // Small fixes 8: a champion's patch (the AI seats step off it).
+      ...(owner && owner.champion ? { champion: true } : {}),
     });
     events.emit(tick, 'slick_spawn', { id: s.id, x: r2(x), z: r2(z), radius: o.radius, untilTick: s.untilTick, ...(o.variant ? { variant: o.variant } : {}) });
     return s;

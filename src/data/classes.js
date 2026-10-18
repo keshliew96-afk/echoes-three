@@ -259,6 +259,16 @@ export const AI_EVADE = Object.freeze({ margin: 0.3, exit: 0.2 });
 // Small fixes 7: the floor pools (slick variants) every AI seat and the
 // autopilot step off: Cinder patches, Molten death pools, Furnace Knight slag.
 export const STEER_OFF_POOLS = Object.freeze(['cinder', 'molten', 'slag']);
+// Small fixes 8: a champion's slow-only patches too (the Briar King's thicket,
+// the Moss Hart's moss, the Gravebell Ringer's ash, the Glassblower's glass).
+// Only a champion's own: a Thornling's or a Coal Hurler's patch of the same
+// look is still walked through. sim/enemies.js spawnSlick stamps `champion`.
+export const STEER_OFF_CHAMPION_POOLS = Object.freeze(['thorn', 'moss', 'ash', 'glass']);
+const STEER_OFF_SET = new Set(STEER_OFF_POOLS);
+const STEER_OFF_CHAMPION_SET = new Set(STEER_OFF_CHAMPION_POOLS);
+// Does an AI seat (and the autopilot) step off this floor patch?
+export const steersOff = (s) =>
+  s.kind === 'slick' && (STEER_OFF_SET.has(s.variant) || (s.champion === true && STEER_OFF_CHAMPION_SET.has(s.variant)));
 // Balance pass: a ranged AI seat (the Archer) backs off a hostile that gets
 // inside `minU`, to `toU` from it, instead of standing and trading blows with
 // its 80 HP body (the stand-off rule only ever closed distance).
