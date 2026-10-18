@@ -64,8 +64,11 @@ elite carries and how often elites appear are unchanged.
   Frozen one does.
 - Heroes ignore knockback, so the gust's throw is a short walk the sim takes
   for them (`affixShove` on the hero, the champions' throw rule).
-- The AI seats leave all three rings (they are affix globs); nobody avoids
-  Cinder patches on purpose.
+- The AI seats leave all three rings (they are affix globs). Since Small
+  fixes 7 every AI seat (melee too) moves its spot off a live Cinder patch
+  (`cinderClear` in `src/sim/allies.js`) and the autopilot walks out of one
+  (a zone with no landing tick, so never a dodge); a human seat is never
+  steered.
 - Colours: gale aqua, rose quartz, cold bell iron (kept off the Bellwright's
   verdigris), banked-coal red (darker than Ember and never the Kiln's gold).
 - The **Signbreaker** deed still counts the first eight only.

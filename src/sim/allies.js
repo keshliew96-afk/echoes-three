@@ -878,6 +878,39 @@ export function createAllySystem({
 
   const isBossBody = (e) => e.boss === true || e.kind === 'stag';
 
+  // ELITE AFFIXES (Small fixes 7): the spot (x, z) moved out of every live
+  // Cinder patch that would hold this seat, straight out from the patch's
+  // centre (from the seat's side when the spot is dead centre). A few passes
+  // settle two patches that touch. Unchanged when no patch is near.
+  function cinderClear(a, x, z) {
+    const patches = [];
+    for (const s of registry.all()) if (s.kind === 'slick' && s.variant === 'cinder' && s.burn > 0) patches.push(s);
+    if (patches.length === 0) return { x, z };
+    for (let pass = 0; pass < 3; pass++) {
+      let moved = false;
+      for (const s of patches) {
+        const R = s.radius + AI_EVADE.margin; // a patch burns the body whose centre stands in it
+        const d = Math.hypot(x - s.x, z - s.z);
+        if (d >= R) continue;
+        let ux = d > 1e-4 ? (x - s.x) / d : a.x - s.x;
+        let uz = d > 1e-4 ? (z - s.z) / d : a.z - s.z;
+        const ul = Math.hypot(ux, uz);
+        if (ul < 1e-4) {
+          ux = a.id % 2 === 0 ? 1 : -1;
+          uz = 0;
+        } else {
+          ux /= ul;
+          uz /= ul;
+        }
+        x = s.x + ux * (R + AI_EVADE.exit);
+        z = s.z + uz * (R + AI_EVADE.exit);
+        moved = true;
+      }
+      if (!moved) break;
+    }
+    return { x, z };
+  }
+
   // AUTOPILOT AND ENDLESS (v0.5.260): a boss's ring telegraph (the Stag's
   // Antler Quake, a boss slam) covering this seat: every seat steps straight
   // out of it (or up to 90 degrees off, inside the leash), or null.
@@ -1089,6 +1122,14 @@ export function createAllySystem({
       if (ev) {
         gx = ev.x;
         gz = ev.z;
+      }
+      // ELITE AFFIXES (Small fixes 7): a Cinder elite's burning patches. Every
+      // seat's spot is moved off them (melee too: the patches trail behind a
+      // fleeing elite, right where a chasing seat walks).
+      if (engageOn()) {
+        const off = cinderClear(a, gx, gz);
+        gx = off.x;
+        gz = off.z;
       }
       const gdx = gx - anchor.x;
       const gdz = gz - anchor.z;

@@ -59,6 +59,14 @@ old one; each blessing lasts 60 s and lies on every hero.
 - The Forge Shrine (content plan 5 slice 9) refuses a party with no common
   relic. The melted relic leaves for the run (`relic_lose`, source `forge`).
   Its rig is a brick forge with an anvil and a crucible in swaying tongs.
+  Tempered reads for its whole 60 s (Small fixes 7, render only,
+  `src/render/vfx/shrinefx.js`): a held Kiln Gold body glow that breathes,
+  a heat pool and a closing forge hoop at the feet, rising gold flakes and
+  a falling anvil spark now and then; it gutters in the last 5 s. The other
+  blessings keep their motes.
+- An escort room's pilgrim road is built after the shrine stands (the
+  blockers are refreshed first), so it bends round the shrine instead of
+  running a stop into it (Small fixes 7).
 - Campaign runs only (Endless and the Daily included); never Boss Rush, the
   tutorial or the legacy single-level run, so the nine goldens never see one.
 

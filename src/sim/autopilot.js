@@ -123,6 +123,9 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
           out.push({ kind: 'lane', fx: e.lane.x0, fz: e.lane.z0, dx: e.lane.x1 - e.lane.x0, dz: e.lane.z1 - e.lane.z0, len: 1, w: (e.lane.w ?? 1.4) / 2 + 0.3, left, raw: true });
         else out.push({ kind: 'ring', x: e.x, z: e.z, r: (e.radius ?? 1.0) + 0.3, left });
       }
+      // ELITE AFFIXES (Small fixes 7): a Cinder patch burns while it lasts.
+      // Never a dodge (no landing tick): the bot walks out of it.
+      if (e.kind === 'slick' && e.variant === 'cinder' && e.burn > 0) out.push({ kind: 'ring', x: e.x, z: e.z, r: e.radius + 0.3, left: Infinity });
     }
     return out;
   }

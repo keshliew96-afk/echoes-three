@@ -422,10 +422,18 @@ function parkParty(W, x = 0, z = 4.5) {
     // Autopilot and Endless (v0.5.260): the carried party's path through
     // Level III no longer meets a Frozen elite by chance on these seeds, so
     // one joins room 1 (the governor still has to stagger it with the rest).
+    // Small fixes 7: it is made sturdy and steady (an elite kept knocked back
+    // holds its rooted powers off), so it lives to charge its nova; the seats
+    // stepping off Cinder patches had changed which later rooms the carried
+    // party reached, and the old count leaned on a Frozen elite met by chance.
     let joined = false;
     for (let i = 0; i < 9000; i++) {
       if (!joined && W.run.view().phase === 'combat') {
-        W.world.cmd('spawn', 'boar', 0, -3, { elite: true, affixes: ['frozen'] });
+        const fz = W.registry.byId(W.world.cmd('spawn', 'boar', 0, -3, { elite: true, affixes: ['frozen'] }));
+        if (fz) {
+          fz.hp = fz.maxHp = 400;
+          fz.knockbackable = false;
+        }
         joined = true;
       }
       W.clock.stepOnce((t) => W.world.step(t, ap.intents(t, emptySnapshot())));
