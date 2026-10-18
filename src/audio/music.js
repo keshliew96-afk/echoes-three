@@ -232,6 +232,17 @@ const INSTR = {
       k.tone(d, t, { f0: f * 1.47, a: 0.004, d: 0.5, gain: v * 0.08 }),
       k.noise(d, t, { type: 'bandpass', f0: 1700, f1: 900, q: 2.2, a: 0.004, d: 0.09, gain: v * 0.22 })
     ),
+  // The Hourwarden's own (Small fixes 6): the clock's hour bell — a bright
+  // bronze strike on the octave ratio (a tower bell, not the Barrow's grave
+  // toll), a quieter fifth ringing above it, the hum an octave under and the
+  // hammer's dry click as it falls on the bell.
+  clocktoll: (k, d, t, f, v, len) =>
+    Math.max(
+      k.bell(d, t, { f, ratio: 2, index: 1.6, d: Math.max(0.9, len + 0.8), gain: v * 0.62 }),
+      k.tone(d, t, { f0: f * 1.5, a: 0.003, d: 0.6, gain: v * 0.08 }),
+      k.tone(d, t, { f0: f * 0.5, a: 0.01, d: Math.max(0.7, len + 0.5), gain: v * 0.22 }),
+      k.noise(d, t, { type: 'highpass', f0: 4200, q: 0.8, a: 0.001, d: 0.025, gain: v * 0.3 })
+    ),
   // Act VI: the smith's hammer on the anvil — a hard, high, inharmonic ring
   // (FM on a non-integer ratio, short), the iron's thud under it and the
   // strike's click; the ring is a fixed pitch like a real anvil.
@@ -555,13 +566,15 @@ export const BOSS_MUSIC = Object.freeze({
   // Content plan 5 slice 1: the Hourwarden keeps the spire theme's key and
   // tempo. Its groove is the clock: a bell ostinato that ticks on every
   // step and tocks a fourth lower, the drum on the quarters like an
-  // escapement, and a heavy toll lead that strikes the hours.
+  // escapement, and a heavy toll lead that strikes the hours on its own hour
+  // bell, 'clocktoll' (Small fixes 6; before, it named the 'toll' instrument
+  // the engine never had, so the lead stayed silent).
   hourwarden: {
     theme: 'spire',
     prog: [0, 3, 5, 0],
     arp: { instr: 'bell', pattern: [4, 0, 4, 0, 4, 0, 5, 1] },
     drum: { 0: 1, 4: 0.6, 8: 0.9, 12: 0.6 },
-    lead: 'toll',
+    lead: 'clocktoll',
     motif: [[0, 0, 4], [4, 0, 4], [8, 0, 4], [16, 4, 2], [18, 3, 2], [20, 1, 2], [22, 0, 6]],
   },
   // Content plan 5 slice 8 (docs/KILN_BOSSES.md): both keep the kiln theme's

@@ -7,8 +7,9 @@
 //            grip, frost's slide hiss), its barricades the 'belfry' wall;
 //            no other land's rooms change
 //   raven    the Ash Raven's boss groove plays its lead on its own 'ashtoll'
-//            instrument (before, it named a 'toll' the music engine never
-//            had, so every lead note threw and the lead stayed silent)
+//            instrument and the Hourwarden's on its own 'clocktoll' (before,
+//            both named a 'toll' the music engine never had, so every lead
+//            note threw and the lead stayed silent)
 // Exit code 1 on any failure.
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -131,11 +132,14 @@ const toCombat = (w) => {
   const r = notes('ashraven', 'barrow');
   const lead = r.keys.filter((k) => k.startsWith('n:ashtoll:'));
   check('raven', `its lead plays: ${lead.length} lead notes a cycle, ${r.throws} throw`, lead.length > 0 && r.throws === 0);
-  // Every other boss groove's notes build as before (the Hourwarden's
-  // 'toll' lead is left as it was; see the PR's open choices).
+  check('raven', `the Hourwarden's groove names its own lead (${BOSS_MUSIC.hourwarden.lead})`, BOSS_MUSIC.hourwarden.lead === 'clocktoll');
+  const h = notes('hourwarden', 'spire');
+  const hl = h.keys.filter((k) => k.startsWith('n:clocktoll:'));
+  check('raven', `its lead plays: ${hl.length} lead notes a cycle, ${h.throws} throw`, hl.length > 0 && h.throws === 0);
+  // Every other boss groove's notes build as before.
   const bad = [];
   for (const [kind, v] of Object.entries(BOSS_MUSIC)) {
-    if (kind === 'ashraven' || kind === 'hourwarden') continue;
+    if (kind === 'ashraven' || kind === 'hourwarden') continue; // checked above
     const x = notes(kind, v.theme);
     if (x.throws) bad.push(`${kind} ${x.throws}`);
   }

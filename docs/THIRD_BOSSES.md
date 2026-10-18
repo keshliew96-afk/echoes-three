@@ -212,7 +212,9 @@ meets it.
   more damage: the party's punish window.
 - **Enrage** under 40 %: faster, more hours, shorter cooldowns.
 
-Identity is the full set: medal, sting, groove, beat cues and tells,
+Identity is the full set: medal, sting, groove (its lead strikes the hours
+on its own hour bell, `clocktoll`, since Small fixes 6; before, it named
+the missing `toll` instrument and stayed silent), beat cues and tells,
 signature VFX for every attack, its enrage and its death, the falling
 weights (`weight` globs in `src/render/enemies/extras.js`), a fall line, a
 rumour, a Hollow Voice line, a Journal page and the Chapter V summary. The
