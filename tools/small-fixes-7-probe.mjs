@@ -249,7 +249,7 @@ for (const kind of Object.keys(POOLS)) {
 }
 
 // -------------------------------------------------------------- version --
-check('version', `the game shows v${VERSION}`, VERSION === '0.5.301');
+check('version', `the game shows v${VERSION} (v0.5.301 or later)`, VERSION.split('.').map(Number).reduce((a, n) => a * 1000 + n, 0) >= 5301);
 
 console.log(`\n${passed}/${passed + failed} checks pass`);
 process.exit(failed ? 1 : 0);

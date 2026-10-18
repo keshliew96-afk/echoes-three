@@ -1869,6 +1869,12 @@
   ],
   "data": true
  },
+ "A cracked wall is marked the moment you enter its room, and any blow from a hero a person plays breaks it open.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "a Crash also stuns.": {
   "files": [
    "src/ui/run/cards.js"
@@ -3458,6 +3464,24 @@
   ],
   "data": true
  },
+ "Begin every run holding Crown Shard. Each elite the party fells pays 5 Glint for every power it carried.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Delver's Lantern. A cracked wall is marked the moment you enter its room, and any blow from a hero a person plays breaks it open.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Dusk Lens. Party critical hits blind the enemy for 1 s (never a boss; once per enemy every 3 s).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Ember Tooth. Party critical hits deal ×2 instead of ×1.5.": {
   "files": [
    "src/data/unlocks.js"
@@ -3536,6 +3560,12 @@
   ],
   "data": true
  },
+ "Begin every run holding Kiln Coal. Enemies a bomb bursts on catch fire: for 4 s they lose 3% of max HP every half second (2% for elites, 0.5% for champions and bosses).": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Kindling Coal. Party critical hits flare, dealing 8 damage to other enemies nearby (16 with Ember Tooth).": {
   "files": [
    "src/data/unlocks.js"
@@ -3584,6 +3614,12 @@
   ],
   "data": true
  },
+ "Begin every run holding Nightfall Veil. The first party blow on each enemy is always a critical hit.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
  "Begin every run holding Oathkeeper's Brand. +4% party damage for every Vow level the run wears (up to +40%).": {
   "files": [
    "src/data/unlocks.js"
@@ -3608,6 +3644,18 @@
   "data": true
  },
  "Begin every run holding Pilgrim's Lamp. Entering an event room heals the party for 30% of max HP and pays 10 Glint.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Pumice Soles. Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Rekindled Heart. Once a level, each hero who would fall rises with 40% of max HP in a burst of flame: 15 damage to enemies within 2.5 u, which catch fire for 4 s.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -3728,6 +3776,12 @@
   "data": true
  },
  "Begin every run holding Whetstone. The party deals 12% more damage.": {
+  "files": [
+   "src/data/unlocks.js"
+  ],
+  "data": true
+ },
+ "Begin every run holding Wing Bone. Each dodge ends in a dive: enemies within 1.4 u of where the hero lands take 10 damage and are knocked back.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -5524,6 +5578,13 @@
   ],
   "data": true
  },
+ "Crown Shard": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Crownbreaker": {
   "files": [
    "src/data/unlocks.js"
@@ -5934,6 +5995,13 @@
   ],
   "data": true
  },
+ "Delver's Lantern": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Depth": {
   "files": [
    "src/ui/run/daily.js"
@@ -6005,6 +6073,12 @@
  "DF": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Dimmed Lantern": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -6251,6 +6325,13 @@
   ],
   "data": true
  },
+ "Dusk Lens": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Duskwing": {
   "files": [
    "src/data/classes.js",
@@ -6289,10 +6370,22 @@
   ],
   "data": true
  },
+ "Each dodge ends in a dive: enemies within 1.4 u of where the hero lands take 10 damage and are knocked back.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Each door shows what waits behind it: the kind of fight and the reward for clearing it. In a run it leads to the next room. Here it ends the tutorial.": {
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "Each elite the party fells pays 5 Glint for every power it carried.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Each elite the party kills pays 6 Glint, plus 4 for every affix it carried.": {
   "files": [
@@ -6527,6 +6620,12 @@
   "files": [
    "src/ui/run/levels.js"
   ]
+ },
+ "Enemies a bomb bursts on catch fire: for 4 s they lose 3% of max HP every half second (2% for elites, 0.5% for champions and bosses).": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Enemies and the Stag: {hp} HP, {dmg} damage": {
   "files": [
@@ -6782,6 +6881,12 @@
   "files": [
    "src/ui/run/effects.js"
   ]
+ },
+ "Every elite carries one more power for the rest of the run.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Every fourth blow the Duskwing lands on a blinded enemy bites again for 8.": {
   "files": [
@@ -7488,6 +7593,12 @@
  "Floodgate: a warning cone in front of him floods for 18. Undertow: a ring under a hero wells up for 12 and leaves slick water. Below half health he rages.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest.": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -8522,6 +8633,12 @@
   ],
   "data": true
  },
+ "Heavy Crowns": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Heavy Slam": {
   "files": [
    "src/sim/allies.js"
@@ -9433,6 +9550,13 @@
  "kills explode · full heals burst — 50% within 1.2 u.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Kiln Coal": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -10540,6 +10664,13 @@
   ],
   "data": true
  },
+ "Nightfall Veil": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "no answer": {
   "files": [
    "src/ui/menu/mpjoin.js",
@@ -11064,6 +11195,12 @@
    "src/ui/menu/tabs/display.js"
   ]
  },
+ "Once a level, each hero who would fall rises with 40% of max HP in a burst of flame: 15 damage to enemies within 2.5 u, which catch fire for 4 s.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "Once a room, each hero's first tonic or bomb comes back to their slot 10 s later.": {
   "files": [
    "src/sim/relics.js"
@@ -11342,6 +11479,12 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "Party critical hits blind the enemy for 1 s (never a boss; once per enemy every 3 s).": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.": {
   "files": [
@@ -11804,6 +11947,13 @@
   ],
   "data": true
  },
+ "Pumice Soles": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "purchased": {
   "files": [
    "src/ui/socket/index.js"
@@ -12207,6 +12357,13 @@
   "files": [
    "src/ui/menu/mpmenu.js"
   ]
+ },
+ "Rekindled Heart": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Relaxed": {
   "files": [
@@ -13161,6 +13318,12 @@
  "SE": {
   "files": [
    "src/sim/skills.js"
+  ],
+  "data": true
+ },
+ "Sealed Door": {
+  "files": [
+   "src/sim/relics.js"
   ],
   "data": true
  },
@@ -15445,6 +15608,12 @@
   ],
   "data": true
  },
+ "The first party blow on each enemy is always a critical hit.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "The flood! Every hero loses a third of their max HP.": {
   "files": [
    "src/ui/run/index.js"
@@ -16406,6 +16575,12 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "The room is dark: party blows on an enemy more than 4.5 u from every hero deal 40% less.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
+ },
  "THE RUN ENDS": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -16982,6 +17157,12 @@
   "files": [
    "src/ui/menu/saves.js"
   ]
+ },
+ "This level's cracked wall stays shut (no blow or bomb opens it), and enemies in this room have 20% more HP.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "This page is {mine}; the host runs {latest}. Reload to update — your settings, saves and records stay in this browser.": {
   "files": [
@@ -18356,6 +18537,13 @@
  "Windward Court": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Wing Bone": {
+  "files": [
+   "src/data/unlocks.js",
+   "src/sim/relics.js"
   ],
   "data": true
  },

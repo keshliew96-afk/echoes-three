@@ -189,7 +189,8 @@ export function createCombat({
     const partyHit = !!M && target.partyIndex !== undefined;
     const partyDeals = !!M && target.faction === 'hostile' && !(atk && atk.faction === 'hostile');
     const rolled = rng.chance(CRIT.chance + critBonus + (partyDeals ? M.critChance() : 0)); // strict roll < chance (§7)
-    const crit = forceCrit ? true : rolled;
+    // RELICS batch 6 (Nightfall Veil): a first blow is forced after the roll.
+    const crit = forceCrit || (partyDeals && M.firstBlow && M.firstBlow(target)) ? true : rolled;
     let amount = base * dealt;
     if (partyDeals) amount *= M.dealtMul(target);
     if (crit) amount *= (critMul ?? CRIT.mult) + (partyDeals ? M.critMulAdd() : 0);

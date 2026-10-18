@@ -888,6 +888,55 @@ export function mountVfxLab() {
     say('Dulled Edge: each blunted crit chips and clinks');
   }, 'Bind Dulled Edge, then three crits on a dummy');
 
+  // ------------------------------------------------------- relics batch 6 --
+  // RELICS batch 6 (docs/RELICS.md "Batch 6"): each relic's beat through its
+  // real proc on what stands in front of the party, then the three curses.
+  const rel6 = section('Relics batch 6');
+  const BATCH6 = [
+    ['delvers_lantern', "Delver's Lantern", 'a cracked wall placed, found by the lantern'],
+    ['kiln_coal', 'Kiln Coal', 'five enemies set alight'],
+    ['pumice_soles', 'Pumice Soles', 'a floor patch refused at the feet'],
+    ['wing_bone', 'Wing Bone', 'the dodge ends in a dive'],
+    ['crown_shard', 'Crown Shard', 'a felled two-power elite pays its crown in Glint'],
+    ['dusk_lens', 'Dusk Lens', 'a crit blinds the nearest enemy'],
+    ['nightfall_veil', 'Nightfall Veil', 'a first blow cut as a crit'],
+    ['rekindled_heart', 'Rekindled Heart', 'a hero rises in a burst of flame'],
+  ];
+  for (const [id, label, what] of BATCH6) {
+    button(rel6, label, async () => {
+      if (!(await tonicRoom())) return say('no relics here (campaign only)');
+      const f = front();
+      if (id === 'delvers_lantern') X().cmd('secretWall');
+      else if (id === 'crown_shard') X().cmd('spawn', 'boar', f.x, f.z - 2.4, { elite: true, affixes: ['gusting', 'cinder'] });
+      else if (id === 'kiln_coal' || id === 'rekindled_heart' || id === 'wing_bone') {
+        for (const dx of [-2.4, -1.2, 0, 1.2, 2.4]) X().cmd('spawn', 'dummy', f.x + dx, f.z - (id === 'kiln_coal' ? 2.4 : 1.0));
+      } else if (id !== 'pumice_soles') X().cmd('spawn', 'boar', f.x, f.z - 2.0);
+      await wait(200);
+      X().cmd('relicDemo', id);
+      say(`${label}: ${what}`);
+    }, what);
+  }
+  for (const [curse, label, what] of [
+    ['sealed_door', 'Sealed Door', 'the level sealed, a wall placed, a blow refused'],
+    ['dimmed_lantern', 'Dimmed Lantern', 'the room goes dark round the party'],
+  ]) {
+    button(rel6, label, async () => {
+      if (!(await tonicRoom())) return say('no relics here (campaign only)');
+      X().cmd('relicCurseHere', curse);
+      if (curse === 'sealed_door') {
+        const w = X().cmd('secretWall');
+        await wait(600);
+        if (w) X().cmd('relicSealKnock');
+      }
+      say(`${label}: ${what}`);
+    }, what);
+  }
+  button(rel6, 'Heavy Crowns', async () => {
+    if (!(await tonicRoom())) return say('no relics here (campaign only)');
+    X().cmd('relicCurseHere', 'heavy_crowns');
+    say('Heavy Crowns: every elite carries one more power from now on');
+  }, 'Bind Heavy Crowns');
+
   // ------------------------------------------------------------ champions --
   // CHAMPION ROOMS (docs/CHAMPIONS.md): each act's champion spawned in front
   // of the party in its own land (crown, sigil, both moves, the rage below
