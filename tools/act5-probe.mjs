@@ -174,14 +174,14 @@ function runThrough(W, opts, maxLevels = 6) {
   try { o = JSON.parse(r.stdout.trim().split('\n').pop()); } catch { o = null; }
   // Slice 3 (docs/ACT_V_BOSSES.md) opened Level V for everyone: the flag no
   // longer changes anything.
-  check(!!o && o.acts.join() === '1,2,3,4,5' && o.levels.join() === '1,2,3,4,5' && o.campaign === 5, `without the flag the campaign has five acts too (${o ? o.acts.join(', ') : r.stderr.slice(0, 200)})`);
+  check(!!o && o.acts.join() === '1,2,3,4,5,6' && o.levels.join() === '1,2,3,4,5' && o.campaign === 5, `without the flag the campaign has five acts too (${o ? o.acts.join(', ') : r.stderr.slice(0, 200)})`);
   check(!!o && o.endless.join() === '1,2,3,4,5' && o.cycle === 5 && o.lap === 5, `without the flag Endless cycles five and Boss Rush laps five (${o ? `${o.cycle}, ${o.lap}` : '-'})`);
   check(!!o && o.spire === 4 && o.best >= 54, `without the flag the Journal holds the Spire rows (${o ? o.best : '-'} entries)`);
 }
 
 // ---------------------------------------------------------------- 1. wiring --
 {
-  check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5' && CAMPAIGN_LEVELS.join() === '1,2,3,4,5', `the campaign runs five levels (${ACT_IDS.join(', ')}; CAMPAIGN_ACTS ${CAMPAIGN_ACTS})`);
+  check(CAMPAIGN_ACTS === 5 && ACT_IDS.join() === '1,2,3,4,5,6' && CAMPAIGN_LEVELS.join() === '1,2,3,4,5', `the campaign runs five levels (${CAMPAIGN_LEVELS.join(', ')}; acts ${ACT_IDS.join(', ')}; CAMPAIGN_ACTS ${CAMPAIGN_ACTS})`);
   check(nextLevel(4) === 5 && nextLevel(5) === null, 'Level V follows the Hollow Heart and is the final level');
   const lv = LEVELS[5];
   check(lv && lv.name === 'The Still Spire' && lv.biome === 'spire' && lv.unlock && lv.unlock.afterVictory === 4, 'Level V is the Still Spire in the spire biome, unlocked by clearing Level IV');

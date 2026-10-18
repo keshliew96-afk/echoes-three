@@ -114,7 +114,7 @@ import gargoyle from './enemies/gargoyle.js';
 import hanger from './enemies/hanger.js';
 // The Ember Kiln (docs/KILN.md, content plan 5 slice 7): the Ember Newt, the
 // Slag Golem, the Bellows Imp and the Cinder Moth. Same module contract; they
-// live only in the Kiln's roster, which plays only behind the ?act6=1 preview.
+// live only in the Kiln's roster (the Kiln road, docs/KILN_BOSSES.md).
 import newt from './enemies/newt.js';
 import slag from './enemies/slag.js';
 import bellows from './enemies/bellows.js';
@@ -734,6 +734,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(o.shard ? { shard: true } : {}),
       ...(o.sack ? { sack: true } : {}),
       ...(o.weight ? { weight: true } : {}),
+      ...(o.ember ? { ember: true } : {}),
       telegraph: {
         kind: 'ring',
         startTick: tick,
@@ -772,6 +773,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(o.affix ? { affix: o.affix } : {}),
       ...(o.sack ? { sack: true } : {}),
       ...(o.weight ? { weight: true } : {}),
+      ...(o.ember ? { ember: true } : {}),
     });
     return g;
   }
@@ -804,6 +806,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(g.shard ? { shard: true } : {}),
       ...(g.sack ? { sack: true } : {}),
       ...(g.weight ? { weight: true } : {}),
+      ...(g.ember ? { ember: true } : {}),
     });
     registry.despawn(g.id);
     const src = owner ?? { id: g.ownerId, kind: g.ownerKind, faceX: 0, faceZ: 1 };

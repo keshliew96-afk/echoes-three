@@ -1,10 +1,10 @@
 # The Ember Kiln
 
-Content plan 5, slice 7 (the plan lives in the project files as CONTENT_PLAN_5.md). The Ember Kiln is the gods' kiln, where the first bells were fired, and the fire never went out. It is the sixth land: a second Level V on its own road. This slice builds its world behind a flag: biome, dressings, six layouts, a new hazard, four new enemies, music, ambience and cues, four Journal pages and the scaffold of its verse. Its bosses and the fork itself come in slice 8, its champion, events and deeds in slice 9.
+Content plan 5, slice 7 (the plan lives in the project files as CONTENT_PLAN_5.md). The Ember Kiln is the gods' kiln, where the first bells were fired, and the fire never went out. It is the sixth land: a second Level V on its own road. This slice built its world behind a flag: biome, dressings, six layouts, a new hazard, four new enemies, music, ambience and cues, four Journal pages and the scaffold of its verse. Its bosses and the fork itself come in slice 8, its champion, events and deeds in slice 9.
 
 ## Behind the flag
 
-`?act6=1` in the address (or `ECHOES_ACT6=1` in Node) turns the preview on (`ACT6_PREVIEW` in src/data/levels.js). Without it nothing changes: five levels on the Spire road, the Journal, story, Endless, Daily and Boss Rush as before (the probe checks this in a child process).
+Since slice 8 (docs/KILN_BOSSES.md) the Kiln plays for everyone: the party picks the Spire or the Kiln on the Level IV clear card, and `?act6=1` (`ACT6_PREVIEW`) no longer changes anything. The Daily stays on the Spire road; Endless and Boss Rush keep their five lands.
 
 With the flag on:
 
@@ -15,7 +15,7 @@ With the flag on:
 - The Ringwalker deed does not count the Kiln Mouth (`ARENA_IDS` leaves act 6 out), so no deed widens.
 - The map table forks after mark IV: the Spire at the top right, the Kiln at the bottom right with a small flame.
 
-**Hook for slice 8.** The party's pick at the Level IV clear only has to set the run's road and pass it to `nextLevel()` (sim/run.js `nextOf`); `roadOfAct()` gives the road of a Level V act. The flag then goes, as `ACT5_PREVIEW` did.
+**The fork (slice 8).** The party's pick at the Level IV clear sets the run's road (`pickRoad` in sim/run.js), and `nextOf()` passes it to `nextLevel()`; `roadOfAct()` gives the road of a Level V act.
 
 ## The level
 
@@ -28,7 +28,7 @@ With the flag on:
 | Interactables | dewfont, barricade (brick skin), keg, bell |
 | Roster | newt 20 %, cindermoth 16 %, bellows 14 %, slag 13 %, plus husks, lancers, crows and knights from the acts below |
 | Difficulty | the Spire's numbers (difficulty.js index 6 copies index 5) |
-| Boss room | stand-ins until slice 8: the Firing Floor meets the Geode Colossus (with two newts and a golem) or the Lich Ram (two moths and an imp) |
+| Boss room | the Firing Floor meets the Bellfounder or the Cinderback (slice 8, docs/KILN_BOSSES.md) |
 | Starter kit (starting there) | the Spire's: +2 skills, 48 nodes, 4 legendaries, 96 Glint |
 | Other | a Hunt room's quarry is a husk; the champion room meets the Spire's champions (slice 9 brings its own); Embers per clear 100, score multiplier 3.0 |
 
@@ -52,13 +52,13 @@ A new hazard, `vent` in src/sim/hazards.js: a grate over the fire. Every 420 tic
 - **Biome.** `src/env/biomes/kiln.js` with a kiln pass in `src/env/ground.js` (`paintKilnSteps`, its own random streams): dark brick, soot, a scorched halo round every vent, flagstone walks, clay, slag crusts and glaze chips per layout, cinders, and a hot crack network breathing gold. Cinder tufts for low cover; the edge (`src/env/treeline.js` `'kiln'`) is a brick yard wall with buttresses and small glowing mouths, bottle kilns, heaps and up to twelve smoking chimneys. Landmarks (`src/env/props.js`): kiln mouths, flues and a cast bronze bell with an indigo crack (the corruption tell), the great bell in its casting pit on the Firing Floor. Fire is kiln gold and crimson coal; Ember stays on telegraphs only.
 - **Cinder vent.** `src/render/hazards/index.js`: a brick kerb with an iron grate over a breathing coal bed; the shared Ember ring for the telegraph; a gold column of flame with sparks and smoke for the eruption; a bed of ash with embers cooling from gold to crimson.
 - **Barricade.** A low-chroma brick skin (`skin: 'brick'`).
-- **Enemies.** `src/render/enemies/kiln.js`: a sooty newt with a gold belly and live coals down its spine; a slag heap whose crust plates lift off a white-gold core after a slam; a pot-bellied imp with bellows on its back that pump and puff sparks; an ash moth with fire in its wings that greys out when spent. Each carries one indigo tell. Event VFX in `src/render/vfx/signature.js` (the Kiln block), the slag pool in `src/render/enemies/extras.js`, a Kiln row in the lab (`?vfxlab=1&act6=1`).
+- **Enemies.** `src/render/enemies/kiln.js`: a sooty newt with a gold belly and live coals down its spine; a slag heap whose crust plates lift off a white-gold core after a slam; a pot-bellied imp with bellows on its back that pump and puff sparks; an ash moth with fire in its wings that greys out when spent. Each carries one indigo tell. Event VFX in `src/render/vfx/signature.js` (the Kiln block), the slag pool in `src/render/enemies/extras.js`, a Kiln row in the lab (`?vfxlab=1`).
 - **Music.** A `kiln` theme in src/audio/music.js: B-flat phrygian dominant (a new `phrygdom` scale) at 100 BPM, an anvil on every beat, a forge-string ostinato, a bellows breath twice a bar and a bronze bell lead; the boss state goes to B-flat harmonic minor at 122 BPM with a great cast bell. Trims combat -8.9 and boss -9.5, set against the Spire and the Wood in one session (`node tools/gntM3-calibrate.mjs --keys combat:kiln,boss:kiln,kiln` confirms them on a quiet machine).
 - **Ambience.** A furnace roar with a fire body, dense crackle and a low B-flat hum; every 4-8 s a far hammer on an anvil or a cooling bell's tick (src/audio/ambient.js, trim -4.7).
 - **Cues.** `src/audio/kilncues.js`: 16 cues for the newt's crouch, lunge and stop, the golem's rear, slam and crust, the imp's pump, fan and choke, the moth's kindle, flare, snuff and relight, and the vent's rumble, eruption and cooling. Levels measured live with the engine's `measureCue`.
 
 ## Verification
 
-- `node tools/act6-probe.mjs` (headless; sets `ECHOES_ACT6=1` itself and checks the flag-off state in a child process): 45 checks over the wiring, the roads, the four enemies, the vent, the governor, Kiln runs and the campaign won there, the Daily on the Spire road, and save and snapshot round trips.
+- `node tools/act6-probe.mjs` (headless): 41 checks over the wiring, the roads, the four enemies, the vent, the governor, Kiln runs and the campaign won there, the Daily on the Spire road, and save and snapshot round trips.
 - `node tools/gntM4b-layoutcheck.mjs`: the six layouts' placements are clear.
 - The nine goldens (`node tools/gntM2-goldens.mjs`) match: nothing outside the flag changed.

@@ -78,7 +78,7 @@ const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
 // campaign — the host drives every level transition.)
-const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'refreshShop', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'openEncounter', 'focusEncounter', 'chooseEncounter', 'openVault', 'buyRelic', 'buyTonic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'refreshShop', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'openEncounter', 'focusEncounter', 'chooseEncounter', 'openVault', 'buyRelic', 'buyTonic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'pickRoad', 'abandonRun']);
 // M4c: autoFill (the socket screen's F / pad Y) mutates the build too — a guest's
 // press becomes the same refused CMD as a socket() (build decisions are the host's).
 const BUILD_MUTATORS = new Set(['socket', 'unsocket', 'autoFill', 'grantNode', 'echoArm', 'setResonance', 'attachSkills']);
@@ -110,7 +110,7 @@ const PARTY_OPS = new Set(['pick', 'replace', 'buy', 'relic', 'tonic', 'refresh'
 // chooser's class); anything else is the Healer's own build, which belongs to
 // its player (each human builds their OWN character, BUILD_BRIEF §25.7). Was
 // always "The Healer makes the build choices", also on a door press.
-const LEVEL_FLOW_OPS = new Set(['returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'abandonRun']);
+const LEVEL_FLOW_OPS = new Set(['returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'pickRoad', 'abandonRun']);
 function hostDecidesCopy(what, w) {
   if (what === 'choosePath') return t('The {cls} picks the door — your pick was shown to the party', { cls: t(w) });
   if (what === 'chooseRelic' || what === 'focusRelic') return t("The {cls} picks the party's relic — your pick was shown to the party", { cls: t(w) });

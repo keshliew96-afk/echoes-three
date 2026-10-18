@@ -1386,6 +1386,11 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "<b>← →</b> choose a road · <b>Enter</b> take it": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
  "<b>⇧</b> upgrades: <b>B</b> sockets · <b>F</b> auto-fill swaps them in": {
   "files": [
    "src/ui/run/draft.js"
@@ -4754,6 +4759,11 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "Choose your road": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
  "Choosing a boon": {
   "files": [
    "src/ui/menu/pause.js"
@@ -7241,6 +7251,12 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Five lands. I inked the Kiln down the right of the page, where the road forks after the Heart. The other way is still blank.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Five lands. I inked the Spire at the very top of the page, and there is still paper above it.": {
   "files": [
    "src/data/story.js"
@@ -7253,7 +7269,31 @@
   ],
   "data": true
  },
+ "Five verses. Flame came home roaring, and the hearth burns hotter for it. Two are still missing.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Five verses. Sky came home ringing, and the fire leaned up to meet it. Two are still missing.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Five verses. The Kiln is all smoke and glare and nowhere dark. I flew it anyway, on the heat off the coals. It lifts you like a hand.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Five verses. The Kiln is all steam and no river. I kept my satchel wet the whole way, and the fire hissed at me the way the hearth does.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Five verses. The Kiln poured every bell I ever loved. I stood in the pit where mine was cast, and it rang without my touching it.": {
   "files": [
    "src/data/story.js"
   ],
@@ -8945,6 +8985,12 @@
   ],
   "data": true
  },
+ "It kept the gods’ fire fed. Now it feeds mine.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "It kept the stair to the gods. I taught it to keep you off it.": {
   "files": [
    "src/data/story.js"
@@ -8959,6 +9005,12 @@
  "It mourns every barrow it passes, and it wants company in its grief.": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "It poured every bell the gods ever rang. I taught it to pour them hollow.": {
+  "files": [
+   "src/data/story.js"
   ],
   "data": true
  },
@@ -9514,7 +9566,8 @@
  },
  "LEVEL {level}": {
   "files": [
-   "src/ui/run/levels.js"
+   "src/ui/run/levels.js",
+   "src/ui/run/transit.js"
   ]
  },
  "Level {level} — between levels": {
@@ -9819,6 +9872,12 @@
   ],
   "data": true
  },
+ "Magma Dive: it sinks into the floor and bursts up under a warning ring at you for 16, leaving slag, then lies spent: hit it then. Tail Lash: a cone at its flank for 12 that throws you. From half health it spits fire onto every hero.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Magpie": {
   "files": [
    "src/data/unlocks.js"
@@ -9978,6 +10037,12 @@
  "Molten": {
   "files": [
    "src/sim/affixes.js"
+  ],
+  "data": true
+ },
+ "Molten Pour: a warning lane for 14 that cools into pools of slag. Bell Drop: a bell falls on a warning ring at you for 16. At each Casting the Kiln's creatures crawl out of a mould, then the Firing: a huge ring round it for 20. Walk to the walls, then hit it while it is quenched.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -10392,6 +10457,11 @@
  "no range stat on this skill": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "No road chosen in {secs} s: the party takes the Spire": {
+  "files": [
+   "src/ui/run/transit.js"
   ]
  },
  "No room with that code.": {
@@ -13271,6 +13341,18 @@
    "src/ui/tutorial/index.js"
   ]
  },
+ "Six lands. The road forks after the Heart now, and I have inked both ways: the Spire up top, the Kiln down the right.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Six verses. Sky and Flame both, and the hearth burns like the gods’ own kiln. Only one is still missing.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Skewer": {
   "files": [
    "src/sim/nodes.js"
@@ -14655,6 +14737,31 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "The Bellfounder": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "THE BELLFOUNDER": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Bellfounder still works the casting pit ahead. When it opens its chest, get to the walls. When it has poured out its heat, go and hit it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Bellfounder’s crucible cracks. In the gods’ kiln, the last bell rings true.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
  "The Bellwright begins with Hang Bell, Peal, Clapper and Tuning Fork.": {
   "files": [
    "src/data/unlocks.js"
@@ -14779,6 +14886,37 @@
   ]
  },
  "The Chorus": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Cinderback": {
+  "files": [
+   "src/data/journal.js",
+   "src/data/levels.js"
+  ],
+  "data": true
+ },
+ "THE CINDERBACK": {
+  "files": [
+   "src/sim/boss.js"
+  ],
+  "data": true
+ },
+ "The Cinderback curls up as close to the hearth as it dares. For the first time in an age, it sleeps.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "The Cinderback sinks into the coals. The kiln’s fire burns clean again.": {
+  "files": [
+   "src/ui/run/endscreens.js",
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Cinderback swims in the coals under the Firing Floor. When the ground glows under you, run. When it comes up steaming, hit it.": {
   "files": [
    "src/data/story.js"
   ],
@@ -14959,6 +15097,7 @@
  },
  "The Ember Kiln": {
   "files": [
+   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -15218,6 +15357,12 @@
   ],
   "data": true
  },
+ "The gods' bell-founder, still at its casting pit in their kiln. Every bell the gods ever rang came out of its crucible. Now it casts them hollow.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "The gods' clock, a bronze clock-jack that struck the hours until they sat down to watch. The hollow song wound it again.": {
   "files": [
    "src/data/journal.js"
@@ -15230,11 +15375,21 @@
   ],
   "data": true
  },
+ "The gods’ high belfry, where they sat down to watch and never rose.": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
  "The gods' kiln, where the first bells were fired. The fire never went out.": {
   "files": [
    "src/data/levels.js"
   ],
   "data": true
+ },
+ "The gods’ kiln, where the first bells were fired. The fire never went out.": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
  },
  "The gods' own crier, carved to stand on the belfry roof and call the winds in. It never stopped calling.": {
   "files": [
@@ -15272,6 +15427,11 @@
   ]
  },
  "The Healer carries · {skills}": {
+  "files": [
+   "src/ui/run/transit.js"
+  ]
+ },
+ "The Healer chooses the road…": {
   "files": [
    "src/ui/run/transit.js"
   ]
@@ -15584,6 +15744,12 @@
    "src/ui/run/endscreens.js",
    "src/ui/run/transit.js"
   ]
+ },
+ "The Kiln's warden, a great fire salamander that basked in the kiln's mouth and kept the fire fed. The Ember Newts are its brood.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "The kiln's waste, raked out and heaped up until the hollow song found it and stood it up.": {
   "files": [
@@ -17253,6 +17419,7 @@
  },
  "Verse of {verse}": {
   "files": [
+   "src/ui/run/transit.js",
    "src/ui/story/page.js"
   ]
  },
@@ -17729,7 +17896,7 @@
   ],
   "data": true
  },
- "Where the Heart’s road forks below the Spire, the other way climbs to the Ember Kiln, where the gods fired the first bells. Every bell was tuned to the note of its fire, and the fire never went out. The hollow song found it still burning and learned to keep it. Whatever keeps the Kiln now, felling it frees the Verse of Flame, the note every bell was tuned to.": {
+ "Where the Heart’s road forks below the Spire, the other way climbs to the Ember Kiln, where the gods fired the first bells. Every bell was tuned to the note of its fire, and the fire never went out. The Bellfounder, who poured every bell the gods ever rang, still stands at its casting pit, and the hollow song taught it to cast them hollow. The Cinderback, the great salamander that kept the fire fed, swims through the coals beneath it. Felling either frees the Verse of Flame, the note every bell was tuned to.": {
   "files": [
    "src/data/story.js"
   ],

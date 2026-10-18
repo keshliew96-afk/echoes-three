@@ -551,6 +551,29 @@ export const BOSS_MUSIC = Object.freeze({
     lead: 'toll',
     motif: [[0, 0, 4], [4, 0, 4], [8, 0, 4], [16, 4, 2], [18, 3, 2], [20, 1, 2], [22, 0, 6]],
   },
+  // Content plan 5 slice 8 (docs/KILN_BOSSES.md): both keep the kiln theme's
+  // key, tempo, anvil, bellows and great cast bell. The Bellfounder's
+  // casting: the forge string climbing a mould's shape and pouring back
+  // down, the drum a slow hammer on the quarters, a bronze lead that rings
+  // one bell at a time and lets it hang. The Cinderback's swim: the forge
+  // string coiling in an S, the drum a lizard's quick scuttle with a lash
+  // on the off-beat, a bronze lead that sinks and bursts back up.
+  founder: {
+    theme: 'kiln',
+    prog: [0, 5, 1, 0],
+    arp: { instr: 'forge', pattern: [0, 2, 4, 5, 4, 2, 1, 0] },
+    drum: { 0: 1, 4: 0.7, 8: 0.95, 12: 0.7 },
+    lead: 'bronze',
+    motif: [[0, 0, 4], [4, 4, 4], [8, 5, 6], [16, 4, 2], [18, 2, 2], [20, 1, 2], [22, 0, 6]],
+  },
+  cinderback: {
+    theme: 'kiln',
+    prog: [0, 1, 4, 0],
+    arp: { instr: 'forge', pattern: [0, 3, 1, 4, 2, 4, 1, 3] },
+    drum: { 0: 1, 2: 0.5, 3: 0.55, 6: 0.75, 8: 0.95, 10: 0.5, 11: 0.55, 14: 0.8 },
+    lead: 'bronze',
+    motif: [[0, 4, 2], [2, 2, 2], [4, 0, 4], [8, -2, 4], [14, 0, 1], [15, 4, 1], [16, 7, 4], [20, 5, 2], [22, 4, 2], [24, 0, 8]],
+  },
 });
 export const bossMusicKey = (kind) => (kind && BOSS_MUSIC[kind] ? kind : null);
 

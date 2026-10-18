@@ -64,7 +64,7 @@ function paintMap(canvas, unlocked) {
   // Four waymarks for the four-level campaign (unchanged); with Level V
   // played (data/levels.js ACT_IDS, the ?act5=1 preview) the route bends on
   // to a fifth mark, the Still Spire, at the top right of the sheet. With the
-  // Ember Kiln played (act 6, the ?act6=1 preview: the OTHER Level V) the
+  // Ember Kiln played (act 6, the OTHER Level V, docs/KILN_BOSSES.md) the
   // route FORKS after the fourth mark: the Spire's road climbs to the top
   // right, the Kiln's runs down to the bottom right, both marked V; the Kiln's
   // mark carries a small kiln-gold flame so the two Vs read apart.

@@ -270,11 +270,11 @@ export const LEVELS = Object.freeze({
   // where the first bells were fired. Act 6 in data, but not a sixth level
   // in a row: it is the OTHER Level V (`level: 5`), a second road after the
   // Hollow Heart beside the Still Spire (`road: 'kiln'`; Kesh's fork,
-  // 2026-10-17). It plays only behind the ?act6=1 preview below, which also
-  // sends the campaign down the Kiln road; slice 8 gives it its own bosses
-  // and lets the party pick the road at the Level IV clear. Until then the
-  // Heart's Geode Colossus and the Barrow's Lich Ram stand in, like the
-  // Spire's stand-ins did, with the Kiln's own creatures as their adds.
+  // 2026-10-17). Its bosses (slice 8, docs/KILN_BOSSES.md): the Bellfounder,
+  // the gods' founder still at its casting pit and the Kiln road's final
+  // boss, whose three Castings let out the Kiln's creatures in turn, or the
+  // Cinderback, the Kiln's own warden, rolled by seed like every act. The
+  // party picks the road on the Level IV clear card (sim/run.js pickRoad).
   6: Object.freeze({
     id: 'ember_kiln',
     act: 6,
@@ -294,15 +294,29 @@ export const LEVELS = Object.freeze({
     introduce: Object.freeze({ newt: 1, cindermoth: 1, husk: 1, crow: 1, bellows: 2, slag: 2, lancer: 3, knight: 4 }),
     hazards: Object.freeze(['vent', 'rockfall', 'gravefire']),
     interactables: Object.freeze(['dewfont', 'barricade', 'keg', 'bell']),
-    boss: 'colossus',
-    bossName: 'The Geode Colossus',
+    boss: 'founder',
+    bossName: 'The Bellfounder',
     bossAdds: Object.freeze([
       ['newt', 2],
       ['slag', 1],
     ]),
     bosses: Object.freeze([
-      Object.freeze({ kind: 'colossus', name: 'The Geode Colossus', adds: Object.freeze([Object.freeze(['newt', 2]), Object.freeze(['slag', 1])]) }),
-      Object.freeze({ kind: 'lichram', name: 'The Lich Ram', adds: Object.freeze([Object.freeze(['cindermoth', 2]), Object.freeze(['bellows', 1])]) }),
+      Object.freeze({
+        kind: 'founder',
+        name: 'The Bellfounder',
+        adds: Object.freeze([Object.freeze(['newt', 2]), Object.freeze(['slag', 1])]),
+        // One Casting a phase, each a mould broken open and its creatures
+        // crawling out: the newts, then a golem and a newt, then the moths
+        // with an imp.
+        addsByPhase: Object.freeze([
+          Object.freeze([Object.freeze(['newt', 2])]),
+          Object.freeze([Object.freeze(['slag', 1]), Object.freeze(['newt', 1])]),
+          Object.freeze([Object.freeze(['cindermoth', 2]), Object.freeze(['bellows', 1])]),
+        ]),
+      }),
+      // The Kiln's own warden: a great fire salamander, with its newts and
+      // a Bellows Imp.
+      Object.freeze({ kind: 'cinderback', name: 'The Cinderback', adds: Object.freeze([Object.freeze(['newt', 2]), Object.freeze(['bellows', 1])]) }),
     ]),
     unlock: Object.freeze({ afterVictory: 4 }),
   }),
@@ -338,10 +352,8 @@ export const ACT5_PREVIEW = (() => {
 })();
 const PLAYED_ACTS = Math.max(CAMPAIGN_ACTS, ACT5_PREVIEW ? 5 : 0);
 // THE EMBER KILN PREVIEW (docs/KILN.md): `?act6=1` in the page address (or
-// ECHOES_ACT6=1 for a Node probe) adds the Kiln (act 6) to the lands that
-// play, and sends the campaign down the Kiln road: Levels I to IV, then the
-// Kiln as Level V instead of the Spire (data/campaign.js). Without it nothing
-// anywhere reads act 6, so every run plays exactly as before.
+// ECHOES_ACT6=1 for a Node probe) added the Kiln (act 6) before its bosses
+// opened it for everyone (docs/KILN_BOSSES.md); now it changes nothing.
 export const ACT6_PREVIEW = (() => {
   try {
     if (typeof location !== 'undefined' && location && typeof location.search === 'string' && /[?&]act6=1(&|$)/.test(location.search)) return true;
@@ -357,12 +369,15 @@ export const ACT6_PREVIEW = (() => {
 // THE LEVEL V ROADS (Kesh's fork, 2026-10-17): after the Hollow Heart a
 // campaign takes one road to its fifth and last level. Each road names the
 // act it ends on. A fifth-level act is one whose row says `level: 5` (the
-// Kiln) or act 5 itself (the Spire). Slice 8 lets the party pick; until then
-// the road is the Spire, or the Kiln behind ?act6=1.
+// Kiln) or act 5 itself (the Spire). The party picks the road on the Level
+// IV clear card (sim/run.js pickRoad); a campaign that has not picked (or a
+// Daily) is on DEFAULT_ROAD, the Spire.
 export const ROADS = Object.freeze({ spire: 5, kiln: 6 });
-export const DEFAULT_ROAD = ACT6_PREVIEW ? 'kiln' : 'spire';
-const EXTRA_ACTS = ACT6_PREVIEW ? [6] : [];
-export const ENDLESS_ACTS = Object.freeze([...[1, 2, 3, 4, 5].slice(0, Math.max(4, PLAYED_ACTS)), ...EXTRA_ACTS]);
+export const DEFAULT_ROAD = 'spire';
+const EXTRA_ACTS = [6];
+// The Endless Descent keeps the five lands it had (the Kiln joining it is
+// an open choice, not this slice's).
+export const ENDLESS_ACTS = Object.freeze([1, 2, 3, 4, 5].slice(0, Math.max(4, PLAYED_ACTS)));
 export const ACT_IDS = Object.freeze([...[1, 2, 3, 4, 5].slice(0, PLAYED_ACTS), ...EXTRA_ACTS]);
 // The campaign level an act plays as (the Kiln, act 6, is a Level V), for
 // every "Level N" a player reads.

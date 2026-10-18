@@ -75,7 +75,7 @@ import { TICK_HZ, SKILL_SLOTS, ARENA } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS, HEALER_SKILL_IDS } from './skills.js';
 import { createDraftSystem, SPOILS_PER_CLEAR, refreshPrice } from './draft.js';
 import { NODES } from './nodes.js';
-import { levelFor, ACT_IDS, ENDLESS_ACTS, CAMPAIGN_ACTS, bossFor, campaignLevel } from '../data/levels.js';
+import { levelFor, ACT_IDS, CAMPAIGN_ACTS, ROADS, DEFAULT_ROAD, roadOfAct, bossFor, campaignLevel } from '../data/levels.js';
 // ENDLESS (docs/ENDLESS.md): the descent past Act III.
 import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, endlessRules, levelOfDepth, beyondCampaign } from '../data/endless.js';
 import { LAYOUTS, arenaOf } from '../data/layouts.js';
@@ -123,6 +123,7 @@ import {
   TRANSIT,
   FIRST_LEVEL,
   nextLevel,
+  nextLevels,
   isLevel,
   grantFor,
   campaignRules,
@@ -338,8 +339,10 @@ export function createRunSystem({
   // The Daily plays the campaign's own CAMPAIGN_ACTS levels (five since the
   // Spire's bosses, docs/ACT_V_BOSSES.md), the same count the server's depth
   // check reads, so a won Daily is Depth 40.
-  // THE EMBER KILN PREVIEW (docs/KILN.md): the Daily keeps the Spire road even
-  // when ?act6=1 sends the campaign down the Kiln's, so its board never meets it.
+  // THE LEVEL V FORK (docs/KILN_BOSSES.md): a campaign runs on the road the
+  // party picked on the Level IV clear card (`c.road`, present once picked),
+  // else the Spire's. The Daily keeps the Spire road, so its board never
+  // meets the Kiln.
   const nextOf = (c, level) =>
     c && c.mode === 'campaign'
       ? c.rush
@@ -348,8 +351,17 @@ export function createRunSystem({
         ? endlessNextLevel(level)
         : c.daily && level >= CAMPAIGN_ACTS
         ? null
-        : nextLevel(level, c.daily ? 'spire' : null)
+        : nextLevel(level, c.daily ? 'spire' : c.road ?? null)
       : null;
+  // The roads a clear of `level` forks into for this campaign: both Level Vs
+  // after Level IV in a plain campaign that has not picked yet, else none.
+  const forkRoads = (c, level) => {
+    if (!c || c.mode !== 'campaign' || c.rush || c.endless || c.daily || c.road || c.tutorial) return null;
+    const opens = nextLevels(level);
+    if (opens.length < 2) return null;
+    const roads = opens.map((a) => roadOfAct(a)).filter(Boolean);
+    return roads.length >= 2 ? roads : null;
+  };
   // The room a level opens in: room 1, or in the rush the boss room for the
   // first fight and the Peddler's clearing (then the boss) for the others.
   const firstRoom = () => (campaign && campaign.rush ? (campaign.index === 1 ? RUN.bossRoom : RUN.shopRoom) : 1);
@@ -2437,16 +2449,24 @@ export function createRunSystem({
       restoreParty(tick);
     }
     const min = kind === 'clear' ? TRANSIT.clearTicks : to !== FIRST_LEVEL ? TRANSIT.departTicks : 0;
+    // THE LEVEL V FORK: the Level IV clear card waits for the party's road
+    // (pickRoad); until then it leads to the Spire, which it takes if nobody
+    // picks.
+    const roads = kind === 'clear' ? forkRoads(campaign, from) : null;
+    const wait = roads ? Math.max(min, TRANSIT.forkTicks) : min;
     campaign.card = {
       kind,
       from,
       to,
       startTick: tick,
-      untilTick: tick + min,
+      untilTick: tick + wait,
       minSkipTick: tick + Math.min(min, TRANSIT.minSkipTicks),
-      hardUntilTick: tick + TRANSIT.hardTicks,
+      hardUntilTick: tick + wait - min + TRANSIT.hardTicks,
       summary: carriedSummary(),
       leftovers,
+      // THE LEVEL V FORK: present only on the Level IV clear card of a
+      // campaign that has two roads ahead (`pick`: the party's, else null).
+      ...(roads ? { fork: { roads, pick: null } } : {}),
       // ENDLESS: the depth the card leads to (present only then).
       ...(campaign.endless ? { depth: campaign.index + (kind === 'clear' ? 1 : 0) } : {}),
       // BOSS RUSH: the fight the card leads to (present only then).
@@ -2464,7 +2484,27 @@ export function createRunSystem({
       minSkipTick: campaign.card.minSkipTick,
       hardUntilTick: campaign.card.hardUntilTick,
       ...(campaign.endless ? { depth: campaign.card.depth } : {}),
+      ...(roads ? { fork: roads.slice() } : {}),
     });
+  }
+
+  // THE LEVEL V FORK: the party picks its road on the Level IV clear card
+  // (the host in co-op). The card then leads to that road's Level V and
+  // sets out shortly after. -> { ok, road, to } | { refused }
+  function pickRoad(road, reason = 'pick') {
+    const c = campaign;
+    if (!active || phase !== 'transit' || !c || !c.card || !c.card.fork) return { refused: 'no_fork' };
+    const card = c.card;
+    if (card.fork.pick) return { refused: 'picked', road: card.fork.pick };
+    if (!card.fork.roads.includes(road) || !ROADS[road]) return { refused: 'road' };
+    const tick = getTick();
+    c.road = road;
+    card.fork.pick = road;
+    card.to = ROADS[road];
+    card.untilTick = Math.max(card.minSkipTick, tick + TRANSIT.forkSettleTicks);
+    card.hardUntilTick = tick + TRANSIT.hardTicks;
+    events.emit(tick, 'road_pick', { road, to: card.to, name: levelFor(card.to).name, from: card.from, reason });
+    return { ok: true, road, to: card.to };
   }
 
   // The card's Enter / the presentation's "ready" advance / the autopilot.
@@ -2478,6 +2518,8 @@ export function createRunSystem({
   // Build the next level and walk into its room 1.
   function advanceLevel(reason) {
     const tick = getTick();
+    // A fork nobody picked takes the Spire's road.
+    if (campaign.card && campaign.card.fork && !campaign.card.fork.pick) pickRoad(DEFAULT_ROAD, 'default');
     const card = campaign.card;
     const to = card.to;
     exitRoom(tick);
@@ -2600,6 +2642,7 @@ export function createRunSystem({
       name: levelFor(c.level).name,
       index: c.index,
       next: nextOf(c, c.level),
+      ...(c.road ? { road: c.road } : {}),
       ...(c.endless ? { endless: true, depth: c.index, won: !!c.won } : {}),
       ...(c.rush ? { rush: { fight: c.index, fights: c.rush.fights, line: cloneData(c.rush.line) } } : {}),
       ...(c.tutorial ? { tutorial: { hold: !!c.tutorial.hold } } : {}),
@@ -3381,6 +3424,9 @@ export function createRunSystem({
       }
       case 'campaignAdvance':
         return campaignAdvance(args[0] ?? 'skip');
+      case 'pickRoad':
+        // ('pickRoad', 'spire' | 'kiln') — the Level IV clear card's fork.
+        return pickRoad(String(args[0] ?? ''), 'pick');
       case 'abandonRun':
         return abandonRun(args[0] ?? 'quit');
       case 'tutorialRelease':
@@ -3882,7 +3928,7 @@ export function createRunSystem({
   });
   function restoreExpedition(d) {
     if (!d) return;
-    act = ENDLESS_ACTS.includes(d.act) ? d.act : 1;
+    act = ACT_IDS.includes(d.act) ? d.act : 1;
     challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
     layout = d.layout ? { ...d.layout } : null;
     lastCombatLayout = d.lastCombatLayout ?? null;
@@ -3956,7 +4002,7 @@ export function createRunSystem({
     roomsDone = d.roomsDone ?? 0;
     startTick = d.startTick ?? 0;
     everStarted = !!d.everStarted;
-    act = ENDLESS_ACTS.includes(d.act) ? d.act : 1;
+    act = ACT_IDS.includes(d.act) ? d.act : 1;
     challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
     bossPick = typeof d.bossPick === 'string' ? d.bossPick : null;
     thirdOpen = Array.isArray(d.thirdBosses) ? d.thirdBosses.filter((a) => ACT_IDS.includes(a)) : [];
@@ -4004,6 +4050,7 @@ export function createRunSystem({
     // Linear campaign (PLAN §12.2).
     startCampaign,
     campaignAdvance,
+    pickRoad,
     abandonRun,
     tutorialRelease,
     endTutorial,

@@ -1080,10 +1080,9 @@ export function createArenaScene(stage, toggles, ctx) {
     });
     queue.length = 0;
     // CAMPAIGN residency (PLAN §12.5): only the resident level's layouts are
-    // ever built in the background. Act V (the Still Spire) is only played
-    // behind ?act5=1 and the Ember Kiln (act 6) behind ?act6=1 (data/
-    // levels.js ACT_IDS): without its flag a land's six dressings are never
-    // pre-built (a ?layout=29 or ?layout=36 boot still builds its own).
+    // ever built in the background, and only for a land that plays (data/
+    // levels.js ACT_IDS, both Level Vs since docs/KILN_BOSSES.md); a
+    // ?layout=29 or ?layout=36 boot still builds its own.
     const played = (id) => ACT_IDS.includes(actOf(id) ?? 1);
     for (const id of order) if (wantedId(id) && played(id) && !dressings.has(id) && !buildStats.failed[id] && (!job || job.id !== id)) queue.push(id);
   }
