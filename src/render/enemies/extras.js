@@ -22,6 +22,7 @@ import {
   CircleGeometry,
   Color,
   ConeGeometry,
+  DoubleSide,
   CylinderGeometry,
   Group,
   IcosahedronGeometry,
@@ -611,8 +612,10 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         }
       } else if (e.kind === 'slick' && e.variant === 'cinder') {
         // ELITE AFFIXES batch two: a Cinder trail patch reads as a scorched
-        // smear of soot with a few banked coals breathing in it, never as a
-        // filled warning disc (those are Ember).
+        // smear of soot with banked coals breathing in it, a red-hot floor
+        // glow and little flame tongues licking up, so it shows at a glance;
+        // never a filled warning disc with a rim (those are Ember telegraphs)
+        // and never the Kiln's gold.
         seenS.add(e.id);
         let c = cinders.get(e.id);
         if (!c) {
@@ -636,13 +639,30 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
             g.add(sp);
             coals.push({ lump, sp });
           }
+          const hot = mix(AFFIX_COLORS.cinder, PALETTE.emberDanger, 0.55).getHex();
           const glow = makeGlowSprite({ color: AFFIX_COLORS.cinder, size: 2.6, opacity: 0 });
           glow.position.y = 0.06;
           g.add(glow);
+          // The floor under it lit red-hot (additive, soft edge, no rim).
+          const heat = new Mesh(sharedGeo('ea-cinder-heat', () => new CircleGeometry(1, 24)), new MeshBasicMaterial({ map: getRadialTexture(), color: hot, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+          heat.rotation.x = -Math.PI / 2;
+          heat.position.y = 0.014;
+          heat.scale.setScalar(1.2);
+          g.add(heat);
+          // Flame tongues licking up off the coals.
+          const flames = [];
+          for (let i = 0; i < 4; i++) {
+            const a = i * 1.7 + e.id * 0.9;
+            const rr = 0.2 + 0.45 * ((i * 0.53 + e.id * 0.29) % 1);
+            const f = new Mesh(sharedGeo('ea-cinder-flame', () => new ConeGeometry(0.11, 0.5, 6, 1, true).translate(0, 0.25, 0)), new MeshBasicMaterial({ color: hot, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: AdditiveBlending, side: DoubleSide }));
+            f.position.set(Math.cos(a) * rr, 0.02, Math.sin(a) * rr);
+            g.add(f);
+            flames.push(f);
+          }
           g.position.set(e.x, 0, e.z);
           g.scale.setScalar(e.radius);
           root.add(g);
-          c = { g, disc, coals, glow };
+          c = { g, disc, coals, glow, heat, flames, spark: (e.id % 5) * 0.06 };
           cinders.set(e.id, c);
         }
         const inK = Math.min(1, (tick - e.startTick) / 6);
@@ -654,6 +674,17 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           k.sp.material.opacity = 0.75 * breath * inK * outK;
         });
         c.glow.material.opacity = (0.5 + 0.12 * Math.sin(tSec * 2.3 + e.id)) * inK * outK;
+        c.heat.material.opacity = (0.55 + 0.15 * Math.sin(tSec * 3.7 + e.id * 1.3)) * inK * outK;
+        c.flames.forEach((f, i) => {
+          const flick = 0.6 + 0.4 * Math.sin(tSec * (9 + i * 2.3) + i * 2.1 + e.id) * Math.sin(tSec * (5.1 + i) + e.id);
+          f.scale.set(1, Math.max(0.15, flick), 1);
+          f.material.opacity = 0.8 * inK * outK;
+        });
+        c.spark -= dt;
+        if (c.spark <= 0 && outK > 0.3) {
+          c.spark = 0.28;
+          impactFx.spray('spark', e.x, 0.08, e.z, 1, { color: mix(AFFIX_COLORS.cinder, PALETTE.parchment, 0.3).getHex(), speed: [0.05, 0.25], up: [0.6, 1.2], size: [0.03, 0.06], life: [0.5, 0.9], gravity: -0.4, drag: 1.5, jitter: e.radius * 0.8, opacity: 0.95 });
+        }
       } else if (e.kind === 'slick' && (e.variant === 'crystal' || e.variant === 'glass' || e.variant === 'quartz')) {
         seenS.add(e.id);
         let c = crystals.get(e.id);
