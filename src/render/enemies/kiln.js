@@ -1165,6 +1165,10 @@ export function buildHurler() {
   const dark = track(flashable(C.hurlerDark));
   const sackM = track(flashable(C.sack));
   const holeHot = heatMat(C.coal);
+  // Squat and stocky, it read too small at play distance (Kesh's "fix
+  // hurler size first" on PR #84): the whole rig plays 1.45x, with its
+  // shadow, and the sack keeps a faint glow at rest so it reads at range.
+  rig.scale.setScalar(1.45);
   const bodyG = new Group();
   bodyG.position.y = 0.24;
   rig.add(bodyG);
@@ -1269,7 +1273,7 @@ export function buildHurler() {
   const floor = floorLight(C.gold, 0.08);
   floor.scale.setScalar(1.1);
   rig.add(floor);
-  const shadow = groundShadow(0.38, 0.4);
+  const shadow = groundShadow(0.52, 0.5);
   s.group.add(shadow);
   const dtOf = clock();
   const throwAge = clip();
@@ -1308,8 +1312,8 @@ export function buildHurler() {
       for (let i = 0; i < holes.length; i++) holes[i].scale.setScalar(0.85 + 0.25 * Math.sin(t * 7 + i * 1.9 + id) * 0.5 + 0.3 * back);
       heatColor(_sp, Math.min(0.9, hot));
       sackGlow.material.color.copy(_sp);
-      sackGlow.material.opacity = clamp01(0.1 + 0.4 * hot);
-      sackGlow.scale.setScalar(0.5 + 0.5 * hot);
+      sackGlow.material.opacity = clamp01(0.2 + 0.4 * hot);
+      sackGlow.scale.setScalar(0.65 + 0.5 * hot);
       floor.material.opacity = clamp01(0.04 + 0.16 * hot);
       floor.position.set(-0.15 * (1 - back), 0.03, -0.25 + 0.2 * back);
       // Body: a heavy sidle; leaning back into the heave, pitching forward
