@@ -16,8 +16,9 @@
 //                    onto the landing, a white-hot star, a shock ring the
 //                    size of the dive, dust thrown out low, a flash on every
 //                    enemy it struck and a short kick
-//   crown_shard      a gold crown, one spike for each power, rises over the
-//                    elite and flares as the party's first blow lands
+//   crown_shard      a felled elite's crown: a gold crown, one spike for
+//                    each power it carried, rises where it fell, each spike
+//                    flares and breaks into coins that arc to the party
 //   dusk_lens        a crit blinds: a rose lens ring focuses down onto the
 //                    enemy's head, a glint crosses it, the dark falls (the
 //                    blind's own cloud is duskfx.js's)
@@ -227,24 +228,32 @@ export function createRelic6Fx({ kit, bus, byId, spray, flare, shock, after, ant
       }
       case 'crown_shard': {
         mark('relic_crown_shard');
-        const b = byId(ev.target);
-        const x = b ? b.x : ev.x ?? 0;
-        const z = b ? b.z : ev.z ?? 0;
-        const s = b && b.radius ? Math.max(1, b.radius / 0.35) : 1;
-        const y = 1.6 * s;
-        const n = Math.max(1, Math.min(3, ev.powers ?? 1));
+        const x = ev.x ?? 0;
+        const z = ev.z ?? 0;
+        const y = 1.4;
+        const n = Math.max(1, Math.min(4, ev.powers ?? 1));
         kit.ring({ x, z, r0: 0.55, r1: 0.45, width: 0.08, life: 0.7, core: PARCH, glow: GOLD, soft: 0.4, y });
+        const p = player();
         for (let i = 0; i < 2 * n + 3; i++) {
           const a = (i / (2 * n + 3)) * TAU;
           const tall = i % 2 === 0 && i / 2 < n;
           const cx = x + Math.cos(a) * 0.48;
           const cz = z + Math.sin(a) * 0.48;
           kit.streak({ a: { x: cx, y, z: cz }, b: { x: cx, y: y + (tall ? 0.5 : 0.2), z: cz }, width: tall ? 0.08 : 0.05, tailW: 0, core: PARCH, glow: GOLD, life: 0.6, delay: 0.03 * i, fall: 0, opacity: 0.95 });
-          if (tall) after(0.2 + 0.05 * i, () => flare(cx, y + 0.55, cz, AMBER, 0.45, { kind: 'star', life: 0.3 }));
+          if (!tall) continue;
+          // Each power's spike flares, then breaks into coins for the party.
+          after(0.3 + 0.06 * i, () => {
+            flare(cx, y + 0.55, cz, AMBER, 0.5, { kind: 'star', life: 0.3 });
+            spray('spark', cx, y + 0.5, cz, N(5), { color: GOLD, speed: [0.3, 0.9], up: [0.8, 1.8], size: [0.05, 0.09], life: [0.5, 0.8], gravity: 2.4, drag: 0.6, jitter: 0.2, opacity: 1 });
+            if (!p) return;
+            const mx = (cx + p.x) / 2;
+            const mz = (cz + p.z) / 2;
+            kit.streak({ a: { x: cx, y: y + 0.55, z: cz }, b: { x: mx, y: y + 1.0, z: mz }, width: 0.05, tailW: 0, core: PARCH, glow: GOLD, life: 0.2, delay: 0.05, fall: 1.0 });
+            kit.streak({ a: { x: mx, y: y + 1.0, z: mz }, b: { x: p.x, y: 1.0, z: p.z }, width: 0.05, tailW: 0, core: PARCH, glow: GOLD, life: 0.2, delay: 0.13, fall: 1.0 });
+          });
         }
         flare(x, y + 0.2, z, GOLD, 0.9, { kind: 'burst', life: 0.3 });
-        kit.light({ x, z, radius: 1.6, color: GOLD, opacity: 0.35, life: 0.6 });
-        spray('spark', x, y, z, N(6), { color: GOLD, speed: [0.1, 0.4], up: [-0.4, 0.4], size: [0.03, 0.06], life: [0.5, 0.8], gravity: 1.0, drag: 1.2, jitter: 0.4, opacity: 0.95 });
+        kit.light({ x, z, radius: 1.6, color: GOLD, opacity: 0.35, life: 0.8 });
         break;
       }
       case 'dusk_lens': {

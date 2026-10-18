@@ -70,7 +70,7 @@ const BEATS = [
   ['kiln_coal', 900],
   ['pumice_soles', 250],
   ['wing_bone', 350],
-  ['crown_shard', 400],
+  ['crown_shard', 550],
   ['dusk_lens', 300],
   ['nightfall_veil', 200],
   ['rekindled_heart', 300],

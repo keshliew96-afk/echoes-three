@@ -3464,7 +3464,7 @@
   ],
   "data": true
  },
- "Begin every run holding Crown Shard. The party deals 10% more damage to an elite for each power it carries (up to +30%).": {
+ "Begin every run holding Crown Shard. Each elite the party fells pays 5 Glint for every power it carried.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -6380,6 +6380,12 @@
   "files": [
    "src/ui/tutorial/index.js"
   ]
+ },
+ "Each elite the party fells pays 5 Glint for every power it carried.": {
+  "files": [
+   "src/sim/relics.js"
+  ],
+  "data": true
  },
  "Each elite the party kills pays 6 Glint, plus 4 for every affix it carried.": {
   "files": [
@@ -16405,12 +16411,6 @@
   "files": [
    "src/ui/run/endscreens.js"
   ]
- },
- "The party deals 10% more damage to an elite for each power it carries (up to +30%).": {
-  "files": [
-   "src/sim/relics.js"
-  ],
-  "data": true
  },
  "The party deals 12% more damage.": {
   "files": [

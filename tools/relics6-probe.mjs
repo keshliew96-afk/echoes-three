@@ -13,7 +13,7 @@
 //   soles    Pumice Soles: a floor patch never slows the party
 //   wing     Wing Bone: the player's dodge ends in a dive, 10 damage round
 //            the landing
-//   crown    Crown Shard: +10% per power on an elite, its crown shows once
+//   crown    Crown Shard: a felled elite pays 5 Glint for every power it carried
 //   lens     Dusk Lens: a party crit blinds 1 s, once per enemy every 3 s
 //   veil     Nightfall Veil: the first blow on each enemy crits, and the crit
 //            roll is still drawn (the run stream moves the same)
@@ -264,21 +264,27 @@ let coalSave = null;
 
 // --------------------------------------------------------------- crown --
 {
-  const w = campaign(SEED);
-  const p = seat(w, 0);
-  const el = boar(w, p.x + 3, p.z, 9000, { elite: true, affixes: ['gusting', 'cinder'] });
-  const two = (el.affixes ?? []).length;
-  const d0 = hitOn(w, el, 20, false, seat(w, 1).id);
-  w.cmd('relicGrant', 'crown_shard');
-  const d1 = hitOn(w, el, 20, false, seat(w, 1).id);
-  steps(w, 2);
-  const shown = procs(w, 'crown_shard').length;
-  hitOn(w, el, 20, false, seat(w, 1).id);
-  steps(w, 2);
-  const again = procs(w, 'crown_shard').length;
-  const plain = boar(w, p.x - 3, p.z, 9000);
-  const e0 = hitOn(w, plain, 20, false, seat(w, 1).id);
-  check('crown', `a ${two}-power elite takes +20% (${d0.toFixed(2)} -> ${d1.toFixed(2)}); its crown shows once; a plain boar takes the base ${e0.toFixed(2)}`, two === 2 && Math.abs(d1 / d0 - 1.2) < 0.005 && shown === 1 && again === 0 && Math.abs(e0 - 20) < 0.01);
+  const fell = (relics, affixes) => {
+    const w = campaign(SEED, relics);
+    const p = seat(w, 0);
+    const el = boar(w, p.x + 3, p.z, 50, { elite: true, affixes });
+    const n = (el.affixes ?? []).length;
+    w.log.length = 0;
+    el.hp = 1;
+    w.cmd('relicHit', el.id, seat(w, 1).id, 50, false);
+    steps(w, 10);
+    const g = w.log.filter((e) => e.type === 'glint_gain' && e.reason === 'relic_crown_shard');
+    return { w, n, g };
+  };
+  const two = fell(['crown_shard'], ['gusting', 'cinder']);
+  const pr = procs(two.w, 'crown_shard')[0];
+  const three = fell(['crown_shard'], ['gusting', 'cinder', 'molten']);
+  const none = fell([], ['gusting', 'cinder']);
+  check('crown', `a felled ${two.n}-power elite pays ${two.g.map((e) => e.amount).join('+') || 0} Glint, a ${three.n}-power one ${three.g.map((e) => e.amount).join('+') || 0}; none without the shard`, two.n === 2 && two.g.length === 1 && two.g[0].amount === 10 && !!pr && pr.powers === 2 && pr.glint === 10 && three.n === 3 && three.g.length === 1 && three.g[0].amount === 15 && none.g.length === 0);
+  const w = campaign(SEED, ['crown_shard']);
+  const el = boar(w, seat(w, 0).x + 3, seat(w, 0).z, 9000, { elite: true, affixes: ['gusting', 'cinder'] });
+  const d = hitOn(w, el, 20, false, seat(w, 1).id);
+  check('crown', `it adds no damage: a two-power elite still takes the base ${d.toFixed(2)}`, Math.abs(d - 20) < 0.01 && procs(w, 'crown_shard').length === 0);
 }
 
 // ---------------------------------------------------------------- lens --

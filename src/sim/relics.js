@@ -132,7 +132,7 @@ export const RELICS = Object.freeze({
   kiln_coal: { name: 'Kiln Coal', rarity: 'common', text: 'Enemies a bomb bursts on catch fire: for 4 s they lose 3% of max HP every half second (2% for elites, 0.5% for champions and bosses).', coal: Object.freeze({ ticks: 240, every: 30, dmg: 0.03, elite: 0.02, big: 0.005 }) },
   pumice_soles: { name: 'Pumice Soles', rarity: 'common', text: 'Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest.', soles: Object.freeze({ everyTicks: 30 }) },
   wing_bone: { name: 'Wing Bone', rarity: 'rare', text: 'Each dodge ends in a dive: enemies within 1.4 u of where the hero lands take 10 damage and are knocked back.', wing: Object.freeze({ radius: 1.4, dmg: 10 }) },
-  crown_shard: { name: 'Crown Shard', rarity: 'rare', text: 'The party deals 10% more damage to an elite for each power it carries (up to +30%).', crown: Object.freeze({ per: 0.1, max: 3 }) },
+  crown_shard: { name: 'Crown Shard', rarity: 'rare', text: 'Each elite the party fells pays 5 Glint for every power it carried.', crown: Object.freeze({ perPower: 5 }) },
   dusk_lens: { name: 'Dusk Lens', rarity: 'rare', text: 'Party critical hits blind the enemy for 1 s (never a boss; once per enemy every 3 s).', lens: Object.freeze({ ticks: 60, everyTicks: 180 }) },
   nightfall_veil: { name: 'Nightfall Veil', rarity: 'legendary', text: 'The first party blow on each enemy is always a critical hit.', veil: true },
   rekindled_heart: { name: 'Rekindled Heart', rarity: 'legendary', text: 'Once a level, each hero who would fall rises with 40% of max HP in a burst of flame: 15 damage to enemies within 2.5 u, which catch fire for 4 s.', heart: Object.freeze({ heal: 0.4, dmg: 15, radius: 2.5 }) },
@@ -373,7 +373,6 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (has('founders_ingot')) m += RELICS.founders_ingot.ingot.per * Math.min(RELICS.founders_ingot.ingot.max, heat);
       // Batch 6: Crown Shard (an elite's powers) and the Dimmed Lantern's
       // dark (an enemy out of every hero's light).
-      if (target && target.elite && has('crown_shard') && Array.isArray(target.affixes)) m += RELICS.crown_shard.crown.per * Math.min(RELICS.crown_shard.crown.max, target.affixes.length);
       if (target && cursedNow('dimmed_lantern') && inTheDark(target)) m *= 1 - CURSES.dimmed_lantern.dim.cut;
       return m;
     },
@@ -480,6 +479,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         }
       }
       if (has('spore_sac')) pending.push({ kind: 'spores', x: target.x, z: target.z, id: target.id });
+      if (target.elite && has('crown_shard') && Array.isArray(target.affixes) && target.affixes.length > 0) pending.push({ kind: 'crown', target: target.id, n: target.affixes.length, x: target.x, z: target.z });
       if (target.elite && has('bounty_writ')) pending.push({ kind: 'bounty', x: target.x, z: target.z, id: target.id, affixes: Array.isArray(target.affixes) ? target.affixes.length : 0 });
       if (target.elite && (!dropped || dropNext)) pending.push({ kind: 'drop', x: target.x, z: target.z, id: target.id, etype: target.kind });
     },
@@ -513,11 +513,6 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         charmHits = 0;
         pending.push({ kind: 'charm', from: t.id, x: t.x, z: t.z, src: atk ? atk.id : null });
       }
-    }
-    // Batch 6: Crown Shard shows its crown on an elite's first party blow.
-    if (t.elite && has('crown_shard') && !t.crowned && Array.isArray(t.affixes) && t.affixes.length > 0) {
-      t.crowned = true;
-      pending.push({ kind: 'crown', target: t.id, n: Math.min(RELICS.crown_shard.crown.max, t.affixes.length) });
     }
     // Batch 6: Dusk Lens, a party crit blinds (never a boss).
     if (ev.crit && has('dusk_lens') && !STATUS.isBoss(t) && t.kind !== 'eglob') {
@@ -1117,10 +1112,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       events.emit(getTick(), 'relic_proc', { relic: 'dusk_lens', target: e.id, from: p.src ?? null, x: r2(e.x), z: r2(e.z) });
     },
     crown(p) {
-      const e = registry.byId(p.target);
-      if (!e) return;
-      const C = RELICS.crown_shard.crown;
-      events.emit(getTick(), 'relic_proc', { relic: 'crown_shard', target: e.id, powers: p.n, dealt: r2(C.per * p.n), x: r2(e.x), z: r2(e.z) });
+      // A felled elite's powers pay out (the elite may already be gone).
+      const n = RELICS.crown_shard.crown.perPower * p.n;
+      pay(n, 'relic_crown_shard');
+      events.emit(getTick(), 'relic_proc', { relic: 'crown_shard', target: p.target, powers: p.n, glint: n, x: r2(p.x), z: r2(p.z) });
     },
     veil(p) {
       const e = registry.byId(p.target);
@@ -1622,7 +1617,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         if (id === 'kiln_coal') for (const e of near.slice(0, 5)) setAlight(e, 'bomb');
         else if (id === 'dusk_lens' && near[0]) pending.push({ kind: 'lens', target: near[0].id, src: player.id });
         else if (id === 'nightfall_veil' && near[0]) pending.push({ kind: 'veil', target: near[0].id });
-        else if (id === 'crown_shard' && near[0]) pending.push({ kind: 'crown', target: near[0].id, n: Math.max(1, Math.min(3, (near[0].affixes ?? []).length)) });
+        else if (id === 'crown_shard' && near[0]) pending.push({ kind: 'crown', target: near[0].id, n: Math.max(1, (near[0].affixes ?? []).length), x: near[0].x, z: near[0].z });
       }
       return id;
     },

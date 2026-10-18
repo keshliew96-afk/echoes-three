@@ -292,7 +292,7 @@ still draws the crit roll it overrides). Numbers are first guesses until play.
 | Kiln Coal | common | Enemies a bomb bursts on catch fire: for 4 s they lose 3% of max HP every half second (2% for elites, 0.5% for champions and bosses). |
 | Pumice Soles | common | Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest. |
 | Wing Bone | rare | Each dodge ends in a dive: enemies within 1.4 u of where the hero lands take 10 damage and are knocked back. |
-| Crown Shard | rare | The party deals 10% more damage to an elite for each power it carries (up to +30%). |
+| Crown Shard | rare | Each elite the party fells pays 5 Glint for every power it carried. |
 | Dusk Lens | rare | Party critical hits blind the enemy for 1 s (never a boss; once per enemy every 3 s). |
 | Nightfall Veil | legendary | The first party blow on each enemy is always a critical hit. |
 | Rekindled Heart | legendary | Once a level, each hero who would fall rises with 40% of max HP in a burst of flame: 15 damage to enemies within 2.5 u, which catch fire for 4 s. |
@@ -317,8 +317,9 @@ How they hook in:
   slip floors are not slicks and still slide.
 - Wing Bone reads `dash_end` (the player) and `ally_dodge` (an AI seat,
   queued through `later` at the dodge's end).
-- Crown Shard and Dimmed Lantern ride `mods.dealtMul`; Crown Shard shows its
-  crown once per elite. Nightfall Veil is `mods.firstBlow(target)`, read by
+- Crown Shard reads `mods.onKill` beside Bounty Writ (both pay on the same
+  elite; Kesh kept the overlap): `pay(5 x powers, 'relic_crown_shard')`.
+  Dimmed Lantern rides `mods.dealtMul`. Nightfall Veil is `mods.firstBlow(target)`, read by
   combat.js after the crit roll is drawn. Dusk Lens applies `blind` on a
   party crit (bosses refuse it).
 - Rekindled Heart rides `mods.saveFromDown` after Last Light, once per seat a
@@ -354,10 +355,10 @@ How they hook in:
 
 ## Verification
 
-- `node tools/relics6-probe.mjs` (headless, batch 6, 28 checks): the data (63
+- `node tools/relics6-probe.mjs` (headless, batch 6, 29 checks): the data (63
   relics, 12 room curses and 8 major, every new line in the nine other
   languages), each relic through its real hook (a secret wall, a bomb, a
-  crystal bed, a dodge press, an affixed elite, crits, a fall), the three
+  crystal bed, a dodge press, a felled two- and three-power elite, crits, a fall), the three
   curses' numbers (a bomb and a heavy blow refused, a door's +20% HP, the
   dark's 40%, one more power on Levels I and IV, Saint's Ashes), nothing in
   the legacy run, and a burn and a sealed level riding a save.

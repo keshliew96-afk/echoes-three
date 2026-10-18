@@ -897,7 +897,7 @@ export function mountVfxLab() {
     ['kiln_coal', 'Kiln Coal', 'five enemies set alight'],
     ['pumice_soles', 'Pumice Soles', 'a floor patch refused at the feet'],
     ['wing_bone', 'Wing Bone', 'the dodge ends in a dive'],
-    ['crown_shard', 'Crown Shard', 'a crown over a two-power elite'],
+    ['crown_shard', 'Crown Shard', 'a felled two-power elite pays its crown in Glint'],
     ['dusk_lens', 'Dusk Lens', 'a crit blinds the nearest enemy'],
     ['nightfall_veil', 'Nightfall Veil', 'a first blow cut as a crit'],
     ['rekindled_heart', 'Rekindled Heart', 'a hero rises in a burst of flame'],
