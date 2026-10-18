@@ -84,7 +84,7 @@ check(await page.evaluate(() => getComputedStyle(document.querySelector('#camp-p
 await openClasses();
 let cs = await cards();
 const lockedCard = cs.find((c) => c.cls === 'bellwright');
-check(cs.length === 6 && lockedCard && lockedCard.locked && lockedCard.disabled, `her card shows locked (${cs.map((c) => c.cls + (c.locked ? ':locked' : '')).join(',')})`);
+check(cs.length === 7 && lockedCard && lockedCard.locked && lockedCard.disabled, `her card shows locked (${cs.map((c) => c.cls + (c.locked ? ':locked' : '')).join(',')})`);
 check(/III/.test(lockedCard ? lockedCard.text : ''), 'the card says what frees her (Level III)');
 if (en) check(/Barrow Wyrm/.test(lockedCard.text) && !/Drowned Heron/.test(lockedCard.text), 'her own text, not Rill\'s');
 await shot('1-locked');

@@ -75,7 +75,7 @@ check(await page.evaluate(() => getComputedStyle(document.querySelector('#camp-p
 await openClasses();
 let cs = await cards();
 const lockedCard = cs.find((c) => c.cls === 'tidecaller');
-check(cs.length === 5 && lockedCard && lockedCard.locked && lockedCard.disabled, `her card shows locked (${cs.map((c) => c.cls + (c.locked ? ':locked' : '')).join(',')})`);
+check(cs.length === 7 && lockedCard && lockedCard.locked && lockedCard.disabled, `her card shows locked (${cs.map((c) => c.cls + (c.locked ? ':locked' : '')).join(',')})`);
 check(/Level II/.test(lockedCard ? lockedCard.text : ''), 'the card says what frees her');
 await page.screenshot({ path: `${OUT}/tidecaller-world-1-locked.png` });
 await page.click('.cs-classes .cs-lineup');
@@ -110,11 +110,14 @@ const talked = await until(async () => {
 }, 20000);
 check(!!talked && talked.line && talked.line !== bub.line, `E moves her on a line (${talked ? talked.line : ''})`);
 
-// 4 — the class picker: five open cards, her NEW badge.
+// 4 — the class picker: her card open beside the first four; Tolly and
+// Sable (freed later, PRs #66 and #80) stay locked. The NEW badge belongs to
+// the newest hero (Duskwing) since #78, so hers is gone.
 await openClasses();
 cs = await cards();
-check(cs.length === 5 && !cs.some((c) => c.locked || c.disabled), 'five open class cards');
-check(await page.evaluate(() => !!document.querySelector('.cs-card[data-cls="tidecaller"] .cs-new:not(.cs-lock)')), 'her card carries the NEW badge');
+const shut = cs.filter((c) => c.locked || c.disabled).map((c) => c.cls);
+check(cs.length === 7 && shut.join() === 'bellwright,duskwing', `five open class cards, Tolly and Sable still locked (${shut.join(', ')})`);
+check(await page.evaluate(() => !document.querySelector('.cs-card[data-cls="tidecaller"] .cs-new')), 'her card is open, with no badge (NEW is the newest hero\'s)');
 await page.screenshot({ path: `${OUT}/tidecaller-world-3-unlocked.png` });
 await closeScreens();
 check(await page.evaluate(() => getComputedStyle(document.querySelector('#camp-prompt .cp-lineup')).display !== 'none'), 'the Team chip is back');

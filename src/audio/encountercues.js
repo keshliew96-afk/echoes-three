@@ -447,7 +447,7 @@ export function createEncounterEventCues() {
 // slip patch ({ x, z, speed, fast }) and the patch's skin. One grain at a time
 // per skin every SLIDE_GRAIN_MS; the fastest slider is heard, a
 // little louder and brighter the faster it goes.
-const SLIDE_CUE = { wet: 'sl_wet', frost: 'sl_frost', glass: 'sl_glass' };
+const SLIDE_CUE = { wet: 'sl_wet', frost: 'sl_frost', rime: 'sl_frost', glass: 'sl_glass' };
 export const SLIDE_GRAIN_MS = 110;
 export function createSlideSound(getEngine, now = () => performance.now()) {
   const last = {};

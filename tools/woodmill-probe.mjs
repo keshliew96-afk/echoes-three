@@ -146,7 +146,7 @@ const cull = (W, keep) => W.registry.all().filter((e) => e.faction === 'hostile'
   check(NEW.every((k) => THREAT[k] > 0), `threat costs (${NEW.map((k) => `${k} ${THREAT[k]}`).join(', ')})`);
   check(NEW.every((k) => ENEMY_VFX[k]), 'one ENEMY_VFX row each');
   const rows = NEW.map((k) => BESTIARY.find((b) => b.id === k));
-  check(BESTIARY.length === 41 && rows.every((r) => r && r.lore && r.text && r.lands.length === 1), `journal rows (${BESTIARY.length} entries; lands ${rows.map((r) => r && r.lands.join()).join(', ')})`);
+  check(BESTIARY.length >= 41 && rows.every((r) => r && r.lore && r.text && r.lands.length === 1), `journal rows (${BESTIARY.length} entries; lands ${rows.map((r) => r && r.lands.join()).join(', ')})`);
   check(rows.every((r) => !/ember/i.test(r.text)), 'journal text says warning ring / lane / cone, never Ember');
   check(AFFIXES.blinking.not.includes('leech') && AFFIXES.blinking.not.includes('lasher') && AFFIXES.frozen.not.includes('leech') && AFFIXES.vampiric.not.includes('leech'), 'affix exclusions: no Blinking leech or lasher, no Frozen or Vampiric leech');
 }
@@ -179,11 +179,12 @@ const cull = (W, keep) => W.registry.all().filter((e) => e.faction === 'hostile'
   toCombat(T);
   const tut = rosterOf(T);
   check(!tut.some((k) => NEW.includes(k)), `the tutorial's room 4 roster has none (${tut.join(', ') || 'no plan'})`);
-  // Endless: home at Depths 1 and 2, guests from Depth 5.
+  // Endless: home at Depths 1 and 2, guests past the first cycle (CYCLE is
+  // 5 since the Spire, so the mixed Barrow is Depth CYCLE + 3).
   const d1 = E.endlessLevel(1);
   const d2 = E.endlessLevel(2);
-  const d7 = E.endlessLevel(7); // the Barrow, mixed
-  check(WOOD.every((k) => d1.roster[k] > 0) && MILL.every((k) => d2.roster[k] > 0) && NEW.every((k) => d7.roster[k] > 0 && d7.introduce[k] === 4), 'Endless: home at Depths 1-2, guests (from room 4) past Depth 5');
+  const d7 = E.endlessLevel(E.CYCLE + 3); // the Barrow, mixed
+  check(WOOD.every((k) => d1.roster[k] > 0) && MILL.every((k) => d2.roster[k] > 0) && NEW.every((k) => d7.roster[k] > 0 && d7.introduce[k] === 4), `Endless: home at Depths 1-2, guests (from room 4) past Depth ${E.CYCLE + 1}`);
   const En = makeWorld(7);
   En.run.startCampaign({ endless: true, harness: true });
   toCombat(En);

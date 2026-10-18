@@ -221,6 +221,17 @@ const INSTR = {
       k.tone(d, t, { f0: f * 0.5, a: 0.01, d: 1.8, gain: v * 0.35 }),
       k.tone(d, t, { f0: f * 1.195, a: 0.004, d: 1.1, gain: v * 0.12 })
     ),
+  // The Ash Raven's own (Small fixes 6): a grave bell under the Barrow, its
+  // bronze cracked and furred with ash — a dark inharmonic strike and a hum
+  // an octave under like the sting's toll, a dry rasp of ash on the attack
+  // (the caw), and the crack: a flat partial beating against the strike.
+  ashtoll: (k, d, t, f, v, len) =>
+    Math.max(
+      k.bell(d, t, { f, ratio: 1.4, index: 2.0, d: Math.max(0.9, len + 0.7), gain: v * 0.7 }),
+      k.tone(d, t, { f0: f * 0.5, a: 0.01, d: Math.max(0.7, len + 0.4), gain: v * 0.26 }),
+      k.tone(d, t, { f0: f * 1.47, a: 0.004, d: 0.5, gain: v * 0.08 }),
+      k.noise(d, t, { type: 'bandpass', f0: 1700, f1: 900, q: 2.2, a: 0.004, d: 0.09, gain: v * 0.22 })
+    ),
   // Act VI: the smith's hammer on the anvil — a hard, high, inharmonic ring
   // (FM on a non-integer ratio, short), the iron's thud under it and the
   // strike's click; the ring is a fixed pitch like a real anvil.
@@ -498,7 +509,9 @@ export const BOSS_MUSIC = Object.freeze({
   },
   // Slice 11. The Ash Raven's groove circles: a tolling bell ostinato that
   // climbs and drops like wingbeats over a taiko on the downbeats, the toll
-  // lead calling a falling minor third (the crow's caw). The Vein Weaver's
+  // lead calling a falling minor third (the crow's caw) on its own cracked
+  // bell, 'ashtoll' (Small fixes 6; before, it named a 'toll' instrument the
+  // engine never had, so the lead stayed silent). The Vein Weaver's
   // creeps: a glass ostinato picking out a web, the Heart's own beat as the
   // drum, a choir lead that winds a thread up and lets it fall.
   ashraven: {
@@ -506,7 +519,7 @@ export const BOSS_MUSIC = Object.freeze({
     prog: [0, 5, 3, 4],
     arp: { instr: 'bell', pattern: [0, 2, 4, 2, 5, 4, 2, 1] },
     drum: { 0: 1, 4: 0.55, 8: 0.9, 10: 0.5, 12: 0.6 },
-    lead: 'toll',
+    lead: 'ashtoll',
     motif: [[0, 4, 2], [2, 2, 6], [8, 4, 2], [10, 2, 2], [12, 1, 4], [16, 4, 2], [18, 2, 4], [24, 0, 8]],
   },
   veinweaver: {

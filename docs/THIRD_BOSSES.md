@@ -148,8 +148,11 @@ Small fixes 3 put the Weaver on the same gate as the others.)
 
 ## Identity
 
-The same set as slice 10: a HUD medal, an intro sting, a boss groove, beat
-cues and tells, signature VFX for every attack, its enrage and its death
+The same set as slice 10: a HUD medal, an intro sting, a boss groove (the
+Raven's lead plays on its own cracked, ash-furred bell, `ashtoll` in
+`src/audio/music.js`, since Small fixes 6; before, it named a `toll`
+instrument the music engine never had and stayed silent), beat cues and
+tells, signature VFX for every attack, its enrage and its death
 (the Raven's dive tears a furrow of embers and feathers down the lane, its
 Omen brings streaks of crows down out of the sky; the Weaver's thread is
 drawn from its spinnerets to each bound hero while it holds, and its Slam

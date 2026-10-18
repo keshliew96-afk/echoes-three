@@ -219,10 +219,12 @@ check('enemy: a Thorn Boar on the patch carries on before it can turn back (dry 
 {
   const withSlip = Object.values(LAYOUTS).filter((L) => L.hazards.some((h) => h.type === 'slip'));
   const acts = withSlip.map((L) => L.act);
-  // Act IV (docs/ACT_IV.md) added heart crystal floors (skin 'glass').
-  check('layouts: slick floor in Act II, III and IV layouts only, never Act I', withSlip.length >= 4 && acts.every((a) => a === 2 || a === 3 || a === 4) && acts.includes(2) && acts.includes(3), withSlip.map((L) => `${L.id} ${L.name}`));
+  // Act IV (docs/ACT_IV.md) added heart crystal floors (skin 'glass'), Act V
+  // (docs/ACT_V.md) rime (skin 'rime' since Small fixes 6); the Kiln has none.
+  check('layouts: slick floor in Act II to V layouts only, never Act I', withSlip.length >= 4 && acts.every((a) => a >= 2 && a <= 5) && acts.includes(2) && acts.includes(3), withSlip.map((L) => `${L.id} ${L.name}`));
   const bossIds = Object.values(LEVELS).map((l) => l.bossLayout);
-  check('layouts: the skins match the land (wet in the Mill, frost in the Barrow, glass in the Heart)', withSlip.every((L) => L.hazards.filter((h) => h.type === 'slip').every((h) => h.skin === (L.act === 2 ? 'wet' : L.act === 4 ? 'glass' : 'frost'))));
+  const SKIN_OF_ACT = { 2: 'wet', 3: 'frost', 4: 'glass', 5: 'rime' };
+  check('layouts: the skins match the land (wet in the Mill, frost in the Barrow, glass in the Heart, rime in the Spire)', withSlip.every((L) => L.hazards.filter((h) => h.type === 'slip').every((h) => h.skin === SKIN_OF_ACT[L.act])));
   check('layouts: no slick floor in Level 1 tables (Act I) or the tutorial clearing (layout 2)', !LEVELS[1].layouts.some((id) => withSlip.some((L) => L.id === id)) && !LAYOUTS[2].hazards.some((h) => h.type === 'slip'));
   void bossIds;
 }
