@@ -134,7 +134,7 @@ const hitOn = (w, target, power, crit = false, by = null) => {
 {
   const rar = NEW.map((id) => RELICS[id] && RELICS[id].rarity);
   const n = (r) => rar.filter((x) => x === r).length;
-  check('data', `53 relics (51 here, the Duskwing's two since his world slice), the eight new ones present (${RELIC_IDS.length})`, RELIC_IDS.length === 53 && NEW.every((id) => RELICS[id]));
+  check('data', `55 relics (51 here, the Duskwing's two since his world slice, the Kiln's two since plan 5 slice 9), the eight new ones present (${RELIC_IDS.length})`, RELIC_IDS.length === 55 && NEW.every((id) => RELICS[id]));
   check('data', `rarities 3 common, 3 rare, 2 legendary (${n('common')}/${n('rare')}/${n('legendary')})`, n('common') === 3 && n('rare') === 3 && n('legendary') === 2);
   check('data', 'none of them a class relic; an heirloom for each', NEW.every((id) => !RELICS[id].cls && UNLOCKS[`heirloom_${id}`] && UNLOCKS[`heirloom_${id}`].relic === id));
   check('data', `10 room curses and 7 major (${CURSE_IDS.length}/${MAJOR_CURSE_IDS.length})`, CURSE_IDS.length === 10 && MAJOR_CURSE_IDS.length === 7 && CURSE_IDS.includes('corked') && CURSE_IDS.includes('tolling_dead') && MAJOR_CURSE_IDS.includes('dulled_edge'));

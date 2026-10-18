@@ -154,7 +154,7 @@ const FIRSTS = { 1: 'briar_knight', 2: 'sluice_warden', 3: 'bone_reeve', 4: 'hol
   }
   check('pick', "Act V's first champion is still the Gale Herald", C.championsOfAct(5)[0].id === 'gale_herald' && C.championFor(5).id === 'gale_herald');
   check('pick', 'the pick is pure (same seed and index, same champion)', [1, 2, 3, 4].every((a) => C.championPick(4242, 2, a).id === C.championPick(4242, 2, a).id));
-  check('pick', 'ten champions in all (plan 5 slice 2 added the Bell Abbess)', C.CHAMPION_IDS.length === 10 && C.CHAMPION_LIST.length === 10 && C.CHAMPION_IDS.every((id) => C.isChampionKind(id)), C.CHAMPION_IDS);
+  check('pick', 'twelve champions in all (plan 5 slice 2 added the Bell Abbess, slice 9 the Kiln two)', C.CHAMPION_IDS.length === 12 && C.CHAMPION_LIST.length === 12 && C.CHAMPION_IDS.every((id) => C.isChampionKind(id)), C.CHAMPION_IDS);
   // The door and the room: a level's crown door names its pick, and taking
   // it spawns that champion.
   let agree = 0;
@@ -417,7 +417,7 @@ if (leapSave) {
 // ---------------------------------------------------------------- deeds --
 {
   const champs = BESTIARY.filter((b) => b.champion);
-  check('deeds', 'the Journal lists ten champions, each in its land, with lore and text', champs.length === 10 && Object.entries(SECONDS).every(([a, id]) => { const r = champs.find((c) => c.id === id); return r && r.lands[0] === Number(a) && r.lore && r.text; }), champs.map((c) => c.id));
+  check('deeds', 'the Journal lists twelve champions, each in its land, with lore and text', champs.length === 12 && Object.entries(SECONDS).every(([a, id]) => { const r = champs.find((c) => c.id === id); return r && r.lands[0] === Number(a) && r.lore && r.text; }), champs.map((c) => c.id));
   const four = DEEDS.four_crowns ?? (DEEDS.get ? DEEDS.get('four_crowns') : null);
   const five = DEEDS.five_crowns ?? (DEEDS.get ? DEEDS.get('five_crowns') : null);
   const life = (ids) => ({ champion: ids });
@@ -426,7 +426,7 @@ if (leapSave) {
   check('deeds', 'Four Crowns takes either champion of each of the first four lands', !!four && four.test(fr, life(C.FIRST_CROWNS)) && four.test(fr, life(['moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron'])) && !four.test(fr, life(['briar_knight', 'moss_hart', 'sluice_warden', 'lockkeeper', 'bone_reeve', 'gravebell_ringer'])));
   if (five) check('deeds', 'Five Crowns counts a land per champion of either kind, the Herald for the Spire', five.test(fr, life(C.FIVE_CROWNS)) && five.test(fr, life(['moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron', 'gale_herald'])) && !five.test(fr, life([...C.FIRST_CROWNS, 'moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron'])) && five.goal(life(C.CHAMPION_IDS))[1] === 5);
   else check('deeds', 'Five Crowns is listed', false);
-  check('deeds', 'champion marks record all ten', MARK_KINDS.champion.length === 10 && Object.values(SECONDS).every((id) => MARK_KINDS.champion.includes(id)));
+  check('deeds', 'champion marks record all twelve', MARK_KINDS.champion.length === 12 && Object.values(SECONDS).every((id) => MARK_KINDS.champion.includes(id)));
 }
 
 mkdirSync(dirname(resolve(here, OUT)), { recursive: true });

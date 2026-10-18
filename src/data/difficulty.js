@@ -198,6 +198,9 @@ export const THREAT = Object.freeze({
   slag: 2.8,
   bellows: 1.7,
   cindermoth: 1.1,
+  // ... and its two more (content plan 5 slice 9).
+  hurler: 1.6,
+  ashwraith: 1.7,
 });
 export const ELITE_COST = 1.8;
 export const ELITE_MUL = Object.freeze({ hp: 1.8, dmg: 1.25, scale: 1.2 });

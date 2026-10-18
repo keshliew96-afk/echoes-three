@@ -48,6 +48,9 @@ export const CHAMPIONS = Object.freeze({
   4: Object.freeze({ id: 'hollow_choir', act: 4, name: 'The Hollow Choir' }),
   // Act V (plan 4 slice 7, docs/CHAMPIONS.md "The Gale Herald").
   5: Object.freeze({ id: 'gale_herald', act: 5, name: 'The Gale Herald' }),
+  // The Ember Kiln (content plan 5 slice 9, docs/CHAMPIONS.md "The Ember
+  // Kiln's champions"): its own two, where it borrowed the Spire's before.
+  6: Object.freeze({ id: 'furnace_knight', act: 6, name: 'The Furnace Knight' }),
 });
 // SECOND CHAMPIONS (plan 4 slice 8, docs/CHAMPIONS.md "Second champions"):
 // Acts I to IV each have a second lord, and the Still Spire too (content
@@ -60,6 +63,7 @@ export const SECOND_CHAMPIONS = Object.freeze({
   3: Object.freeze({ id: 'gravebell_ringer', act: 3, name: 'The Gravebell Ringer', second: true }),
   4: Object.freeze({ id: 'vein_matron', act: 4, name: 'The Vein Matron', second: true }),
   5: Object.freeze({ id: 'bell_abbess', act: 5, name: 'The Bell Abbess', second: true }),
+  6: Object.freeze({ id: 'glassblower', act: 6, name: 'The Glassblower', second: true }),
 });
 // Every champion, in act order (each act's first, then its second).
 export const CHAMPION_LIST = Object.freeze(

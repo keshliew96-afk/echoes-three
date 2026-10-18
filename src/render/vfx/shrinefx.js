@@ -90,13 +90,25 @@ export function createShrineFx({ kit, bus, byId, spray, flare, shock, after, ant
           ? { color: INK, tile: SHARD_TILE.feather }
           : ev.pick
             ? { color: PALETTE.paleGold, tile: SHARD_TILE.needle }
-            : { color: (TONIC_COLORS[ev.tonic] ?? TONIC_COLORS.mend_tonic).glow, tile: SHARD_TILE.drop };
+            : ev.relic
+              ? { color: VFX_MATTER.kilngold, tile: SHARD_TILE.drop }
+              : { color: (TONIC_COLORS[ev.tonic] ?? TONIC_COLORS.mend_tonic).glow, tile: SHARD_TILE.drop };
     const from = ev.hp ? (world?.entities?.() ?? []).filter((e) => e.partyIndex !== undefined && e.hp > 0) : by ? [by] : [];
     for (const h of from) {
       kit.streak({ a: { x: h.x, y: 0.9, z: h.z }, b: { x, y: 1.3, z }, width: 0.08, tailW: 0.02, core: PARCH, glow: price.color, life: 0.35, fall: 1.4, opacity: 0.85 });
       spray('shard', h.x, 0.9, h.z, 4, { color: price.color, tile: price.tile, speed: [0.3, 0.8], up: [0.8, 1.6], size: [0.08, 0.13], life: [0.5, 0.8], gravity: -0.4, drag: 1.4, jitter: 0.3 });
     }
     if (ev.curse) spray('smoke', x, 0.4, z, 8, { color: INK, speed: [0.2, 0.6], up: [0.6, 1.2], size: [0.45, 0.7], grow: 1.5, life: [0.9, 1.4], opacity: 0.4, gravity: -0.3, drag: 1.8, jitter: 0.5 });
+    // The Forge Shrine: the relic melts in the crucible and three anvil
+    // blows ring sparks off it before the shrine answers.
+    if (ev.relic) {
+      for (let i = 0; i < 3; i++) {
+        after(i * 0.07, () => {
+          flare(x + 0.1, 1.05, z - 0.38, VFX_MATTER.kilngold, 0.5, { kind: 'star', life: 0.12, core: VFX_MATTER.kilnheat });
+          spray('spark', x + 0.1, 1.05, z - 0.38, 10, { color: VFX_MATTER.kilngold, speed: [1.2, 3.2], up: [0.6, 2.0], size: [0.03, 0.06], life: [0.3, 0.6], gravity: 6, drag: 0.6, jitter: 0.1, opacity: 1 });
+        });
+      }
+    }
     anticipate(x, z, 1.4, c.glow, { y: 0.9, lines: 8, core: c.core });
     after(0.22, () => {
       // The shrine answers.

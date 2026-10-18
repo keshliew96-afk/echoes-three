@@ -608,11 +608,21 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           b.material.opacity = (1 - cs) * outK * (u < 0.7 ? 0.5 * Math.sin((u / 0.7) * Math.PI) : 0);
           b.scale.setScalar(0.08 + 0.18 * u);
         }
-      } else if (e.kind === 'slick' && e.variant === 'crystal') {
+      } else if (e.kind === 'slick' && (e.variant === 'crystal' || e.variant === 'glass')) {
         seenS.add(e.id);
         let c = crystals.get(e.id);
         if (!c) {
           c = makeCrystalPatch();
+          // THE EMBER KILN (content plan 5 slice 9): the Glassblower's burst
+          // bubble leaves a bed of glass shards, amber-gold in soot, lower
+          // and finer than the Heart's crystal.
+          if (e.variant === 'glass') {
+            c.disc.material.color.set(VFX_MATTER.kilnbrick ?? '#3A2A24').multiplyScalar(0.6);
+            c.cluster.material.color.set(VFX_MATTER.moltenglass ?? '#E8B04A');
+            c.cluster.material.emissive.set(VFX_MATTER.kilngold ?? '#E0A040');
+            c.glow.material.color.set(VFX_MATTER.kilngold ?? '#E0A040');
+            c.flat = 0.5;
+          }
           c.g.position.set(e.x, 0, e.z);
           c.g.rotation.y = (e.id * 2.399963) % (Math.PI * 2);
           c.g.scale.setScalar(e.radius);
@@ -621,7 +631,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         }
         const inK = Math.min(1, (tick - e.startTick) / 6);
         const outK = Math.min(1, Math.max(0, (e.untilTick - tick) / 24));
-        c.cluster.scale.set(1, Math.max(0.01, (inK < 1 ? 1.15 * inK : 1) * outK), 1);
+        c.cluster.scale.set(1, Math.max(0.01, (inK < 1 ? 1.15 * inK : 1) * outK * (c.flat ?? 1)), 1);
         c.cluster.position.y = -0.04 * (1 - outK);
         c.disc.material.opacity = 0.7 * Math.min(1, inK * 2) * outK;
         c.cluster.material.emissiveIntensity = 0.5 + 0.08 * Math.sin(tSec * 2.2 + e.id) + 0.6 * (1 - inK);

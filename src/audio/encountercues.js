@@ -30,6 +30,9 @@
 //              (F lydian) far off in the cold
 //   ev_bell    Silent Bell: a muffled bell strike dying into silence, then a
 //              reverse swell drawn back into the cloth
+//   The Ember Kiln's (content plan 5 slice 9):
+//   ev_pour    Molten Bell: molten metal hissing into the mould, then the
+//              new bell struck once, full and ringing in B-flat
 //   ev_unbind  a curse lifted (curse_lifted, the Silent Bell's): a clean
 //              bright crack and a rising run of pure bells
 // Room objectives (in the room: spatial on the SFX bus):
@@ -88,6 +91,7 @@ export const ENCOUNTER_CUE_CAL = {
   ev_dice: 0,
   ev_seat: 0,
   ev_bell: 0,
+  ev_pour: 0,
   ev_unbind: 0,
   ob_horn: -3.6,
   ob_winded: -11.9,
@@ -238,6 +242,14 @@ const CUES = {
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 500, q: 0.8, d: 0.12, gain: 0.45 }),
       k.tone(d, t + 1.0, { f0: P(p, 349.2), f1: P(p, 698.5), glide: 0.6, a: 0.6, d: 0.05, gain: 0.22 }),
       k.noise(d, t + 1.0, { type: 'bandpass', f0: P(p, 600), f1: P(p, 2600), q: 1.4, a: 0.62, d: 0.04, gain: 0.3 })
+    ) },
+  ev_pour: { ...ui, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 2600), f1: P(p, 1200), q: 1, a: 0.08, hold: 0.4, d: 0.3, gain: 0.4 }),
+      k.noise(d, t + 0.05, { src: 'crackle', type: 'highpass', f0: P(p, 2400), q: 0.8, a: 0.05, hold: 0.4, d: 0.2, gain: 0.3 }),
+      k.bell(d, t + 0.8, { f: P(p, 116.5), ratio: 1.41, index: 1.6, d: 2.2, gain: 0.6 }),
+      k.bell(d, t + 0.8, { f: P(p, 233.1), ratio: 2.0, index: 0.9, d: 1.8, gain: 0.3 }),
+      k.tone(d, t + 0.8, { f0: P(p, 58.3), a: 0.01, d: 1.6, gain: 0.4 })
     ) },
   ev_unbind: { ...ui, cooldownMs: 400, fn: (k, t, d, p) =>
     Math.max(
@@ -397,6 +409,7 @@ const TAKE = {
   gamblers_dice: 'ev_dice',
   gods_seat: 'ev_seat',
   silent_bell: 'ev_bell',
+  molten_bell: 'ev_pour',
 };
 export const ENCOUNTER_TAKE_CUES = Object.freeze({ ...TAKE });
 

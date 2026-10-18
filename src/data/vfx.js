@@ -242,6 +242,10 @@ export const ENEMY_VFX = Object.freeze({
   slag: Object.freeze({ matter: 'slag', family: 'brute', shard: null, chunk: 8, dust: 3 }),
   bellows: Object.freeze({ matter: 'bellows', family: 'support', shard: null, chunk: 4, dust: 2 }),
   cindermoth: Object.freeze({ matter: 'mothash', family: 'flyer', shard: 'petal', chunk: 0, dust: 3 }),
+  // ... and its two more (content plan 5 slice 9): the coal and its cinder
+  // bed, the fumble; the fade, the rise and the rake.
+  hurler: Object.freeze({ matter: 'coalsack', family: 'shooter', shard: null, chunk: 4, dust: 3 }),
+  ashwraith: Object.freeze({ matter: 'ashgrey', family: 'charger', shard: null, chunk: 0, dust: 4 }),
   // CHAMPIONS (docs/CHAMPIONS.md): the four lords. Their move beats and
   // deaths are director recipes keyed by champion_* events.
   briar_knight: Object.freeze({ matter: 'bramble', family: 'brute', shard: 'needle', chunk: 8, dust: 3 }),
@@ -257,6 +261,9 @@ export const ENEMY_VFX = Object.freeze({
   vein_matron: Object.freeze({ matter: 'heartcrystal', family: 'brute', shard: 'needle', chunk: 6, dust: 1, heart: true, shot: Object.freeze({ look: 'dart', trail: 0.2 }) }),
   // The Still Spire's second (content plan 5 slice 2).
   bell_abbess: Object.freeze({ matter: 'habit', family: 'brute', shard: 'feather', chunk: 6, dust: 3 }),
+  // The Ember Kiln's two (content plan 5 slice 9).
+  furnace_knight: Object.freeze({ matter: 'kilniron', family: 'brute', shard: null, chunk: 8, dust: 4 }),
+  glassblower: Object.freeze({ matter: 'moltenglass', family: 'brute', shard: 'needle', chunk: 6, dust: 2 }),
 });
 
 const FAMILY_DEFAULT = Object.freeze({

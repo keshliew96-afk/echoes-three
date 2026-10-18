@@ -3160,6 +3160,155 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     },
   });
 
+  // ... and its two more (content plan 5 slice 9, docs/KILN.md "Two more
+  // creatures"), in the same rule: Ember only on the ring that hurts, the
+  // rest Kiln Gold over soot and ash.
+  const SACK = vfxMatterColor('coalsack');
+  const ASHG = vfxMatterColor('ashgrey');
+  const HURL_Y = 1.5; // the sack over the Hurler's head at the top of the swing
+  const WRAITH_Y = 1.3; // the Wraith's ember heart
+
+  // Coal Hurler — "the mortar". The swing: the sack goes back over its head
+  // and the live coal leaves it on a high arc, a gold head with a smoking
+  // trail, landing as the warning closes. Timed off the telegraph so the
+  // coal is seen in the air over the ring.
+  const HURL_FLIGHT = 0.42; // s in the air, the last part of the 66-tick warning
+  bus.on('telegraph_start', (ev) => {
+    if (ev.etype !== 'hurler') return;
+    const h = byId(ev.id);
+    if (!h) return;
+    const lead = Math.max(0, (ev.resolveTick - (world.tick ?? 0)) / 60 - HURL_FLIGHT);
+    const x0 = h.x;
+    const z0 = h.z;
+    // The sack glows as it is swung back.
+    spray('spark', x0, 1.0, z0, 4, { color: KGOLD, speed: [0.05, 0.25], up: [0.4, 0.9], size: [0.03, 0.06], life: [0.4, 0.7], gravity: -0.2, drag: 1.4, jitter: 0.3 });
+    after(lead, () => {
+      mark('hurler_flight');
+      const x1 = ev.x;
+      const z1 = ev.z;
+      const steps = N(9);
+      for (let i = 0; i <= steps; i++) {
+        const k = i / steps;
+        const x = x0 + (x1 - x0) * k;
+        const z = z0 + (z1 - z0) * k;
+        const y = HURL_Y + (0.2 - HURL_Y) * k + 2.4 * k * (1 - k) * 2;
+        after(HURL_FLIGHT * k, () => {
+          kit.flash({ x, y, z, color: KHEAT, size: 0.32, life: 0.09, opacity: 0.95 });
+          spray('spark', x, y, z, 1, { color: KGOLD, speed: [0.05, 0.25], up: [-0.3, 0.1], size: [0.04, 0.07], life: [0.25, 0.45], gravity: 2, drag: 1.2 });
+          if (i % 2 === 0) spray('smoke', x, y, z, 1, { color: KBRICK, speed: [0.05, 0.15], up: [0.1, 0.3], size: [0.14, 0.22], grow: 1.6, life: [0.45, 0.7], opacity: 0.28, gravity: -0.2, drag: 2.2 });
+        });
+      }
+    });
+  });
+  // The landing: the Ember ring at the coal's radius (the hit), the coal
+  // bursting into a fan of gold cinders that bounce and settle, a scorch and
+  // the cinder bed glowing (the bed itself is the slick, extras.js).
+  bus.on('hurler_coal', (ev) => {
+    mark('hurler_coal');
+    const r = ev.radius ?? 1.3;
+    flare(ev.x, 0.3, ev.z, EMBER, 1.1, { kind: 'burst', life: 0.2, core: KHEAT });
+    shock(ev.x, ev.z, r * 1.02, EMBER, { life: 0.28, width: 0.11, jag: 0.5 });
+    kit.flash({ x: ev.x, y: 0.3, z: ev.z, color: KHEAT, size: 0.8, life: 0.14 });
+    spray('spark', ev.x, 0.2, ev.z, 16, { color: KGOLD, speed: [1.2, 2.8], up: [1.4, 3.0], size: [0.05, 0.1], life: [0.5, 0.85], gravity: 7, drag: 0.5, jitter: 0.2 });
+    spray('spark', ev.x, 0.2, ev.z, 8, { color: KSPARK, speed: [0.6, 1.6], up: [0.4, 1.2], size: [0.03, 0.06], life: [0.3, 0.6], gravity: 4, drag: 0.8, jitter: 0.25 });
+    spray('chunk', ev.x, 0.2, ev.z, 5, { color: KCOAL, speed: [0.8, 1.8], up: [0.8, 1.8], size: [0.05, 0.09], life: [0.5, 0.8], jitter: 0.2 });
+    spray('smoke', ev.x, 0.2, ev.z, 3, { color: KBRICK, speed: [0.3, 0.8], up: [0.3, 0.7], size: [0.32, 0.46], grow: 1.5, life: [0.8, 1.2], opacity: 0.3, gravity: -0.25, drag: 2.2, jitter: 0.3 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r, kind: 'scorch', stain: INK, glow: KGOLD, glowOpacity: 0.55, cool: 1.4, life: 3.0, opacity: 0.4 });
+    kit.light({ x: ev.x, z: ev.z, radius: r * 1.4, color: KGOLD, opacity: 0.4, life: 0.5, attack: 0.02 });
+  });
+  // A stun makes it fumble: the sack drops, a cough of soot and a spill of
+  // dull coals at its own feet, nothing thrown.
+  bus.on('hurler_fumble', (ev) => {
+    mark('hurler_fumble');
+    const h = byId(ev.id);
+    const x = h ? h.x : ev.x;
+    const z = h ? h.z : ev.z;
+    spray('smoke', x, 1.0, z, 3, { color: SACK, speed: [0.2, 0.5], up: [0.1, 0.4], size: [0.22, 0.34], grow: 1.5, life: [0.6, 0.9], opacity: 0.4, gravity: -0.2, drag: 2.4 });
+    spray('chunk', x, 1.0, z, 4, { color: KCOAL, speed: [0.2, 0.6], up: [0.2, 0.6], size: [0.04, 0.07], life: [0.4, 0.6] });
+    spray('spark', x, 0.9, z, 5, { color: KCOAL, speed: [0.1, 0.4], up: [-0.1, 0.2], size: [0.03, 0.05], life: [0.35, 0.6], gravity: 4, drag: 0.8 });
+  });
+
+  // Ash Wraith — "the step behind you". The fade: it comes apart into a
+  // twist of grey ash that spirals up and away, its ember winking out; a
+  // thin ash wisp runs low over the floor toward the mark, and at the mark
+  // the ash gathers (grey motes drawn in, a faint gold heart kindling) until
+  // it rises.
+  bus.on('ashwraith_fade', (ev) => {
+    mark('ashwraith_fade');
+    const { x, z } = ev;
+    for (let i = 0; i < N(10); i++) {
+      const a = (i / 10) * TAU;
+      spray('smoke', x + Math.cos(a) * 0.25, 0.4 + i * 0.12, z + Math.sin(a) * 0.25, 1, { color: ASHG, speed: [0.3, 0.6], up: [0.6, 1.2], size: [0.26, 0.4], grow: 1.6, life: [0.7, 1.1], opacity: 0.4, gravity: -0.4, drag: 1.8, dir: { x: -Math.sin(a), z: Math.cos(a) }, dirBias: 0.7 });
+    }
+    kit.flash({ x, y: WRAITH_Y, z, color: KGOLD, size: 0.5, life: 0.22, grow: -0.6, opacity: 0.7 });
+    spray('spark', x, WRAITH_Y, z, 6, { color: KCOAL, speed: [0.1, 0.4], up: [0.2, 0.6], size: [0.03, 0.05], life: [0.4, 0.7], gravity: 1.5, drag: 1.2 });
+    if (Number.isFinite(ev.toX)) {
+      const d = unit2(ev.toX - x, ev.toZ - z);
+      const len = Math.hypot(ev.toX - x, ev.toZ - z);
+      kit.streak({ a: { x, y: 0.12, z }, b: { x: x + d.x * 0.6, y: 0.12, z: z + d.z * 0.6 }, width: 0.18, tailW: 0.4, core: ASHG, glow: ASHG, life: 0.5, travel: { x: d.x * (len / 0.5), y: 0, z: d.z * (len / 0.5) }, fall: 0.6, opacity: 0.35 });
+      after(0.35, () => {
+        for (let i = 0; i < N(8); i++) {
+          const a = rnd(0, TAU);
+          kit.streak({ a: { x: ev.toX + Math.cos(a) * 1.2, y: 0.4, z: ev.toZ + Math.sin(a) * 1.2 }, b: { x: ev.toX + Math.cos(a) * 0.9, y: 0.45, z: ev.toZ + Math.sin(a) * 0.9 }, width: 0.06, tailW: 0, core: BONE, glow: ASHG, life: 0.3, delay: i * 0.05, travel: { x: -Math.cos(a) * 3, y: 0.6, z: -Math.sin(a) * 3 }, fall: 1.0, opacity: 0.6 });
+        }
+        kit.flash({ x: ev.toX, y: 0.5, z: ev.toZ, color: KCOAL, size: 0.7, life: 0.5, hold: 0.2, opacity: 0.45 });
+      });
+    }
+  });
+  // The rise and the rake: a column of ash bursts up on the mark, three
+  // claw strokes rake across the ring (Ember: the hit), sparks off the
+  // claws, and ash raining back.
+  bus.on('ashwraith_rake', (ev) => {
+    mark('ashwraith_rake');
+    const r = ev.radius ?? 1.3;
+    const w = byId(ev.id);
+    const d = faceOf(w);
+    const ang = Math.atan2(d.z, d.x);
+    kit.pillar({ x: ev.x, z: ev.z, radius: 0.5, height: 2.6, color: ASHG, life: 0.5, opacity: 0.45 });
+    spray('smoke', ev.x, 0.3, ev.z, 6, { color: ASHG, speed: [0.6, 1.4], up: [0.8, 1.8], size: [0.32, 0.48], grow: 1.6, life: [0.8, 1.2], opacity: 0.42, gravity: -0.2, drag: 2.0, jitter: 0.3 });
+    flare(ev.x, WRAITH_Y, ev.z, KGOLD, 0.9, { kind: 'burst', life: 0.2, core: KHEAT });
+    for (let i = 0; i < 3; i++) {
+      const off = (i - 1) * 0.35;
+      kit.slash({ x: ev.x - d.x * 0.3 - d.z * off, z: ev.z - d.z * 0.3 + d.x * off, angle: ang, radius: r * 0.8, width: 0.12, span: 1.6, sweep: 0.08, life: 0.22, core: PARCH, glow: EMBER, soft: 0.6, y: 0.9 - i * 0.15, lift: 0.2, delay: i * 0.04, gain: 0.8, opacity: 0.85 });
+    }
+    shock(ev.x, ev.z, r * 1.02, EMBER, { life: 0.28, width: 0.1, jag: 0.5 });
+    spray('spark', ev.x, 0.9, ev.z, 10, { color: KSPARK, speed: [1.0, 2.4], up: [0.2, 1.0], size: [0.03, 0.06], life: [0.25, 0.5], gravity: 3, drag: 0.9, dir: d, dirBias: 0.5 });
+    kit.mark({ x: ev.x, z: ev.z, radius: r * 0.9, kind: 'gouge', angle: ang, stretch: 1.4, stain: INK, glow: KGOLD, glowOpacity: 0.35, cool: 0.8, life: 2.2, opacity: 0.3 });
+    after(0.15, () => spray('shard', ev.x, 2.0, ev.z, 8, { color: ASHG, tile: SHARD_TILE.petal, speed: [0.2, 0.7], up: [-0.2, 0.3], size: [0.08, 0.13], life: [1.2, 1.8], gravity: 0.3, drag: 1.8, spin: [-4, 4], flutter: 0.8, jitter: 0.5 }));
+  });
+  // Spent no longer: the ember catches again.
+  bus.on('ashwraith_recover', (ev) => {
+    mark('ashwraith_recover');
+    const w = byId(ev.id);
+    const x = w ? w.x : ev.x;
+    const z = w ? w.z : ev.z;
+    kit.flash({ x, y: WRAITH_Y, z, color: KGOLD, size: 0.45, life: 0.3, opacity: 0.6 });
+    embersUp(x, z, KSPARK, 3, { radius: 0.15, y: WRAITH_Y });
+  });
+  Object.assign(CREATURE_DEATH, {
+    hurler: (es, matter, x, z) => {
+      // The sack splits: live coals spilled across the floor, soot.
+      mark('hurler_death');
+      flare(x, 0.9, z, KGOLD, 0.9, { kind: 'burst', life: 0.22, core: KHEAT });
+      spray('chunk', x, 0.9, z, 8, { color: KCOAL, speed: [0.8, 2.0], up: [0.8, 1.8], size: [0.05, 0.09], life: [0.5, 0.9], jitter: 0.25 });
+      spray('spark', x, 0.9, z, 12, { color: KGOLD, speed: [0.8, 2.0], up: [0.8, 2.0], size: [0.04, 0.08], life: [0.5, 0.9], gravity: 5, drag: 0.6 });
+      spray('smoke', x, 0.8, z, 4, { color: SACK, speed: [0.4, 1.0], up: [0.3, 0.8], size: [0.3, 0.44], grow: 1.6, life: [0.8, 1.2], opacity: 0.4, gravity: -0.2, drag: 2.2 });
+      kit.mark({ x, z, radius: 0.9, kind: 'scorch', stain: INK, glow: KGOLD, glowOpacity: 0.5, cool: 1.4, life: 3.0, opacity: 0.4 });
+    },
+    ashwraith: (es, matter, x, z) => {
+      // It falls to ash where it stands: a collapse of grey, the last
+      // ember dropping to the floor and going out.
+      mark('ashwraith_death');
+      spray('smoke', x, 1.0, z, 7, { color: ASHG, speed: [0.3, 0.9], up: [-0.2, 0.4], size: [0.34, 0.5], grow: 1.5, life: [0.9, 1.4], opacity: 0.42, gravity: 0.2, drag: 2.0, jitter: 0.35 });
+      spray('shard', x, 1.4, z, 12, { color: ASHG, tile: SHARD_TILE.petal, speed: [0.2, 0.8], up: [0.0, 0.5], size: [0.08, 0.14], life: [1.4, 2.0], gravity: 0.4, drag: 1.8, spin: [-4, 4], flutter: 0.8 });
+      kit.streak({ a: { x, y: WRAITH_Y, z }, b: { x, y: 0.1, z }, width: 0.08, tailW: 0, core: KHEAT, glow: KGOLD, life: 0.3, fall: 1.0, opacity: 0.8 });
+      after(0.3, () => {
+        kit.flash({ x, y: 0.1, z, color: KGOLD, size: 0.5, life: 0.4, grow: -0.5, opacity: 0.7 });
+        spray('spark', x, 0.1, z, 6, { color: KCOAL, speed: [0.2, 0.6], up: [0.3, 0.8], size: [0.03, 0.05], life: [0.4, 0.8], gravity: 2, drag: 1.0 });
+      });
+    },
+  });
+
   // ------------------------------------------------- the Thornmother --
   // "She fights the floor." Style: bramble over violet rot. Shapes: thorn
   // spikes punching up where her seed pods root, a torn-earth charge lane,
@@ -3775,6 +3924,12 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const CH_CRYSTAL = vfxMatterColor('heartcrystal');
   const CH_VEIN = vfxMatterColor('heartvein');
   const CH_PEAK = vfxMatterColor('heartpeak');
+  // The Ember Kiln's two (content plan 5 slice 9): kiln iron, molten glass.
+  const KIRON = vfxMatterColor('kilniron');
+  const GLASSC = vfxMatterColor('moltenglass');
+  const FK_GRATE_Y = 1.6; // the Furnace Knight's grate (render/enemies/champions2.js)
+  const GB_PIPE = 1.3; // the Glassblower's pipe reaches this far ahead...
+  const GB_TIP_Y = 1.25; // ...at this height
   // The wind-up: gold motes drawn into the champion, Ember lines into where
   // the move will land.
   bus.on('champion_tell', (ev) => {
@@ -3820,6 +3975,45 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     if (ev.champion === 'bell_abbess' && ev.move === 'vesper_peal' && c) {
       const d = faceOf(c);
       spray('spark', c.x + d.x * 0.3 + 0.3, 2.2, c.z + d.z * 0.3, 8, { color: BRONZE, speed: [0.1, 0.4], up: [0.2, 0.6], size: [0.04, 0.07], life: [0.5, 0.8], gravity: -0.2, drag: 1.6, jitter: 0.7 });
+    }
+    // THE EMBER KILN's two (content plan 5 slice 9). The Furnace Knight
+    // digs in for the Rush: its greaves' seams flare gold, slag spits from
+    // under its feet and the floor scorches where it stands.
+    if (ev.champion === 'furnace_knight' && ev.move === 'molten_rush' && c) {
+      const d = faceOf(c);
+      kit.flash({ x: c.x, y: 0.4, z: c.z, color: KGOLD, size: 1.1, life: 0.5, hold: 0.15, opacity: 0.55 });
+      spray('spark', c.x - d.x * 0.3, 0.15, c.z - d.z * 0.3, 10, { color: KGOLD, speed: [0.6, 1.6], up: [0.6, 1.6], size: [0.04, 0.08], life: [0.4, 0.7], gravity: 5, drag: 0.7, dir: { x: -d.x, z: -d.z }, dirBias: 0.6 });
+      kit.mark({ x: c.x, z: c.z, radius: 1.0, kind: 'scorch', stain: INK, glow: KGOLD, glowOpacity: 0.5, cool: 1.0, life: 2.4, opacity: 0.35 });
+    }
+    // ... and opens its grate for the Blast: heat pours out of the bars, a
+    // shimmer of sparks pulled in through them, gold light on the floor.
+    if (ev.champion === 'furnace_knight' && ev.move === 'grate_blast' && c) {
+      const d = faceOf(c);
+      const gx = c.x + d.x * 0.45;
+      const gz = c.z + d.z * 0.45;
+      kit.flash({ x: gx, y: FK_GRATE_Y, z: gz, color: KGOLD, size: 1.2, life: 0.9, hold: 0.4, opacity: 0.6 });
+      kit.light({ x: gx, z: gz, radius: 2.2, color: KGOLD, opacity: 0.4, life: 1.0, attack: 0.3 });
+      for (let i = 0; i < N(8); i++) {
+        const a = Math.atan2(d.z, d.x) + rnd(-0.8, 0.8);
+        kit.streak({ a: { x: gx + Math.cos(a) * 1.4, y: FK_GRATE_Y + rnd(-0.3, 0.3), z: gz + Math.sin(a) * 1.4 }, b: { x: gx + Math.cos(a) * 1.1, y: FK_GRATE_Y, z: gz + Math.sin(a) * 1.1 }, width: 0.04, tailW: 0, core: KHEAT, glow: KGOLD, life: 0.2, delay: i * 0.04, travel: { x: -Math.cos(a) * 5, y: 0, z: -Math.sin(a) * 5 }, fall: 1.0, opacity: 0.8 });
+      }
+    }
+    // The Glassblower sets its lips to the pipe for the Bubble: the gather
+    // swells and glows, a ring of heat-haze round the pipe's end.
+    if (ev.champion === 'glassblower' && ev.move === 'glass_bubble' && c) {
+      const d = faceOf(c);
+      const tx = c.x + d.x * GB_PIPE;
+      const tz = c.z + d.z * GB_PIPE;
+      kit.flash({ x: tx, y: GB_TIP_Y, z: tz, color: GLASSC, size: 0.9, life: 1.1, hold: 0.6, grow: 0.8, opacity: 0.55 });
+      kit.ring({ x: tx, z: tz, r0: 0.2, r1: 0.9, width: 0.05, life: 0.8, core: KHEAT, glow: GLASSC, soft: 0.6, y: GB_TIP_Y, opacity: 0.5, thin: 0.5 });
+    }
+    // ... and takes a breath for the Gout: the pipe's mouth goes white-hot.
+    if (ev.champion === 'glassblower' && ev.move === 'glass_gout' && c) {
+      const d = faceOf(c);
+      const tx = c.x + d.x * GB_PIPE;
+      const tz = c.z + d.z * GB_PIPE;
+      kit.flash({ x: tx, y: GB_TIP_Y, z: tz, color: KHEAT, size: 0.6, life: 0.8, hold: 0.4, opacity: 0.7 });
+      spray('spark', tx, GB_TIP_Y, tz, 6, { color: GLASSC, speed: [0.1, 0.4], up: [0.1, 0.4], size: [0.04, 0.07], life: [0.4, 0.7], gravity: 2, drag: 1.2 });
     }
   });
   bus.on('champion_spawn', (ev) => {
@@ -4286,6 +4480,97 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       if (c && (ev.victims ?? 0) > 0) after(0.12, () => kit.ring({ x: c.x + d.x * 2.2, z: c.z + d.z * 2.2, r0: 0.6, r1: 2.0, width: 0.06, life: 0.8, core: PARCH, glow: CH_STILL, soft: 0.7, y: 0.06, opacity: 0.45 }));
       camfx.kick(d.x, d.z, 0.35, 0.12);
     },
+    // THE EMBER KILN (content plan 5 slice 9). Molten Rush: the Furnace
+    // Knight sets off down the lane (its slag is the slicks it drops), a
+    // gold-hot wake behind it, the Ember head on the rush.
+    molten_rush(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const c = byId(ev.id);
+      const len = c && c.charge ? c.charge.left * Math.hypot(c.charge.vx, c.charge.vz) : 5;
+      laneDrive(c ? c.x : ev.x, c ? c.z : ev.z, d, len, 8.6, { wake: KGOLD, wakeW: 1.0, head: EMBER, peak: KHEAT, stain: SLAGC, glow: KGOLD, marks: 4 });
+      spray('spark', c ? c.x : ev.x, 0.3, c ? c.z : ev.z, 12, { color: KSPARK, speed: [1.0, 2.4], up: [0.5, 1.2], size: [0.03, 0.06], life: [0.3, 0.55], gravity: 4, drag: 0.8, dir: { x: -d.x, z: -d.z }, dirBias: 0.6 });
+      spray('chunk', c ? c.x : ev.x, 0.2, c ? c.z : ev.z, 5, { color: SLAGC, speed: [0.8, 1.8], up: [0.6, 1.4], size: [0.06, 0.12], life: [0.4, 0.7], dir: { x: -d.x, z: -d.z }, dirBias: 0.5 });
+      camfx.kick(d.x, d.z, 0.4, 0.14);
+    },
+    // Grate Blast: the furnace roars out of the grate — the Ember edge over
+    // the cone (the hit), gold fire fronts rolling out, white-gold cinders
+    // racing down it, a scorched fan and the heat-light under it.
+    grate_blast(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const ang = Math.atan2(d.z, d.x);
+      const R = 3.8;
+      const half = 40 * (Math.PI / 180);
+      const gx = ev.x + d.x * 0.45;
+      const gz = ev.z + d.z * 0.45;
+      flare(gx, FK_GRATE_Y, gz, KGOLD, 2.2, { kind: 'burst', life: 0.28, core: KHEAT, angle: ang });
+      kit.flash({ x: gx, y: FK_GRATE_Y, z: gz, color: KHEAT, size: 1.2, life: 0.16 });
+      kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: R * 0.55, width: R * 0.9, span: half * 2, sweep: 0.05, life: 0.26, core: EMBER, glow: EMBER, soft: 0.8, y: 0.12, lift: 0, grow: 0.3, gain: 0.5, opacity: 0.45 });
+      for (let i = 0; i < 5; i++) {
+        kit.slash({ x: ev.x, z: ev.z, angle: ang, radius: 0.6 + i * 0.7, width: 0.22 - i * 0.03, span: half * 2 * (0.75 + i * 0.07), sweep: 0.04, life: 0.36, core: i < 2 ? KHEAT : KSPARK, glow: KGOLD, soft: 0.55, y: FK_GRATE_Y * 0.7 - 0.18 * i, lift: 0, grow: 1.3, delay: i * 0.05, gain: 1.0 - i * 0.15, opacity: 0.95 - i * 0.15 });
+      }
+      for (let i = 0; i < N(12); i++) {
+        const a = ang + rnd(-half, half) * 0.95;
+        const ux = Math.cos(a);
+        const uz = Math.sin(a);
+        const sp = rnd(7, 11);
+        const reach = R * rnd(0.75, 1.0);
+        const y0 = rnd(0.6, FK_GRATE_Y);
+        kit.streak({ a: { x: gx, y: y0, z: gz }, b: { x: gx + ux * 0.4, y: y0, z: gz + uz * 0.4 }, width: 0.06, tailW: 0, core: KHEAT, glow: KGOLD, life: reach / sp, delay: rnd(0, 0.08), travel: { x: ux * sp, y: -y0 * 0.5 * (sp / reach), z: uz * sp }, fall: 1.0, opacity: 0.9 });
+      }
+      spray('spark', gx, FK_GRATE_Y - 0.2, gz, 26, { color: KSPARK, speed: [3.0, 6.0], up: [-0.2, 0.8], size: [0.03, 0.07], life: [0.35, 0.65], gravity: 1.5, drag: 1.4, dir: d, dirBias: 0.9 });
+      spray('smoke', ev.x + d.x * R * 0.6, 0.3, ev.z + d.z * R * 0.6, 5, { color: KBRICK, speed: [0.5, 1.0], up: [0.3, 0.7], size: [0.36, 0.52], grow: 1.5, life: [0.8, 1.2], opacity: 0.28, gravity: -0.25, drag: 2.0, dir: d, dirBias: 0.6, jitter: R * 0.15 });
+      kit.mark({ x: ev.x + d.x * R * 0.55, z: ev.z + d.z * R * 0.55, radius: R * 0.6, kind: 'gouge', angle: ang, stretch: 1.6, stain: INK, glow: KGOLD, glowOpacity: 0.45, cool: 1.0, life: 3.0, opacity: 0.3 });
+      kit.light({ x: ev.x + d.x * R * 0.5, z: ev.z + d.z * R * 0.5, radius: R * 0.7, color: KGOLD, opacity: 0.5, life: 0.5, attack: 0.02 });
+      camfx.kick(d.x, d.z, 0.5, 0.14);
+    },
+    // Glass Bubble: the bubble drifts off the pipe over the mark and bursts
+    // — a white-gold pop, the Ember ring (the hit), a sphere of glittering
+    // glass needles flung out and falling, a ring of heat. The shards left
+    // behind are the slick (extras.js, variant 'glass').
+    glass_bubble(ev) {
+      const c = byId(ev.id);
+      const d = faceOf(c);
+      const r = 2.1;
+      if (c) {
+        // The bubble's drift, seen as a glowing orb sliding from the pipe to
+        // the mark just before it bursts.
+        const tx = c.x + d.x * GB_PIPE;
+        const tz = c.z + d.z * GB_PIPE;
+        kit.streak({ a: { x: tx, y: GB_TIP_Y + 0.4, z: tz }, b: { x: ev.x, y: 1.2, z: ev.z }, width: 0.3, tailW: 0.05, core: KHEAT, glow: GLASSC, life: 0.18, fall: 1.4, opacity: 0.5 });
+      }
+      flare(ev.x, 1.0, ev.z, GLASSC, 1.8, { kind: 'burst', life: 0.26, core: PARCH });
+      kit.flash({ x: ev.x, y: 1.0, z: ev.z, color: KHEAT, size: 1.4, life: 0.16 });
+      shock(ev.x, ev.z, r * 1.02, EMBER, { life: 0.3, width: 0.12, jag: 0.4 });
+      kit.ring({ x: ev.x, z: ev.z, r0: 0.4, r1: r * 1.4, width: 0.12, life: 0.5, core: KHEAT, glow: GLASSC, soft: 0.55, y: 0.9, opacity: 0.55, thin: 0.5 });
+      spray('shard', ev.x, 1.0, ev.z, 26, { color: GLASSC, tile: SHARD_TILE.needle, speed: [1.4, 3.2], up: [0.6, 2.4], size: [0.08, 0.13], life: [0.6, 1.0], gravity: 6, spin: [-12, 12], jitter: 0.4 });
+      spray('spark', ev.x, 1.0, ev.z, 14, { color: PARCH, speed: [0.6, 1.8], up: [0.4, 1.6], size: [0.03, 0.05], life: [0.4, 0.8], gravity: 3, drag: 1.0, jitter: 0.5 });
+      kit.light({ x: ev.x, z: ev.z, radius: r * 1.3, color: GLASSC, opacity: 0.45, life: 0.5, attack: 0.02 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.35, 0.12);
+    },
+    // Glass Gout: a rope of molten glass sprays down the lane, the Ember
+    // edge on it (the hit), gold beads spattering off and cooling.
+    glass_gout(ev) {
+      const d = unit2(ev.dx ?? 0, ev.dz ?? 1);
+      const c = byId(ev.id);
+      const len = 6.5;
+      const x0 = (c ? c.x : ev.x) + d.x * GB_PIPE;
+      const z0 = (c ? c.z : ev.z) + d.z * GB_PIPE;
+      const ang = Math.atan2(d.z, d.x);
+      const SPEED = 16;
+      kit.streak({ a: { x: x0, y: 0.1, z: z0 }, b: { x: x0 + d.x * len, y: 0.1, z: z0 + d.z * len }, width: 1.0, tailW: 0.9, core: EMBER, glow: EMBER, life: 0.24, fall: 2.2, opacity: 0.4 });
+      kit.streak({ a: { x: x0, y: GB_TIP_Y, z: z0 }, b: { x: x0 + d.x * len, y: 0.5, z: z0 + d.z * len }, width: 0.28, tailW: 0.14, core: KHEAT, glow: GLASSC, life: len / SPEED + 0.3, fall: 1.2, opacity: 0.9 });
+      flare(x0, GB_TIP_Y, z0, GLASSC, 1.2, { kind: 'burst', life: 0.2, core: KHEAT, angle: ang });
+      const steps = 5;
+      for (let i = 0; i < steps; i++) {
+        const k = (i + 0.7) / steps;
+        const px = x0 + d.x * len * k;
+        const pz = z0 + d.z * len * k;
+        after((len * k) / SPEED, () => {
+          spray('spark', px, 0.4, pz, 4, { color: GLASSC, speed: [0.6, 1.6], up: [0.6, 1.4], size: [0.04, 0.08], life: [0.4, 0.7], gravity: 6, drag: 0.6 });
+          kit.mark({ x: px, z: pz, radius: 0.6, kind: 'scorch', stain: INK, glow: GLASSC, glowOpacity: 0.5, cool: 1.2, life: 2.6, opacity: 0.3 });
+        });
+      }
+    },
   });
   bus.on('champion_move', (ev) => {
     mark(`champion_${ev.move}`);
@@ -4298,6 +4583,17 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const c = byId(ev.id);
     const d = faceOf(c);
     const wall = ev.cause === 'wall';
+    // The Furnace Knight's rush (content plan 5 slice 9): slag and gold
+    // sparks instead of bramble and earth.
+    if (ev.champion === 'furnace_knight') {
+      flare(ev.x + d.x * 0.6, 0.8, ev.z + d.z * 0.6, wall ? EMBER : KGOLD, wall ? 2.0 : 1.3, { kind: 'star', life: 0.24, angle: Math.atan2(d.z, d.x), core: KHEAT });
+      shock(ev.x, ev.z, wall ? 2.2 : 1.4, wall ? EMBER : KGOLD, { life: 0.35, width: 0.14, jag: wall ? 0.7 : 0 });
+      spray('spark', ev.x + d.x * 0.5, 0.3, ev.z + d.z * 0.5, wall ? 20 : 12, { color: KSPARK, speed: [1.4, 3.0], up: [0.3, 1.2], size: [0.03, 0.06], life: [0.25, 0.5], gravity: 5, drag: 0.7, dir: d, dirBias: 0.7 });
+      spray('chunk', ev.x + d.x * 0.6, 0.3, ev.z + d.z * 0.6, wall ? 10 : 5, { color: SLAGC, speed: [1.0, 2.4], up: [1.0, 2.2], size: [0.07, 0.13], life: [0.5, 0.85], dir: { x: -d.x, z: -d.z }, dirBias: 0.4, jitter: 0.4 });
+      spray('smoke', ev.x, 0.2, ev.z, 3, { color: KBRICK, speed: [0.5, 1.1], up: [0.1, 0.3], size: [0.38, 0.52], grow: 1.4, life: [0.8, 1.1], opacity: 0.3, drag: 2.4, jitter: 0.5 });
+      if (wall) camfx.kick(d.x, d.z, 0.7, 0.16);
+      return;
+    }
     flare(ev.x + d.x * 0.6, 0.7, ev.z + d.z * 0.6, wall ? EMBER : CH_BRAMBLE, wall ? 2.0 : 1.2, { kind: 'star', life: 0.24, angle: Math.atan2(d.z, d.x) });
     shock(ev.x, ev.z, wall ? 2.2 : 1.4, wall ? EMBER : CH_BRAMBLE, { life: 0.35, width: 0.14, jag: wall ? 0.7 : 0 });
     spray('chunk', ev.x + d.x * 0.6, 0.3, ev.z + d.z * 0.6, wall ? 12 : 6, { color: vfxMatterColor('earth'), speed: [1.0, 2.6], up: [1.0, 2.6], size: [0.08, 0.15], life: [0.5, 0.9], dir: { x: -d.x, z: -d.z }, dirBias: 0.4, jitter: 0.4 });
@@ -4383,6 +4679,32 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       spray('shard', x, 2.6, z, 22, { color: GUST, tile: SHARD_TILE.feather, speed: [0.6, 2.0], up: [0.6, 1.8], size: [0.14, 0.22], life: [1.6, 2.4], gravity: 0.5, drag: 1.5, spin: [-6, 6], flutter: 0.85, jitter: 0.8 });
       spray('chunk', x, 1.4, z, 6, { color: BRONZE, speed: [0.8, 1.8], up: [1.0, 2.0], size: [0.06, 0.1], life: [0.6, 0.9] });
       spray('spark', x, 1.6, z, 14, { color: vfxMatterColor('hushpale'), speed: [0.1, 0.4], up: [0.2, 0.6], size: [0.05, 0.08], life: [1.4, 2.0], gravity: -0.1, drag: 2, jitter: 0.9 });
+    },
+    // THE EMBER KILN (content plan 5 slice 9).
+    furnace_knight: (es, matter, x, z) => {
+      // The furnace goes out of it: a last roar through the grate, the
+      // riveted plates bursting off, the fire spilling out across the floor
+      // in a gold crater that cools to iron-grey.
+      mark('furnace_knight_death');
+      championDeath(KIRON, KGOLD, x, z);
+      flare(x, FK_GRATE_Y, z, KGOLD, 2.6, { kind: 'burst', life: 0.42, core: KHEAT });
+      shock(x, z, 3.0, KGOLD, { life: 0.55, width: 0.22, core: KHEAT, jag: 0.6 });
+      spray('chunk', x, 1.6, z, 12, { color: KIRON, speed: [1.0, 2.6], up: [1.2, 2.6], size: [0.1, 0.18], life: [0.7, 1.1], jitter: 0.5 });
+      spray('spark', x, 1.4, z, 22, { color: KSPARK, speed: [1.0, 2.6], up: [1.4, 3.0], size: [0.04, 0.08], life: [0.6, 1.0], gravity: 5, drag: 0.6, jitter: 0.4 });
+      kit.crack({ x, z, radius: 1.8, glow: KGOLD, life: 2.6, cool: 1.8 });
+      spray('smoke', x, 1.2, z, 6, { color: SLAGC, speed: [0.4, 1.0], up: [0.6, 1.4], size: [0.45, 0.65], grow: 1.6, life: [1.0, 1.6], opacity: 0.35, gravity: -0.3, drag: 1.6, jitter: 0.6 });
+    },
+    glassblower: (es, matter, x, z) => {
+      // The pipe drops and the gather shatters: a gold burst, a storm of
+      // glass needles glittering as they fall, the pipe's last bubble
+      // popping above.
+      mark('glassblower_death');
+      championDeath(vfxMatterColor('bellows'), GLASSC, x, z);
+      flare(x, GB_TIP_Y, z, GLASSC, 2.4, { kind: 'burst', life: 0.4, core: PARCH });
+      kit.ring({ x, z, r0: 0.4, r1: 3.6, width: 0.1, life: 0.7, core: KHEAT, glow: GLASSC, soft: 0.6, y: 1.2, opacity: 0.55, thin: 0.5 });
+      spray('shard', x, 1.4, z, 30, { color: GLASSC, tile: SHARD_TILE.needle, speed: [1.2, 3.0], up: [1.0, 2.6], size: [0.08, 0.14], life: [0.7, 1.2], gravity: 5, spin: [-12, 12], jitter: 0.6 });
+      spray('spark', x, 1.4, z, 16, { color: PARCH, speed: [0.4, 1.4], up: [0.6, 1.8], size: [0.03, 0.05], life: [0.6, 1.1], gravity: 2, drag: 1.0, jitter: 0.6 });
+      after(0.25, () => flare(x, 2.6, z, GLASSC, 1.0, { kind: 'burst', life: 0.2, core: PARCH }));
     },
     vein_matron: (es, matter, x, z) => {
       // Her heart bursts: violet light out through the roots, crystal
@@ -6873,6 +7195,23 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
           }
           spray('spark', b.x, 0.7, b.z, N(6), { color: STORM, speed: [0.6, 1.4], up: [0.3, 1.0], size: [0.03, 0.05], life: [0.2, 0.4], gravity: 1.0, drag: 1.0, dir: { x: dx, z: dz }, dirBias: 0.7, opacity: 1 });
         }
+        break;
+      }
+      case 'founders_ingot': {
+        // THE EMBER KILN (content plan 5 slice 9): the ingot takes another
+        // room's heat. A Kiln Gold bar-glow flares at the hero's belt, heat
+        // shimmers up off it, and the hotter it runs the more sparks it
+        // throws (heat 1 to 5). Kiln Gold, never Ember.
+        mark('relic_founders_ingot');
+        const p = player();
+        if (!p) break;
+        const h = Math.max(1, Math.min(5, ev.heat ?? 1));
+        const gold = VFX_MATTER.kilngold;
+        const white = VFX_MATTER.kilnheat;
+        flare(p.x, 0.9, p.z, gold, 0.6 + 0.15 * h, { kind: 'burst', life: 0.3, core: white });
+        kit.ring({ x: p.x, z: p.z, r0: 0.3, r1: 0.9 + 0.2 * h, width: 0.08, life: 0.45, core: white, glow: gold, soft: 0.5, y: 0.08 });
+        spray('spark', p.x, 0.9, p.z, N(4 + 3 * h), { color: gold, speed: [0.3, 1.0], up: [1.0, 2.2], size: [0.03, 0.06], life: [0.5, 0.9], gravity: -0.4, drag: 1.2, jitter: 0.25, opacity: 1 });
+        spray('smoke', p.x, 1.1, p.z, N(2), { color: white, speed: [0.05, 0.2], up: [0.6, 1.0], size: [0.25, 0.4], grow: 1.6, life: [0.6, 0.9], opacity: 0.12, drag: 2.0, jitter: 0.2 });
         break;
       }
       case 'trophy_cord': {

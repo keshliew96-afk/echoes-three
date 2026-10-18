@@ -984,6 +984,9 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     else if (ev.encounter === 'traveling_smith' && r && ev.lost && RELICS[ev.lost]) a.toast(t('The smith reforges {old} into {name}. {text}', { old: t(RELICS[ev.lost].name), name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 6000 });
     // THE STILL SPIRE (plan 4 slice 7).
     else if (ev.encounter === 'silent_bell' && ev.lifted && CURSES[ev.lifted]) a.toast(t('The bell drinks {name}. The curse is lifted.', { name: t(CURSES[ev.lifted].name) }), { tone: 'info', ms: 5200 });
+    // THE EMBER KILN (content plan 5 slice 9).
+    else if (ev.encounter === 'molten_bell' && Array.isArray(ev.relics) && ev.relics.length) a.toast(t('The bell is cast for {n} Glint and rings out: {names}.', { n: ev.paid ?? 0, names: ev.relics.map((id) => (RELICS[id] ? t(RELICS[id].name) : id)).join(', ') }), { tone: 'info', ms: 5600 });
+    else if (ev.encounter === 'molten_bell' && ev.glint) a.toast(t('The bell is cast, but no relic is left for it to ring: +{n} Glint.', { n: ev.glint }), { tone: 'info', ms: 4800 });
     else if (ev.encounter === 'gamblers_dice' && Array.isArray(ev.dice)) {
       const [d1, d2] = ev.dice;
       if (r) a.toast(t('Doubles, {a} and {b}! The stranger pays a relic: {name}. {text}', { a: d1, b: d2, name: t(r.name), text: t(r.text) }), { tone: 'info', ms: 6000 });
@@ -1003,6 +1006,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (!a || typeof a.toast !== 'function' || !S) return;
     const B = ev.blessing ? BLESSINGS[ev.blessing] : null;
     if (ev.pick) a.toast(t('{name} takes your key. A greater relic waits when the room clears.', { name: t(S.name) }), { tone: 'info', ms: 5200 });
+    else if (ev.relic && RELICS[ev.relic] && B) a.toast(t('{name} melts down {relic}: {blessing} for 60 s ({text}).', { name: t(S.name), relic: t(RELICS[ev.relic].name), blessing: t(B.name), text: t(B.text) }), { tone: 'info', ms: 5600 });
     else if (ev.curse && CURSES[ev.curse] && B) a.toast(t('{name}: {blessing} for 60 s. Your next fight is cursed: {curse}.', { name: t(S.name), blessing: t(B.name), curse: t(CURSES[ev.curse].name) }), { tone: 'info', ms: 5600 });
     else if (B) a.toast(t('{name}: {blessing} for 60 s ({text}).', { name: t(S.name), blessing: t(B.name), text: t(B.text) }), { tone: 'info', ms: 4800 });
   });
@@ -1012,11 +1016,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
     if (ev.reason === 'glint') a.toast(t('The shrine asks 25 Glint.'), { tone: 'info', ms: 3600 });
     else if (ev.reason === 'key') a.toast(t('The shrine asks for a vault key.'), { tone: 'info', ms: 3600 });
     else if (ev.reason === 'tonic') a.toast(t('The shrine asks for a tonic or bomb.'), { tone: 'info', ms: 3600 });
+    else if (ev.reason === 'relic') a.toast(t('The shrine asks for a common relic to melt down.'), { tone: 'info', ms: 3600 });
   });
   bus.on('relic_lose', (ev) => {
     const a = service('app');
     const r = RELICS[ev.relic];
-    if (ev.source === 'smith') return; // the reforge toast names it
+    if (ev.source === 'smith' || ev.source === 'forge') return; // the reforge and Forge Shrine toasts name it
     if (a && typeof a.toast === 'function' && r && ev.source === 'seat') a.toast(t('The seat takes {name}.', { name: t(r.name) }), { tone: 'info', ms: 4200 });
     else if (a && typeof a.toast === 'function' && r) a.toast(t('The spirit takes {name}.', { name: t(r.name) }), { tone: 'info', ms: 4200 });
   });

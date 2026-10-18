@@ -25,9 +25,9 @@ import { LINEUP_CLASSES } from './lineup.js';
 import { LEVELS, ACT_IDS, bossFor } from './levels.js';
 import { endlessBossIndex, CYCLE } from './endless.js';
 import { RUSH_RULES, LAP as RUSH_LAP } from './rush.js';
-import { ENCOUNTER_IDS } from '../sim/encounters.js';
+import { ENCOUNTER_IDS, WAYFARER_IDS } from '../sim/encounters.js';
 import { AFFIX_IDS } from '../sim/affixes.js';
-import { CHAMPION_IDS, FOUR_CROWN_ACTS, FIVE_CROWN_ACTS, crownLands } from '../sim/champions.js';
+import { CHAMPION_IDS, FOUR_CROWN_ACTS, FIVE_CROWN_ACTS, crownLands, championsOfAct } from '../sim/champions.js';
 import { LAYOUTS, LAYOUT_IDS } from './layouts.js';
 import { dayDiff, isDailyKey } from './daily.js';
 import { VOW_RANKS, VOW_MAX_RANK, VOW_DEED_LEVELS, vowName, vowLevelOf, vowPayPct, clampRank, freshVowBest, saneVowBest } from './vows.js';
@@ -165,7 +165,13 @@ export function lifeAfter(meta, facts) {
   return { ...marksAfter(meta && meta.marks, facts), bosses: [...bosses] };
 }
 const markCount = (life, k) => ((life && life[k]) || []).length;
+// Wayfarer's event rooms: every kind but the Ember Kiln's (sim/encounters.js
+// WAYFARER_IDS), so its count stays where it was before the Kiln's event.
+const wayCount = (life) => ((life && life.event) || []).filter((id) => WAYFARER_IDS.includes(id)).length;
 const crownCount = (life, acts = FOUR_CROWN_ACTS) => crownLands((life && life.champion) || [], acts);
+// The Ember Kiln's two champions (content plan 5 slice 9): Kiln Crowns.
+const KILN_CROWNS = Object.freeze(championsOfAct(6).filter((c) => c.act === 6).map((c) => c.id));
+const kilnCrowns = (life) => KILN_CROWNS.filter((id) => ((life && life.champion) || []).includes(id)).length;
 const allFelled = (life) => BOSSES.every((b) => ((life && life.bosses) || []).includes(b.kind));
 
 // One-off deeds: paid once, on the run that first meets them (not multiplied).
@@ -205,7 +211,7 @@ export const DEEDS = Object.freeze(
     ['rush_swift', { name: 'Against the Clock', text: 'Win a Boss Rush in under 12 minutes.', embers: 80, test: (r) => !!r.rush && r.rush.won && r.rush.sec > 0 && r.rush.sec < RUSH_RULES.swiftSec }],
     // ROUND TWO (docs/UNLOCKS.md): the event rooms, affixes, objectives,
     // champions, vaults, arenas, relics, bosses, Rill and the Daily.
-    ['wayfarer', { name: 'Wayfarer', text: 'Enter every kind of event room.', embers: 60, test: (r, l) => markCount(l, 'event') >= ENCOUNTER_IDS.length, goal: (l) => [markCount(l, 'event'), ENCOUNTER_IDS.length] }],
+    ['wayfarer', { name: 'Wayfarer', text: 'Enter every kind of event room.', embers: 60, test: (r, l) => wayCount(l) >= WAYFARER_IDS.length, goal: (l) => [wayCount(l), WAYFARER_IDS.length] }],
     ['signbreaker', { name: 'Signbreaker', text: 'Fell an elite with each of the eight affixes.', embers: 60, test: (r, l) => markCount(l, 'affix') >= AFFIX_IDS.length, goal: (l) => [markCount(l, 'affix'), AFFIX_IDS.length] }],
     ['run_to_ground', { name: 'Run to Ground', text: 'Win a Hunt room: catch the quarry before it escapes.', embers: 20, test: (r) => (r.objectives || []).includes('hunt') }],
     ['scorched_nests', { name: 'Scorched Nests', text: 'Win a Purge room: break every nest in time.', embers: 20, test: (r) => (r.objectives || []).includes('purge') }],
@@ -230,6 +236,16 @@ export const DEEDS = Object.freeze(
           ['windfall', { name: 'Windfall', text: 'Fell the Gale Herald, the champion of the Still Spire.', embers: 25, test: (r) => (r.champions || []).includes('gale_herald') }],
           ['five_crowns', { name: 'Five Crowns', text: 'Fell a champion in each of the five lands. Either of a land\'s two champions counts.', embers: 80, test: (r, l) => crownCount(l, FIVE_CROWN_ACTS) >= FIVE_CROWN_ACTS.length, goal: (l) => [crownCount(l, FIVE_CROWN_ACTS), FIVE_CROWN_ACTS.length] }],
           ['break_the_hush', { name: 'Break the Hush', text: 'Fell the Hush on the Harrowing challenge.', embers: 80, test: (r) => r.bosses.includes('hush') && r.challenge === 'harrowing' }],
+        ]
+      : []),
+    // THE EMBER KILN (content plan 5 slice 9): the Flame verse, its two
+    // champions and the Bellfounder. Listed only while the Kiln is played.
+    // (Kingslayer, Ringwalker, Wayfarer and Five Crowns keep their counts.)
+    ...(ACT_IDS.includes(6)
+      ? [
+          ['through_the_fire', { name: 'Through the Fire', text: 'Clear Level V, the Ember Kiln, and bring the Verse of Flame home.', embers: 60, test: (r) => r.cleared.includes(6) }],
+          ['kiln_crowns', { name: 'Kiln Crowns', text: 'Fell both champions of the Ember Kiln: the Furnace Knight and the Glassblower.', embers: 40, test: (r, l) => kilnCrowns(l) >= KILN_CROWNS.length, goal: (l) => [kilnCrowns(l), KILN_CROWNS.length] }],
+          ['quench_the_founder', { name: 'Quench the Founder', text: 'Fell the Bellfounder on the Harrowing challenge.', embers: 80, test: (r) => r.bosses.includes('founder') && r.challenge === 'harrowing' }],
         ]
       : []),
     // VOW RANKS (plan 4 slice 10): a mode beaten (a campaign completed, the
@@ -371,6 +387,15 @@ const TINT_ROWS = [
         ['tint_galebronze', 'bellwright', 'Gale Bronze', { glow: '#E6B866', second: '#F2F6FF', debris: '#6C6A64' }, 0, { deed: 'windfall' }],
       ]
     : []),
+  // THE EMBER KILN (content plan 5 slice 9): steam off quenched iron for the
+  // Tidecaller over Kiln Gold, and Kiln Gold on soot-black wings for the
+  // Duskwing (the Kiln's heat, never Ember, which stays the threat colour).
+  ...(ACT_IDS.includes(6)
+    ? [
+        ['tint_quench', 'tidecaller', 'Quench Steam', { glow: '#E8EEF2', second: '#FFC24A', debris: '#5A5550' }, 40, { level: 6 }],
+        ['tint_cinderwing', 'duskwing', 'Cinderwing', { glow: '#FFC24A', second: '#FFE6A8', debris: '#2A2422' }, 0, { deed: 'kiln_crowns' }],
+      ]
+    : []),
 ];
 
 function build() {
@@ -474,7 +499,8 @@ export function reqMet(req, { meta, records }) {
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V'];
 export function reqText(req) {
   if (!req) return '';
-  if (req.level) return `Clear Level ${ROMAN[req.level] ?? req.level}`;
+  // (The Ember Kiln is act 6 in data, the other Level V.)
+  if (req.level) return req.level === 6 ? 'Clear Level V, the Ember Kiln' : `Clear Level ${ROMAN[req.level] ?? req.level}`;
   if (req.campaign) return 'Complete a campaign';
   if (req.boss) return `Defeat ${((BOSSES.find((b) => b.kind === req.boss) || {}).name ?? req.boss).replace(/^The /, 'the ')}`;
   if (req.relic) return `Find ${RELICS[req.relic] ? RELICS[req.relic].name : req.relic} in a run`;

@@ -1643,6 +1643,25 @@ export function createRunSystem({
         if (lifted) result.lifted = lifted;
         break;
       }
+      // THE EMBER KILN (content plan 5 slice 9): Glint poured into the
+      // mould, 40 for each relic, up to three; the rest stays in the purse.
+      case 'molten_bell': {
+        const n = Math.min(R.pourMax, Math.floor(wallet / R.pourStep));
+        spend(n * R.pourStep, 'event_bell');
+        const rung = [];
+        for (let k = 0; k < n; k++) {
+          const relic = relics.grantRandom('molten', encounterBody() ?? player);
+          if (!relic) break;
+          rung.push(relic);
+        }
+        result.paid = n * R.pourStep;
+        result.relics = rung;
+        if (rung.length < n) {
+          gainGlint(RELIC_RULES.emptyPoolGlint * (n - rung.length), 'relic_pool_empty');
+          result.glint = RELIC_RULES.emptyPoolGlint * (n - rung.length);
+        }
+        break;
+      }
       case 'traveling_smith': {
         spend(E.price, 'event_smith');
         const lost = relics.loseNewest('smith');
@@ -1776,6 +1795,7 @@ export function createRunSystem({
     else if (S.cost === 'key' && !vaults.held()) why = 'key';
     else if (S.cost === 'tonic' && !(tonics.enabled() && tonics.slot(seat))) why = 'tonic';
     else if (S.cost === 'curse' && !relics.enabled()) why = 'curse';
+    else if (S.cost === 'relic' && !relics.newestOf('common')) why = 'relic';
     if (why) {
       if (why !== 'used') {
         body.uses = 1;
@@ -1812,6 +1832,9 @@ export function createRunSystem({
     } else if (S.cost === 'tonic') {
       result.tonic = tonics.slot(seat);
       tonics.setSlot(seat, null);
+    } else if (S.cost === 'relic') {
+      // THE EMBER KILN's Forge Shrine (content plan 5 slice 9).
+      result.relic = relics.loseNewestOf('forge', 'common');
     }
     // RELICS batch 5: Votive Ribbon makes the blessing last longer.
     const B = S.gift !== 'relic' ? bless(bodies, S.gift, tick, Math.round(SHRINE_RULES.blessTicks * relics.blessMul())) : null;

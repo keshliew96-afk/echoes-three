@@ -1,7 +1,8 @@
 // EVENT ROOMS (docs/EVENT_ROOMS.md, content plan 2 slice 1). A third kind of
 // door, marked "?", leads to a small room with no fight that holds one of
-// sixteen encounters (eight at first, six more in plan 3 slice 6, two of the
-// Still Spire's in plan 4 slice 7). Each is a
+// seventeen encounters (eight at first, six more in plan 3 slice 6, two of
+// the Still Spire's in plan 4 slice 7, the Ember Kiln's in content plan 5
+// slice 9). Each is a
 // trade: HP, Glint, a curse, a relic or a fight for a reward. Taking the "?"
 // door also gives up the combat room it replaces (its stipend, its clear
 // spoils and its draft), which is the price of the free ones.
@@ -50,6 +51,9 @@ export const EVENT_RULES = Object.freeze({
   // The Still Spire's two (plan 4 slice 7).
   seatRelics: 2, // Gods' Seat: the newest relics it takes
   bellCost: 0.15, // Silent Bell: each hero gives this share of max HP
+  // The Ember Kiln's (content plan 5 slice 9).
+  pourStep: 40, // Molten Bell: the Glint poured for each relic...
+  pourMax: 3, // ...up to this many
   spot: Object.freeze({ x: 1.2, z: -3.6 }), // where the encounter stands
   bodyRadius: 0.6, // its solid footprint (bodies walk round it)
 });
@@ -181,6 +185,18 @@ export const ENCOUNTERS = Object.freeze({
     land: 'spire',
     safe: true,
   },
+  // THE EMBER KILN (content plan 5 slice 9, docs/KILN.md "The Kiln's
+  // event"): the bell the founder never finished.
+  molten_bell: {
+    name: 'Molten Bell',
+    text: 'A great bell half-cast in its mould, still glowing. The founder never finished pouring it.',
+    detail: 'Pour Glint into the mould: 40 for each relic, up to three (at least 40).',
+    effect: 'The bell is cast, and it rings out one relic for every 40 Glint poured.',
+    cost: 'pour',
+    price: EVENT_RULES.pourStep,
+    land: 'kiln',
+    safe: true,
+  },
   traveling_smith: {
     name: 'Traveling Smith',
     text: 'An anvil on a handcart, and a smith who never stops whistling.',
@@ -201,6 +217,10 @@ export const ENCOUNTERS = Object.freeze({
   },
 });
 export const ENCOUNTER_IDS = Object.freeze(Object.keys(ENCOUNTERS));
+// The event rooms the Wayfarer deed counts: every kind but the Ember Kiln's
+// (content plan 5 slice 9), so the deed does not widen when the Kiln's
+// event arrives (Kesh: a slice never widens an existing deed).
+export const WAYFARER_IDS = Object.freeze(ENCOUNTER_IDS.filter((id) => ENCOUNTERS[id].land !== 'kiln'));
 
 // The stream's seed, salted so it never shadows the run or relic streams.
 export function encounterSeed(seed) {
@@ -237,7 +257,7 @@ export function createEncounterSystem({ events, getTick }) {
   // Why encounter `id` cannot be taken right now (null = it can).
   const blocked = (id, ctx) => {
     const E = ENCOUNTERS[id];
-    if ((E.cost === 'glint' || E.cost === 'purse') && ctx.wallet < E.price) return 'glint';
+    if ((E.cost === 'glint' || E.cost === 'purse' || E.cost === 'pour') && ctx.wallet < E.price) return 'glint';
     if (E.cost === 'relic' && ctx.relics <= 0) return 'relic';
     if (E.cost === 'relics' && ctx.relics < E.price) return 'relics';
     if (E.cost === 'lift' && !(ctx.majors > 0)) return 'lift';

@@ -1,4 +1,4 @@
-// CHAMPION ROOMS (docs/CHAMPIONS.md): the ten champions' voices,
+// CHAMPION ROOMS (docs/CHAMPIONS.md): the twelve champions' voices,
 // registered on the engine like the boss and encounter cues
 // (engine.registerCue / registerEventCue): procedural, no files. Listen-only:
 // event payloads in, cues out, so the goldens cannot move.
@@ -20,13 +20,18 @@
 //                   champions' antler_toss, harts_leap, chain_hook,
 //                   lock_turn, death_knell, grave_call, vein_lash,
 //                   heart_pulse, and the Spire's second, the Bell Abbess:
-//                   rope_swing, vesper_peal)
+//                   rope_swing, vesper_peal, and the Ember Kiln's two:
+//                   molten_rush, grate_blast, glass_bubble, glass_gout)
 //   ch_leap_gather  the Moss Hart gathering itself for the leap (with ch_tell)
 //   ch_hook_whirl   the Lockkeeper's key whirling up for the hook (with ch_tell)
 //   ch_stoop_rise   the Gale Herald's stoop taking wing (with ch_tell)
 //   ch_rope_grip    the Bell Abbess taking the rope for the swing: it creaks
 //                   taut and the great bell hums far overhead (with ch_tell)
-//   ch_charge_stop  the Briar Knight's charge stops (a wall: a crash)
+//   ch_rush_dig     the Furnace Knight digging in for the rush (with ch_tell)
+//   ch_grate_open   its grate swinging open on the roaring furnace (with ch_tell)
+//   ch_glass_swell  the Glassblower's bubble swelling on the pipe (with ch_tell)
+//   ch_charge_stop  the Briar Knight's or the Furnace Knight's charge stops
+//                   (a wall: a crash)
 import { UI_PEAK_DB } from './cues.js';
 import { phrase } from './bosscues.js';
 import { CHAMPION_IDS, isChampionKind } from '../sim/champions.js';
@@ -58,6 +63,10 @@ export const CHAMPION_CUE_CAL = {
   ch_gale_herald_rage: 7.3,
   ch_bell_abbess_sting: 5.9,
   ch_bell_abbess_rage: 5.5,
+  ch_furnace_knight_sting: 6,
+  ch_furnace_knight_rage: 6,
+  ch_glassblower_sting: 5,
+  ch_glassblower_rage: 5,
   ch_fall: 1.8,
   ch_chest: 0,
   ch_crown: 0,
@@ -86,6 +95,13 @@ export const CHAMPION_CUE_CAL = {
   ch_rope_grip: -5.9,
   ch_rope_swing: 3,
   ch_vesper_peal: -2.5,
+  ch_rush_dig: -8,
+  ch_molten_rush: 0,
+  ch_grate_open: -8,
+  ch_grate_blast: 2,
+  ch_glass_swell: -9,
+  ch_glass_bubble: 1,
+  ch_glass_gout: -1,
   ch_charge_stop: -1.7,
   // @cal end
 };
@@ -105,6 +121,9 @@ const VOICE = {
   vein_matron: { root: 49, lead: 'glass', drum: 'heart' }, // the Heart, C# phrygian
   // The Still Spire's second (content plan 5 slice 2).
   bell_abbess: { root: 53, lead: 'choir', drum: 'knell' }, // the Still Spire, F lydian
+  // The Ember Kiln's two (content plan 5 slice 9), in the Kiln's key.
+  furnace_knight: { root: 46, lead: 'horn', drum: 'anvil' }, // the Ember Kiln, B-flat harmonic minor
+  glassblower: { root: 46, lead: 'glass', drum: 'anvil' }, // the Ember Kiln, B-flat harmonic minor
 };
 const STINGS = {
   // A knight's horn: tonic, fifth, then the flat second held over a thorn pluck.
@@ -134,6 +153,12 @@ const STINGS = {
   // F, G, A to the lydian raised fourth (B) held as the bell sounds again,
   // her hand-bell glinting over it.
   bell_abbess: [[0, 0, 'knell', 0.8], [0, 29, 'low', 0.9, 1.4], [0.06, 65, 'choir', 0.45, 0.4], [0.3, 67, 'choir', 0.45, 0.35], [0.52, 69, 'choir', 0.5, 0.3], [0.72, 71, 'choir', 0.55, 0.8], [0.72, 0, 'knell', 0.7], [0.72, 89, 'bell', 0.3, 1.0], [0.84, 84, 'bell', 0.22, 0.9]],
+  // The furnace-warden: two anvil blows, a low cast bell under a horn on
+  // B-flat and F, rising to the raised seventh (A) held as the anvil rings.
+  furnace_knight: [[0, 0, 'anvil', 1], [0.2, 0, 'anvil', 0.85], [0, 34, 'low', 0.9, 1.3], [0, 46, 'cast', 0.6, 1.2], [0.1, 58, 'horn', 0.85, 0.22], [0.34, 65, 'horn', 0.9, 0.22], [0.58, 69, 'horn', 0.95, 0.7], [0.58, 0, 'anvil', 1], [0.58, 82, 'bell', 0.25, 0.9]],
+  // The glassblower: one anvil tap, then glass notes blown up the minor
+  // chord to the raised seventh, ringing, over a low cast bell.
+  glassblower: [[0, 0, 'anvil', 0.7], [0, 34, 'low', 0.8, 1.2], [0.06, 70, 'glass', 0.5, 0.4], [0.24, 73, 'glass', 0.5, 0.35], [0.42, 77, 'glass', 0.55, 0.35], [0.6, 81, 'glass', 0.6, 0.9], [0.6, 46, 'cast', 0.5, 1.0], [0.6, 0, 'anvil', 0.8]],
 };
 const rageNotes = (v) => [
   [0, 0, v.drum, 1],
@@ -365,6 +390,63 @@ Object.assign(CUES, {
       k.noise(d, t, { type: 'highpass', f0: P(p, 5200), q: 0.7, d: 0.08, gain: 0.35 }),
       k.noise(d, t + 0.12, { type: 'bandpass', f0: P(p, 3000), f1: P(p, 1200), q: 0.8, a: 0.15, hold: 0.2, d: 0.6, gain: 0.2 })
     )),
+  // THE EMBER KILN (content plan 5 slice 9).
+  // The Furnace Knight digs in: iron greaves grinding, slag hissing under
+  // them, the furnace's draught pulling in.
+  ch_rush_dig: sfx(-12, (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.22].map((o) => k.noise(d, t + o, { src: 'brown', type: 'lowpass', f0: 800, f1: 260, q: 0.8, d: 0.18, gain: 0.6 })),
+      k.noise(d, t + 0.1, { type: 'highpass', f0: P(p, 3200), q: 0.7, a: 0.1, hold: 0.2, d: 0.3, gain: 0.22 }),
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 58), f1: P(p, 70), glide: 0.5, a: 0.1, d: 0.5, gain: 0.35, filter: { f0: 500, q: 1.2 } })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // The rush: an iron body thundering off, sparks scraping from its feet.
+  ch_molten_rush: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 66), f1: P(p, 40), d: 0.55, gain: 0.95 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 800), f1: P(p, 300), q: 0.8, a: 0.04, hold: 0.3, d: 0.3, gain: 0.75 }),
+      k.noise(d, t + 0.05, { src: 'crackle', type: 'bandpass', f0: P(p, 3000), q: 1.2, a: 0.02, hold: 0.25, d: 0.2, gain: 0.3 }),
+      k.tone(d, t, { type: 'square', f0: P(p, 233), f1: P(p, 220), d: 0.12, gain: 0.18, filter: { f0: 1500, q: 2 } })
+    )),
+  // The grate swings open: an iron hinge's groan and the furnace's roar
+  // swelling behind the bars.
+  ch_grate_open: sfx(-12, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 700), f1: P(p, 380), q: 5, a: 0.03, hold: 0.12, d: 0.15, gain: 0.5 }),
+      k.noise(d, t + 0.15, { src: 'brown', type: 'lowpass', f0: 300, f1: 1100, q: 0.8, a: 0.5, d: 0.25, gain: 0.7 }),
+      k.tone(d, t + 0.15, { f0: P(p, 46), f1: P(p, 58), glide: 0.6, a: 0.4, d: 0.3, gain: 0.4 })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // The blast: a gout of fire roaring out of the grate, a crackle of
+  // sparks on it, the iron chest ringing once.
+  ch_grate_blast: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 1800, f1: 400, q: 0.8, a: 0.02, hold: 0.2, d: 0.5, gain: 0.95 }),
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 900), f1: P(p, 2600), q: 0.9, a: 0.03, hold: 0.15, d: 0.4, gain: 0.6 }),
+      k.noise(d, t + 0.05, { src: 'crackle', type: 'bandpass', f0: P(p, 2400), q: 0.9, d: 0.45, gain: 0.45 }),
+      k.tone(d, t, { f0: P(p, 70), f1: P(p, 36), d: 0.45, gain: 0.8 }),
+      k.bell(d, t + 0.02, { f: P(p, 116.5), ratio: 2.4, index: 2.2, d: 0.8, gain: 0.25 })
+    )),
+  // The bubble swelling on the pipe: a breath blown long through iron,
+  // glass stretching with a thin rising ring.
+  ch_glass_swell: sfx(-12, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 500), f1: P(p, 900), q: 2, a: 0.2, hold: 0.5, d: 0.3, gain: 0.45 }),
+      k.tone(d, t + 0.2, { type: 'triangle', f0: P(p, 880), f1: P(p, 1760), glide: 0.9, a: 0.3, d: 0.4, gain: 0.12 })
+    ), { maxVoices: 1, cooldownMs: 300 }),
+  // The bubble bursts: a bright pop, a shower of glass tinkling down.
+  ch_glass_bubble: sfx(-7, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'highpass', f0: P(p, 2000), q: 0.7, d: 0.06, gain: 0.8 }),
+      k.tone(d, t, { f0: P(p, 180), f1: P(p, 60), d: 0.25, gain: 0.6 }),
+      ...[0.04, 0.09, 0.15, 0.22, 0.3].map((o, i) => k.bell(d, t + o, { f: P(p, [1864.7, 2217.5, 2793.8, 3520, 2489][i]), ratio: 2.76, index: 0.8, d: 0.35, gain: 0.18 }))
+    )),
+  // The gout: a hiss of molten glass spraying out, then crackling as it
+  // hardens.
+  ch_glass_gout: sfx(-8, (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 3200), f1: P(p, 1400), q: 0.9, a: 0.02, hold: 0.2, d: 0.3, gain: 0.7 }),
+      k.noise(d, t + 0.1, { src: 'crackle', type: 'highpass', f0: P(p, 3000), q: 0.8, d: 0.4, gain: 0.4 }),
+      k.tone(d, t, { f0: P(p, 120), f1: P(p, 70), d: 0.2, gain: 0.4 })
+    )),
   ch_charge_stop: sfx(-9, (k, t, d, p) =>
     Math.max(
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: P(p, 900), f1: P(p, 250), q: 0.8, d: 0.3, gain: 0.9 }),
@@ -382,10 +464,10 @@ const at = (ev, h, id) => {
 
 // The entrance roar's pitch: the choir's is high and glassy, the Gale
 // Herald's (a carved stone crier, wings and all) deep and heavy.
-const ROAR_PITCH = { hollow_choir: 1.3, gale_herald: 0.7, moss_hart: 0.75, lockkeeper: 0.9, gravebell_ringer: 0.85, vein_matron: 1.15, bell_abbess: 1.1 };
+const ROAR_PITCH = { hollow_choir: 1.3, gale_herald: 0.7, moss_hart: 0.75, lockkeeper: 0.9, gravebell_ringer: 0.85, vein_matron: 1.15, bell_abbess: 1.1, furnace_knight: 0.6, glassblower: 1.2 };
 
 // A move whose wind-up has its own sound under the shared tell.
-const TELL_EXTRA = { stoop: 'ch_stoop_rise', harts_leap: 'ch_leap_gather', chain_hook: 'ch_hook_whirl', rope_swing: 'ch_rope_grip' };
+const TELL_EXTRA = { stoop: 'ch_stoop_rise', harts_leap: 'ch_leap_gather', chain_hook: 'ch_hook_whirl', rope_swing: 'ch_rope_grip', molten_rush: 'ch_rush_dig', grate_blast: 'ch_grate_open', glass_bubble: 'ch_glass_swell' };
 
 export function createChampionEventCues() {
   return {

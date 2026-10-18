@@ -23,6 +23,15 @@
 //   kn_vrumble  a cinder vent's telegraph: the furnace below rumbling up
 //   kn_erupt    a cinder vent's eruption: a roaring column of fire
 //   kn_vcool    vent_cool: the cinder bed cooling, a falling steam hiss
+//   kn_hheave   the Coal Hurler heaving its sack (its ring telegraph, with
+//               the common tick): a grunt, coals shifting in the sack
+//   kn_hcoal    hurler_coal: a sack of coals bursting, a shower of embers
+//   kn_hfumble  hurler_fumble: the sack dropped, coals spilling
+//   kn_wgather  the Ash Wraith gathering (its ring telegraph, with the
+//               common tick): a dry breath of ash drawn in
+//   kn_wfade    ashwraith_fade: the wraith scattering into a whirl of ash
+//   kn_wrake    ashwraith_rake: cinder claws raking out of the ash
+//   kn_wrecover ashwraith_recover: its ember catching again
 const P = (p, f) => f * (p && p.pitch ? p.pitch : 1);
 
 // Measured design peaks (dBFS at unity gain, max of 3 takes) so each cue
@@ -47,6 +56,13 @@ export const KILN_CUE_CAL = {
   kn_vrumble: -2.5,
   kn_erupt: 1.5,
   kn_vcool: 1.3,
+  kn_hheave: -8,
+  kn_hcoal: 0,
+  kn_hfumble: -6,
+  kn_wgather: -10,
+  kn_wfade: -6,
+  kn_wrake: -3,
+  kn_wrecover: -8,
   // @cal end
 };
 
@@ -156,6 +172,47 @@ const CUES = {
       k.noise(d, t, { type: 'highpass', f0: P(p, 5200), f1: P(p, 2200), q: 0.7, a: 0.06, hold: 0.15, d: 0.7, gain: 0.7 }),
       k.noise(d, t + 0.1, { src: 'crackle', type: 'bandpass', f0: P(p, 2000), q: 1, d: 0.5, gain: 0.3, rate: 0.7 })
     ) },
+
+  // THE COAL HURLER (content plan 5 slice 9).
+  kn_hheave: { levelDb: -14, priority: 3, maxVoices: 2, cooldownMs: 200, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 110), f1: P(p, 150), glide: 0.4, a: 0.05, d: 0.25, gain: 0.3, filter: { f0: 700, q: 1.5 } }),
+      ...[0.05, 0.16, 0.27].map((o) => k.noise(d, t + o, { src: 'crackle', type: 'bandpass', f0: P(p, 1400), q: 1.2, d: 0.1, gain: 0.4 })),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 500, q: 0.8, a: 0.1, d: 0.2, gain: 0.35 })
+    ) },
+  kn_hcoal: { levelDb: -8, priority: 4, maxVoices: 3, cooldownMs: 100, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 90), f1: P(p, 40), d: 0.3, gain: 0.85 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 1400, f1: 300, q: 0.8, d: 0.35, gain: 0.7 }),
+      k.noise(d, t + 0.03, { src: 'crackle', type: 'highpass', f0: P(p, 2600), q: 0.8, a: 0.02, hold: 0.2, d: 0.4, gain: 0.5 })
+    ) },
+  kn_hfumble: { levelDb: -15, priority: 2, maxVoices: 2, cooldownMs: 150, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 700, q: 0.8, d: 0.15, gain: 0.6 }),
+      ...[0.06, 0.12, 0.2].map((o) => k.noise(d, t + o, { src: 'crackle', type: 'bandpass', f0: P(p, 1800), q: 1, d: 0.08, gain: 0.35 }))
+    ) },
+  // THE ASH WRAITH.
+  kn_wgather: { levelDb: -15, priority: 3, maxVoices: 2, cooldownMs: 200, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 600), f1: P(p, 1800), q: 1.5, a: 0.35, d: 0.15, gain: 0.55 }),
+      k.tone(d, t + 0.1, { type: 'triangle', f0: P(p, 233), f1: P(p, 220), a: 0.25, d: 0.3, gain: 0.12 })
+    ) },
+  kn_wfade: { levelDb: -13, priority: 3, maxVoices: 2, cooldownMs: 150, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 2400), f1: P(p, 500), q: 1.2, a: 0.02, d: 0.5, gain: 0.6 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 600, q: 0.8, d: 0.3, gain: 0.3 })
+    ) },
+  kn_wrake: { levelDb: -9, priority: 4, maxVoices: 2, cooldownMs: 100, fn: (k, t, d, p) =>
+    Math.max(
+      ...[0, 0.05, 0.1].map((o, i) => k.noise(d, t + o, { type: 'bandpass', f0: P(p, [3800, 3200, 2600][i]), f1: P(p, 1200), q: 2, d: 0.12, gain: 0.55 })),
+      k.noise(d, t, { src: 'crackle', type: 'highpass', f0: P(p, 2800), q: 0.8, d: 0.3, gain: 0.35 }),
+      k.tone(d, t, { f0: P(p, 140), f1: P(p, 70), d: 0.2, gain: 0.4 })
+    ) },
+  kn_wrecover: { levelDb: -17, priority: 2, maxVoices: 2, cooldownMs: 200, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { src: 'crackle', type: 'bandpass', f0: P(p, 1600), f1: P(p, 2400), q: 1, a: 0.1, d: 0.25, gain: 0.45 }),
+      k.tone(d, t, { type: 'triangle', f0: P(p, 466), f1: P(p, 440), a: 0.08, d: 0.3, gain: 0.1 })
+    ) },
 };
 
 export const KILN_CUE_IDS = Object.freeze(Object.keys(CUES));
@@ -170,7 +227,7 @@ const one = (cue, where, extra) => [{ cue, ...where, ...extra }];
 // Each creature's own wind-up, riding on the common telegraph tick. The
 // tick sits where the telegraph is drawn (the target); the wind-up sits on
 // the creature.
-const WINDUP = { newt: 'kn_ncrouch', slag: 'kn_srear', bellows: 'kn_bpump', cindermoth: 'kn_mkindle' };
+const WINDUP = { newt: 'kn_ncrouch', slag: 'kn_srear', bellows: 'kn_bpump', cindermoth: 'kn_mkindle', hurler: 'kn_hheave', ashwraith: 'kn_wgather' };
 
 export function createKilnEventCues() {
   return {
@@ -191,6 +248,11 @@ export function createKilnEventCues() {
     hazard_telegraph: (ev, h) => (ev.htype === 'vent' ? one('kn_vrumble', at(ev, h, ev.id)) : null),
     hazard_resolve: (ev, h) => (ev.htype === 'vent' && ev.erupt ? one('kn_erupt', at(ev, h, ev.id)) : null),
     vent_cool: (ev, h) => one('kn_vcool', at(ev, h, ev.id)),
+    hurler_coal: (ev, h) => one('kn_hcoal', at(ev, h, ev.id)),
+    hurler_fumble: (ev, h) => one('kn_hfumble', at(ev, h, ev.id)),
+    ashwraith_fade: (ev, h) => one('kn_wfade', at(ev, h, ev.id)),
+    ashwraith_rake: (ev, h) => one('kn_wrake', at(ev, h, ev.id)),
+    ashwraith_recover: (ev, h) => one('kn_wrecover', at(ev, h, ev.id)),
   };
 }
 

@@ -35,7 +35,8 @@
 //                                  (72 ticks): it takes wing and glides over,
 //                                  landing on the mark at the end for 17
 //                                  (over barricades and hazards while aloft)
-//   (The second champions, the Spire's Bell Abbess among them, are below.)
+//   (The second champions, the Spire's Bell Abbess among them, and the
+//   Ember Kiln's two are below.)
 //
 // Sim discipline as every archetype: plain data on the entity, no RNG draws
 // (the move order alternates; the circling side is spawn-ordinal parity).
@@ -999,6 +1000,189 @@ export const bellAbbess = champion({
   ],
 });
 
+// ================================================ THE EMBER KILN'S TWO --
+// (content plan 5 slice 9, docs/CHAMPIONS.md "The Ember Kiln's champions")
+// The Kiln's crown door leads to one of its two lords by seed, like every
+// land's (championPick).
+
+// ------------------------------------------------------ FURNACE KNIGHT --
+// A great knight of riveted kiln iron with a furnace burning behind the
+// grate of its breastplate and a founder's sledge in both fists; it keeps
+// close.
+//   Molten Rush   a lane at the farthest hero 2.2 to 6.5 u off (62 ticks),
+//                 then it charges down it, 15 to each hero it meets, and
+//                 its molten feet leave slag behind (up to four pools, slow
+//                 35 % for 3 s)
+//   Grate Blast   a cone r 3.8, half-angle 40° (66 ticks): the grate opens
+//                 and the furnace roars out for 16, throwing every hero in
+//                 it 1.6 u back
+// Together: it rushes the backline, then roasts whoever stands at its grate.
+const FK = Object.freeze({
+  hp: 100,
+  moveSpeed: 1.2,
+  radius: 0.66,
+  kbScale: 0.12,
+  keepMin: 1.4,
+  keepMax: 2.4,
+  rushMin: 2.2,
+  rushMax: 6.5,
+  rushWidth: 1.15,
+  rushSpeed: 8.6, // u/s down the lane
+  rushDamage: 15,
+  trailEvery: 9, // ticks between slag pools on the run...
+  trailMax: 4, // ...at most this many a rush
+  trailRadius: 0.9,
+  trailTicks: 180,
+  trailSlow: 0.35,
+  coneRadius: 3.8,
+  coneHalfDeg: 40,
+  coneDamage: 16,
+  throwDist: 1.6,
+  throwTicks: 10,
+});
+export const furnaceKnight = champion({
+  id: 'furnace_knight',
+  stats: FK,
+  moves: [
+    {
+      id: 'molten_rush',
+      shape: 'lane',
+      ticks: 62,
+      cd: 160,
+      // Like the Briar Knight, it rushes the FARTHEST hero in reach.
+      can: (ctx, e) => !!farthestHero(ctx, e, FK.rushMin, FK.rushMax + 1.5),
+      start(ctx, e) {
+        const t = farthestHero(ctx, e, FK.rushMin, FK.rushMax + 1.5);
+        const d = unit(t.x - e.x, t.z - e.z);
+        const c = ctx.movement.sweptContact(e.x, e.z, d.x * FK.rushMax, d.z * FK.rushMax, e.radius);
+        const length = Math.max(FK.rushMin, Math.max(0, Math.min(1, c.t)) * FK.rushMax);
+        return { fromX: e.x, fromZ: e.z, x: e.x + d.x * length, z: e.z + d.z * length, dirX: d.x, dirZ: d.z, length, width: FK.rushWidth, targetId: t.id };
+      },
+      resolve(ctx, e, t) {
+        const perTick = FK.rushSpeed / ctx.TICK_HZ;
+        e.charge = { vx: t.dirX * perTick, vz: t.dirZ * perTick, left: Math.ceil(t.length / perTick), hits: [], trail: 0, pools: 0 };
+        e.mode = 'charge';
+        return 0;
+      },
+    },
+    {
+      id: 'grate_blast',
+      shape: 'cone',
+      ticks: 66,
+      cd: 165,
+      can: (ctx, e, target, d) => d.l <= FK.coneRadius - 0.4 + (target.radius ?? 0),
+      start: (ctx, e, target, d) => ({ x: e.x, z: e.z, dirX: d.x, dirZ: d.z, radius: FK.coneRadius, halfAngleDeg: FK.coneHalfDeg }),
+      resolve(ctx, e, t) {
+        const victims = inCone(ctx.registry, t);
+        ctx.strike(e, victims, ctx.dmg(e, FK.coneDamage), t.x, t.z, { delivery: 'skill', shape: 'cone' });
+        throwFrom(e, victims, t.x, t.z, t.dirX, t.dirZ, FK.throwDist, FK.throwTicks);
+        return partyOnly(victims);
+      },
+    },
+  ],
+  busy: (ctx, e) => !!e.charge,
+  hit(ctx, e, tick) {
+    const c = e.charge;
+    if (!c) return;
+    const k = ctx.speedMul(e, tick);
+    const { hit } = ctx.movement.sweptStep(e, c.vx * k, c.vz * k, e.radius);
+    c.left -= 1;
+    // Its molten feet: a slag pool every few ticks of the run.
+    c.trail = (c.trail ?? 0) + 1;
+    if (c.trail >= FK.trailEvery && (c.pools ?? 0) < FK.trailMax) {
+      c.trail = 0;
+      c.pools = (c.pools ?? 0) + 1;
+      ctx.spawnSlick(e, e.x, e.z, { radius: FK.trailRadius, ticks: FK.trailTicks, slow: FK.trailSlow, variant: 'slag' });
+    }
+    const hits = [];
+    for (const p of ctx.registry.all()) {
+      if (p.faction !== 'party' || !(p.hp > 0) || c.hits.includes(p.id)) continue;
+      if (Math.hypot(p.x - e.x, p.z - e.z) <= e.radius + (p.radius ?? 0) + 0.1) hits.push(p);
+    }
+    for (const p of hits) c.hits.push(p.id);
+    if (hits.length) ctx.strike(e, hits, ctx.dmg(e, FK.rushDamage), e.x - c.vx, e.z - c.vz, { delivery: 'skill', shape: 'lane' });
+    if (hit || c.left <= 0) {
+      e.charge = null;
+      e.mode = 'stalk';
+      ctx.events.emit(tick, 'champion_charge_end', { id: e.id, champion: 'furnace_knight', cause: hit ? 'wall' : 'spent', hits: c.hits.length, pools: c.pools ?? 0, x: r2(e.x), z: r2(e.z) });
+    }
+  },
+});
+
+// --------------------------------------------------------- GLASSBLOWER --
+// A long-limbed kiln imp in a scorched leather apron, an iron blowpipe as
+// tall as itself with a glowing gather of molten glass at its end; it keeps
+// its distance and backs off a hero who closes in.
+//   Glass Bubble  a ring r 2.1 under its target up to 8 u off (84 ticks): a
+//                 molten bubble swells on the pipe, floats over and bursts
+//                 for 15; the shards stay as a glittering patch (slow 35 %
+//                 for 4 s)
+//   Glass Gout    a lane 6.5 u x 1.0 at its target (54 ticks): a gout of
+//                 molten glass down it for 12 that hardens on every hero it
+//                 hits (slow 50 % for 1 s)
+// Together: it pins you in shards, then glazes you where you stand.
+const GB = Object.freeze({
+  hp: 100,
+  moveSpeed: 1.1,
+  radius: 0.6,
+  kbScale: 0.14,
+  keepMin: 3.4,
+  keepMax: 5.6,
+  backs: true, // it skips away from a hero who closes in
+  bubbleRange: 8.0,
+  bubbleMin: 1.2,
+  bubbleRadius: 2.1,
+  bubbleDamage: 15,
+  shardTicks: 240,
+  shardSlow: 0.35,
+  goutLength: 6.5,
+  goutWidth: 1.0,
+  goutDamage: 12,
+  glazeSlow: 0.5,
+  glazeTicks: 60,
+});
+export const glassblower = champion({
+  id: 'glassblower',
+  stats: GB,
+  moves: [
+    {
+      id: 'glass_bubble',
+      shape: 'ring',
+      ticks: 84,
+      cd: 175,
+      can: (ctx, e, target, d) => d.l >= GB.bubbleMin && d.l <= GB.bubbleRange,
+      start(ctx, e, target, d) {
+        const { x, z } = landingMark(ctx, e, target);
+        return { x, z, dirX: d.x, dirZ: d.z, radius: GB.bubbleRadius };
+      },
+      resolve(ctx, e, t) {
+        const victims = partyInRadius(ctx.registry, t.x, t.z, t.radius);
+        const props = neutralsInRadius(ctx.registry, t.x, t.z, t.radius);
+        ctx.strike(e, victims.concat(props), ctx.dmg(e, GB.bubbleDamage), t.x, t.z, { delivery: 'skill', shape: 'ring' });
+        ctx.spawnSlick(e, t.x, t.z, { radius: t.radius * 0.85, ticks: GB.shardTicks, slow: GB.shardSlow, variant: 'glass' });
+        return victims.length;
+      },
+    },
+    {
+      id: 'glass_gout',
+      shape: 'lane',
+      ticks: 54,
+      cd: 150,
+      can: (ctx, e, target, d) => d.l > 1e-6 && d.l <= GB.goutLength,
+      start(ctx, e, target, d) {
+        const length = clipLength(ctx, e.x, e.z, d.x, d.z, GB.goutLength);
+        return { fromX: e.x, fromZ: e.z, x: e.x + d.x * length, z: e.z + d.z * length, dirX: d.x, dirZ: d.z, length, width: GB.goutWidth };
+      },
+      resolve(ctx, e, t, tick) {
+        const victims = inLane(ctx.registry, t);
+        ctx.strike(e, victims, ctx.dmg(e, GB.goutDamage), t.fromX, t.fromZ, { delivery: 'skill', shape: 'lane' });
+        slowAll(ctx, e, victims, GB.glazeSlow, GB.glazeTicks, tick);
+        return partyOnly(victims);
+      },
+    },
+  ],
+});
+
 export const CHAMPION_KITS = Object.freeze({
   briar_knight: briarKnight,
   sluice_warden: sluiceWarden,
@@ -1010,4 +1194,6 @@ export const CHAMPION_KITS = Object.freeze({
   gravebell_ringer: gravebellRinger,
   vein_matron: veinMatron,
   bell_abbess: bellAbbess,
+  furnace_knight: furnaceKnight,
+  glassblower,
 });

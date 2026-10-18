@@ -46,6 +46,7 @@ old one; each blessing lasts 60 s and lies on every hero.
 | Barrow | Grave Shrine | a curse on the next combat room | Fury: +30% damage dealt |
 | Heart | Geode Shrine | the party's vault key | a rare or legendary relic pick at the clear |
 | Spire | Wind Shrine | the offering hero's tonic or bomb | Tailwind: +20% move speed, +15% damage |
+| Kiln | Forge Shrine | the party's newest common relic, melted down | Tempered: +25% damage, 20% less damage taken |
 
 - Blessings live on `e.blessing` (not a status), read by `speedMul`,
   `damageDealtMul` and `damageTakenMul` in `src/sim/status.js`.
@@ -55,6 +56,9 @@ old one; each blessing lasts 60 s and lies on every hero.
 - The Geode Shrine's key counts as surrendered (`key_surrender`), not as a
   vault opened. If the room already owes a pick, the shrine grants a rare or
   legendary relic outright instead.
+- The Forge Shrine (content plan 5 slice 9) refuses a party with no common
+  relic. The melted relic leaves for the run (`relic_lose`, source `forge`).
+  Its rig is a brick forge with an anvil and a crucible in swaying tongs.
 - Campaign runs only (Endless and the Daily included); never Boss Rush, the
   tutorial or the legacy single-level run, so the nine goldens never see one.
 

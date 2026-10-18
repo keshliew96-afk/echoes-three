@@ -47,7 +47,7 @@ import {
   TorusGeometry,
   Vector2,
 } from 'three';
-import { PALETTE } from '../../data/palette.js';
+import { PALETTE, VFX_MATTER } from '../../data/palette.js';
 import { toonMaterial } from '../toon.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { sharedGeo } from '../geocache.js';
@@ -75,6 +75,8 @@ export const ENCOUNTER_ACCENT = Object.freeze({
   // The Still Spire (plan 4 slice 7).
   gods_seat: '#E8E2D0',
   silent_bell: '#AEB8CC',
+  // The Ember Kiln (content plan 5 slice 9): Kiln Gold, never Ember.
+  molten_bell: VFX_MATTER.kilngold,
 });
 
 const STONE = hslColor(30, 0.06, 0.4);
@@ -1147,6 +1149,122 @@ function propBell(g) {
   };
 }
 
+// THE EMBER KILN's Molten Bell (content plan 5 slice 9): a clay mould sunk
+// in a brick pit, the crown of a half-cast bell glowing at its lip, and a
+// crucible on an iron gantry above it. Taken, the crucible tips and pours,
+// the bell rises out of the mould whole and rings: gold rings go out and
+// it swings. Heat in Kiln Gold, never Ember.
+function propMoltenBell(g) {
+  const brick = toonMaterial({ color: new Color(VFX_MATTER.kilnbrick) });
+  const clay = toonMaterial({ color: hslColor(18, 0.22, 0.3) });
+  const iron = toonMaterial({ color: IRON });
+  const bronze = toonMaterial({ color: hslColor(34, 0.45, 0.36), side: DoubleSide });
+  const gold = VFX_MATTER.kilngold;
+  const heat = VFX_MATTER.kilnheat;
+  g.add(groundShadow(1.0, 0.45, { wide: 1.3, deep: 0.8 }));
+  // The pit: a ring of brick round the mould.
+  for (let i = 0; i < 10; i++) {
+    const a = (i / 10) * Math.PI * 2;
+    const b = add(g, new Mesh(sharedGeo('ev-mb-brick', () => new BoxGeometry(0.34, 0.24, 0.2)), brick), { x: Math.cos(a) * 0.82, y: 0.12, z: Math.sin(a) * 0.82 });
+    b.rotation.y = -a + Math.PI / 2;
+  }
+  add(g, new Mesh(sharedGeo('ev-mb-mould', () => new CylinderGeometry(0.62, 0.72, 0.5, 14)), clay), { y: 0.25 });
+  // The molten seam round the mould's lip.
+  const seam = new Mesh(sharedGeo('ev-mb-seam', () => new RingGeometry(0.46, 0.6, 28)), flatGlow(gold, 0.85));
+  seam.rotation.x = -Math.PI / 2;
+  add(g, seam, { ink: false, y: 0.505 });
+  // The bell: only its crown shows until it is cast.
+  const bell = new Group();
+  bell.position.y = 0.2;
+  g.add(bell);
+  const prof = [[0, 0.7], [0.12, 0.69], [0.2, 0.64], [0.24, 0.5], [0.27, 0.25], [0.34, 0], [0.45, -0.18], [0.5, -0.24], [0.46, -0.26], [0.38, -0.2], [0.26, -0.02], [0.2, 0.25], [0.17, 0.5], [0, 0.56]].map(([x, y]) => new Vector2(x, y));
+  add(bell, new Mesh(sharedGeo('ev-mb-bell', () => new LatheGeometry(prof, 22)), bronze), { y: 0 });
+  add(bell, new Mesh(sharedGeo('ev-mb-canon', () => new TorusGeometry(0.08, 0.03, 6, 12)), iron), { y: 0.76 });
+  const bellHot = new MeshBasicMaterial({ color: new Color(gold), transparent: true, opacity: 0.6, blending: AdditiveBlending, depthWrite: false, toneMapped: false });
+  add(bell, new Mesh(sharedGeo('ev-mb-bellglow', () => new LatheGeometry(prof.map((v) => new Vector2(v.x * 1.02, v.y)), 22)), bellHot), { ink: false });
+  // The gantry and the crucible.
+  for (const sx of [-0.95, 0.95]) add(g, new Mesh(sharedGeo('ev-mb-post', () => new BoxGeometry(0.1, 2.1, 0.1)), iron), { x: sx, y: 1.05, z: -0.1 });
+  add(g, new Mesh(sharedGeo('ev-mb-beam', () => new BoxGeometry(2.0, 0.1, 0.12)), iron), { y: 2.1, z: -0.1 });
+  const tilt = new Group();
+  tilt.position.set(0, 1.85, -0.1);
+  g.add(tilt);
+  add(tilt, new Mesh(sharedGeo('ev-mb-hanger', () => new BoxGeometry(0.03, 0.3, 0.03)), iron), { y: 0.1 });
+  const pot = add(tilt, new Mesh(sharedGeo('ev-mb-pot', () => new CylinderGeometry(0.22, 0.16, 0.3, 10)), toonMaterial({ color: new Color(VFX_MATTER.kilnbrick).multiplyScalar(0.55) })), { y: -0.15 });
+  const melt = new Mesh(sharedGeo('ev-mb-melt', () => new CircleGeometry(0.2, 12).rotateX(-Math.PI / 2)), new MeshBasicMaterial({ color: new Color(heat), toneMapped: false }));
+  add(pot, melt, { ink: false, y: 0.151 });
+  // The pour: a thin bright column from the pot's lip to the mould.
+  const pourMat = flatGlow(heat, 0);
+  const pour = new Mesh(sharedGeo('ev-mb-pour', () => new CylinderGeometry(0.035, 0.05, 1, 6).translate(0, -0.5, 0)), pourMat);
+  add(g, pour, { ink: false, x: 0.2, y: 1.75, z: -0.1 });
+  pour.scale.y = 1.2;
+  // Heat over the mould and sparks rising.
+  const halo = makeGlowSprite({ color: gold, size: 1.8, opacity: 0.35 });
+  halo.material.toneMapped = false;
+  halo.position.y = 0.7;
+  g.add(halo);
+  const sparks = [];
+  for (let i = 0; i < 8; i++) {
+    const s = makeGlowSprite({ color: i % 3 ? gold : heat, size: 0.08, opacity: 0.9 });
+    s.material.toneMapped = false;
+    g.add(s);
+    sparks.push({ s, ph: i / 8, a: i * 0.8 });
+  }
+  // The ringing: gold rings going out when it is cast.
+  const rings = [];
+  for (let i = 0; i < 3; i++) {
+    const r = new Mesh(sharedGeo('ev-mb-ring', () => new RingGeometry(0.94, 1.0, 56)), flatGlow(gold, 0));
+    r.rotation.x = -Math.PI / 2;
+    r.renderOrder = 3;
+    add(g, r, { ink: false, y: 0.04 });
+    rings.push(r);
+  }
+  let cast = 9; // seconds since the take
+  let done = false;
+  return {
+    update(t, k, dt) {
+      cast += dt;
+      const kk = Math.max(0.3, Math.min(1.3, k));
+      // The crucible tips for the pour, then rights itself.
+      const pouring = cast < 1.1 ? Math.min(1, cast / 0.25) * (cast > 0.85 ? (1.1 - cast) / 0.25 : 1) : 0;
+      tilt.rotation.z = -0.9 * pouring + 0.03 * Math.sin(t * 0.9);
+      pourMat.opacity = 0.95 * pouring;
+      // The bell rises whole out of the mould once poured, then hangs and swings.
+      const rise = done ? Math.min(1, Math.max(0, (cast - 0.8) / 0.6)) : 0;
+      const ease = rise * rise * (3 - 2 * rise);
+      bell.position.y = 0.2 + 0.95 * ease;
+      const sw = cast > 1.4 && cast < 5 ? 0.22 * Math.sin((cast - 1.4) * 5) * Math.exp(-(cast - 1.4) * 0.9) : 0;
+      bell.rotation.z = sw;
+      bellHot.opacity = done ? 0.6 * Math.max(0, 1 - cast / 5) + 0.05 : (0.45 + 0.15 * Math.sin(t * 2.1)) * kk;
+      seam.material.opacity = (done ? 0.25 : 0.7 + 0.15 * Math.sin(t * 3.3)) * kk;
+      halo.material.opacity = (done ? 0.12 : 0.28 + 0.08 * Math.sin(t * 1.7)) * kk + 0.4 * pouring;
+      for (const o of sparks) {
+        const u = (t * 0.45 + o.ph) % 1;
+        const a = o.a + t * 0.3;
+        o.s.position.set(Math.cos(a) * 0.35 * (1 - u * 0.4), 0.55 + u * 1.5, Math.sin(a) * 0.35 * (1 - u * 0.4));
+        o.s.material.opacity = 0.9 * (1 - u) * kk * (done ? 0.4 : 1);
+      }
+      rings.forEach((r, i) => {
+        const u = (cast - 1.4 - i * 0.35) / 1.4;
+        const on = u > 0 && u < 1;
+        r.scale.setScalar(on ? 0.4 + 2.6 * u : 0.01);
+        r.material.opacity = on ? 0.7 * (1 - u) : 0;
+      });
+    },
+    take(x, z) {
+      cast = 0;
+      done = true;
+      impactFx.embers(x, z, { color: gold, n: 22, radius: 0.8, tall: 2.2 });
+      impactFx.embers(x, z, { color: heat, n: 10, radius: 0.4, tall: 1.4 });
+    },
+    restore(taken) {
+      if (taken) {
+        done = true;
+        cast = 9;
+      }
+    },
+  };
+}
+
 const PROPS = {
   blood_shrine: propShrine,
   wishing_well: propWell,
@@ -1164,6 +1282,7 @@ const PROPS = {
   gamblers_dice: propDice,
   gods_seat: propSeat,
   silent_bell: propBell,
+  molten_bell: propMoltenBell,
 };
 export const ENCOUNTER_KINDS = Object.freeze(Object.keys(PROPS));
 

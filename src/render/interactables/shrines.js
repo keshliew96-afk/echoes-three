@@ -1,4 +1,4 @@
-// SHRINES (docs/SHRINES.md, content plan 4 slice 9): the five land shrines
+// SHRINES (docs/SHRINES.md, content plan 4 slice 9): the six land shrines
 // as rigs. Every shrine is an old stone plinth with an offering bowl and a
 // lit core in its blessing's colour (render/../data/palette.js
 // SHRINE_COLORS), crowned by its land's sign:
@@ -8,6 +8,8 @@
 //   heart   Geode Shrine    a split geode, violet crystal inside a dark rind
 //                           round a keyhole of gold light
 //   spire   Wind Shrine     a small bell-cote with a turning weather vane
+//   kiln    Forge Shrine    a squat brick forge with an anvil on it and a
+//                           crucible of Kiln Gold hanging in tongs
 // A slow glyph ring breathes on the floor round it while it waits. Answered
 // (or asleep once the room clears), the core and ring go dark and the bowl
 // cools. State shows in the body, never in colour alone: the `ix-` prompt
@@ -128,6 +130,31 @@ function crownSpire(g, c, stone) {
   return vane;
 }
 
+// The Kiln (content plan 5 slice 9): a squat brick forge behind the bowl, an
+// anvil on top, and a crucible of molten gold hanging from iron tongs that
+// sway. Heat in Kiln Gold, never Ember.
+const KGOLD = new Color(VFX_MATTER.kilngold);
+function crownKiln(g, c, stone) {
+  void c;
+  addTo(g, sharedGeo('sh-kiln-forge', () => new BoxGeometry(0.78, 0.5, 0.4)), stone, [0, 0.25, -0.38]);
+  addTo(g, sharedGeo('sh-kiln-mouth', () => new BoxGeometry(0.3, 0.16, 0.02)), new MeshBasicMaterial({ color: exactColor(VFX_MATTER.kilngold), toneMapped: false }), [0, 0.2, -0.17], false);
+  const iron = toonMaterial({ color: IRON });
+  addTo(g, sharedGeo('sh-kiln-anvil', () => mergeGeometries([new BoxGeometry(0.2, 0.1, 0.16).translate(0, 0.05, 0), new BoxGeometry(0.1, 0.12, 0.1).translate(0, 0.16, 0), new BoxGeometry(0.46, 0.09, 0.18).translate(0.02, 0.26, 0), new ConeGeometry(0.06, 0.2, 4).rotateZ(Math.PI / 2).translate(-0.31, 0.27, 0)])), iron, [0.1, 0.5, -0.38]);
+  for (const s of [-1, 1]) addTo(g, sharedGeo('sh-kiln-post', () => new BoxGeometry(0.06, 0.9, 0.06)), iron, [s * 0.34, 0.95, -0.18]);
+  addTo(g, sharedGeo('sh-kiln-beam', () => new BoxGeometry(0.76, 0.06, 0.06)), iron, [0, 1.42, -0.18]);
+  const tongs = new Group();
+  tongs.position.set(0, 1.4, -0.18);
+  addTo(tongs, sharedGeo('sh-kiln-tongs', () => mergeGeometries([-1, 1].map((s) => new BoxGeometry(0.025, 0.36, 0.025).rotateZ(s * 0.12).translate(s * 0.03, -0.18, 0)))), iron);
+  const pot = addTo(tongs, sharedGeo('sh-kiln-pot', () => new CylinderGeometry(0.11, 0.08, 0.14, 8)), toonMaterial({ color: new Color(VFX_MATTER.kilnbrick).multiplyScalar(0.6) }), [0, -0.4, 0]);
+  addTo(pot, sharedGeo('sh-kiln-melt', () => new CircleGeometry(0.095, 10).rotateX(-Math.PI / 2)), new MeshBasicMaterial({ color: exactColor(VFX_MATTER.kilnheat), toneMapped: false }), [0, 0.071, 0], false);
+  const pg = makeGlowSprite({ color: KGOLD, size: 0.45, opacity: 0.6 });
+  pg.material.toneMapped = false;
+  pg.position.y = 0.1;
+  pot.add(pg);
+  g.add(tongs);
+  return tongs;
+}
+
 export function buildShrineRig(e) {
   const id = SHRINE_COLORS[e.shrine] ? e.shrine : 'wood';
   const c = SHRINE_COLORS[id];
@@ -136,10 +163,12 @@ export function buildShrineRig(e) {
   const dark = toonMaterial({ color: new Color(c.stone).multiplyScalar(0.45) });
   plinth(g, stone, dark);
   let vane = null;
+  let tongs = null;
   if (id === 'wood') crownWood(g, c);
   else if (id === 'mill') crownMill(g, c, stone);
   else if (id === 'barrow') crownBarrow(g, c, stone);
   else if (id === 'heart') crownHeart(g, c);
+  else if (id === 'kiln') tongs = crownKiln(g, c, stone);
   else vane = crownSpire(g, c, stone);
   // The lit core in the bowl and its breath.
   const flameMat = new MeshBasicMaterial({ color: exactColor(c.glow), transparent: true, opacity: 0.9, toneMapped: false, depthWrite: false, blending: AdditiveBlending });
@@ -189,6 +218,7 @@ export function buildShrineRig(e) {
         mo.m.material.opacity = 0.8 * (1 - u) * lit;
       }
       if (vane) vane.rotation.y = Math.sin(tSec * 0.7) * 0.9 + tSec * 0.2;
+      if (tongs) tongs.rotation.z = Math.sin(tSec * 0.9) * 0.08 * lit;
     },
     onOffer(ev) {
       impactFx.embers(ev.x, ev.z, { color: c.glow, n: 12, radius: 0.5, tall: 2.0 });

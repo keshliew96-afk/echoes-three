@@ -111,6 +111,11 @@ const RELIC_SVG = {
   bottomless_flask: `<path d="M12 4 H20 M13 4 V10 L7 26 Q6 28 9 28 H23 Q26 28 25 26 L19 10 V4" ${STROKE}/><path d="M11 20 Q16 16 21 20 Q16 24 13 21 Q16 19 18 21" ${STROKE}/>`,
   // A great bell with sound rings rolling out from its lip.
   tenor_bell: `<path d="M16 3 V6" ${STROKE}/><path d="M9 21 Q9 6 16 6 Q23 6 23 21 Z" ${FILL}/><path d="M7 21 H25" ${STROKE}/><path d="M4 26 Q16 31 28 26 M2 21 Q1 25 4 26 M30 21 Q31 25 28 26" ${STROKE}/>`,
+  // THE EMBER KILN (content plan 5 slice 9). A greave of hammered slag, its
+  // knee plate and two rivets.
+  slag_greaves: `<path d="M11 4 H21 L22 15 Q22 22 20 27 H12 Q10 22 10 15 Z" ${STROKE}/><path d="M9 11 Q16 7 23 11" ${STROKE}/><path d="M12 27 L8 29 H24 L20 27" ${STROKE}/><circle cx="13" cy="18" r="1.6" ${FILL}/><circle cx="19" cy="18" r="1.6" ${FILL}/>`,
+  // An ingot, glowing: a trapezoid bar with heat lines rising off it.
+  founders_ingot: `<path d="M5 26 L9 17 H23 L27 26 Z" ${FILL}/><path d="M9 17 L12 14 H20 L23 17" ${STROKE}/><path d="M11 10 Q9 8 11 5 M16 10 Q18 7 16 3 M21 10 Q19 8 21 5" ${STROKE}/>`,
 };
 
 // The curse mark: a crescent moon cut by an eye slit.

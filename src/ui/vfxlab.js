@@ -96,7 +96,7 @@ const ENEMIES = [
   // Act V, the Still Spire (docs/ACT_V.md).
   ['Act V', 5, ['kite', 'chime', 'gargoyle', 'hanger', 'vane', 'sacristan']],
   // The Ember Kiln (docs/KILN.md; act 6 in data, Level V on the Kiln road).
-  ['Kiln', 6, ['newt', 'slag', 'bellows', 'cindermoth', 'kiln pack', 'vent']],
+  ['Kiln', 6, ['newt', 'slag', 'bellows', 'cindermoth', 'hurler', 'ashwraith', 'kiln pack', 'vent']],
 ];
 // The room an act's row plays in: Level V only exists behind ?act5=1.
 const roomAct = (act) => (ACT_IDS.includes(act) ? act : 4);
@@ -528,6 +528,16 @@ export function mountVfxLab() {
           for (const dx of [-1.4, -0.4, 0.6, 1.6]) X().cmd('spawn', 'cindermoth', f.x + dx, f.z - 2.6 - (dx > 0 ? 0.6 : 0));
           return say('cindermoth x4: they flutter in, hang and kindle (Ember ring), flare, then drift off as grey husks (x2 damage) until they relight');
         }
+        // Content plan 5 slice 9.
+        if (k === 'hurler') {
+          X().cmd('spawn', 'hurler', f.x - 1.4, f.z - 4.4);
+          X().cmd('spawn', 'hurler', f.x + 1.4, f.z - 4.8);
+          return say('hurler x2: it keeps its distance, heaves the coal sack (Ember ring on you), lobs it and leaves an ash patch; stun it mid-heave to make it drop the sack');
+        }
+        if (k === 'ashwraith') {
+          X().cmd('spawn', 'ashwraith', f.x, f.z - 3.4);
+          return say('ash wraith: it scatters into ash (untouchable), its Ember ring opens behind you, it reforms there and rakes; then it is spent, slow and takes x1.3');
+        }
         if (k === 'kiln pack') {
           X().cmd('spawn', 'slag', f.x, f.z - 3.2);
           X().cmd('spawn', 'newt', f.x - 1.8, f.z - 2.4);
@@ -875,7 +885,7 @@ export function mountVfxLab() {
   // of the party in its own land (crown, sigil, both moves, the rage below
   // half health and its fall all play live).
   const champ = section('Champions');
-  for (const [act, kind, name] of [[1, 'briar_knight', 'Briar Knight'], [2, 'sluice_warden', 'Sluice Warden'], [3, 'bone_reeve', 'Bone Reeve'], [4, 'hollow_choir', 'Hollow Choir'], [5, 'gale_herald', 'Gale Herald'], [1, 'moss_hart', 'Moss Hart'], [2, 'lockkeeper', 'Lockkeeper'], [3, 'gravebell_ringer', 'Gravebell Ringer'], [4, 'vein_matron', 'Vein Matron'], [5, 'bell_abbess', 'Bell Abbess']]) {
+  for (const [act, kind, name] of [[1, 'briar_knight', 'Briar Knight'], [2, 'sluice_warden', 'Sluice Warden'], [3, 'bone_reeve', 'Bone Reeve'], [4, 'hollow_choir', 'Hollow Choir'], [5, 'gale_herald', 'Gale Herald'], [1, 'moss_hart', 'Moss Hart'], [2, 'lockkeeper', 'Lockkeeper'], [3, 'gravebell_ringer', 'Gravebell Ringer'], [4, 'vein_matron', 'Vein Matron'], [5, 'bell_abbess', 'Bell Abbess'], [6, 'furnace_knight', 'Furnace Knight'], [6, 'glassblower', 'Glassblower']]) {
     button(champ, name, async () => {
       await ensureCombat(roomAct(act));
       const f = front();
@@ -1035,7 +1045,7 @@ export function mountVfxLab() {
     ]],
     // CHAMPION ROOMS (src/audio/championcues.js).
     ['Sound, champion stings', [
-      ['Briar Knight', 'ch_briar_knight_sting'], ['Sluice Warden', 'ch_sluice_warden_sting'], ['Bone Reeve', 'ch_bone_reeve_sting'], ['Hollow Choir', 'ch_hollow_choir_sting'], ['Gale Herald', 'ch_gale_herald_sting'], ['Moss Hart', 'ch_moss_hart_sting'], ['Lockkeeper', 'ch_lockkeeper_sting'], ['Gravebell Ringer', 'ch_gravebell_ringer_sting'], ['Vein Matron', 'ch_vein_matron_sting'], ['Bell Abbess', 'ch_bell_abbess_sting'],
+      ['Briar Knight', 'ch_briar_knight_sting'], ['Sluice Warden', 'ch_sluice_warden_sting'], ['Bone Reeve', 'ch_bone_reeve_sting'], ['Hollow Choir', 'ch_hollow_choir_sting'], ['Gale Herald', 'ch_gale_herald_sting'], ['Moss Hart', 'ch_moss_hart_sting'], ['Lockkeeper', 'ch_lockkeeper_sting'], ['Gravebell Ringer', 'ch_gravebell_ringer_sting'], ['Vein Matron', 'ch_vein_matron_sting'], ['Bell Abbess', 'ch_bell_abbess_sting'], ['Furnace Knight', 'ch_furnace_knight_sting'], ['Glassblower', 'ch_glassblower_sting'],
       ['Rage', 'ch_briar_knight_rage'], ['Fall', 'ch_fall'], ['Chest', 'ch_chest'], ['Crown door', 'ch_crown'],
     ]],
     ['Sound, champion moves', [
@@ -1044,6 +1054,7 @@ export function mountVfxLab() {
       ['Shard Hymn', 'ch_shard_hymn'], ['Discord', 'ch_discord'], ['Gale Call', 'ch_gale_call'], ['Stoop', 'ch_stoop'],
       ['Antler Toss', 'ch_antler_toss'], ['Leap gather', 'ch_leap_gather'], ["Hart's Leap", 'ch_harts_leap'], ['Hook whirl', 'ch_hook_whirl'], ['Chain Hook', 'ch_chain_hook'], ['Lock Turn', 'ch_lock_turn'],
       ['Death Knell', 'ch_death_knell'], ['Grave Call', 'ch_grave_call'], ['Vein Lash', 'ch_vein_lash'], ['Heart Pulse', 'ch_heart_pulse'], ['Rope grip', 'ch_rope_grip'], ['Rope Swing', 'ch_rope_swing'], ['Vesper Peal', 'ch_vesper_peal'],
+      ['Rush dig', 'ch_rush_dig'], ['Molten Rush', 'ch_molten_rush'], ['Grate open', 'ch_grate_open'], ['Grate Blast', 'ch_grate_blast'], ['Bubble swell', 'ch_glass_swell'], ['Glass Bubble', 'ch_glass_bubble'], ['Glass Gout', 'ch_glass_gout'],
     ]],
     // SHOP REFRESH (src/audio/cues.js): the peddler's riffle beside the buy.
     ['Sound, shop', [['Buy', 'purchase'], ['Refresh', 'shop_refresh'], ['Too dear', 'deny']]],

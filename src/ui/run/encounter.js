@@ -37,6 +37,8 @@ export const ENCOUNTER_COLOR = Object.freeze({
   // The Still Spire (plan 4 slice 7).
   gods_seat: '#E8E2D0',
   silent_bell: '#AEB8CC',
+  // The Ember Kiln (content plan 5 slice 9).
+  molten_bell: '#FFC24A',
 });
 
 // Line-drawn sigils, 24-unit box, stroke = currentColor.
@@ -59,6 +61,8 @@ const SIGIL = {
   gods_seat: '<path d="M7 21v-6h10v6"/><path d="M5 15h14"/><path d="M8 15V7.5a4 4 0 0 1 8 0V15"/><path d="M5 15v-3.5M19 15v-3.5"/><circle cx="12" cy="3.4" r="1.4"/><path d="M3 21h18"/>',
   // A tongueless bell under a hush stroke, two dead sound-arcs crossed out.
   silent_bell: '<path d="M12 3v2"/><path d="M6.5 16c0-6 1.8-9.5 5.5-9.5s5.5 3.5 5.5 9.5z"/><path d="M4.5 16h15"/><path d="M3 9.5c-.8 1.2-.8 2.8 0 4M21 9.5c.8 1.2.8 2.8 0 4"/><path d="M2 7l3 8M22 7l-3 8"/><path d="M9 20h6"/>',
+  // A bell rising out of its mould, a crucible pouring into it.
+  molten_bell: '<path d="M8 15c0-4.5 1.6-7 4-7s4 2.5 4 7z"/><path d="M6.5 15h11"/><path d="M5 18h14l-1.5 3h-11z"/><path d="M12 6V4.5"/><path d="M15 3.5l3-1.5 1.5 2.5-3 1.5z"/><path d="M17 6l-1 2"/>',
 };
 export function encounterSigil(id, size = 44) {
   const p = SIGIL[id] ?? '<path d="M9 9a3 3 0 1 1 4 2.8c-.7.3-1 .8-1 1.5V14M12 17.5v.5"/>';
