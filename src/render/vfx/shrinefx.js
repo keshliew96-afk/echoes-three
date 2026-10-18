@@ -20,6 +20,15 @@
 //                             ring (the HUD toast names why)
 //   blessings (frame)         a blessed hero sheds a few motes of the
 //                             blessing's colour round the feet while it lasts
+//   Tempered (frame)          the Forge Shrine's blessing reads for its whole
+//                             60 s (Small fixes 7): the hero glows like
+//                             fresh-forged metal (a held Kiln Gold body glow
+//                             that breathes), stands in a heat pool inside
+//                             a steady gold rim with a forge hoop closing on
+//                             it, sheds rising gold
+//                             flakes and, now and then, an anvil spark spits
+//                             off; all of it thins in the last 5 s.
+//                             Kiln Gold only, never Ember (attack warnings).
 //
 // createShrineFx(h) takes the signature director's helpers and returns
 // { frame(dt, entities) } for its per-frame loop.
@@ -143,13 +152,74 @@ export function createShrineFx({ kit, bus, byId, spray, flare, shock, after, ant
     kit.ring({ x: ev.x, z: ev.z, r0: 1.0, r1: 0.3, width: 0.06, life: 0.35, core: PALETTE.bone, glow: PALETTE.warmGrey, soft: 0.6, y: 0.06, opacity: 0.6 });
   });
 
+  // ---------------------------------------------------------- Tempered --
+  // One record per tempered hero: its held glow and its own clocks.
+  const GOLD = VFX_MATTER.kilngold;
+  const HEAT = VFX_MATTER.kilnheat;
+  const tempered = new Map();
+  function temperedFrame(dt, e, left) {
+    let t = tempered.get(e.id);
+    if (!t) {
+      t = { g: kit.glow({ x: e.x, y: 0.72, z: e.z, color: GOLD, size: 1.9, opacity: 0.5, owner: e.id, pulse: 0.55 }), clock: 0, hoop: rnd(0, 0.5), spit: rnd(0.4, 1.0), phase: rnd(0, TAU) };
+      tempered.set(e.id, t);
+    }
+    // The last 5 s: the heat gutters (the glow dims and drops out in beats).
+    const fading = left < 5;
+    const gutter = fading && Math.sin(left * 9) > 0.2;
+    if (t.g.owner === e.id) {
+      kit.setGlow(t.g, e.x, 0.72, e.z);
+      t.g.op = (fading ? (gutter ? 0.08 : 0.26) : 0.5) * 0.85;
+    }
+    t.clock += dt;
+    t.hoop -= dt;
+    t.spit -= dt;
+    t.phase += dt * 1.6;
+    if (t.clock >= 0.12) {
+      t.clock = 0;
+      if (!gutter) {
+        // The heat pool on the floor and a white-hot core at the chest.
+        kit.light({ x: e.x, z: e.z, radius: 1.5, color: GOLD, opacity: fading ? 0.35 : 0.75, life: 0.22, attack: 0.04 });
+        // A steady gold band round the feet: the forged rim (it reads
+        // through a crowd where the motes do not).
+        kit.ring({ x: e.x, z: e.z, r0: 0.7, r1: 0.74, width: 0.07, life: 0.2, core: HEAT, glow: GOLD, soft: 0.35, y: 0.045, opacity: fading ? 0.45 : 0.9, thin: 0 });
+        kit.flash({ x: e.x + Math.cos(t.phase) * 0.06, y: 0.82, z: e.z + Math.sin(t.phase) * 0.06, color: HEAT, size: 0.5, life: 0.18, opacity: fading ? 0.3 : 0.6 });
+        // Rising gold flakes, two a beat, off the shoulders and the hands.
+        for (let k = 0; k < 2; k++) {
+          const a = rnd(0, TAU);
+          spray('spark', e.x + Math.cos(a) * 0.3, rnd(0.35, 1.0), e.z + Math.sin(a) * 0.3, 1, { color: k ? HEAT : GOLD, speed: [0.02, 0.1], up: [0.7, 1.4], size: [0.035, 0.065], life: [0.55, 0.9], gravity: -0.35, drag: 1.5, jitter: 0.08, opacity: 0.95 });
+        }
+      }
+    }
+    // The forge hoop: a gold band closes on the feet like a quench ring.
+    if (t.hoop <= 0) {
+      t.hoop = fading ? 1.1 : 0.7;
+      kit.ring({ x: e.x, z: e.z, r0: 1.15, r1: 0.6, width: 0.09, life: 0.65, core: HEAT, glow: GOLD, soft: 0.45, y: 0.05, opacity: fading ? 0.5 : 0.95, thin: 0.3 });
+    }
+    // Now and then a spark spits off the hot metal and falls.
+    if (t.spit <= 0) {
+      t.spit = rnd(0.8, 1.5);
+      if (!fading || rnd(0, 1) < 0.4) spray('spark', e.x, rnd(0.6, 1.1), e.z, 5, { color: GOLD, speed: [1.0, 2.4], up: [0.6, 1.6], size: [0.025, 0.05], life: [0.3, 0.55], gravity: 7, drag: 0.5, jitter: 0.25, opacity: 1 });
+    }
+  }
+
   // --------------------------------------------------------- blessings --
   let acc = 0;
   function frame(dt, entities) {
+    const tick = world?.tick ?? 0;
+    const hot = new Set();
+    for (const e of entities) {
+      if (e.partyIndex === undefined || !e.blessing || e.blessing.id !== 'tempered' || !(e.blessing.untilTick > tick) || !(e.hp > 0)) continue;
+      hot.add(e.id);
+      temperedFrame(dt, e, (e.blessing.untilTick - tick) / 60);
+    }
+    for (const [id, t] of tempered) {
+      if (hot.has(id)) continue;
+      if (t.g.owner === id) kit.release(t.g, 0.25);
+      tempered.delete(id);
+    }
     acc += dt;
     if (acc < 0.12) return;
     acc = 0;
-    const tick = world?.tick ?? 0;
     for (const e of entities) {
       if (e.partyIndex === undefined || !e.blessing || !(e.blessing.untilTick > tick) || !(e.hp > 0)) continue;
       const bc = BLESSING_COLORS[e.blessing.id];

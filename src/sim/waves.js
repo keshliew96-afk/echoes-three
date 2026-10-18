@@ -34,6 +34,7 @@
 // full). The `?room=` harness (no plan) keeps the legacy §11 roll EXACTLY
 // (gate G4a.6).
 import { innerBounds, staticClearance } from './movement.js';
+import { refreshBlockers } from './interactables.js';
 import { THREAT, ELITE_COST, WAVE_SIZE_CAP, ROOM_CONCURRENT_CAP } from '../data/difficulty.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt, purge, escort and hold rooms. Their
 // state lives in `obj` (null in kill_all / defend rooms, so those rooms save,
@@ -593,6 +594,10 @@ export function createWaveDirector({ registry, events, rng, enemies, getTick }) 
   // escortRoute), hunted by the waves like the Waystone is.
   function beginEscort(tick) {
     const E = OBJECTIVE_RULES.escort;
+    // The room's blockers as they stand now (a shrine spawned this same tick
+    // is not installed until the tick's own refresh), so the road bends round
+    // them instead of running a stop into the shrine.
+    refreshBlockers(registry);
     const route = escortRoute(obj.dir, obj.side, E.radius);
     const [x, z] = route[0];
     const hp = r2(E.hp * (plan ? plan.hpMul : 1));

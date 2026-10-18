@@ -256,6 +256,9 @@ export const MELEE_CLASSES = Object.freeze(['tank', 'swordsman', 'duskwing']);
 // `margin` = the clearance past the ring's edge that still counts as inside;
 // `exit` = how far past that the seat walks, so it never hovers on the edge.
 export const AI_EVADE = Object.freeze({ margin: 0.3, exit: 0.2 });
+// Small fixes 7: the floor pools (slick variants) every AI seat and the
+// autopilot step off: Cinder patches, Molten death pools, Furnace Knight slag.
+export const STEER_OFF_POOLS = Object.freeze(['cinder', 'molten', 'slag']);
 // Balance pass: a ranged AI seat (the Archer) backs off a hostile that gets
 // inside `minU`, to `toU` from it, instead of standing and trading blows with
 // its 80 HP body (the stand-off rule only ever closed distance).
