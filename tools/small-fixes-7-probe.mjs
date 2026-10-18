@@ -3,9 +3,10 @@
 //
 //   node tools/small-fixes-7-probe.mjs [--root <checkout>]
 //
-//   cinder   the AI seats step off a Cinder elite's burning patch (ranged
-//            and melee alike) and the autopilot walks the player seat off
-//            one; a human seat standing in a patch with no input stays put
+//   cinder   the AI seats step off a Cinder elite's burning patch, a Molten
+//            death pool and a Furnace Knight slag pool (ranged and melee
+//            alike) and the autopilot walks the player seat off each; a
+//            human seat standing in a patch with no input stays put
 //            and burns, exactly as before
 //   road     the pilgrim's road bends round a shrine that stands in the
 //            escort room (before, the shrine was placed first and the road
@@ -91,11 +92,18 @@ function cinderRoom(seed) {
   e.knockbackable = false;
   return { w, e };
 }
-// A Cinder patch at (x, z), as the affix lays it (sim/affixes.js).
-function patch(w, owner, x, z) {
-  const N = AFFIX_RULES.cinder;
+// A floor pool at (x, z) as the game lays it: a Cinder patch and a Molten
+// death pool (sim/affixes.js), a Furnace Knight slag pool (its Molten Rush
+// trail, sim/enemies/champions.js FK).
+const POOLS = {
+  cinder: { radius: AFFIX_RULES.cinder.radius, ticks: AFFIX_RULES.cinder.ticks, slow: 0, burn: AFFIX_RULES.cinder.burn },
+  molten: { radius: AFFIX_RULES.molten.poolRadius, ticks: AFFIX_RULES.molten.poolTicks, slow: 0, burn: AFFIX_RULES.molten.burn },
+  slag: { radius: 0.9, ticks: 180, slow: 0.35, burn: 0 },
+};
+function patch(w, owner, x, z, kind = 'cinder') {
+  const P = POOLS[kind];
   const tick = w.clock.tick;
-  return w.registry.spawn({ kind: 'slick', faction: 'neutral', x, z, px: x, pz: z, radius: N.radius, slow: 0, startTick: tick, untilTick: tick + N.ticks, ownerId: owner.id, variant: 'cinder', burn: N.burn });
+  return w.registry.spawn({ kind: 'slick', faction: 'neutral', x, z, px: x, pz: z, radius: P.radius, slow: P.slow, startTick: tick, untilTick: tick + P.ticks, ownerId: owner.id, variant: kind, ...(P.burn ? { burn: P.burn } : {}) });
 }
 const hold = (e) => {
   e.x = e.px = 0;
@@ -105,8 +113,12 @@ const inPatch = (b, s) => Math.hypot(b.x - s.x, b.z - s.z) <= s.radius;
 const burnsOn = (w, id, from) => w.log.slice(from).filter((x) => x.type === 'hit' && x.target === id && x.shape === 'molten').length;
 
 // --------------------------------------------------------------- cinder --
-{
-  // Every AI seat gets a patch laid right where it stands while it fights.
+// Small fixes 7 (Kesh's "Steer round slag pools too"): the same for a Molten
+// death pool and a Furnace Knight slag pool. A wider pool takes longer to
+// walk out of (the slag also slows), so each kind has its own bound.
+const OUT_WITHIN = { cinder: 40, molten: 60, slag: 70 };
+for (const kind of Object.keys(POOLS)) {
+  // Every AI seat gets a pool laid right where it stands while it fights.
   const { w, e } = cinderRoom(7);
   const allies = w.registry.all().filter((x) => x.kind === 'ally' && x.hp > 0);
   for (const a of allies) a.hp = a.maxHp = 5000;
@@ -117,27 +129,33 @@ const burnsOn = (w, id, from) => w.log.slice(from).filter((x) => x.type === 'hit
     hold(e);
     w.step();
   }
-  const pats = allies.map((a) => patch(w, e, a.x, a.z));
+  // Laid under the seat, centred a little off it on the side away from the
+  // elite (a wide pool centred on a melee seat would cover the elite too, and
+  // no spot in reach would be dry).
+  const pats = allies.map((a) => {
+    const d = Math.hypot(a.x - e.x, a.z - e.z) || 1;
+    const off = kind === 'cinder' ? 0 : POOLS[kind].radius * 0.5;
+    return patch(w, e, a.x + ((a.x - e.x) / d) * off, a.z + ((a.z - e.z) / d) * off, kind);
+  });
   const from = w.log.length;
-  let worst = 0;
   const stood = allies.map(() => 0);
-  for (let i = 0; i < 60; i++) {
+  for (let i = 0; i < 90; i++) {
     hold(e);
     w.step();
     allies.forEach((a, k) => {
       if (inPatch(a, pats[k])) stood[k] += 1;
     });
   }
-  worst = Math.max(...stood);
+  const worst = Math.max(...stood);
   const burns = allies.map((a) => burnsOn(w, a.id, from));
   const off = allies.every((a, k) => !inPatch(a, pats[k]));
-  check('cinder', `the AI seats step off a fresh Cinder patch (${allies.map((a) => a.classId).join(', ')}): out within ${worst} ticks`, allies.length >= 2 && off && worst <= 40, { stood, burns });
-  check('cinder', 'so a patch laid under an AI seat never burns it (the first burn is 0.5 s in)', burns.every((n) => n === 0), { burns });
+  check('cinder', `the AI seats step off a fresh ${kind} pool (${allies.map((a) => a.classId).join(', ')}): out within ${worst} ticks`, allies.length >= 2 && off && worst <= OUT_WITHIN[kind], { stood, burns });
+  if (kind === 'cinder') check('cinder', 'so a patch laid under an AI seat never burns it (the first burn is 0.5 s in)', burns.every((n) => n === 0), { burns });
   const melee = allies.filter((a) => ['swordsman', 'tank', 'duskwing'].includes(a.classId));
-  check('cinder', `melee seats step off too (${melee.map((a) => a.classId).join(', ') || 'none in this party'})`, melee.length > 0 && melee.every((a) => !inPatch(a, pats[allies.indexOf(a)])));
+  check('cinder', `melee seats step off a ${kind} pool too (${melee.map((a) => a.classId).join(', ') || 'none in this party'})`, melee.length > 0 && melee.every((a) => !inPatch(a, pats[allies.indexOf(a)])));
 }
-{
-  // The autopilot (the player seat on the bot) walks off a patch.
+for (const kind of Object.keys(POOLS)) {
+  // The autopilot (the player seat on the bot) walks off a pool.
   // The party pinned round the hero, so the bot (holding near the party's
   // centre, the elite out of its reach) would stand still where it is.
   const { w, e } = cinderRoom(7);
@@ -155,7 +173,7 @@ const burnsOn = (w, id, from) => w.log.slice(from).filter((x) => x.type === 'hit
     pin();
     w.step();
   }
-  const s = patch(w, e, p.x, p.z);
+  const s = patch(w, e, p.x, p.z, kind);
   const from = w.log.length;
   let stood = 0;
   for (let i = 0; i < 100; i++) {
@@ -164,7 +182,7 @@ const burnsOn = (w, id, from) => w.log.slice(from).filter((x) => x.type === 'hit
     w.step();
     if (inPatch(p, s)) stood += 1;
   }
-  check('cinder', `the autopilot walks the player seat off a patch: out within ${stood} ticks`, stood <= 40 && !inPatch(p, s), { stood, burns: burnsOn(w, p.id, from) });
+  check('cinder', `the autopilot walks the player seat off a ${kind} pool: out within ${stood} ticks`, stood <= OUT_WITHIN[kind] && !inPatch(p, s), { stood, burns: burnsOn(w, p.id, from) });
 }
 {
   // A human seat: no input, no steering. It stays in the patch and burns.

@@ -35,6 +35,9 @@
 import { SKILLS } from './skills.js';
 import { emptySnapshot } from '../core/intents.js';
 import { SKILL_SLOTS, DODGE } from '../core/constants.js';
+import { STEER_OFF_POOLS } from '../data/classes.js';
+
+const STEER_OFF = new Set(STEER_OFF_POOLS);
 
 const FOLLOW_U = 1.5; // hold within 1.5 u of the party centroid
 const HEAL_BELOW = 0.7; // cast heals when the neediest member is below 70%
@@ -123,9 +126,9 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
           out.push({ kind: 'lane', fx: e.lane.x0, fz: e.lane.z0, dx: e.lane.x1 - e.lane.x0, dz: e.lane.z1 - e.lane.z0, len: 1, w: (e.lane.w ?? 1.4) / 2 + 0.3, left, raw: true });
         else out.push({ kind: 'ring', x: e.x, z: e.z, r: (e.radius ?? 1.0) + 0.3, left });
       }
-      // ELITE AFFIXES (Small fixes 7): a Cinder patch burns while it lasts.
-      // Never a dodge (no landing tick): the bot walks out of it.
-      if (e.kind === 'slick' && e.variant === 'cinder' && e.burn > 0) out.push({ kind: 'ring', x: e.x, z: e.z, r: e.radius + 0.3, left: Infinity });
+      // Small fixes 7: a Cinder patch, a Molten death pool, a Furnace Knight
+      // slag pool. Never a dodge (no landing tick): the bot walks out of it.
+      if (e.kind === 'slick' && STEER_OFF.has(e.variant)) out.push({ kind: 'ring', x: e.x, z: e.z, r: e.radius + 0.3, left: Infinity });
     }
     return out;
   }

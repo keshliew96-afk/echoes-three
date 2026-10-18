@@ -54,7 +54,7 @@ import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE }
 // is cast from the seat's LOADOUT (sim/party.js) through ONE pipeline
 // (sim/allycast.js); the AI picks with the §25.8 rules (sim/partyai.js).
 import { SKILLS } from './skills.js';
-import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, AI_KITE, AI_DUSK, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS, CLASS_TECH } from '../data/classes.js';
+import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, STEER_OFF_POOLS, AI_KITE, AI_DUSK, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS, CLASS_TECH } from '../data/classes.js';
 import { createAllyCaster, cdTicksOf } from './allycast.js';
 import { castChoice } from './partyai.js';
 
@@ -878,37 +878,43 @@ export function createAllySystem({
 
   const isBossBody = (e) => e.boss === true || e.kind === 'stag';
 
-  // ELITE AFFIXES (Small fixes 7): the spot (x, z) moved out of every live
-  // Cinder patch that would hold this seat, straight out from the patch's
-  // centre (from the seat's side when the spot is dead centre). A few passes
-  // settle two patches that touch. Unchanged when no patch is near.
-  function cinderClear(a, x, z) {
+  // Small fixes 7: the floor pools every AI seat steps off (sim/autopilot.js
+  // reads the same list).
+  const STEER_OFF = new Set(STEER_OFF_POOLS);
+  // The spot (x, z) moved off a live such pool that would hold this seat:
+  // straight out from the pool's centre (from the seat's side when the spot
+  // is dead centre), else the nearest turn round it that stays inside the
+  // leash and clear of every pool. Unchanged when no pool holds the spot.
+  function cinderClear(a, x, z, anchor, LR) {
     const patches = [];
-    for (const s of registry.all()) if (s.kind === 'slick' && s.variant === 'cinder' && s.burn > 0) patches.push(s);
+    for (const s of registry.all()) if (s.kind === 'slick' && STEER_OFF.has(s.variant)) patches.push(s);
     if (patches.length === 0) return { x, z };
-    for (let pass = 0; pass < 3; pass++) {
-      let moved = false;
-      for (const s of patches) {
-        const R = s.radius + AI_EVADE.margin; // a patch burns the body whose centre stands in it
-        const d = Math.hypot(x - s.x, z - s.z);
-        if (d >= R) continue;
-        let ux = d > 1e-4 ? (x - s.x) / d : a.x - s.x;
-        let uz = d > 1e-4 ? (z - s.z) / d : a.z - s.z;
-        const ul = Math.hypot(ux, uz);
-        if (ul < 1e-4) {
-          ux = a.id % 2 === 0 ? 1 : -1;
-          uz = 0;
-        } else {
-          ux /= ul;
-          uz /= ul;
-        }
-        x = s.x + ux * (R + AI_EVADE.exit);
-        z = s.z + uz * (R + AI_EVADE.exit);
-        moved = true;
-      }
-      if (!moved) break;
+    // A pool holds the body whose centre stands in it.
+    const wet = (px, pz) => patches.find((s) => Math.hypot(px - s.x, pz - s.z) < s.radius + AI_EVADE.margin) ?? null;
+    const s = wet(x, z);
+    if (!s) return { x, z };
+    const d = Math.hypot(x - s.x, z - s.z);
+    let ux = d > 1e-4 ? (x - s.x) / d : a.x - s.x;
+    let uz = d > 1e-4 ? (z - s.z) / d : a.z - s.z;
+    const ul = Math.hypot(ux, uz);
+    if (ul < 1e-4) {
+      ux = a.id % 2 === 0 ? 1 : -1;
+      uz = 0;
+    } else {
+      ux /= ul;
+      uz /= ul;
     }
-    return { x, z };
+    // Straight out first; when the leash ring or another pool blocks that
+    // way, the nearest turn round the pool (45 degree steps, left first).
+    const R = s.radius + AI_EVADE.margin + AI_EVADE.exit;
+    for (const deg of [0, 45, -45, 90, -90, 135, -135, 180]) {
+      const c = Math.cos((deg * Math.PI) / 180);
+      const sn = Math.sin((deg * Math.PI) / 180);
+      const px = s.x + (ux * c - uz * sn) * R;
+      const pz = s.z + (ux * sn + uz * c) * R;
+      if (!wet(px, pz) && Math.hypot(px - anchor.x, pz - anchor.z) <= LR) return { x: px, z: pz };
+    }
+    return { x: s.x + ux * R, z: s.z + uz * R };
   }
 
   // AUTOPILOT AND ENDLESS (v0.5.260): a boss's ring telegraph (the Stag's
@@ -1123,11 +1129,12 @@ export function createAllySystem({
         gx = ev.x;
         gz = ev.z;
       }
-      // ELITE AFFIXES (Small fixes 7): a Cinder elite's burning patches. Every
-      // seat's spot is moved off them (melee too: the patches trail behind a
-      // fleeing elite, right where a chasing seat walks).
+      // Small fixes 7: a Cinder elite's burning patches, a Molten elite's
+      // death pool and the Furnace Knight's slag pools. Every seat's spot is
+      // moved off them (melee too: the patches trail behind a fleeing elite,
+      // right where a chasing seat walks).
       if (engageOn()) {
-        const off = cinderClear(a, gx, gz);
+        const off = cinderClear(a, gx, gz, anchor, LR);
         gx = off.x;
         gz = off.z;
       }
