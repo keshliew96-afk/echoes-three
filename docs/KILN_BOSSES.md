@@ -84,8 +84,8 @@ It keeps 3 to 5.5 u from its target, like the Hush.
 
 - The sixth verse, Flame, is the Kiln's chapter (`KILN_CHAPTER` in
   `src/data/story.js`); the Kiln road ends on `ENDING.kiln`.
-- Wick and Quill have a sixth-verse line, and a five-verse line for a party
-  whose fifth verse is Flame and not Sky.
+- Wick and Quill have a sixth-verse line. Wick, Quill, Rill, Tolly and Sable
+  have a five-verse line for a party whose fifth verse is Flame and not Sky.
 - Bramble's rumours, the Hollow Voice's first-meeting lines, the boss-win and
   end-screen lines, and the Journal rows for both bosses.
 - The Cinderback's warden (`warden_salamander`, `src/render/npcs/wardens.js`)

@@ -159,7 +159,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
   // (The camp calls refresh() once its services are up, then twice a second.)
   let verses = 0;
   // THE LEVEL V FORK: five verses with Flame and not Sky (the Kiln road
-  // first) have their own Wick and Quill lines.
+  // first) have their own Wick, Quill, Rill, Tolly and Sable lines.
   let flameFive = false;
   function refresh() {
     const p = profile();
@@ -182,7 +182,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
       return all[(n.talkIdx + 1) % all.length];
     }
     if (HERO_TALK[n.id]) {
-      const base = HERO_TALK[n.id].lineFor(verses);
+      const base = HERO_TALK[n.id].lineFor(verses, flameFive);
       if (n.talkIdx < 0) return base;
       const all = [base, ...HERO_TALK[n.id].extra];
       return all[(n.talkIdx + 1) % all.length];

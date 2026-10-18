@@ -171,11 +171,13 @@ export const RILL_LINES = Object.freeze({
       'Five verses. The rain off the Spire runs clear again. I can hear the sky in the river now.',
     ],
   },
+  // THE LEVEL V FORK: five verses with Flame and not Sky (the Kiln road first).
+  flameFive: { text: 'Five verses. The Kiln is all steam and no river. I kept my satchel wet the whole way, and the fire hissed at me the way the hearth does.' },
   extra: {
     text: ['Soak them first, then crash a wave through. Water always finds the gaps.'],
   },
 });
-export const rillLineFor = (verses) => RILL_LINES.byVerses.text[Math.max(0, Math.min(RILL_LINES.byVerses.text.length - 1, verses - 2))];
+export const rillLineFor = (verses, flameFive = false) => flameFive ? RILL_LINES.flameFive.text : RILL_LINES.byVerses.text[Math.max(0, Math.min(RILL_LINES.byVerses.text.length - 1, verses - 2))];
 // Wick's one line about her, in his rotation once she has joined.
 export const KEEPER_RILL_LINE = Object.freeze({ text: 'Rill sits on the sluice side of the fire and wrings out her satchel every night. The hearth hisses at her, and she laughs at it.' });
 
@@ -189,11 +191,13 @@ export const TOLLY_LINES = Object.freeze({
       'Five verses. The Spire is all belfries and no ringers. When this is over I mean to tune every one of them.',
     ],
   },
+  // THE LEVEL V FORK: five verses with Flame and not Sky (the Kiln road first).
+  flameFive: { text: 'Five verses. The Kiln poured every bell I ever loved. I stood in the pit where mine was cast, and it rang without my touching it.' },
   extra: {
     text: ['Hang the bells first, where they will walk. Then ring them all at once. A peal is just patience, said loudly.'],
   },
 });
-export const tollyLineFor = (verses) => TOLLY_LINES.byVerses.text[Math.max(0, Math.min(TOLLY_LINES.byVerses.text.length - 1, verses - 3))];
+export const tollyLineFor = (verses, flameFive = false) => flameFive ? TOLLY_LINES.flameFive.text : TOLLY_LINES.byVerses.text[Math.max(0, Math.min(TOLLY_LINES.byVerses.text.length - 1, verses - 3))];
 // Wick's one line about her, in his rotation once she has joined.
 export const KEEPER_TOLLY_LINE = Object.freeze({ text: 'Tolly polishes her bell before she sleeps, every night. Says a bell that is not loved goes flat. I believe her.' });
 
@@ -206,11 +210,13 @@ export const SABLE_LINES = Object.freeze({
       'Five verses. The Spire is all open sky and nowhere to hide. I flew it anyway. Up there the wind does the flying for you.',
     ],
   },
+  // THE LEVEL V FORK: five verses with Flame and not Sky (the Kiln road first).
+  flameFive: { text: 'Five verses. The Kiln is all smoke and glare and nowhere dark. I flew it anyway, on the heat off the coals. It lifts you like a hand.' },
   extra: {
     text: ['Drop in, put their lights out, bite, and get out before they find you. The dark is not a place, it is a moment. Use it.'],
   },
 });
-export const sableLineFor = (verses) => SABLE_LINES.byVerses.text[Math.max(0, Math.min(SABLE_LINES.byVerses.text.length - 1, verses - 4))];
+export const sableLineFor = (verses, flameFive = false) => flameFive ? SABLE_LINES.flameFive.text : SABLE_LINES.byVerses.text[Math.max(0, Math.min(SABLE_LINES.byVerses.text.length - 1, verses - 4))];
 // Wick's one line about him, in his rotation once he has joined.
 export const KEEPER_SABLE_LINE = Object.freeze({ text: 'Sable sleeps upside down over the woodpile and eats all my figs. He says the hearth is too bright. He sits as close to it as he can anyway.' });
 

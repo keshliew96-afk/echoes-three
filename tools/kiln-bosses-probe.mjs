@@ -155,6 +155,8 @@ const inLane = (t, p) => {
   check(S.endingFor(5, 'kiln') === S.ENDING.kiln && S.endingFor(5, 'spire') === S.ENDING.spire, 'the Kiln road ends on its own ending');
   check(S.WARDENS.cinderback?.model === 'warden_salamander' && S.WARDENS.cinderback.also.includes('founder'), 'either boss frees the Cinderback warden');
   check(BESTIARY.some((r) => r.id === 'founder' && r.boss && r.lore) && BESTIARY.some((r) => r.id === 'cinderback' && r.boss && r.lore), `the Journal lists them (${BESTIARY.length} entries)`);
+  const heroFlame = [[S.rillLineFor, S.RILL_LINES], [S.tollyLineFor, S.TOLLY_LINES], [S.sableLineFor, S.SABLE_LINES]];
+  check(heroFlame.every(([f, L]) => f(5, true) === L.flameFive.text && f(5, false) === L.byVerses.text[L.byVerses.text.length - 1] && /Kiln/.test(L.flameFive.text)), 'Rill, Tolly and Sable have a Kiln-road five-verse line');
   // The modes around the fork.
   const lines = Array.from({ length: 12 }, (_, i) => rushLine(i + 1));
   check(LAP === 5 && RUSH_RULES.fights === 10 && lines.every((l) => l.every((f) => f.act <= 5)), 'Boss Rush keeps its five acts and ten fights');
@@ -163,6 +165,7 @@ const inLane = (t, p) => {
     'The Bellfounder', 'THE BELLFOUNDER', 'The Cinderback', 'THE CINDERBACK', ch.summary,
     S.RUMOURS.founder.text, S.RUMOURS.cinderback.text, S.BOSS_VOICE.founder.text, S.BOSS_VOICE.cinderback.text, S.WARDENS.cinderback.text,
     S.KEEPER_LINES.byVerses.text[6], S.KEEPER_LINES.flameFive.text, S.CHRONICLER_LINES.byVerses.text[6], S.CHRONICLER_LINES.flameFive.text,
+    S.RILL_LINES.flameFive.text, S.TOLLY_LINES.flameFive.text, S.SABLE_LINES.flameFive.text,
     'The Bellfounder’s crucible cracks. In the gods’ kiln, the last bell rings true.', 'The Cinderback sinks into the coals. The kiln’s fire burns clean again.',
     'Choose your road', 'Verse of {verse}', 'No road chosen in {secs} s: the party takes the Spire', 'The Healer chooses the road…', '<b>← →</b> choose a road · <b>Enter</b> take it',
     'The gods’ high belfry, where they sat down to watch and never rose.', 'The gods’ kiln, where the first bells were fired. The fire never went out.',

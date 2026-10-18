@@ -7281,6 +7281,24 @@
   ],
   "data": true
  },
+ "Five verses. The Kiln is all smoke and glare and nowhere dark. I flew it anyway, on the heat off the coals. It lifts you like a hand.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Five verses. The Kiln is all steam and no river. I kept my satchel wet the whole way, and the fire hissed at me the way the hearth does.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Five verses. The Kiln poured every bell I ever loved. I stood in the pit where mine was cast, and it rang without my touching it.": {
+  "files": [
+   "src/data/story.js"
+  ],
+  "data": true
+ },
  "Five verses. The rain off the Spire runs clear again. I can hear the sky in the river now.": {
   "files": [
    "src/data/story.js"
