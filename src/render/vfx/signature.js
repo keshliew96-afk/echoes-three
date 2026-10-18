@@ -37,6 +37,7 @@ import { createDuskFx } from './duskfx.js';
 import { createTonicFx } from './tonicfx.js';
 import { createShrineFx } from './shrinefx.js';
 import { createSecretFx } from './secretfx.js';
+import { createRelic6Fx } from './relic6fx.js';
 
 const EMBER = PALETTE.emberDanger;
 const PARCH = PALETTE.parchment;
@@ -853,6 +854,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const shrineFx = createShrineFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world });
   // SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and the chamber.
   createSecretFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, rnd, mark, player });
+  // RELICS batch 6 (docs/RELICS.md "Batch 6"): the lantern, the burning,
+  // the dive, the crown, the lens, the veil, the heart, and the three
+  // curses (the seal, the dark, the crowns).
+  const relic6Fx = createRelic6Fx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, player, world, stage });
   bus.on('ally_cast', (ev) => {
     const fn = SKILL_SIG[ev.skill];
     if (!fn || ev.x == null) return;
@@ -6585,6 +6590,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     duskFx.frame(dt, world.entities());
     tonicFx.frame(dt, world.entities());
     shrineFx.frame(dt, world.entities());
+    relic6Fx.frame(dt, world.entities());
     kit.update(dt);
   }
 
@@ -7505,6 +7511,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     lastClassHit.clear();
     swingSide.clear();
     camfx.clear();
+    relic6Fx.teardown();
     return kit.clear();
   }
   bus.on('level_transit', levelTeardown);

@@ -33,6 +33,8 @@ import { dailyPick } from '../data/daily.js';
 import { CLASS_TECH } from '../data/classes.js';
 import { CONSUMABLES, shareFor } from './consumables.js';
 import { isChampionKind } from './champions.js';
+import { DODGE } from '../core/constants.js';
+import { hash32 } from './affixes.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
@@ -123,6 +125,17 @@ export const RELICS = Object.freeze({
   oathkeepers_brand: { name: "Oathkeeper's Brand", rarity: 'rare', vow: true, text: '+4% party damage for every Vow level the run wears (up to +40%).', brand: Object.freeze({ per: 0.04, max: 10 }) },
   bottomless_flask: { name: 'Bottomless Flask', rarity: 'legendary', text: "Once a room, each hero's first tonic or bomb comes back to their slot 10 s later.", flask: Object.freeze({ delayTicks: 600 }) },
   tenor_bell: { name: 'Tenor Bell', rarity: 'legendary', text: "Every 10th enemy the party fells in a room rings the great bell: every enemy in the room takes 12 damage and is slowed 40% for 2 s. Kills inside the Bellwright's bell rings count twice.", tenor: Object.freeze({ every: 10, dmg: 12, slow: 0.4, ticks: 120 }) },
+  // Batch 6 (docs/RELICS.md "Batch 6"): relics that answer content plan 5
+  // (secret rooms, the Duskwing's dive and darkness, the Ember Kiln, the
+  // late affixes and their floor patches). No dice either.
+  delvers_lantern: { name: "Delver's Lantern", rarity: 'common', text: 'A cracked wall is marked the moment you enter its room, and any blow from a hero a person plays breaks it open.', lantern: true },
+  kiln_coal: { name: 'Kiln Coal', rarity: 'common', text: 'Enemies a bomb bursts on catch fire: for 4 s they lose 3% of max HP every half second (2% for elites, 0.5% for champions and bosses).', coal: Object.freeze({ ticks: 240, every: 30, dmg: 0.03, elite: 0.02, big: 0.005 }) },
+  pumice_soles: { name: 'Pumice Soles', rarity: 'common', text: 'Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest.', soles: Object.freeze({ everyTicks: 30 }) },
+  wing_bone: { name: 'Wing Bone', rarity: 'rare', text: 'Each dodge ends in a dive: enemies within 1.4 u of where the hero lands take 10 damage and are knocked back.', wing: Object.freeze({ radius: 1.4, dmg: 10 }) },
+  crown_shard: { name: 'Crown Shard', rarity: 'rare', text: 'The party deals 10% more damage to an elite for each power it carries (up to +30%).', crown: Object.freeze({ per: 0.1, max: 3 }) },
+  dusk_lens: { name: 'Dusk Lens', rarity: 'rare', text: 'Party critical hits blind the enemy for 1 s (never a boss; once per enemy every 3 s).', lens: Object.freeze({ ticks: 60, everyTicks: 180 }) },
+  nightfall_veil: { name: 'Nightfall Veil', rarity: 'legendary', text: 'The first party blow on each enemy is always a critical hit.', veil: true },
+  rekindled_heart: { name: 'Rekindled Heart', rarity: 'legendary', text: 'Once a level, each hero who would fall rises with 40% of max HP in a burst of flame: 15 damage to enemies within 2.5 u, which catch fire for 4 s.', heart: Object.freeze({ heal: 0.4, dmg: 15, radius: 2.5 }) },
 });
 // Batch 3: the class relics (a relic -> the class it needs in the party).
 export const CLASS_RELICS = Object.freeze(Object.fromEntries(Object.keys(RELICS).filter((id) => RELICS[id].cls).map((id) => [id, RELICS[id].cls])));
@@ -154,6 +167,10 @@ export const CURSES = Object.freeze({
   corked: { name: 'Corked', text: 'Tonics and bombs cannot be used in this room, and enemies here have 10% more HP.', corked: true, diff: { hpMul: 1.1 } },
   tolling_dead: { name: 'Tolling Dead', text: 'Each enemy that falls in this room tolls a knell: 0.8 s later it strikes heroes within 1.6 u for 10% of their max HP.', toll: Object.freeze({ delayTicks: 48, radius: 1.6, dmg: 0.1, max: 6 }) },
   dulled_edge: { name: 'Dulled Edge', major: true, text: 'Party critical hits deal ×1.25 instead of ×1.5 for the rest of the run.', critMul: -0.25 },
+  // Batch 6: two room curses and one major one.
+  sealed_door: { name: 'Sealed Door', text: "This level's cracked wall stays shut (no blow or bomb opens it), and enemies in this room have 20% more HP.", sealed: true, diff: { hpMul: 1.2 } },
+  dimmed_lantern: { name: 'Dimmed Lantern', text: 'The room is dark: party blows on an enemy more than 4.5 u from every hero deal 40% less.', dim: Object.freeze({ radius: 4.5, cut: 0.4 }) },
+  heavy_crowns: { name: 'Heavy Crowns', major: true, text: 'Every elite carries one more power for the rest of the run.', affixAdd: 1 },
 });
 // The room curses a door can carry, and the major ones.
 export const CURSE_IDS = Object.freeze(Object.keys(CURSES).filter((id) => !CURSES[id].major));
@@ -265,6 +282,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   let flaskUsed = []; // batch 5: seats whose flask already refilled this room
   let stormNext = -1; // small fixes 5: the tick Stormglass gathers its own gust (-1: none this room)
   let heat = 0; // the Ember Kiln: Founder's Ingot's combat rooms cleared this level
+  let alight = {}; // batch 6: Kiln Coal, enemy id -> { until, next } while it burns
+  let lensAt = {}; // batch 6: Dusk Lens, enemy id -> the tick it last blinded
+  let kindled = []; // batch 6: Rekindled Heart, seats that rose this level
+  let sealed = false; // batch 6: Sealed Door, this level's cracked wall stays shut
+  let solesAt = {}; // batch 6: Pumice Soles, seat -> the tick its last beat showed
 
   const has = (id) => owned.includes(id);
   const sum = (key) => owned.reduce((s, id) => s + (RELICS[id][key] ?? 0), 0);
@@ -311,6 +333,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     flaskUsed = [];
     stormNext = -1;
     heat = 0;
+    alight = {};
+    lensAt = {};
+    kindled = [];
+    sealed = false;
+    solesAt = {};
     if (combat && typeof combat.setMods === 'function') combat.setMods(on ? mods : null);
   }
 
@@ -344,7 +371,32 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (has('oathkeepers_brand')) m += RELICS.oathkeepers_brand.brand.per * Math.min(RELICS.oathkeepers_brand.brand.max, vowLevel());
       // THE EMBER KILN: Founder's Ingot (combat rooms cleared this level).
       if (has('founders_ingot')) m += RELICS.founders_ingot.ingot.per * Math.min(RELICS.founders_ingot.ingot.max, heat);
+      // Batch 6: Crown Shard (an elite's powers) and the Dimmed Lantern's
+      // dark (an enemy out of every hero's light).
+      if (target && target.elite && has('crown_shard') && Array.isArray(target.affixes)) m += RELICS.crown_shard.crown.per * Math.min(RELICS.crown_shard.crown.max, target.affixes.length);
+      if (target && cursedNow('dimmed_lantern') && inTheDark(target)) m *= 1 - CURSES.dimmed_lantern.dim.cut;
       return m;
+    },
+    // Batch 6: Nightfall Veil, the first party blow on each enemy crits.
+    // sim/combat.js asks after its crit roll (the roll is still drawn).
+    firstBlow(target) {
+      if (!has('nightfall_veil') || !target || target.veiled || target.lifecycle === 'break' || target.kind === 'eglob') return false;
+      target.veiled = true;
+      pending.push({ kind: 'veil', target: target.id });
+      return true;
+    },
+    // Batch 6: Pumice Soles, a floor patch's slow refused (sim/enemies.js
+    // asks before it slows a party body). Its beat shows at most twice a
+    // second for each seat.
+    slickProof(t, s) {
+      if (!has('pumice_soles')) return false;
+      const seat = t.partyIndex ?? 0;
+      const tick = getTick();
+      if (!Number.isFinite(solesAt[seat]) || tick - solesAt[seat] >= RELICS.pumice_soles.soles.everyTicks) {
+        solesAt[seat] = tick;
+        events.emit(tick, 'relic_proc', { relic: 'pumice_soles', target: t.id, seat, variant: s.variant ?? null, x: r2(t.x), z: r2(t.z) });
+      }
+      return true;
     },
     // `delivery`: the hit's (THE EMBER KILN: Slag Greaves turns hazards).
     takenMul: (delivery = null) =>
@@ -378,9 +430,17 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     },
     // Last Light: true = the blow leaves this member at 1 HP instead.
     saveFromDown(target) {
-      if (!has('last_light') || savedThisRoom.includes(target.id)) return false;
-      savedThisRoom.push(target.id);
-      events.emit(getTick(), 'relic_proc', { relic: 'last_light', target: target.id, x: r2(target.x), z: r2(target.z) });
+      if (has('last_light') && !savedThisRoom.includes(target.id)) {
+        savedThisRoom.push(target.id);
+        events.emit(getTick(), 'relic_proc', { relic: 'last_light', target: target.id, x: r2(target.x), z: r2(target.z) });
+        return true;
+      }
+      // Batch 6: Rekindled Heart, once a level for each seat; the rise and
+      // its flame land at the end of the tick.
+      const seat = target.partyIndex;
+      if (!has('rekindled_heart') || !Number.isInteger(seat) || kindled.includes(seat)) return false;
+      kindled.push(seat);
+      pending.push({ kind: 'rekindle', target: target.id, seat });
       return true;
     },
     onPartyHit(target, attacker, amount) {
@@ -452,6 +512,19 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       if (charmHits >= RELICS.millrace_charm.charm.every) {
         charmHits = 0;
         pending.push({ kind: 'charm', from: t.id, x: t.x, z: t.z, src: atk ? atk.id : null });
+      }
+    }
+    // Batch 6: Crown Shard shows its crown on an elite's first party blow.
+    if (t.elite && has('crown_shard') && !t.crowned && Array.isArray(t.affixes) && t.affixes.length > 0) {
+      t.crowned = true;
+      pending.push({ kind: 'crown', target: t.id, n: Math.min(RELICS.crown_shard.crown.max, t.affixes.length) });
+    }
+    // Batch 6: Dusk Lens, a party crit blinds (never a boss).
+    if (ev.crit && has('dusk_lens') && !STATUS.isBoss(t) && t.kind !== 'eglob') {
+      const L = RELICS.dusk_lens.lens;
+      if (!Number.isFinite(lensAt[t.id]) || getTick() - lensAt[t.id] >= L.everyTicks) {
+        lensAt[t.id] = getTick();
+        pending.push({ kind: 'lens', target: t.id, src: atk ? atk.id : null });
       }
     }
     // THE DUSKWING: Moonless Fang, his own blows on a blinded enemy.
@@ -595,6 +668,58 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     if (!on || !live() || !ev.gust || !ev.lane || !has('stormglass')) return;
     pending.push({ kind: 'storm', lane: { ...ev.lane } });
   });
+  // ------------------------------------------------ batch 6 listeners --
+  // Delver's Lantern: a cracked wall is marked the moment it stands.
+  events.on('secret_wall', (ev) => {
+    if (on && live() && has('delvers_lantern')) pending.push({ kind: 'lantern', wall: ev.id, x: ev.x, z: ev.z, yaw: ev.yaw ?? 0 });
+  });
+  // Kiln Coal: what a bomb burst on catches fire.
+  events.on('tonic_burst', (ev) => {
+    if (!on || !live() || !has('kiln_coal') || ev.echo || !Array.isArray(ev.hit)) return;
+    for (const id of ev.hit) pending.push({ kind: 'coal', target: id, from: 'bomb' });
+  });
+  // Wing Bone: the player's dodge ends here; a person's other seat dives
+  // where its dodge's travel ends (its own step runs on its input frames).
+  events.on('dash_end', () => {
+    if (on && live() && has('wing_bone') && player.hp > 0) pending.push({ kind: 'wing', target: player.id });
+  });
+  events.on('ally_dodge', (ev) => {
+    if (on && live() && has('wing_bone') && registry.byId(ev.id)) later.push({ kind: 'wing', at: getTick() + DODGE.durationTicks, target: ev.id });
+  });
+  // The Dimmed Lantern: is `e` beyond the light of every standing hero?
+  function inTheDark(e) {
+    const R = CURSES.dimmed_lantern.dim.radius;
+    for (const h of partyBodies()) if (h.hp > 0 && Math.hypot(h.x - e.x, h.z - e.z) <= R) return false;
+    return true;
+  }
+  // Kiln Coal: set `e` alight (a fresh burn restarts the clock).
+  function setAlight(e, from) {
+    if (!hostileLive(e)) return false;
+    const C = RELICS.kiln_coal.coal;
+    const tick = getTick();
+    alight[e.id] = { until: tick + C.ticks, next: tick + C.every };
+    events.emit(tick, 'relic_proc', { relic: 'kiln_coal', stage: 'alight', target: e.id, from, resolveTick: tick + C.ticks, x: r2(e.x), z: r2(e.z) });
+    return true;
+  }
+  function burnTick() {
+    const tick = getTick();
+    const C = RELICS.kiln_coal.coal;
+    for (const key of Object.keys(alight).sort((a, b) => a - b)) {
+      const b = alight[key];
+      const e = registry.byId(Number(key));
+      if (!hostileLive(e) || tick > b.until) {
+        delete alight[key];
+        continue;
+      }
+      if (tick < b.next) continue;
+      b.next = tick + C.every;
+      if (b.next > b.until) delete alight[key]; // the last lick
+      const share = bigBody(e) ? C.big : e.elite ? C.elite : C.dmg;
+      const r = combat.applyDamage(e, e.maxHp * share, { delivery: 'skill', shape: 'burn', attacker: null, source: 'kiln_coal' });
+      if (r && r.amount > 0) events.emit(tick, 'relic_proc', { relic: 'kiln_coal', stage: 'burn', target: e.id, amount: r2(r.amount), x: r2(e.x), z: r2(e.z) });
+    }
+  }
+
   // Warding Chalk: once a second, every standing member inside the ring.
   function chalkTick() {
     if (!ring || !has('warding_chalk')) return;
@@ -664,6 +789,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     if (!on) return;
     if (ring && live()) chalkTick();
     if (stormNext >= 0 && roomMode && live() && has('stormglass')) stormTick();
+    if (live() && Object.keys(alight).length) burnTick();
     if (later.length && live()) {
       const tick = getTick();
       const due = later.filter((p) => p.at <= tick);
@@ -678,6 +804,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     for (const p of list) {
       if (p.kind in BATCH5) {
         BATCH5[p.kind](p);
+        continue;
+      }
+      if (p.kind in BATCH6) {
+        BATCH6[p.kind](p);
         continue;
       }
       if (p.kind === 'thorns') {
@@ -957,6 +1087,65 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     },
   };
 
+  // Batch 6's procs (endOfTick).
+  const BATCH6 = {
+    lantern(p) {
+      events.emit(getTick(), 'relic_proc', { relic: 'delvers_lantern', stage: 'mark', wall: p.wall, yaw: r2(p.yaw ?? 0), x: r2(p.x), z: r2(p.z), px: r2(player.x), pz: r2(player.z) });
+    },
+    coal(p) {
+      setAlight(registry.byId(p.target), p.from);
+    },
+    wing(p) {
+      const b = registry.byId(p.target);
+      if (!b || !(b.hp > 0)) return;
+      const W = RELICS.wing_bone.wing;
+      const hit = [];
+      for (const e of registry.all().filter(hostileLive).sort((a, c) => a.id - c.id)) {
+        const dx = e.x - b.x;
+        const dz = e.z - b.z;
+        if (Math.hypot(dx, dz) > W.radius + (e.radius ?? 0)) continue;
+        const l = Math.hypot(dx, dz) || 1;
+        const r = combat.applyDamage(e, W.dmg, { delivery: 'skill', shape: 'ground_aoe', dirX: dx / l, dirZ: dz / l, attacker: null, source: 'wing_bone' });
+        if (r && r.amount > 0) hit.push(e.id);
+      }
+      events.emit(getTick(), 'relic_proc', { relic: 'wing_bone', target: b.id, hit, radius: W.radius, x: r2(b.x), z: r2(b.z) });
+    },
+    lens(p) {
+      const e = registry.byId(p.target);
+      if (!hostileLive(e)) return;
+      if (!combat.status.apply(e, 'blind', 1, RELICS.dusk_lens.lens.ticks, getTick(), p.src)) return;
+      events.emit(getTick(), 'relic_proc', { relic: 'dusk_lens', target: e.id, from: p.src ?? null, x: r2(e.x), z: r2(e.z) });
+    },
+    crown(p) {
+      const e = registry.byId(p.target);
+      if (!e) return;
+      const C = RELICS.crown_shard.crown;
+      events.emit(getTick(), 'relic_proc', { relic: 'crown_shard', target: e.id, powers: p.n, dealt: r2(C.per * p.n), x: r2(e.x), z: r2(e.z) });
+    },
+    veil(p) {
+      const e = registry.byId(p.target);
+      if (!e) return;
+      events.emit(getTick(), 'relic_proc', { relic: 'nightfall_veil', target: e.id, x: r2(e.x), z: r2(e.z) });
+    },
+    rekindle(p) {
+      const b = registry.byId(p.target);
+      if (!b || !(b.hp > 0)) return;
+      const H = RELICS.rekindled_heart.heart;
+      combat.applyHeal(b, b.maxHp * H.heal, { healer: b.id, source: 'rekindled_heart' });
+      const hit = [];
+      for (const e of registry.all().filter(hostileLive).sort((a, c) => a.id - c.id)) {
+        const dx = e.x - b.x;
+        const dz = e.z - b.z;
+        if (Math.hypot(dx, dz) > H.radius + (e.radius ?? 0)) continue;
+        const l = Math.hypot(dx, dz) || 1;
+        const r = combat.applyDamage(e, H.dmg, { delivery: 'skill', shape: 'ground_aoe', dirX: dx / l, dirZ: dz / l, attacker: null, source: 'rekindled_heart' });
+        if (r && r.amount > 0) hit.push(e.id);
+        if (registry.byId(e.id) && e.hp > 0) setAlight(e, 'heart');
+      }
+      events.emit(getTick(), 'relic_proc', { relic: 'rekindled_heart', target: b.id, seat: p.seat, hit, radius: H.radius, hp: r2(b.hp), x: r2(b.x), z: r2(b.z) });
+    },
+  };
+
   // ------------------------------------------------------- run hooks --
   // A combat or boss room's first tick.
   function onRoomEnter(room, mode) {
@@ -970,6 +1159,8 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     // an event or vault room; endOfTick skips a room with gust vents).
     stormNext = mode === 'event' || mode === 'vault' ? -1 : getTick() + RELICS.stormglass.storm.everyTicks;
     later = later.filter((p) => p.kind === 'refill');
+    alight = {};
+    lensAt = {};
     if (curse && curse.room !== room) curse = null;
     if (curse) {
       events.emit(getTick(), 'curse_apply', { curse: curse.id, room, mode, ...(CURSES[curse.id].major ? { major: true } : {}), x: r2(player.x), z: r2(player.z) });
@@ -1007,6 +1198,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     const refills = later.filter((p) => p.kind === 'refill');
     later = [];
     for (const p of refills) BATCH5.refill(p);
+    alight = {};
     // Batch 4: Banner Pennant (any objective won), Champion's Laurel (the
     // chest), Geode Heart (a cursed room cleared).
     if (has('banner_pennant') && objective && won) {
@@ -1131,6 +1323,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     if (major && majors.includes(id)) return;
     curse = { id, room, ...(major ? { major: true } : {}) };
     if (major) majors.push(id);
+    // Batch 6: a Sealed Door shuts the level's cracked wall from now on.
+    if (CURSES[id].sealed && !sealed) {
+      sealed = true;
+      events.emit(getTick(), 'curse_proc', { curse: id, stage: 'seal', room, x: r2(player.x), z: r2(player.z) });
+    }
     cursesTaken += 1;
     events.emit(getTick(), 'curse_taken', { curse: id, room, taken: cursesTaken, ...(major ? { major: true, majors: majors.length } : {}) });
   }
@@ -1181,6 +1378,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     flaskUsed = [];
     stormNext = -1;
     heat = 0; // the Ingot cools
+    alight = {};
+    lensAt = {};
+    kindled = []; // the Heart may rise again
+    sealed = false; // a new level, a new wall
+    solesAt = {};
   }
 
   // Shop: the Healer's shelf prices with Peddler's Seal.
@@ -1198,6 +1400,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       // VOW RANKS: Heavy Bell's slower dodges, for the HUD ring (present only
       // when worn).
       ...(vowMods() && vowMods().dodge ? { vowDodge: vowMods().dodge } : {}),
+      // Batch 6: the level's wall is sealed (the wall wears the seal), and
+      // the Dimmed Lantern's light radius while the room is dark.
+      ...(sealed ? { sealed: true } : {}),
+      ...(cursedNow('dimmed_lantern') ? { dim: CURSES.dimmed_lantern.dim.radius } : {}),
       shelf: shelf ? shelf.map((s) => ({ id: s.id, name: RELICS[s.id].name, rarity: RELICS[s.id].rarity, text: RELICS[s.id].text, ...(RELICS[s.id].cls ? { cls: RELICS[s.id].cls } : {}), price: s.price, sold: s.sold || owned.includes(s.id) })) : null,
       offer: offer
         ? {
@@ -1238,6 +1444,10 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
       ...(flaskUsed.length ? { flaskUsed: [...flaskUsed] } : {}),
       ...(stormNext >= 0 && has('stormglass') ? { stormNext } : {}),
       ...(heat ? { heat } : {}),
+      ...(Object.keys(alight).length ? { alight: Object.fromEntries(Object.entries(alight).map(([k, v]) => [k, { ...v }])) } : {}),
+      ...(Object.keys(lensAt).length ? { lensAt: { ...lensAt } } : {}),
+      ...(kindled.length ? { kindled: [...kindled] } : {}),
+      ...(sealed ? { sealed } : {}),
       ...(pending.length ? { pending: pending.map((p) => ({ ...p })) } : {}),
     };
   }
@@ -1271,6 +1481,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     flaskUsed = Array.isArray(d.flaskUsed) ? d.flaskUsed.filter(Number.isInteger) : [];
     stormNext = Number.isFinite(d.stormNext) ? d.stormNext : -1;
     heat = Number.isFinite(d.heat) ? d.heat : 0;
+    alight = {};
+    if (d.alight && typeof d.alight === 'object') for (const [k, v] of Object.entries(d.alight)) if (v && Number.isFinite(v.until) && Number.isFinite(v.next)) alight[k] = { until: v.until, next: v.next };
+    lensAt = d.lensAt && typeof d.lensAt === 'object' ? { ...d.lensAt } : {};
+    kindled = Array.isArray(d.kindled) ? d.kindled.filter(Number.isInteger) : [];
+    sealed = !!d.sealed;
   }
 
   return {
@@ -1306,6 +1521,19 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     blessMul: () => (on && has('votive_ribbon') ? RELICS.votive_ribbon.votive.blessMul : 1),
     corked: () => on && cursedHere() && !!CURSES[curse.id] && !!CURSES[curse.id].corked,
     trophies: () => (on ? trophies : 0),
+    // Batch 6: any blow from a person's hero opens the wall (Delver's
+    // Lantern), the level's wall is sealed (Sealed Door), the powers an
+    // elite gains (Heavy Crowns; Saint's Ashes makes it every other room by
+    // a hash of the room's salt) and what burns (Kiln Coal).
+    lanternOpens: () => on && has('delvers_lantern'),
+    wallSealed: () => on && sealed,
+    affixAdd(salt = '') {
+      if (!on) return 0;
+      const n = majors.reduce((s, id) => s + (CURSES[id].affixAdd ?? 0), 0);
+      if (n === 0) return 0;
+      return majorScale() < 1 ? (hash32(`${salt}|CROWNS`) % 2 === 0 ? n : 0) : n;
+    },
+    burning: () => (on ? Object.keys(alight).map(Number) : []),
     fuse,
     openShelf,
     shelfItem,
@@ -1379,6 +1607,23 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
         later.push({ kind: 'refill', at: tick + 90, seat, item: 'mend_tonic' });
         events.emit(tick, 'relic_proc', { relic: id, stage: 'pour', seat, item: 'mend_tonic', target: player.id, ...at });
       } else if (id === 'tenor_bell') pending.push({ kind: 'tenor', x: at.x, z: at.z, id: null });
+      // Batch 6: each beat through its real proc, on what stands in front.
+      else if (id === 'delvers_lantern') {
+        const w = registry.all().find((e) => e.kind === 'secret_wall' && e.shut);
+        pending.push({ kind: 'lantern', wall: w ? w.id : null, x: w ? w.x : at.x, z: w ? w.z : r2(at.z - 4), yaw: w ? w.yaw ?? 0 : 0 });
+      } else if (id === 'pumice_soles') events.emit(tick, 'relic_proc', { relic: id, target: player.id, seat: player.partyIndex ?? 0, variant: 'quartz', ...at });
+      else if (id === 'wing_bone') pending.push({ kind: 'wing', target: player.id });
+      else if (id === 'rekindled_heart') pending.push({ kind: 'rekindle', target: player.id, seat: player.partyIndex ?? 0 });
+      else {
+        const near = registry
+          .all()
+          .filter(hostileLive)
+          .sort((a, b) => Math.hypot(a.x - at.x, a.z - at.z) - Math.hypot(b.x - at.x, b.z - at.z) || a.id - b.id);
+        if (id === 'kiln_coal') for (const e of near.slice(0, 5)) setAlight(e, 'bomb');
+        else if (id === 'dusk_lens' && near[0]) pending.push({ kind: 'lens', target: near[0].id, src: player.id });
+        else if (id === 'nightfall_veil' && near[0]) pending.push({ kind: 'veil', target: near[0].id });
+        else if (id === 'crown_shard' && near[0]) pending.push({ kind: 'crown', target: near[0].id, n: Math.max(1, Math.min(3, (near[0].affixes ?? []).length)) });
+      }
       return id;
     },
     grant(id) {

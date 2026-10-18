@@ -267,7 +267,10 @@ export function createRunSystem({
     const depth = endlessDepth();
     // Endless: Depths 1-4 are the campaign's own count; two powers from Depth 5.
     // Batch two (Gusting, Crystal, Tolling, Cinder) joins from room 4 on.
-    return { count: affixCountFor({ act, room: roomIndex, endless: beyondCampaign(depth) }), salt: `${frame.seed}:${depth || act}:${campaign.index}:${roomIndex}`, late: roomIndex >= LATE_AFFIX_ROOM };
+    // RELICS batch 6: Heavy Crowns adds a power (three at most).
+    const salt = `${frame.seed}:${depth || act}:${campaign.index}:${roomIndex}`;
+    const count = affixCountFor({ act, room: roomIndex, endless: beyondCampaign(depth) });
+    return { count: Math.min(3, count + relics.affixAdd(salt)), salt, late: roomIndex >= LATE_AFFIX_ROOM };
   }
 
   let active = false;
@@ -425,8 +428,11 @@ export function createRunSystem({
     if (!active || !secrets.shut() || phase !== 'combat') return;
     const by = ev.attacker != null ? registry.byId(ev.attacker) : null;
     if (!by || by.partyIndex === undefined) return;
-    const heavy = ev.delivery === 'skill' && ev.base >= SECRET_RULES.heavyMin && humanSeat(by.partyIndex);
-    if (heavy) openWall('hit', by.partyIndex);
+    // RELICS batch 6: Delver's Lantern opens it to any blow from a person's
+    // hero; a Sealed Door keeps it shut whatever lands (a knock and its seal).
+    const heavy = humanSeat(by.partyIndex) && ((ev.delivery === 'skill' && ev.base >= SECRET_RULES.heavyMin) || relics.lanternOpens());
+    if (heavy && relics.wallSealed()) sealedKnock(by.partyIndex);
+    else if (heavy) openWall('hit', by.partyIndex);
     else if (secrets.knock()) {
       const w = secrets.wall();
       events.emit(getTick(), 'secret_knock', { id: w.id, seat: by.partyIndex, base: ev.base, x: r2(w.x), z: r2(w.z) });
@@ -435,8 +441,17 @@ export function createRunSystem({
   events.on('tonic_burst', (ev) => {
     if (!active || !secrets.shut() || phase !== 'combat' || !humanSeat(ev.seat)) return;
     const w = secrets.wall();
-    if (Math.hypot(ev.x - w.x, ev.z - w.z) <= (ev.radius ?? 0) + SECRET_RULES.bombReach) openWall('bomb', ev.seat);
+    if (Math.hypot(ev.x - w.x, ev.z - w.z) > (ev.radius ?? 0) + SECRET_RULES.bombReach) return;
+    if (relics.wallSealed()) sealedKnock(ev.seat);
+    else openWall('bomb', ev.seat);
   });
+  // A Sealed Door's wall turns a breaking blow: the seal flares (at most as
+  // often as a knock's dust).
+  function sealedKnock(seat) {
+    if (!secrets.knock()) return;
+    const w = secrets.wall();
+    events.emit(getTick(), 'curse_proc', { curse: 'sealed_door', stage: 'refuse', wall: w.id, seat: seat ?? null, yaw: r2(w.yaw ?? 0), x: r2(w.x), z: r2(w.z) });
+  }
   events.on('secret_touch', () => openSecret());
 
   // The quarry is marked for the whole party the moment it breaks cover.
@@ -2913,7 +2928,7 @@ export function createRunSystem({
     const c = controllers();
     // SECRET ROOMS: the autopilot's Healer throws a bomb it holds at a cracked
     // wall in reach (so the probes can reach a chamber).
-    if (live && autopilot.active() && secrets.shut()) {
+    if (live && autopilot.active() && secrets.shut() && !relics.wallSealed()) {
       const w = secrets.wall();
       const id = tonics.slot(0);
       const row = id ? CONSUMABLES[id] : null;
@@ -3797,6 +3812,12 @@ export function createRunSystem({
         return active && secrets.shut() ? openWall('probe', 0) : null;
       case 'secretTake':
         return openSecret();
+      case 'relicSealKnock':
+        // RELICS batch 6 (probe / VFX lab): a breaking blow on a Sealed
+        // Door's wall, turned by the seal.
+        if (!active || !secrets.shut() || !relics.wallSealed()) return null;
+        sealedKnock(0);
+        return true;
       case 'secretState':
         return secrets.enabled() ? secrets.view() : null;
       case 'vaultState':

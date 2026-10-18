@@ -111,6 +111,22 @@ const RELIC_SVG = {
   bottomless_flask: `<path d="M12 4 H20 M13 4 V10 L7 26 Q6 28 9 28 H23 Q26 28 25 26 L19 10 V4" ${STROKE}/><path d="M11 20 Q16 16 21 20 Q16 24 13 21 Q16 19 18 21" ${STROKE}/>`,
   // A great bell with sound rings rolling out from its lip.
   tenor_bell: `<path d="M16 3 V6" ${STROKE}/><path d="M9 21 Q9 6 16 6 Q23 6 23 21 Z" ${FILL}/><path d="M7 21 H25" ${STROKE}/><path d="M4 26 Q16 31 28 26 M2 21 Q1 25 4 26 M30 21 Q31 25 28 26" ${STROKE}/>`,
+  // Batch 6. A delver's lantern: a cage, its flame, a beam thrown sideways.
+  delvers_lantern: `<path d="M12 5 H20 M16 2 V5" ${STROKE}/><path d="M11 8 H21 L20 24 H12 Z" ${STROKE}/><path d="M16 12 Q19 16 16 20 Q13 16 16 12 Z" ${FILL}/><path d="M10 27 H22" ${STROKE}/><path d="M23 13 L30 10 M23 17 L30 18" ${STROKE}/>`,
+  // A coal of the kiln: a faceted lump with flames licking off its top.
+  kiln_coal: `<path d="M6 22 L10 15 L18 13 L26 17 L24 26 L12 28 Z" ${FILL}/><path d="M10 15 L16 21 L26 17 M16 21 L12 28" ${STROKE}/><path d="M13 12 Q11 7 14 4 Q15 8 17 9 Q18 5 21 3 Q22 9 19 12" ${STROKE}/>`,
+  // A sole of pumice, pitted, stepping over a patch.
+  pumice_soles: `<path d="M9 5 Q16 3 18 10 Q20 18 15 25 Q11 29 8 24 Q6 18 7 11 Q7 6 9 5 Z" ${STROKE}/><circle cx="12" cy="10" r="1.3" ${FILL}/><circle cx="14" cy="16" r="1.3" ${FILL}/><circle cx="11" cy="21" r="1.3" ${FILL}/><path d="M20 27 Q25 24 29 27" ${STROKE}/>`,
+  // A bat's wing bone, the membrane spread between its fingers.
+  wing_bone: `<path d="M4 8 L14 16 L28 6" ${STROKE}/><path d="M14 16 L20 26 M14 16 L26 18 M14 16 L28 12" ${STROKE}/><path d="M28 6 Q24 10 28 12 Q23 14 26 18 Q21 20 20 26" ${STROKE}/><circle cx="14" cy="16" r="2" ${FILL}/>`,
+  // A shard broken off a crown, three points still standing.
+  crown_shard: `<path d="M5 24 L8 10 L13 17 L17 6 L21 17 L27 11 L25 24 Z" ${STROKE}/><path d="M5 24 L25 24 L23 28 L8 28 Z" ${FILL}/><circle cx="17" cy="15" r="1.6" ${FILL}/>`,
+  // A lens with a moon eclipsing inside it, a handle.
+  dusk_lens: `<circle cx="13" cy="13" r="9" ${STROKE}/><circle cx="13" cy="13" r="5" ${FILL}/><path d="M15 10 Q19 13 15 16" ${STROKE}/><path d="M20 20 L28 28" ${STROKE}/>`,
+  // A veil falling from a crescent moon.
+  nightfall_veil: `<path d="M20 4 Q12 6 12 12 Q12 18 20 20 Q14 21 10 17 Q6 12 10 7 Q14 3 20 4 Z" ${FILL}/><path d="M8 18 Q6 24 5 29 M13 19 Q13 25 12 29 M18 20 Q20 25 21 29 M23 19 Q26 23 28 28" ${STROKE}/>`,
+  // A heart wrapped in a rising flame.
+  rekindled_heart: `<path d="M16 27 Q5 19 6 12 Q7 7 11 7 Q14 7 16 11 Q18 7 21 7 Q25 7 26 12 Q27 19 16 27 Z" ${STROKE}/><path d="M16 23 Q11 18 13 14 Q15 16 16 14 Q17 10 15 7 Q21 11 20 17 Q19 21 16 23 Z" ${FILL}/>`,
   // THE EMBER KILN (content plan 5 slice 9). A greave of hammered slag, its
   // knee plate and two rivets.
   slag_greaves: `<path d="M11 4 H21 L22 15 Q22 22 20 27 H12 Q10 22 10 15 Z" ${STROKE}/><path d="M9 11 Q16 7 23 11" ${STROKE}/><path d="M12 27 L8 29 H24 L20 27" ${STROKE}/><circle cx="13" cy="18" r="1.6" ${FILL}/><circle cx="19" cy="18" r="1.6" ${FILL}/>`,

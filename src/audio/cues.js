@@ -726,9 +726,19 @@ const RELIC_PROC_CUE = Object.freeze({
   tenor_bell: { cue: 'bw_great', pitch: 0.7 },
   // THE EMBER KILN (content plan 5 slice 9): the ingot heating, an anvil ring.
   founders_ingot: { cue: 'kn_crust', pitch: 1.3 },
+  // Batch 6: the relics of content plan 5.
+  delvers_lantern: { cue: 'sr_draught', pitch: 1.25 },
+  kiln_coal: { cue: 'kn_mkindle', pitch: 1.2 },
+  pumice_soles: { cue: 'sr_knock', pitch: 1.6 },
+  wing_bone: { cue: 'dk_land', pitch: 1.15 },
+  crown_shard: { cue: 'shimmer', pitch: 1.6 },
+  dusk_lens: { cue: 'dk_eclipse', pitch: 1.35 },
+  nightfall_veil: { cue: 'dk_veil', pitch: 1.25 },
+  rekindled_heart: { cue: 'kn_erupt', pitch: 1.1 },
 });
 // Twin Fuse's lit fuse and the flask's pour stay quiet: their payoff speaks.
-const RELIC_PROC_QUIET = new Set(['lit', 'pour']);
+// Batch 6: Kiln Coal's burn ticks too (the catch is heard).
+const RELIC_PROC_QUIET = new Set(['lit', 'pour', 'burn']);
 const HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'restorative_wave', 'guardian_bond']);
 // PARTY: the new class skills' own cues (BUILD_BRIEF §25.2 audio column).
 export const CLASS_SKILL_CUE = Object.freeze({
@@ -1018,6 +1028,8 @@ export const DEFAULT_EVENT_CUES = {
   // Dulled Edge, a dull low clink under a blunted crit.
   curse_proc: (ev, h) => {
     if (ev.curse === 'dulled_edge') return one('sword_parry', at(ev, h, ev.target), { pitch: 0.6 });
+    // RELICS batch 6: the Sealed Door's seal set, and a blow it turns.
+    if (ev.curse === 'sealed_door') return ev.stage === 'seal' ? one('zone_spawn', at(ev, h, null), { pitch: 0.55 }) : one('sr_knock', at(ev, h, null), { pitch: 0.55 });
     if (ev.curse === 'tolling_dead') return ev.stage === 'toll' ? one('bw_knell', at(ev, h, null), { pitch: 0.6 }) : one('bw_ring', at(ev, h, null), { pitch: 0.55 });
     return ev.healed && ev.healed.length ? one('siphon_heal', at(ev, h, ev.from), { pitch: 0.6 }) : null;
   },

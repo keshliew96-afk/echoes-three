@@ -856,6 +856,9 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
         if (Math.hypot(t.x - s.x, t.z - s.z) > s.radius) continue;
         if (burnNow) combat.applyDamage(t, s.burn, { delivery: 'contact', shape: 'molten', attacker: null, source: 'molten' });
         if (!(s.slow > 0)) continue;
+        // RELICS batch 6 (Pumice Soles): the party walks through unslowed.
+        const M = combat.getMods ? combat.getMods() : null;
+        if (M && M.active() && M.slickProof && M.slickProof(t, s)) continue;
         const cur = t.status && t.status.slow;
         if (cur && cur.untilTick >= tick + 4 && cur.mag >= s.slow) continue;
         statusMod.apply(t, 'slow', s.slow, 8, tick, s.id);

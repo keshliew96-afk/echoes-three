@@ -277,6 +277,62 @@ How they hook in:
 - `?vfxlab=1` → "Relics batch 5": each relic's beat (`cmd('relicDemo', id)`)
   and the two room curses on a live campaign room.
 
+## Batch 6: relics for plan 5's content, three curses
+
+Content plan 5, slice 11 (v0.5.302). Eight relics answer what plan 5 added
+(secret rooms, the Kiln, the Duskwing, the second batch of elite powers) and
+three curses, one of them major. 63 relics and 20 curses in all (12 room, 8
+major); every relic has its heirloom. No dice: each relic reads the bus, a
+hit or a count, so holding one never moves the relic stream (Nightfall Veil
+still draws the crit roll it overrides). Numbers are first guesses until play.
+
+| Relic | Rarity | Effect |
+|---|---|---|
+| Delver's Lantern | common | A cracked wall is marked the moment you enter its room, and any blow from a hero a person plays breaks it open. |
+| Kiln Coal | common | Enemies a bomb bursts on catch fire: for 4 s they lose 3% of max HP every half second (2% for elites, 0.5% for champions and bosses). |
+| Pumice Soles | common | Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest. |
+| Wing Bone | rare | Each dodge ends in a dive: enemies within 1.4 u of where the hero lands take 10 damage and are knocked back. |
+| Crown Shard | rare | The party deals 10% more damage to an elite for each power it carries (up to +30%). |
+| Dusk Lens | rare | Party critical hits blind the enemy for 1 s (never a boss; once per enemy every 3 s). |
+| Nightfall Veil | legendary | The first party blow on each enemy is always a critical hit. |
+| Rekindled Heart | legendary | Once a level, each hero who would fall rises with 40% of max HP in a burst of flame: 15 damage to enemies within 2.5 u, which catch fire for 4 s. |
+
+| Curse | Kind | Effect |
+|---|---|---|
+| Sealed Door | room | This level's cracked wall stays shut (no blow or bomb opens it), and enemies in this room have 20% more HP. |
+| Dimmed Lantern | room | The room is dark: party blows on an enemy more than 4.5 u from every hero deal 40% less. |
+| Heavy Crowns | major | Every elite carries one more power for the rest of the run (three at most; Saint's Ashes: in about every other room, by the room's hash). |
+
+How they hook in:
+
+- Delver's Lantern reads `secret_wall` (a `mark` proc with the wall's place)
+  and `relics.lanternOpens()` lets run.js's `wall_blow` treat any blow from a
+  human seat as heavy. AI seats still only knock.
+- Kiln Coal reads `tonic_burst` (each hit id; a Twin Fuse echo does not
+  re-light) into `alight` (id -> until/next, saved). `burnTick()` in
+  `endOfTick` lands eight licks through the pipeline (`source: 'kiln_coal'`,
+  shape `burn`). Rekindled Heart's burst lights through the same map.
+- Pumice Soles: enemies.js `stepSlicks` asks `mods.slickProof(body, slick)`
+  before slowing a party body (a throttled `relic_proc` for its beat). Ice
+  slip floors are not slicks and still slide.
+- Wing Bone reads `dash_end` (the player) and `ally_dodge` (an AI seat,
+  queued through `later` at the dodge's end).
+- Crown Shard and Dimmed Lantern ride `mods.dealtMul`; Crown Shard shows its
+  crown once per elite. Nightfall Veil is `mods.firstBlow(target)`, read by
+  combat.js after the crit roll is drawn. Dusk Lens applies `blind` on a
+  party crit (bosses refuse it).
+- Rekindled Heart rides `mods.saveFromDown` after Last Light, once per seat a
+  level (`kindled`, saved).
+- Sealed Door sets `sealed` for the level (saved) when it binds: run.js
+  refuses a heavy blow or a bomb with a `curse_proc` stage `refuse`
+  (`sealedKnock`), the autopilot leaves the wall alone, and the view carries
+  `sealed: true`. Its HP comes from `diff.hpMul`.
+- Dimmed Lantern: `inTheDark(target)`; the view carries `dim: 4.5` for the
+  dark veil the renderer draws round the heroes.
+- Heavy Crowns: `relics.affixAdd(salt)` is added in run.js `affixRule()`.
+- `?vfxlab=1` → "Relics batch 6": each relic's beat and the three curses on a
+  live campaign room; `node tools/relics6-shots.mjs` shoots the same beats.
+
 ## Determinism and the legacy traces
 
 - Every relic roll (curse on a door, which door, which curse, which three
@@ -297,6 +353,14 @@ How they hook in:
   its configured door; `autopilot({ curses: 'avoid' })` steps around a cursed one.
 
 ## Verification
+
+- `node tools/relics6-probe.mjs` (headless, batch 6, 28 checks): the data (63
+  relics, 12 room curses and 8 major, every new line in the nine other
+  languages), each relic through its real hook (a secret wall, a bomb, a
+  crystal bed, a dodge press, an affixed elite, crits, a fall), the three
+  curses' numbers (a bomb and a heavy blow refused, a door's +20% HP, the
+  dark's 40%, one more power on Levels I and IV, Saint's Ashes), nothing in
+  the legacy run, and a burn and a sealed level riding a save.
 
 - `node tools/relics5-probe.mjs` (headless, batch 5): the data (51 relics, 10
   room curses and 7 major, every new line in the nine other languages), each
