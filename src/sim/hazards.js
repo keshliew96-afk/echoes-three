@@ -164,6 +164,8 @@ export const HAZARD_TYPES = Object.freeze({
 export const SLIP_SKINS = Object.freeze({
   wet: Object.freeze({ grip: 0.09 }),
   frost: Object.freeze({ grip: 0.07 }),
+  // Act V (Small fixes 6): the Spire's own rime look; frost's grip.
+  rime: Object.freeze({ grip: 0.07 }),
   // Act IV (docs/ACT_IV.md): polished violet crystal in the Hollow Heart.
   glass: Object.freeze({ grip: 0.08 }),
 });

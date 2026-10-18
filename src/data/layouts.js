@@ -25,10 +25,10 @@
 //     gravefire    vents [[x, z] x3], offset (ticks into its 420-tick cycle)
 //     gust         x0 z0 x1 z1 (blows from the vent at 0 toward 1), w (1.6), offset (ticks into its 420-tick cycle)
 //     vent         offset (ticks into its 420-tick cycle)  a cinder vent (the Kiln): erupts r 1.2, leaves cinders
-//     slip         r (1.1-1.9), skin ('wet' Mill | 'frost' Barrow, Spire)  slick floor:
+//     slip         r (1.1-1.9), skin ('wet' Mill | 'frost' Barrow | 'rime' Spire)  slick floor:
 //                  bodies keep sliding (Acts II and III only, never Level 1)
 //   interactables:  { type, x, z, yaw?, ...params }
-//     dewfont · barricade (yaw, skin) · keg · sluice (lanes: millrace indices) · bell
+//     dewfont · barricade (yaw, skin: timber | crates | cairn | crystal | brick | belfry) · keg · sluice (lanes: millrace indices) · bell
 //   spawns (optional): [[x, z] x 8] this room's spawn ring, index-aligned with
 //                   waves.js SPAWN_POINTS (layouts 10-15, 21, 23-25, 27)
 //   arena (optional): true on the act's open arena (21, 23, 25, 27), which
@@ -744,8 +744,8 @@ export const LAYOUTS = Object.freeze({
     ]),
     interactables: Object.freeze([
       { type: 'bell', x: 0.0, z: -5.6 },
-      { type: 'barricade', x: -3.6, z: -3.4, yaw: 0.4, skin: 'cairn' },
-      { type: 'barricade', x: 3.6, z: -3.4, yaw: -0.4, skin: 'cairn' },
+      { type: 'barricade', x: -3.6, z: -3.4, yaw: 0.4, skin: 'belfry' },
+      { type: 'barricade', x: 3.6, z: -3.4, yaw: -0.4, skin: 'belfry' },
       { type: 'dewfont', x: -4.2, z: 4.6 },
       { type: 'keg', x: 4.4, z: 4.4 },
     ]),
@@ -761,12 +761,12 @@ export const LAYOUTS = Object.freeze({
       { type: 'rockfall' },
       { type: 'gust', x0: -3.0, z0: -4.8, x1: 3.0, z1: -4.8, offset: 0 },
       { type: 'gust', x0: 3.0, z0: 5.0, x1: -3.0, z1: 5.0, offset: 210 },
-      { type: 'slip', x: -9.6, z: 0.0, r: 1.3, skin: 'frost' },
-      { type: 'slip', x: 9.6, z: 0.0, r: 1.3, skin: 'frost' },
+      { type: 'slip', x: -9.6, z: 0.0, r: 1.3, skin: 'rime' },
+      { type: 'slip', x: 9.6, z: 0.0, r: 1.3, skin: 'rime' },
     ]),
     interactables: Object.freeze([
-      { type: 'barricade', x: -4.4, z: -2.0, yaw: 1.2, skin: 'cairn' },
-      { type: 'barricade', x: 4.4, z: -2.0, yaw: -1.2, skin: 'cairn' },
+      { type: 'barricade', x: -4.4, z: -2.0, yaw: 1.2, skin: 'belfry' },
+      { type: 'barricade', x: 4.4, z: -2.0, yaw: -1.2, skin: 'belfry' },
       { type: 'dewfont', x: -7.0, z: 4.6 },
       { type: 'keg', x: 7.0, z: -4.6 },
       { type: 'bell', x: 6.8, z: 4.6 },
@@ -783,11 +783,11 @@ export const LAYOUTS = Object.freeze({
       { type: 'rockfall' },
       { type: 'gust', x0: 3.0, z0: -4.8, x1: -3.0, z1: -4.8, offset: 60 },
       { type: 'gust', x0: 7.0, z0: -4.4, x1: 7.0, z1: 4.4, offset: 270 },
-      { type: 'slip', x: -6.8, z: 3.6, r: 1.3, skin: 'frost' },
+      { type: 'slip', x: -6.8, z: 3.6, r: 1.3, skin: 'rime' },
     ]),
     interactables: Object.freeze([
       { type: 'bell', x: -7.0, z: -1.0 },
-      { type: 'barricade', x: -3.8, z: -2.8, yaw: 0.6, skin: 'cairn' },
+      { type: 'barricade', x: -3.8, z: -2.8, yaw: 0.6, skin: 'belfry' },
       { type: 'dewfont', x: 3.6, z: 5.0 },
       { type: 'keg', x: -4.0, z: 4.4 },
     ]),
@@ -803,12 +803,12 @@ export const LAYOUTS = Object.freeze({
       { type: 'rockfall' },
       { type: 'gust', x0: -7.0, z0: 4.4, x1: -7.0, z1: -4.4, offset: 0 },
       { type: 'gust', x0: 7.0, z0: -4.4, x1: 7.0, z1: 4.4, offset: 210 },
-      { type: 'slip', x: 0.0, z: -5.8, r: 1.2, skin: 'frost' },
+      { type: 'slip', x: 0.0, z: -5.8, r: 1.2, skin: 'rime' },
     ]),
     interactables: Object.freeze([
       { type: 'dewfont', x: 0.0, z: 5.4 },
-      { type: 'barricade', x: -3.6, z: 2.6, yaw: 0.5, skin: 'cairn' },
-      { type: 'barricade', x: 3.6, z: 2.6, yaw: -0.5, skin: 'cairn' },
+      { type: 'barricade', x: -3.6, z: 2.6, yaw: 0.5, skin: 'belfry' },
+      { type: 'barricade', x: 3.6, z: 2.6, yaw: -0.5, skin: 'belfry' },
       { type: 'keg', x: -9.4, z: 0.0 },
       { type: 'keg', x: 9.4, z: 0.0 },
     ]),
@@ -824,13 +824,13 @@ export const LAYOUTS = Object.freeze({
       { type: 'rockfall' },
       { type: 'gust', x0: 3.0, z0: -4.8, x1: -3.0, z1: -4.8, offset: 0 },
       { type: 'gust', x0: -3.0, z0: 5.0, x1: 3.0, z1: 5.0, offset: 210 },
-      { type: 'slip', x: -7.0, z: -1.0, r: 1.4, skin: 'frost' },
-      { type: 'slip', x: 7.0, z: 1.0, r: 1.4, skin: 'frost' },
+      { type: 'slip', x: -7.0, z: -1.0, r: 1.4, skin: 'rime' },
+      { type: 'slip', x: 7.0, z: 1.0, r: 1.4, skin: 'rime' },
     ]),
     interactables: Object.freeze([
       { type: 'bell', x: 0.0, z: -6.2 },
-      { type: 'barricade', x: -5.6, z: 2.4, yaw: 0.3, skin: 'cairn' },
-      { type: 'barricade', x: 5.6, z: -2.4, yaw: 0.3, skin: 'cairn' },
+      { type: 'barricade', x: -5.6, z: 2.4, yaw: 0.3, skin: 'belfry' },
+      { type: 'barricade', x: 5.6, z: -2.4, yaw: 0.3, skin: 'belfry' },
       { type: 'keg', x: -3.0, z: -2.8 },
       { type: 'dewfont', x: 6.8, z: 4.8 },
     ]),
@@ -849,8 +849,8 @@ export const LAYOUTS = Object.freeze({
       { type: 'rockfall' },
       { type: 'gust', x0: -9.6, z0: 0.0, x1: -4.6, z1: 0.0, offset: 0 },
       { type: 'gust', x0: 9.6, z0: 0.0, x1: 4.6, z1: 0.0, offset: 210 },
-      { type: 'slip', x: -6.0, z: -4.0, r: 1.2, skin: 'frost' },
-      { type: 'slip', x: 6.0, z: -4.0, r: 1.2, skin: 'frost' },
+      { type: 'slip', x: -6.0, z: -4.0, r: 1.2, skin: 'rime' },
+      { type: 'slip', x: 6.0, z: -4.0, r: 1.2, skin: 'rime' },
     ]),
     interactables: Object.freeze([
       { type: 'dewfont', x: 0.0, z: 5.8 },
@@ -863,7 +863,7 @@ export const LAYOUTS = Object.freeze({
   // the Hourwarden's boss room only): the loft behind the gods' great
   // clock face, its dial filling the north parapet. Two vents blow in across
   // the loft from opposite corners, rime under the dial's west and east
-  // edges, cairn barricades shoring up the floor between them.
+  // edges, belfry-wall barricades shoring up the floor between them.
   35: Object.freeze({
     id: 35,
     act: 5,
@@ -873,13 +873,13 @@ export const LAYOUTS = Object.freeze({
       { type: 'rockfall' },
       { type: 'gust', x0: -8.0, z0: -5.0, x1: -4.4, z1: -2.2, offset: 0 },
       { type: 'gust', x0: 7.6, z0: 5.0, x1: 3.6, z1: 2.4, offset: 210 },
-      { type: 'slip', x: 6.6, z: -3.6, r: 1.2, skin: 'frost' },
-      { type: 'slip', x: -6.6, z: 3.8, r: 1.2, skin: 'frost' },
+      { type: 'slip', x: 6.6, z: -3.6, r: 1.2, skin: 'rime' },
+      { type: 'slip', x: -6.6, z: 3.8, r: 1.2, skin: 'rime' },
     ]),
     interactables: Object.freeze([
       { type: 'bell', x: 0.0, z: -6.0 },
-      { type: 'barricade', x: -4.0, z: 1.2, yaw: 1.3, skin: 'cairn' },
-      { type: 'barricade', x: 4.8, z: -0.8, yaw: 1.3, skin: 'cairn' },
+      { type: 'barricade', x: -4.0, z: 1.2, yaw: 1.3, skin: 'belfry' },
+      { type: 'barricade', x: 4.8, z: -0.8, yaw: 1.3, skin: 'belfry' },
       { type: 'dewfont', x: -2.4, z: 5.4 },
       { type: 'keg', x: 9.6, z: -6.0 },
     ]),

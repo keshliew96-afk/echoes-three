@@ -4,8 +4,9 @@
 //   dewfont    a stone font whose basin holds Bright Heal water (the heal
 //              colour — this water IS heal output) with rising motes; drinking
 //              drains it to a dry cracked bowl
-//   barricade  destructible cover in three skins (timber planks / a crate row /
-//              a bone-stone cairn wall / a violet crystal ridge / stacked fire bricks): hit flash, a cracked lean below half
+//   barricade  destructible cover in six skins (timber planks / a crate row /
+//              a bone-stone cairn wall / a violet crystal ridge / stacked fire bricks /
+//              a rimed limestone belfry wall): hit flash, a cracked lean below half
 //              HP, a splinter burst when it breaks
 //   keg        a hooped powder keg; lit, its fuse spits Ember sparks, it shakes,
 //              and the Ember ring shows the 1.6 u blast for the whole 60-tick
@@ -75,6 +76,15 @@ const KILN_BRICK_BURNT = hslColor(20, 0.08, 0.13);
 const KILN_MORTAR = hslColor(26, 0.08, 0.08);
 let brickParts = null;
 const brickWallParts = (make) => (brickParts = brickParts ?? make());
+// Belfry wall (the Still Spire): pale weathered limestone ashlar, a slate
+// footing, a fallen bell-cage beam with a bronze strap, a small tarnished
+// bell tipped against its foot and a crust of rime on every upper face
+// (palette of env/biomes/spire.js: limestone, slate, rime, bronze).
+const SPIRE_STONE = hslColor(40, 0.07, 0.5);
+const SPIRE_STONE_LIT = hslColor(42, 0.08, 0.62);
+const SPIRE_SLATE = hslColor(220, 0.12, 0.2);
+const SPIRE_TIMBER = hslColor(28, 0.1, 0.22);
+const SPIRE_RIME = hslColor(204, 0.3, 0.86);
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 
@@ -295,6 +305,72 @@ function buildBarricade(e) {
       track(flashable(KILN_MORTAR))
     );
     yawG.add(mortar);
+  } else if (skin === 'belfry') {
+    // Belfry wall (Act V, the Still Spire): two courses of chamfered limestone
+    // blocks on a slate footing, the top course broken (one block gone, one
+    // shifted), a fallen bell-cage beam laid across it with a bronze strap,
+    // a small tarnished bell tipped on its side at the foot, and rime crusted
+    // along every top face and drifted in the joints.
+    const stone = track(flashable(SPIRE_STONE));
+    const lit = track(flashable(SPIRE_STONE_LIT));
+    const slate = track(flashable(SPIRE_SLATE));
+    const timber = track(flashable(SPIRE_TIMBER));
+    const bronze = track(flashable(BRONZE));
+    const rime = track(flashable(SPIRE_RIME));
+    const footing = new Mesh(sharedGeo('ix-belfry-footing', () => new BoxGeometry(1.42, 0.1, 0.5).translate(0, 0.05, 0)), slate);
+    addInk(footing);
+    yawG.add(footing);
+    // [x, y, w, h, d, yaw, lit]: the lower course whole, the upper broken.
+    const blocks = [
+      [-0.47, 0.27, 0.44, 0.34, 0.38, 0.02, 0],
+      [0.0, 0.27, 0.46, 0.34, 0.4, -0.03, 1],
+      [0.47, 0.27, 0.44, 0.34, 0.38, 0.04, 0],
+      [-0.24, 0.6, 0.46, 0.3, 0.36, -0.05, 1],
+      [0.3, 0.59, 0.4, 0.28, 0.34, 0.12, 0],
+    ];
+    const parts = (want) =>
+      mergeGeometries(blocks.filter((q) => q[6] === want).map(([x, y, w, h, d, yw]) => new BoxGeometry(w, h, d).rotateY(yw).translate(x, y, 0)));
+    for (const [key, mat] of [['plain', stone], ['lit', lit]]) {
+      const m = new Mesh(sharedGeo(`ix-belfry-blocks-${key}`, () => parts(key === 'lit' ? 1 : 0)), mat);
+      addInk(m);
+      yawG.add(m);
+    }
+    // The bell-cage beam: a dark timber baulk lying askew over the top
+    // course, its end over the gap, a bronze strap round it.
+    const beam = new Mesh(sharedGeo('ix-belfry-beam', () => new BoxGeometry(1.24, 0.12, 0.14)), timber);
+    beam.position.set(0.02, 0.81, 0.02);
+    beam.rotation.set(0, 0.16, -0.07);
+    addInk(beam);
+    yawG.add(beam);
+    const strap = new Mesh(sharedGeo('ix-belfry-strap', () => new BoxGeometry(0.06, 0.15, 0.17)), bronze);
+    strap.position.set(-0.36, 0.83, 0.08);
+    strap.rotation.set(0, 0.16, -0.07);
+    yawG.add(strap);
+    // The bell, fallen from the cage: tipped on its side at the wall's foot.
+    const profile = [[0.0, 0], [0.04, 0], [0.08, -0.05], [0.1, -0.2], [0.15, -0.3], [0.16, -0.33], [0.0, -0.33]].map(([x, y]) => new Vector2(x, y));
+    const bell = new Mesh(sharedGeo('ix-belfry-bell', () => new LatheGeometry(profile, 12)), bronze);
+    bell.rotation.set(0.2, 0.4, Math.PI / 2 - 0.25);
+    bell.position.set(0.56, 0.17, 0.3);
+    addInk(bell);
+    yawG.add(bell);
+    // Rime: thin crusts on the top faces and drifts banked in the joints
+    // and at the windward foot (boxes made non-indexed to merge with the
+    // icosahedron drifts).
+    const crust = new Mesh(
+      sharedGeo('ix-belfry-rime', () =>
+        mergeGeometries([
+          new BoxGeometry(0.4, 0.025, 0.3).translate(-0.47, 0.452, -0.02).toNonIndexed(),
+          new BoxGeometry(0.36, 0.025, 0.28).rotateY(0.04).translate(0.5, 0.452, 0.0).toNonIndexed(),
+          new BoxGeometry(0.42, 0.025, 0.3).rotateY(-0.05).translate(-0.24, 0.762, 0.0).toNonIndexed(),
+          new BoxGeometry(0.34, 0.025, 0.26).rotateY(0.12).translate(0.3, 0.742, -0.02).toNonIndexed(),
+          new IcosahedronGeometry(0.12, 0).scale(1.6, 0.35, 0.8).translate(-0.6, 0.12, -0.24),
+          new IcosahedronGeometry(0.1, 0).scale(1.8, 0.3, 0.7).translate(0.15, 0.11, -0.24),
+          new IcosahedronGeometry(0.07, 0).scale(1.4, 0.4, 0.8).translate(-0.24, 0.45, 0.19),
+        ])
+      ),
+      rime
+    );
+    yawG.add(crust);
   } else {
     // Bone-stone cairn wall (Act III): stacked pale blocks, a dark chink course.
     const bone = track(flashable(BONE_STONE));
@@ -335,7 +411,7 @@ function buildBarricade(e) {
       yawG.position.y = -0.04 * dmg;
     },
     onBreak(e) {
-      const debris = skin === 'crystal' ? PALETTE.godstuffViolet : skin === 'brick' ? KILN_BRICK_LIT : PALETTE.bone;
+      const debris = skin === 'crystal' ? PALETTE.godstuffViolet : skin === 'brick' ? KILN_BRICK_LIT : skin === 'belfry' ? SPIRE_STONE_LIT : PALETTE.bone;
       impactFx.hit(e.x, e.z, { color: debris, scale: 2.2 });
       impactFx.impact(e.x, e.z, { color: debris, n: 14 });
       impactFx.splat(e.x, e.z);
@@ -712,7 +788,7 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
   function prewarm() {
     warmed = true;
     warmPark(root, buildDewfont().group);
-    for (const skin of ['timber', 'crates', 'cairn', 'crystal', 'brick']) warmPark(root, buildBarricade({ skin, collider: { yaw: 0 } }).group);
+    for (const skin of ['timber', 'crates', 'cairn', 'crystal', 'brick', 'belfry']) warmPark(root, buildBarricade({ skin, collider: { yaw: 0 } }).group);
     warmPark(root, buildKeg().group);
     warmPark(root, buildSluice({ laneIds: [] }, world).group);
     warmPark(root, buildBell().group);

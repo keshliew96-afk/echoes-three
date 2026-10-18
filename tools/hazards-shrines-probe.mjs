@@ -268,7 +268,11 @@ const trade = (level, prep) => {
     W.step();
     mend(W);
     const ph = W.run.view().phase;
-    if (ph === 'path' || ph === 'draft' || ph === 'relic' || ph === 'shop') W.run.cmd('autoAdvance', []);
+    // Step past the between-room pages with the run's own commands.
+    if (ph === 'reward') W.run.cmd('draftDecline', []);
+    else if (ph === 'relic') W.run.cmd('relicChoose', [0]);
+    else if (ph === 'path') W.run.cmd('pathChoose', [0]);
+    else if (ph === 'shop') W.run.cmd('shopAdvance', []);
     cursed = W.log.find((e) => e.type === 'shrine_curse');
     if (!cursed && ph !== 'combat' && i % 30 === 0) W.world.cmd('skipToRoom', 4);
   }

@@ -30,33 +30,35 @@ const P = (p, f) => f * (p && p.pitch ? p.pitch : 1);
 
 // Measured design peaks (dBFS at unity gain, max of 3 takes) so each cue
 // peaks at its levelDb — tools/smallfixes2-cuecal.mjs --only spirecues --write.
-// Shipped with an offline estimate: each recipe rendered (max of 5 takes) by
-// the bake worker's DSP twin (src/audio/render.js), which lands within
-// 0-1.7 dB of the live measurement on the Heart's and the Wood and Mill's
-// cues (offline reads high on the loud, low recipes: those come out a
-// touch quieter, never louder); re-measure live when the sandbox allows.
+// Shipped with an offline estimate; measured live in Small fixes 6
+// (v0.5.298): five runs of the tool in headless Chromium, each cue's calDb
+// the MEDIAN of its five design peaks, because the sandbox's software
+// audio swings a noise recipe up to 3 dB run to run (sp_hland, sp_vdart,
+// sp_settle, sp_kdive the most). The estimates were within 1.3 dB for 18
+// of the 20; the gust vent's intake (sp_gin, 2.5 dB quiet) and the rope
+// hanger's landing (sp_hland, 1.9 dB quiet) moved most.
 export const SPIRE_CUE_CAL = {
   // @cal begin
   sp_kdive: -10.2,
-  sp_kland: -1.5,
-  sp_krise: -12.2,
+  sp_kland: -1.6,
+  sp_krise: -13.5,
   sp_toll: 2.6,
-  sp_choke: -1.7,
-  sp_crack: -7.8,
-  sp_wake: 2.9,
-  sp_slam: 3.2,
-  sp_settle: -7.2,
+  sp_choke: -1.4,
+  sp_crack: -7.6,
+  sp_wake: 2.3,
+  sp_slam: 1.9,
+  sp_settle: -8.3,
   sp_swing: -9.3,
-  sp_hland: 1.9,
-  sp_gin: -8.2,
-  sp_gust: 0.7,
-  sp_calm: -10.7,
+  sp_hland: 0,
+  sp_gin: -10.7,
+  sp_gust: -0.5,
+  sp_calm: -11.7,
   sp_vswing: -7.8,
-  sp_vsnap: -4.5,
-  sp_vdart: -8.9,
-  sp_hush: -4.2,
-  sp_rap: 0.8,
-  sp_mute: -0.4,
+  sp_vsnap: -4.8,
+  sp_vdart: -7.7,
+  sp_hush: -2.9,
+  sp_rap: -0.2,
+  sp_mute: -1.3,
   // @cal end
 };
 

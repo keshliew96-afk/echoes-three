@@ -46,7 +46,10 @@ sim's circle:
 
 - the surface: wet slate stones with black water joints and a teal algae
   film (Mill), or rime over dark grave earth with pale crystal cracks and
-  feathered frost toward the edge (Barrow);
+  feathered frost toward the edge (Barrow), or, in the Still Spire (skin
+  `rime`, Small fixes 6), wind-combed rime crusted over pale limestone flags
+  with slate grout, rime feathering out of the joints and a crust thickening
+  toward the edge (frost's grip 0.07, frost's slide hiss);
 - a crisp light rim exactly where the slip starts;
 - a steady cool glaze, plus a gloss sheen that sweeps across the patch every
   few seconds, so a still frame always shows a highlight;

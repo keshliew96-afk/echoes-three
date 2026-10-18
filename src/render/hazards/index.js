@@ -23,7 +23,8 @@
 //              never Ember (it never hurts): one shader disc per patch with an
 //              organic edge kept on the sim's circle. 'wet' = algae-slick
 //              flagstones under a film of water (Mill); 'frost' = grave
-//              rime with pale crystal cracks (Barrow). Layers: the surface
+//              rime with pale crystal cracks (Barrow); 'rime' = wind-combed
+//              rime over pale limestone flags (the Spire). Layers: the surface
 //              with a bright rim at the slip boundary; a gloss sheen that
 //              sweeps across it every few seconds plus a steady sky glaze;
 //              four-point star glints that wink in turn; low cold mist
@@ -245,6 +246,18 @@ const SLIP_LOOK = {
     glaze: hslColor(258, 0.42, 0.52),
     sheen: hslColor(262, 0.5, 0.88),
   },
+  // Spire rime (Act V): wind-combed rime crusted over pale worn limestone
+  // flags, slate grout, rime feathering out of the joints (the palette of
+  // env/biomes/spire.js; not the Barrow's dark grave frost)
+  rime: {
+    stoneA: hslColor(40, 0.05, 0.3),
+    stoneB: hslColor(42, 0.07, 0.42),
+    film: hslColor(206, 0.34, 0.5),
+    joint: hslColor(220, 0.18, 0.1),
+    rim: hslColor(200, 0.4, 0.8),
+    glaze: hslColor(208, 0.3, 0.42),
+    sheen: hslColor(196, 0.4, 0.88),
+  },
   // grave frost (Barrow): a thin rime over dark grave earth, pale cracks
   frost: {
     stoneA: hslColor(218, 0.16, 0.15),
@@ -264,8 +277,9 @@ function makeSlipMaterial(skin, radius, seed) {
       uR: { value: radius },
       uS: { value: radius + SLIP_PAD },
       uSeed: { value: seed },
-      uFrost: { value: skin === 'frost' ? 1 : 0 },
+      uFrost: { value: skin === 'frost' || skin === 'rime' ? 1 : 0 },
       uGlass: { value: skin === 'glass' ? 1 : 0 },
+      uRime: { value: skin === 'rime' ? 1 : 0 },
       uStir: { value: 0 },
       uStoneA: { value: L.stoneA },
       uStoneB: { value: L.stoneB },
@@ -294,6 +308,7 @@ function makeSlipMaterial(skin, radius, seed) {
       uniform float uSeed;
       uniform float uFrost;
       uniform float uGlass;
+      uniform float uRime;
       uniform float uStir;
       uniform vec3 uStoneA;
       uniform vec3 uStoneB;
@@ -346,6 +361,27 @@ function makeSlipMaterial(skin, radius, seed) {
         // Frost feathers: dense rime toward the rim, fern-like streaks.
         float fern = smoothstep( 0.55, 0.85, noise( vec2( ang * 9.0, d * 3.0 ) + uSeed ) ) * smoothstep( 0.9, 0.1, toEdge );
         col = mix( col, uRim, fern * uFrost * 0.4 );
+        // Spire rime: a cold blue crust over the limestone flags (the stone
+        // showing through where it is thin), crisp rime filling the grout,
+        // feathering out of the joints and combed into windrows along the
+        // high wind.
+        // Replaces the grave-frost body; the frost rim, sheen and glints
+        // below still apply.
+        if ( uRime > 0.5 ) {
+          vec3 fc = cells( p * 0.95 + 1.7 );
+          vec3 rc = mix( uStoneA, uStoneB, fc.z * 0.6 + n * 0.4 );
+          float crust = smoothstep( 0.35, 0.65, fbm( p * 1.1 + uSeed * 1.3 ) );
+          rc = mix( rc, uFilm, 0.4 + 0.4 * crust );
+          float grout = 1.0 - smoothstep( 0.02, 0.05, fc.y );
+          rc = mix( rc, uRim, grout * 0.8 );
+          float feather = ( 1.0 - smoothstep( 0.05, 0.16, fc.y ) ) * step( 0.62, noise( p * 7.0 + uSeed ) );
+          rc = mix( rc, uRim, feather * 0.45 );
+          vec2 wd = normalize( vec2( 0.94, 0.34 ) );
+          vec2 q = vec2( dot( p, wd ), dot( p, vec2( -wd.y, wd.x ) ) );
+          float row = smoothstep( 0.6, 0.7, noise( vec2( q.x * 0.9, q.y * 6.0 ) + uSeed * 2.0 ) );
+          rc = mix( rc, uSheen, row * 0.35 );
+          col = rc;
+        }
         // Steady glaze: a cool sky reflection across the whole surface, and
         // the puddled (wet) / polished (frost) areas reflect the most.
         float gloss = mix( 0.35 + 0.65 * smoothstep( 0.45, 0.7, n ), 0.6, uFrost );
@@ -984,8 +1020,9 @@ function buildGravefire(h) {
 
 function buildSlip(h) {
   const g = new Group();
-  const skin = h.skin === 'frost' || h.skin === 'glass' ? h.skin : 'wet';
-  // Glass rides the frost behaviours (crystal dust spray, glints, low haze).
+  const skin = h.skin === 'frost' || h.skin === 'glass' || h.skin === 'rime' ? h.skin : 'wet';
+  // Glass and the Spire's rime ride the frost behaviours (crystal dust
+  // spray, glints, low haze).
   const icy = skin !== 'wet';
   const L = SLIP_LOOK[skin];
   const r = h.radius ?? 1.4;
@@ -1014,10 +1051,11 @@ function buildSlip(h) {
   }
   // Frost: low cold mist drifting over it. Wet: a soft cool sheen glow.
   const mists = [];
-  const mistN = skin === 'frost' ? 3 : 1;
+  // Rime: two thin drifts of spindrift skimming low along the wind.
+  const mistN = skin === 'frost' ? 3 : skin === 'rime' ? 2 : 1;
   for (let i = 0; i < mistN; i++) {
-    const w = makeGlowSprite({ color: icy ? L.glaze : L.film, size: r * (skin === 'frost' ? 1.3 : skin === 'glass' ? 1.6 : 1.9), opacity: 0 });
-    w.position.y = skin === 'frost' ? 0.22 : 0.05;
+    const w = makeGlowSprite({ color: icy ? L.glaze : L.film, size: r * (skin === 'frost' ? 1.3 : skin === 'rime' ? 1.1 : skin === 'glass' ? 1.6 : 1.9), opacity: 0 });
+    w.position.y = skin === 'frost' ? 0.22 : skin === 'rime' ? 0.1 : 0.05;
     g.add(w);
     mists.push({ w, phase: i * 2.1 + seed * 4 });
   }
@@ -1035,7 +1073,7 @@ function buildSlip(h) {
         st.sp.material.rotation = tSec * 0.4 + st.phase;
       }
       mists.forEach((m, i) => {
-        m.w.material.opacity = skin === 'frost' ? 0.05 + 0.03 * Math.sin(tSec * 0.5 + m.phase) : skin === 'glass' ? 0.06 + 0.03 * Math.sin(tSec * 0.9) : 0.04 + 0.02 * Math.sin(tSec * 0.8);
+        m.w.material.opacity = skin === 'frost' ? 0.05 + 0.03 * Math.sin(tSec * 0.5 + m.phase) : skin === 'rime' ? 0.045 + 0.025 * Math.sin(tSec * 0.7 + m.phase) : skin === 'glass' ? 0.06 + 0.03 * Math.sin(tSec * 0.9) : 0.04 + 0.02 * Math.sin(tSec * 0.8);
         m.w.position.x = Math.sin(tSec * 0.17 + m.phase) * r * 0.35;
         m.w.position.z = Math.cos(tSec * 0.13 + m.phase * 1.3) * r * 0.3;
         void i;
@@ -2133,6 +2171,7 @@ export function createHazardLayer({ stage, world, bus, cosmetic, slide = null })
       slip: { id: 1, radius: 1.4, skin: 'wet' },
       slipFrost: { id: 2, radius: 1.4, skin: 'frost' },
       slipGlass: { id: 3, radius: 1.4, skin: 'glass' },
+      slipRime: { id: 4, radius: 1.4, skin: 'rime' },
       gravefireVein: { id: 1, vents: [{ x: 0, z: 0 }], skin: 'vein' },
       gust: { id: 1, x: 0, z: 0, len: 4, dirX: 1, dirZ: 0, lane: { x0: -2, z0: 0, x1: 2, z1: 0, w: 1.6 } },
       vent: { id: 1, x: 0, z: 0, radius: 1.2, phase: 'idle' },

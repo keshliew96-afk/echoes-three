@@ -39,7 +39,7 @@ const { hashState } = await import(u('src/core/hash.js'));
 const { createStateIO } = await import(u('src/save/capture.js'));
 const { clonePlain } = await import(u('src/save/codec.js'));
 const { LEVELS, bossFor, thirdBossActs } = await import(u('src/data/levels.js'));
-const { endlessBossIndex } = await import(u('src/data/endless.js'));
+const { endlessBossIndex, CYCLE } = await import(u('src/data/endless.js'));
 const { isDailyKey } = await import(u('src/data/daily.js'));
 const { BOSS_KITS } = await import(u('src/sim/boss.js'));
 const { DEEDS, UNLOCKS, WATER_BOSSES } = await import(u('src/data/unlocks.js'));
@@ -142,13 +142,13 @@ const addKinds = (W, from) => W.log.slice(from).filter((e) => e.type === 'boss_a
     for (let s = 1; s <= 200; s++) if (bossFor(lv, s).kind === kinds[oldIndex(lv, s)]) same += 1;
     check(same === 200, `locked, seeds 1-200 on Level ${lv} meet the boss they met before (${same}/200)`);
     let deep = 0;
-    for (let s = 1; s <= 40; s++) for (let d = lv; d <= lv + 12; d += 4) if (LEVELS[lv].bosses[endlessBossIndex(d, s)].kind === kinds[(oldIndex(lv, s) + Math.floor((d - 1) / 4)) % 2]) deep += 1;
+    for (let s = 1; s <= 40; s++) for (let d = lv; d <= lv + 3 * CYCLE; d += CYCLE) if (LEVELS[lv].bosses[endlessBossIndex(d, s)].kind === kinds[(oldIndex(lv, s) + Math.floor((d - 1) / CYCLE)) % 2]) deep += 1;
     check(deep === 160, `locked, Endless cycles the original two as before (${deep}/160)`);
     const n = {};
     for (let s = 1; s <= 60; s++) n[bossFor(lv, s, null, [lv]).kind] = (n[bossFor(lv, s, null, [lv]).kind] ?? 0) + 1;
     check(kinds.every((k) => n[k] > 0), `unlocked, seeds 1-60 on Level ${lv} meet all three (${kinds.map((k) => `${k} ${n[k] ?? 0}`).join(', ')})`);
     const ends = new Set();
-    for (let d = lv; d <= lv + 8; d += 4) ends.add(LEVELS[lv].bosses[endlessBossIndex(d, 3, [lv])].kind);
+    for (let d = lv; d <= lv + 2 * CYCLE; d += CYCLE) ends.add(LEVELS[lv].bosses[endlessBossIndex(d, 3, [lv])].kind);
     check(ends.size === 3, `unlocked, Endless cycles all three (${[...ends].join(', ')})`);
   }
   check(thirdBossActs({}).length === 0 && thirdBossActs({ stag: 1 }).length === 0, 'a fresh save, or one boss felled, opens no third boss');
