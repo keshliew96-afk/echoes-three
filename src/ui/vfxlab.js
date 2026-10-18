@@ -13,7 +13,7 @@
 //            fight, telegraph, hit and die as in a run
 //   Boss     force the add phase / enrage, or end the fight
 //   Relics   an elite's relic drop, Spore Sac, a major curse, Short Fuse
-//   Affixes  an elite with one of the eight named powers (or two), in front
+//   Affixes  an elite with one of the twelve named powers (or two), in front
 //            of the party, so its plate, aura, telegraph and burst play
 //   Floors   a slick floor patch (wet stone / grave frost) under the party
 //            with boars charging across it, or a whole room that carries
@@ -758,7 +758,8 @@ export function mountVfxLab() {
   // ELITE AFFIXES (docs/ELITE_AFFIXES.md): one elite per power, spawned with
   // that power forced, so each warning and burst can be reviewed.
   const aff = section('Elite affixes');
-  const AFFIX_DEMO = { molten: 'boar', frozen: 'ram', vampiric: 'boar', warded: 'knight', blinking: 'mantis', splitting: 'boar', hasted: 'boar', thorned: 'ram' };
+  // (Batch two, content plan 5 slice 10: Gusting, Crystal, Tolling, Cinder.)
+  const AFFIX_DEMO = { molten: 'boar', frozen: 'ram', vampiric: 'boar', warded: 'knight', blinking: 'mantis', splitting: 'boar', hasted: 'boar', thorned: 'ram', gusting: 'boar', crystal: 'boar', tolling: 'ram', cinder: 'crab' };
   for (const [id, kind] of Object.entries(AFFIX_DEMO)) {
     button(aff, id[0].toUpperCase() + id.slice(1), async () => {
       await ensureCombat(id === 'warded' ? 3 : 1);
@@ -774,6 +775,13 @@ export function mountVfxLab() {
     X().cmd('spawn', 'boar', f.x + 1.2, f.z - 2.6, { elite: true, affixes: ['frozen', 'warded'] });
     say('two elites with two powers each');
   }, 'Molten + Hasted crab, Frozen + Warded boar');
+  button(aff, 'Batch two pairs', async () => {
+    await ensureCombat(3);
+    const f = front();
+    X().cmd('spawn', 'boar', f.x - 1.2, f.z - 2.6, { elite: true, affixes: ['gusting', 'cinder'] });
+    X().cmd('spawn', 'ram', f.x + 1.2, f.z - 2.6, { elite: true, affixes: ['tolling', 'crystal'] });
+    say('two elites with two batch-two powers each');
+  }, 'Gusting + Cinder boar, Tolling + Crystal ram');
 
   // ------------------------------------------------------ tonics and bombs --
   // TONICS AND BOMBS (docs/CONSUMABLES.md): a campaign room (the slot is

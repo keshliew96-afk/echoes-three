@@ -344,7 +344,10 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     statsOf: (etype) => enemyStats(etype),
     nearestTarget: (e) => nearestTarget(e),
     stunned: (e, tick) => statusMod.isStunned(e, tick),
-    movement: { innerBounds, staticClearance, sweptContactT },
+    movement: { innerBounds, staticClearance, sweptContactT, walkStep },
+    // Batch two: the Cinder trail's patches, the Tolling slow.
+    spawnSlick: (owner, x, z, o) => spawnSlick(owner, x, z, o),
+    status: statusMod,
   });
   events.on('hit', (ev) => {
     if (ev.amount > 0 && ev.attacker != null) affix.onHit(ev);
@@ -449,7 +452,7 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     if (elite && !(opts && opts.noAffix)) {
       const forced = opts && Array.isArray(opts.affixes) ? opts.affixes.filter((id) => AFFIX_IDS.includes(id)) : null;
       const rule = forced ? null : affixRule();
-      const list = forced ?? (rule && rule.count > 0 ? rollAffixes(rule.salt, e.id, etype, rule.count) : null);
+      const list = forced ?? (rule && rule.count > 0 ? rollAffixes(rule.salt, e.id, etype, rule.count, !!rule.late) : null);
       if (list && list.length) affix.arm(e, list, tick);
     }
     return e;
@@ -813,6 +816,8 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
       ...(g.ember ? { ember: true } : {}),
     });
     registry.despawn(g.id);
+    // ELITE AFFIXES batch two: the gust throws, the toll slows (affixes.js).
+    if (g.affix === 'gusting' || g.affix === 'tolling') return affix.landGlob(g, victims, tick);
     const src = owner ?? { id: g.ownerId, kind: g.ownerKind, faceX: 0, faceZ: 1 };
     strike(ctx, src, victims.concat(props), g.power, g.tx, g.tz, { delivery: 'skill', shape: 'ring' });
     if (!(g.slickRadius > 0)) return; // a glob with no ground patch (the Lich Ram's graves)
@@ -866,11 +871,14 @@ export function createEnemySystem({ registry, events, rng, combat, getTick, queu
     resolveEnemies(tick);
     // ELITE AFFIXES: each affixed elite's powers, then the molten cores.
     let cores = false;
+    let shoves = false;
     for (const e of registry.all()) {
       if (e.affixes && isEnemyKind(e.kind) && e.state === 'active' && registry.byId(e.id)) affix.resolve(e, tick);
       else if (e.kind === 'affix_core') cores = true;
+      else if (e.affixShove) shoves = true;
     }
     if (cores) affix.stepCores(tick);
+    if (shoves) affix.stepShoves(tick);
   }
   function resolveEnemies(tick) {
     for (const e of registry.all()) {

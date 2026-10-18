@@ -194,4 +194,11 @@ export const AFFIX_COLORS = Object.freeze({
   splitting: '#B6B04A', // sick mustard
   hasted: '#F3E76A', // spark yellow
   thorned: '#A27A4A', // bark brown (bone tips)
+  // Batch two (content plan 5 slice 10). Cinder is coal red, kept apart
+  // from the Kiln's gold (the Kiln's heat) and darker than Ember (the
+  // warnings themselves stay Ember).
+  gusting: '#BFEDE4', // pale gale aqua
+  crystal: '#EE8FC6', // rose quartz
+  tolling: '#8FA3BF', // cold bell iron (not the Bellwright's verdigris)
+  cinder: '#C2362A', // banked-coal red
 });

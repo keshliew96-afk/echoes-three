@@ -4826,6 +4826,12 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Cinder": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "Cinder Moth": {
   "files": [
    "src/data/journal.js"
@@ -5533,6 +5539,12 @@
  "Crush": {
   "files": [
    "src/sim/nodes.js"
+  ],
+  "data": true
+ },
+ "Crystal": {
+  "files": [
+   "src/sim/affixes.js"
   ],
   "data": true
  },
@@ -8180,6 +8192,12 @@
   ],
   "data": true
  },
+ "Gusting": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "Half the particles, no camera kick, softer light": {
   "files": [
    "src/ui/run/effects.js"
@@ -9632,6 +9650,18 @@
   "files": [
    "src/ui/menu/pause.js"
   ]
+ },
+ "Leaves a trail of burning cinders.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
+ "Leaves crystal spurs that erupt behind it.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
  },
  "Leech Fang": {
   "files": [
@@ -14111,7 +14141,19 @@
   ],
   "data": true
  },
+ "Stops to call a gust that throws you back.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
  "Stops to charge a frost nova that slows.": {
+  "files": [
+   "src/sim/affixes.js"
+  ],
+  "data": true
+ },
+ "Stops to ring a toll that slows you.": {
   "files": [
    "src/sim/affixes.js"
   ],
@@ -17275,6 +17317,12 @@
  "Toller": {
   "files": [
    "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "Tolling": {
+  "files": [
+   "src/sim/affixes.js"
   ],
   "data": true
  },

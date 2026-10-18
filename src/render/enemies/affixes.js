@@ -10,6 +10,11 @@
 //     Thorned thorns (they flare when they sting)
 //   - the Blinking destination's Ember ring, the Molten core on the ground,
 //     and the swell of a Molten / Frozen burst under its Ember ring
+//   - batch two (content plan 5 slice 10): Gusting wind ribbons that wind
+//     tight while the gust gathers, Crystal rose-quartz spines, a Tolling
+//     iron bell over the crown that swings hard as the toll gathers, Cinder
+//     banked coals shedding sparks; the gust gathering in its ring, the
+//     crystal spur growing out of the floor, the toll's ripples closing in
 // The one-shot beats (reveal, bursts, blink, split, leech, thorns) are the
 // VFX director's (render/vfx/signature.js). Render-only: reads sim entities
 // and bus events, never mutates sim state.
@@ -17,6 +22,8 @@ import {
   AdditiveBlending,
   ConeGeometry,
   CircleGeometry,
+  CylinderGeometry,
+  TorusGeometry,
   DoubleSide,
   Group,
   IcosahedronGeometry,
@@ -194,6 +201,63 @@ export function createAffixLayer({ root, stage, world, bus, shapes }) {
         tint.position.y = 0.4;
         g.add(tint);
         parts.thorned = { thorns, tint };
+      } else if (id === 'gusting') {
+        // Three thin wind ribbons on tilted orbits, a pale gale light.
+        const ribbons = [0, 1, 2].map((k) => {
+          const m = new Mesh(sharedGeo(`ea-gust:${R.toFixed(2)}`, () => new TorusGeometry(R + 0.12, 0.022, 4, 40, TAU * 0.42)), addMat(c, 0.75));
+          m.position.y = H * (0.3 + 0.22 * k);
+          g.add(m);
+          return m;
+        });
+        const glow = makeGlowSprite({ color: c, size: R * 2.0, opacity: 0.18 });
+        glow.position.y = H * 0.5;
+        g.add(glow);
+        parts.gusting = { ribbons, glow, H, mote: 0 };
+      } else if (id === 'crystal') {
+        // Rose-quartz spines jutting from its back and shoulders.
+        const spines = [];
+        for (let i = 0; i < 7; i++) {
+          const m = new Mesh(sharedGeo('ea-spine', () => new OctahedronGeometry(0.1, 0)), new MeshBasicMaterial({ color: c, transparent: true, opacity: 0.92, toneMapped: false }));
+          const a = (i / 7) * TAU;
+          const len = 1.6 + (i % 3) * 0.7;
+          m.scale.set(0.55, len, 0.55);
+          m.position.set(Math.cos(a) * R * 0.45, H * (0.62 + 0.08 * (i % 2)), Math.sin(a) * R * 0.45);
+          m.rotation.set(Math.sin(a) * 0.7, 0, -Math.cos(a) * 0.7);
+          g.add(m);
+          spines.push(m);
+        }
+        const glow = makeGlowSprite({ color: c, size: R * 1.5, opacity: 0.16 });
+        glow.position.y = H * 0.65;
+        g.add(glow);
+        parts.crystal = { spines, glow };
+      } else if (id === 'tolling') {
+        // A cracked iron bell hanging in the air over the crown.
+        const bell = new Group();
+        const body = new Mesh(sharedGeo('ea-bell', () => new CylinderGeometry(0.1, 0.2, 0.26, 14, 1, true).translate(0, -0.13, 0)), new MeshBasicMaterial({ color: c, side: DoubleSide, toneMapped: false }));
+        const lip = new Mesh(sharedGeo('ea-bell-lip', () => new TorusGeometry(0.2, 0.022, 4, 18).rotateX(Math.PI / 2).translate(0, -0.26, 0)), new MeshBasicMaterial({ color: PALETTE.bone, toneMapped: false }));
+        const crown = new Mesh(sharedGeo('ea-bell-crown', () => new IcosahedronGeometry(0.07, 0)), new MeshBasicMaterial({ color: c, toneMapped: false }));
+        bell.add(body, lip, crown);
+        bell.position.y = H + 0.75;
+        g.add(bell);
+        const glow = makeGlowSprite({ color: c, size: 0.7, opacity: 0.3 });
+        glow.position.y = H + 0.6;
+        g.add(glow);
+        const ripple = new Mesh(sharedGeo(`ea-ripple:${R.toFixed(2)}`, () => new RingGeometry(R * 0.96, R, 48)), addMat(c, 0));
+        ripple.rotation.x = -Math.PI / 2;
+        ripple.position.y = 0.05;
+        g.add(ripple);
+        parts.tolling = { bell, glow, ripple, H };
+      } else if (id === 'cinder') {
+        // Banked coals: a low red breath under it, sparks shed as it walks.
+        const glow = makeGlowSprite({ color: c, size: R * 2.6, opacity: 0.4 });
+        glow.position.y = 0.2;
+        g.add(glow);
+        const coals = [0, 1, 2, 3].map(() => {
+          const sp = makeGlowSprite({ color: c, size: 0.18, opacity: 0.9 });
+          g.add(sp);
+          return sp;
+        });
+        parts.cinder = { glow, coals, spark: 0 };
       }
     }
     root.add(g);
@@ -261,18 +325,76 @@ export function createAffixLayer({ root, stage, world, bus, shapes }) {
               shards.push(m);
             }
           }
+          // Batch two: the gust's wind arcs on the rim, the toll's closing
+          // ripples, the crystal spur rising out of the floor.
+          const arcs = [];
+          if (e.affix === 'gusting') {
+            for (let i = 0; i < 4; i++) {
+              const m = new Mesh(sharedGeo(`ea-garc:${(e.blastRadius ?? 2).toFixed(2)}`, () => new RingGeometry((e.blastRadius ?? 2) * 0.86, (e.blastRadius ?? 2) * 0.9, 40, 1, 0, TAU * 0.18)), addMat(c, 0.7));
+              m.rotation.x = -Math.PI / 2;
+              m.rotation.z = (i / 4) * TAU;
+              m.position.y = 0.06;
+              g.add(m);
+              arcs.push(m);
+            }
+          } else if (e.affix === 'tolling') {
+            for (let i = 0; i < 3; i++) {
+              const m = new Mesh(sharedGeo('ea-tring', () => new RingGeometry(0.95, 1, 56)), addMat(c, 0.6));
+              m.rotation.x = -Math.PI / 2;
+              m.position.y = 0.05 + i * 0.005;
+              g.add(m);
+              arcs.push(m);
+            }
+          } else if (e.affix === 'crystal') {
+            glow.material.opacity = 0.2;
+            for (let i = 0; i < 5; i++) {
+              const m = new Mesh(sharedGeo('ea-spine', () => new OctahedronGeometry(0.1, 0)), new MeshBasicMaterial({ color: c, transparent: true, opacity: 0.95, toneMapped: false }));
+              const a = (i / 5) * TAU + 0.4;
+              m.position.set(Math.cos(a) * 0.16 * (i ? 1 : 0), 0, Math.sin(a) * 0.16 * (i ? 1 : 0));
+              m.rotation.set(Math.sin(a) * 0.35 * (i ? 1 : 0), 0, -Math.cos(a) * 0.35 * (i ? 1 : 0));
+              g.add(m);
+              shards.push(m);
+            }
+          }
           g.position.set(e.tx, 0, e.tz);
           root.add(g);
-          s = { g, glow, shards, affix: e.affix };
+          s = { g, glow, shards, arcs, affix: e.affix, R: e.blastRadius ?? 1.5 };
           swells.set(e.id, s);
         }
         const span = Math.max(1, e.landTick - e.startTick);
         const u = Math.min(1, Math.max(0, (tick - 1 + alpha - e.startTick) / span));
         s.glow.scale.setScalar(0.5 + (e.blastRadius ?? 1.5) * 1.6 * u * u + 0.1 * Math.sin(tSec * 30) * u);
         s.glow.material.opacity = 0.5 + 0.45 * u;
-        for (const m of s.shards) {
-          m.scale.set(0.8, 0.4 + 2.6 * u, 0.8);
-          m.position.y = 0.05 + 0.12 * u;
+        if (s.affix === 'crystal') {
+          // The spur pushes up through the floor, the centre one tallest.
+          s.shards.forEach((m, i) => {
+            const h = (i ? 2.2 : 4.2) * (0.15 + 0.85 * u * u);
+            m.scale.set(0.9, h, 0.9);
+            m.position.y = 0.1 * h - 0.05;
+          });
+          s.glow.scale.setScalar(0.4 + 1.0 * u);
+          s.glow.material.opacity = 0.18 + 0.3 * u; // the Ember ring must stay readable through it
+        } else
+          for (const m of s.shards) {
+            m.scale.set(0.8, 0.4 + 2.6 * u, 0.8);
+            m.position.y = 0.05 + 0.12 * u;
+          }
+        if (s.affix === 'gusting') {
+          // Wind arcs race round the rim, faster and brighter as it gathers.
+          s.arcs.forEach((m, i) => {
+            m.rotation.z = (i / 4) * TAU + tSec * (2 + 9 * u * u);
+            m.material.opacity = 0.35 + 0.55 * u;
+          });
+          s.glow.scale.setScalar(0.4 + 0.6 * u);
+          if (emberBeat) impactFx.spray('smoke', e.tx, 0.15, e.tz, 1, { color: AFFIX_COLORS.gusting, speed: [0.2, 0.5], up: [0.05, 0.2], size: [0.3, 0.5], grow: 1.3, life: [0.4, 0.6], opacity: 0.18, drag: 2, jitter: s.R * 0.8 });
+        } else if (s.affix === 'tolling') {
+          // Ripples close in from the rim to the bell, one after another.
+          s.arcs.forEach((m, i) => {
+            const k = (tSec * 1.6 + i / 3) % 1;
+            m.scale.setScalar(Math.max(0.05, s.R * (1 - k)));
+            m.material.opacity = (0.25 + 0.5 * u) * Math.sin(k * Math.PI);
+          });
+          s.glow.scale.setScalar(0.4 + 0.5 * u);
         }
         if (emberBeat && s.affix === 'molten') impactFx.embers(e.tx, e.tz, { n: 2, radius: (e.blastRadius ?? 1.5) * 0.5, tall: 1.4 });
         continue;
@@ -391,6 +513,54 @@ export function createAffixLayer({ root, stage, world, bus, shapes }) {
           m.position.z = Math.sin(a) * (rec.R - 0.08);
           m.rotation.y = -a;
         });
+      }
+      if (P.gusting) {
+        const Gp = P.gusting;
+        const charging = e.gustUntil > tick;
+        const pull = charging ? 1 - Math.max(0, e.gustUntil - tick) / 54 : 0;
+        Gp.ribbons.forEach((m, i) => {
+          m.rotation.set(Math.PI / 2 + 0.35 * Math.sin(i * 2.1), 0, tSec * (charging ? 9 : 2.4) * (i % 2 ? -1 : 1) + i * 2.1);
+          m.scale.setScalar(1 - 0.35 * pull);
+          m.material.opacity = 0.55 + 0.35 * pull;
+        });
+        Gp.glow.material.opacity = 0.14 + 0.4 * pull;
+        Gp.mote += dt;
+        if (alive && Gp.mote > 0.18) {
+          Gp.mote = 0;
+          const a = tSec * 3;
+          impactFx.spray('spark', pos.x + Math.cos(a) * rec.R, 0.25, pos.z + Math.sin(a) * rec.R, 1, { color: AFFIX_COLORS.gusting, speed: [0.4, 0.9], up: [0.3, 0.7], size: [0.03, 0.05], life: [0.4, 0.6], dir: { x: -Math.sin(a), z: Math.cos(a) }, dirBias: 0.8, drag: 1.2, opacity: 0.8 });
+        }
+      }
+      if (P.crystal) {
+        P.crystal.spines.forEach((m, i) => {
+          m.material.opacity = 0.75 + 0.2 * Math.sin(tSec * 3 + i * 1.3);
+        });
+        P.crystal.glow.material.opacity = 0.12 + 0.06 * Math.sin(tSec * 2.4 + e.id);
+      }
+      if (P.tolling) {
+        const T = P.tolling;
+        const charging = e.tollUntil > tick;
+        const k = charging ? 1 - Math.max(0, e.tollUntil - tick) / 60 : 0;
+        T.bell.rotation.z = Math.sin(tSec * (charging ? 11 : 1.6)) * (charging ? 0.25 + 0.5 * k : 0.12);
+        T.bell.position.y = T.H + 0.75 + 0.05 * Math.sin(tSec * 1.3 + e.id);
+        T.glow.material.opacity = 0.22 + 0.5 * k;
+        const ph = (tSec * (charging ? 2.6 : 0.7)) % 1;
+        T.ripple.scale.setScalar(0.6 + ph * (charging ? 2.4 : 0.8));
+        T.ripple.material.opacity = (charging ? 0.55 : 0.22) * (1 - ph);
+      }
+      if (P.cinder) {
+        const Cn = P.cinder;
+        Cn.glow.material.opacity = 0.32 + 0.12 * Math.sin(tSec * 4.3 + e.id);
+        Cn.coals.forEach((sp, i) => {
+          const a = tSec * 1.3 + (i * TAU) / 4;
+          sp.position.set(Math.cos(a) * rec.R * 0.7, 0.12 + 0.05 * Math.sin(tSec * 5 + i), Math.sin(a) * rec.R * 0.7);
+          sp.material.opacity = 0.6 + 0.35 * Math.sin(tSec * 7 + i * 1.9);
+        });
+        Cn.spark += dt;
+        if (alive && Cn.spark > (rig.moveK > 0.3 ? 0.07 : 0.25)) {
+          Cn.spark = 0;
+          impactFx.spray('spark', pos.x, 0.2, pos.z, 1, { color: AFFIX_COLORS.cinder, speed: [0.05, 0.3], up: [0.6, 1.2], size: [0.03, 0.06], life: [0.6, 1.0], gravity: -0.4, drag: 1.4, jitter: rec.R * 0.6, opacity: 0.95 });
+        }
       }
       // Blinking destination: an Ember ring where it will appear.
       if (e.blink && alive) {

@@ -34,7 +34,7 @@ const { createEventBus } = await import(u('src/core/events.js'));
 const { createClock } = await import(u('src/core/clock.js'));
 const { createWorld } = await import(u('src/sim/world.js'));
 const { emptySnapshot } = await import(u('src/core/intents.js'));
-const { AFFIX_IDS, AFFIXES, AFFIX_RULES, rollAffixes } = await import(u('src/sim/affixes.js'));
+const { AFFIX_IDS, FIRST_AFFIX_IDS = AFFIX_IDS, AFFIXES, AFFIX_RULES, rollAffixes } = await import(u('src/sim/affixes.js'));
 const { quantizeEntity, viewEntity } = await import(u('src/net/protocol/quantize.js'));
 const { default: KNIGHT } = await import(u('src/sim/enemies/knight.js'));
 const TUNE = process.argv.includes('--tune');
@@ -163,7 +163,9 @@ function parkParty(W, x = 0, z = 4.5) {
   check(!/2/.test(l1) && /1/.test(l1), `Level I rooms roll one power (rule by room: ${l1})`);
   check(/^1,.*2/.test(l2), `Level II rolls one, then two from room 4 (rule by room: ${l2})`);
   check(badKind === 0 && clash === 0, `no power on an excluded kind (${badKind}), never Molten with Frozen (${clash})`);
-  check(seen.size === AFFIX_IDS.length, `all eight powers rolled somewhere (${[...seen].sort().join(', ')})`);
+  // (Batch two joins from room 4 on, so first rooms roll the first eight only;
+  // tools/affixes-2-probe.mjs checks the rest.)
+  check(seen.size === FIRST_AFFIX_IDS.length && [...seen].every((id) => FIRST_AFFIX_IDS.includes(id)), `all eight powers rolled somewhere (${[...seen].sort().join(', ')})`);
   // Pure roll: every kind, many ordinals.
   let pureBad = 0;
   for (const kind of ['boar', 'mantis', 'brood', 'knight', 'mole', 'lamprey', 'gravewisp', 'ram'])
