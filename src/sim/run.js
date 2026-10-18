@@ -105,7 +105,7 @@ import { SHRINES, SHRINE_RULES, shrineOfBiome, shrineRoomFor, shrineSpotStart, s
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
 import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): how many powers an elite carries.
-import { affixCountFor, AFFIX_RULES, AFFIXES } from './affixes.js';
+import { affixCountFor, AFFIX_RULES, AFFIXES, LATE_AFFIX_ROOM } from './affixes.js';
 import { encounterSpec } from './interactables.js';
 // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
 import { sanitizeBoons } from '../data/unlocks.js';
@@ -266,7 +266,8 @@ export function createRunSystem({
     if (frame.modes[roomIndex - 1] === 'boss') return null;
     const depth = endlessDepth();
     // Endless: Depths 1-4 are the campaign's own count; two powers from Depth 5.
-    return { count: affixCountFor({ act, room: roomIndex, endless: beyondCampaign(depth) }), salt: `${frame.seed}:${depth || act}:${campaign.index}:${roomIndex}` };
+    // Batch two (Gusting, Crystal, Tolling, Cinder) joins from room 4 on.
+    return { count: affixCountFor({ act, room: roomIndex, endless: beyondCampaign(depth) }), salt: `${frame.seed}:${depth || act}:${campaign.index}:${roomIndex}`, late: roomIndex >= LATE_AFFIX_ROOM };
   }
 
   let active = false;

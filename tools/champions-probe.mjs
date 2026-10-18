@@ -81,6 +81,12 @@ function build(seed) {
   let rec = null;
   bus.on('*', (e) => {
     if (rec && e.type !== 'sound') rec.push(e);
+    // Balance pass (v0.5.224): a Knight the governor held back for its
+    // starve time swings anyway; mark that start so the stagger check skips it.
+    if (e.type === 'telegraph_start' && e.etype === 'knight') {
+      const k = registry.byId(e.id);
+      if (k && k.heldLast === e.tick && e.tick - k.heldSince >= 240) e.starved = true;
+    }
     if (e.type.startsWith('champion_') || e.type.startsWith('crown_') || ['telegraph_start', 'room_cleared', 'relic_offer', 'hit', 'death', 'path_offer', 'enemy_spawn'].includes(e.type)) log.push(e);
   });
   const step = () => clock.stepOnce((t) => world.step(t, ap.active() ? ap.intents(t, emptySnapshot()) : emptySnapshot()));
@@ -247,7 +253,8 @@ for (const level of [1, 2, 3, 4, 5]) {
   // (unless starved, which an otherwise empty room never is). The Heart's
   // crystal spurs (slice 9, docs/SHRINES.md) never wait on the governor by
   // design, only note their start, so their wind-ups are left out here.
-  const starts = w.log.filter((x) => x.type === 'telegraph_start' && x.playerTargeted && x.etype !== 'spur').map((x) => x.tick);
+  // A starved Knight swing (it swings anyway, see the log hook) is left out too.
+  const starts = w.log.filter((x) => x.type === 'telegraph_start' && x.playerTargeted && x.etype !== 'spur' && !x.starved).map((x) => x.tick);
   let gap = Infinity;
   for (let i = 1; i < starts.length; i++) gap = Math.min(gap, starts[i] - starts[i - 1]);
   check('moves', `Level ${level}: player-targeted wind-ups stay ${GOVERNOR.staggerTicks} ticks apart`, starts.length >= 2 && gap >= GOVERNOR.staggerTicks, { starts: starts.length, minGap: gap });

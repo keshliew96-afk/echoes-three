@@ -20,6 +20,16 @@
 //   Hasted     moves 40% faster
 //   Thorned    a party hit from within 2.6 u stings back for 20% (at most 8)
 //
+// Batch two (content plan 5 slice 10), rolled only from room 4 of a level on
+// (the rule's `late` flag), so rooms 1 to 3 roll exactly as before:
+//   Gusting    roots itself under an Ember ring (0.9 s); the gust hits for 5
+//              and throws everyone inside 2.4 u out
+//   Crystal    plants a crystal spur where it stands; after 1.0 s under an
+//              Ember ring the spur erupts and leaves a slowing crystal bed
+//   Tolling    roots itself under an Ember ring (1.0 s); the toll does no
+//              damage but slows everyone inside by 40% for 2 s
+//   Cinder     trails small burning patches as it walks (2 damage every 0.5 s)
+//
 // The two damaging telegraphs (Molten, Frozen) are player-targeted and go
 // through the §11 governor (two at most, starts 1.2 s apart). Every draw is a
 // hash of the run seed, the level, the room and the elite's spawn ordinal,
@@ -32,7 +42,12 @@
 
 const r2 = (v) => Math.round(v * 100) / 100;
 
-export const AFFIX_IDS = Object.freeze(['molten', 'frozen', 'vampiric', 'warded', 'blinking', 'splitting', 'hasted', 'thorned']);
+// The first eight (plan 2) roll in every affixed room; batch two only from
+// room 4 of a level on. The Signbreaker deed still counts the first eight.
+export const FIRST_AFFIX_IDS = Object.freeze(['molten', 'frozen', 'vampiric', 'warded', 'blinking', 'splitting', 'hasted', 'thorned']);
+export const LATE_AFFIX_IDS = Object.freeze(['gusting', 'crystal', 'tolling', 'cinder']);
+export const AFFIX_IDS = Object.freeze([...FIRST_AFFIX_IDS, ...LATE_AFFIX_IDS]);
+export const LATE_AFFIX_ROOM = 4;
 
 // name / text are shown by the UI through t(). `not` lists enemy kinds the
 // power never rolls on (a kind it would break or make pointless); `clash`
@@ -41,16 +56,25 @@ export const AFFIX_IDS = Object.freeze(['molten', 'frozen', 'vampiric', 'warded'
 // drinks so it is never Vampiric; the Ash Keener and the Barrow Sexton take
 // every power. Act V (docs/ACT_V.md): a Gargoyle never charges a frost nova
 // (it would act while still stone) and the Kite, the Gargoyle and the Rope
-// Hanger never Blink (a dive, a perch and a rope).
+// Hanger never Blink (a dive, a perch and a rope). Batch two: the rooted
+// rings (Gusting, Tolling) skip what Frozen skips plus the bells (the Chime
+// Wraith, the Bell Sacristan) and the Gust Kite; Crystal skips the crystal
+// kinds (Geode Brute, Heart Bloom); Cinder skips the burrowers and the
+// Kiln's own fire creatures. The three rooted or ringed powers never share
+// an elite with each other or with Frozen, and Cinder never with Frozen.
 export const AFFIXES = Object.freeze({
   molten: Object.freeze({ id: 'molten', name: 'Molten', text: 'Bursts into a burning pool when it dies.', not: Object.freeze([]), clash: Object.freeze(['frozen']) }),
-  frozen: Object.freeze({ id: 'frozen', name: 'Frozen', text: 'Stops to charge a frost nova that slows.', not: Object.freeze(['gravewisp', 'censer', 'leech', 'gargoyle']), clash: Object.freeze(['molten']) }),
+  frozen: Object.freeze({ id: 'frozen', name: 'Frozen', text: 'Stops to charge a frost nova that slows.', not: Object.freeze(['gravewisp', 'censer', 'leech', 'gargoyle']), clash: Object.freeze(['molten', 'gusting', 'tolling', 'cinder']) }),
   vampiric: Object.freeze({ id: 'vampiric', name: 'Vampiric', text: 'Heals for part of the damage it deals.', not: Object.freeze(['gravewisp', 'censer', 'leech', 'siphon']), clash: Object.freeze([]) }),
   warded: Object.freeze({ id: 'warded', name: 'Warded', text: 'A ward makes it immune for a few seconds at a time.', not: Object.freeze([]), clash: Object.freeze([]) }),
   blinking: Object.freeze({ id: 'blinking', name: 'Blinking', text: 'Marks a spot beside you, then blinks to it.', not: Object.freeze(['mole', 'lamprey', 'gravewisp', 'censer', 'leech', 'lasher', 'bloom', 'kite', 'gargoyle', 'hanger']), clash: Object.freeze([]) }),
   splitting: Object.freeze({ id: 'splitting', name: 'Splitting', text: 'Splits into two smaller copies when it dies.', not: Object.freeze(['brood', 'broodling', 'knight', 'lamprey', 'gravewisp', 'censer']), clash: Object.freeze([]) }),
   hasted: Object.freeze({ id: 'hasted', name: 'Hasted', text: 'Moves much faster.', not: Object.freeze(['bloom']), clash: Object.freeze([]) }),
   thorned: Object.freeze({ id: 'thorned', name: 'Thorned', text: 'Hits from close range sting back.', not: Object.freeze(['gravewisp', 'censer']), clash: Object.freeze([]) }),
+  gusting: Object.freeze({ id: 'gusting', name: 'Gusting', text: 'Stops to call a gust that throws you back.', not: Object.freeze(['gravewisp', 'censer', 'leech', 'gargoyle', 'chime', 'sacristan', 'kite']), clash: Object.freeze(['frozen', 'tolling']) }),
+  crystal: Object.freeze({ id: 'crystal', name: 'Crystal', text: 'Leaves crystal spurs that erupt behind it.', not: Object.freeze(['gravewisp', 'censer', 'geode', 'bloom']), clash: Object.freeze([]) }),
+  tolling: Object.freeze({ id: 'tolling', name: 'Tolling', text: 'Stops to ring a toll that slows you.', not: Object.freeze(['gravewisp', 'censer', 'leech', 'gargoyle', 'chime', 'sacristan', 'kite']), clash: Object.freeze(['frozen', 'gusting']) }),
+  cinder: Object.freeze({ id: 'cinder', name: 'Cinder', text: 'Leaves a trail of burning cinders.', not: Object.freeze(['gravewisp', 'censer', 'mole', 'lamprey', 'bloom', 'newt', 'cindermoth', 'slag']), clash: Object.freeze(['frozen']) }),
 });
 
 // Every number in one place (ticks at 60 Hz).
@@ -63,6 +87,10 @@ export const AFFIX_RULES = Object.freeze({
   splitting: Object.freeze({ count: 2, hpFrac: 0.4, dmgFrac: 0.7, scale: 0.78, spread: 0.7 }),
   hasted: Object.freeze({ speed: 1.4 }),
   thorned: Object.freeze({ reflect: 0.2, cap: 8, reach: 2.6 }),
+  gusting: Object.freeze({ firstTicks: 150, cdTicks: 390, range: 2.6, windTicks: 54, radius: 2.6, power: 5, throwDist: 2.4, throwTicks: 12 }),
+  crystal: Object.freeze({ firstTicks: 120, cdTicks: 240, range: 4.0, windTicks: 60, radius: 1.1, power: 8, patchRadius: 0.9, patchTicks: 180, slow: 0.3 }),
+  tolling: Object.freeze({ firstTicks: 150, cdTicks: 420, range: 2.8, windTicks: 60, radius: 3.0, slow: 0.4, slowTicks: 120 }),
+  cinder: Object.freeze({ everyTicks: 24, minStep: 0.35, radius: 0.6, ticks: 150, burn: 2, maxLive: 6 }),
 });
 
 // How many powers an elite carries: one on Level I, one in rooms 1-3 and two
@@ -87,10 +115,12 @@ export function hash32(s) {
 }
 
 // The powers for one elite: `count` distinct ids from those its kind may
-// carry, never two that clash. Pure: (salt, ordinal, etype, count) -> ids.
-export function rollAffixes(salt, ordinal, etype, count) {
+// carry, never two that clash. Pure: (salt, ordinal, etype, count, late) ->
+// ids. Batch two joins the pool only when `late` (room 4 of a level on), so
+// rooms 1 to 3 draw from the first eight exactly as before.
+export function rollAffixes(salt, ordinal, etype, count, late = false) {
   const out = [];
-  let pool = AFFIX_IDS.filter((id) => !AFFIXES[id].not.includes(etype));
+  let pool = (late ? AFFIX_IDS : FIRST_AFFIX_IDS).filter((id) => !AFFIXES[id].not.includes(etype));
   for (let k = 0; k < count && pool.length > 0; k++) {
     const id = pool[hash32(`${salt}|${ordinal}|${k}`) % pool.length];
     out.push(id);
@@ -120,6 +150,14 @@ export function createAffixLogic(ctx) {
     if (hasAffix(e, 'blinking')) {
       e.blinkAt = tick + R.blinking.firstTicks;
       e.blink = null; // { x, z, at } while a spot is marked
+    }
+    if (hasAffix(e, 'gusting')) e.gustAt = tick + R.gusting.firstTicks;
+    if (hasAffix(e, 'crystal')) e.spurAt = tick + R.crystal.firstTicks;
+    if (hasAffix(e, 'tolling')) e.tollAt = tick + R.tolling.firstTicks;
+    if (hasAffix(e, 'cinder')) {
+      e.cinderAt = tick + R.cinder.everyTicks;
+      e.cinderX = e.x;
+      e.cinderZ = e.z;
     }
     events.emit(tick, 'elite_affixes', { id: e.id, etype: e.kind, affixes: [...list], x: r2(e.x), z: r2(e.z) });
   }
@@ -180,7 +218,82 @@ export function createAffixLogic(ctx) {
         }
       }
     }
+    // GUSTING and TOLLING: a rooted ring round itself (the glob carries it),
+    // the gust or the toll resolving where the glob lands.
+    for (const id of ['gusting', 'tolling']) {
+      if (!hasAffix(e, id)) continue;
+      const G = R[id];
+      const key = id === 'gusting' ? 'gust' : 'toll';
+      if (e[`${key}Until`] > tick) speed = 0;
+      else if (tick >= e[`${key}At`] && !busy(e, tick)) {
+        const foe = ctx.nearestTarget(e);
+        const near = foe && foe.partyIndex !== undefined && Math.hypot(foe.x - e.x, foe.z - e.z) <= G.range + (foe.radius ?? 0.3) + e.radius;
+        if (near && governor.grants(tick)) {
+          ctx.spawnGlob(e, tick, {
+            tx: e.x,
+            tz: e.z,
+            flightTicks: G.windTicks,
+            radius: G.radius,
+            power: id === 'gusting' ? G.power * (e.dmgMul ?? 1) : 0,
+            playerTargeted: true,
+            targetId: foe.id,
+            affix: id,
+          });
+          e[`${key}Until`] = tick + G.windTicks;
+          e[`${key}At`] = tick + G.cdTicks;
+          speed = 0;
+          events.emit(tick, `affix_${key}`, { id: e.id, x: r2(e.x), z: r2(e.z), radius: G.radius, resolveTick: tick + G.windTicks });
+        }
+      }
+    }
     e.affixSpeed = speed;
+    // CRYSTAL: a spur planted where it stands erupts under its own ring once
+    // it has walked on (the glob carries the ring; it lands where it lies).
+    if (hasAffix(e, 'crystal') && tick >= e.spurAt && !busy(e, tick)) {
+      const C = R.crystal;
+      const foe = ctx.nearestTarget(e);
+      if (foe && foe.partyIndex !== undefined && Math.hypot(foe.x - e.x, foe.z - e.z) <= C.range && governor.grants(tick)) {
+        ctx.spawnGlob(e, tick, {
+          tx: e.x,
+          tz: e.z,
+          flightTicks: C.windTicks,
+          radius: C.radius,
+          power: C.power * (e.dmgMul ?? 1),
+          slickRadius: C.patchRadius,
+          slickTicks: C.patchTicks,
+          slickSlow: C.slow,
+          slickVariant: 'quartz',
+          playerTargeted: true,
+          targetId: foe.id,
+          affix: 'crystal',
+        });
+        e.spurAt = tick + C.cdTicks;
+        events.emit(tick, 'affix_spur', { id: e.id, x: r2(e.x), z: r2(e.z), radius: C.radius, resolveTick: tick + C.windTicks });
+      }
+    }
+    // CINDER: a burning patch wherever it has walked (never while standing).
+    if (hasAffix(e, 'cinder') && tick >= e.cinderAt) {
+      const N = R.cinder;
+      e.cinderAt = tick + N.everyTicks;
+      if (Math.hypot(e.x - e.cinderX, e.z - e.cinderZ) >= N.minStep) {
+        let live = 0;
+        let oldest = null;
+        for (const s of registry.all()) {
+          if (s.kind !== 'slick' || s.variant !== 'cinder' || s.ownerId !== e.id) continue;
+          live += 1;
+          if (!oldest) oldest = s;
+        }
+        if (live >= N.maxLive && oldest) {
+          events.emit(tick, 'slick_expire', { id: oldest.id });
+          registry.despawn(oldest.id);
+        }
+        const s = ctx.spawnSlick(e, e.cinderX, e.cinderZ, { radius: N.radius, ticks: N.ticks, slow: 0, variant: 'cinder' });
+        s.burn = N.burn;
+        e.cinderX = e.x;
+        e.cinderZ = e.z;
+        events.emit(tick, 'affix_cinder', { id: e.id, slick: s.id, x: r2(s.x), z: r2(s.z), radius: N.radius });
+      }
+    }
     // BLINKING: mark a spot by the target, then appear there.
     if (hasAffix(e, 'blinking')) {
       const B = R.blinking;
@@ -332,5 +445,42 @@ export function createAffixLogic(ctx) {
     }
   }
 
-  return { arm, resolve, onHit, onDeath, stepCores };
+  // A batch-two glob lands (sim/enemies.js calls this for the Gusting and
+  // Tolling globs instead of its usual strike): the gust hits and throws,
+  // the toll slows. Heroes ignore knockback, so a throw is a short walk the
+  // sim takes for them (e.affixShove on the hero: plain data, a save mid
+  // throw continues).
+  function landGlob(g, victims, tick) {
+    if (g.affix === 'gusting') {
+      const G = R.gusting;
+      for (const v of victims) {
+        if (!(v.hp > 0)) continue;
+        const dx = v.x - g.tx;
+        const dz = v.z - g.tz;
+        const l = Math.hypot(dx, dz);
+        const ux = l > 1e-6 ? dx / l : 0;
+        const uz = l > 1e-6 ? dz / l : 1;
+        combat.applyDamage(v, g.power, { delivery: 'skill', shape: 'ring', dirX: ux, dirZ: uz, attacker: g.ownerId, source: 'gusting' });
+        if (v.hp > 0) v.affixShove = { dx: r2(ux), dz: r2(uz), per: G.throwDist / G.throwTicks, ticksLeft: G.throwTicks };
+      }
+      events.emit(tick, 'affix_gust_blast', { id: g.ownerId, x: r2(g.tx), z: r2(g.tz), radius: g.blastRadius, victims: victims.length });
+    } else if (g.affix === 'tolling') {
+      const T = R.tolling;
+      for (const v of victims) if (v.hp > 0) ctx.status.apply(v, 'slow', T.slow, T.slowTicks, tick, g.ownerId);
+      events.emit(tick, 'affix_tolled', { id: g.ownerId, x: r2(g.tx), z: r2(g.tz), radius: g.blastRadius, victims: victims.length });
+    }
+  }
+
+  // The throws in flight (once per tick).
+  function stepShoves() {
+    for (const p of registry.all()) {
+      const s = p.affixShove;
+      if (!s) continue;
+      if (p.hp > 0) ctx.movement.walkStep(p, s.dx * s.per, s.dz * s.per, p.radius ?? 0.3);
+      s.ticksLeft -= 1;
+      if (s.ticksLeft <= 0 || !(p.hp > 0)) delete p.affixShove;
+    }
+  }
+
+  return { arm, resolve, onHit, onDeath, stepCores, landGlob, stepShoves };
 }

@@ -22,6 +22,7 @@ import {
   CircleGeometry,
   Color,
   ConeGeometry,
+  DoubleSide,
   CylinderGeometry,
   Group,
   IcosahedronGeometry,
@@ -38,7 +39,7 @@ import { sharedGeo } from '../geocache.js';
 import { impactFx } from '../vfx/hub.js';
 import { HIDE, HEART, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
-import { makeGlowSprite } from '../glow.js';
+import { getRadialTexture, makeGlowSprite } from '../glow.js';
 import { t } from '../../i18n/index.js';
 
 // Merge mixed primitives (polyhedra are non-indexed, the rest indexed).
@@ -202,6 +203,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
   const globs = new Map(); // glob id -> { g, core, shadow, ring }
   const slicks = new Map(); // slick id -> mesh
   const crystals = new Map(); // crystal slick id -> { g, disc, cluster, glow } (Act IV)
+  const cinders = new Map(); // Cinder affix patch id -> { g, disc, coals, glow }
   const shardIds = new Set(); // live Geode shard glob ids (their landing is the director's)
   const tethers = new Map(); // gravewisp id -> beam (slice 2)
   const snares = new Map(); // snare slick id -> { g, disc, teeth, glow, ring } (Barrow Sexton)
@@ -608,7 +610,82 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
           b.material.opacity = (1 - cs) * outK * (u < 0.7 ? 0.5 * Math.sin((u / 0.7) * Math.PI) : 0);
           b.scale.setScalar(0.08 + 0.18 * u);
         }
-      } else if (e.kind === 'slick' && (e.variant === 'crystal' || e.variant === 'glass')) {
+      } else if (e.kind === 'slick' && e.variant === 'cinder') {
+        // ELITE AFFIXES batch two: a Cinder trail patch reads as a scorched
+        // smear of soot with banked coals breathing in it, a red-hot floor
+        // glow and little flame tongues licking up, so it shows at a glance;
+        // never a filled warning disc with a rim (those are Ember telegraphs)
+        // and never the Kiln's gold.
+        seenS.add(e.id);
+        let c = cinders.get(e.id);
+        if (!c) {
+          const g = new Group();
+          const disc = new Mesh(sharedGeo('ea-cinder-disc', () => new CircleGeometry(1, 24)), new MeshBasicMaterial({ map: getRadialTexture(), color: VFX_MATTER.ash ?? '#221F1B', transparent: true, opacity: 0, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+          disc.rotation.x = -Math.PI / 2;
+          disc.position.y = 0.011;
+          disc.scale.setScalar(1.35);
+          g.add(disc);
+          // Banked coals: little lit lumps with a glow over each.
+          const coals = [];
+          for (let i = 0; i < 7; i++) {
+            const a = i * 2.399963 + e.id;
+            const rr = 0.15 + 0.6 * ((i * 0.37 + e.id * 0.13) % 1);
+            const lump = new Mesh(sharedGeo('ea-coal', () => new IcosahedronGeometry(0.12, 0)), new MeshBasicMaterial({ color: mix(AFFIX_COLORS.cinder, PALETTE.parchment, 0.25).getHex(), transparent: true, opacity: 0, toneMapped: false }));
+            lump.position.set(Math.cos(a) * rr, 0.03, Math.sin(a) * rr);
+            lump.scale.set(1, 0.55, 1).multiplyScalar(0.8 + 0.5 * ((i * 0.61) % 1));
+            g.add(lump);
+            const sp = makeGlowSprite({ color: AFFIX_COLORS.cinder, size: 0.7, opacity: 0 });
+            sp.position.set(lump.position.x, 0.12, lump.position.z);
+            g.add(sp);
+            coals.push({ lump, sp });
+          }
+          const hot = mix(AFFIX_COLORS.cinder, PALETTE.emberDanger, 0.55).getHex();
+          const glow = makeGlowSprite({ color: AFFIX_COLORS.cinder, size: 2.6, opacity: 0 });
+          glow.position.y = 0.06;
+          g.add(glow);
+          // The floor under it lit red-hot (additive, soft edge, no rim).
+          const heat = new Mesh(sharedGeo('ea-cinder-heat', () => new CircleGeometry(1, 24)), new MeshBasicMaterial({ map: getRadialTexture(), color: hot, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: AdditiveBlending, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -3 }));
+          heat.rotation.x = -Math.PI / 2;
+          heat.position.y = 0.014;
+          heat.scale.setScalar(1.2);
+          g.add(heat);
+          // Flame tongues licking up off the coals.
+          const flames = [];
+          for (let i = 0; i < 4; i++) {
+            const a = i * 1.7 + e.id * 0.9;
+            const rr = 0.2 + 0.45 * ((i * 0.53 + e.id * 0.29) % 1);
+            const f = new Mesh(sharedGeo('ea-cinder-flame', () => new ConeGeometry(0.11, 0.5, 6, 1, true).translate(0, 0.25, 0)), new MeshBasicMaterial({ color: hot, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: AdditiveBlending, side: DoubleSide }));
+            f.position.set(Math.cos(a) * rr, 0.02, Math.sin(a) * rr);
+            g.add(f);
+            flames.push(f);
+          }
+          g.position.set(e.x, 0, e.z);
+          g.scale.setScalar(e.radius);
+          root.add(g);
+          c = { g, disc, coals, glow, heat, flames, spark: (e.id % 5) * 0.06 };
+          cinders.set(e.id, c);
+        }
+        const inK = Math.min(1, (tick - e.startTick) / 6);
+        const outK = Math.min(1, Math.max(0, (e.untilTick - tick) / 30));
+        c.disc.material.opacity = 0.85 * inK * outK;
+        c.coals.forEach((k, i) => {
+          const breath = 0.65 + 0.35 * Math.sin(tSec * (3.1 + i * 0.7) + i * 1.9 + e.id);
+          k.lump.material.opacity = inK * outK;
+          k.sp.material.opacity = 0.75 * breath * inK * outK;
+        });
+        c.glow.material.opacity = (0.5 + 0.12 * Math.sin(tSec * 2.3 + e.id)) * inK * outK;
+        c.heat.material.opacity = (0.55 + 0.15 * Math.sin(tSec * 3.7 + e.id * 1.3)) * inK * outK;
+        c.flames.forEach((f, i) => {
+          const flick = 0.6 + 0.4 * Math.sin(tSec * (9 + i * 2.3) + i * 2.1 + e.id) * Math.sin(tSec * (5.1 + i) + e.id);
+          f.scale.set(1, Math.max(0.15, flick), 1);
+          f.material.opacity = 0.8 * inK * outK;
+        });
+        c.spark -= dt;
+        if (c.spark <= 0 && outK > 0.3) {
+          c.spark = 0.28;
+          impactFx.spray('spark', e.x, 0.08, e.z, 1, { color: mix(AFFIX_COLORS.cinder, PALETTE.parchment, 0.3).getHex(), speed: [0.05, 0.25], up: [0.6, 1.2], size: [0.03, 0.06], life: [0.5, 0.9], gravity: -0.4, drag: 1.5, jitter: e.radius * 0.8, opacity: 0.95 });
+        }
+      } else if (e.kind === 'slick' && (e.variant === 'crystal' || e.variant === 'glass' || e.variant === 'quartz')) {
         seenS.add(e.id);
         let c = crystals.get(e.id);
         if (!c) {
@@ -622,6 +699,15 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
             c.cluster.material.emissive.set(VFX_MATTER.kilngold ?? '#E0A040');
             c.glow.material.color.set(VFX_MATTER.kilngold ?? '#E0A040');
             c.flat = 0.5;
+          }
+          // ELITE AFFIXES batch two: a Crystal elite's spur leaves a bed of
+          // rose quartz, sharper and paler than the Heart's violet.
+          if (e.variant === 'quartz') {
+            c.disc.material.color.set(AFFIX_COLORS.crystal).multiplyScalar(0.28);
+            c.cluster.material.color.set(AFFIX_COLORS.crystal);
+            c.cluster.material.emissive.set(AFFIX_COLORS.crystal);
+            c.glow.material.color.set(AFFIX_COLORS.crystal);
+            c.flat = 0.8;
           }
           c.g.position.set(e.x, 0, e.z);
           c.g.rotation.y = (e.id * 2.399963) % (Math.PI * 2);
@@ -729,6 +815,12 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
       root.remove(p.g);
       for (const m of [p.base, p.melt, p.crust, p.glow, ...p.bubbles]) m.material.dispose();
       slagPools.delete(id);
+    }
+    for (const [id, c] of cinders) {
+      if (seenS.has(id)) continue;
+      root.remove(c.g);
+      c.g.traverse((o) => o.material && o.material.dispose && o.material.dispose());
+      cinders.delete(id);
     }
     for (const [id, c] of crystals) {
       if (seenS.has(id)) continue;

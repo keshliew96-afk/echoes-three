@@ -1,7 +1,8 @@
 # Elite affixes
 
 Content plan 2, slice 3 (v0.5.235). In a campaign, every elite carries one
-or two named **powers** from a set of eight. The powers show as chips on a
+or two named **powers** from a set of eight (twelve from room 4 of a level
+on since v0.5.300, see Batch two). The powers show as chips on a
 plate above the elite, each with its own colour, aura and sound, and the two
 that hurt (Molten and Frozen) warn with the usual red (Ember) ring first.
 
@@ -37,6 +38,37 @@ that hurt (Molten and Frozen) warn with the usual red (Ember) ring first.
 | Thorned | A party hit from within 2.6 u stings the striker for 20% of it (at most 8). Ranged bolts are safe. | Bone thorns, flare on a sting | Grave Wisp |
 
 Every number lives in `AFFIX_RULES` in `src/sim/affixes.js`.
+
+## Batch two
+
+Content plan 5, slice 10 (v0.5.300). Four more powers that borrow from the
+newer lands. They join the pool only **from room 4 of a level on** (the
+rule's `late` flag; campaign, Endless, Daily and the chest ambush alike), so
+rooms 1 to 3 roll exactly as before: the roll there draws from the first
+eight with the same hash. From room 4 on an elite draws from all twelve (so
+which of the first eight it gets can differ from before). How many powers an
+elite carries and how often elites appear are unchanged.
+
+| Power | What it does | Warning | Not on |
+|---|---|---|---|
+| Gusting | When a party body is within 2.6 u: roots itself and gathers a gust for 0.9 s (radius 2.6), which hits for 5 x its damage multiplier and throws everyone inside 2.4 u straight out (over 0.2 s). Every 6.5 s. | Ember ring around it, wind drawn in | Grave Wisp, Heart Censer, Mire Leech, Gargoyle, Chime Wraith, Bell Sacristan, Gust Kite |
+| Crystal | When a party body is within 4 u: plants a spur where it stands; 1.0 s later the spur erupts (radius 1.1, 8 damage) and leaves a rose-quartz bed (radius 0.9, 3 s) that slows 30%. Every 4 s. | Ember ring on the spur, the spur growing | Grave Wisp, Heart Censer, Geode Brute, Heart Bloom |
+| Tolling | When a party body is within 2.8 u: roots itself and swings its bell for 1.0 s (radius 3.0); the toll does no damage but slows everyone inside by 40% for 2 s. Every 7 s. | Ember ring around it, ripples closing in | as Gusting |
+| Cinder | While it walks, drops a burning patch where it was every 0.4 s (radius 0.6, 2.5 s, 2 damage every 0.5 s to who stands in it; at most 6 live, the oldest goes first). Nothing while it stands still. | The glowing patch itself | Grave Wisp, Heart Censer, Grave Mole, Bog Lamprey, Heart Bloom, Ember Newt, Cinder Moth, Slag Golem |
+
+- Gusting and Tolling never share an elite with each other or with Frozen
+  (three rooted rings); Cinder never with Frozen.
+- The three rings are player-targeted telegraphs and take a §11 governor
+  slot, like Molten and Frozen (the toll too: a slow under another burst is
+  what the governor is there to keep apart). A knocked-back elite waits, as a
+  Frozen one does.
+- Heroes ignore knockback, so the gust's throw is a short walk the sim takes
+  for them (`affixShove` on the hero, the champions' throw rule).
+- The AI seats leave all three rings (they are affix globs); nobody avoids
+  Cinder patches on purpose.
+- Colours: gale aqua, rose quartz, cold bell iron (kept off the Bellwright's
+  verdigris), banked-coal red (darker than Ember and never the Kiln's gold).
+- The **Signbreaker** deed still counts the first eight only.
 
 ## Fairness
 
@@ -76,7 +108,10 @@ brings it back.
 - `src/render/enemies/affixes.js`: plates, auras, the blink mark, the core,
   the swelling bursts. `src/render/vfx/signature.js`: the one-shot beats.
   `src/render/enemies/extras.js`: frost and lava patches.
-- `src/audio/cues.js`: ten new procedural cues.
+- `src/audio/cues.js`: ten new procedural cues (seven more in batch two:
+  `gust_charge`, `gust_burst`, `spur_plant`, `spur_burst`, `toll_charge`,
+  `toll_ring`, `cinder_drop`; landing cues mapped in
+  `src/render/hazards/cues.js`).
 - `src/ui/tutorial/index.js`: the tip. `src/ui/vfxlab.js`: an
   **Elite affixes** row (`?vfxlab=1`) spawns one elite per power, or two
   with two each.
@@ -88,5 +123,8 @@ brings it back.
   roll, each of the eight through the real sim, the governor over Level III
   autopilot play, the AI reactions, snapshots and saves. `--tune` plays
   autopilot campaigns on Levels I to III.
+- `node tools/affixes-2-probe.mjs`: headless (14 checks) for batch two:
+  rooms 1 to 3 roll as before, the late rule, all four through the real sim,
+  the governor, the AI, Signbreaker, snapshots and saves.
 - `node tools/affixes-browser.mjs [--lang de] [--only id,id]`: the real page
   against `npm run dev`; screenshots into `captures/affix-*.png`.

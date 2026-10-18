@@ -1023,7 +1023,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   bus.on('enemy_glob_land', (ev) => {
     const kind = globKind.get(ev.id);
     globKind.delete(ev.id);
-    if (ev.affix) return affixBurst(ev); // ELITE AFFIXES: Molten / Frozen
+    if (ev.affix) return affixBurst(ev); // ELITE AFFIXES: Molten / Frozen / batch two
     if (ev.sack) return sackLand(ev);
     if (ev.weight) return weightLand(ev); // the Hourwarden's clock weights
     if (ev.ember) return emberLand(ev); // the Cinderback's gobbets
@@ -6337,6 +6337,56 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.05, 0.1);
       return;
     }
+    // Batch two (content plan 5 slice 10).
+    if (ev.affix === 'gusting') {
+      // The gust breaks outward: a pale shock wall, wind streaks flung to the
+      // rim and past it, dust kicked up in a ring.
+      mark('affix_gust_burst');
+      const c = AC.gusting;
+      kit.flash({ x, y: 0.5, z, color: c, size: r * 0.9, life: 0.22, opacity: 0.55 });
+      shock(x, z, r * 1.15, c, { life: 0.4, width: 0.18 });
+      shock(x, z, r * 0.8, PARCH, { life: 0.3, width: 0.07, delay: 0.05 });
+      kit.ring({ x, z, r0: r * 0.3, r1: r * 1.35, width: 0.12, life: 0.35, core: PARCH, glow: c, soft: 0.6, y: 0.08 });
+      for (let i = 0; i < N(16); i++) {
+        const a = (i / 16) * TAU + rnd(-0.12, 0.12);
+        const r0 = r * rnd(0.2, 0.5);
+        kit.streak({ a: { x: x + Math.cos(a) * r0, y: rnd(0.2, 0.9), z: z + Math.sin(a) * r0 }, b: { x: x + Math.cos(a) * (r0 + 0.5), y: rnd(0.2, 0.9), z: z + Math.sin(a) * (r0 + 0.5) }, width: 0.05, tailW: 0, core: PARCH, glow: c, life: 0.32, delay: rnd(0, 0.05), travel: { x: Math.cos(a) * r * 2.2, y: 0.1, z: Math.sin(a) * r * 2.2 }, fall: 0.5 });
+      }
+      spray('smoke', x, 0.15, z, 10, { color: VFX_MATTER.cinder, speed: [1.4, 2.6], up: [0.05, 0.3], size: [0.35, 0.6], grow: 1.6, life: [0.5, 0.8], opacity: 0.32, drag: 2.2, jitter: r * 0.3 });
+      spray('spark', x, 0.3, z, 10, { color: c, speed: [2.0, 3.6], up: [0.2, 0.7], size: [0.03, 0.06], life: [0.3, 0.5], drag: 1.0, opacity: 0.9 });
+      kit.light({ x, z, radius: r * 1.4, color: c, opacity: 0.45, life: 0.45 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.07, 0.12);
+      return;
+    }
+    if (ev.affix === 'crystal') {
+      // The spur erupts: a lance of rose quartz out of the floor, splinters
+      // thrown up and out, a cracked star left in the stone.
+      mark('affix_spur_burst');
+      const c = AC.crystal;
+      flare(x, 0.8, z, c, 1.0, { kind: 'star', life: 0.22 });
+      kit.flash({ x, y: 0.6, z, color: c, size: r * 0.8, life: 0.2, opacity: 0.35 });
+      kit.pillar({ x, z, radius: 0.18, height: 1.9, color: c, life: 0.3, opacity: 0.35 });
+      shock(x, z, r * 1.1, c, { life: 0.32, width: 0.12, jag: 0.5 });
+      kit.crack({ x, z, radius: r * 0.85, glow: c, life: 1.8, cool: 0.5 });
+      spray('shard', x, 0.5, z, 16, { color: c, tile: SHARD_TILE.drop, speed: [1.2, 2.8], up: [1.6, 3.2], size: [0.07, 0.15], life: [0.5, 0.9], gravity: 7, drag: 0.4, spin: [-5, 5] });
+      spray('spark', x, 0.6, z, 8, { color: PARCH, speed: [0.8, 2.0], up: [0.8, 1.8], size: [0.03, 0.05], life: [0.3, 0.5], drag: 1.0 });
+      kit.light({ x, z, radius: r * 1.5, color: c, opacity: 0.32, life: 0.45 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.05, 0.1);
+      return;
+    }
+    if (ev.affix === 'tolling') {
+      // The toll rings out: three iron rings roll across the ring one after
+      // another, a dull flash at the bell, the air shivering.
+      mark('affix_toll_burst');
+      const c = AC.tolling;
+      flare(x, 1.6, z, c, 1.2, { kind: 'star', life: 0.3 });
+      for (let i = 0; i < 3; i++) kit.ring({ x, z, r0: 0.3, r1: r * (1.0 + i * 0.12), width: 0.1 - i * 0.02, life: 0.5 + i * 0.1, core: PARCH, glow: c, soft: 0.5, y: 0.06 + i * 0.01, delay: i * 0.12 });
+      kit.mark({ x, z, radius: r * 0.9, kind: 'sigil', stain: c, glow: c, cool: 1.0, life: 1.4, opacity: 0.25 });
+      spray('spark', x, 0.4, z, 8, { color: c, speed: [0.3, 0.8], up: [0.2, 0.6], size: [0.04, 0.07], life: [0.6, 1.0], drag: 1.6, jitter: r * 0.7, opacity: 0.8 });
+      kit.light({ x, z, radius: r * 1.3, color: c, opacity: 0.4, life: 0.7 });
+      camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.03, 0.08);
+      return;
+    }
     // Molten: the core bursts, lava thrown out, a burning pool left behind.
     mark('affix_molten_burst');
     const c = AC.molten;
@@ -6353,6 +6403,36 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.light({ x, z, radius: r * 2.0, color: c, opacity: 0.75, life: 0.8 });
     camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.09, 0.14);
   }
+  // Batch two wind-ups: the gust draws air in to the elite; the toll lifts
+  // a cold flare over its bell; the spur glints where it is planted; a
+  // Cinder patch catches with a little puff of sparks.
+  bus.on('affix_gust', (ev) => {
+    mark('affix_gust');
+    const c = AC.gusting;
+    const r = ev.radius ?? AFFIX_RULES.gusting.radius;
+    for (let i = 0; i < N(12); i++) {
+      const a = (i / 12) * TAU + rnd(-0.2, 0.2);
+      const rr = r * rnd(0.95, 1.2);
+      kit.streak({ a: { x: ev.x + Math.cos(a) * rr, y: rnd(0.2, 0.7), z: ev.z + Math.sin(a) * rr }, b: { x: ev.x + Math.cos(a + 0.3) * (rr - 0.4), y: 0.4, z: ev.z + Math.sin(a + 0.3) * (rr - 0.4) }, width: 0.04, tailW: 0, core: PARCH, glow: c, life: 0.7, delay: i * 0.035, travel: { x: -Math.cos(a) * rr * 1.2, y: 0.25, z: -Math.sin(a) * rr * 1.2 }, fall: 0.6 });
+    }
+    kit.light({ x: ev.x, z: ev.z, radius: r, color: c, opacity: 0.3, life: 0.9 });
+  });
+  bus.on('affix_toll', (ev) => {
+    mark('affix_toll');
+    const c = AC.tolling;
+    flare(ev.x, 1.7, ev.z, c, 0.9, { kind: 'star', life: 0.4 });
+    kit.ring({ x: ev.x, z: ev.z, r0: (ev.radius ?? 3) * 1.05, r1: 0.4, width: 0.05, life: 0.9, core: c, glow: c, soft: 0.5, y: 0.05, opacity: 0.5 });
+  });
+  bus.on('affix_spur', (ev) => {
+    mark('affix_spur');
+    const c = AC.crystal;
+    flare(ev.x, 0.25, ev.z, c, 0.7, { kind: 'star', life: 0.3 });
+    spray('shard', ev.x, 0.1, ev.z, 5, { color: c, tile: SHARD_TILE.drop, speed: [0.2, 0.6], up: [0.4, 0.9], size: [0.05, 0.09], life: [0.3, 0.5], gravity: 6, spin: [-3, 3] });
+  });
+  bus.on('affix_cinder', (ev) => {
+    spray('spark', ev.x, 0.1, ev.z, 3, { color: AC.cinder, speed: [0.05, 0.25], up: [0.5, 1.0], size: [0.03, 0.06], life: [0.5, 0.9], gravity: -0.3, drag: 1.5, jitter: ev.radius ?? 0.5, opacity: 0.9 });
+    spray('smoke', ev.x, 0.1, ev.z, 1, { color: VFX_MATTER.cinder, speed: [0.05, 0.2], up: [0.3, 0.6], size: [0.35, 0.55], grow: 1.5, life: [0.9, 1.4], opacity: 0.22, gravity: -0.2, drag: 2 });
+  });
   // A molten core drops where the elite fell.
   bus.on('affix_core', (ev) => {
     mark('affix_core');

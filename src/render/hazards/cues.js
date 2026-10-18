@@ -125,14 +125,16 @@ const CUES = {
     ) },
 };
 
+// ELITE AFFIXES: each burst glob's landing cue (src/audio/cues.js).
+const AFFIX_LAND_CUE = Object.freeze({ frozen: 'frost_burst', molten: 'molten_burst', gusting: 'gust_burst', crystal: 'spur_burst', tolling: 'toll_ring' });
 const at = (ev) => (Number.isFinite(ev.x) && Number.isFinite(ev.z) ? { x: ev.x, z: ev.z } : {});
 
 const EVENT_CUES = {
   enemy_charge: (ev) => [{ cue: 'm4b_roll', ...at(ev) }],
   enemy_charge_end: (ev) => (ev.cause === 'wall' ? [{ cue: 'm4b_thud', ...at(ev) }] : null),
-  // ELITE AFFIXES: a Molten / Frozen burst is not a lob (src/audio/cues.js).
+  // ELITE AFFIXES: a Molten / Frozen / batch-two burst is not a lob (src/audio/cues.js).
   enemy_lob: (ev) => (ev.affix || ev.weight ? [] : [{ cue: 'm4b_lob', ...at(ev) }]),
-  enemy_glob_land: (ev) => (ev.shard || ev.weight ? null : ev.affix === 'frozen' ? [{ cue: 'frost_burst', ...at(ev) }] : ev.affix === 'molten' ? [{ cue: 'molten_burst', ...at(ev) }] : [{ cue: 'm4b_splash', ...at(ev) }]),
+  enemy_glob_land: (ev) => (ev.shard || ev.weight ? null : AFFIX_LAND_CUE[ev.affix] ? [{ cue: AFFIX_LAND_CUE[ev.affix], ...at(ev) }] : [{ cue: 'm4b_splash', ...at(ev) }]),
   enemy_swoop: (ev) => [{ cue: 'm4b_swoop', ...at(ev) }],
   enemy_slam: (ev) => [{ cue: 'm4b_thud', ...at(ev), pitch: 0.85 }],
   enemy_burrow: (ev) => [{ cue: 'm4b_dig', ...at(ev) }],

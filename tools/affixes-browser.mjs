@@ -73,8 +73,11 @@ await waitFor(() => window.__echoes.cmd('runState').phase === 'combat', null, 24
 await cmd('killAllEnemies');
 await sleep(1500);
 
-const ALL = ['molten', 'frozen', 'vampiric', 'warded', 'blinking', 'splitting', 'hasted', 'thorned'];
-const KIND = { molten: 'boar', frozen: 'ram', vampiric: 'boar', warded: 'boar', blinking: 'mantis', splitting: 'boar', hasted: 'boar', thorned: 'ram' };
+// (Batch two, content plan 5 slice 10: gusting, crystal, tolling, cinder;
+// each also leaves captures/affix-<id>-burst.png at its burst.)
+const ALL = ['molten', 'frozen', 'vampiric', 'warded', 'blinking', 'splitting', 'hasted', 'thorned', 'gusting', 'crystal', 'tolling', 'cinder'];
+const KIND = { molten: 'boar', frozen: 'ram', vampiric: 'boar', warded: 'boar', blinking: 'mantis', splitting: 'boar', hasted: 'boar', thorned: 'ram', gusting: 'boar', crystal: 'boar', tolling: 'ram', cinder: 'crab' };
+const BURST_EVENT = { gusting: 'affix_gust_blast', crystal: 'enemy_glob_land', tolling: 'affix_tolled' };
 const list = ONLY ? ONLY.split(',') : ALL;
 // A fresh live room for each shot: the run's next combat room, or a restart.
 async function freshRoom() {
@@ -118,6 +121,21 @@ for (const id of list) {
     await poke(eid, { blinkAt: '+1' });
     await waitFor((i) => !!window.__echoes.content.world().entities().find((e) => e.id === i)?.blink, eid, 30000).then((ok) => check(ok, 'Blinking: the spot is marked'));
     await sleep(200);
+  } else if (id === 'gusting' || id === 'tolling') {
+    const key = id === 'gusting' ? 'gust' : 'toll';
+    await page.evaluate((x, z) => window.__echoes.cmd('teleport', x, z), f.x + 0.6, f.z - 0.9);
+    await poke(eid, { [`${key}At`]: '+1', knockbackable: false });
+    await waitFor(([i, k]) => (window.__echoes.content.world().entities().find((e) => e.id === i)?.[`${k}Until`] ?? 0) > window.__echoes.content.world().tick, [eid, key], 30000).then((ok) => check(ok, `${id}: it roots and gathers under its ring`));
+    await sleep(450);
+  } else if (id === 'crystal') {
+    await page.evaluate((x, z) => window.__echoes.cmd('teleport', x, z), f.x + 0.6, f.z - 1.0);
+    await poke(eid, { spurAt: '+1' });
+    await waitFor(() => window.__echoes.content.world().entities().some((e) => e.kind === 'eglob' && e.affix === 'crystal'), null, 30000).then((ok) => check(ok, 'crystal: a spur grows under its ring'));
+    await sleep(650);
+  } else if (id === 'cinder') {
+    // Let it walk in from afar so the trail shows.
+    await page.evaluate((x, z) => window.__echoes.cmd('teleport', x, z), f.x - 3.5, f.z + 2.0);
+    await waitFor(() => window.__echoes.content.world().entities().filter((e) => e.kind === 'slick' && e.variant === 'cinder').length >= 3, null, 60000).then((ok) => check(ok, 'cinder: it leaves burning patches as it walks'));
   } else if (id === 'warded') {
     await poke(eid, { wardAt: '+1', affixWard: null });
     await waitFor((i) => window.__echoes.content.world().entities().find((e) => e.id === i)?.affixWard === 'on', eid, 30000).then((ok) => check(ok, 'Warded: the ward goes up'));
@@ -126,6 +144,12 @@ for (const id of list) {
   const pl = await plates();
   if (id !== 'molten') check(pl.length >= 1 && pl.some((c) => c.length === 1), `${id}: a plate with one chip (${JSON.stringify(pl)})`);
   await page.screenshot({ path: `captures/affix-${id}${sfx}.png` });
+  if (BURST_EVENT[id]) {
+    // The burst itself: wait for the glob to land, then shoot the beat.
+    await waitFor((a) => !window.__echoes.content.world().entities().some((e) => e.kind === 'eglob' && e.affix === a), id, 30000).then((ok) => check(ok, `${id}: the burst lands`));
+    await sleep(60);
+    await page.screenshot({ path: `captures/affix-${id}-burst${sfx}.png` });
+  }
 }
 // Two elites with two powers each.
 {
@@ -139,6 +163,19 @@ for (const id of list) {
   check(pl.filter((c) => c.length === 2).length >= 2, `two plates with two chips each (${JSON.stringify(pl)})`);
   if (LANG) check(pl.flat().every((c) => !['Molten', 'Hasted', 'Frozen', 'Thorned'].includes(c)), `chips are in ${LANG} (${pl.flat().join(', ')})`);
   await page.screenshot({ path: `captures/affix-two${sfx}.png` });
+}
+// Batch two: two elites with two of the new powers each.
+if (!ONLY || ONLY.split(',').some((id) => ['gusting', 'crystal', 'tolling', 'cinder'].includes(id))) {
+  await freshRoom();
+  const f = await front();
+  const a = await cmd('spawn', 'boar', f.x - 1.3, f.z - 2.4, { elite: true, affixes: ['gusting', 'cinder'] });
+  const b = await cmd('spawn', 'ram', f.x + 1.3, f.z - 2.6, { elite: true, affixes: ['tolling', 'crystal'] });
+  for (const i of [a, b]) await poke(i, { maxHp: 9000, hp: 9000 });
+  await sleep(2200);
+  const pl = await plates();
+  check(pl.filter((c) => c.length === 2).length >= 2, `batch two: two plates with two chips each (${JSON.stringify(pl)})`);
+  if (LANG) check(pl.flat().every((c) => !['Gusting', 'Cinder', 'Tolling', 'Crystal'].includes(c)), `batch two chips are in ${LANG} (${pl.flat().join(', ')})`);
+  await page.screenshot({ path: `captures/affix-two-batch2${sfx}.png` });
 }
 const vis = await page.evaluate(() => window.__echoes.content.vfx ? window.__echoes.content.vfx().recipes ?? null : null);
 console.log('recipes', JSON.stringify(vis && Object.fromEntries(Object.entries(vis).filter(([k]) => k.startsWith('affix')))));

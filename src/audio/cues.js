@@ -846,6 +846,52 @@ cue('thorns', { levelDb: -14, maxVoices: 2, cooldownMs: 90 }, (k, t, d) =>
     k.noise(d, t + 0.025, { f0: 2600, q: 5, d: 0.05, gain: 0.7 })
   )
 );
+// Batch two (content plan 5 slice 10).
+// Gusting: air drawn in (a rising whoosh), then the gust (a wide blast and a
+// low thump under it).
+cue('gust_charge', { levelDb: -13, priority: 4, maxVoices: 2, cooldownMs: 150 }, (k, t, d) =>
+  Math.max(
+    k.noise(d, t, { type: 'bandpass', f0: 380, f1: 1700, q: 1.4, a: 0.55, d: 0.9, gain: 1 }),
+    k.noise(d, t + 0.1, { type: 'highpass', f0: 2400, f1: 4200, q: 0.8, a: 0.5, d: 0.8, gain: 0.35 })
+  )
+);
+cue('gust_burst', { levelDb: -9, priority: 4, maxVoices: 2, cooldownMs: 150 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { type: 'lowpass', f0: 4200, f1: 500, q: 0.7, d: 0.5, gain: 1 }),
+    k.tone(d, t, { f0: P(p, 120), f1: P(p, 55), d: 0.22, gain: 0.55 })
+  )
+);
+// Crystal: the spur planted (a small glass tick), the eruption (a hard crack
+// and a ringing shard).
+cue('spur_plant', { levelDb: -16, maxVoices: 2, cooldownMs: 150 }, (k, t, d, p) =>
+  k.bell(d, t, { f: P(p, 1980), ratio: 2.3, index: 1.2, d: 0.25, gain: 0.6 })
+);
+cue('spur_burst', { levelDb: -9, priority: 4, maxVoices: 2, cooldownMs: 120 }, (k, t, d, p) =>
+  Math.max(
+    k.noise(d, t, { f0: P(p, 4600), f1: P(p, 1800), q: 4, d: 0.18, gain: 1 }),
+    k.bell(d, t + 0.01, { f: P(p, 1760), ratio: 2.9, index: 2.4, d: 0.55, gain: 0.4 }),
+    k.tone(d, t, { f0: P(p, 210), f1: P(p, 90), d: 0.12, gain: 0.45 })
+  )
+);
+// Tolling: the bell swung back (a low swell), then the toll (a deep cracked
+// iron bell, colder and lower than the Bellwright's bronze).
+cue('toll_charge', { levelDb: -14, priority: 4, maxVoices: 2, cooldownMs: 150 }, (k, t, d, p) =>
+  k.tone(d, t, { type: 'triangle', f0: P(p, 98), f1: P(p, 131), a: 0.6, d: 1.0, gain: 0.6, filter: { f0: 700, q: 1 } })
+);
+cue('toll_ring', { levelDb: -8, priority: 4, maxVoices: 2, cooldownMs: 200 }, (k, t, d, p) =>
+  Math.max(
+    k.bell(d, t, { f: P(p, 104), ratio: 2.76, index: 2.8, d: 2.2, gain: 1 }),
+    k.bell(d, t + 0.02, { f: P(p, 211), ratio: 1.41, index: 1.6, d: 1.4, gain: 0.4 }),
+    k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 900, f1: 300, q: 1, d: 0.25, gain: 0.35 })
+  )
+);
+// Cinder: a patch catching (a soft coal crackle, quiet: it comes often).
+cue('cinder_drop', { levelDb: -21, maxVoices: 2, cooldownMs: 320 }, (k, t, d) =>
+  Math.max(
+    k.noise(d, t, { src: 'brown', type: 'bandpass', f0: 1400, q: 2, d: 0.12, gain: 1 }),
+    k.noise(d, t + 0.05, { f0: 3200, q: 5, d: 0.04, gain: 0.5 })
+  )
+);
 
 export const DEFAULT_EVENT_CUES = {
   basic_fire: (ev, h) => one('shoot', at(ev, h)),
@@ -951,6 +997,10 @@ export const DEFAULT_EVENT_CUES = {
   affix_split: (ev, h) => one('split', at(ev, h)),
   affix_leech: (ev, h) => one('leech', at(ev, h, ev.id)),
   affix_thorns: (ev, h) => one('thorns', at(ev, h, ev.id)),
+  affix_gust: (ev, h) => one('gust_charge', at(ev, h, ev.id)),
+  affix_toll: (ev, h) => one('toll_charge', at(ev, h, ev.id)),
+  affix_spur: (ev, h) => one('spur_plant', at(ev, h)),
+  affix_cinder: (ev, h) => one('cinder_drop', at(ev, h)),
   // RELICS slice 2: an elite's relic drop, the relic shelf.
   relic_drop: () => [{ cue: 'reward' }],
   relic_purchase: () => [{ cue: 'purchase' }],
