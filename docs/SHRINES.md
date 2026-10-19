@@ -52,7 +52,10 @@ old one; each blessing lasts 60 s and lies on every hero.
   `damageDealtMul` and `damageTakenMul` in `src/sim/status.js`.
 - The Grave Shrine's curse binds the next combat room before its waves roll
   (unless a door's curse already did); that room still pays its cursed-room
-  relic pick.
+  relic pick. A door's curse of either kind holds its room: a major curse is
+  never overwritten (`relics.curseHeldFor`), its room pays the greater pick,
+  and the shrine's curse waits for the next combat room after it (since
+  0.5.310; `node tools/gameplay-bugs-probe.mjs`).
 - The Geode Shrine's key counts as surrendered (`key_surrender`), not as a
   vault opened. If the room already owes a pick, the shrine grants a rare or
   legendary relic outright instead.

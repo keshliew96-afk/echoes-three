@@ -633,7 +633,8 @@ export function createAllySystem({
   // HP and Downed state PERSIST across rooms, so no free revive there.
   function onRoomBoundary(reason) {
     const tick = getTick();
-    const freeRevive = reason !== 'room_start';
+    // Leaving a room revives no one (room_clear already did).
+    const freeRevive = reason !== 'room_start' && reason !== 'room_exit';
     for (const ch of [...channels.values()]) {
       channels.delete(ch.targetId);
       const rev = ch.reviverId != null ? registry.byId(ch.reviverId) : null;
@@ -2460,6 +2461,11 @@ export function createAllySystem({
       }
       case 'roomBoundary':
         onRoomBoundary('debug_boundary');
+        return true;
+      case 'roomExit':
+        // The party walks on: ally zones and bolts stay in the room they
+        // were cast in (no free revive).
+        onRoomBoundary('room_exit');
         return true;
       case 'campSeats':
         // Camp block: install (object) or clear (null) the hearth seat hold.

@@ -40,6 +40,13 @@ leaderboard on the session server.
   then the shorter run time, then the earlier post.
 - Everything else (drafts, doors, relic picks, enemies) follows the shared
   stream, so two players see the same offers as long as they play alike.
+- **Bosses felled:** each level's record keeps the boss it met (`rec.boss`,
+  set at every level clear in src/sim/run.js), and the unlock facts read it.
+  Before 0.5.310 a Daily kept none, so `runFacts` re-rolled every level's boss
+  from the last level's seed and credited the wrong ones on 337 of 365 days
+  (`meta.bosses`, the `boss_*` deeds, Kingslayer, the hero unlock feats, the
+  boss tints). Credit is right from 0.5.310 on; what older Daily wins wrongly
+  credited stays on the profile (nothing is rewritten).
 
 The plain campaign, Endless and the tutorial never carry the `daily` key, so
 the nine goldens are byte-identical.
@@ -89,6 +96,9 @@ POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version } -> { 
 - `node tools/daily-probe.mjs` (headless, 25 checks): seed, omen, Level II
   reseed, rules, depth, board order, closed days, bad input, Upstash
   commands, and the HTTP routes on a live server.
+- `node tools/gameplay-bugs-probe.mjs` (headless): two whole Daily wins
+  credit the bosses they fought; a summary without per-level bosses still
+  reads the old way.
 - `node tools/daily-browser.mjs [--lang de] [--dir …]` against a served build
   (`npm run build && node server/index.mjs --static dist --port 7821
   --origins self`): card, day screen, run, HUD, end card, board.

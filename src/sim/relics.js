@@ -1340,6 +1340,9 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   // The ROOM curse that reshapes room `room`'s numbers (a major curse's
   // numbers come from majorCurses(), every combat room).
   const curseFor = (room) => (on && curse && curse.room === room && !curse.major ? curse.id : null);
+  // Any curse a door bound to room `room`, a major one included (a Grave
+  // Shrine's curse must not overwrite it).
+  const curseHeldFor = (room) => (on && curse && curse.room === room ? curse.id : null);
 
   // ------------------------------------------------- the relic shelf --
   // The room-7 peddler's relic shelf: RELIC_RULES.shelfSize relics (relic
@@ -1513,6 +1516,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     rollDoorCurse,
     takeCurse,
     curseFor,
+    curseHeldFor,
     majorCurses: () => (on ? [...majors] : []),
     // Batch 4: how much each major curse weighs (Saint's Ashes), the Glint
     // factor (Pauper's Mark), a vault pile's factor (Vault Ledger) and the
