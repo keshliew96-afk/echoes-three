@@ -295,6 +295,8 @@ async function fight(page, team) {
     const X = __echoes;
     // A fresh campaign's first room: its own enemies plus a pack on top.
     X.cmd('partyMode', 'auto');
+    // Seat 0 is the human's hero, which partyMode leaves alone: the leader bot plays it.
+    X.cmd('autopilot', { seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto', pages: false, leader: true });
     const p = X.content.world().player;
     const kinds = ['boar', 'mantis', 'boar', 'quillback', 'mantis', 'moth', 'boar'];
     kinds.forEach((k, i) => X.cmd('spawn', k, p.x + (i - 3) * 0.9, p.z - 2.2 - (i % 2) * 0.9));
