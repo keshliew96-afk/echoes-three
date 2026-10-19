@@ -20,8 +20,43 @@ npx vite build                          # clean apart from the advancedChunks an
   hold keys for about 250 ms and wait on sim state, not on time.
 - Look at the screenshots yourself, and run the readability checks in `CLAUDE.md` "Before READY".
 
+### Player build (v0.5.314)
+
+The debug API (`window.__echoes` with `cmd`, `sim`, `campaign` and the rest) and every
+harness URL param exist only in a **harness build**: the dev server (`npm run dev`), a build
+made with `VITE_ECHOES_HARNESS=1 npx vite build`, and Node (`src/app/harness.js`, `HARNESS`).
+A plain `npx vite build`, which is what Render serves, is a **player build**: `window.__echoes`
+is `{ version }` (frozen), and the page query is cut to the player params before any module
+reads it (`PLAYER_PARAMS` in `src/app/harness.js`):
+
+| Kept in a player build | Why |
+|---|---|
+| `?lang=` | the language link (`docs/I18N.md`) |
+| `?menu=0` / `?menu=1` | the game's own fresh-boot reload sets `?menu=0` (`src/app/app.js` freshReload) |
+| `?fps=1` | the fps meter, also a Display setting |
+| `?audio=0` | a muted boot |
+| `?net=` | the server address, the same as Settings ▸ Network |
+| `?bloom=0` `?vignette=0` `?grade=0` `?outline=0` `?msaa=N` `?ink=0` `?bandguard=0` `?dressings=N` | render quality and memory knobs |
+| `?tips=0\|1` `?story=0\|1` | the tip and story popup switches |
+
+Everything else reads as absent there: the legacy params (`?scene=` `?room=` `?run=1`
+`?seed=` `?variant=` `?layout=` `?level=` `?act=`), `?rill=1` `?tolly=1` `?sable=1`
+`?act5=1` `?act6=1`, `?endless=1` `?rush=1` `?daily=`, `?party=` `?partygrant=`, `?fresh=1`
+`?freeze=1` `?slot=` `?debug=1` `?vfxlab=1`, and the co-op harness params (`?nethost=1`
+`?netjoin=` `?netquick=1` `?netname=` `?netseat=` `?netcond=` `?netrate=` `?netbot=` `?p2p=0`
+`?p2pwait=`). A new param is a harness param unless it is added to `PLAYER_PARAMS`. Game code
+reads the query only through `pageQuery()` (or `parseBootParams`) and never reads
+`window.__echoes`; it reaches the bus and the net client through the registry
+(`service('bus')`, `service('net')`).
+
+Probes that drive a **built** dist through the debug API (`tools/cloudsave-browser.mjs`,
+`tools/daily-browser.mjs`, the `gntDEPLOY-*` and `gntfix*` deploy probes and their kin) need
+`VITE_ECHOES_HARNESS=1 npx vite build` first. `node tools/player-build-gating-probe.mjs
+--dist dist` checks a player build; `--dev http://127.0.0.1:5199/` checks the dev server.
+
 The sections below are from the builder and critic rounds up to v0.5.220 (2026-10-04). The
-debug API, the frame analyzer and the harness boot parameters still work; the round, critic,
+debug API, the frame analyzer and the harness boot parameters still work in a harness build
+("Player build" above); the round, critic,
 `PROGRESS.md` and Windows-specific instructions are historical.
 
 ## The one rule

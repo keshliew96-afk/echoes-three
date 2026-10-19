@@ -29,6 +29,7 @@ import { clockOf } from '../../data/daily.js';
 import { placeLine } from './daily.js';
 import { UNLOCKS } from '../../data/unlocks.js';
 import { VOW_ROMAN, VOW_MODES, vowPayPct, vowName } from '../../data/vows.js';
+import { pageQuery } from '../../app/harness.js';
 
 const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'V']; // 6: the Ember Kiln is the other Level V (docs/KILN.md)
 const STYLE_ID = 'cg-levels-style';
@@ -218,7 +219,7 @@ export function endlessInfo() {
     profile = null;
   }
   const rec = profile && profile.records ? profile.records : {};
-  const harness = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('endless') === '1';
+  const harness = typeof window !== 'undefined' && pageQuery().get('endless') === '1';
   return {
     level: 'endless',
     name: t('The Endless Descent'),
@@ -287,7 +288,7 @@ export function rushInfo() {
     coop = false;
   }
   const rec = profile && profile.records ? profile.records : {};
-  const harness = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('rush') === '1';
+  const harness = typeof window !== 'undefined' && pageQuery().get('rush') === '1';
   const open = harness || rushUnlockedFrom(profile);
   return {
     level: 'rush',

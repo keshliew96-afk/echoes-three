@@ -3,6 +3,13 @@
 //   outgoing damage  = Parchment, rise-and-fade, scale with magnitude
 //   incoming (party) = Bruise Umber with Parchment outline, drops w/ lateral shake
 //   heals            = Bright Heal, rising, "+HP" glyph
+// ATTACK FEEDBACK (docs/HIT_FEEDBACK.md, "Your damage numbers"): outgoing
+// damage splits by WHO dealt it. The viewer's own hits (their seat, the same
+// rule as hit feedback's own body) print Hearth Amber, heavier, larger, with a
+// 3 px outline and a stronger pop, drawn above everything else in the layer;
+// everyone else's outgoing damage (AI seats, co-op partners, hazards, kegs)
+// prints Bone, lighter, at 0.7x size and 45 % opacity, so it reads as
+// background. Heals and party-incoming numerals are unchanged.
 // 2 px contrast outline, no plate; tabular numerals; numeral floor 20 px.
 // Cap 12 simultaneous — when the cap is reached the OLDEST fades early (it is
 // recycled immediately for the newcomer, so the on-screen count can never
@@ -12,6 +19,25 @@ import { DAMAGE_NUMBERS } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
 
 const OUTLINE_W = 2; // px (§17: 2 px contrast outline)
+
+// Own vs other outgoing damage (ATTACK FEEDBACK). `own` is the viewer's hit,
+// `other` anyone else's; a spawn with no `who` keeps the old look exactly.
+export const NUMERAL_WHO = Object.freeze({
+  own: Object.freeze({ color: PALETTE.hearthAmber, outlineW: 3, weight: 900, sizeMul: 1.22, opacity: 1, pop: 0.5, critPop: 0.8, z: 2 }),
+  other: Object.freeze({ color: PALETTE.bone, outlineW: 2, weight: 600, sizeMul: 0.7, opacity: 0.45, pop: 0.2, critPop: 0.4, z: 1 }),
+});
+
+// Which party seat dealt this hit, or null (an enemy, a hazard, a keg, an
+// unknown body). `byId(id)` looks an entity up in the live world. The one
+// party carrier without an attacker id is the Healer's basic bolt (the
+// world's projectile system, sim/world.js queueImpact): a basic projectile
+// hit with no attacker on a non-party body is seat 0's.
+export function hitterSeat(ev, byId) {
+  if (!ev || ev.kind === 'player' || ev.kind === 'ally') return null;
+  if (ev.attacker == null) return ev.delivery === 'basic' && ev.shape === 'projectile' ? 0 : null;
+  const a = typeof byId === 'function' ? byId(ev.attacker) : null;
+  return a && Number.isInteger(a.partyIndex) ? a.partyIndex : null;
+}
 
 // --- ONE DRIVER, ONE FLUSH (run-block round-3 fix) ------------------------
 // The pool used to be aged by whichever scene happened to own it, which meant
@@ -39,6 +65,13 @@ export function flushNumberPools() {
   let n = 0;
   for (const p of POOLS) n += p.releaseAll();
   return n;
+}
+
+// ATTACK FEEDBACK probe surface: outgoing numerals spawned per look since
+// boot (window.__echoes.numerals()).
+const TALLY = { own: 0, other: 0, plain: 0 };
+export function numeralTally() {
+  return { ...TALLY };
 }
 
 export function numberPoolCount() {
@@ -77,8 +110,7 @@ const FAN_NEAR_Y = 150;
 const EDGE_PAD = 34;
 const BOTTOM_PAD_FRAC = 0.17;
 
-function outlineShadow(color) {
-  const w = OUTLINE_W;
+function outlineShadow(color, w = OUTLINE_W) {
   const d = Math.round(w * 0.7071 * 10) / 10;
   return [
     `${w}px 0 0 ${color}`,
@@ -152,17 +184,16 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       ['damage', 34, true],
       ['heal', 18, false],
       ['incoming', 26, false],
+      ['damage', 3, false, 'own'],
+      ['damage', 40, true, 'own'],
+      ['damage', 12, false, 'other'],
     ];
-    specs.forEach(([kind, amount, crit], i) => {
+    specs.forEach(([kind, amount, crit, who], i) => {
       const k = KINDS[kind] ?? KINDS.damage;
       const el = document.createElement('div');
       el.className = 'dmg-num';
-      let px = DAMAGE_NUMBERS.minPx + amount * DAMAGE_NUMBERS.pxPerPoint;
-      if (crit) px *= DAMAGE_NUMBERS.critScale;
       el.textContent = `${k.prefix}${amount}`;
-      el.style.fontSize = `${Math.round(px)}px`;
-      el.style.color = k.color;
-      el.style.textShadow = outlineShadow(k.outline);
+      styleNumeral(el, k, kind, amount, crit, who);
       el.style.visibility = 'visible';
       el.style.opacity = '0.002';
       el.style.transform = `translate(${(cx + (i - 2) * 90).toFixed(1)}px, ${(h * rows[i % rows.length]).toFixed(1)}px) translate(-50%, -100%) scale(${crit ? 1.25 : 1})`;
@@ -178,6 +209,23 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     warm = null;
   }
   const v = new Vector3();
+
+  // Font size, colour, weight, outline and stacking for one numeral. Returns
+  // the style row (or null for the unsplit look) so the pop can read it.
+  function styleNumeral(el, k, kind, amount, crit, who) {
+    const w = kind === 'damage' ? NUMERAL_WHO[who] ?? null : null;
+    // Scale with magnitude (§17); crits render visibly larger.
+    let px = DAMAGE_NUMBERS.minPx + Math.abs(amount) * DAMAGE_NUMBERS.pxPerPoint;
+    if (crit) px *= DAMAGE_NUMBERS.critScale;
+    if (w) px = Math.max(DAMAGE_NUMBERS.minPx, px * w.sizeMul); // never under the §17 floor
+    el.style.fontSize = `${Math.round(px)}px`;
+    el.style.color = w ? w.color : k.color;
+    el.style.fontWeight = w ? String(w.weight) : '';
+    el.style.zIndex = w ? String(w.z) : '';
+    el.style.textShadow = outlineShadow(k.outline, w ? w.outlineW : OUTLINE_W);
+    el.dataset.who = w ? who : '';
+    return { px, w };
+  }
 
   function acquire() {
     let el = pool.pop();
@@ -204,21 +252,22 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     return n;
   }
 
-  // spawn({ x, z, amount, kind: 'damage'|'heal'|'incoming', crit })
-  function spawn({ x, z, amount, kind = 'damage', crit = false }) {
-    if (active.length >= DAMAGE_NUMBERS.cap) release(active[0]); // oldest fades early (§1)
+  // spawn({ x, z, amount, kind: 'damage'|'heal'|'incoming', crit, who: 'own'|'other' })
+  function spawn({ x, z, amount, kind = 'damage', crit = false, who = null }) {
+    if (active.length >= DAMAGE_NUMBERS.cap) {
+      // Oldest fades early (§1). ATTACK FEEDBACK: someone else's numeral goes
+      // first, so a crowd of ally hits never pushes the viewer's own off.
+      const victim = active.find((r) => r.who !== 'own') ?? active[0];
+      release(victim);
+    }
     const k = KINDS[kind] ?? KINDS.damage;
     const el = acquire();
-    // Scale with magnitude (§17); crits render visibly larger.
-    let px = DAMAGE_NUMBERS.minPx + Math.abs(amount) * DAMAGE_NUMBERS.pxPerPoint;
-    if (crit) px *= DAMAGE_NUMBERS.critScale;
     // Whole points print whole; a fractional instance keeps ONE decimal so a
     // pinned value like the Siphon drain (5.5) is not rounded into a lie.
     const shown = Math.round(amount * 10) / 10;
     el.textContent = `${k.prefix}${Number.isInteger(shown) ? shown : shown.toFixed(1)}`;
-    el.style.fontSize = `${Math.round(px)}px`;
-    el.style.color = k.color;
-    el.style.textShadow = outlineShadow(k.outline);
+    const { px, w } = styleNumeral(el, k, kind, amount, crit, who);
+    if (kind === 'damage') TALLY[w ? who : 'plain'] += 1;
     // --- DETERMINISTIC FAN (see FAN_* above).
     // Project this numeral's ANCHOR to the screen now, find every live numeral
     // anchored near it, and take the first slot that cluster has not used.
@@ -264,6 +313,9 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       jy: -(slot % 3) * 14, // a touch of vertical separation on top of the fan
       rises: k.rises,
       crit,
+      who: w ? who : null,
+      pop: w ? (crit ? w.critPop : w.pop) : crit ? 0.55 : 0.3,
+      alpha: w ? w.opacity : 1,
     });
   }
 
@@ -305,12 +357,13 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       const sy = Math.min(h - h * BOTTOM_PAD_FRAC, Math.max(EDGE_PAD, rawY));
       const offFrame = sx !== rawX || sy !== rawY;
       // 120 ms pop-in overshoot settling to 1, stronger on crits.
+      // (ATTACK FEEDBACK: the viewer's own numerals pop harder, others' softer.)
       const popT = Math.min(1, rec.age / 0.12);
-      const over = rec.crit ? 0.55 : 0.3;
+      const over = rec.pop;
       const scale = (1 + over * (1 - popT)) * (offFrame ? 0.78 : 1);
       rec.el.style.transform = `translate(${sx.toFixed(1)}px, ${sy.toFixed(1)}px) translate(-50%, -100%) scale(${scale.toFixed(3)})`;
       const fade = t < 0.55 ? 1 : 1 - (t - 0.55) / 0.45;
-      rec.el.style.opacity = (fade * (offFrame ? 0.82 : 1)).toFixed(3);
+      rec.el.style.opacity = (fade * rec.alpha * (offFrame ? 0.82 : 1)).toFixed(3);
     }
   }
 

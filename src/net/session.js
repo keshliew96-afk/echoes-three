@@ -51,6 +51,7 @@ import { SKILLS } from '../sim/skills.js';
 import { cdTicksOf } from '../sim/allycast.js';
 import { dodgeCooldownTicks } from '../sim/relics.js';
 import { t } from '../i18n/index.js';
+import { pageQuery } from '../app/harness.js';
 
 // seats.js seatControlText() in the player's language (docs/I18N.md): the net
 // HUD note for a seat changing hands.
@@ -970,7 +971,7 @@ export function createNetSession(ctx) {
     requestFull('join');
     // ?netbot=<seed> (multi-client harnesses, e.g. the netbench's --url):
     // this guest plays with scripted input.
-    const nb = new URLSearchParams(location.search).get('netbot');
+    const nb = pageQuery().get('netbot');
     if (nb !== null && !bot) api.setBotInput({ seed: Number(nb) || 3 });
     log('guest_start', { seat });
     // A guest whose tab is already hidden joins as away (the AI plays its

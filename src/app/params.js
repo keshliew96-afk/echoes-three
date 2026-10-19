@@ -9,6 +9,9 @@
 //   ?menu=1 -> always show the title (even with legacy params, e.g. ?seed=5&menu=1)
 //   neither -> title iff NO legacy harness param is present (a player's plain URL)
 // Other params are documented in PLAN.md §6 and docs/TESTING.md.
+// PLAYER BUILD: only PLAYER_PARAMS (src/app/harness.js) reach the parse; every
+// harness param reads as absent there.
+import { gateQuery, HARNESS } from './harness.js';
 
 // ('layout' is the Gauntlet content-harness param; it skips the title like the rest.)
 // ('level' — CAMPAIGN: a campaign AT that level on the first ticked frame.)
@@ -20,8 +23,8 @@ function flagOf(params, name, def) {
   return v !== '0' && v !== 'false';
 }
 
-export function parseBootParams(search = typeof window !== 'undefined' ? window.location.search : '') {
-  const p = new URLSearchParams(search);
+export function parseBootParams(search = typeof window !== 'undefined' ? window.location.search : '', harness = HARNESS) {
+  const p = gateQuery(search, harness);
   const legacy = LEGACY_HARNESS_PARAMS.filter((k) => p.has(k));
   const menuParam = p.get('menu');
   let showTitle;

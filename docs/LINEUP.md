@@ -53,6 +53,15 @@ are unchanged.
   `seatCritter`, `seatClass`), the lobby, the draft, the shop, the socket
   screen, the party strip, the end cards and the camp all go through
   `classOfSeat`.
+- The party strip (`ui/run/partystrip.js`: the tabs on the socket screen,
+  the party draft page and the shop shelf) is built once at boot, so it
+  re-dresses its tabs (portrait, glyph, name, accent) whenever the active
+  lineup or the portrait cache changes (v0.5.313; before that a run with
+  Rill, Tolly or Sable in a seat still showed the default class there). The
+  socket screen's "Your build" title follows the viewer's own seat, not
+  seat 0, and the party page's owner band reads FOR YOU — THE {cls} over
+  the card of the hero the viewer plays (any class, any seat; in co-op each
+  human sees it on their own hero only, `viewerSeat()`).
 - Class select (`app/playclass.js`): the chosen class plays the seat it
   holds in the run's lineup. A class that stayed at camp falls back to the
   Healer's seat.
@@ -118,6 +127,9 @@ name a little only if a word still does not fit.
   - only campaigns taking a lineup
   - a mid-fight save of the shuffled party continuing bit-identically in a
     fresh world
+- `node tools/seat-label-browser.mjs [--lang zh-Hans]` (needs Vite on 5199):
+  five lineups that seat all seven heroes, four of them played by the human;
+  every party page and socket screen tab names the class on its seat.
 - `node tools/lineup-browser.mjs` (needs Vite on 5199): the played Tank
   moves to its lineup seat, the bodies, portraits and HP bars follow, and a
   plain campaign afterwards is the default four.

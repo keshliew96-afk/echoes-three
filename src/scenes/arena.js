@@ -81,6 +81,7 @@ import { variantLayoutRng } from '../env/layout.js';
 import { createAfterimages } from '../render/critters/afterimage.js';
 import { installBandGuard, bandGuardInfo, guardSubtree } from '../env/bandguard.js';
 import { compileAsyncSafe } from '../render/precompile.js';
+import { pageQuery } from '../app/harness.js';
 
 // Yielded by a dressing build that is waiting on the paint worker: the
 // background pump stops for the frame instead of spinning on it.
@@ -373,7 +374,7 @@ function contactBlob(radius, opacity) {
 
 export function createArenaScene(stage, toggles, ctx) {
   const { cosmetic, world, bus } = ctx;
-  const params = new URLSearchParams(window.location.search);
+  const params = pageQuery();
   // ?layout=N (M4b content harness) wins over ?variant=N; both pick the boot
   // dressing (1-9). Default: layout 1, the certified clearing.
   const vParam = parseInt(params.get('layout') ?? params.get('variant') ?? '1', 10);
@@ -1554,7 +1555,7 @@ export function createArenaScene(stage, toggles, ctx) {
   {
     let bootAct = null;
     try {
-      const a = Number(new URLSearchParams(window.location.search).get('act'));
+      const a = Number(pageQuery().get('act'));
       if (a >= 1 && a <= 6) bootAct = a;
     } catch {
       /* no location (tests) */
