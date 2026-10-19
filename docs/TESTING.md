@@ -1,6 +1,28 @@
 # Testing & Verification Contract
 
-Binding for every builder and critic agent on this project.
+## Current recipe (read this; the rest of the file is mostly history)
+
+Every slice PR runs, before it says READY (`CLAUDE.md` has the full slice rules):
+
+```bash
+node tools/<slice>-probe.mjs            # the slice's own probe (Node or browser)
+node tools/gntM2-goldens.mjs            # the nine goldens, 9/9 against tools/goldens.json
+node tools/i18n-extract.mjs --check     # every language has every key
+npx vite build                          # clean apart from the advancedChunks and chunk-size warnings
+```
+
+- `tools/goldens.json` holds the nine expected hashes. Record it (`--record`) only when a
+  change is meant to move the legacy single-level run, and say so in the PR.
+- Browser probes need `npm run dev` on 127.0.0.1:5199. In a Linux cloud session, as root:
+  `PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` and
+  `ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader"`
+  (`tools/gnt-arch-browser.mjs` and most newer probes read it). Software GL runs at 1 to 25 fps:
+  hold keys for about 250 ms and wait on sim state, not on time.
+- Look at the screenshots yourself, and run the readability checks in `CLAUDE.md` "Before READY".
+
+The sections below are from the builder and critic rounds up to v0.5.220 (2026-10-04). The
+debug API, the frame analyzer and the harness boot parameters still work; the round, critic,
+`PROGRESS.md` and Windows-specific instructions are historical.
 
 ## The one rule
 
