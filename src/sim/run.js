@@ -821,6 +821,17 @@ export function createRunSystem({
     tonics.clearRoom();
   }
 
+  // Walking on to the next room: the last room's bodies stay behind (its
+  // retreaters, the escort pilgrim, the Waystone, nests and enemy shots, the
+  // party's zones and bolts), whatever kind of room comes next. A combat
+  // room's own planRoom reset finds nothing left; a shop, vault or event
+  // room has no reset of its own.
+  function leaveRoomBodies(tick) {
+    enemies.reset();
+    sweepPlayerTransients(tick, 'room_exit');
+    if (allySys && typeof allySys.cmd === 'function') allySys.cmd('roomExit');
+  }
+
   function positionParty() {
     // Rooms are separate arenas: the party walks in at the entry arc.
     player.x = 0;
@@ -840,6 +851,7 @@ export function createRunSystem({
   function enterRoom(n) {
     const tick = getTick();
     exitRoom(tick);
+    leaveRoomBodies(tick);
     // PARTY: no socket hold outlives the room change.
     if (pages && pages.screensAny()) for (let s = 0; s < 4; s++) pages.setScreen(s, false);
     roomIndex = n;
@@ -853,8 +865,8 @@ export function createRunSystem({
     const combatRoom = mode === 'kill_all' || mode === 'defend' || mode === 'champion' || isObjectiveMode(mode);
     const baseDiff = rushFight() ? rushDifficulty(rushFight(), challenge) : beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
     // SHRINES: the Grave Shrine's curse binds this fight (unless a door's
-    // curse already did).
-    if (combatRoom && mode !== 'boss' && shrine && shrine.curse && !relics.curseFor(n)) {
+    // curse, room or major, already did).
+    if (combatRoom && mode !== 'boss' && shrine && shrine.curse && !relics.curseHeldFor(n)) {
       relics.takeCurse(shrine.curse, n);
       events.emit(tick, 'shrine_curse', { room: n, curse: shrine.curse });
       shrine.curse = null;
@@ -2297,7 +2309,9 @@ export function createRunSystem({
         rec.cleared = true;
         rec.ticks = levelTicks;
         // THIRD BOSSES: the boss this level met (unlock facts read it).
-        if (thirdOpen.length || c.rush) rec.boss = currentBoss().kind ?? 'stag';
+        // Always kept: a Daily reseeds each level, so the summary's one seed
+        // cannot re-roll the earlier levels' bosses.
+        rec.boss = currentBoss().kind ?? 'stag';
       }
       // ENDLESS: the final level's first clear wins the campaign; the
       // descent goes on.
