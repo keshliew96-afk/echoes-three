@@ -1077,7 +1077,7 @@ export function createSocketScreen({ bus, world }) {
         lines.push(`<span>${statsLine(sk)}</span>`);
       }
     } else {
-      title = `<span>${viewSeat === 0 ? t('Your build') : t("The {cls}'s build", { cls: esc(t(CLASS_NAME[classOfSeat(viewSeat)])) })}</span>`;
+      title = `<span>${viewSeat === ownSeat() ? t('Your build') : t("The {cls}'s build", { cls: esc(t(CLASS_NAME[classOfSeat(viewSeat)])) })}</span>`;
       lines.push(t('4 skills · 8 sockets each · grey cells socket freely but contribute nothing'));
     }
     detailEl.innerHTML = `
