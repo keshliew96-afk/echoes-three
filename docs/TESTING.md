@@ -6,8 +6,9 @@ Every slice PR runs, before it says READY (`CLAUDE.md` has the full slice rules)
 
 ```bash
 node tools/<slice>-probe.mjs            # the slice's own probe (Node or browser)
+npm test                                # the headless suite below; holds the next two lines
 node tools/gntM2-goldens.mjs            # the nine goldens, 9/9 against tools/goldens.json
-node tools/i18n-extract.mjs --check     # every language has every key
+node tools/i18n-extract.mjs --check     # every language has every key (writes nothing)
 npx vite build                          # clean apart from the advancedChunks and chunk-size warnings
 ```
 
@@ -19,6 +20,34 @@ npx vite build                          # clean apart from the advancedChunks an
   (`tools/gnt-arch-browser.mjs` and most newer probes read it). Software GL runs at 1 to 25 fps:
   hold keys for about 250 ms and wait on sim state, not on time.
 - Look at the screenshots yourself, and run the readability checks in `CLAUDE.md` "Before READY".
+
+### npm test and CI (v0.5.318)
+
+`npm test` runs `tools/test.mjs`: 25 browser-free probes one after another (about 5 minutes,
+most of it `gameplay-bugs-probe`), exit 1 if any fails. `npm test -- --list` prints the suite,
+`npm test -- --only <part of a file name>` runs a few. The suite is the safety net itself
+(`test-safety-net-probe`), the nine goldens, the language check, the data cross-check
+(`data-xcheck-probe`), layout placements, save round trips (`save-determinism-probe`,
+`gntM2-nodetrip`, `save-safety-probe`), the server and protocol units, the player-build
+gating, and one probe each for the lineup, class skills, champions, vaults, hazards and
+shrines, relics, vow ranks, the Kiln and its bosses, Endless and the Daily.
+
+A probe joins the suite (an entry in `SUITE` in `tools/test.mjs`) when it opens no browser,
+needs no dev server and runs in a few minutes on one core. Browser probes stay manual.
+
+CI (`.github/workflows/test.yml`) runs `npm ci --ignore-scripts`, `npm test` and
+`npx vite build` on Node 22 for every push to `gauntlet` and every pull request.
+
+House rules the safety-net probe checks:
+- every relative import in `tools/` resolves. The 76 probes whose critic libraries
+  (`gntc*-lib.mjs`) were never committed were deleted in v0.5.318; git history keeps them;
+- `i18n-extract --check` writes nothing; it fails when `src/i18n/catalog.json` is out of date
+  (refresh it with `node tools/i18n-extract.mjs`);
+- a probe never pins one exact version: it reads `VERSION` from `src/version.js` and asks
+  for "this version or later".
+
+Known limit: `src/sim/movement.js` keeps its colliders at module level, so two worlds in one
+Node process must run one after the other, never stepped in turn.
 
 ### Player build (v0.5.314)
 

@@ -85,9 +85,10 @@ try {
     const c = document.querySelector('.cg-levels .cg-card[data-level="daily"]');
     const cards = [...document.querySelectorAll('.cg-levels .cg-card')];
     const r = c.getBoundingClientRect();
-    return { n: cards.length, last: cards.indexOf(c) === 5, locked: c.getAttribute('aria-disabled') === 'true', text: c.textContent.replace(/\s+/g, ' ').trim(), inView: r.right <= innerWidth && r.bottom <= innerHeight };
+    const i = cards.indexOf(c);
+    return { n: cards.length, at: i, afterEndless: i > 0 && cards[i - 1].dataset.level === 'endless', locked: c.getAttribute('aria-disabled') === 'true', text: c.textContent.replace(/\s+/g, ' ').trim(), inView: r.right <= innerWidth && r.bottom <= innerHeight };
   });
-  check(sel.n >= 6 && sel.last && !sel.locked && sel.inView, `the Daily card is the sixth card, open, on screen (${sel.text.slice(0, 120)})`);
+  check(sel.afterEndless && !sel.locked && sel.inView, `the Daily card follows Endless (card ${sel.at + 1} of ${sel.n}), open, on screen (${sel.text.slice(0, 120)})`);
   await shot('daily-1-select');
   await page.click('.cg-levels .cg-card[data-level="daily"]');
 

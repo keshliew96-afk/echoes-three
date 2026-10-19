@@ -156,6 +156,6 @@ const AJ = J.AFFIX_JOURNAL ?? [];
   check('deed', 'eleven powers felled before plus the twelfth this run completes it', !!a && Array.isArray(a.deeds) && a.deeds.includes('signbreaker'), a && (a.deeds ?? a.error));
 }
 
-check('version', 'v0.5.304', VERSION === '0.5.304', VERSION);
+check('version', `the game shows v${VERSION} (v0.5.304 or later)`, VERSION.split('.').map(Number).reduce((a, n) => a * 1000 + n, 0) >= 5304, VERSION);
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
