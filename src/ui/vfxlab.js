@@ -37,6 +37,7 @@
 // it (the Spire's creatures and hazards exist either way). The Kiln row
 // likewise plays in a Level V Kiln room (the Kiln road, act 6 in data).
 import { ACT_IDS } from '../data/levels.js';
+import { setArcaneVariant, arcaneVariantNow } from '../data/vfx.js';
 
 const HEALER_SETS = [
   ['spirit_bolt', 'mending_bolt', 'nova_bloom', 'sanctuary'],
@@ -462,6 +463,22 @@ export function mountVfxLab() {
     }
     say(`${cls} reel done`);
   }
+  // Kesh's three VFX templates (design-VFX.md §11): each one's beats in a
+  // row in front of the party, and the purple-clash switch for the magic.
+  const tplRow = section('VFX templates');
+  for (const [label, id] of [['Magic', 'magic'], ['Blade', 'blade'], ['Sci-fi', 'scifi']]) {
+    button(tplRow, label, async () => {
+      await ensureCombat(run().act || 1);
+      const n = X().content.vfxShowcase(id);
+      say(`${label} template: ${n} beats`);
+      await wait(n * 900 + 600);
+    }, `every beat of the ${label} template`);
+  }
+  const purple = button(tplRow, `Purple: ${arcaneVariantNow()}`, async () => {
+    const v = setArcaneVariant(arcaneVariantNow() === 'vivid' ? 'safe' : 'vivid');
+    purple.textContent = `Purple: ${v}`;
+    say(v === 'safe' ? 'magic purple: the magenta, further from corruption Violet' : 'magic purple: the vivid purple of the template');
+  }, 'switch the magic purple between the template purple and a magenta further from Violet');
   const party = section('Party skills (reels)');
   CLASS_SETS.tidecaller.forEach((set, i) => button(party, `Tidecaller ${'ABC'[i]}`, () => tideReel(set), set.join(', ')));
   CLASS_SETS.bellwright.forEach((set, i) => button(party, `Bellwright ${'ABC'[i]}`, () => tideReel(set, 'bellwright'), set.join(', ')));

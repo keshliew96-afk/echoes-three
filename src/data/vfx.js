@@ -6,7 +6,7 @@
 // changes — and an enemy with no row falls back to a sensible default.
 //
 // Render-only data: nothing in the sim reads this file.
-import { PALETTE, VFX_SIGNATURE, VFX_MATTER } from './palette.js';
+import { PALETTE, VFX_SIGNATURE, VFX_MATTER, VFX_TEMPLATE } from './palette.js';
 import { CLASS_SKILLS } from './classes.js';
 
 // --------------------------------------------------------------- classes --
@@ -164,6 +164,94 @@ export function vfxSkillClass(skillId) {
   const m = /^(tank|swordsman|archer|healer|tidecaller|bellwright|duskwing)_basic$/.exec(skillId);
   if (m) return m[1];
   return SKILL_OWNER.get(skillId) ?? 'healer';
+}
+
+// ------------------------------------------------------------- templates --
+// Kesh's three VFX templates (docs/gauntlet/design-VFX.md §11). Every hero
+// effect plays one of them on top of its class look (render/vfx/templates.js):
+//   magic  spells and magical attacks
+//   blade  blades, claws, bites and other melee, and the closest fit for
+//          physical shots (arrows) and blows (a swung bell)
+//   scifi  technological weapons (no hero carries one; it waits for the
+//          enemy pass and plays in the VFX lab)
+// A class's basic attack and any skill not listed take the class default.
+export const CLASS_TEMPLATE = Object.freeze({
+  healer: 'magic',
+  tank: 'blade',
+  swordsman: 'blade',
+  archer: 'blade',
+  tidecaller: 'magic',
+  bellwright: 'magic',
+  duskwing: 'blade',
+});
+export const SKILL_TEMPLATE = Object.freeze({
+  // The Bellwright swings her bell like a mace.
+  bell_swing: 'blade',
+  // The Duskwing's night magic: the dark, the screech, the swarm, the veil,
+  // the blink, the moon and the wings he wears.
+  nightfall: 'magic',
+  echo_screech: 'magic',
+  bat_swarm: 'magic',
+  shadow_veil: 'magic',
+  flit: 'magic',
+  blood_moon: 'magic',
+  night_wings: 'magic',
+});
+// The look of each template: colours (palette.js) and how hard it plays.
+//   rune   the arcane circle's kind and spin (rad/s)
+//   dust   stardust / matrix particles per beat { cast, hit, trail (per s) }
+export const VFX_TEMPLATES = Object.freeze({
+  magic: Object.freeze({
+    id: 'magic',
+    a: VFX_TEMPLATE.magic.purple,
+    b: VFX_TEMPLATE.magic.gold,
+    core: VFX_TEMPLATE.magic.star,
+    deep: VFX_TEMPLATE.magic.deep,
+    rune: Object.freeze({ kind: 'arcane', spin: 1.4 }),
+    dust: Object.freeze({ cast: 26, hit: 7, trail: 38, tex: 'star' }),
+  }),
+  blade: Object.freeze({
+    id: 'blade',
+    a: VFX_TEMPLATE.blade.fire,
+    b: VFX_TEMPLATE.blade.wave,
+    core: VFX_TEMPLATE.blade.core,
+    deep: VFX_TEMPLATE.blade.flame,
+    smoke: VFX_TEMPLATE.blade.smoke,
+    rune: Object.freeze({ kind: 'sun', spin: 2.2 }),
+    dust: Object.freeze({ cast: 14, hit: 6, trail: 30, tex: 'spark' }),
+  }),
+  scifi: Object.freeze({
+    id: 'scifi',
+    a: VFX_TEMPLATE.scifi.cyan,
+    b: VFX_TEMPLATE.scifi.magenta,
+    core: VFX_TEMPLATE.scifi.white,
+    deep: VFX_TEMPLATE.scifi.grid,
+    rune: Object.freeze({ kind: 'hex', spin: 0.9 }),
+    dust: Object.freeze({ cast: 22, hit: 8, trail: 34, tex: 'square' }),
+  }),
+});
+// The lab's switch for the purple clash (palette.js VFX_TEMPLATE note):
+// 'vivid' is Kesh's purple, 'safe' the magenta that sits further from Violet.
+let arcaneVariant = 'vivid';
+let magicSafe = null;
+export function setArcaneVariant(v) {
+  arcaneVariant = v === 'safe' ? 'safe' : 'vivid';
+  return arcaneVariant;
+}
+export const arcaneVariantNow = () => arcaneVariant;
+export function vfxTemplate(id) {
+  if (id === 'magic' && arcaneVariant === 'safe') {
+    magicSafe ??= Object.freeze({ ...VFX_TEMPLATES.magic, a: VFX_TEMPLATE.magic.arcaneSafe, deep: '#7A2A9A' });
+    return magicSafe;
+  }
+  return VFX_TEMPLATES[id] ?? VFX_TEMPLATES.magic;
+}
+// Which template one effect plays: the skill's own row, else its class's
+// default (a basic attack id like 'archer_basic' reads its class).
+export function vfxTemplateFor(classId, skillId = null) {
+  if (skillId && SKILL_TEMPLATE[skillId]) return SKILL_TEMPLATE[skillId];
+  const cls = classId ?? (skillId ? vfxSkillClass(skillId) : null);
+  return CLASS_TEMPLATE[cls] ?? 'magic';
 }
 
 // --------------------------------------------------------------- enemies --
