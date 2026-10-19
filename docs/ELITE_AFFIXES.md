@@ -70,11 +70,11 @@ elite carries and how often elites appear are unchanged.
   `src/data/classes.js`, `cinderClear` in `src/sim/allies.js`, keeping
   inside the leash) and the autopilot walks out of one (a zone with no
   landing tick, so never a dodge); a human seat is never steered. Small
-  fixes 8 adds a champion's slow-only patches (thorn, moss, ash, glass:
-  `STEER_OFF_CHAMPION_POOLS`, read through `steersOff`; spawnSlick stamps
-  `champion` on a champion's patch, so a Thornling's or a Coal Hurler's is
-  still walked through) and keeps a seat's chosen way out (`poolExit`)
-  while it stays dry, so a wide pool no longer flips it between two turns.
+  fixes 8 adds the slow-only beds, whoever lays them (thorn, moss, ash,
+  glass: `STEER_OFF_SLOW_POOLS`, read through `steersOff`: the champions,
+  Thornlings, the Thornmother, Coal Hurlers and the Ash Raven) and keeps a
+  seat's chosen way out (`poolExit`) while it stays dry, so a wide pool no
+  longer flips it between two turns.
 - Colours: gale aqua, rose quartz, cold bell iron (kept off the Bellwright's
   verdigris), banked-coal red (darker than Ember and never the Kiln's gold).
 - The **Signbreaker** deed still counts the first eight only.

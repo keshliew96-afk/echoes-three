@@ -3,13 +3,12 @@
 //
 //   node tools/small-fixes-8-probe.mjs [--root <checkout>]
 //
-//   pools    the AI seats and the autopilot step off a champion's slow-only
-//            patch (the Briar Knight's thorn thicket, the Moss Hart's moss,
-//            the Gravebell Ringer's ash, the Glassblower's glass) as they do
-//            off a Cinder patch (Small fixes 7); the game stamps those
-//            patches as a champion's, a Thornling's thorn patch stays
-//            unstamped (walked through as before); a human seat with no
-//            input is never steered
+//   pools    the AI seats and the autopilot step off a slow-only bed (the
+//            Briar Knight's thorn thicket, the Moss Hart's moss, the
+//            Gravebell Ringer's ash, the Glassblower's glass, and on Kesh's
+//            "Fix beds first" the Thornling, Thornmother, Coal Hurler and
+//            Ash Raven beds too) as they do off a Cinder patch (Small fixes
+//            7); a human seat with no input is never steered
 //   soles    Pumice Soles keeps a slip floor (wet flagstone, grave frost,
 //            heart crystal) from sliding the party: the player seat stops
 //            dead, an AI seat never takes momentum, a human seat's step
@@ -39,6 +38,7 @@ const { emptySnapshot } = await import(u('src/core/intents.js'));
 const { setSlipPatches } = await import(u('src/sim/movement.js'));
 const { stepHumanMove } = await import(u('src/sim/remote.js'));
 const { OBJECTIVE_RULES } = await import(u('src/sim/objectives.js'));
+const { steersOff = () => false } = await import(u('src/data/classes.js'));
 const { VERSION } = await import(u('src/version.js'));
 
 let failed = 0;
@@ -98,7 +98,7 @@ function fightRoom(seed) {
   return { w, e };
 }
 // A champion's patch as sim/enemies/champions.js lays it (radius, slow,
-// life), stamped as the game stamps it (sim/enemies.js spawnSlick).
+// life); `champion` false = the same bed from another maker.
 const POOLS = {
   thorn: { radius: 2.2, ticks: 300, slow: 0.35 },
   moss: { radius: 1.8, ticks: 300, slow: 0.3 },
@@ -151,10 +151,10 @@ for (const kind of Object.keys(POOLS)) {
   check('pools', `the AI seats step off a champion's ${kind} patch (${r.allies.map((a) => a.classId).join(', ')}): out within ${worst} ticks`, r.allies.length >= 2 && r.off && worst <= OUT_WITHIN[kind], { stood: r.stood });
 }
 {
-  // A Thornling's thorn patch (no champion stamp): unchanged, walked through.
+  // A Thornling's thorn bed (Kesh's "Fix beds first"): steered round too.
   const r = seatsOnPool('thorn', false);
-  const kept = r.stood.filter((n) => n >= 100).length;
-  check('pools', `a Thornling's thorn patch is not steered round (${kept} of ${r.allies.length} seats keep their spot in it)`, kept >= 1, { stood: r.stood });
+  const worst = Math.max(...r.stood);
+  check('pools', `the AI seats step off a Thornling's thorn bed too: out within ${worst} ticks`, r.off && worst <= OUT_WITHIN.thorn, { stood: r.stood });
 }
 for (const kind of Object.keys(POOLS)) {
   // The autopilot walks the player seat off a champion's patch.
@@ -204,8 +204,8 @@ for (const kind of Object.keys(POOLS)) {
   check('pools', `a human seat with no input stays in a champion's moss (moved ${moved.toFixed(2)} u)`, inPatch(p, s) && moved < 0.05, { moved });
 }
 {
-  // The game's own stamp: each champion's patch carries it, a Thornling's not.
-  const LAYS = { briar_knight: 'thorn', moss_hart: 'moss', gravebell_ringer: 'ash', glassblower: 'glass', thornling: 'thorn' };
+  // The game's own beds, from each maker: every one is steered round.
+  const LAYS = { briar_knight: 'thorn', moss_hart: 'moss', gravebell_ringer: 'ash', glassblower: 'glass', thornling: 'thorn', hurler: 'ash' };
   const got = {};
   for (const [kind, variant] of Object.entries(LAYS)) {
     const { w, e } = fightRoom(5);
@@ -219,9 +219,12 @@ for (const kind of Object.keys(POOLS)) {
       w.step();
       s = w.registry.all().find((x) => x.kind === 'slick' && x.variant === variant && c && x.ownerId === c.id) ?? null;
     }
-    got[kind] = s ? s.champion === true : 'no patch';
+    got[kind] = s ? steersOff(s) : 'no patch';
   }
-  check('pools', "each champion's patch is stamped a champion's, a Thornling's is not", got.briar_knight === true && got.moss_hart === true && got.gravebell_ringer === true && got.glassblower === true && got.thornling === false, got);
+  // The bosses' beds (the Thornmother's thorn globs, the Ash Raven's ash).
+  got.thornmother = steersOff({ kind: 'slick', variant: 'thorn' });
+  got.ashraven = steersOff({ kind: 'slick', variant: 'ash' });
+  check('pools', 'every maker\'s bed is one the AI seats step off (champions, Thornling, Coal Hurler, Thornmother, Ash Raven)', Object.values(got).every((v) => v === true), got);
 }
 
 // ---------------------------------------------------------------- soles --

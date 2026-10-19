@@ -125,7 +125,7 @@ export function createAutopilot({ registry, player, run, skills, build, room = n
         else out.push({ kind: 'ring', x: e.x, z: e.z, r: (e.radius ?? 1.0) + 0.3, left });
       }
       // Small fixes 7: a Cinder patch, a Molten death pool, a Furnace Knight
-      // slag pool; Small fixes 8: a champion's thorn, moss, ash or glass.
+      // slag pool; Small fixes 8: a thorn, moss, ash or glass bed.
       // Never a dodge (no landing tick): the bot walks out of it.
       if (steersOff(e)) out.push({ kind: 'ring', x: e.x, z: e.z, r: e.radius + 0.3, left: Infinity });
     }
