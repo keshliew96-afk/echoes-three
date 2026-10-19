@@ -50,6 +50,12 @@ import { createStaticHandler, createBuildInfoReader } from './static.mjs';
 
 export const HELLO_TIMEOUT_MS = 5000;
 export const IDENTITY_TTL_MS = 10 * 60 * 1000;
+// SERVER HARDENING: an identity that never sat in a room (a menu visit, a
+// bot's hello-and-close) is forgotten a minute after its socket closes.
+export const LONE_IDENTITY_TTL_MS = 60 * 1000;
+// Per client IP: new WebSocket connections a minute (a reload loop or a
+// household's menus fit; a hello-and-close script does not).
+export const CONN_RATE_PER_MIN = 60;
 export const MAX_PEERS = 256;
 // Per client IP: a household of 4 players + their menu probes + a reload
 // or two fits; a script opening sockets in a loop does not.
@@ -60,15 +66,25 @@ export const isLoopbackIp = (ip) => LOOPBACK_IPS.has(String(ip || '')) || /^(::f
 // The client's IP: the direct peer, or — when the direct peer is a reverse
 // proxy on this machine (Caddy / nginx / the Vite dev proxy) — the last
 // X-Forwarded-For hop, which that proxy appended itself.
-export function clientIp(req) {
+// SERVER HARDENING (docs/CODE_REVIEW.md #2): `trustProxy` = how many proxy
+// hops in front of this server append to X-Forwarded-For (Render: 1, its
+// load balancer, which connects from a private address — not loopback — so
+// without this every player shared one "IP" and one set of limits). The
+// client is the hop that many places from the right: a hop a client wrote
+// itself sits further left and is never read.
+export function clientIp(req, trustProxy = 0) {
   const direct = (req.socket && req.socket.remoteAddress) || '';
   const xff = req.headers['x-forwarded-for'];
-  if (isLoopbackIp(direct) && xff) {
+  const n = isLoopbackIp(direct) ? Math.max(1, trustProxy) : trustProxy;
+  if (n > 0 && xff) {
     const hops = String(xff).split(',').map((h) => h.trim()).filter(Boolean);
-    if (hops.length) return { ip: hops[hops.length - 1], proxied: true };
+    if (hops.length) return { ip: hops[Math.max(0, hops.length - n)], proxied: true };
   }
   return { ip: direct, proxied: false };
 }
+
+// Render sets RENDER=true in its services: one load balancer hop.
+export const defaultTrustProxy = (env = process.env) => (env.ECHOES_TRUST_PROXY !== undefined ? Math.max(0, Number(env.ECHOES_TRUST_PROXY) || 0) : env.RENDER ? 1 : 0);
 
 // origins: null / [] / ['*'] = any origin. Entries are exact origins
 // ('https://echoes.example.com') or 'self' (the Origin's host equals the
@@ -153,6 +169,7 @@ export function createEchoesServer(options = {}) {
     build: null, // DEPLOY: the deployed build when it is not served here ({ version, entry } or a version string)
     cloud: true, // cloud saves at /cloud/ (cloud.mjs); cloudDir: where they are written
     cloudDir: null,
+    trustProxy: defaultTrustProxy(), // SERVER HARDENING: proxy hops in front (clientIp)
     ...options,
   };
   const serveStatic = opt.static ? createStaticHandler({ root: opt.static, log: (k, d) => log(k, d) }) : null;
@@ -162,6 +179,7 @@ export function createEchoesServer(options = {}) {
     return staticBuild ? staticBuild() : null;
   }
   const perIp = new Map(); // client ip -> live WebSocket connections
+  const connRate = new Map(); // client ip -> { n, since } new connections this minute
   const now = () => Date.now();
   const startedAt = now();
   const peers = new Map(); // peerId -> identity
@@ -189,6 +207,9 @@ export function createEchoesServer(options = {}) {
     originRejected: 0,
     ipRejected: 0,
     signals: 0, // WEBRTC CO-OP: rtc signalling messages forwarded
+    congestedDrops: 0, // SERVER HARDENING: droppable frames skipped for a peer behind on reading
+    overflows: 0, // SERVER HARDENING: peers cut off for not reading
+    connRateRejected: 0, // SERVER HARDENING: upgrades refused by the per-IP connection rate
   };
   const logRing = [];
   function log(kind, data = {}) {
@@ -198,12 +219,32 @@ export function createEchoesServer(options = {}) {
     if (opt.log) console.log(`[echoes-net] ${kind} ${JSON.stringify(data)}`);
   }
 
+  // The client address every per-IP limit uses. The first request also
+  // prints how addresses arrive (direct peer kind, forwarded hops) so a
+  // deploy can check the proxy setting without logging anyone's address.
+  let addressShown = false;
+  function ipOf(req) {
+    const r = clientIp(req, opt.trustProxy);
+    if (!addressShown && opt.static) {
+      addressShown = true;
+      const direct = String((req.socket && req.socket.remoteAddress) || '');
+      const hops = String(req.headers['x-forwarded-for'] || '').split(',').filter((h) => h.trim()).length;
+      console.log(`[echoes-net] client addresses: direct peer ${isLoopbackIp(direct) ? 'loopback' : 'remote'}, ${hops} forwarded hop(s), trusting ${opt.trustProxy} proxy hop(s)`);
+    }
+    return r.ip;
+  }
+
   // ---------------------------------------------------------- sending --
   function sendRec(rec, text, { unreliable = false } = {}) {
     if (!rec || rec.closedHandled || !rec.conn.open) return false;
     rec.link.down.send(text, { reliable: !unreliable, bytes: text.length, stream: unreliable ? 'hb' : 'ctl' }, (m) => {
       if (rec.closedHandled || !rec.conn.open) return;
-      rec.conn.send(m);
+      // SERVER HARDENING: a heartbeat reply is skipped for a peer that is
+      // behind on reading (control messages always go).
+      if (!rec.conn.send(m, { droppable: unreliable })) {
+        if (unreliable) counters.congestedDrops += 1;
+        return;
+      }
       rec.link.outMeter.add(Buffer.byteLength(m));
       counters.controlOut += 1;
     });
@@ -215,9 +256,17 @@ export function createEchoesServer(options = {}) {
   function sendBinary(peer, u8) {
     const rec = peer && peer.rec;
     if (!rec || rec.closedHandled || !rec.conn.open) return false;
-    rec.link.down.send(u8, { reliable: !isUnreliableChannel(u8[0]), bytes: u8.length, stream: u8[0] }, (m) => {
+    const reliable = !isUnreliableChannel(u8[0]);
+    rec.link.down.send(u8, { reliable, bytes: u8.length, stream: u8[0] }, (m) => {
       if (rec.closedHandled || !rec.conn.open) return;
-      rec.conn.send(m);
+      // SERVER HARDENING: snapshots, inputs and repeat event batches are
+      // skipped while the peer is behind on reading (the next one supersedes
+      // them); reliable frames always go, and a peer that falls far enough
+      // behind is cut off by ws.mjs.
+      if (!rec.conn.send(m, { droppable: !reliable })) {
+        if (!reliable) counters.congestedDrops += 1;
+        return;
+      }
       rec.link.outMeter.add(m.length);
       counters.binaryOut += 1;
     });
@@ -259,6 +308,10 @@ export function createEchoesServer(options = {}) {
       rec.link.up.send(data, { reliable, bytes, stream: isBinary ? data[0] : hb ? 'hb' : 'ctl' }, (d) => handleIncoming(rec, d, isBinary));
     });
     conn.on('close', (code) => handleClose(rec, `close_${code}`));
+    conn.on('overflow', (e) => {
+      counters.overflows += 1;
+      log('overflow', { peer: rec.peer?.id ?? null, ip, ...e });
+    });
     conn.on('protocolError', (e) => {
       counters.protocolErrors += 1;
       log('protocol_error', { peer: rec.peer?.id ?? null, ...e });
@@ -477,7 +530,10 @@ export function createEchoesServer(options = {}) {
         }
       }
     } else {
-      const id = `p${randomBytes(4).toString('hex')}`;
+      // 64-bit ids: a 32-bit id collides once identities pile up, and a
+      // collision overwrote the older identity (its token never cleaned up).
+      let id = `p${randomBytes(8).toString('hex')}`;
+      while (peers.has(id)) id = `p${randomBytes(8).toString('hex')}`;
       const token = randomBytes(16).toString('hex');
       peer = { id, token, rttMs: null, roomCode: null, seat: null, cond: null, blockUntil: 0, createdAt: now() };
       peers.set(id, peer);
@@ -488,6 +544,7 @@ export function createEchoesServer(options = {}) {
     peer.build = String(m.build);
     peer.protocol = m.v;
     peer.rec = rec;
+    peer.ip = rec.ip;
     peer.lastRecvAt = now();
     peer.disconnectedAt = null;
     rec.peer = peer;
@@ -543,11 +600,15 @@ export function createEchoesServer(options = {}) {
       }
     }
     for (const p of [...peers.values()]) {
-      if (!p.rec && !p.roomCode && p.disconnectedAt && t - p.disconnectedAt > IDENTITY_TTL_MS) {
+      if (p.roomCode) p.joined = true;
+      const ttl = p.joined ? IDENTITY_TTL_MS : LONE_IDENTITY_TTL_MS;
+      if (!p.rec && !p.roomCode && p.disconnectedAt && t - p.disconnectedAt > ttl) {
         peers.delete(p.id);
         tokens.delete(p.token);
       }
     }
+    for (const [ip, w] of connRate) if (t - w.since > 60000) connRate.delete(ip);
+    for (const code of rttPushed.keys()) if (!lobby.rooms.has(code)) rttPushed.delete(code);
     if (t - lastRttPush > 2000) {
       lastRttPush = t;
       for (const room of lobby.rooms.values()) {
@@ -642,7 +703,12 @@ export function createEchoesServer(options = {}) {
     return { ok: true, code, hostPeerId: host?.id ?? null, graceMs: r.room.state === 'migrating' ? r.room.migrateAt - now() : null };
   }
 
-  function health() {
+  // SERVER HARDENING: /health from another machine answers liveness and the
+  // deployed build only — the LAN addresses, counts and conditioner are for
+  // this machine's tools (a loopback caller with no proxy in between).
+  function health(req = null) {
+    const local = !req || (isLoopbackIp(req.socket && req.socket.remoteAddress) && !req.headers['x-forwarded-for']);
+    if (!local) return { ok: true, name: 'echoes-net', protocol: PROTOCOL_VERSION, path: WS_PATH, transport: 'websocket', build: servedBuild(), static: !!serveStatic };
     let live = 0;
     for (const r of conns) if (r.peer) live += 1;
     return {
@@ -711,6 +777,10 @@ export function createEchoesServer(options = {}) {
 
   // ----------------------------------------------------------- listen --
   const http = createServer();
+  // SERVER HARDENING: a request (a cloud upload included) gets two minutes
+  // to arrive in full, not Node's five; headers get ten seconds.
+  http.requestTimeout = 120000;
+  http.headersTimeout = 10000;
   const cloud = opt.cloud ? createCloudStore({ dir: opt.cloudDir }) : null;
   // DAILY DESCENT (docs/DAILY.md): the day's leaderboard, in the cloud
   // saves' store (Upstash) or in memory. Off with the cloud (--no-cloud).
@@ -732,7 +802,7 @@ export function createEchoesServer(options = {}) {
     cloud,
     daily,
     originAllowed: (req) => originAllowed(req, opt.origins),
-    clientIp: (req) => clientIp(req).ip,
+    clientIp: (req) => ipOf(req),
   };
   const handler = createHttpHandler(server);
   http.on('request', (req, res) => {
@@ -755,7 +825,7 @@ export function createEchoesServer(options = {}) {
     } catch {
       /* acceptUpgrade answers 404 */
     }
-    const { ip } = clientIp(req);
+    const ip = ipOf(req);
     if (pathname === WS_PATH) {
       if (!originAllowed(req, opt.origins)) {
         counters.originRejected += 1;
@@ -766,6 +836,18 @@ export function createEchoesServer(options = {}) {
         counters.ipRejected += 1;
         log('ip_cap', { ip, live: perIp.get(ip) || 0, cap: opt.maxPerIp });
         return refuseUpgrade(socket, 429, 'Too Many Requests', 'Too many connections from your address.', 'Retry-After: 10\r\n');
+      }
+      // SERVER HARDENING: new connections per IP per minute.
+      if (opt.maxPerIp > 0 && !isLoopbackIp(ip)) {
+        const t = now();
+        let w = connRate.get(ip);
+        if (!w || t - w.since > 60000) connRate.set(ip, (w = { n: 0, since: t }));
+        w.n += 1;
+        if (w.n > CONN_RATE_PER_MIN) {
+          counters.connRateRejected += 1;
+          if (w.n === CONN_RATE_PER_MIN + 1) log('conn_rate', { ip, cap: CONN_RATE_PER_MIN });
+          return refuseUpgrade(socket, 429, 'Too Many Requests', 'Too many connections from your address.', 'Retry-After: 30\r\n');
+        }
       }
     }
     const conn = acceptUpgrade(req, socket, head, { path: WS_PATH, maxPayload: 1 << 20 });

@@ -31,6 +31,11 @@ import {
 import { CLASS_BY_SEAT, ERR, sanitizeName } from '../src/net/protocol/messages.js';
 import { DEFAULT_LINEUP, LINEUP_CLASSES, normalizeLineup, sameLineup } from '../src/data/lineup.js';
 
+// SERVER HARDENING (docs/CODE_REVIEW.md): rooms whose host came from one
+// client IP (loopback exempt: the harness bots and a host's own browser).
+// Creating and dropping rooms from one address held every room on the server.
+export const MAX_ROOMS_PER_IP = 4;
+const LOOPBACK_RE = /^(::1|(::ffff:)?127\.\d+\.\d+\.\d+)$/;
 export const LOBBY_HOLD_MS = 10000; // a disconnected lobby member keeps the seat 10 s (page reload)
 export const START_COUNTDOWN_MS = 1500;
 // A returning host's page resumes from the keyframe cache only while the
@@ -137,6 +142,14 @@ export class Lobby {
   createRoom(peer, { visibility = 'private', name = null, dropIn = true, quick = false } = {}, re = MSG.CREATE_ROOM) {
     if (peer.roomCode) return this.error(peer, ERR.ALREADY_IN_ROOM, re);
     if (this.rooms.size >= this.maxRooms) return this.reject(peer, REJECT.SERVER_FULL, re);
+    if (peer.ip && !LOOPBACK_RE.test(String(peer.ip))) {
+      let mine = 0;
+      for (const r of this.rooms.values()) if (r.hostIp === peer.ip && r.state !== 'closed') mine += 1;
+      if (mine >= MAX_ROOMS_PER_IP) {
+        this.log('room_ip_cap', { peer: peer.id, cap: MAX_ROOMS_PER_IP });
+        return this.reject(peer, REJECT.SERVER_FULL, re);
+      }
+    }
     const code = this.newCode();
     const room = {
       code,
@@ -151,6 +164,7 @@ export class Lobby {
       startedAt: null,
       seed: null,
       hostPeerId: peer.id,
+      hostIp: peer.ip || null,
       hostLostAt: null,
       migrateAt: null,
       startAt: null,
@@ -600,7 +614,9 @@ export class Lobby {
         room.lastMatchStatusAt = now;
         const host = room.peerRef.get(room.hostPeerId);
         const waited = now - room.createdAt;
-        if (host && host.conn) this.send(host, MSG.MATCH_STATUS, { queued: true, code: room.code, waitedMs: waited, openRooms: this.openRoomCount(host), offerStart: waited >= 15000 });
+        // The identity's live socket is `rec` (`conn` never existed, so these
+        // once-a-second updates were never sent).
+        if (host && host.rec) this.send(host, MSG.MATCH_STATUS, { queued: true, code: room.code, waitedMs: waited, openRooms: this.openRoomCount(host), offerStart: waited >= 15000 });
       }
     }
   }

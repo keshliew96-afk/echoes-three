@@ -215,7 +215,8 @@ async function clearLevelOne(w, extraDraws) {
   check('plausible', 'wrong version, seed, won depth and too fast a time are refused', pl.every((r, i) => r.status === 400 && r.body.error === want[i]), pl.map((r) => r.body.error));
   const fine = await Promise.all([post(30, 40, 40000, { won: true }), post(31, 8, 8 * MIN_ROOM_TICKS), post(32, 0, 60), post(33, 5, 9000, { version: bumpPatch(VERSION, -1) })]);
   check('plausible', 'a won run of every room, a fast but possible run, an older build of this line are taken', fine.every((r) => r.status === 200 && r.body.ok), fine.map((r) => r.body.error || r.body.rank));
-  check('plausible', 'versionOk keeps to the line and refuses newer builds', versionOk('0.5.1', '0.5.274') && versionOk('0.5.274', '0.5.274') && !versionOk('0.5.275', '0.5.274') && !versionOk('0.6.0', '0.5.274') && !versionOk('probe', '0.5.274'));
+  // SERVER HARDENING (v0.5.307): at most three patches behind the server.
+  check('plausible', 'versionOk keeps to the line, at most three patches back, and refuses newer builds', versionOk('0.5.271', '0.5.274') && versionOk('0.5.274', '0.5.274') && !versionOk('0.5.270', '0.5.274') && !versionOk('0.5.1', '0.5.274') && !versionOk('0.5.275', '0.5.274') && !versionOk('0.6.0', '0.5.274') && !versionOk('probe', '0.5.274'));
   const old = await s.score({ key: '2026-10-06', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok }, '10.0.0.4');
   check('board', 'an old day is closed', old.status === 400 && old.body.error === 'closed_day');
   const fut = await s.score({ key: '2026-10-09', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok }, '10.0.0.4');

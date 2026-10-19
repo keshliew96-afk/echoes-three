@@ -22,9 +22,16 @@
 import { dailyKey, dayDiff, isDailyKey, compareEntries, cleanName, dailySeed, DAILY_RULES } from '../src/data/daily.js';
 import { CAMPAIGN_ACTS } from '../src/data/levels.js';
 import { VERSION } from '../src/version.js';
+import { windowCounter, REDIS_TIMEOUT_MS } from './cloud.mjs';
 
 const KEEP_DAYS = 30;
-const MAX_ENTRIES = 5000; // per day, in memory
+const MAX_ENTRIES = 5000; // per day, in memory and in Redis
+// SERVER HARDENING (docs/CODE_REVIEW.md #4): new player ids one client IP may
+// put on a day's board (a household, a reinstall or two), and how many
+// patch versions behind this server a posting game may be (a run that
+// started just before a deploy still counts).
+export const NEW_IDS_PER_IP_DAY = 6;
+export const VERSION_PATCH_WINDOW = 3;
 const CLASSES = new Set(['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright', 'duskwing']);
 const RATE = { score: 30, board: 120, windowMs: 10 * 60 * 1000 };
 const MAX_TICKS = 60 * 60 * 60 * 6; // six hours of play
@@ -35,14 +42,15 @@ const MAX_DEPTH = DAILY_RULES.roomsPerLevel * CAMPAIGN_ACTS;
 // real run sits far above this; a made-up post (depth 40 in a minute) does not.
 export const MIN_ROOM_TICKS = 240;
 const VERSION_RE = /^(\d+)\.(\d+)\.(\d+)$/;
-// The game's version must be this server's line (major.minor) and no newer
-// than the server: the day's relic and curse come from the version's relic
-// list, and a build the server does not know cannot be checked.
+// The game's version must be this server's line (major.minor), no newer
+// than the server and at most VERSION_PATCH_WINDOW patches older: the day's
+// relic and curse come from the version's relic list, a build the server
+// does not know cannot be checked, and an old build's rules are not today's.
 export function versionOk(v, server = VERSION) {
   const a = VERSION_RE.exec(typeof v === 'string' ? v : '');
   const b = VERSION_RE.exec(server);
   if (!a || !b) return false;
-  return a[1] === b[1] && a[2] === b[2] && Number(a[3]) <= Number(b[3]);
+  return a[1] === b[1] && a[2] === b[2] && Number(a[3]) <= Number(b[3]) && Number(b[3]) - Number(a[3]) <= VERSION_PATCH_WINDOW;
 }
 
 function memoryBackend() {
@@ -73,7 +81,7 @@ function memoryBackend() {
 
 function redisBackend(url, token, fetchImpl = globalThis.fetch) {
   async function cmd(args) {
-    const res = await fetchImpl(url, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify(args) });
+    const res = await fetchImpl(url, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify(args), signal: AbortSignal.timeout(REDIS_TIMEOUT_MS) });
     if (!res.ok) throw new Error(`redis ${res.status}`);
     const j = await res.json();
     if (j && j.error) throw new Error(`redis ${j.error}`);
@@ -102,6 +110,8 @@ function redisBackend(url, token, fetchImpl = globalThis.fetch) {
       return parse(await cmd(['HGET', hkey(key), id]));
     },
     async put(key, id, entry) {
+      // The same per-day cap as memory: a new id past it is refused.
+      if (Number(await cmd(['HLEN', hkey(key)])) >= MAX_ENTRIES && !(await cmd(['HEXISTS', hkey(key), id]))) return false;
       await cmd(['HSET', hkey(key), id, JSON.stringify(entry)]);
       await cmd(['EXPIRE', hkey(key), String(KEEP_DAYS * 86400)]);
       return true;
@@ -141,18 +151,10 @@ export function createDailyStore({ env = process.env, fetchImpl, now = () => Dat
   const redisToken = env.ECHOES_CLOUD_REDIS_TOKEN;
   const durable = !!(redisUrl && redisToken);
   const backend = durable ? redisBackend(String(redisUrl).replace(/\/$/, ''), String(redisToken), fetchImpl) : memoryBackend();
-  const hits = new Map();
+  const hits = windowCounter(RATE.windowMs);
+  const newIds = windowCounter(86400 * 1000);
   function allow(kind, ip) {
-    const k = `${kind}:${ip || '?'}`;
-    const t = now();
-    let h = hits.get(k);
-    if (!h || t - h.since > RATE.windowMs) {
-      h = { n: 0, since: t };
-      hits.set(k, h);
-    }
-    if (hits.size > 20000) hits.clear();
-    h.n += 1;
-    return h.n <= RATE[kind];
+    return hits.add(`${kind}:${ip || '?'}`, 1, now()) <= RATE[kind];
   }
   const info = () => ({ store: backend.kind, durable });
   // Public view of an entry (the id stays on the server).
@@ -190,7 +192,11 @@ export function createDailyStore({ env = process.env, fetchImpl, now = () => Dat
     }
     const best = !cur;
     if (best) {
+      // SERVER HARDENING: a few new ids per IP per day (each fake id was a
+      // fresh board entry).
+      if (newIds.peek(`${b.key}:${ip || '?'}`, now()) >= NEW_IDS_PER_IP_DAY) return { status: 429, body: { ok: false, error: 'busy', today } };
       const ok = await backend.put(b.key, b.id, entry);
+      if (ok) newIds.add(`${b.key}:${ip || '?'}`, 1, now());
       if (!ok) return { status: 503, body: { ok: false, error: 'full' } };
     }
     const list = await ranked(b.key);
