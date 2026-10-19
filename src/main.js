@@ -54,7 +54,7 @@ import { createTechFx } from './render/techfx/index.js';
 import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 import { createBossLayer } from './render/boss/index.js';
 import { createRunUi } from './ui/run/index.js';
-import { updateNumberPools, flushNumberPools, prewarmNumberPools } from './render/numbers.js';
+import { updateNumberPools, flushNumberPools, prewarmNumberPools, numeralTally } from './render/numbers.js';
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
 import { parseBootParams, wipeEchoesStorage } from './app/params.js';
 import { createApp } from './app/app.js';
@@ -1149,6 +1149,8 @@ window.__echoes = {
   version: VERSION,
   // CLASS SELECT (docs/CLASS_SELECT.md): the class the local player plays.
   playClass: () => playClass.debug(),
+  // ATTACK FEEDBACK (docs/HIT_FEEDBACK.md): outgoing numerals per look.
+  numerals: () => numeralTally(),
   i18n: () => i18nDebug(), // docs/I18N.md: { lang, misses, seen }
   tutorial: () => service('tutorial'), // docs/TUTORIAL.md: { startNow, skip, debug() ... }
   story: () => service('story'), // docs/STORY.md: { showPrologue, voice, debug() }
