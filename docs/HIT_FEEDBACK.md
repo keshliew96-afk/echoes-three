@@ -74,10 +74,10 @@ Damage numbers on enemies split by who dealt the hit:
 
 | | Your hits | Everyone else's (AI seats, co-op partners, hazards, kegs) |
 |---|---|---|
-| Colour | Hearth Amber `#E8A23D` | Parchment `#F4EFE6` (as before) |
-| Weight, outline | 900, 3 px charcoal | 700, 2 px charcoal (as before) |
-| Size | 1.22 x the old size | 0.8 x the old size (never under the 20 px floor) |
-| Opacity | full | 70 % |
+| Colour | Hearth Amber `#E8A23D` | Bone `#C9C2B3` (was Parchment) |
+| Weight, outline | 900, 3 px charcoal | 600, 2 px charcoal |
+| Size | 1.22 x the old size | 0.7 x the old size (never under the 20 px floor) |
+| Opacity | full | 45 % (Kesh's pick over 70 % Parchment, 2026-10-19) |
 | Pop-in overshoot | 0.5 (crit 0.8) | 0.2 (crit 0.4) |
 | Stacking | drawn above every other numeral | under yours |
 

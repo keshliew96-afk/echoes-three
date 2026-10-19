@@ -8,7 +8,7 @@
 // rule as hit feedback's own body) print Hearth Amber, heavier, larger, with a
 // 3 px outline and a stronger pop, drawn above everything else in the layer;
 // everyone else's outgoing damage (AI seats, co-op partners, hazards, kegs)
-// keeps Parchment but prints smaller and at 70 % opacity, so it reads as
+// prints Bone, lighter, at 0.7x size and 45 % opacity, so it reads as
 // background. Heals and party-incoming numerals are unchanged.
 // 2 px contrast outline, no plate; tabular numerals; numeral floor 20 px.
 // Cap 12 simultaneous — when the cap is reached the OLDEST fades early (it is
@@ -24,7 +24,7 @@ const OUTLINE_W = 2; // px (§17: 2 px contrast outline)
 // `other` anyone else's; a spawn with no `who` keeps the old look exactly.
 export const NUMERAL_WHO = Object.freeze({
   own: Object.freeze({ color: PALETTE.hearthAmber, outlineW: 3, weight: 900, sizeMul: 1.22, opacity: 1, pop: 0.5, critPop: 0.8, z: 2 }),
-  other: Object.freeze({ color: PALETTE.parchment, outlineW: 2, weight: 700, sizeMul: 0.8, opacity: 0.7, pop: 0.2, critPop: 0.4, z: 1 }),
+  other: Object.freeze({ color: PALETTE.bone, outlineW: 2, weight: 600, sizeMul: 0.7, opacity: 0.45, pop: 0.2, critPop: 0.4, z: 1 }),
 });
 
 // Which party seat dealt this hit, or null (an enemy, a hazard, a keg, an

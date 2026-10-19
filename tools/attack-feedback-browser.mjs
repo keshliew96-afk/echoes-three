@@ -8,7 +8,7 @@
 //     an AI-free seat 3): a live room-3 fight with four heroes and a pack of
 //     tough boars prints the viewer's own hits as `own` numerals (Hearth
 //     Amber, weight 900, full opacity) and every other outgoing hit as
-//     `other` numerals (Parchment, 70 % opacity, smaller for the same
+//     `other` numerals (Bone, 45 % opacity, smaller for the same
 //     amount); the game's own/other tally matches a count the probe makes
 //     itself from the hit events; both looks share one frame (screenshot);
 //   - heals stay Bright Heal; damage on the party stays Bruise Umber.
@@ -155,7 +155,7 @@ for (const cls of CLASSES) {
     const o = both.o[0];
     const x = both.x[0];
     check(o.color === hexRgb(own.color) && Number(o.weight) >= 900, `${cls}: your numeral is Hearth Amber, weight 900 (${o.color}, ${o.weight}, "${o.text}")`);
-    check(x.color === hexRgb(other.color) && x.opacity <= 0.71, `${cls}: an ally's numeral is Parchment at 70 % or less (${x.color}, ${x.opacity}, "${x.text}")`);
+    check(x.color === hexRgb(other.color) && x.opacity <= 0.46, `${cls}: an ally's numeral is Bone at 45 % or less (${x.color}, ${x.opacity}, "${x.text}")`);
     check(Number(o.z) > Number(x.z), `${cls}: yours draws above (z ${o.z} over ${x.z})`);
     const per = (n) => n.size / Math.max(1, Math.abs(Number(n.text)));
     const so = both.o.find((n) => Number(n.text) === Number(x.text));
