@@ -20,6 +20,16 @@ const OP = { CONT: 0x0, TEXT: 0x1, BIN: 0x2, CLOSE: 0x8, PING: 0x9, PONG: 0xa };
 const td = new TextDecoder('utf-8', { fatal: true });
 const te = new TextEncoder();
 
+// SERVER HARDENING (docs/CODE_REVIEW.md #1): bytes queued for a peer that
+// is not reading. Above SOFT the server's droppable frames (snapshots,
+// inputs, pongs) are skipped; above HARD the peer is cut off. Without this a
+// client that stops reading made Node queue every frame (1.3 GB in 5 s).
+export const BUFFER_SOFT_BYTES = 1 << 20;
+export const BUFFER_HARD_BYTES = 4 << 20;
+// Pings a peer may send (each answered with a pong): a bucket refilled at
+// PING_RATE.perSec; past killAfter dropped pings in 10 s the peer is cut off.
+const PING_RATE = { perSec: 5, burst: 20, killAfter: 200 };
+
 export const CLOSE = Object.freeze({
   NORMAL: 1000,
   GOING_AWAY: 1001,
@@ -120,6 +130,9 @@ export class WsConnection extends EventEmitter {
     this.bytesIn = 0;
     this.bytesOut = 0;
     this._closeTimer = null;
+    this.maxBuffered = BUFFER_HARD_BYTES;
+    this.overflowed = false;
+    this._ping = { tokens: PING_RATE.burst, last: Date.now(), dropped: 0, windowStart: Date.now() };
     socket.on('data', (d) => this._onData(d));
     socket.on('close', () => this._finish());
     socket.on('error', (err) => {
@@ -141,10 +154,16 @@ export class WsConnection extends EventEmitter {
   get bufferedAmount() {
     return this.socket.writableLength || 0;
   }
+  // True while the peer is behind on reading: droppable frames are skipped.
+  get congested() {
+    return this.bufferedAmount > BUFFER_SOFT_BYTES;
+  }
 
-  // send(string | Uint8Array) — one unfragmented frame.
-  send(data) {
+  // send(string | Uint8Array, { droppable }) — one unfragmented frame. A
+  // droppable frame is skipped (false) while the peer is congested.
+  send(data, { droppable = false } = {}) {
     if (!this.open) return false;
+    if (droppable && this.congested) return false;
     if (typeof data === 'string') return this._frame(OP.TEXT, Buffer.from(te.encode(data)));
     return this._frame(OP.BIN, Buffer.from(data.buffer, data.byteOffset, data.byteLength));
   }
@@ -195,14 +214,45 @@ export class WsConnection extends EventEmitter {
       header.writeUInt32BE(len >>> 0, 6);
     }
     header[0] = 0x80 | opcode;
+    // A peer this far behind is not reading: cut it off before its queue
+    // eats the server's memory (its seat is held like any dropped link).
+    if (this.bufferedAmount + header.length + len > this.maxBuffered) {
+      if (!this.overflowed) {
+        this.overflowed = true;
+        this.closeCode = CLOSE.POLICY;
+        this.closeReason = 'not reading';
+        this.emit('overflow', { buffered: this.bufferedAmount });
+      }
+      this.terminate();
+      return false;
+    }
     this.bytesOut += header.length + len;
     try {
-      this.socket.write(header);
-      if (len) this.socket.write(payload);
+      // One write per frame (header + payload) keeps the queue at one entry.
+      if (!len) this.socket.write(header);
+      else this.socket.write(Buffer.concat([header, payload], header.length + len));
       return true;
     } catch {
       return false;
     }
+  }
+
+  // The ping bucket: 'ok', 'drop' (no pong) or 'kill'.
+  _takePing() {
+    const b = this._ping;
+    const t = Date.now();
+    b.tokens = Math.min(PING_RATE.burst, b.tokens + ((t - b.last) / 1000) * PING_RATE.perSec);
+    b.last = t;
+    if (t - b.windowStart > 10000) {
+      b.windowStart = t;
+      b.dropped = 0;
+    }
+    if (b.tokens >= 1) {
+      b.tokens -= 1;
+      return 'ok';
+    }
+    b.dropped += 1;
+    return b.dropped > PING_RATE.killAfter ? 'kill' : 'drop';
   }
 
   _fail(code, reason) {
@@ -258,9 +308,13 @@ export class WsConnection extends EventEmitter {
 
   _onFrame(fin, opcode, payload) {
     switch (opcode) {
-      case OP.PING:
-        this._frame(OP.PONG, payload);
+      case OP.PING: {
+        // Rate-limited, and never answered into a congested queue.
+        const r = this._takePing();
+        if (r === 'kill') return this._fail(CLOSE.POLICY, 'ping flood');
+        if (r === 'ok' && !this.congested) this._frame(OP.PONG, payload);
         return;
+      }
       case OP.PONG:
         this.emit('pong', payload);
         return;

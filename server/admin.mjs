@@ -67,7 +67,7 @@ export function createHttpHandler(server) {
       res.writeHead(204, { 'access-control-allow-origin': '*', 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'content-type' });
       return res.end();
     }
-    if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/health') return json(res, 200, server.health());
+    if ((req.method === 'GET' || req.method === 'HEAD') && url.pathname === '/health') return json(res, 200, server.health(req));
     if (server.cloud && url.pathname.startsWith('/cloud/')) {
       // Another website's page may not read or write saves here (the same
       // Origin allow-list as the WebSocket); a request with no Origin is a tool.

@@ -31,6 +31,45 @@ const MAX_FILES = 5000;
 // Per client IP: uploads and lookups per 10 minutes (a code guesser gets
 // nowhere: 31^8 codes).
 const RATE = { save: 30, load: 60, windowMs: 10 * 60 * 1000 };
+// SERVER HARDENING (docs/CODE_REVIEW.md #3): uploads read at once across the
+// whole server (each holds up to MAX_BUNDLE_BYTES in memory), and the bytes
+// one client IP may upload in a day.
+export const MAX_CONCURRENT_UPLOADS = 4;
+export const MAX_UPLOAD_BYTES_PER_DAY = 64 * 1024 * 1024;
+const HITS_CAP = 20000;
+// An Upstash call that hangs gives up after this long (the request answers 503).
+export const REDIS_TIMEOUT_MS = 5000;
+
+// A per-key window counter that never holds more than `cap` keys: expired
+// windows go first, then the oldest (a flood of new keys never resets the
+// limits of everyone else, as a clear() did).
+export function windowCounter(windowMs, cap = HITS_CAP) {
+  const hits = new Map(); // key -> { n, since }
+  return {
+    hits,
+    add(key, amount, now) {
+      let h = hits.get(key);
+      if (!h || now - h.since > windowMs) {
+        if (h) hits.delete(key);
+        h = { n: 0, since: now };
+        hits.set(key, h);
+        if (hits.size > cap) {
+          for (const [k, v] of hits) if (now - v.since > windowMs) hits.delete(k);
+          for (const k of hits.keys()) {
+            if (hits.size <= cap) break;
+            if (k !== key) hits.delete(k);
+          }
+        }
+      }
+      h.n += amount;
+      return h.n;
+    },
+    peek(key, now) {
+      const h = hits.get(key);
+      return h && now - h.since <= windowMs ? h.n : 0;
+    },
+  };
+}
 
 // 'abcd efgh' / 'ABCD-EFGH' -> 'ABCDEFGH', or null when it is not a code.
 export function normalizeCode(raw) {
@@ -104,7 +143,7 @@ function fileBackend(dir) {
 // Upstash Redis over its REST API: POST <url> with a command array.
 function redisBackend(url, token, fetchImpl = globalThis.fetch) {
   async function cmd(args) {
-    const res = await fetchImpl(url, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify(args) });
+    const res = await fetchImpl(url, { method: 'POST', headers: { authorization: `Bearer ${token}`, 'content-type': 'application/json' }, body: JSON.stringify(args), signal: AbortSignal.timeout(REDIS_TIMEOUT_MS) });
     if (!res.ok) throw new Error(`redis ${res.status}`);
     const j = await res.json();
     if (j && j.error) throw new Error(`redis ${j.error}`);
@@ -139,24 +178,38 @@ export function createCloudStore({ dir = null, env = process.env, fetchImpl } = 
     backend = fileBackend(resolve(dir || env.ECHOES_CLOUD_DIR || '.echoes-cloud'));
     durable = env.ECHOES_CLOUD_DURABLE === '1' || env.ECHOES_CLOUD_DURABLE === 'true';
   }
-  const hits = new Map(); // `${kind}:${ip}` -> { n, since }
+  const hits = windowCounter(RATE.windowMs);
+  const bytes = windowCounter(86400 * 1000);
   function allow(kind, ip) {
-    const k = `${kind}:${ip || '?'}`;
-    const now = Date.now();
-    let h = hits.get(k);
-    if (!h || now - h.since > RATE.windowMs) {
-      h = { n: 0, since: now };
-      hits.set(k, h);
-    }
-    if (hits.size > 20000) hits.clear();
-    h.n += 1;
-    return h.n <= RATE[kind];
+    return hits.add(`${kind}:${ip || '?'}`, 1, Date.now()) <= RATE[kind];
+  }
+  // SERVER HARDENING: the checks an upload passes BEFORE its body is read
+  // (rate, declared size, the day's byte budget, the server-wide slots).
+  let uploading = 0;
+  function admitUpload(ip, declared) {
+    if (Number.isFinite(declared) && declared > MAX_BUNDLE_BYTES + 4096) return { status: 413, body: { ok: false, error: 'too_large' } };
+    if (!allow('save', ip)) return { status: 429, body: { ok: false, error: 'busy' } };
+    if (bytes.peek(`up:${ip || '?'}`, Date.now()) >= MAX_UPLOAD_BYTES_PER_DAY) return { status: 429, body: { ok: false, error: 'busy' } };
+    if (uploading >= MAX_CONCURRENT_UPLOADS) return { status: 503, body: { ok: false, error: 'busy' } };
+    uploading += 1;
+    let done = false;
+    return {
+      ok: true,
+      read(n) {
+        bytes.add(`up:${ip || '?'}`, n, Date.now());
+      },
+      release() {
+        if (!done) uploading -= 1;
+        done = true;
+      },
+    };
   }
   const info = () => ({ ok: true, store: backend.kind, durable, ttlDays: TTL_DAYS, maxBytes: MAX_BUNDLE_BYTES });
   const expires = (ms) => new Date(ms + TTL_DAYS * 86400 * 1000).toISOString();
 
-  async function save({ bundle, code = null, token = null }, ip) {
-    if (!allow('save', ip)) return { status: 429, body: { ok: false, error: 'busy' } };
+  // `admitted`: the HTTP route already counted this upload (admitUpload).
+  async function save({ bundle, code = null, token = null }, ip, { admitted = false } = {}) {
+    if (!admitted && !allow('save', ip)) return { status: 429, body: { ok: false, error: 'busy' } };
     const bad = checkBundle(bundle);
     if (bad) return { status: 400, body: { ok: false, error: bad } };
     const now = Date.now();
@@ -191,15 +244,16 @@ export function createCloudStore({ dir = null, env = process.env, fetchImpl } = 
     return { status: 200, body: { ok: true, code, bundle: rec.bundle, savedAt: rec.savedAt, expiresAt: expires(Date.parse(rec.savedAt) || Date.now()) } };
   }
 
-  return { info, save, load, kind: backend.kind, durable };
+  return { info, save, load, admitUpload, uploads: () => uploading, kind: backend.kind, durable };
 }
 
-function readJson(req, max) {
+function readJson(req, max, onBytes = () => {}) {
   return new Promise((res, rej) => {
     let size = 0;
     const chunks = [];
     req.on('data', (c) => {
       size += c.length;
+      onBytes(c.length);
       if (size > max) {
         rej(Object.assign(new Error('too large'), { code: 'too_large' }));
         req.destroy();
@@ -234,13 +288,25 @@ export async function handleCloud(req, res, { store, ip, cors }) {
   try {
     if (req.method === 'GET' && url.pathname === '/cloud/info') return send(200, store.info()), true;
     if (req.method === 'POST' && url.pathname === '/cloud/save') {
+      // SERVER HARDENING: refused uploads are answered before a byte of
+      // their body is read (and the connection closed, not drained).
+      const declared = req.headers['content-length'] !== undefined ? Number(req.headers['content-length']) : NaN;
+      const gate = store.admitUpload ? store.admitUpload(ip, declared) : { ok: true, read() {}, release() {} };
+      if (!gate.ok) {
+        res.setHeader('connection', 'close');
+        res.on('finish', () => req.destroy());
+        send(gate.status, gate.body);
+        return true;
+      }
       let body;
       try {
-        body = await readJson(req, MAX_BUNDLE_BYTES + 4096);
+        body = await readJson(req, MAX_BUNDLE_BYTES + 4096, (n) => gate.read(n));
       } catch (err) {
         return send(err.code === 'too_large' ? 413 : 400, { ok: false, error: err.code || 'not_a_bundle' }), true;
+      } finally {
+        gate.release();
       }
-      const r = await store.save(body || {}, ip);
+      const r = await store.save(body || {}, ip, { admitted: !!store.admitUpload });
       return send(r.status, r.body), true;
     }
     const m = /^\/cloud\/save\/([^/]+)$/.exec(url.pathname);

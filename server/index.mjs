@@ -27,10 +27,13 @@
 // --build <version> (the deployed build when the game is served elsewhere).
 // CLOUD SAVES (docs/CLOUD_SAVES.md): --cloud-dir <dir> (where saves are
 // written; default $ECHOES_CLOUD_DIR or ./.echoes-cloud) · --no-cloud.
+// SERVER HARDENING: --trust-proxy n (proxy hops in front of this server that
+// append X-Forwarded-For; default $ECHOES_TRUST_PROXY, else 1 on Render, else
+// 0 — a loopback proxy is always trusted for one hop).
 import { pathToFileURL } from 'node:url';
 import { resolve, join } from 'node:path';
 import { existsSync, statSync } from 'node:fs';
-import { createEchoesServer, MAX_PER_IP } from './server.mjs';
+import { createEchoesServer, MAX_PER_IP, defaultTrustProxy } from './server.mjs';
 import { parseCond, formatCond } from '../src/net/protocol/conditioner.js';
 import { DEFAULT_PORT, PROTOCOL_VERSION, WS_PATH } from '../src/net/protocol/constants.js';
 
@@ -128,6 +131,7 @@ if (isMain) {
     build: a.build && a.build !== true ? String(a.build) : null,
     cloud: !a['no-cloud'],
     cloudDir: a['cloud-dir'] && a['cloud-dir'] !== true ? String(a['cloud-dir']) : null,
+    trustProxy: a['trust-proxy'] !== undefined ? Math.max(0, Number(a['trust-proxy']) || 0) : defaultTrustProxy(),
   });
   srv
     .listen()
@@ -154,7 +158,7 @@ if (isMain) {
       console.log(`[echoes-net]   health: ${info.health}   admin API: ${a.admin ? 'on (loopback only)' : 'off'}   conditioner: ${formatCond(cond)}`);
       if (srv.cloud) console.log(`[echoes-net]   cloud saves: ${srv.cloud.kind}${srv.cloud.durable ? ' (durable)' : ' (kept until this server restarts — docs/CLOUD_SAVES.md)'}`);
       if (srv.daily) console.log(`[echoes-net]   daily board: ${srv.daily.kind}${srv.daily.durable ? ' (durable)' : ' (kept until this server restarts — docs/DAILY.md)'}`);
-      console.log(`[echoes-net]   origins: ${origins && origins.length ? origins.join(', ') : 'any'}   per-IP cap: ${maxPerIp || 'off'}`);
+      console.log(`[echoes-net]   origins: ${origins && origins.length ? origins.join(', ') : 'any'}   per-IP cap: ${maxPerIp || 'off'}   trusted proxy hops: ${srv.opt.trustProxy}`);
       console.log(`[echoes-net] ready ${JSON.stringify({ port: info.port, host, url: info.url, lanUrls: info.lanUrls, path: WS_PATH, admin: !!a.admin, pid: process.pid, site: info.site, siteUrls: info.siteUrls, build: info.build })}`);
     })
     .catch((err) => {
