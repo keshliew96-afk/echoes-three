@@ -1,16 +1,23 @@
 # Echoes
 
-A top-down party roguelike for the browser, built with Three.js. You play the
-mouse Healer leading three AI (or human) allies — a badger Tank, a fox Swordsman
-and a hare Archer — through eight-room expeditions, drafting skills and socketing
-nodes between fights, until you face the expedition's boss: the Hollow Stag, the
-Drowned Heron or the Barrow Wyrm.
+A top-down party roguelike for the browser, built with Three.js. A party of four
+critters fights through a 40-room campaign of five levels, drafting skills and
+socketing nodes between fights, meeting each land's bosses, champions, events and
+secrets, and choosing at the end of Level IV whether to climb the Still Spire or
+descend into the Ember Kiln.
 
+- Seven heroes: the Healer, Tank, Swordsman and Archer from the start, and the
+  Tidecaller, Bellwright and Duskwing, each freed by clearing a level. You pick
+  your hero and who joins you; AI allies fill the empty seats.
 - Single player and up to 4-player online co-op (one host + 3 guests)
-- Three expeditions (Hollow Wood, Sunken Mill, Ashen Barrow), each a full run
-- 4 equipped skills, each with 8 node sockets (any rarity fits any socket)
-- Save slots, autosave, quick save, records, a settings menu with display and
-  audio controls
+- Five levels (Hollow Wood, Sunken Mill, Ashen Barrow, Hollow Heart, then the
+  Still Spire or the Ember Kiln), plus Endless, a Daily run with a leaderboard,
+  and Boss Rush
+- 4 equipped skills per hero, each with 8 node sockets (any rarity fits any socket)
+- Relics and curses, elite powers, tonics and bombs, shrines, vows, deeds and
+  unlocks, and a Journal that records what you have met
+- Ten languages, keyboard and mouse or a gamepad, save slots, autosave and
+  optional cloud saves
 
 ## Requirements
 

@@ -1,13 +1,16 @@
 # ECHOES WEB — BUILD BRIEF (v1.0, 2026-08-15)
 
-This is the single self-contained implementation spec for the Three.js web build of
+> **Read `CLAUDE.md` first.** This is the original spec (2026-08-15) and the game has
+> grown far past it. Rulings A19 on and the per-system docs under `docs/` replace it
+> where they differ; `CLAUDE.md` holds the current working rules.
+
+This is the original implementation spec for the Three.js web build of
 **Echoes**, translated from the approved GameStudio design corpus (game concept R3,
-combat GDD, build/draft/shop GDDs, HUD/UX specs, art bible). A builder with NO other
-context implements from this document alone. The binding visual/responsiveness
+combat GDD, build/draft/shop GDDs, HUD/UX specs, art bible). The binding visual/responsiveness
 quality bar is `docs/REFERENCE_BAR.md` (same folder) — every rendered frame is
-judged against its 10 checks and its responsiveness bar. Where this brief and a
-memory of the original docs disagree, THIS BRIEF WINS (scoping rulings are listed
-in Appendix A).
+judged against its 10 checks and its responsiveness bar. Over the original
+GameStudio docs this brief wins (scoping rulings are listed in Appendix A); later
+rulings and the per-system docs win over this brief.
 
 **Elevator pitch**: top-down party action roguelike. You play the Healer — a chibi
 mouse in a bell cloak — leading three AI critter allies (badger Tank, fox Swordsman,
@@ -1176,6 +1179,10 @@ Every juice-contract event fires its sound slot. Master volume constant, no UI.
 | A16 | (PARTY, 2026-09-27 — the user's request) **Per-character builds** (§25, docs/gauntlet/PLAN.md §16): the Tank, Swordsman and Archer get the Healer's build model — at most 4 equipped skills, 8 node sockets per skill, no rarity caps, the repetition limits and grey / inert verdicts — drawn from their OWN class skill pool (8 each; the §7 kit = the starting loadout; a new class skill always REPLACES one of the 4 — the old one returns to the class pool, its nodes to the bench; no character ever holds more than 4 skills) and a class-matched node pool (6 class nodes + the shared nodes its fantasy allows). Every combat room offers every character a card on one party page (the player's own card first; AI-held cards pre-picked by default, so one Enter still commits); each character has its own purse and shelf; in multiplayer each human builds their own character (the host builds AI-held seats) with 30 s auto-pick deadlines. §7's "allies' builds don't grow" and §12's kit-cast rule are superseded; the Healer is unchanged (§25.11). |
 | A17 | (PARTY, 2026-09-27 — the user's rule, verbatim: "when the 4 slot of skill is full, player still pick skill wave, do not change it to node reward wave, instead the reward is still skill, but player can choose whether to replace one of the current 4 skill or not to replace") **Full-slot skill rewards are SWAP offers for EVERY character, the Healer included** (§16, §25.1, §25.6, docs/gauntlet/PLAN.md §16): a skill reward (a room reward / draft / a skill-promising door) stays a SKILL reward when the character already holds 4 skills — the card offers one skill of its class pool it does not own and the player picks which of the 4 owned skills it REPLACES, or Leaves and keeps the loadout. Still never more than 4 skills. The replaced skill returns to its class pool (the Healer's pool = all 17 Healer skills − owned, so a replaced Mending Bolt / Swift Mend can come back; with both starting skills owned it is exactly today's 15-skill draw); its nodes go to that character's bench (never lost) and the page offers the auto-fill; its Resonance counter, pending Echo recasts, passive pulse and Reapply clocks end with it. Supersedes §16's "with 4 owned a skill promise becomes a node" and §25.1 / §25.11's "the Healer never gets a swap offer". AI-held seats and the Healer autopilot resolve swaps by the §25.8 priority rule; in multiplayer the character's owner decides. |
 | A18 | (Act IV, 2026-10-07 — the user's pick from content plan 2) **Four levels.** A11's three expeditions grow to four: Level IV, *The Hollow Heart*, sits under the Barrow (biome `heart`, layouts 16–20, four new enemies, its own music and ambience; docs/ACT_IV.md). The campaign is won after Level IV, and the Endless Descent cycles four biomes. Act IV has no bosses of its own yet: its boss room meets the Barrow Wyrm or the Lich Ram on Act IV numbers. `CAMPAIGN_ACTS` in src/data/levels.js is the switch: set it to 3 and the campaign keeps three levels while Act IV still plays in Endless. |
+| A19 | (Plans 2 to 5, 2026-10-04 to 10-19 — the user's picks) **A8 and A11 are superseded where the game has since grown**: relics and curses, more heroes, more bosses and champions per land, and a gamepad (§3) are in scope. Echoes/Seals currencies, talent trees and camp facilities stay out. |
+| A20 | (Lineup, 2026-10-09 — the user's rule) **Seven heroes.** The Healer, Tank, Swordsman and Archer start free; the Tidecaller, Bellwright and Duskwing unlock on the first Level II, III and IV clear (docs/TIDECALLER.md, BELLWRIGHT.md, DUSKWING.md). The lineup picker chooses who joins the team, never who stays at camp; in co-op each human picks their own hero first, then the host fills the empty seats with AI (docs/LINEUP.md, CLASS_SELECT.md). |
+| A21 | (Act V and the Kiln, 2026-10-11 and 10-17 — the user's picks) **Five levels with a fork.** Level V joins the campaign (`CAMPAIGN_ACTS` 5). After Level IV the party picks the Still Spire or the Ember Kiln (act 6 in data, road `kiln`), each with its own ending and verse; a run stays 40 rooms (docs/ACT_V.md, KILN.md, KILN_BOSSES.md). |
+| A22 | (2026-10-10 to 10-19 — the user's taps) **Settled rules**, listed in `CLAUDE.md` "Settled decisions": a boss arena is boss-only; a shrine sleeps at its room clear; Windfall stays Gale Herald-only; Crown Shard pays Glint per elite power; AI seats and the autopilot steer round slowing and burning beds, the human hero never; the Bestiary total counts creatures only. Do not reopen without the user. |
 
 ---
 

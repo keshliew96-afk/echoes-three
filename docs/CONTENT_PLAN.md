@@ -1,5 +1,7 @@
 # Content plan: bosses, enemies, rooms and run modifiers
 
+> Historical: this is content plan 1 and all of it shipped. Plans 2 to 5 live in the project files; the current rules are in `CLAUDE.md`.
+
 Status: **slice 1 shipped** (two new bosses, five new enemy bodies); slices 2–4 planned.
 Owner of the numbers: this file. Code is the source of truth once a slice lands.
 
