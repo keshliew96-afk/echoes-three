@@ -56,7 +56,7 @@ are unchanged.
 - The party strip (`ui/run/partystrip.js`: the tabs on the socket screen,
   the party draft page and the shop shelf) is built once at boot, so it
   re-dresses its tabs (portrait, glyph, name, accent) whenever the active
-  lineup or the portrait cache changes (v0.5.311; before that a run with
+  lineup or the portrait cache changes (v0.5.313; before that a run with
   Rill, Tolly or Sable in a seat still showed the default class there). The
   socket screen's "Your build" title follows the viewer's own seat, not
   seat 0, and the party page's owner band reads FOR YOU — THE {cls} over
