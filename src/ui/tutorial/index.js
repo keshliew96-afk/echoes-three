@@ -41,6 +41,7 @@ import { t } from '../../i18n/index.js';
 import { bindings, PAD, MOUSE_BUTTON_CODE } from '../../core/bindings.js';
 import { cap, padCap, moveCaps, skillsCap, usingPad, onHintsChange } from '../../app/controls.js';
 import { tidecallerOpen, bellwrightOpen, duskwingOpen, rosterGrown } from '../../data/lineup.js';
+import { pageQuery } from '../../app/harness.js';
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
@@ -295,7 +296,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
   registerTutorialSettings(settings);
   installCss();
   const harness = !!(params && params.menuSkip);
-  const query = new URLSearchParams(window.location.search);
+  const query = pageQuery();
   const tipsOn = query.get('tips') === '1' || (!harness && query.get('tips') !== '0');
 
   // ------------------------------------------------------------ the DOM --

@@ -19,6 +19,7 @@
 // sees the table), before the settings store exists; with no stored choice it follows the
 // browser's language when that is one of the ten, else English. Switching
 // language reloads the page (applyLanguage) so every screen is rebuilt in it.
+import { pageQuery } from '../app/harness.js';
 
 export const LANGUAGES = Object.freeze([
   { code: 'en', name: 'English', english: 'English' },
@@ -91,7 +92,7 @@ function browserLanguage() {
 // ?lang=xx overrides for one page load (probes, screenshots); not stored.
 function urlLanguage() {
   try {
-    const v = new URLSearchParams(window.location.search).get('lang');
+    const v = pageQuery().get('lang');
     return LANGUAGE_CODES.includes(v) ? v : null;
   } catch {
     return null;

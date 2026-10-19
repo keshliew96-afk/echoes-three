@@ -20,6 +20,7 @@ import { dailyKey, isDailyKey, dailySeed, betterEntry, cleanName } from '../data
 import { dailyOmen } from '../sim/relics.js';
 import { resolveServerAddress } from '../net/address.js';
 import { VERSION } from '../version.js';
+import { pageQuery } from '../app/harness.js';
 
 const STORE_KEY = 'echoes.daily.v1';
 const TIMEOUT_MS = 15000;
@@ -62,7 +63,7 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
   function today() {
     let q = null;
     try {
-      q = new URLSearchParams(window.location.search).get('daily');
+      q = pageQuery().get('daily');
     } catch {
       q = null;
     }
@@ -159,7 +160,7 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
     let n = '';
     try {
       // ?netname= names the player for harnesses, as it does in lobbies.
-      const q = new URLSearchParams(window.location.search).get('netname');
+      const q = pageQuery().get('netname');
       if (q) return cleanName(q);
     } catch {
       /* the setting below */
