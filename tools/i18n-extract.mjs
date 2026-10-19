@@ -3,9 +3,10 @@
 // src/i18n/catalog.json and check the language tables against it.
 //
 //   node tools/i18n-extract.mjs            rewrite src/i18n/catalog.json
-//   node tools/i18n-extract.mjs --check    also list, per language, missing
-//                                          keys and placeholder mismatches
-//                                          (exit 1 when any)
+//   node tools/i18n-extract.mjs --check    write nothing; list, per language,
+//                                          missing keys and placeholder
+//                                          mismatches, and say if catalog.json
+//                                          is out of date (exit 1 when any)
 //
 // Keys come from two places:
 //   1. literal first arguments of t('...') and the two literal forms of
@@ -124,7 +125,16 @@ const catalog = {};
 for (const [k, e] of sorted) {
   catalog[k] = { files: [...e.files].sort(), ...(e.plural ? { plural: true, one: e.one } : {}), ...(e.data ? { data: true } : {}) };
 }
-writeFileSync(join(SRC, 'i18n/catalog.json'), JSON.stringify(catalog, null, 1) + '\n');
+// --check only reads: it says when the committed catalog has fallen behind
+// the source instead of rewriting it (run without --check to refresh it).
+const catalogPath = join(SRC, 'i18n/catalog.json');
+const catalogText = JSON.stringify(catalog, null, 1) + '\n';
+let stale = false;
+if (!CHECK) writeFileSync(catalogPath, catalogText);
+else if (!existsSync(catalogPath) || readFileSync(catalogPath, 'utf8') !== catalogText) {
+  stale = true;
+  console.log('catalog.json is out of date: run node tools/i18n-extract.mjs to refresh it');
+}
 const nPlural = sorted.filter(([, e]) => e.plural).length;
 console.log(`catalog: ${sorted.length} keys (${nPlural} plural, ${sorted.filter(([, e]) => e.data).length} from data tables)`);
 
@@ -159,5 +169,5 @@ if (CHECK) {
     for (const m of mism.slice(0, 15)) console.log(`  mismatch: ${m}`);
     bad += missing.length + mism.length;
   }
-  process.exit(bad ? 1 : 0);
+  process.exit(bad || stale ? 1 : 0);
 }

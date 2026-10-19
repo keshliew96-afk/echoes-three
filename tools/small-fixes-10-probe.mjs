@@ -72,7 +72,7 @@ const untranslated = (key) => LANGS.filter((l) => typeof tables[l][key] !== 'str
   check('wayfarer', 'a profile that already holds it keeps it and is not paid twice', !a3.deeds.includes('wayfarer'), a3.deeds);
 }
 
-check('version', 'v0.5.305', VERSION === '0.5.305', VERSION);
+check('version', `the game shows v${VERSION} (v0.5.305 or later)`, VERSION.split('.').map(Number).reduce((a, n) => a * 1000 + n, 0) >= 5305, VERSION);
 
 // ------------------------------------------------------------- journal --
 const LINE = 'Felled before the Journal kept count.';
