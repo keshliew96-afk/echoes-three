@@ -138,6 +138,8 @@ try {
   await netEval(host, 'window.__ev = []; E.on("intent", (e) => window.__ev.push({ kind: e.kind, index: e.index ?? null })); return 1;');
   await guest.page.bringToFront().catch(() => {});
   await netEval(guest, 'window.__kd = 0; window.addEventListener("keydown", () => (window.__kd += 1), true); return 1;');
+  await netEval(guest, 'window.__pb = []; const g = n.session.debugGuest(); const p = g.frames.push.bind(g.frames); g.frames.push = (...fs) => { for (const f of fs) if (f && f.press) window.__pb.push(f.press); return p(...fs); }; return 1;');
+  await netEval(host, 'window.__ps = []; const W = E.content.world(); const st = W.step.bind(W); W.step = (t, snap, si) => { if (snap && snap.presses && snap.presses.length) window.__ps.push(snap.presses.map((x) => x.kind).join(",")); return st(t, snap, si); }; return 1;');
   for (let round = 0; round < 2; round++) {
     for (const k of ['KeyR', 'Tab', 'F2']) {
       await tap(guest, k);
@@ -147,7 +149,7 @@ try {
     if (all !== null) break;
   }
   const intents = await netEval(host, 'return window.__ev;');
-  if (!intents.some((e) => e.kind === 'rally')) console.log('  host at', JSON.stringify(await netEval(host, 'return { status: n.session.status(), ev: window.__ev.length };')).slice(0, 1200));
+  if (!intents.some((e) => e.kind === 'rally')) console.log('  presses: guest frames', JSON.stringify(await netEval(guest, 'return window.__pb.slice(0, 20);')), 'host steps', JSON.stringify(await netEval(host, 'return window.__ps.slice(0, 20);')));
   if (!intents.some((e) => e.kind === 'rally')) console.log('  guest at', JSON.stringify(await netEval(guest, 'const g = n.session.debugGuest(); return { vis: document.visibilityState, focus: document.hasFocus(), away: g && g.away, frozen: g && g.frozen, ownReady: !!(g && g.own && g.own.ready), seat: n.session.status().seat, keydowns: window.__kd || 0, gseat: g && g.seat };')).slice(0, 900));
   check(
     `the guest Healer's R, Tab and F2 reach the host's sim (${JSON.stringify(intents)})`,
@@ -292,10 +294,11 @@ try {
   await sleep(4000);
   await waitOn(host, 'return E.campaign.ready(4).ready;', { timeout: 300000 }).catch(() => null);
   await netEval(guest, 'return n.session.campBegin(4, "levels");');
-  await waitOn(host, 'const v = E.state().run; return v.act === 4 && v.phase === "combat";', { timeout: 300000 });
+  await waitOn(host, 'const v = E.state().run; return v.act === 4 && v.phase === "combat";', { timeout: 300000, poll: 100 });
+  await netEval(host, 'for (const m of E.state().party || []) if (m.hp > 0) E.cmd("setHp", m.id, 1); if (E.state().run.phase === "combat") E.cmd("killAllEnemies"); return 1;');
   await netEval(host, 'E.cmd("skipToRoom", 8); return 1;');
-  await waitOn(host, 'const v = E.state().run; return v.room === 8 && v.phase === "combat";', { timeout: 120000 });
-  await waitOn(host, 'const c = E.campaign.state().card; if (c && c.fork) return true; E.cmd("killBoss"); E.cmd("killAllEnemies"); return false;', { timeout: 420000, poll: 1500 }).catch(async (err) => {
+  await waitOn(host, 'for (const m of E.state().party || []) if (m.hp > 0) E.cmd("setHp", m.id, 1); if (E.state().run.phase === "combat") E.cmd("killAllEnemies"); const v = E.state().run; return v.room === 8 && v.phase === "combat";', { timeout: 120000, poll: 500 });
+  await waitOn(host, 'for (const m of E.state().party || []) if (m.hp > 0) E.cmd("setHp", m.id, 1); if (E.state().run.phase === "combat") E.cmd("killAllEnemies"); const c = E.campaign.state().card; if (c && c.fork) return true; E.cmd("killBoss"); return false;', { timeout: 420000, poll: 1500 }).catch(async (err) => {
     console.log('  host at', JSON.stringify(await netEval(host, 'const v = E.state().run; return { phase: v.phase, act: v.act, room: v.room, card: E.campaign.state().card };')).slice(0, 900));
     throw err;
   });
