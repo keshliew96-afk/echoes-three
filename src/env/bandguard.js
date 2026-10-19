@@ -45,6 +45,7 @@
 // that the whole `enemyfx` subtree is skipped by name and any material can opt
 // out with `material.userData.noBandGuard = true`.
 import { Vector4 } from 'three';
+import { pageQuery } from '../app/harness.js';
 
 // Guard band in SIGNED degrees (hue 350 == -10). Wider than the analyzer's
 // [5, 25) on both sides because the guard runs in linear space and ACES + the
@@ -162,7 +163,7 @@ function scan(root) {
 }
 
 const guardEnabled = () =>
-  typeof location === 'undefined' || new URLSearchParams(location.search).get('bandguard') !== '0';
+  typeof location === 'undefined' || pageQuery().get('bandguard') !== '0';
 
 // Guard a subtree NOW (gauntlet r4 J4-F1, INT — a minimal edit in M4b's file).
 // The guard is part of a material's program (onBeforeCompile), so a material

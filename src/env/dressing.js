@@ -41,6 +41,7 @@ import { CAMERA } from '../core/constants.js';
 import { makeGlowSprite } from '../render/glow.js';
 import { makeFlameSprite } from './flame.js';
 import { EMBER_GLOW } from './colors.js';
+import { service } from '../app/registry.js';
 
 const EL = (CAMERA.elevationDeg * Math.PI) / 180;
 const TOWARD_CAM = { y: Math.sin(EL), z: Math.cos(EL) };
@@ -72,9 +73,10 @@ function getPoolTexture() {
   return poolTex;
 }
 
-// Subscribe to the run frame's room events through the debug API once it
-// exists (it is created after the scenes are built). Polls at animation-frame
-// cadence for up to ~10 s, then gives up silently.
+// Subscribe to the run frame's room events through the event bus once main.js
+// provides it (after the scenes are built). Polls at animation-frame cadence
+// for up to ~10 s, then gives up silently. (It used to read window.__echoes,
+// which a player build no longer carries: src/app/harness.js.)
 // CAMPAIGN (docs/gauntlet/PLAN.md §12.5, gate GC.6): ONE module-level bus
 // subscription fans out to every live dressing's watcher, and a disposed
 // dressing unregisters its watcher. (Each dressing used to add four bus
@@ -88,7 +90,7 @@ function hookOnce() {
   hooked = true;
   let tries = 0;
   const tryHook = () => {
-    const E = typeof window !== 'undefined' ? window.__echoes : null;
+    const E = service('bus');
     if (E && typeof E.on === 'function') {
       E.on('room_enter', (ev) => {
         for (const fn of watchers) fn(ev.mode ?? null);

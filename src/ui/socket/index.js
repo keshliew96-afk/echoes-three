@@ -1666,7 +1666,8 @@ export function createSocketScreen({ bus, world }) {
       let guest = false;
       let who = 'Healer';
       try {
-        const n = (window.__echoes && window.__echoes.net) || null;
+        const svc = service('net');
+        const n = svc ? (svc.debug ?? svc) : null;
         guest = !!(n && typeof n.isGuest === 'function' && n.isGuest());
         // The host decides (net/seats.js chooserSeat: the Tank after a
         // migration once a human is back on the Healer).

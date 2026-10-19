@@ -16,7 +16,7 @@
 //   5. no page error, no line missing in the language.
 // Screenshots: --shots <dir> (cloud-<n>-<name>[-<lang>].png).
 //
-//   npm run build && node tools/cloudsave-browser.mjs [--lang en] [--shots captures]
+//   VITE_ECHOES_HARNESS=1 npm run build && node tools/cloudsave-browser.mjs [--lang en] [--shots captures]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
 // ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader".
 import { mkdirSync, mkdtempSync, existsSync, rmSync } from 'node:fs';
