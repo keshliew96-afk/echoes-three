@@ -3429,5 +3429,6 @@
  "ELITE POWER": "정예 능력",
  "Not met yet. Elites carry it from room 4 of a level on.": "아직 만나지 못함. 각 레벨의 방 4부터 정예가 지닙니다.",
  "Not met yet. Elites carry it in the campaign.": "아직 만나지 못함. 캠페인의 정예가 지닙니다.",
- "Felled before the Journal kept count.": "일지가 세기 전에 쓰러뜨렸습니다."
+ "Felled before the Journal kept count.": "일지가 세기 전에 쓰러뜨렸습니다.",
+ "Felled: {n}, and more before the Journal kept count.": "쓰러뜨림: {n} (일지가 세기 전의 기록은 빠져 있습니다)"
 }

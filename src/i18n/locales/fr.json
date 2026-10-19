@@ -3541,5 +3541,6 @@
  "ELITE POWER": "POUVOIR D’ÉLITE",
  "Not met yet. Elites carry it from room 4 of a level on.": "Pas encore rencontré. Les élites le portent à partir de la salle 4 d’un niveau.",
  "Not met yet. Elites carry it in the campaign.": "Pas encore rencontré. Les élites le portent pendant la campagne.",
- "Felled before the Journal kept count.": "Abattu avant que le Journal ne tienne le compte."
+ "Felled before the Journal kept count.": "Abattu avant que le Journal ne tienne le compte.",
+ "Felled: {n}, and more before the Journal kept count.": "Abattus : {n}, et d’autres avant que le Journal ne tienne le compte."
 }

@@ -7323,6 +7323,11 @@
    "src/ui/story/journal.js"
   ]
  },
+ "Felled: {n}, and more before the Journal kept count.": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Fetches the save under the code above and, after you confirm, replaces the profile and save slots on this device with it. The game then reloads.": {
   "files": [
    "src/ui/menu/cloud.js"

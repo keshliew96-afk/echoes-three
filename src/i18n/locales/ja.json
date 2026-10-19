@@ -3429,5 +3429,6 @@
  "ELITE POWER": "エリートの能力",
  "Not met yet. Elites carry it from room 4 of a level on.": "まだ出会っていない。各レベルの4部屋目からエリートが持つ。",
  "Not met yet. Elites carry it in the campaign.": "まだ出会っていない。キャンペーンのエリートが持つ。",
- "Felled before the Journal kept count.": "日誌が数え始める前に討伐済み。"
+ "Felled before the Journal kept count.": "日誌が数え始める前に討伐済み。",
+ "Felled: {n}, and more before the Journal kept count.": "討伐数：{n}（日誌が数え始める前の討伐は含まれません）"
 }

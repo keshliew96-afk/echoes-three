@@ -51,10 +51,12 @@ export function journalInfo(p) {
   const lore = { ...(seen.lore || {}) };
   // ELITE POWERS (Small fixes 9): a power the deeds' lifetime marks hold was
   // felled before the Journal listed powers. How often is unknown (Small
-  // fixes 10), so it is met with no count and its page says so (`early`)
-  // until the Journal counts a felling of its own.
+  // fixes 10), so it is met with no count and its page says so (`early`);
+  // once the Journal counts a felling of its own, the tile shows the count
+  // with a + and the page says the earlier kills are not in it
+  // (journal.early.affix, saved).
   const affix = { ...(seen.affix || {}) };
-  const affixEarly = new Set();
+  const affixEarly = new Set(((p && p.journal && p.journal.early) || {}).affix || []);
   for (const id of (meta.marks && meta.marks.affix) || []) {
     if ((affix[id] ?? 0) > 0) continue;
     affix[id] = 0;
@@ -240,7 +242,7 @@ export function createJournalPage(kind, getInfo) {
         b.dataset.jid = keyOf(e);
         b.style.setProperty('--rim', rimOf(e));
         b.setAttribute('aria-label', e.seen ? t(nameOf(e)) : t('Not met yet'));
-        b.innerHTML = `${tileArt(e)}${e.seen && e.count > 0 && (e.kind === 'enemy' || e.kind === 'boss' || e.kind === 'affix') ? `<span class="jr-n">${e.count}</span>` : ''}`;
+        b.innerHTML = `${tileArt(e)}${e.seen && e.count > 0 && (e.kind === 'enemy' || e.kind === 'boss' || e.kind === 'affix') ? `<span class="jr-n">${e.count}${e.early ? '+' : ''}</span>` : ''}`;
         b.addEventListener('mouseenter', () => select(b.dataset.jid));
         b.addEventListener('focus', () => select(b.dataset.jid));
         b.addEventListener('click', () => select(b.dataset.jid));
@@ -326,7 +328,7 @@ export function createJournalPage(kind, getInfo) {
       parts.push(`<div class="jr-name">${name}</div>`);
       if (e.seen) {
         parts.push(`<div class="jr-text">${esc(t(a.text))}</div>`);
-        parts.push(`<div class="jr-count">${esc(e.early ? t('Felled before the Journal kept count.') : t('Felled: {n}', { n: e.count }))}</div>`);
+        parts.push(`<div class="jr-count">${esc(e.early ? (e.count > 0 ? t('Felled: {n}, and more before the Journal kept count.', { n: e.count }) : t('Felled before the Journal kept count.')) : t('Felled: {n}', { n: e.count }))}</div>`);
       } else parts.push(`<div class="jr-text jr-dim">${esc(a.late ? t('Not met yet. Elites carry it from room 4 of a level on.') : t('Not met yet. Elites carry it in the campaign.'))}</div>`);
     } else if (e.kind === 'lore') {
       const pg = LORE_BY_ID[e.id];

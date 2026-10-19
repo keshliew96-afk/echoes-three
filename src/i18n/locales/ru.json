@@ -3572,5 +3572,6 @@
  "ELITE POWER": "СИЛА ЭЛИТЫ",
  "Not met yet. Elites carry it from room 4 of a level on.": "Ещё не встречена. Элита носит её с 4-й комнаты уровня.",
  "Not met yet. Elites carry it in the campaign.": "Ещё не встречена. Элита носит её в кампании.",
- "Felled before the Journal kept count.": "Сражено до того, как Дневник начал счёт."
+ "Felled before the Journal kept count.": "Сражено до того, как Дневник начал счёт.",
+ "Felled: {n}, and more before the Journal kept count.": "Сражено: {n}, и ещё до того, как Дневник начал счёт."
 }

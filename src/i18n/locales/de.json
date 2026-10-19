@@ -3510,5 +3510,6 @@
  "ELITE POWER": "ELITEKRAFT",
  "Not met yet. Elites carry it from room 4 of a level on.": "Noch nicht begegnet. Elitegegner tragen sie ab Raum 4 einer Stufe.",
  "Not met yet. Elites carry it in the campaign.": "Noch nicht begegnet. Elitegegner tragen sie in der Kampagne.",
- "Felled before the Journal kept count.": "Gefällt, bevor das Tagebuch mitzählte."
+ "Felled before the Journal kept count.": "Gefällt, bevor das Tagebuch mitzählte.",
+ "Felled: {n}, and more before the Journal kept count.": "Gefällt: {n}, dazu weitere, bevor das Tagebuch mitzählte."
 }

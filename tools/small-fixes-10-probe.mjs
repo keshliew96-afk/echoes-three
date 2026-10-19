@@ -14,6 +14,12 @@
 //             count." instead of "Felled: 1"; a power the Journal counted
 //             keeps "Felled: n"; the new line is translated in all ten
 //             languages; the Elite powers heading still counts it as met
+//   recount   (Kesh's "Fix recount first") the profile works out once which
+//             powers were felled before the Journal counted them
+//             (journal.early.affix, from the lifetime marks) and keeps that
+//             list; once such a power is felled again its tile reads "n+"
+//             and its page "Felled: n, and more before the Journal kept
+//             count."; a power the Journal always counted stays plain
 //   version   v0.5.305
 // The journal leg runs in the real game (a Vite dev server at --url; the
 // probe never imports src/render). --root runs the headless checks against
@@ -34,6 +40,7 @@ globalThis.performance ??= { now: () => Date.now() };
 const { ENCOUNTERS, ENCOUNTER_IDS, WAYFARER_IDS } = await import(u('src/sim/encounters.js'));
 const { DEEDS, awardFor, freshMeta } = await import(u('src/data/unlocks.js'));
 const { VERSION } = await import(u('src/version.js'));
+const PROF = await import(u('src/save/profile.js'));
 
 let failed = 0;
 let passed = 0;
@@ -72,6 +79,25 @@ const LINE = 'Felled before the Journal kept count.';
 check('journal', 'the new line is translated in all nine other languages', untranslated(LINE).length === 0, untranslated(LINE));
 const src = readFileSync(join(here, 'src/ui/story/journal.js'), 'utf8');
 check('journal', 'the Journal page uses the new line', src.includes(`t('${LINE}')`));
+
+// ------------------------------------------------------------- recount --
+const LINE2 = 'Felled: {n}, and more before the Journal kept count.';
+check('recount', 'the recount line is translated in all nine other languages', untranslated(LINE2).length === 0, untranslated(LINE2));
+{
+  const meta = { ...PROF.freshProfile().meta, marks: { ...(PROF.freshProfile().meta.marks || {}), affix: ['gusting', 'molten'] } };
+  const old = { seen: { affix: { molten: 2 } } }; // a v0.5.304 journal: no early list
+  const j1 = PROF.saneJournal ? PROF.saneJournal(old, meta) : null;
+  check('recount', 'a profile without the list works it out from the marks (Gusting, not the counted Molten)', !!j1 && JSON.stringify(j1.early && j1.early.affix) === '["gusting"]', j1 && j1.early);
+  const j2 = PROF.saneJournal({ ...j1, seen: { affix: { molten: 2, gusting: 3 } } }, meta);
+  check('recount', 'the stored list is kept after the power is felled again', !!j2.early && j2.early.affix.join() === 'gusting', j2.early);
+  const fresh = PROF.saneJournal(PROF.freshJournal(), meta);
+  check('recount', 'a new profile starts with an empty list (nothing is early later)', !!fresh.early && fresh.early.affix.length === 0, fresh.early);
+  const text = JSON.stringify({ ...PROF.freshProfile(), meta, journal: old });
+  const back = PROF.parseProfile(text);
+  check('recount', 'loading a stored v0.5.304 profile fills the list', !!back && back.journal.early.affix.join() === 'gusting', back && back.journal.early);
+  const again = PROF.parseProfile(JSON.stringify(back));
+  check('recount', 'and a save round trip keeps it', !!again && again.journal.early.affix.join() === 'gusting');
+}
 
 if (!argv.includes('--no-browser')) {
   const URL0 = opt('url', 'http://127.0.0.1:5199/');
@@ -144,6 +170,37 @@ if (!argv.includes('--no-browser')) {
   check('journal', `a power felled before v0.5.304 is met with no tile number (${JSON.stringify(g)})`, !!g && !g.unseen && g.n === null);
   check('journal', `its page reads the new line, not "Felled: 1" (${g && g.count})`, !!g && g.count === tr);
   check('journal', `the Elite powers heading counts both as met (${head.trim()})`, head.includes('2/12'));
+  // Recount: Gusting felled three times since, after kills the Journal missed.
+  await page.evaluate(() => {
+    const p = window.__echoes.save.profile();
+    p.journal.seen.affix = { molten: 2, gusting: 3 };
+    p.journal.early = { affix: ['gusting'] };
+  });
+  await page.keyboard.press('Escape');
+  await sleep(1500);
+  let reopened = false;
+  for (let i = 0; i < 6 && !reopened; i++) {
+    await key('KeyJ');
+    reopened = await page.waitForFunction(() => !!document.querySelector('.st-story'), { timeout: 8000, polling: 200 }).then(() => true).catch(() => false);
+    if (!reopened) {
+      await page.keyboard.press('Escape');
+      await sleep(2500);
+    }
+  }
+  for (let i = 0; i < 6; i++) {
+    const tab = await page.evaluate(() => document.querySelector('.st-story')?.__journal?.()?.tab);
+    if (tab === 'bestiary') break;
+    await key('KeyE');
+    await sleep(600);
+  }
+  await sleep(1200);
+  const m2 = await pick('molten');
+  check('recount', `a power the Journal always counted stays plain (${m2.n} / ${m2.count})`, m2.n === '2' && m2.count === (LANG && LANG !== 'en' ? tables[LANG]['Felled: {n}'] : 'Felled: {n}').replace('{n}', '2'));
+  const g2 = await pick('gusting');
+  await page.screenshot({ path: `${SHOTS}/sf10-recount${LANG ? `-${LANG}` : ''}.png` });
+  const want2 = (LANG && LANG !== 'en' ? tables[LANG][LINE2] : LINE2).replace('{n}', '3');
+  check('recount', `an old power felled again: tile "3+" (${g2.n})`, g2.n === '3+');
+  check('recount', `and its page says earlier kills are not counted (${g2.count})`, g2.count === want2);
   if (LANG && LANG !== 'en') {
     const miss = await page.evaluate(() => (window.__echoes.i18n ? window.__echoes.i18n().misses : []));
     check('journal', `no missing translations on this screen (${miss.slice(0, 4).join(' | ')})`, miss.length === 0);

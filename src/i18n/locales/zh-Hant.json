@@ -3429,5 +3429,6 @@
  "ELITE POWER": "精英能力",
  "Not met yet. Elites carry it from room 4 of a level on.": "尚未遭遇。每關第 4 個房間起，精英會帶有牠。",
  "Not met yet. Elites carry it in the campaign.": "尚未遭遇。戰役中的精英會帶有牠。",
- "Felled before the Journal kept count.": "在手記開始計數前已討伐。"
+ "Felled before the Journal kept count.": "在手記開始計數前已討伐。",
+ "Felled: {n}, and more before the Journal kept count.": "已討伐：{n}（手記開始計數前的不計在內）"
 }
