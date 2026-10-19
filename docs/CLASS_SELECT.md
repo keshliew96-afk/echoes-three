@@ -38,9 +38,11 @@ A guest plays a run with what the host has. Checked on two pages through a campa
 - **The party tabs** on the host mark the host's own class "you" and a guest Healer with the guest's name (the Healer tab read "you" for any host).
 - **The off-screen threat markers** rank threats by distance from the viewer's own hero, and a sound with no place of its own plays at it (both used the Healer's body).
 
-Kept as the host's by design (one call for the whole party): the doors, the party relic, the event cards, the Spire-or-Kiln road, the level card's advance, the end card, Quit to Lobby, saving, and the Ally builds mode for the AI seats. A guest's press on these is shown to the party as a ping.
+- **The party's calls** (Kesh's pick, "guests call too"): any human now makes them, a guest as the host does. They are the doors, the party relic, the event card (open, take, leave), a vault's chest, the Spire-or-Kiln road, the level card's Enter (set out now; the host's level manager still waits until every page can draw the next level) and the end card's Return to Camp. A guest's press goes to the host as a `pick` CMD (`PARTY_CALLS`, `hostPickCmd` in `src/net/session.js`) and the host's game applies it through the entry point its own page uses. The first call the host receives decides; a later one finds the choice closed and its player reads "Too late — that choice already closed". The road keeps its 30 s Spire default. A guest's pointer on the doors, the relic cards and the event card is its own focus (its keys and pad pick what it points at), still shown to the party as a ping. The guest's banner on those pages reads "Anyone can choose — the first choice leads the party".
 
-Probe: `node tools/guest-vs-host-runs.mjs` against `npm run dev` (own server on port 7932, two browsers, the host on the Archer and the guest on the Healer): 15 checks, from the guest's Level Select pick to the guest's Done at the Peddler.
+Kept as the host's: starting a run from the host's own camp, Quit to Lobby, saving, and the Ally builds mode for the AI seats (the host fills the empty seats, a settled rule).
+
+Probe: `node tools/guest-vs-host-runs.mjs` against `npm run dev` (own server on port 7932, two browsers, the host on the Archer and the guest on the Healer): 22 checks, from the guest's Level Select pick through the doors, an event card, a relic, the Peddler and the end card to the Kiln's road on a Level IV clear card.
 
 ## Determinism
 

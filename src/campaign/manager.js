@@ -279,7 +279,12 @@ export function createCampaignManager({ world, bus, scene, stage, app, registry,
   }
 
   function requestSkip(source = 'enter') {
-    if (isGuest()) return { ok: false, reason: 'guest' };
+    if (isGuest()) {
+      // GUEST VS HOST: a guest's Enter asks the host's manager to set out.
+      const n = net();
+      const sent = !!(n && typeof n.requestLevelSkip === 'function' && n.requestLevelSkip(source));
+      return sent ? { ok: true, sent: true } : { ok: false, reason: 'guest' };
+    }
     const r = run();
     const v = r ? r.view() : null;
     if (!v || v.phase !== 'transit') return { ok: false, reason: 'no_card' };

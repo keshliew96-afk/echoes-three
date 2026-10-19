@@ -3548,5 +3548,6 @@
  "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "Seu perfil foi salvo por uma versão mais nova de Echoes. Recarregue a página para atualizar o jogo: até lá, esta aba não salva recordes, Brasas nem desbloqueios.",
  "The host has not unlocked that yet": "O anfitrião ainda não desbloqueou isso",
  "The host could not set out just now — try again": "O anfitrião não pôde partir agora — tente de novo",
- "{name} set out — the run begins": "{name} partiu — a jornada começa"
+ "{name} set out — the run begins": "{name} partiu — a jornada começa",
+ "Anyone can choose — the first choice leads the party": "Qualquer um pode escolher — a primeira escolha guia o grupo"
 }

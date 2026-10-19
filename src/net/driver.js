@@ -41,7 +41,7 @@ const now = () => (typeof performance !== 'undefined' ? performance.now() : Date
 // a remote human's frames drive the Healer, 'ai' = nobody does: the leader
 // bot). The session switches the leader bot with it, so the bot never
 // overrides a human Healer's input (NET3-F1).
-export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null, onPartyCmd = null, onCampCmd = null }) {
+export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null, onPartyCmd = null, onCampCmd = null, onPickCmd = null }) {
   const snap = createSnapshotHost();
   const ring = createRewindRing({ registry });
   const feeds = new Map(); // seat -> feed
@@ -539,10 +539,23 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       return;
     }
     if (cmd.kind === 'pick') {
-      // Build decisions belong to the host (PLAN §3.7): a guest's pick is
-      // answered command_rejected and shown to everyone as a ping.
+      // GUEST VS HOST: a party call (doors, relic, event card, road, level
+      // card, end card) the session applies like the host's own press; any
+      // other pick stays the host's (PLAN §3.7): answered command_rejected
+      // and shown to everyone as a ping.
+      let r = { reason: 'host_decides' };
+      try {
+        if (onPickCmd) r = onPickCmd(c);
+      } catch (err) {
+        r = { reason: 'error' };
+        log('pick_cmd_error', { error: String(err && err.message) });
+      }
+      if (!r || !r.reason) {
+        stats.partyCalls = (stats.partyCalls || 0) + 1;
+        return;
+      }
       stats.rejected += 1;
-      sendCmd(c.seat, { kind: 'command_rejected', re: c.cmdSeq, what: cmd.what ?? null, reason: 'host_decides' });
+      sendCmd(c.seat, { kind: 'command_rejected', re: c.cmdSeq, what: cmd.what ?? null, reason: r.reason });
       const ping = { kind: 'ping', seat: c.seat, page: cmd.page ?? null, index: cmd.index ?? null, at: clock.tick };
       sendCmd(SEAT_ALL, ping);
       if (onCmd) onCmd(ping);

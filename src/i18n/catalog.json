@@ -2920,6 +2920,11 @@
   ],
   "data": true
  },
+ "Anyone can choose — the first choice leads the party": {
+  "files": [
+   "src/ui/run/index.js"
+  ]
+ },
  "Anything since the last save is lost.": {
   "files": [
    "src/ui/menu/pause.js"
@@ -15005,16 +15010,6 @@
    "src/ui/run/index.js"
   ]
  },
- "The {cls} leads on to the next level…": {
-  "files": [
-   "src/ui/run/index.js"
-  ]
- },
- "The {cls} picks the door — point with ←/→ and Enter": {
-  "files": [
-   "src/ui/run/index.js"
-  ]
- },
  "The {cls} picks the door — your pick was shown to the party": {
   "files": [
    "src/net/session.js"
@@ -15978,16 +15973,6 @@
   ]
  },
  "The Healer carries · {skills}": {
-  "files": [
-   "src/ui/run/transit.js"
-  ]
- },
- "The Healer chooses the road…": {
-  "files": [
-   "src/ui/run/transit.js"
-  ]
- },
- "The Healer leads on…": {
   "files": [
    "src/ui/run/transit.js"
   ]
@@ -18238,11 +18223,6 @@
  "Waiting for {names} to choose their character": {
   "files": [
    "src/ui/menu/lobby.js"
-  ]
- },
- "Waiting for the {cls}…": {
-  "files": [
-   "src/ui/run/index.js"
   ]
  },
  "Walk around the clearing.": {

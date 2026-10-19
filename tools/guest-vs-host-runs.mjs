@@ -21,6 +21,11 @@
 //     host's Advance waits on the guest, and the guest's Done then lets the
 //     party leave at once (was: the countdown ran out when the host played
 //     another class);
+//   - the party's calls (Kesh's "guests call too"): the guest's own focus on
+//     the doors and its pick decides the door; the guest leaves an event card;
+//     the guest picks the relic it points at; the guest's Return to Camp on
+//     the end card; at a Level IV start the guest picks the Kiln's road on the
+//     clear card and its Enter sets the party out;
 //   - 0 desyncs over the snapshot hash checks; no page errors.
 //   node tools/guest-vs-host-runs.mjs [--port 7932] [--base http://127.0.0.1:5199/] [--shots dir] [--lang de] [--w 720 --h 450]
 import { mkdirSync } from 'node:fs';
@@ -131,12 +136,19 @@ try {
 
   // 2. The Healer's party commands from the guest's keys.
   await netEval(host, 'window.__ev = []; E.on("intent", (e) => window.__ev.push({ kind: e.kind, index: e.index ?? null })); return 1;');
-  for (const k of ['KeyR', 'Tab', 'F2']) {
-    await tap(guest, k);
-    await sleep(1500);
+  await guest.page.bringToFront().catch(() => {});
+  await netEval(guest, 'window.__kd = 0; window.addEventListener("keydown", () => (window.__kd += 1), true); return 1;');
+  for (let round = 0; round < 2; round++) {
+    for (const k of ['KeyR', 'Tab', 'F2']) {
+      await tap(guest, k);
+      await sleep(1500);
+    }
+    const all = await waitOn(host, 'return ["rally", "target_cycle", "target_select"].every((k) => window.__ev.some((e) => e.kind === k));', { timeout: 30000 }).catch(() => null);
+    if (all !== null) break;
   }
-  await waitOn(host, 'return ["rally", "target_cycle", "target_select"].every((k) => window.__ev.some((e) => e.kind === k));', { timeout: 30000 }).catch(() => null);
   const intents = await netEval(host, 'return window.__ev;');
+  if (!intents.some((e) => e.kind === 'rally')) console.log('  host at', JSON.stringify(await netEval(host, 'return { status: n.session.status(), ev: window.__ev.length };')).slice(0, 1200));
+  if (!intents.some((e) => e.kind === 'rally')) console.log('  guest at', JSON.stringify(await netEval(guest, 'const g = n.session.debugGuest(); return { vis: document.visibilityState, focus: document.hasFocus(), away: g && g.away, frozen: g && g.frozen, ownReady: !!(g && g.own && g.own.ready), seat: n.session.status().seat, keydowns: window.__kd || 0, gseat: g && g.seat };')).slice(0, 900));
   check(
     `the guest Healer's R, Tab and F2 reach the host's sim (${JSON.stringify(intents)})`,
     intents.some((e) => e.kind === 'rally') && intents.some((e) => e.kind === 'target_cycle') && intents.some((e) => e.kind === 'target_select' && e.index === 1),
@@ -144,8 +156,8 @@ try {
   );
 
   // 3. The reward: the guest's own Healer card.
-  await netEval(host, 'E.cmd("killAllEnemies"); return 1;');
-  await waitOn(host, 'return E.state().run.phase === "reward";');
+  await netEval(host, 'window.__calls = []; for (const k of ["path_chosen", "event_leave", "relic_gain", "road_pick"]) E.on(k, (e) => window.__calls.push({ type: k, side: e.side ?? null, relic: e.relic ?? null, road: e.road ?? null, reason: e.reason ?? null })); E.cmd("eventDoor", "wishing_well", 1); return 1;');
+  await waitOn(host, 'const p = E.state().run.phase; if (p === "combat") E.cmd("killAllEnemies"); return p === "reward";', { timeout: 180000, poll: 1500 });
   await waitOn(guest, 'return E.state().run.phase === "reward" && E.runUi().screen === "draft";');
   await sleep(3000);
   const owners = await netEval(host, 'const { netOwners } = await import("/src/ui/run/partystrip.js"); return netOwners();');
@@ -172,7 +184,71 @@ try {
   const pref = await netEval(host, 'return E.party.state().autoSocketOwn;');
   check(`the guest's "Socket my new nodes" change mid-session reaches the host (${JSON.stringify(pref)})`, pref[0] === true, pref);
 
-  // 5. The Peddler: the guest's own purse, and its Done after the host's Advance.
+  // 5. The party's calls from the guest: the doors, an event card, a relic.
+  const clearRoom = async () => {
+    await waitOn(host, 'const p = E.state().run.phase; if (p === "combat") E.cmd("killAllEnemies"); if (p === "reward") E.cmd("partyCommit"); return p !== "combat" && p !== "reward" && p !== "skip";', { timeout: 180000, poll: 1500 });
+  };
+  const guestDoor = async (side) => {
+    await waitOn(guest, 'const v = E.state().run; return v.phase === "path" && E.runUi().screen === "path";', { timeout: 60000 });
+    await sleep(1500);
+    const f = await netEval(guest, 'const R = E.content.world().runSystem(); R.focusPath(arg); const v = R.view(); return { focus: v.path.focus, pick: R.choosePath(v.path.focus) };', side);
+    await waitOn(host, 'return E.state().run.phase !== "path";', { timeout: 30000 }).catch(() => null);
+    const chosen = await netEval(host, 'return window.__calls.filter((c) => c.type === "path_chosen").pop() || null;');
+    return { f, chosen };
+  };
+  // The relic pick (the run's first comes after room 1; a cursed room owes one).
+  let relicDone = false;
+  const guestRelic = async () => {
+    const rv = await netEval(host, 'const v = E.state().run; return { phase: v.phase, offer: v.relics && v.relics.offer ? v.relics.offer.choices.map((c) => c.id) : null };');
+    await waitOn(guest, 'return E.state().run.phase === "relic" && E.runUi().screen === "relic";', { timeout: 60000 });
+    await sleep(1500);
+    await shot(guest, 'guest-calls-relic');
+    const g = await netEval(guest, 'const R = E.content.world().runSystem(); R.focusRelic(1); const o = R.view().relics.offer; return { focus: o.focus, pick: R.chooseRelic(o.focus) };');
+    await waitOn(host, 'return E.state().run.phase !== "relic";', { timeout: 30000 }).catch(() => null);
+    const got = await netEval(host, 'return window.__calls.filter((c) => c.type === "relic_gain").pop() || null;');
+    check(`the guest picks the relic it points at for the party (${JSON.stringify(g)} -> ${JSON.stringify(got)} of ${JSON.stringify(rv.offer)})`, rv.offer && rv.offer.length >= 2 && g.focus === 1 && got && got.relic === rv.offer[1], { g, got, rv });
+    relicDone = true;
+  };
+  await waitOn(host, 'const p = E.state().run.phase; if (p === "reward") E.cmd("partyCommit"); return p === "path" || p === "relic";', { timeout: 90000, poll: 1500 }).catch(async (err) => {
+    console.log('  host at', JSON.stringify(await netEval(host, 'const v = E.state().run; return { phase: v.phase, room: v.room, combat: v.combatActive, party: v.party ? { cards: v.party.cards.map((c) => c && { decided: c.decided, by: c.by }) } : null, path: v.path || null };')).slice(0, 900));
+    throw err;
+  });
+  if ((await netEval(host, 'return E.state().run.phase;')) === 'relic') {
+    await guestRelic();
+    await waitOn(host, 'return E.state().run.phase === "path";', { timeout: 60000 });
+  }
+  let hv = await netEval(host, 'const v = E.state().run; return { focus: v.path.focus, options: v.path.options.map((o) => ({ event: !!o.event, curse: o.curse || null })) };');
+  const evSide = hv.options.findIndex((o) => o.event);
+  const side1 = evSide >= 0 ? evSide : 1;
+  const d1 = await guestDoor(side1);
+  check(`the guest points at a door with its own keys and its pick decides the door (host focus ${hv.focus}, guest ${JSON.stringify(d1.f)} -> ${JSON.stringify(d1.chosen)})`, d1.f.focus === side1 && d1.chosen && d1.chosen.side === side1, { hv, d1 });
+  if (evSide >= 0) {
+    await waitOn(host, 'const p = E.state().run.phase; return p === "event" || p === "encounter";', { timeout: 60000 });
+    await netEval(host, 'E.cmd("relicDoor", "short_fuse", 0); if (E.state().run.phase === "event") E.cmd("eventOpen"); return 1;');
+    await waitOn(guest, 'const v = E.state().run; return v.phase === "encounter" && E.runUi().screen === "encounter";', { timeout: 60000 });
+    await sleep(1500);
+    await shot(guest, 'guest-calls-event');
+    await netEval(guest, 'const R = E.content.world().runSystem(); R.focusEncounter(1); return R.chooseEncounter("leave");');
+    await waitOn(host, 'return window.__calls.some((c) => c.type === "event_leave");', { timeout: 30000 }).catch(() => null);
+    const left = await netEval(host, 'return { phase: E.state().run.phase, left: window.__calls.some((c) => c.type === "event_leave") };');
+    check(`the guest leaves the event card for the party (${JSON.stringify(left)})`, left.left, left);
+  } else {
+    check('the doors after room 1 carry the forced "?" door', false, hv);
+    await clearRoom();
+    await netEval(host, 'E.cmd("relicDoor", "short_fuse", 0); return 1;');
+  }
+  // The cursed door owes a relic pick after its room (when room 1 paid none).
+  if (!relicDone) {
+    await waitOn(host, 'return E.state().run.phase === "path";', { timeout: 60000 });
+    hv = await netEval(host, 'const v = E.state().run; return { options: v.path.options.map((o) => ({ event: !!o.event, curse: o.curse || null })) };');
+    await guestDoor(Math.max(0, hv.options.findIndex((o) => o.curse)));
+    await clearRoom();
+    const rv = await netEval(host, 'const v = E.state().run; return { phase: v.phase };');
+    if (rv.phase === 'relic') await guestRelic();
+    else check('the cursed room owes a relic pick', false, { hv, rv });
+  }
+
+  // 6. The Peddler: the guest's own purse, and its Done after the host's Advance.
   await netEval(host, 'E.cmd("skipToRoom", 7); return 1;');
   await waitOn(host, 'return E.state().run.phase === "shop";');
   await waitOn(guest, 'return E.state().run.phase === "shop" && E.runUi().screen === "shop";');
@@ -196,6 +272,48 @@ try {
     left = false;
   }
   check(`the guest's Done lets the party leave at once (${left ? `${Date.now() - tDone} ms` : 'still in the shop after 12 s'}), not after the countdown`, left, { left });
+
+  // 7. The end card: the guest's Return to Camp.
+  await netEval(host, 'E.cmd("endRun", "defeat"); return 1;');
+  await waitOn(guest, 'const v = E.state().run; return v.phase === "defeat" && E.runUi().screen === "end";', { timeout: 60000 });
+  await sleep(2000);
+  await netEval(guest, 'return E.content.world().runSystem().returnToCamp();');
+  let camped = true;
+  try {
+    await waitOn(host, 'return E.state().run.phase === "idle";', { timeout: 30000 });
+  } catch {
+    camped = false;
+  }
+  check(`the guest's Return to Camp on the end card takes the party to camp (${camped})`, camped, { camped });
+  if (!camped) await netEval(host, 'E.cmd("returnToCamp"); return 1;');
+
+  // 8. The Level IV clear card: the guest picks the road and sets out.
+  await netEval(host, 'E.campaign.unlock([1, 2, 3, 4]); return 1;');
+  await sleep(4000);
+  await waitOn(host, 'return E.campaign.ready(4).ready;', { timeout: 300000 }).catch(() => null);
+  await netEval(guest, 'return n.session.campBegin(4, "levels");');
+  await waitOn(host, 'const v = E.state().run; return v.act === 4 && v.phase === "combat";', { timeout: 300000 });
+  await netEval(host, 'E.cmd("skipToRoom", 8); return 1;');
+  await waitOn(host, 'const v = E.state().run; return v.room === 8 && v.phase === "combat";', { timeout: 120000 });
+  await waitOn(host, 'const c = E.campaign.state().card; if (c && c.fork) return true; E.cmd("killBoss"); E.cmd("killAllEnemies"); return false;', { timeout: 420000, poll: 1500 }).catch(async (err) => {
+    console.log('  host at', JSON.stringify(await netEval(host, 'const v = E.state().run; return { phase: v.phase, act: v.act, room: v.room, card: E.campaign.state().card };')).slice(0, 900));
+    throw err;
+  });
+  await waitOn(guest, 'const c = E.campaign.state().card; return !!(c && c.fork) && E.runUi().screen === "transit";', { timeout: 120000 });
+  await sleep(2000);
+  await shot(guest, 'guest-calls-road');
+  const gRoad = await netEval(guest, 'const R = E.content.world().runSystem(); R.pickRoad("kiln"); return E.campaign.requestSkip("enter");');
+  await waitOn(host, 'const c = n.session.partyCalls(); return c.pickRoad === 1 && c.levelSkip === 1;', { timeout: 30000 }).catch(() => null);
+  const road = await netEval(host, 'const c = E.campaign.state().card; return { pick: c && c.fork ? c.fork.pick : null, calls: n.session.partyCalls(), log: window.__calls.filter((x) => x.type === "road_pick") };');
+  check(`the guest picks the Kiln's road on the Level IV clear card (${JSON.stringify(road)})`, road.log.some((x) => x.road === 'kiln') && road.calls.pickRoad === 1, road);
+  check(`the guest's Enter on the level card sets the party out (${JSON.stringify(gRoad)}; host calls ${JSON.stringify(road.calls)})`, gRoad && gRoad.ok && road.calls.levelSkip === 1, { gRoad, road });
+  let onKiln = true;
+  try {
+    await waitOn(host, 'const v = E.state().run; return v.act === 6 && v.phase !== "transit";', { timeout: 300000 });
+  } catch {
+    onKiln = false;
+  }
+  check(`the party sets out on the Kiln's road (${onKiln})`, onKiln, { onKiln });
 
   const gs = await netEval(guest, 'const g = n.session.debugGuest(); return g ? { desyncs: g.desyncs, hashChecks: g.hashChecks } : null;');
   check(`0 desyncs over ${gs && gs.hashChecks} snapshot hash checks`, gs && gs.desyncs === 0 && gs.hashChecks > 0, gs);
