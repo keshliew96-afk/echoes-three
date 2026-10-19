@@ -39,8 +39,8 @@ CI (`.github/workflows/test.yml`) runs `npm ci --ignore-scripts`, `npm test` and
 `npx vite build` on Node 22 for every push to `gauntlet` and every pull request.
 
 House rules the safety-net probe checks:
-- every relative import in `tools/` resolves. Probes whose critic libraries were never
-  committed (`gntc*-lib.mjs`, 76 files) are kept, unrunnable, under `tools/retired/`;
+- every relative import in `tools/` resolves. The 76 probes whose critic libraries
+  (`gntc*-lib.mjs`) were never committed were deleted in v0.5.318; git history keeps them;
 - `i18n-extract --check` writes nothing; it fails when `src/i18n/catalog.json` is out of date
   (refresh it with `node tools/i18n-extract.mjs`);
 - a probe never pins one exact version: it reads `VERSION` from `src/version.js` and asks

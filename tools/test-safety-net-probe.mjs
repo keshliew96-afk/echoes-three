@@ -2,7 +2,7 @@
 // TEST SAFETY NET probe (code review finding 12, docs/TESTING.md "npm test"),
 // headless, no browser. Checks the net itself, so it cannot quietly rot:
 //   1. every relative import of every script in tools/ resolves (probes whose
-//      critic libraries were never committed live in tools/retired/);
+//      critic libraries were never committed were deleted in v0.5.318);
 //   2. `npm test` runs tools/test.mjs and every probe in its suite exists;
 //   3. the CI job runs `npm test` and `vite build` on pushes to gauntlet and
 //      on pull requests;
