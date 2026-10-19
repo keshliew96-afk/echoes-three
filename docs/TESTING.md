@@ -20,7 +20,7 @@ npx vite build                          # clean apart from the advancedChunks an
   hold keys for about 250 ms and wait on sim state, not on time.
 - Look at the screenshots yourself, and run the readability checks in `CLAUDE.md` "Before READY".
 
-### Player build (v0.5.313)
+### Player build (v0.5.314)
 
 The debug API (`window.__echoes` with `cmd`, `sim`, `campaign` and the rest) and every
 harness URL param exist only in a **harness build**: the dev server (`npm run dev`), a build
