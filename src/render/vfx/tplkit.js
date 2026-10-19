@@ -578,8 +578,20 @@ export function createTemplateKit({ stage, cosmetic }) {
       live: () => slots.reduce((n, s) => n + (s.live ? 1 : 0), 0),
     };
   }
+  // Crowd dimming: a burst landing where many template pieces already glow
+  // comes in fainter, so a stacked fight stays readable instead of blowing
+  // out to white (each piece is additive under the bloom).
+  const near = (s, x, z) => s.live && s.cx !== undefined && (s.cx - x) ** 2 + (s.cz - z) ** 2 < 4;
+  let crowdPools = [];
+  function crowd(x, z) {
+    let n = 0;
+    for (const pool of crowdPools) for (const s of pool.slots) if (near(s, x, z)) n++;
+    return Math.max(0.4, 1 / (1 + 0.09 * Math.max(0, n - 1))); // n counts the new piece too
+  }
   const start = (s, o, life) => {
     s.live = true;
+    s.cx = o.x;
+    s.cz = o.z;
     s.age = 0;
     s.delay = o.delay ?? 0;
     s.life = life;
@@ -615,7 +627,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.inner.color.copy(soft(o.inner ?? o.outer ?? '#FFC94A'));
     s.r = o.radius ?? 1;
     s.spin = o.spin ?? 1.4;
-    s.op = (o.opacity ?? 0.9) * (0.55 + 0.45 * lightGain);
+    s.op = (o.opacity ?? 0.9) * (0.55 + 0.45 * lightGain) * crowd(o.x, o.z);
     s.grow = o.grow ?? 0.08;
     s.obj.position.set(o.x, o.y ?? 0.035, o.z);
     if (o.stand !== undefined) {
@@ -673,7 +685,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uGlow.value.copy(soft(o.glow ?? '#A24BFF'));
     u.uSeed.value = rnd(0, 50);
     u.uGain.value = o.gain ?? 1.15;
-    s.op = (o.opacity ?? 0.9) * lightGain;
+    s.op = (o.opacity ?? 0.9) * lightGain * crowd(o.x, o.z);
     u.uOpacity.value = 0;
     return s;
   }
@@ -728,7 +740,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.r0 = o.radius ?? 1;
     s.grow = o.grow ?? 0.08;
     s.w0 = o.width ?? 0.3;
-    s.op = o.opacity ?? 1;
+    s.op = (o.opacity ?? 1) * crowd(o.x, o.z);
     s.tail = o.ring ? 2 : o.tail ?? 0.9;
     s.obj.position.set(o.x, 0, o.z);
     u.uStart.value = (o.angle ?? 0) - span / 2;
@@ -793,6 +805,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     return { obj: mesh, u };
   });
   const BLAST_MODE = { fire: 0, celestial: 1, holo: 2 };
+  crowdPools = [circles, beams, blazes, blasts];
   // opts: x, y, z, size (u across), mode ('fire' | 'celestial' | 'holo'),
   // core, a, b (hex), life, opacity, delay, spin, gain.
   function blast(o) {
@@ -811,7 +824,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.spinRate = o.spin ?? 0.8;
     u.uGain.value = o.gain ?? 1.3;
     u.uK.value = 0;
-    s.op = o.opacity ?? 1;
+    s.op = (o.opacity ?? 1) * crowd(o.x, o.z);
     u.uOpacity.value = 0;
     return s;
   }

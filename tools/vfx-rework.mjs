@@ -163,9 +163,9 @@ function clipEnd(name) {
   clipDir = null;
 }
 // Step n virtual frames; still[i] names a still to keep at frame i.
-async function frames(page, n, still = {}) {
+async function frames(page, n, still = {}, ticks = 0) {
   for (let i = 0; i < n; i++) {
-    await page.evaluate((ms) => __vclock.step(ms), 1000 / FPS);
+    await page.evaluate((ms, k) => (k && __echoes.sim.stepN(k, null), __vclock.step(ms)), 1000 / FPS, ticks);
     if (clipDir) await page.screenshot({ path: join(clipDir, `f${String(clipN++).padStart(5, '0')}.jpg`), type: 'jpeg', quality: 86 });
     if (SHOTS && still[i]) await page.screenshot({ path: join(SHOTS, `${still[i]}.png`) });
   }
@@ -227,6 +227,13 @@ async function equipAll(page, sets) {
     X.cmd('killAllEnemies');
     X.sim.stepN(4, null);
     const out = {};
+    // The Healer's keys are set again if the new room's start reset them.
+    const h = sets.find((x) => x.seat === 0);
+    const hs = () => ((X.cmd('skillState') || {}).slots || []).map((sl) => sl && sl.id);
+    if (h && !h.set.every((id) => hs().includes(id))) {
+      X.cmd('restoreSkillState', { slots: h.set.map((id) => ({ id, remaining: 0 })), override: null, auras: {} });
+      if (!h.set.every((id) => hs().includes(id))) denied.push(`healer ${h.set.join('+')}: restore refused (phase ${(X.state().run || {}).phase}, room ${(X.state().run || {}).room})`);
+    }
     if (denied.length) out.denied = denied;
     for (const { seat } of sets) out[seat] = seat === 0 ? ((X.cmd('skillState') || {}).slots || []).map((s) => s && s.id) : (X.cmd('partyView', seat) || {}).slots || [];
     return out;
@@ -243,6 +250,8 @@ async function castOne(page, cls, seat, id, slot) {
     (seat, near) => {
       const X = __echoes;
       X.cmd('killAllEnemies');
+      // A cleared room opens the reward pages over the shot: leave them.
+      for (let i = 0; i < 8 && (X.state().run || {}).phase === 'reward'; i++) X.cmd('draftDecline');
       const me = X.content.world().entities().find((e) => e.partyIndex === seat) ?? X.content.world().player;
       const f = { x: me.x, z: me.z - (near ? 1.0 : 2.2) };
       for (const [dx, dz] of [[-0.9, 0], [0, -0.5], [0.9, 0]]) X.cmd('spawn', 'dummy', f.x + dx, f.z + dz);
@@ -316,15 +325,17 @@ async function fight(page, team) {
     kinds.forEach((k, i) => X.cmd('spawn', k, p.x + (i - 3) * 0.9, p.z - 2.2 - (i % 2) * 0.9));
   });
   clipStart(`fight-${team}`);
-  await live(page, true);
-  await frames(page, 150, { 40: `fight-${team}-1`, 75: `fight-${team}-2`, 110: `fight-${team}-3`, 140: `fight-${team}-4` });
-  await live(page, false);
+  // The sim steps through __echoes.sim.stepN (two ticks a frame), the one
+  // path that carries the leader bot's intents; the clock only draws.
+  await frames(page, 150, { 40: `fight-${team}-1`, 75: `fight-${team}-2`, 110: `fight-${team}-3`, 140: `fight-${team}-4` }, 60 / FPS);
   clipEnd(`fight-${team}`);
   const r1 = await recipes(page);
   const d = (k) => (r1[k] ?? 0) - (r0[k] ?? 0);
   const need = team === 'A' ? ['tpl:blade_swing', 'tpl:blade_release', 'tpl:blade_hit', 'tpl:magic_release', 'tpl:magic_hit'] : ['tpl:blade_swing', 'tpl:magic_release', 'tpl:magic_hit', 'tpl:blade_hit'];
   for (const k of need) check(d(k) > 0, `fight ${team}: ${k.slice(4)} played ${d(k)}x`);
   const counts = await page.evaluate(() => __echoes.content.vfx().tpl);
+  const pilot = await page.evaluate(() => { const v = __echoes.cmd('autopilot', { seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto', pages: false, leader: true }); const p = __echoes.content.world().player; return { stats: v.stats, hp: p.hp, phase: (__echoes.state().run || {}).phase, tick: __echoes.tick }; });
+  console.log(`info fight ${team} leader bot: ${JSON.stringify(pilot)}`);
   console.log(`info fight ${team} live template primitives at the end: ${JSON.stringify(counts)}`);
 }
 
