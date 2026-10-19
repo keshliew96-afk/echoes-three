@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Shared browser launcher for Gauntlet probes (docs/gauntlet/PLAN.md §6.7).
-// READ-ONLY for every key: import it, never edit it (it is ARCH's file).
+// Shared by most probes: change it only in ways that keep every caller working.
 //
 //   import { launchEchoes, openEchoes, FLAGS } from './gnt-arch-browser.mjs';
 //   const browser = await launchEchoes({ gpu: true, headful: false, background: true, autoplay: true });
@@ -19,6 +19,10 @@
 // CLI:  node tools/gnt-arch-browser.mjs rafhz [--headful] [--url U] [--ms 3000]
 //       -> { rafHz, frameMsP50, frameMsP95, renderer, headful } — the display cadence a
 //          V-Sync / frame-limit measurement must be interpreted against.
+//
+// ECHOES_CHROME_ARGS (space-separated) adds flags to every launch, e.g. in a Linux
+// cloud session as root: ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle
+// --use-angle=swiftshader --enable-unsafe-swiftshader". Flags already passed are not repeated.
 import puppeteer from 'puppeteer';
 
 export const FLAGS = Object.freeze({
@@ -49,6 +53,9 @@ export async function launchEchoes({
     `--window-size=${width},${height}`,
     ...extraArgs,
   ];
+  for (const a of (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean)) {
+    if (!args.includes(a)) args.push(a);
+  }
   return puppeteer.launch({
     headless: !headful,
     protocolTimeout: 300000,

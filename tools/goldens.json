@@ -1,0 +1,65 @@
+{
+ "kill_all-1": {
+  "tick": 3567,
+  "events": 737,
+  "eventsHash": "3e2b2eedc51b3df8",
+  "stateHash": "70eb3bdeaae32021",
+  "rngDraws": 52
+ },
+ "kill_all-2": {
+  "tick": 3563,
+  "events": 735,
+  "eventsHash": "453a4475fab4de34",
+  "stateHash": "2aed39ede59b5624",
+  "rngDraws": 52
+ },
+ "kill_all-3": {
+  "tick": 3564,
+  "events": 745,
+  "eventsHash": "34e950667c426f91",
+  "stateHash": "ee0f9a355ac5ac9d",
+  "rngDraws": 56
+ },
+ "defend-1": {
+  "tick": 3552,
+  "events": 918,
+  "eventsHash": "1b4ce6a9463837c4",
+  "stateHash": "92f7448ce9fc4dc2",
+  "rngDraws": 92
+ },
+ "defend-2": {
+  "tick": 3549,
+  "events": 847,
+  "eventsHash": "f3ca4c29a0520c26",
+  "stateHash": "53ed409d1eb07029",
+  "rngDraws": 91
+ },
+ "defend-3": {
+  "tick": 3558,
+  "events": 868,
+  "eventsHash": "16846bfb9ff47470",
+  "stateHash": "8899ca4c212ca65c",
+  "rngDraws": 95
+ },
+ "run-1": {
+  "tick": 3561,
+  "events": 987,
+  "eventsHash": "4d6d3c3ca73409e7",
+  "stateHash": "bf1702a33e2e1063",
+  "rngDraws": 121
+ },
+ "run-2": {
+  "tick": 3558,
+  "events": 1214,
+  "eventsHash": "0edc1b335960467d",
+  "stateHash": "52fa0f948ee03c3c",
+  "rngDraws": 151
+ },
+ "run-3": {
+  "tick": 3567,
+  "events": 940,
+  "eventsHash": "5f96dfa0990f0d27",
+  "stateHash": "27063894cd09387b",
+  "rngDraws": 113
+ }
+}
