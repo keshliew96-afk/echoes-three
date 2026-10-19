@@ -3542,5 +3542,7 @@
  "Not met yet. Elites carry it from room 4 of a level on.": "Aún no encontrado. Las élites lo llevan desde la sala 4 de un nivel.",
  "Not met yet. Elites carry it in the campaign.": "Aún no encontrado. Las élites lo llevan en la campaña.",
  "Felled before the Journal kept count.": "Abatido antes de que el Diario llevara la cuenta.",
- "Felled: {n}, and more before the Journal kept count.": "Abatidos: {n}, y más antes de que el Diario llevara la cuenta."
+ "Felled: {n}, and more before the Journal kept count.": "Abatidos: {n}, y más antes de que el Diario llevara la cuenta.",
+ "The load stopped part-way. Reload the page: the game finishes loading it when it starts.": "La carga se detuvo a medias. Recarga la página: el juego termina de cargarla al iniciarse.",
+ "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "Tu perfil se guardó con una versión más reciente de Echoes. Recarga la página para actualizar el juego: hasta entonces, esta pestaña no guarda récords, Brasas ni desbloqueos."
 }

@@ -16344,6 +16344,11 @@
   ],
   "data": true
  },
+ "The load stopped part-way. Reload the page: the game finishes loading it when it starts.": {
+  "files": [
+   "src/ui/menu/cloud.js"
+  ]
+ },
  "The Lockkeeper": {
   "files": [
    "src/data/journal.js",
@@ -19086,6 +19091,11 @@
  "Your profile is unavailable in this browser mode.": {
   "files": [
    "src/ui/run/unlocks.js"
+  ]
+ },
+ "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": {
+  "files": [
+   "src/save/index.js"
   ]
  },
  "Your progress and settings are saved.": {

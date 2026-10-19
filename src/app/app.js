@@ -269,6 +269,12 @@ export function createApp({ params }) {
     if (r.status === 'recovered') toast(t('Settings were reset — the saved file was unreadable'), { tone: 'warn', ms: 5200 });
     else if (r.status === 'newer') toast(t('Your settings were saved by a newer version of Echoes — using defaults for now'), { tone: 'warn', ms: 5200 });
     else if (r.storage === 'memory') toast(t("Settings can't be saved in this browser mode"), { tone: 'warn', ms: 4200 });
+    // SAVE SAFETY: a profile from a newer version is kept, never overwritten.
+    try {
+      service('save')?.announceProfile?.();
+    } catch {
+      /* UI only */
+    }
   }
 
   function showTitle() {

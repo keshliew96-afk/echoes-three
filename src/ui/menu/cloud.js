@@ -118,6 +118,8 @@ function errorLine(r, code) {
       return t('This save is damaged or empty and can’t be loaded.');
     case 'quota':
       return t('This device has no room left for the save. Nothing was changed.');
+    case 'partial':
+      return t('The load stopped part-way. Reload the page: the game finishes loading it when it starts.');
     default:
       return t('The server couldn’t do that right now ({status}). Try again later.', { status: r.status || r.error || '?' });
   }

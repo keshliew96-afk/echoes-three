@@ -3430,5 +3430,7 @@
  "Not met yet. Elites carry it from room 4 of a level on.": "아직 만나지 못함. 각 레벨의 방 4부터 정예가 지닙니다.",
  "Not met yet. Elites carry it in the campaign.": "아직 만나지 못함. 캠페인의 정예가 지닙니다.",
  "Felled before the Journal kept count.": "일지가 세기 전에 쓰러뜨렸습니다.",
- "Felled: {n}, and more before the Journal kept count.": "쓰러뜨림: {n} (일지가 세기 전의 기록은 빠져 있습니다)"
+ "Felled: {n}, and more before the Journal kept count.": "쓰러뜨림: {n} (일지가 세기 전의 기록은 빠져 있습니다)",
+ "The load stopped part-way. Reload the page: the game finishes loading it when it starts.": "불러오기가 중간에 멈췄습니다. 페이지를 새로고침하세요. 게임이 시작할 때 불러오기를 마칩니다.",
+ "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "프로필이 더 새로운 버전의 Echoes로 저장되었습니다. 페이지를 새로고침해 게임을 업데이트하세요. 그때까지 이 탭은 기록, 불씨, 해금을 저장하지 않습니다."
 }

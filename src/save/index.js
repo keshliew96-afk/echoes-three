@@ -50,7 +50,7 @@ import { createDeedRunTracker } from './deedrun.js';
 import { JOURNAL_ALIAS, ENEMY_JOURNAL_IDS, BOSS_JOURNAL_IDS, AFFIX_JOURNAL_IDS } from '../data/journal.js';
 import { createThumbnailer } from './thumbnail.js';
 import { createAutosave } from './autosave.js';
-import { makeBundle, readBundle, applyBundle } from './cloud.js';
+import { makeBundle, readBundle, applyBundle, finishPendingApply } from './cloud.js';
 
 const TICK_HZ = 60;
 const r1 = (v) => Math.round(v * 10) / 10;
@@ -154,6 +154,14 @@ export function createSaveSystem({
   storage,
 }) {
   const store = createSaveStorage(storage !== undefined ? { storage } : {});
+  // SAVE SAFETY: a cloud / backup load a closed page left part-way is
+  // finished before anything reads the profile or the slots (save/cloud.js).
+  let pendingApply = null;
+  try {
+    pendingApply = finishPendingApply(store);
+  } catch (err) {
+    console.warn('[save] finishing a cloud load failed', err);
+  }
   const profileStore = createProfileStore({ store });
   const thumbs = createThumbnailer({ stage });
   // Boot idle: start the thumbnail worker (fetch, module, JPEG encoder) now,
@@ -177,15 +185,35 @@ export function createSaveSystem({
   // kill counter base of the live run (score = kills since run_start).
   // CAMPAIGN (PLAN §12.8): per-level kills for the campaign score — the kill
   // counter at the live level's start and the kills of every level cleared.
+  // SAVE SAFETY: the run's deed facts (save/deedrun.js) and High Water's best
+  // cast ride along too, so Continue after a reload pays the deeds the run
+  // earned before it; a tree without them starts them fresh.
   const tracker = { playtimeTicks: 0, runKillBase: 0, levelKillBase: 0, levelKills: [] };
   let profileTicks = 0; // ticks not yet credited to the profile's lifetime playtime
+  // UNLOCKS round two (docs/UNLOCKS.md): what this run did that a deed
+  // counts (save/deedrun.js; it only reads the bus).
+  const deedRun = createDeedRunTracker(bus);
+  // THE TIDECALLER: High Water (a deed) wants the most soaked enemies one
+  // cast crashed. A cast's crashes share its tick, seat and skill.
+  const crashCasts = new Map();
+  let crashBest = 0;
   const appState = {
-    save: () => ({ playtimeTicks: tracker.playtimeTicks, runKillBase: tracker.runKillBase, levelKillBase: tracker.levelKillBase, levelKills: tracker.levelKills.slice() }),
+    save: () => ({
+      playtimeTicks: tracker.playtimeTicks,
+      runKillBase: tracker.runKillBase,
+      levelKillBase: tracker.levelKillBase,
+      levelKills: tracker.levelKills.slice(),
+      deedRun: deedRun.save(),
+      crashBest,
+    }),
     load: (d) => {
       tracker.playtimeTicks = Number.isFinite(d.playtimeTicks) ? d.playtimeTicks : 0;
       tracker.runKillBase = Number.isFinite(d.runKillBase) ? d.runKillBase : 0;
       tracker.levelKillBase = Number.isFinite(d.levelKillBase) ? d.levelKillBase : tracker.runKillBase;
       tracker.levelKills = Array.isArray(d.levelKills) ? d.levelKills.filter((k) => Number.isFinite(k)) : [];
+      deedRun.load(d.deedRun);
+      crashCasts.clear();
+      crashBest = Number.isFinite(d.crashBest) && d.crashBest > 0 ? Math.floor(d.crashBest) : 0;
     },
   };
   const io = createStateIO({ clock, rng, registry, world, scene, appState });
@@ -850,13 +878,24 @@ export function createSaveSystem({
   }
   // Replaces the profile and every slot, then freezes storage: the caller
   // reloads the page so every screen reads the new files.
+  // SAVE SAFETY: a load that changed nothing turns the autosave back on (the
+  // session goes on saving); one that went through, or stopped part-way,
+  // leaves the store frozen for the reload.
   function applyCloud(value) {
     try {
       autosaver.setEnabled?.(false);
     } catch {
       /* the frozen store refuses its writes anyway */
     }
-    return applyBundle(store, value);
+    const r = applyBundle(store, value);
+    if (!r.ok && !store.frozen) {
+      try {
+        autosaver.setEnabled?.(true);
+      } catch {
+        /* best effort */
+      }
+    }
+    return r;
   }
   function backupName() {
     const d = new Date();
@@ -1138,10 +1177,8 @@ export function createSaveSystem({
       }
     }
   });
-  // THE TIDECALLER: High Water (a deed) wants the most soaked enemies one
-  // cast crashed. A cast's crashes share its tick, seat and skill.
-  const crashCasts = new Map();
-  let crashBest = 0;
+  // THE TIDECALLER: High Water's count (crashCasts / crashBest, declared
+  // with the app trackers above).
   bus.on('crash', (ev) => {
     const k = `${ev.tick}|${ev.seat}|${ev.skill}`;
     const n = (crashCasts.get(k) ?? 0) + 1;
@@ -1149,9 +1186,6 @@ export function createSaveSystem({
     if (crashCasts.size > 64) crashCasts.delete(crashCasts.keys().next().value);
     if (n > crashBest) crashBest = n;
   });
-  // UNLOCKS round two (docs/UNLOCKS.md): what this run did that a deed
-  // counts (save/deedrun.js; it only reads the bus).
-  const deedRun = createDeedRunTracker(bus);
   bus.on('level_start', (ev) => {
     tracker.levelKillBase = world.stats.kills;
     if (probing) return;
@@ -1369,6 +1403,7 @@ export function createSaveSystem({
         if (profileStore.sync()) {
           tabSync.profile += 1;
           notify(profileListeners, 'profile');
+          announceProfile();
         }
       }
       if (k === null || (k.startsWith(SAVE_PREFIX) && !k.endsWith('.tmp'))) {
@@ -1562,7 +1597,24 @@ export function createSaveSystem({
   }
 
   // ------------------------------------------------------------- api --
+  // SAVE SAFETY: a profile a newer version of the game saved is shown but
+  // never written (save/profile.js). Said once a session: at the title
+  // (app.js) or when another tab of the newer game writes it.
+  let newerAnnounced = false;
+  function announceProfile() {
+    if (newerAnnounced || profileStore.report.status !== 'newer') return false;
+    if (!app || typeof app.toast !== 'function') return false;
+    newerAnnounced = true;
+    try {
+      app.toast(t('Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.'), { tone: 'warn', ms: 8000 });
+    } catch {
+      /* UI only */
+    }
+    return true;
+  }
+
   const api = {
+    announceProfile,
     capture,
     apply: (tree) => applyTree(tree, 'api'),
     hash: (tree) => hashState(tree ?? capture()),
@@ -1714,6 +1766,7 @@ export function createSaveSystem({
     simulateTornWrite,
     profile: () => profileStore.get(),
     profileReport: () => profileStore.report,
+    pendingApply: () => pendingApply, // SAVE SAFETY: a cloud load finished at boot
     usage: () => store.usage(),
     canSave,
     exportText,
@@ -1740,6 +1793,7 @@ export function createSaveSystem({
     tabs: () => ({ profile: profileStore.debugState(), adopted: { profile: tabSync.profile, slots: tabSync.slots }, indexFresh: store.read(INDEX_KEY) === indexText && !slotsStale }),
     autosave: (reason) => autosave(reason),
     autosaveEnabled: (on) => autosaver.setEnabled(on),
+    autosaveOn: () => autosaver.isEnabled(), // SAVE SAFETY probe: on again after a failed cloud load
     resetAutosaveThrottle: () => autosaver.resetThrottle(),
     captureLog: () => captureLog.map((r) => ({ ...r })),
     requestCapture: (reason) => requestCapture(reason).then((r) => ({ ok: r.ok, rec: r.rec, hash: r.tree ? hashState(r.tree) : null })),

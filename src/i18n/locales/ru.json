@@ -3573,5 +3573,7 @@
  "Not met yet. Elites carry it from room 4 of a level on.": "Ещё не встречена. Элита носит её с 4-й комнаты уровня.",
  "Not met yet. Elites carry it in the campaign.": "Ещё не встречена. Элита носит её в кампании.",
  "Felled before the Journal kept count.": "Сражено до того, как Дневник начал счёт.",
- "Felled: {n}, and more before the Journal kept count.": "Сражено: {n}, и ещё до того, как Дневник начал счёт."
+ "Felled: {n}, and more before the Journal kept count.": "Сражено: {n}, и ещё до того, как Дневник начал счёт.",
+ "The load stopped part-way. Reload the page: the game finishes loading it when it starts.": "Загрузка прервалась на полпути. Перезагрузите страницу: игра завершит загрузку при запуске.",
+ "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "Ваш профиль сохранён более новой версией Echoes. Перезагрузите страницу, чтобы обновить игру: до тех пор эта вкладка не сохраняет рекорды, Угли и открытия."
 }
