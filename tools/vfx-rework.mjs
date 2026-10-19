@@ -175,6 +175,9 @@ const live = (page, on) => page.evaluate((v) => (v ? (__echoes.sim.thaw(), __vcl
 // A Level 1 campaign: the first four heroes, or the three later heroes
 // beside the Healer.
 async function setupTeam(page, team) {
+  // The reels clear rooms between casts: the run's pages stay hidden so they
+  // do not cover the shot (the sim keeps stepping under them).
+  await page.addStyleTag({ content: '.rn-page, #run-veil { display: none !important; }' });
   // A campaign, so the campaign-only skills of each pool can go on a key.
   const lineup = team === 'A' ? ['healer', 'tank', 'swordsman', 'archer'] : ['healer', 'tidecaller', 'bellwright', 'duskwing'];
   await page.evaluate((lineup) => __echoes.cmd('startCampaign', { level: 1, lineup }), lineup);
@@ -250,8 +253,6 @@ async function castOne(page, cls, seat, id, slot) {
     (seat, near) => {
       const X = __echoes;
       X.cmd('killAllEnemies');
-      // A cleared room opens the reward pages over the shot: leave them.
-      for (let i = 0; i < 8 && (X.state().run || {}).phase === 'reward'; i++) X.cmd('draftDecline');
       const me = X.content.world().entities().find((e) => e.partyIndex === seat) ?? X.content.world().player;
       const f = { x: me.x, z: me.z - (near ? 1.0 : 2.2) };
       for (const [dx, dz] of [[-0.9, 0], [0, -0.5], [0.9, 0]]) X.cmd('spawn', 'dummy', f.x + dx, f.z + dz);
