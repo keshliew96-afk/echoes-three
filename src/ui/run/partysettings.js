@@ -44,17 +44,25 @@ export function registerPartySettings(settings, { world, params = null } = {}) {
     }
     return 0;
   };
-  function apply() {
+  function apply(key = null) {
     const P = world && typeof world.partySystem === 'function' ? world.partySystem() : null;
-    if (!P || (world.replica === true)) return;
+    if (!P) return;
+    // GUEST VS HOST: a network guest's world is a replica; its own "Socket
+    // my new nodes" still reaches the host (the party proxy sends it as the
+    // `pref` CMD), as a host's change applies at once. Ally builds stays the
+    // host's (it sets the AI-held seats).
+    if (world.replica === true) {
+      if (key === AUTO_SOCKET_OWN_KEY) P.setAutoSocketOwn(ownSeat(), !!settings.get(AUTO_SOCKET_OWN_KEY));
+      return;
+    }
     const mode = override ?? settings.get(ALLY_BUILDS_KEY) ?? 'suggest';
     if (P.mode() !== mode) P.setMode(mode);
     P.setAutoSocketOwn(ownSeat(), !!settings.get(AUTO_SOCKET_OWN_KEY));
   }
   apply();
   if (settings && typeof settings.subscribe === 'function') {
-    settings.subscribe(ALLY_BUILDS_KEY, apply);
-    settings.subscribe(AUTO_SOCKET_OWN_KEY, apply);
+    settings.subscribe(ALLY_BUILDS_KEY, () => apply(ALLY_BUILDS_KEY));
+    settings.subscribe(AUTO_SOCKET_OWN_KEY, () => apply(AUTO_SOCKET_OWN_KEY));
   }
   registerSettingsRow('gameplay', {
     id: 'allyBuilds',

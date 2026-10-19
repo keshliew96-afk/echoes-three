@@ -398,9 +398,14 @@ export function createPartyPages(ctx) {
     } else doorDeadlineTick = null;
   }
   // The Advance countdown (a host Advance with a human not Done).
-  function startAdvanceCountdown(tick = getTick()) {
+  // `by` = the seat that pressed Advance (the host's): the countdown waits on
+  // every OTHER human (GUEST VS HOST: a host on any seat, not only seat 0).
+  function startAdvanceCountdown(tick = getTick(), by = null) {
     if (!shop) return null;
     shop.leaveTick = tick + PARTY_DEADLINES.shopAdvanceTicks;
+    // (Seat 0, the usual host, is left out so a solo or seat-0 tree is unchanged.)
+    if (Number.isInteger(by) && by !== 0) shop.leaveBy = by;
+    else delete shop.leaveBy;
     events.emit(tick, 'party_deadline', { what: 'shop_advance', tick: shop.leaveTick });
     return shop.leaveTick;
   }
@@ -470,6 +475,7 @@ export function createPartyPages(ctx) {
       done: [...shop.done],
       deadlineTick: shop.deadlineTick,
       leaveTick: shop.leaveTick,
+      ...(Number.isInteger(shop.leaveBy) ? { leaveBy: shop.leaveBy } : {}),
       deadlineInTicks: shop.deadlineTick !== null ? Math.max(0, shop.deadlineTick - tick) : null,
       leaveInTicks: shop.leaveTick !== null ? Math.max(0, shop.leaveTick - tick) : null,
       // SHOP REFRESH: per-seat refresh counts (present only after one).

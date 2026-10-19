@@ -270,8 +270,12 @@ export function createThreatLayer({ stage, world, bus = null }) {
     const cy = h / 2;
     const rect = { l: EDGE_INSET, r: w - EDGE_INSET, t: EDGE_INSET, b: h - EDGE_INSET };
 
-    const px = world.player.x;
-    const pz = world.player.z;
+    // GUEST VS HOST: nearest-first from the viewer's own hero (a guest's or
+    // a non-Healer player's seat), as the Healer's player gets it.
+    const nv = world.netView;
+    const me = (nv && typeof nv.followTarget === 'function' && nv.followTarget()) || world.player;
+    const px = me.x;
+    const pz = me.z;
     const markRaw = world.allySystem?.().getMark?.() ?? null;
     const markId = typeof markRaw === 'object' && markRaw ? markRaw.id : markRaw;
 

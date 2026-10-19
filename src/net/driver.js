@@ -26,7 +26,7 @@
 import { BIN, SNAPSHOT_EVERY_TICKS, KEYFRAME_EVERY_TICKS, SIM_HZ } from './protocol/constants.js';
 import { createSnapshotHost, pct } from './protocol/snapshot.js';
 import { decodeInputPacket, decodeCmd, encodeCmd, encodeEvents, encodeKeyframe, encodeEventsBundle, eventsBody, SEAT_ALL } from './protocol/codec.js';
-import { seatInputOf, repeatFrame, neutralFrame, frameFromSnapshot, playerSnapshotOf, STALE_REPEAT_TICKS, DASH_HOLD_TICKS } from '../sim/netseats.js';
+import { seatInputOf, repeatFrame, neutralFrame, frameFromSnapshot, playerSnapshotOf, STALE_REPEAT_TICKS, DASH_HOLD_TICKS, PARTY_COMMANDS } from '../sim/netseats.js';
 import { emptySnapshot } from '../core/intents.js';
 import { createRewindRing } from './lagcomp.js';
 
@@ -275,7 +275,8 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       }
       if (!inp) continue;
       if (seat === 0) playerSnap = playerSnapshotOf(inp);
-      else si.seats[seat] = inp;
+      // The Healer's party commands (rally, target_*) act only from seat 0.
+      else si.seats[seat] = inp.presses.some((p) => PARTY_COMMANDS.includes(p.kind)) ? { ...inp, presses: inp.presses.filter((p) => !PARTY_COMMANDS.includes(p.kind)) } : inp;
     }
     if (!playerSnap) {
       // No human on the Healer (after a migration): the leader bot plays it

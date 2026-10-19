@@ -27,7 +27,7 @@
 import { BIN, SNAPSHOT_EVERY_TICKS, SIM_HZ } from './protocol/constants.js';
 import { createSnapshotClient } from './protocol/snapshot.js';
 import { encodeInputPacket, decodeEvents, decodeEventsBundle, decodeCmd, encodeCmd, decodeKeyframe, fromBase64 } from './protocol/codec.js';
-import { frameFromSnapshot, seatInputOf, quantAim } from '../sim/netseats.js';
+import { frameFromSnapshot, seatInputOf, quantAim, PARTY_COMMANDS } from '../sim/netseats.js';
 import { moveIndex, HUMAN_DODGE } from '../sim/remote.js';
 import { scriptedInput } from '../sim/script.js';
 import { isStunned } from '../sim/status.js';
@@ -74,6 +74,10 @@ const now = () => performance.now();
 // TONICS AND BOMBS: a guest's slot press rides bit 10; the host resolves it
 // (no local prediction: the slot and the throw are the host's).
 const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'interact', 'use_item']);
+// GUEST VS HOST: a guest playing the Healer (seat 0) also sends its party
+// commands — Rally (R), Mark (Tab) and the heal target (F1-F4) — as a host
+// or single-player Healer has them.
+const HEALER_PRESSES = new Set([...GUEST_PRESSES, ...PARTY_COMMANDS]);
 const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
 for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
@@ -310,7 +314,12 @@ export function createNetSession(ctx) {
           // BUILD_BRIEF §25.7: a guest's Advance lamp reads "Done".
           if (prop === 'advanceFromShop') return () => guestPartyCall({ op: 'done', seat: localSeat() });
           if (prop === 'partyScreen') return (seat, open) => guestPartyCall({ op: 'screen', seat, open: !!open });
+          // GUEST VS HOST: a guest playing the Healer decides the Healer's
+          // own card and shelf (seat 0's single-player entry points), as a
+          // host or single-player Healer does.
+          if (localSeat() === 0 && Object.prototype.hasOwnProperty.call(GUEST_HEALER_RUN, prop)) return (...args) => GUEST_HEALER_RUN[prop](t, ...args);
         }
+        if (typeof v === 'function' && area === 'build' && localSeat() === 0 && Object.prototype.hasOwnProperty.call(GUEST_HEALER_BUILD, prop)) return GUEST_HEALER_BUILD[prop];
         if (typeof v === 'function' && mutators.has(prop)) {
           return (...args) => {
             guestPick(area, String(prop), args);
@@ -381,8 +390,16 @@ export function createNetSession(ctx) {
   const hostMayAct = (seat) => {
     const s = Number(seat);
     if (!(Number.isInteger(s) && s >= 0 && s <= 3)) return false;
-    return s === 0 || s === localSeat() || seatControllers()[s] !== 'human';
+    if (s === localSeat()) return true;
+    // GUEST VS HOST: the Healer's seat is the host's to decide only while no
+    // guest plays it (the leader bot, or the host itself); a guest Healer
+    // builds its own character like any guest.
+    if (s === 0) return !guestHoldsHealer();
+    return seatControllers()[s] !== 'human';
   };
+  // A guest plays seat 0: this page hosts from another seat and seat 0's
+  // frames are a remote human's.
+  const guestHoldsHealer = () => role === 'host' && localSeat() !== 0 && seatControllers()[0] === 'human';
   const partyStats = { sent: 0, applied: 0, rejected: 0, rejectedHere: 0, byReason: {} };
   function guestPartyCall(body) {
     if (role !== 'guest' || !body) return false;
@@ -420,6 +437,20 @@ export function createNetSession(ctx) {
     if (ok) partyStats.predicted = (partyStats.predicted || 0) + 1;
     return ok && body.op === 'replace' ? body.slot : r;
   }
+  // GUEST VS HOST: the Healer's own entry points (seat 0's run.reward, the
+  // run wallet's shelf and world.buildSystem) for a guest playing the Healer
+  // — the same `party` CMDs a guest on an ally seat sends for its own seat.
+  const GUEST_HEALER_RUN = {
+    takeReward: (R, replace) => guestPartyPredict({ op: 'pick', seat: 0, choice: 'take', replace: Number.isInteger(replace) ? replace : null }, R),
+    declineReward: (R) => guestPartyPredict({ op: 'pick', seat: 0, choice: 'leave', replace: null }, R),
+    setRewardReplace: (R, slot) => guestPartyPredict({ op: 'replace', seat: 0, slot }, R),
+    buy: (R, index) => guestPartyCall({ op: 'buy', seat: 0, index }),
+  };
+  const GUEST_HEALER_BUILD = {
+    socket: (skill, node, col, bench = null) => guestPartyCall({ op: 'socket', seat: 0, skill, node, col, bench: Number.isInteger(bench) ? bench : null }),
+    unsocket: (skill, col) => guestPartyCall({ op: 'unsocket', seat: 0, skill, col }),
+    autoFill: () => guestPartyCall({ op: 'autofill', seat: 0 }),
+  };
   // A seat build as the local UI may touch it.
   function seatBuildGuard(b, seat, mode) {
     return new Proxy(b, {
@@ -487,7 +518,28 @@ export function createNetSession(ctx) {
         }
         if (prop === 'autoFillAll') return () => v.call(t, [0, 1, 2, 3].filter(hostMayAct));
         if (prop === 'advanceFromShop') return (o = {}) => v.call(t, { ...(o || {}), by: localSeat() });
+        // GUEST VS HOST: the Healer's own entry points belong to a guest
+        // playing the Healer.
+        if (Object.prototype.hasOwnProperty.call(GUEST_HEALER_RUN, prop)) {
+          return (...args) => {
+            if (hostMayAct(0)) return v.apply(t, args);
+            partyStats.rejectedHere += 1;
+            return false;
+          };
+        }
         return v;
+      },
+    });
+  }
+  // GUEST VS HOST: the Healer's build (world.buildSystem) as the host's UI
+  // may touch it — read-only while a guest plays the Healer.
+  let hostBuildProxy = null;
+  function hostBuildGuard(B) {
+    return new Proxy(B, {
+      get(t, prop) {
+        const v = t[prop];
+        if (typeof v !== 'function' || !SEAT_BUILD_MUTATORS.has(prop)) return v;
+        return (...args) => (hostMayAct(0) ? v.apply(t, args) : false);
       },
     });
   }
@@ -499,6 +551,12 @@ export function createNetSession(ctx) {
       if (!R) return R;
       if (!hostRunProxy || hostRunProxy.target !== R) hostRunProxy = { target: R, proxy: hostRunGuard(R) };
       return hostRunProxy.proxy;
+    };
+    world.buildSystem = () => {
+      const B = rawBuildSystem();
+      if (!B) return B;
+      if (!hostBuildProxy || hostBuildProxy.target !== B) hostBuildProxy = { target: B, proxy: hostBuildGuard(B) };
+      return hostBuildProxy.proxy;
     };
     if (rawPartySystem) {
       partyProxy = null;
@@ -514,6 +572,8 @@ export function createNetSession(ctx) {
     if (!hostGuardsOn) return;
     hostGuardsOn = false;
     world.runSystem = rawRunSystem;
+    world.buildSystem = rawBuildSystem;
+    hostBuildProxy = null;
     if (rawPartySystem) world.partySystem = rawPartySystem;
     partyProxy = null;
     hostRunProxy = null;
@@ -532,11 +592,14 @@ export function createNetSession(ctx) {
     };
     if (!PARTY_OPS.has(op)) return reject('unknown');
     const seat = Number(cmd.seat);
-    if (!(Number.isInteger(seat) && seat === c.seat && seat >= 1 && seat <= 3)) return reject('not_owner');
-    if (seatControllers()[seat] !== 'human') return reject('not_owner');
+    if (!(Number.isInteger(seat) && seat === c.seat && seat >= 0 && seat <= 3)) return reject('not_owner');
+    // GUEST VS HOST: seat 0 is a guest's own when that guest plays the Healer.
+    if (seat === 0 ? !guestHoldsHealer() : seatControllers()[seat] !== 'human') return reject('not_owner');
     const R = rawRunSystem();
     const P = rawPartySystem ? rawPartySystem() : null;
     if (!R || !P) return reject('closed');
+    // Seat 0's build is the Healer's (world.buildSystem), not a party seat.
+    const buildOf = (i) => (i === 0 ? rawBuildSystem() : P.build(i));
     let r;
     switch (op) {
       case 'pick':
@@ -569,12 +632,12 @@ export function createNetSession(ctx) {
         r = R.reorderLoadout(seat, Number(cmd.from), Number(cmd.to));
         break;
       case 'socket': {
-        const b = P.build(seat);
+        const b = buildOf(seat);
         r = b ? b.socket(String(cmd.skill), String(cmd.node), Number(cmd.col) | 0, Number.isInteger(cmd.bench) ? cmd.bench : null) : null;
         break;
       }
       case 'unsocket': {
-        const b = P.build(seat);
+        const b = buildOf(seat);
         r = b ? b.unsocket(String(cmd.skill), Number(cmd.col) | 0) : null;
         break;
       }
@@ -1052,12 +1115,13 @@ export function createNetSession(ctx) {
       pending: body ? !!body.pendingSkill : false,
       keyAt: g.keyAt[KEY_OF[kind]],
     });
-    const order = (k) => (k === 'dodge' ? 0 : k === 'interact' ? 9 : k === 'use_item' ? 10 : Number(k.slice(6)) || 5);
-    const presses = s.presses.filter((p) => GUEST_PRESSES.has(p.kind)).sort((a, b) => order(a.kind) - order(b.kind));
+    const order = (k) => (k === 'dodge' ? 0 : k === 'interact' ? 9 : k === 'use_item' ? 10 : PARTY_COMMANDS.includes(k) ? 11 : Number(k.slice(6)) || 5);
+    const vocab = g.seat === 0 ? HEALER_PRESSES : GUEST_PRESSES;
+    const presses = s.presses.filter((p) => vocab.has(p.kind)).sort((a, b) => order(a.kind) - order(b.kind));
     for (const p of presses) {
       g.pendingPresses.push(p);
       if (!g.own.ready) continue;
-      if (p.kind === 'use_item') continue;
+      if (p.kind === 'use_item' || PARTY_COMMANDS.includes(p.kind)) continue;
       if (p.kind === 'interact') {
         const target = localInteractTarget(body);
         if (target) g.shadow.interact({ ...ctxFor('interact'), target });
@@ -1130,7 +1194,7 @@ export function createNetSession(ctx) {
     const rt = g.shownTick !== null ? g.shownTick : g.interp.renderTick(now());
     const frame = frameFromSnapshot(
       { move: moveOfIndex(snap.move), aim: snap.aim, basicAttackHeld: snap.basicAttackHeld, reviveHeld: snap.reviveHeld, presses: snap.presses },
-      { seq: g.seq, tick: g.seq, viewTick: rt === null ? 0 : Math.max(0, rt), away: g.away }
+      { seq: g.seq, tick: g.seq, viewTick: rt === null ? 0 : Math.max(0, rt), away: g.away, party: g.seat === 0 }
     );
     g.frames.push(frame);
     sendInputs();

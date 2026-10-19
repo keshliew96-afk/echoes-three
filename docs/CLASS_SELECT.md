@@ -23,6 +23,21 @@ Code: the solo seat driver and the setting in `src/app/playclass.js`; the picker
 - If the host leaves a lobby, the next player becomes host and keeps their class.
 - In a session the camp's Class chip is hidden: the class is the lobby seat.
 
+### Guest vs host in runs (v0.5.315)
+
+A guest plays a run with what the host has. Checked on two pages through a campaign run (and the Endless and Boss Rush runs share the same code): moving, aiming, the basic, dodge, the four skills, E on every interactable (shrines, vaults, encounters, secret bodies, revives), the tonic slot, breaking a secret wall, the own draft card, the own socket screen and loadout order, the own purse at the Peddler (cards, relics, the tonic stand, refresh) and Done. What was not equal, now fixed:
+
+- **A guest playing the Healer** (the host on another class, or a host who came back after a migration) now owns the Healer the way an ally-seat guest owns its hero: it takes or leaves the Healer's draft card and moves its Replaces mark, sockets and auto-fills the Healer's build, shops from the run wallet and refreshes its shelf. These go to the host as the same `party` CMDs (seat 0) and the host applies them through the single-player entry points (`takeReward`, `buy`, `world.buildSystem`). While a guest plays the Healer, the host's own UI no longer decides or edits that card or build (`hostMayAct(0)` in `src/net/session.js`). Before, the host decided the Healer's build for the guest and the guest's own presses were refused.
+- **The Healer's party commands from a guest.** Rally (R), Mark (Tab) and the heal target (F1 to F4) now ride the input frame (press bits 11 to 15, `src/sim/netseats.js`) when the sender plays seat 0, so a guest Healer has them as a host or solo Healer does. Any other seat's frame still drops them (they stay the Healer's, solo too).
+- **The Peddler countdown** waits on every human other than the one who pressed Advance, whichever seat the host plays (`leaveBy` on the party shop). Before, a host on another class kept waiting on itself, so the last guest's Done did not let the party leave and the 15 s countdown ran out.
+- **"Socket my new nodes"** changed by a guest during a session now reaches the host (it was sent only at join).
+- **The party tabs** on the host mark the host's own class "you" and a guest Healer with the guest's name (the Healer tab read "you" for any host).
+- **The off-screen threat markers** rank threats by distance from the viewer's own hero, and a sound with no place of its own plays at it (both used the Healer's body).
+
+Kept as the host's by design (one call for the whole party): the doors, the party relic, the event cards, the Spire-or-Kiln road, the level card's advance, the end card, Quit to Lobby, saving, and the Ally builds mode for the AI seats. A guest's press on these is shown to the party as a ping.
+
+Probe: `node tools/guest-vs-host-runs.mjs` against `npm run dev` (own server on port 7932, two browsers, the host on the Archer and the guest on the Healer).
+
 ## Determinism
 
 - The Healer is the default. With the Healer chosen, single-player steps exactly as before (`world.step(tick, sampleIntents())`), so plain runs, replays and the 9 golden traces are unchanged (`node tools/gntM2-goldens.mjs`, 9 of 9).

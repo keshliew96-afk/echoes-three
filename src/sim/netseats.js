@@ -20,9 +20,16 @@
 import { moveOf, moveIndex } from './remote.js';
 
 // Press bits of the INPUT frame (codec.js PRESS): 0 dodge, 1..8 skill_1..8,
-// 9 interact, 10 use_item (TONICS AND BOMBS).
-export const PRESS_BITS = Object.freeze({ dodge: 0, skill_1: 1, skill_2: 2, skill_3: 3, skill_4: 4, skill_5: 5, skill_6: 6, skill_7: 7, skill_8: 8, interact: 9, use_item: 10 });
+// 9 interact, 10 use_item (TONICS AND BOMBS); GUEST VS HOST: 11 rally,
+// 12 target_cycle, 13 target_select with its ally index (0-3) in bits 14-15.
+// The last three are the Healer's party commands: they ride only a seat-0
+// frame (a guest playing the Healer) and only the Healer resolves them.
+export const PRESS_BITS = Object.freeze({ dodge: 0, skill_1: 1, skill_2: 2, skill_3: 3, skill_4: 4, skill_5: 5, skill_6: 6, skill_7: 7, skill_8: 8, interact: 9, use_item: 10, rally: 11, target_cycle: 12, target_select: 13 });
 const BIT_KINDS = Object.entries(PRESS_BITS).sort((a, b) => a[1] - b[1]);
+export const PARTY_COMMANDS = Object.freeze(['rally', 'target_cycle', 'target_select']);
+const TARGET_INDEX_SHIFT = 14;
+// Every party-command bit (rally, target_cycle, target_select + its index).
+export const PARTY_PRESS_MASK = (1 << PRESS_BITS.rally) | (1 << PRESS_BITS.target_cycle) | (1 << PRESS_BITS.target_select) | (3 << TARGET_INDEX_SHIFT);
 
 export const SEAT_REASONS = Object.freeze(['join', 'drop', 'away', 'return', 'migrate']);
 
@@ -30,13 +37,22 @@ export function pressBitsOf(presses) {
   let bits = 0;
   for (const p of presses || []) {
     const b = PRESS_BITS[p && p.kind];
-    if (b !== undefined) bits |= 1 << b;
+    if (b === undefined) continue;
+    if (p.kind === 'target_select') {
+      // One ally index per frame: the first press of the frame keeps it.
+      if (bits & (1 << b)) continue;
+      bits |= ((Number(p.index) | 0) & 3) << TARGET_INDEX_SHIFT;
+    }
+    bits |= 1 << b;
   }
   return bits;
 }
 export function pressesOf(bits) {
   const out = [];
-  for (const [kind, b] of BIT_KINDS) if (bits & (1 << b)) out.push({ kind });
+  for (const [kind, b] of BIT_KINDS) {
+    if (!(bits & (1 << b))) continue;
+    out.push(kind === 'target_select' ? { kind, index: (bits >> TARGET_INDEX_SHIFT) & 3 } : { kind });
+  }
   return out;
 }
 
@@ -45,11 +61,11 @@ export function pressesOf(bits) {
 export const AIM_Q = 64;
 export const quantAim = (v) => Math.round(v * AIM_Q) / AIM_Q + 0;
 
-// frameFromSnapshot(snap, { seq, tick, viewTick, away }) — a local intent
-// snapshot (core/input.js) as a network input frame. Presses outside the
-// seat's vocabulary (rally, target_*) are dropped: party commands are the
-// Healer's.
-export function frameFromSnapshot(snap, { seq, tick, viewTick = 0, away = false } = {}) {
+// frameFromSnapshot(snap, { seq, tick, viewTick, away, party }) — a local
+// intent snapshot (core/input.js) as a network input frame. The party
+// commands (rally, target_*) are the Healer's: they ride the frame only with
+// `party` (the sender plays seat 0), else they are dropped.
+export function frameFromSnapshot(snap, { seq, tick, viewTick = 0, away = false, party = false } = {}) {
   const mv = snap && snap.move ? moveIndex(snap.move.x, snap.move.z) : 0;
   const aim = snap && snap.aim ? { x: quantAim(snap.aim.x), z: quantAim(snap.aim.z) } : null;
   return {
@@ -64,7 +80,7 @@ export function frameFromSnapshot(snap, { seq, tick, viewTick = 0, away = false 
     // both sides then resolve the same point.
     aimX: aim ? aim.x : 0,
     aimZ: aim ? aim.z : 0,
-    press: away ? 0 : pressBitsOf(snap && snap.presses),
+    press: away ? 0 : pressBitsOf(snap && snap.presses) & (party ? -1 : ~PARTY_PRESS_MASK),
   };
 }
 
@@ -84,9 +100,13 @@ export function seatInputOf(frames, carryBits = 0, carrySeqs = null) {
   let bits = carryBits;
   const pressSeq = {};
   if (carrySeqs) for (const c of carrySeqs) for (const p of pressesOf(c.bits | 0)) if (!(p.kind in pressSeq)) pressSeq[p.kind] = c.seq;
+  const SEL = 1 << PRESS_BITS.target_select;
+  const IDX = 3 << TARGET_INDEX_SHIFT;
   for (const f of frames) {
-    bits |= f.press | 0;
-    for (const p of pressesOf(f.press | 0)) if (!(p.kind in pressSeq)) pressSeq[p.kind] = f.seq;
+    const fb = f.press | 0;
+    // The first target_select of the tick keeps its ally index.
+    bits |= bits & SEL ? fb & ~IDX : fb;
+    for (const p of pressesOf(fb)) if (!(p.kind in pressSeq)) pressSeq[p.kind] = f.seq;
   }
   return {
     seq: last.seq,
@@ -137,6 +157,6 @@ export function playerSnapshotOf(si) {
     aim: si.aim ? { x: si.aim.x, z: si.aim.z } : null,
     basicAttackHeld: !!si.basic,
     reviveHeld: !!si.revive,
-    presses: si.presses.map((p) => (p.kind.startsWith('skill_') ? { kind: p.kind, slot: Number(p.kind.slice(6)) - 1 } : { kind: p.kind })),
+    presses: si.presses.map((p) => (p.kind.startsWith('skill_') ? { kind: p.kind, slot: Number(p.kind.slice(6)) - 1 } : p.kind === 'target_select' ? { kind: p.kind, index: p.index } : { kind: p.kind })),
   };
 }
