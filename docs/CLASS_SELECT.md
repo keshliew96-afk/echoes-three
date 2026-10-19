@@ -22,6 +22,8 @@ Code: the solo seat driver and the setting in `src/app/playclass.js`; the picker
 - The between-room choices are the host's, whichever class the host plays; guests' banners name the host's class.
 - If the host leaves a lobby, the next player becomes host and keeps their class.
 - In a session the camp's Class chip is hidden: the class is the lobby seat.
+- At camp every player-held seat (a guest's, or the class the host or a solo player walks) faces its own aim, standing or walking, and takes the cast pose when it fires, exactly like the Healer; only seats the AI holds idle toward the hearth. On its own page a player's critter turns to the local mouse; other pages show the replicated facing (`playerHeld()` in `src/scenes/camp.js`).
+- What a guest can do at camp: walk, aim and fire its own seat, talk to the camp NPCs, open its own Slots, Unlocks, Journal and settings. By design the host alone opens the Level Select, chooses the level, Endless or Boss Rush, and walks through the portal; the class is the lobby seat for everyone in a session.
 
 ## Determinism
 
@@ -33,3 +35,4 @@ Code: the solo seat driver and the setting in `src/app/playclass.js`; the picker
 
 - `node tools/classpick-browser.mjs` against `npm run dev`: a fresh profile plays the Healer; C and a click pick the Swordsman; real keys walk it in camp (not the Healer); a camp-started run has it human-held with its kit on the command bar, real keys move and cast it, the reward waits for the player; the choice survives a reload; picking the Healer hands it back. Screenshots `captures/class-1..4-*.png`.
 - `node tools/classpick-net.mjs` against `npm run dev` (own server on port 7911): the host takes the Archer and the guest the Swordsman, a taken class is refused, the host's keys move the Archer in camp and in a run, the empty Healer seat is the bot, the reward waits for the host, guests are told the Archer decides. A guest's seat is human only while its input frames keep arriving; under software GL in a Linux cloud (two pages near 1 fps) the host falls back to the AI between frames, exactly as on gauntlet before class select, so the probe reports the guest's seat instead of gating on it.
+- `node tools/camp-guest-facing.mjs` against `npm run dev` (own server on port 7931): the guest takes the Tank, points its mouse west of its critter (away from the fire) and stands still; the Tank faces west on the guest's page and the host's and still does three seconds later; walking south with the mouse west it still faces west; the AI Archer still idles toward the hearth. `--shots <dir> --tag <name>` saves the pages.

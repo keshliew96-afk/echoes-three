@@ -294,6 +294,7 @@ export function createCampScene(stage, toggles, ctx) {
     },
     rig: createCritter(classId, { cosmetic }),
     yaw: CAMP_SPOTS[classId].yaw,
+    castLeft: 0,
   }));
   for (const a of allyRigs) {
     a.rig.group.position.set(CAMP_SPOTS[a.classId].x, 0, CAMP_SPOTS[a.classId].z);
@@ -463,6 +464,15 @@ export function createCampScene(stage, toggles, ctx) {
   bus.on('basic_fire', () => {
     firedFlag = true;
   });
+  // A player-held ally seat (a co-op guest, a host or solo player on a
+  // class other than the Healer) casts at camp too: its rig takes the same
+  // cast hold the Healer's does.
+  const onSeatCast = (ev) => {
+    const a = ev ? allyRigs.find((r) => r.classId === ev.classId) : null;
+    if (a) a.castLeft = CAST_HOLD;
+  };
+  bus.on('ally_basic', onSeatCast);
+  bus.on('ally_cast', onSeatCast);
 
   function applyCampLighting() {
     if (keyLight) {
@@ -697,6 +707,16 @@ export function createCampScene(stage, toggles, ctx) {
     } catch {
       return false;
     }
+  }
+  // 'own' = the local player's body on this page (its aim is local and
+  // exact); 'remote' = another player's seat (its replicated facing);
+  // null = a seat the AI holds, which idles toward the hearth.
+  function playerHeld(e) {
+    const nv = world.netView;
+    if (nv && Number.isInteger(nv.seat) && nv.seat > 0 && e.partyIndex === nv.seat) return 'own';
+    if (e.controller === 'human') return 'remote';
+    const ctl = typeof world.seatControllers === 'function' ? world.seatControllers() : null;
+    return ctl && ctl[e.partyIndex] === 'human' ? 'remote' : null;
   }
   function isGuest() {
     const netSvc = svc('net');
@@ -1103,7 +1123,31 @@ export function createCampScene(stage, toggles, ctx) {
         const az = e.pz + (e.z - e.pz) * alpha;
         a.rig.group.position.set(ax, 0, az);
         const sp = Math.hypot(e.x - e.px, e.z - e.pz) * TICK_HZ;
-        if (sp > MOVE_EPS) {
+        a.castLeft = Math.max(0, a.castLeft - dt);
+        const held = playerHeld(e);
+        if (held) {
+          // A seat a player holds (a co-op guest, or the class the host or a
+          // solo player walks) faces its aim exactly like the Healer above,
+          // walking or standing: it is never turned back to the fire.
+          let fx = e.faceX ?? 0;
+          let fz = e.faceZ ?? 1;
+          if (held === 'own' && e.aim) {
+            const adx = e.aim.x - ax;
+            const adz = e.aim.z - az;
+            const al = Math.hypot(adx, adz);
+            if (al > 1e-3) {
+              fx = adx / al;
+              fz = adz / al;
+            }
+          }
+          let d = Math.atan2(fx, fz) - a.yaw;
+          while (d > Math.PI) d -= Math.PI * 2;
+          while (d < -Math.PI) d += Math.PI * 2;
+          a.yaw += d * (1 - Math.exp(-YAW_RATE * dt));
+          a.rig.setYaw(a.yaw);
+          if (a.castLeft > 0) a.rig.setAnim('cast', a.castLeft > CAST_HOLD - dt * 2 ? CAST_PHASE : undefined);
+          else a.rig.setAnim(sp > MOVE_EPS ? 'walk' : 'idle');
+        } else if (sp > MOVE_EPS) {
           const want = Math.atan2(e.x - e.px, e.z - e.pz);
           let d = want - a.yaw;
           while (d > Math.PI) d -= Math.PI * 2;
@@ -1288,6 +1332,7 @@ export function createCampScene(stage, toggles, ctx) {
             classId: a.classId,
             visible: a.rig.group.visible,
             anim: a.rig.getAnim(),
+            yaw: r2(a.yaw),
             x: r2(a.rig.group.position.x),
             z: r2(a.rig.group.position.z),
           })),
