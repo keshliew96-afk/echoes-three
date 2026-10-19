@@ -1077,12 +1077,17 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // Who decides: the host's seat — the Healer, unless a migration moved the
   // host and a human is back on the Healer (then the host's class decides;
   // net/seats.js chooserSeat).
+  // GUEST VS HOST: the doors, the relic, the event card, the level card and
+  // the end card are every human's call; the first one the host receives leads.
+  const anyone = () => t('Anyone can choose — the first choice leads the party');
   const GUEST_LINES = {
     draft: (w) => t('The {cls} is choosing the reward…', { cls: t(w) }),
-    path: (w) => t('The {cls} picks the door — point with ←/→ and Enter', { cls: t(w) }),
+    path: anyone,
     shop: (w) => t('The {cls} is shopping…', { cls: t(w) }),
-    end: (w) => t('Waiting for the {cls}…', { cls: t(w) }),
-    transit: (w) => t('The {cls} leads on to the next level…', { cls: t(w) }),
+    end: anyone,
+    transit: anyone,
+    relic: anyone,
+    encounter: anyone,
   };
   const chooserLabel = () => {
     const n = service('net');

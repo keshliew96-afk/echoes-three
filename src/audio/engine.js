@@ -853,7 +853,10 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       return e && Number.isFinite(e.x) ? { x: e.x, z: e.z } : null;
     },
     player() {
-      const p = world && world.player;
+      // GUEST VS HOST: the viewer's own hero (a guest's seat), else the Healer.
+      const nv = world && world.netView;
+      const own = nv && typeof nv.followTarget === 'function' ? nv.followTarget() : null;
+      const p = own || (world && world.player);
       return p && Number.isFinite(p.x) ? { x: p.x, z: p.z } : null;
     },
     kind(id) {

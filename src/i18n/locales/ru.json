@@ -3579,5 +3579,6 @@
  "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "Ваш профиль сохранён более новой версией Echoes. Перезагрузите страницу, чтобы обновить игру: до тех пор эта вкладка не сохраняет рекорды, Угли и открытия.",
  "The host has not unlocked that yet": "Хост ещё не открыл это",
  "The host could not set out just now — try again": "Хост не смог выступить прямо сейчас — попробуй ещё раз",
- "{name} set out — the run begins": "{name} выступает — забег начинается"
+ "{name} set out — the run begins": "{name} выступает — забег начинается",
+ "Anyone can choose — the first choice leads the party": "Выбрать может любой — первый выбор ведёт отряд"
 }

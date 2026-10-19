@@ -3436,5 +3436,6 @@
  "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "你的檔案由更新版本的 Echoes 儲存。請重新整理頁面以更新遊戲：在此之前，此分頁不會儲存紀錄、餘燼或解鎖。",
  "The host has not unlocked that yet": "房主尚未解鎖該內容",
  "The host could not set out just now — try again": "房主暫時無法出發——請再試一次",
- "{name} set out — the run begins": "{name}已出發——本輪開始"
+ "{name} set out — the run begins": "{name}已出發——本輪開始",
+ "Anyone can choose — the first choice leads the party": "任何人都能選擇——最先做出的選擇帶領隊伍"
 }
