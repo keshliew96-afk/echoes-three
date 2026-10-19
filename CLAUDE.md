@@ -56,6 +56,8 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
 6. **Colour.** Ember `#FF5A36` is for enemy threats only, Bright Heal `#5FE873` for healing only, and
    Violet `#B79CF0` for corruption only (BUILD_BRIEF §19, §23). Land heat colours are not Ember.
    The VFX bar is Diablo IV or Hades (`?vfxlab=1`).
+   Every VFX build follows Kesh's three templates (magic, knife and sword, sci-fi) and his enhancer
+   words in `docs/gauntlet/design-VFX.md` §11; pick the template per effect from `SKILL_TEMPLATE`.
 
 ## Settled decisions (Kesh's picks; do not reopen)
 

@@ -478,6 +478,8 @@ if (signaturefx) {
   setImpactFxDirected(true);
   signaturefx.prewarm();
   service('content').vfx = () => signaturefx.debugCounts();
+  // The VFX lab's template reels (design-VFX.md §11).
+  service('content').vfxShowcase = (id, at) => signaturefx.showcase(id, at);
 }
 // Hit feedback (docs/HIT_FEEDBACK.md): the red edge pulse toward the
 // attacker, the party's hit flash and the heavy-hit kick — render and HUD

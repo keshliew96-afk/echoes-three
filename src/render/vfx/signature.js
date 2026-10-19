@@ -30,6 +30,8 @@ import { TELL_INDIGO, TELL_INDIGO_GLOW } from '../enemies/style.js';
 import { impactFx } from './hub.js';
 import { SHARD_TILE } from './particles.js';
 import { createVfxKit } from './kit.js';
+import { createTemplateKit } from './tplkit.js';
+import { createTemplateFx } from './templates.js';
 import { createCameraFx } from './camerafx.js';
 import { createTideFx } from './tidefx.js';
 import { createBellFx } from './bellfx.js';
@@ -68,6 +70,8 @@ const ENEMY_SHOT_TRAIL = Object.freeze({
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
   const kit = createVfxKit({ stage, cosmetic });
+  // Kesh's VFX templates (design-VFX.md §11): their own primitives.
+  const tk = createTemplateKit({ stage, cosmetic });
   const rnd = (a, b) => cosmetic.range(a, b);
 
   // ------------------------------------------------------------ settings --
@@ -76,6 +80,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const v = settings?.get?.('gameplay.effects');
     intensity = VFX_INTENSITY[v] ?? VFX_INTENSITY.full;
     kit.setIntensity(intensity);
+    tk.setIntensity(intensity);
   };
   readSettings();
   settings?.subscribe?.('gameplay.effects', readSettings);
@@ -858,6 +863,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // the dive, the crown, the lens, the veil, the heart, and the three
   // curses (the seal, the dark, the crowns).
   const relic6Fx = createRelic6Fx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, player, world, stage });
+  // THE VFX TEMPLATES (design-VFX.md §11): magic, blade and sci-fi, played
+  // over every hero beat above (registered last, so they draw on top).
+  const tplFx = createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area: (id) => SKILL_AREA.get(id) ?? null });
   bus.on('ally_cast', (ev) => {
     const fn = SKILL_SIG[ev.skill];
     if (!fn || ev.x == null) return;
@@ -6591,7 +6599,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     tonicFx.frame(dt, world.entities());
     shrineFx.frame(dt, world.entities());
     relic6Fx.frame(dt, world.entities());
+    tplFx.frame(dt, world.entities());
     kit.update(dt);
+    tk.update(dt);
   }
 
   // After every layer placed the camera this frame.
@@ -7512,7 +7522,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     swingSide.clear();
     camfx.clear();
     relic6Fx.teardown();
-    return kit.clear();
+    tplFx.teardown();
+    return kit.clear() + tk.clear();
   }
   bus.on('level_transit', levelTeardown);
   bus.on('run_end', levelTeardown);
@@ -7521,13 +7532,14 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
 
   function prewarm() {
     kit.prewarm(stage.scene);
+    tk.prewarm(stage.scene);
   }
 
   function debugCounts() {
-    return { ...kit.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
+    return { ...kit.counts(), tpl: tk.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
   }
 
-  return { update, applyCamera, prewarm, debugCounts, kit, camfx };
+  return { update, applyCamera, prewarm, debugCounts, kit, camfx, showcase: (id, at) => tplFx.showcase(id, at) };
 }
 
 // Healer skills that restore (their casts get petals + light, never damage FX).
