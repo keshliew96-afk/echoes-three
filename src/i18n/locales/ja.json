@@ -3433,5 +3433,8 @@
  "Felled before the Journal kept count.": "日誌が数え始める前に討伐済み。",
  "Felled: {n}, and more before the Journal kept count.": "討伐数：{n}（日誌が数え始める前の討伐は含まれません）",
  "The load stopped part-way. Reload the page: the game finishes loading it when it starts.": "読み込みが途中で止まりました。ページを再読み込みしてください。起動時に読み込みを完了します。",
- "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "プロフィールは新しいバージョンのEchoesで保存されています。ページを再読み込みしてゲームを更新してください。それまでこのタブは記録、残り火、解放を保存しません。"
+ "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "プロフィールは新しいバージョンのEchoesで保存されています。ページを再読み込みしてゲームを更新してください。それまでこのタブは記録、残り火、解放を保存しません。",
+ "The host has not unlocked that yet": "ホストはまだそれを解放していません",
+ "The host could not set out just now — try again": "ホストは今は出発できませんでした — もう一度試してください",
+ "{name} set out — the run begins": "{name}が出発しました — ランが始まります"
 }

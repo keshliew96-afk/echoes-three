@@ -270,7 +270,7 @@ export function dailyInfo() {
 // BOSS RUSH (docs/BOSS_RUSH.md): the rush card — open once the game is won
 // (or with the ?rush=1 harness), with the profile's best time and most
 // bosses felled. CO-OP BOSS RUSH: open in a co-op lobby too (the host's
-// card: a guest never sees the Level Select); `coop` marks a lobby so the
+// card a guest's pick is sent to); `coop` marks a lobby so the
 // card says the party sets out together.
 export function rushInfo() {
   let profile = null;
