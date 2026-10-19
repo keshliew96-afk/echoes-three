@@ -64,3 +64,42 @@ character; the edge still glows toward the attacker through the side glow.
   ally's flash, the toggle off, the lab preview, nothing in the camp.
 - Probe surface: `__echoes.content.hitFeedback()` (counts per tier, live
   vignette / side / arc levels), `__echoes.content.hitPreview(tier)`.
+
+## Your damage numbers (攻击反馈)
+
+Kesh (2026-10-19): "enhance 攻击反馈 let player know the damage deal … full
+screen of number with same color, only heal is different". Shipped in v0.5.312.
+
+Damage numbers on enemies split by who dealt the hit:
+
+| | Your hits | Everyone else's (AI seats, co-op partners, hazards, kegs) |
+|---|---|---|
+| Colour | Hearth Amber `#E8A23D` | Bone `#C9C2B3` (was Parchment) |
+| Weight, outline | 900, 3 px charcoal | 600, 2 px charcoal |
+| Size | 1.22 x the old size | 0.7 x the old size (never under the 20 px floor) |
+| Opacity | full | 45 % (Kesh's pick over 70 % Parchment, 2026-10-19) |
+| Pop-in overshoot | 0.5 (crit 0.8) | 0.2 (crit 0.4) |
+| Stacking | drawn above every other numeral | under yours |
+
+- **Yours** means your seat, the same rule as the own-body hit feedback above:
+  the class you picked solo, your seat in co-op (`viewerSeat()`), so each
+  co-op player sees their own hits in amber on their own screen. The seat
+  comes from the hit's attacker body (`hitterSeat` in
+  `src/render/numbers.js`); the Healer's basic bolt carries no attacker id
+  and is the only party carrier that does not, so a basic projectile hit with
+  no attacker is seat 0's.
+- When the 12-numeral cap is full, the oldest numeral that is not yours fades
+  first, so a crowd of ally hits never pushes yours off the screen.
+- Unchanged: crits still print 1.4 x larger with a stronger pop; damage the
+  party takes stays Bruise Umber with a Parchment outline and drops instead of
+  rising; heals stay Bright Heal with "+"; the Bone "(n)" shield share and the
+  "blocked" numeral are untouched.
+- Hearth Amber is the palette's "selection" colour: never Ember (enemy
+  threats), Bright Heal or Violet.
+- Render only: no damage, rule, deed or record changes, and the goldens are
+  untouched. No new text and no setting.
+- Probe: `node tools/attack-feedback-browser.mjs [--lang zh-Hans] [--classes healer,archer] [--act 6]`
+  (pure attribution checks, then a live room-3 fight per class with both
+  looks in one frame, their styles, and the game's own/other split matched
+  against a count the probe makes from the hit events). Probe surface:
+  `__echoes.numerals()` (outgoing numerals spawned per look).

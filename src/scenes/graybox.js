@@ -32,7 +32,8 @@ import {
 import { toonMaterial, addOutline } from '../render/toon.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createFollowRig } from '../render/camera.js';
-import { createNumberPool } from '../render/numbers.js';
+import { createNumberPool, hitterSeat } from '../render/numbers.js';
+import { viewerSeat } from '../app/viewerseat.js';
 import { createParticlePool } from '../render/vfx/particles.js';
 import { createDecalPool } from '../render/vfx/decals.js';
 import { setImpactFx, impactFx } from '../render/vfx/hub.js';
@@ -244,6 +245,10 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   let lastShake = null;
   let emberDebt = 0; // fractional ember budget over still-hot scorch decals
 
+  const entityById = (id) => {
+    for (const e of world.entities()) if (e.id === id) return e;
+    return null;
+  };
   bus.on('hit', (ev) => {
     const rig = dummies.get(ev.target);
     if (rig) rig.flashUntilTick = ev.tick + HITFLASH.ticks; // §9 #1: ~3 frames
@@ -252,12 +257,16 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     // §19.1 reserves Bruise Umber for the WHOLE party, allies included, so the
     // player can tell "we are being hurt" from "we are hurting them" at a glance.
     const partyVictim = ev.kind === 'player' || ev.kind === 'ally';
+    // ATTACK FEEDBACK (docs/HIT_FEEDBACK.md): outgoing damage the viewer's
+    // own seat dealt prints in its own look; everyone else's is secondary.
+    const who = partyVictim ? null : hitterSeat(ev, entityById) === viewerSeat() ? 'own' : 'other';
     numbers.spawn({
       x: ev.x,
       z: ev.z,
       amount: ev.amount,
       kind: partyVictim ? 'incoming' : 'damage',
       crit: ev.crit,
+      who,
     });
     // REFERENCE_BAR check 5 ("a single hit reads as an event"): every hit
     // throws debris + a spark + a smoke puff along the impact direction, so a
