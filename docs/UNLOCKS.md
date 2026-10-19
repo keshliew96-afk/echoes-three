@@ -82,7 +82,7 @@ Deeds and Ember sinks for what landed after round one: event rooms, elite affixe
 
 | Deed | Condition | Embers | Counted |
 | --- | --- | --- | --- |
-| Wayfarer | Enter every kind of event room (14) | 60 | across runs |
+| Wayfarer | Enter every kind of event room (17) | 60 | across runs |
 | Signbreaker | Fell an elite with each of the twelve affixes (Small fixes 9; a profile that already holds it keeps it) | 60 | across runs |
 | Run to Ground | Win a Hunt room | 20 | one run |
 | Scorched Nests | Win a Purge room | 20 | one run |
@@ -149,9 +149,9 @@ Glassblower, across runs, 40, with an N of 2 bar) and **Quench the Founder**
 (fell the Bellfounder on Harrowing, 80). Tints: **Quench Steam** (Tidecaller,
 40, the Kiln cleared) and **Cinderwing** (Duskwing, free with Kiln Crowns).
 Heirlooms of Slag Greaves and Founder's Ingot come with the relics.
-Kingslayer, Ringwalker, Five Crowns and Windfall are unchanged; Wayfarer counts
-the sixteen events it counted before (`WAYFARER_IDS`), so the Molten Bell does
-not widen it.
+Kingslayer, Ringwalker, Five Crowns and Windfall are unchanged. Wayfarer counts
+every event, the Molten Bell included (`WAYFARER_IDS`, seventeen since Small
+fixes 10, Kesh's pick); a profile that already holds it keeps it.
 
 ## Vow ranks (plan 4 slice 10)
 
