@@ -153,6 +153,17 @@ first-time tip, sounds and visuals.
   `captures/objective-*.png`.
 - `node tools/gntM2-goldens.mjs`: the nine goldens stay identical.
 
+## Leaving the room
+
+When the party walks on (`enterRoom` → `leaveRoomBodies` in src/sim/run.js,
+since 0.5.310), the room's bodies stay behind whatever room comes next:
+retreaters, the escort pilgrim, the Waystone, nests and enemy shots
+(`enemies.reset`), the party's zones and bolts (`sweepPlayerTransients`,
+cause `room_exit`) and the AI seats' zones and bolts (`allies` cmd
+`roomExit`, which revives no one). Before, only a combat room's wave plan
+cleared them, so a hunt's retreaters or a pilgrim could stand in the next
+shop, vault or event room. `node tools/gameplay-bugs-probe.mjs` checks it.
+
 ## Known limits
 
 - Nests are not colliders for walking (enemies separate from them softly).
