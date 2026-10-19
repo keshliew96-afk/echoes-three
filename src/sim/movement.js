@@ -185,8 +185,9 @@ export function slipBlend(e, ix, iz, gripMul = 1) {
 // `snap`: the step is a dash / knockback — taken as is and kept as momentum.
 // Moves the body (walkStep: walls and colliders stay solid) and updates its
 // momentum. Returns true when the slide moved it.
-export function slipFollow(e, x0, z0, { snap = false, gripMul = 1 } = {}) {
-  if (e.flier || e.burrowed) {
+// `proof`: the body never slides (Small fixes 8: Pumice Soles on the party).
+export function slipFollow(e, x0, z0, { snap = false, gripMul = 1, proof = false } = {}) {
+  if (e.flier || e.burrowed || proof) {
     if (e.slipVx !== undefined) dropSlip(e);
     return false;
   }

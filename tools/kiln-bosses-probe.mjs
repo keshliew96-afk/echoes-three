@@ -226,7 +226,20 @@ function laneWatch(W, attack) {
   check(W.log.some((e) => e.type === 'slick_spawn' && e.variant === 'slag'), 'the pour leaves slag pools that slow');
   const laneTel = W.log.find((e) => e.type === 'boss_telegraph_start' && e.attack === 'pour');
   check(!!laneTel && laneTel.shape === 'lane' && lw.rec.lanes >= 1, `the pour is a lane with the seats' lane-step flag (${lw.rec.lanes} lanes; ${lw.rec.outAtEnd} of ${lw.rec.inAtStart} seats stepped out)`);
-  check(bells.length >= 1 && bells.some((n) => n.victims > 0), `Bell Drops land (${bells.length}, hits ${bells.map((n) => n.victims).join('/')})`);
+  // Small fixes 8: the AI seats step out of a boss's ring telegraph (and
+  // since Small fixes 7 off the pour's slag too), so with the party free
+  // every drop can miss. A party held where it stands takes the drop.
+  const held = party(W).map((p) => [p, p.x, p.z]);
+  const fromHeld = W.log.length;
+  steps(W, 720, () => {
+    mend(W);
+    for (const [p, x, z] of held) {
+      p.x = p.px = x;
+      p.z = p.pz = z;
+    }
+  });
+  const heldBells = W.log.filter((e, i) => i >= fromHeld && e.type === 'boss_bell_drop');
+  check(bells.length >= 1 && heldBells.some((n) => n.victims > 0), `Bell Drops land (${bells.length} with the party free, hits ${bells.map((n) => n.victims).join('/')}; ${heldBells.length} on a held party, hits ${heldBells.map((n) => n.victims).join('/')})`);
   check(evs(W, 'boss_firing').length === 0, 'no Firing before the First Casting');
   check(hitsOn(W, from, b.id) > 0, `its attacks hurt the party (${hitsOn(W, from, b.id)} hits)`);
   for (const [pct, want, n] of [[0.74, ['newt'], 1], [0.49, ['slag', 'newt'], 2], [0.24, ['cindermoth', 'bellows'], 3]]) {

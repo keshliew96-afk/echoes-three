@@ -45,7 +45,7 @@
 // inside combat.applyDamage, taken in resolution order, so one seed replays.
 import { TICK_HZ } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
-import { walkStep } from './movement.js';
+import { walkStep, slipPatches } from './movement.js';
 import { clampPlacement, countFinal, clampHalfAngle, createSkillBolts, fanDirections } from './shapes.js';
 // Network play (M5b, docs/gauntlet/PLAN.md §3.7): human-controlled ally seats
 // share one movement / dodge model with the guest's own-seat predictor.
@@ -54,7 +54,7 @@ import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE }
 // is cast from the seat's LOADOUT (sim/party.js) through ONE pipeline
 // (sim/allycast.js); the AI picks with the §25.8 rules (sim/partyai.js).
 import { SKILLS } from './skills.js';
-import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, STEER_OFF_POOLS, AI_KITE, AI_DUSK, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS, CLASS_TECH } from '../data/classes.js';
+import { CLASS_BASE_KIT, STARTING_LOADOUT, AI_ENGAGE, AI_EVADE, steersOff, AI_KITE, AI_DUSK, MELEE_CLASSES, AI_IDLE_FALLBACK_TICKS, CLASS_TECH } from '../data/classes.js';
 import { createAllyCaster, cdTicksOf } from './allycast.js';
 import { castChoice } from './partyai.js';
 
@@ -879,20 +879,32 @@ export function createAllySystem({
   const isBossBody = (e) => e.boss === true || e.kind === 'stag';
 
   // Small fixes 7: the floor pools every AI seat steps off (sim/autopilot.js
-  // reads the same list).
-  const STEER_OFF = new Set(STEER_OFF_POOLS);
+  // reads the same rule, data/classes.js steersOff).
   // The spot (x, z) moved off a live such pool that would hold this seat:
   // straight out from the pool's centre (from the seat's side when the spot
   // is dead centre), else the nearest turn round it that stays inside the
   // leash and clear of every pool. Unchanged when no pool holds the spot.
   function cinderClear(a, x, z, anchor, LR) {
     const patches = [];
-    for (const s of registry.all()) if (s.kind === 'slick' && STEER_OFF.has(s.variant)) patches.push(s);
+    for (const s of registry.all()) if (steersOff(s)) patches.push(s);
     if (patches.length === 0) return { x, z };
     // A pool holds the body whose centre stands in it.
     const wet = (px, pz) => patches.find((s) => Math.hypot(px - s.x, pz - s.z) < s.radius + AI_EVADE.margin) ?? null;
     const s = wet(x, z);
-    if (!s) return { x, z };
+    if (!s) {
+      if (a.poolExit !== undefined) delete a.poolExit;
+      return { x, z };
+    }
+    // Small fixes 8: the way out once chosen is kept while it stays dry and
+    // inside the leash (a wide pool, the Briar Knight's thicket, otherwise
+    // flipped the seat between two turns tick by tick and held it in place).
+    const k = a.poolExit;
+    if (k && k.id === s.id && !wet(k.x, k.z) && Math.hypot(k.x - anchor.x, k.z - anchor.z) <= LR) return { x: k.x, z: k.z };
+    const out = poolExit(a, x, z, s, anchor, LR, wet);
+    a.poolExit = { id: s.id, x: out.x, z: out.z };
+    return out;
+  }
+  function poolExit(a, x, z, s, anchor, LR, wet) {
     const d = Math.hypot(x - s.x, z - s.z);
     let ux = d > 1e-4 ? (x - s.x) / d : a.x - s.x;
     let uz = d > 1e-4 ? (z - s.z) / d : a.z - s.z;
@@ -1498,6 +1510,9 @@ export function createAllySystem({
     if (f.aim) a.aim = { x: f.aim.x, z: f.aim.z };
     let moved = false;
     let ended = false;
+    // Small fixes 8: Pumice Soles, a slip floor never slides the seat.
+    const M = slipPatches().length > 0 && combat.getMods ? combat.getMods() : null;
+    const slipProof = !!(M && M.active() && M.slipProof && M.slipProof(a));
     for (const mv of f.moves) {
       // A dash advances one step per consumed INPUT FRAME, never on a starved
       // tick (net/driver.js, bounded by sim/netseats.js DASH_HOLD_TICKS): the
@@ -1506,7 +1521,7 @@ export function createAllySystem({
       // saw (NET3-F2: 1.1-1.3 u snaps after a guest-page stall mid-dash).
       if (f.starved && a.dashTicksLeft > 0) continue;
       const spd = a.hp > 0 ? S.moveSpeed * (combat.status ? combat.status.speedMul(a, tick) : 1) : DOWNED_CRAWL_SPEED;
-      const r = stepHumanMove(a, mv, spd);
+      const r = stepHumanMove(a, mv, spd, { slipProof });
       if (r.moved) moved = true;
       if (r.ended) ended = true;
     }
