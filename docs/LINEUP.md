@@ -56,10 +56,12 @@ are unchanged.
 - The party strip (`ui/run/partystrip.js`: the tabs on the socket screen,
   the party draft page and the shop shelf) is built once at boot, so it
   re-dresses its tabs (portrait, glyph, name, accent) whenever the active
-  lineup or the portrait cache changes (v0.5.309; before that a run with
+  lineup or the portrait cache changes (v0.5.311; before that a run with
   Rill, Tolly or Sable in a seat still showed the default class there). The
   socket screen's "Your build" title follows the viewer's own seat, not
-  seat 0.
+  seat 0, and the party page's owner band reads FOR YOU — THE {cls} over
+  the card of the hero the viewer plays (any class, any seat; in co-op each
+  human sees it on their own hero only, `viewerSeat()`).
 - Class select (`app/playclass.js`): the chosen class plays the seat it
   holds in the run's lineup. A class that stayed at camp falls back to the
   Healer's seat.
