@@ -131,7 +131,8 @@ export function freshProfile() {
 }
 
 // SECRET ROOMS (docs/SECRET_ROOMS.md): 'lore', the pages the hidden chambers hold.
-export const JOURNAL_KINDS = Object.freeze(['enemy', 'boss', 'relic', 'curse', 'event', 'lore']);
+// Small fixes 9: 'affix', the elite powers (met, then felled with).
+export const JOURNAL_KINDS = Object.freeze(['enemy', 'boss', 'relic', 'curse', 'event', 'lore', 'affix']);
 export function freshJournal() {
   return { seen: Object.fromEntries(JOURNAL_KINDS.map((k) => [k, {}])) };
 }

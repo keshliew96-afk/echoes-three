@@ -16,8 +16,8 @@
 //      Cinder (a trail of burning patches as it walks, capped, none standing).
 //   3. The §11 governor holds with four batch-two elites in one room.
 //   4. The AI: the seats step out of a Gusting ring before it blows.
-//   5. Signbreaker still counts the first eight; co-op snapshot and save
-//      carry the new powers.
+//   5. Signbreaker counts all twelve (Small fixes 9; it counted the first
+//      eight until then); co-op snapshot and save carry the new powers.
 // Exit code 1 on any failure.
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -388,10 +388,11 @@ function parkParty(W, x = 0, z = 4.5) {
 // ---------------------------------------- 5. Signbreaker, co-op, saves --
 {
   const test = DEEDS.signbreaker && DEEDS.signbreaker.test;
-  const seven = [...FIRST_AFFIX_IDS.slice(0, 7), ...LATE_AFFIX_IDS];
+  const eleven = [...FIRST_AFFIX_IDS.slice(0, 7), ...LATE_AFFIX_IDS];
   const all8 = [...FIRST_AFFIX_IDS];
-  const okSb = typeof test === 'function' && !test({}, { affix: seven }) && test({}, { affix: all8 });
-  check(okSb, `Signbreaker: seven of the first eight plus all four new = not yet; the first eight = done${typeof test === 'function' ? '' : ' (deed not found)'}`);
+  const all12 = [...FIRST_AFFIX_IDS, ...LATE_AFFIX_IDS];
+  const okSb = typeof test === 'function' && !test({}, { affix: eleven }) && !test({}, { affix: all8 }) && test({}, { affix: all12 });
+  check(okSb, `Signbreaker (all twelve since Small fixes 9): eleven = not yet; the first eight alone = not yet; all twelve = done${typeof test === 'function' ? '' : ' (deed not found)'}`);
   const W = liveRoom(47, 3);
   const e = forced(W, 'boar', ['gusting', 'cinder'], 0, -3);
   const q = quantizeEntity(e, W.clock.tick, null);

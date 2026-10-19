@@ -43,7 +43,7 @@
 const r2 = (v) => Math.round(v * 100) / 100;
 
 // The first eight (plan 2) roll in every affixed room; batch two only from
-// room 4 of a level on. The Signbreaker deed still counts the first eight.
+// room 4 of a level on. The Signbreaker deed counts all twelve (Small fixes 9).
 export const FIRST_AFFIX_IDS = Object.freeze(['molten', 'frozen', 'vampiric', 'warded', 'blinking', 'splitting', 'hasted', 'thorned']);
 export const LATE_AFFIX_IDS = Object.freeze(['gusting', 'crystal', 'tolling', 'cinder']);
 export const AFFIX_IDS = Object.freeze([...FIRST_AFFIX_IDS, ...LATE_AFFIX_IDS]);

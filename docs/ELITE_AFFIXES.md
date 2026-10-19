@@ -77,7 +77,8 @@ elite carries and how often elites appear are unchanged.
   longer flips it between two turns.
 - Colours: gale aqua, rose quartz, cold bell iron (kept off the Bellwright's
   verdigris), banked-coal red (darker than Ember and never the Kiln's gold).
-- The **Signbreaker** deed still counts the first eight only.
+- The **Signbreaker** deed counts all twelve (Small fixes 9; a profile that already holds it keeps it).
+- The Journal (J) lists all twelve on its Bestiary page, under Elite powers: met when an elite wearing one arrives, counted when it falls.
 
 ## Fairness
 

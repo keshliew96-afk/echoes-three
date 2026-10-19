@@ -83,7 +83,7 @@ Deeds and Ember sinks for what landed after round one: event rooms, elite affixe
 | Deed | Condition | Embers | Counted |
 | --- | --- | --- | --- |
 | Wayfarer | Enter every kind of event room (14) | 60 | across runs |
-| Signbreaker | Fell an elite with each of the eight affixes | 60 | across runs |
+| Signbreaker | Fell an elite with each of the twelve affixes (Small fixes 9; a profile that already holds it keeps it) | 60 | across runs |
 | Run to Ground | Win a Hunt room | 20 | one run |
 | Scorched Nests | Win a Purge room | 20 | one run |
 | Safe Home | Win an Escort room | 20 | one run |

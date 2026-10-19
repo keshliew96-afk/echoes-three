@@ -47,7 +47,7 @@ import {
 import { createProfileStore, scoreRun } from './profile.js';
 import { loadoutBoons, loadoutTints, tidecallerFreed, bellwrightFreed, duskwingFreed } from '../data/unlocks.js';
 import { createDeedRunTracker } from './deedrun.js';
-import { JOURNAL_ALIAS, ENEMY_JOURNAL_IDS, BOSS_JOURNAL_IDS } from '../data/journal.js';
+import { JOURNAL_ALIAS, ENEMY_JOURNAL_IDS, BOSS_JOURNAL_IDS, AFFIX_JOURNAL_IDS } from '../data/journal.js';
 import { createThumbnailer } from './thumbnail.js';
 import { createAutosave } from './autosave.js';
 import { makeBundle, readBundle, applyBundle } from './cloud.js';
@@ -1239,7 +1239,7 @@ export function createSaveSystem({
     if (typeof id !== 'string' || !journalOn()) return;
     const k = JOURNAL_ALIAS[id] ?? id;
     if (kind === 'enemy' && BOSS_JOURNAL_IDS.includes(k)) kind = 'boss';
-    if ((kind === 'enemy' && !ENEMY_JOURNAL_IDS.includes(k)) || (kind === 'boss' && !BOSS_JOURNAL_IDS.includes(k))) return;
+    if ((kind === 'enemy' && !ENEMY_JOURNAL_IDS.includes(k)) || (kind === 'boss' && !BOSS_JOURNAL_IDS.includes(k)) || (kind === 'affix' && !AFFIX_JOURNAL_IDS.includes(k))) return;
     if (!journalBatch) journalBatch = {};
     const m = (journalBatch[kind] = journalBatch[kind] || {});
     m[k] = (m[k] ?? 0) + n;
@@ -1252,7 +1252,22 @@ export function createSaveSystem({
   }
   bus.on('enemy_spawn', (ev) => journalNote('enemy', ev.etype));
   bus.on('boss_spawn', (ev) => journalNote('boss', ev.kind ?? 'stag'));
-  bus.on('death', (ev) => journalNote('enemy', ev.kind, 1));
+  const journalWore = new Map(); // elite id -> the powers it wore
+  bus.on('death', (ev) => {
+    journalNote('enemy', ev.kind, 1);
+    // ELITE POWERS (Small fixes 9): each power the fallen elite wore.
+    const wore = journalWore.get(ev.id);
+    if (!wore) return;
+    journalWore.delete(ev.id);
+    for (const a of wore) journalNote('affix', a, 1);
+  });
+  // An affixed elite arrives: its powers are met (and remembered until it falls).
+  bus.on('elite_affixes', (ev) => {
+    if (!Array.isArray(ev.affixes) || !ev.affixes.length) return;
+    for (const a of ev.affixes) journalNote('affix', a);
+    journalWore.set(ev.id, ev.affixes.slice());
+    if (journalWore.size > 256) journalWore.delete(journalWore.keys().next().value);
+  });
   bus.on('relic_offer', (ev) => {
     for (const id of ev.choices ?? []) journalNote('relic', id);
   });

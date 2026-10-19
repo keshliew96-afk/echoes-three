@@ -1,5 +1,6 @@
 // THE JOURNAL (docs/JOURNAL.md, content plan 2 slice 9): the pages of the
-// camp journal (J) after the Hearth Song — Bestiary, Relics, Events, Deeds.
+// camp journal (J) after the Hearth Song — Bestiary (with the elite powers),
+// Relics, Events, Deeds.
 // Each page is a grid of entries and a detail panel for the focused one.
 // What the player has met comes from the profile: its `journal` block
 // (save/profile.js, written by save/index.js during campaign runs) plus the
@@ -8,17 +9,17 @@
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { LEVELS, ACT_IDS } from '../../data/levels.js';
-import { BESTIARY, ENEMY_JOURNAL_IDS } from '../../data/journal.js';
+import { BESTIARY, ENEMY_JOURNAL_IDS, AFFIX_JOURNAL } from '../../data/journal.js';
 
 const CHAMPION_SET = new Set(BESTIARY.filter((b) => b.champion).map((b) => b.id));
 import { RELICS, RELIC_IDS, CURSES } from '../../sim/relics.js';
 import { ENCOUNTERS, ENCOUNTER_IDS } from '../../sim/encounters.js';
 import { DEEDS, DEED_IDS } from '../../data/unlocks.js';
 import { LORE_IDS, LORE_BY_ID } from '../../sim/secrets.js';
-import { SECRET_COLORS } from '../../data/palette.js';
+import { SECRET_COLORS, AFFIX_COLORS } from '../../data/palette.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { RARITY_COLOR } from '../run/cards.js';
-import { relicIconHtml, curseIconHtml } from '../run/relicicons.js';
+import { relicIconHtml, curseIconHtml, affixIconHtml } from '../run/relicicons.js';
 import { encounterSigil, ENCOUNTER_COLOR } from '../run/encounter.js';
 import { createModelViewer, thumbFor } from './viewer.js';
 
@@ -48,9 +49,14 @@ export function journalInfo(p) {
   const curse = { ...(seen.curse || {}) };
   const event = { ...(seen.event || {}) };
   const lore = { ...(seen.lore || {}) };
+  // ELITE POWERS (Small fixes 9): a power the deeds' lifetime marks hold was
+  // felled before the Journal listed powers.
+  const affix = { ...(seen.affix || {}) };
+  for (const id of (meta.marks && meta.marks.affix) || []) affix[id] = Math.max(affix[id] ?? 0, 1);
   const deeds = new Set(meta.deeds || []);
   const row = (map, id) => ({ id, seen: id in map, count: map[id] ?? 0 });
   const bestiary = BESTIARY.map((b) => ({ ...row(b.boss ? boss : enemy, b.id), boss: b.boss }));
+  const affixes = AFFIX_JOURNAL.map((a) => row(affix, a.id));
   const relics = RELIC_IDS.map((id) => row(relic, id));
   const curses = Object.keys(CURSES).map((id) => row(curse, id));
   const events = ENCOUNTER_IDS.map((id) => row(event, id));
@@ -60,13 +66,14 @@ export function journalInfo(p) {
   const met = (list) => list.filter((x) => x.seen).length;
   return {
     bestiary,
+    affixes,
     relics,
     curses,
     events,
     pages,
     deeds: deedRows,
     totals: {
-      bestiary: { met: met(bestiary), of: bestiary.length },
+      bestiary: { met: met(bestiary) + met(affixes), of: bestiary.length + affixes.length },
       relics: { met: met(relics) + met(curses), of: relics.length + curses.length },
       events: { met: met(events) + met(pages), of: events.length + pages.length },
       deeds: { met: deedRows.filter((d) => d.done).length, of: deedRows.length },
@@ -150,7 +157,7 @@ export function createJournalPage(kind, getInfo) {
 
   function entries() {
     const info = getInfo();
-    if (kind === 'bestiary') return info.bestiary.map((r) => ({ ...r, kind: r.boss ? 'boss' : 'enemy' }));
+    if (kind === 'bestiary') return [...info.bestiary.map((r) => ({ ...r, kind: r.boss ? 'boss' : 'enemy' })), ...(info.affixes || []).map((r) => ({ ...r, kind: 'affix' }))];
     if (kind === 'relics') return [...info.relics.map((r) => ({ ...r, kind: 'relic' })), ...info.curses.map((r) => ({ ...r, kind: 'curse' }))];
     return [...info.events.map((r) => ({ ...r, kind: 'event' })), ...(info.pages || []).map((r) => ({ ...r, kind: 'lore' }))];
   }
@@ -166,6 +173,7 @@ export function createJournalPage(kind, getInfo) {
     if (e.kind === 'relic') return relicIconHtml(e.id, 48);
     if (e.kind === 'curse') return curseIconHtml(48, !!CURSES[e.id].major);
     if (e.kind === 'lore') return pageIconHtml(48);
+    if (e.kind === 'affix') return affixIconHtml(e.id, 48);
     return encounterSigil(e.id, 48);
   }
   function rimOf(e) {
@@ -175,6 +183,7 @@ export function createJournalPage(kind, getInfo) {
     if (e.kind === 'curse') return P.godstuffViolet;
     if (e.kind === 'event') return ENCOUNTER_COLOR[e.id] ?? P.bone;
     if (e.kind === 'lore') return SECRET_COLORS.glow;
+    if (e.kind === 'affix') return AFFIX_COLORS[e.id] ?? P.bone;
     return P.hearthAmber;
   }
 
@@ -189,6 +198,8 @@ export function createJournalPage(kind, getInfo) {
       // CHAMPION ROOMS: the four champions, between the lands and the bosses.
       groups.push([t('Champions'), all.filter((e) => e.kind === 'enemy' && CHAMPION_SET.has(e.id))]);
       groups.push([t('Bosses'), all.filter((e) => e.kind === 'boss')]);
+      // ELITE POWERS (Small fixes 9): the twelve affixes, after the bosses.
+      groups.push([t('Elite powers'), all.filter((e) => e.kind === 'affix')]);
     } else if (kind === 'relics') {
       groups.push([t('Relics'), all.filter((e) => e.kind === 'relic')]);
       groups.push([t('Curses'), all.filter((e) => e.kind === 'curse')]);
@@ -213,7 +224,7 @@ export function createJournalPage(kind, getInfo) {
         b.dataset.jid = keyOf(e);
         b.style.setProperty('--rim', rimOf(e));
         b.setAttribute('aria-label', e.seen ? t(nameOf(e)) : t('Not met yet'));
-        b.innerHTML = `${tileArt(e)}${e.seen && e.count > 0 && (e.kind === 'enemy' || e.kind === 'boss') ? `<span class="jr-n">${e.count}</span>` : ''}`;
+        b.innerHTML = `${tileArt(e)}${e.seen && e.count > 0 && (e.kind === 'enemy' || e.kind === 'boss' || e.kind === 'affix') ? `<span class="jr-n">${e.count}</span>` : ''}`;
         b.addEventListener('mouseenter', () => select(b.dataset.jid));
         b.addEventListener('focus', () => select(b.dataset.jid));
         b.addEventListener('click', () => select(b.dataset.jid));
@@ -228,6 +239,7 @@ export function createJournalPage(kind, getInfo) {
     if (e.kind === 'relic') return RELICS[e.id].name;
     if (e.kind === 'curse') return CURSES[e.id].name;
     if (e.kind === 'lore') return LORE_BY_ID[e.id].name;
+    if (e.kind === 'affix') return AFFIX_JOURNAL.find((a) => a.id === e.id).name;
     return ENCOUNTERS[e.id].name;
   }
 
@@ -291,6 +303,15 @@ export function createJournalPage(kind, getInfo) {
         parts.push(`<div class="jr-text">${esc(t(c.text))}</div>`);
         parts.push(`<div class="jr-count">${esc(tn(e.count, 'Borne {n} time', 'Borne {n} times'))}</div>`);
       } else parts.push(`<div class="jr-text jr-dim">${esc(t('Not borne yet.'))}</div>`);
+    } else if (e.kind === 'affix') {
+      const a = AFFIX_JOURNAL.find((x) => x.id === e.id);
+      parts.push(stage(affixIconHtml(e.id, 96)));
+      parts.push(`<div class="jr-tag">${esc(t('ELITE POWER'))}</div>`);
+      parts.push(`<div class="jr-name">${name}</div>`);
+      if (e.seen) {
+        parts.push(`<div class="jr-text">${esc(t(a.text))}</div>`);
+        parts.push(`<div class="jr-count">${esc(t('Felled: {n}', { n: e.count }))}</div>`);
+      } else parts.push(`<div class="jr-text jr-dim">${esc(a.late ? t('Not met yet. Elites carry it from room 4 of a level on.') : t('Not met yet. Elites carry it in the campaign.'))}</div>`);
     } else if (e.kind === 'lore') {
       const pg = LORE_BY_ID[e.id];
       parts.push(stage(pageIconHtml(96)));
