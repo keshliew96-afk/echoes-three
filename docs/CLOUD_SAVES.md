@@ -91,13 +91,44 @@ The fallback while saves are short-lived:
   then the profile, drops slots the bundle does not have, and freezes the
   store so nothing the page still holds (a pagehide autosave, the profile
   flush) can write over the loaded files before the reload
-  (`storage.freeze()`).
+  (`storage.freeze()`). It is staged: see "Loading safely" below.
 - `src/save/index.js`: `cloudBundle()`, `readBundle()`, `applyBundle()`,
   `exportBackup()` on the save service.
 - `src/ui/menu/cloud.js`: the Settings rows. The server address is the one
   multiplayer uses (`src/net/address.js`: this site's own server unless the
   player saved another). The last code and its token live in
   `localStorage['echoes.cloud.v1']`.
+
+## Loading safely
+
+Since v0.5.308 (code review finding 5) a load never leaves a device half
+replaced:
+
+1. **Stage.** Every file the bundle brings is written beside its key as
+   `<key>.incoming` (`echoes.save.v1.auto-1.incoming`,
+   `echoes.profile.v1.incoming`). Nothing on the device has changed yet. If
+   any write is refused (the device is full), the staged copies are removed
+   and the menu's "Nothing was changed" line is true: every slot, backup and
+   the profile are as they were, and the save service turns the autosave
+   back on for the rest of the session.
+2. **Plan.** `echoes.cloud.applying` records which slots and whether the
+   profile are coming.
+3. **Swap.** Slots first, then the profile, as before: a slot the bundle
+   holds is written with the usual atomic write (its old copy goes to
+   `.bak`, only when it is readable: a damaged slot keeps its good backup); a slot it does not hold is removed with its backup. When the
+   atomic write does not fit, that slot's old copies are removed first, so
+   the swap needs no room beyond what staging proved. The plan key goes last.
+4. **Finish at boot.** A page closed during the swap leaves the plan: the
+   next boot finishes the swap before the profile or the slots are read
+   (`finishPendingApply`). Staged files with no plan (a page closed while
+   staging) are dropped. A swap that still stops part-way reports
+   `partial`; the menu says "The load stopped part-way. Reload the page: the
+   game finishes loading it when it starts."
+
+Staging holds the bundle twice for a moment, so a device very close to full
+may refuse a load the old order would have squeezed in; the refusal changes
+nothing. A profile from a newer format is carried in a bundle as it is and
+reads as `newer` ("This save comes from a newer version of Echoes…").
 
 ## Checks
 
@@ -111,3 +142,8 @@ slots and run after the reload; A mid-run gets the run line and Cancel changes
 nothing; saving again keeps the code after the server forgot it. The nine
 goldens are unchanged (`node tools/gntM2-goldens.mjs`): nothing here touches
 the sim.
+
+`node tools/save-safety-probe.mjs` (headless) covers "Loading safely": a
+refused staging changes nothing and turns the autosave back on, a clean load
+replaces as before, a partial swap is finished at boot, orphan staging is
+dropped, and a damaged slot keeps its good backup through a save or a load.

@@ -367,6 +367,7 @@ export function createAutosave({
         : null;
     },
     log: () => log.map((r) => ({ ...r })),
+    isEnabled: () => enabled,
     setEnabled(on) {
       enabled = !!on;
       if (!enabled) {

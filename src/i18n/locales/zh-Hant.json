@@ -3430,5 +3430,7 @@
  "Not met yet. Elites carry it from room 4 of a level on.": "尚未遭遇。每關第 4 個房間起，精英會帶有牠。",
  "Not met yet. Elites carry it in the campaign.": "尚未遭遇。戰役中的精英會帶有牠。",
  "Felled before the Journal kept count.": "在手記開始計數前已討伐。",
- "Felled: {n}, and more before the Journal kept count.": "已討伐：{n}（手記開始計數前的不計在內）"
+ "Felled: {n}, and more before the Journal kept count.": "已討伐：{n}（手記開始計數前的不計在內）",
+ "The load stopped part-way. Reload the page: the game finishes loading it when it starts.": "讀取中途停止。請重新整理頁面：遊戲啟動時會完成讀取。",
+ "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "你的檔案由更新版本的 Echoes 儲存。請重新整理頁面以更新遊戲：在此之前，此分頁不會儲存紀錄、餘燼或解鎖。"
 }

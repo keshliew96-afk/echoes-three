@@ -60,9 +60,36 @@ export function createDeedRunTracker(bus) {
   bus.on('layout_enter', (ev) => {
     if (ARENA_IDS.includes(ev.layoutId)) addOnce(run.arenas, ev.layoutId);
   });
+  // SAVE SAFETY: the facts ride in the run save (tree.app.deedRun, save/index.js)
+  // so Continue after a reload keeps the run's deed progress; the elites
+  // still alive keep the powers they wore. A tree without them (a new game,
+  // a save from before) starts the facts fresh.
+  const ids = (a) => (Array.isArray(a) ? [...new Set(a.filter((v) => typeof v === 'string'))] : []);
+  const count = (n) => (Number.isFinite(n) && n > 0 ? Math.floor(n) : 0);
   return {
     reset() {
       run = fresh();
+    },
+    save: () => ({
+      events: run.events.slice(),
+      affixes: run.affixes.slice(),
+      objectives: run.objectives.slice(),
+      champions: run.champions.slice(),
+      arenas: run.arenas.slice(),
+      vaults: run.vaults,
+      pealBest: run.pealBest,
+      blindBest: run.blindBest,
+      blindAt: run.blindAt,
+      blindN: run.blindN,
+      wore: [...run.wore].map(([id, list]) => [id, list.slice()]),
+    }),
+    load(d) {
+      run = fresh();
+      if (!d || typeof d !== 'object') return;
+      for (const k of ['events', 'affixes', 'objectives', 'champions', 'arenas']) run[k] = ids(d[k]);
+      for (const k of ['vaults', 'pealBest', 'blindBest', 'blindN']) run[k] = count(d[k]);
+      run.blindAt = typeof d.blindAt === 'string' ? d.blindAt : '';
+      if (Array.isArray(d.wore)) for (const e of d.wore.slice(-256)) if (Array.isArray(e) && e.length === 2 && Array.isArray(e[1])) run.wore.set(e[0], e[1].filter((a) => typeof a === 'string'));
     },
     // The plain facts (no live state), as awardRun's summary.deedRun.
     facts: () => ({ events: run.events.slice(), affixes: run.affixes.slice(), objectives: run.objectives.slice(), champions: run.champions.slice(), arenas: run.arenas.slice(), vaults: run.vaults, pealBest: run.pealBest, blindBest: run.blindBest }),

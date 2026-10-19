@@ -39,13 +39,29 @@
 // pays a finished run; buyUnlock / equipUnlock / clearLoadout are the Unlocks
 // screen's writes. All go through commit() (atomic, multi-tab safe); a
 // records reset keeps `meta`.
+//
+// SAVE SAFETY (docs/UNLOCKS.md "Save data"). Two guards for a
+// tab older than the profile it finds:
+//   * `v` above PROFILE_V is a newer FORMAT, not a damaged file: the store
+//     shows what it can read of it and turns read-only (report.status
+//     'newer'; every write is refused, nothing is overwritten) until the page
+//     is reloaded into the newer game.
+//   * `build` is the newest game version that wrote the profile. When it is
+//     newer than this build, the ids this build does not know (unlocks,
+//     deeds, feats, relics, marks, journal kinds, new meta keys) are the newer
+//     build's content: they stay out of the view but every write puts them
+//     back verbatim and nothing is refunded for them (data/unlocks.js
+//     foreignMeta). A profile last written by this build or an older one
+//     keeps the old rule: an unlock no build knows any more is refunded.
 import { PROFILE_KEY } from './storage.js';
 import { CAMPAIGN_LEVELS, ALL_LEVELS, FIRST_LEVEL, nextLevels } from '../data/campaign.js';
-import { freshMeta, saneMeta, runFacts, awardFor, grantFree, UNLOCKS, reqMet, FEATS, featsOf, marksAfter, vowBestAfter } from '../data/unlocks.js';
+import { VERSION } from '../version.js';
+import { freshMeta, saneMeta, saneMetaFrom, foreignMeta, withForeign, runFacts, awardFor, grantFree, UNLOCKS, reqMet, FEATS, featsOf, marksAfter, vowBestAfter } from '../data/unlocks.js';
 import { VOW_MAX_RANK } from '../data/vows.js';
 
 export const ACT_MUL = Object.freeze({ 1: 1.0, 2: 1.5, 3: 2.0, 4: 2.5, 5: 3.0, 6: 3.0 }); // 6: the Ember Kiln, the other Level V
 export const CHALLENGE_MUL = Object.freeze({ relaxed: 0.75, standard: 1, harrowing: 1.5 });
+export const PROFILE_V = 1;
 const MAX_SCORES = 10;
 
 export function scoreRun({ roomsCleared = 0, kills = 0, victory = false, act = 1, challenge = 'standard', timeSec = 0 }) {
@@ -168,8 +184,42 @@ export function saneStory(s) {
   return out;
 }
 
-function sane(p) {
-  if (!p || typeof p !== 'object' || p.v !== 1) return null;
+// SAVE SAFETY: game versions ('0.5.308') compared part by part.
+export function compareBuilds(a, b) {
+  const pa = String(a ?? '').split('.').map((n) => parseInt(n, 10) || 0);
+  const pb = String(b ?? '').split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(pa.length, pb.length, 3); i++) if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) < (pb[i] ?? 0) ? -1 : 1;
+  return 0;
+}
+const isBuild = (b) => typeof b === 'string' && /^\d+\.\d+\.\d+$/.test(b);
+// Written by a build newer than this one?
+export const fromNewerBuild = (p) => !!(p && isBuild(p.build) && compareBuilds(p.build, VERSION) > 0);
+// A stored profile in a newer FORMAT (its `v` above PROFILE_V)?
+export function newerProfile(textOrObj) {
+  let p = textOrObj;
+  if (typeof p === 'string') {
+    try {
+      p = JSON.parse(p);
+    } catch {
+      return false;
+    }
+  }
+  return !!(p && typeof p === 'object' && Number.isFinite(p.v) && p.v > PROFILE_V);
+}
+// The parts of a stored profile a newer build added (null: none, or the
+// profile is this build's or older).
+function foreignOf(raw) {
+  if (!fromNewerBuild(raw)) return null;
+  const meta = foreignMeta(raw.meta);
+  let journal = null;
+  if (raw.journal && typeof raw.journal === 'object' && raw.journal.seen && typeof raw.journal.seen === 'object') {
+    for (const [k, v] of Object.entries(raw.journal.seen)) if (!JOURNAL_KINDS.includes(k)) (journal ||= {})[k] = v;
+  }
+  return meta || journal ? { meta, journal } : null;
+}
+
+function sane(p, { lift = false } = {}) {
+  if (!p || typeof p !== 'object' || (p.v !== PROFILE_V && !(lift && newerProfile(p)))) return null;
   const f = freshProfile();
   const out = { ...f, ...p };
   out.highScores = Array.isArray(p.highScores) ? p.highScores.filter((h) => h && Number.isFinite(h.score)).slice(0, MAX_SCORES) : [];
@@ -188,7 +238,8 @@ function sane(p) {
   // holds the Kiln too.
   if (out.unlocks.acts.includes(5) && !out.unlocks.acts.includes(6)) out.unlocks.acts.push(6);
   out.playtimeSec = Number.isFinite(p.playtimeSec) ? p.playtimeSec : 0;
-  out.meta = saneMeta(p.meta);
+  out.v = PROFILE_V;
+  out.meta = saneMetaFrom(p.meta, { newer: fromNewerBuild(p) || newerProfile(p) });
   out.story = saneStory(p.story);
   out.journal = saneJournal(p.journal, out.meta);
   return out;
@@ -224,6 +275,10 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   let deferred = noDeferred(); // counters that ride the next write (flush)
   let report = { status: 'fresh', detail: null };
   const syncLog = []; // debug: the last 10 adoptions of another tab's write
+  // SAVE SAFETY: what a newer build added to the stored profile (written
+  // back on every write), and the read-only state a newer format sets.
+  let baseForeign = null;
+  let readOnly = false;
 
   function parse(text) {
     try {
@@ -231,6 +286,39 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     } catch {
       return null;
     }
+  }
+  const foreignIn = (text) => {
+    try {
+      return foreignOf(JSON.parse(text));
+    } catch {
+      return null;
+    }
+  };
+  // A newer format: shown as far as this build reads it (else a fresh view),
+  // never written.
+  function holdNewer(text) {
+    let p = null;
+    try {
+      p = sane(JSON.parse(text), { lift: true });
+    } catch {
+      p = null;
+    }
+    readOnly = true;
+    base = p ?? freshProfile();
+    baseText = text;
+    baseForeign = null;
+    report = { status: 'newer', detail: 'the profile was saved by a newer version of the game — nothing is written until the page reloads' };
+    rebuild();
+    return true;
+  }
+  // The text a write stores: the view, stamped with the newest build that
+  // wrote it, plus what a newer build added.
+  function serialize(view) {
+    const out = JSON.parse(JSON.stringify(view));
+    out.build = isBuild(view.build) && compareBuilds(view.build, VERSION) > 0 ? view.build : VERSION;
+    if (baseForeign && baseForeign.meta) out.meta = withForeign(out.meta, baseForeign.meta);
+    if (baseForeign && baseForeign.journal && out.journal && out.journal.seen) for (const [k, v] of Object.entries(baseForeign.journal)) if (!(k in out.journal.seen)) out.journal.seen[k] = v;
+    return { text: JSON.stringify(out), build: out.build };
   }
   const clone = (p) => sane(JSON.parse(JSON.stringify(p))) ?? freshProfile();
   // .bak only ever receives a readable profile (a torn main never replaces it)
@@ -241,7 +329,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // newest readable copy (sync) even when this tab has nothing of its own.
   const mainDamaged = () => {
     const t = store.read(PROFILE_KEY);
-    return t !== null && parse(t) === null;
+    return t !== null && parse(t) === null && !newerProfile(t);
   };
 
   function applyDeferred(p) {
@@ -271,15 +359,22 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   function sync() {
     const text = store.read(PROFILE_KEY);
     if (text === baseText) return false;
+    if (text !== null && newerProfile(text)) return holdNewer(text);
     let p = text !== null ? parse(text) : null;
+    let pText = text;
     if (!p && text !== null) {
       let best = null;
+      let bestText = null;
       for (const k of [`${PROFILE_KEY}.bak`, `${PROFILE_KEY}.tmp`]) {
         const t = store.read(k);
         const c = t !== null ? parse(t) : null;
-        if (c && (!best || String(c.savedAt || '') > String(best.savedAt || ''))) best = c;
+        if (c && (!best || String(c.savedAt || '') > String(best.savedAt || ''))) {
+          best = c;
+          bestText = t;
+        }
       }
       p = best && String(best.savedAt || '') > String(base.savedAt || '') ? best : null;
+      pText = bestText;
       if (!p) {
         baseText = text; // keep this tab's copy; the next write repairs main
         return false;
@@ -288,6 +383,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     if (!p) return false;
     base = p;
     baseText = text;
+    baseForeign = foreignIn(pText);
     rebuild();
     syncLog.push({ at: Date.now(), savedAt: p.savedAt ?? null, highScores: p.highScores.length, unlocks: p.unlocks.acts.slice(), pending: pending.length });
     if (syncLog.length > 10) syncLog.shift();
@@ -298,7 +394,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     // A valid tmp newer than the main copy = a write torn before its main step.
     const main = store.read(PROFILE_KEY);
     const tmp = store.read(`${PROFILE_KEY}.tmp`);
-    if (tmp !== null) {
+    if (tmp !== null && !newerProfile(tmp) && !newerProfile(main)) {
       const t = parse(tmp);
       const m = main !== null ? parse(main) : null;
       if (t && (!m || String(t.savedAt || '') > String(m.savedAt || ''))) {
@@ -306,6 +402,12 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       } else store.remove(`${PROFILE_KEY}.tmp`);
     }
     const text = store.read(PROFILE_KEY);
+    readOnly = false;
+    baseForeign = null;
+    if (text !== null && newerProfile(text)) {
+      holdNewer(text);
+      return profile;
+    }
     if (text === null) {
       base = freshProfile();
       baseText = null;
@@ -317,6 +419,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     if (p) {
       base = p;
       baseText = text;
+      baseForeign = foreignIn(text);
       rebuild();
       if (report.status !== 'promoted') report = { status: 'ok', detail: null };
       return profile;
@@ -324,10 +427,16 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     // Corrupt main: keep the unreadable text aside, try the backup.
     store.writePlain(`${PROFILE_KEY}.corrupt`, text);
     const bak = store.read(`${PROFILE_KEY}.bak`);
+    if (bak !== null && newerProfile(bak)) {
+      holdNewer(bak);
+      baseText = text;
+      return profile;
+    }
     const b = bak !== null ? parse(bak) : null;
     if (b) {
       base = b;
-      const bt = JSON.stringify(b);
+      baseForeign = foreignIn(bak);
+      const bt = serialize(b).text;
       baseText = store.writeAtomic(PROFILE_KEY, bt).ok ? bt : text;
       report = { status: 'backup', detail: 'the records file was unreadable — restored the backup' };
     } else {
@@ -343,9 +452,11 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
   // (quota, blocked storage) keeps them pending for the next write.
   function persist() {
     sync();
+    if (readOnly) return { ok: false, error: 'newer' };
     rebuild();
     profile.savedAt = now();
-    const text = JSON.stringify(profile);
+    const { text, build } = serialize(profile);
+    profile.build = build;
     const r = store.writeAtomic(PROFILE_KEY, text, { backupIf: keepAsBackup });
     if (r.ok) {
       base = profile;
@@ -750,6 +861,10 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     get report() {
       return report;
     },
+    // SAVE SAFETY: a newer-format profile is on disk; nothing is written.
+    get readOnly() {
+      return readOnly;
+    },
     // debug (SAVE4-F1): what this tab has not written yet + recent adoptions
     debugState: () => ({
       pending: pending.length,
@@ -761,6 +876,7 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     // Records reset (explicit, this tab's choice): a fresh profile replaces
     // the stored one; nothing this tab had pending survives it.
     reset() {
+      if (readOnly) return { ok: false, error: 'newer' };
       pending = [];
       deferred = noDeferred();
       // UNLOCKS: a records reset clears scores and records, never the Embers
@@ -775,7 +891,8 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
       baseText = null;
       rebuild();
       profile.savedAt = now();
-      const text = JSON.stringify(profile);
+      const { text, build } = serialize(profile);
+      profile.build = build;
       const r = store.writeAtomic(PROFILE_KEY, text, { backupIf: keepAsBackup });
       if (r.ok) {
         base = profile;

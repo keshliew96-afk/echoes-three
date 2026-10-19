@@ -485,6 +485,117 @@ export function saneMeta(m) {
   return out;
 }
 
+// SAVE SAFETY (docs/UNLOCKS.md "Save data"): what a stored
+// meta holds that this build's tables do not know — unlocks, deeds, feats,
+// relics and marks a newer build added, its new keys, and loadout pointers to
+// them. saneMeta keeps them out of what the game shows; the profile store
+// writes them back verbatim (withForeign) when a newer build wrote the
+// profile, so a tab left open across a deploy never prunes them or refunds
+// them. -> null when there is nothing foreign.
+export function foreignMeta(m) {
+  if (!m || typeof m !== 'object') return null;
+  const f = freshMeta();
+  const out = {};
+  const keys = {};
+  for (const [k, v] of Object.entries(m)) if (!(k in f)) keys[k] = v;
+  if (Object.keys(keys).length) out.keys = keys;
+  if (Number.isFinite(m.mv) && m.mv > META_VERSION) out.mv = m.mv;
+  if (m.owned && typeof m.owned === 'object') {
+    const o = {};
+    for (const [id, paid] of Object.entries(m.owned)) if (!UNLOCKS[id]) o[id] = paid;
+    if (Object.keys(o).length) out.owned = o;
+  }
+  const unknown = (arr, table) => (Array.isArray(arr) ? arr.filter((x) => typeof x === 'string' && !table[x]) : []);
+  for (const [k, table] of [['deeds', DEEDS], ['feats', FEATS], ['relicsSeen', RELICS]]) {
+    const u = unknown(m[k], table);
+    if (u.length) out[k] = u;
+  }
+  if (m.marks && typeof m.marks === 'object') {
+    const mk = {};
+    for (const [k, v] of Object.entries(m.marks)) {
+      if (k === 'daily') continue;
+      if (!MARK_KINDS[k]) mk[k] = v;
+      else if (Array.isArray(v)) {
+        const u = v.filter((x) => !MARK_KINDS[k].includes(x));
+        if (u.length) mk[k] = u;
+      }
+    }
+    if (Object.keys(mk).length) out.marks = mk;
+  }
+  if (m.vowBest && typeof m.vowBest === 'object') {
+    const fresh = freshVowBest();
+    const vb = {};
+    for (const [k, v] of Object.entries(m.vowBest)) if (!(k in fresh)) vb[k] = v;
+    if (Object.keys(vb).length) out.vowBest = vb;
+  }
+  const l = m.loadout && typeof m.loadout === 'object' ? m.loadout : null;
+  if (l) {
+    const lo = {};
+    const isForeign = (id) => typeof id === 'string' && !UNLOCKS[id];
+    for (const slot of ['kits', 'tints']) {
+      if (!l[slot] || typeof l[slot] !== 'object') continue;
+      const per = {};
+      for (const [c, id] of Object.entries(l[slot])) if (!LOADOUT_CLASSES.includes(c) || isForeign(id)) per[c] = id;
+      if (Object.keys(per).length) lo[slot] = per;
+    }
+    if (isForeign(l.heirloom)) lo.heirloom = l.heirloom;
+    const tier = Math.round(num(l.purse));
+    if (tier > 0 && !UNLOCKS[`purse_${tier}`]) lo.purse = tier;
+    const vows = Array.isArray(l.vows) ? l.vows.filter(isForeign) : [];
+    if (vows.length) {
+      lo.vows = vows;
+      if (l.vowRanks && typeof l.vowRanks === 'object') {
+        const vr = {};
+        for (const v of vows) if (l.vowRanks[v] !== undefined) vr[v] = l.vowRanks[v];
+        if (Object.keys(vr).length) lo.vowRanks = vr;
+      }
+    }
+    for (const [k, v] of Object.entries(l)) if (!['kits', 'tints', 'heirloom', 'purse', 'vows', 'vowRanks'].includes(k)) (lo.keys ||= {})[k] = v;
+    if (Object.keys(lo).length) out.loadout = lo;
+  }
+  return Object.keys(out).length ? out : null;
+}
+
+// The meta as stored: this build's view plus what foreignMeta kept. A
+// loadout pointer this build cleared comes back only where the view left
+// that place empty (an equip made here wins).
+export function withForeign(meta, foreign) {
+  if (!foreign) return meta;
+  const m = JSON.parse(JSON.stringify(meta));
+  if (foreign.keys) for (const [k, v] of Object.entries(foreign.keys)) if (!(k in m)) m[k] = v;
+  if (foreign.mv) m.mv = Math.max(m.mv, foreign.mv);
+  if (foreign.owned) for (const [id, paid] of Object.entries(foreign.owned)) if (m.owned[id] === undefined) m.owned[id] = paid;
+  for (const k of ['deeds', 'feats', 'relicsSeen']) if (foreign[k]) m[k] = [...new Set([...m[k], ...foreign[k]])];
+  if (foreign.marks) {
+    for (const [k, v] of Object.entries(foreign.marks)) {
+      if (Array.isArray(m.marks[k]) && Array.isArray(v)) m.marks[k] = [...new Set([...m.marks[k], ...v])];
+      else if (!(k in m.marks)) m.marks[k] = v;
+    }
+  }
+  if (foreign.vowBest) for (const [k, v] of Object.entries(foreign.vowBest)) if (!(k in m.vowBest)) m.vowBest[k] = v;
+  const lo = foreign.loadout;
+  if (lo) {
+    const l = m.loadout;
+    for (const slot of ['kits', 'tints']) if (lo[slot]) for (const [c, id] of Object.entries(lo[slot])) if (l[slot][c] == null) l[slot][c] = id;
+    if (lo.heirloom && l.heirloom == null) l.heirloom = lo.heirloom;
+    if (lo.purse && !l.purse) l.purse = lo.purse;
+    if (lo.vows) l.vows = [...new Set([...l.vows, ...lo.vows])];
+    if (lo.vowRanks) for (const [v, r] of Object.entries(lo.vowRanks)) if (l.vowRanks[v] === undefined) l.vowRanks[v] = r;
+    if (lo.keys) for (const [k, v] of Object.entries(lo.keys)) if (!(k in l)) l[k] = v;
+  }
+  return m;
+}
+
+// The view of a meta a newer build wrote: as saneMeta, but an unlock this
+// build does not know is not refunded (it is the newer build's, kept as
+// stored), never "content removed in a later version".
+export function saneMetaFrom(m, { newer = false } = {}) {
+  if (!newer || !m || typeof m !== 'object' || !m.owned || typeof m.owned !== 'object') return saneMeta(m);
+  const owned = {};
+  for (const [id, paid] of Object.entries(m.owned)) if (UNLOCKS[id]) owned[id] = paid;
+  return saneMeta({ ...m, owned });
+}
+
 // --------------------------------------------------------- requirements --
 // ctx = { meta, records } (records: the profile's records).
 export function reqMet(req, { meta, records }) {
