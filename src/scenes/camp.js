@@ -785,7 +785,8 @@ export function createCampScene(stage, toggles, ctx) {
     if (isGuest() || !inSession()) return { ok: false, reason: 'closed' };
     if (picking || !canBegin()) return { ok: false, reason: 'busy' };
     if (level === 'portal') {
-      const e = world.entities().find((x) => x.kind === 'ally' && x.partyIndex === seat);
+      // (Seat 0 is the Healer's body, world.player: a guest may play it.)
+      const e = seat === 0 ? world.player : world.entities().find((x) => x.kind === 'ally' && x.partyIndex === seat);
       if (!e) return { ok: false, reason: 'closed' };
       const dx = e.x - PORTAL.x;
       const dz = e.z - (PORTAL.z + 0.55);

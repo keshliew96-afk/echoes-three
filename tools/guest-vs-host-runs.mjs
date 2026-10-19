@@ -5,6 +5,8 @@
 // browser; the host takes the Archer, the guest the Healer:
 //   - unit: the input frame carries the Healer's party commands (rally, mark,
 //     heal target with its ally index) only from a seat-0 sender;
+//   - at camp the guest Healer's Level Select pick starts the run on the
+//     host, as an ally-seat guest's does (PR #97);
 //   - in room 1 the guest Healer's R, Tab and F2 reach the host's sim
 //     (intent rally / target_cycle / target_select 1), as the host Healer's do;
 //   - the host's party tabs mark its own Archer "you" and the guest's Healer
@@ -113,7 +115,16 @@ try {
   check(`the session is up: the host on the Archer, the guest on the Healer (${JSON.stringify(roles)})`, hs && hs.ok && roles[0].role === 'host' && roles[0].seat === 3 && roles[1].role === 'guest' && roles[1].seat === 0, roles);
 
   await waitOn(host, 'return E.campaign.ready(1).ready;', { timeout: 150000 });
-  await netEval(host, 'return E.campaign.choose(1);');
+  // The guest Healer picks Level 1 at camp (the pick goes to the host's game).
+  const ask = await netEval(guest, 'return n.session.campBegin(1, "levels");');
+  let started = true;
+  try {
+    await waitOn(host, 'const v = E.state().run; return v.phase === "combat" && v.act === 1 && v.room === 1;', { timeout: 45000 });
+  } catch {
+    started = false;
+  }
+  check(`the guest Healer's Level Select pick starts Level 1 on the host (${ask})`, ask === true && started, { ask, started });
+  if (!started) await netEval(host, 'return E.campaign.choose(1);');
   await waitOn(host, 'const v = E.state().run; return v.phase === "combat" && v.act === 1 && v.room === 1;');
   await waitOn(guest, 'const v = E.state().run; return v.phase === "combat" && v.act === 1 && v.room === 1;');
   await sleep(3000);

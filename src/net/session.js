@@ -590,7 +590,8 @@ export function createNetSession(ctx) {
   // the host's checks (scenes/camp.js guestBegin). Null = started.
   function hostCampCmd(c) {
     const cmd = c.cmd || {};
-    if (!(Number.isInteger(c.seat) && c.seat >= 1 && c.seat <= 3) || seatControllers()[c.seat] !== 'human') return { reason: 'not_owner' };
+    // GUEST VS HOST: a guest playing the Healer (seat 0) sets out too.
+    if (!(Number.isInteger(c.seat) && c.seat >= 0 && c.seat <= 3) || (c.seat === 0 ? !guestHoldsHealer() : seatControllers()[c.seat] !== 'human')) return { reason: 'not_owner' };
     const level = typeof cmd.level === 'string' ? cmd.level : Number(cmd.level);
     let r = null;
     try {
