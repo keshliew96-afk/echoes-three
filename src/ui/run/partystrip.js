@@ -175,7 +175,16 @@ const faceHtml = (classId, px = 40) => {
 export function ownerBandHtml(seat, { you = false } = {}) {
   const classId = classOfSeat(seat);
   const acc = CLASS_ACCENTS[classId];
-  const label = seat === 0 ? (you ? t('FOR YOU — THE HEALER') : t('FOR THE HEALER')) : t('FOR THE {cls}', { cls: t(CLASS_NAME[classId]).toUpperCase() });
+  // FOR YOU marks the viewer's own hero (any class, any seat); the Healer
+  // keeps its own wording.
+  const cls = t(CLASS_NAME[classId]).toUpperCase();
+  const label = you
+    ? seat === 0
+      ? t('FOR YOU — THE HEALER')
+      : t('FOR YOU — THE {cls}', { cls })
+    : seat === 0
+      ? t('FOR THE HEALER')
+      : t('FOR THE {cls}', { cls });
   return `<div class="rn-owner" data-seat="${seat}" style="--acc:${acc}"><span class="rn-ownerface">${faceHtml(classId, 22)}</span>${iconHtml(`cls_${classId}`, { size: 18 })}<span>${esc(label)}</span></div>`;
 }
 

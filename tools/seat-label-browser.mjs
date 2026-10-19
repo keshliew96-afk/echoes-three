@@ -6,7 +6,7 @@
 //
 // Rounds: the player picks a hero at camp, then a campaign starts with a
 // lineup putting the newer heroes in the ally seats; each round reads the
-// party page's tabs (reward phase) and the socket screen's tabs (path phase).
+// party page's tabs and owner bands (FOR YOU over the played hero only; reward phase) and the socket screen's tabs (path phase).
 // Across the rounds every one of the seven heroes sits in a seat and four
 // of them are played by the human. A last plain round checks the default
 // four come back. Screenshots under captures/ (or --out <dir>).
@@ -78,6 +78,17 @@ const shown = await page.evaluate(async () => {
   const [{ CLASS_NAME }, { t }] = await Promise.all([import('/src/data/classes.js'), import('/src/i18n/index.js')]);
   return Object.fromEntries(Object.keys(CLASS_NAME).map((c) => [c, t(CLASS_NAME[c])]));
 });
+// The owner band the party page should show over a seat's card: FOR YOU on
+// the hero the viewer plays, whichever class and seat it is.
+const bandWant = await page.evaluate(async () => {
+  const [{ CLASS_NAME }, { t }] = await Promise.all([import('/src/data/classes.js'), import('/src/i18n/index.js')]);
+  const out = {};
+  for (const c of Object.keys(CLASS_NAME)) {
+    const cls = t(CLASS_NAME[c]).toUpperCase();
+    out[c] = c === 'healer' ? { you: t('FOR YOU — THE HEALER'), other: t('FOR THE HEALER') } : { you: t('FOR YOU — THE {cls}', { cls }), other: t('FOR THE {cls}', { cls }) };
+  }
+  return out;
+});
 
 for (const [i, R] of ROUNDS.entries()) {
   const want = R.lineup || DEFAULT;
@@ -126,6 +137,20 @@ for (const [i, R] of ROUNDS.entries()) {
     check(JSON.stringify(draft.map((x) => x.cls)) === JSON.stringify(want), `[${tag}] party page tabs dress the lineup (${draft.map((x) => x.cls).join(',')})`);
     check(draft.every((x) => x.name === shown[x.cls]), `[${tag}] party page tabs name the lineup (${draft.map((x) => x.name).join(', ')})`);
   } else console.log(`note [${tag}] no party strip on the reward page (solo card)`);
+  // Each tab's owner band: FOR YOU only over the played hero's card.
+  if (draft) {
+    for (let s = 0; s < 4; s++) {
+      await page.evaluate((k) => {
+        const tab = [...document.querySelectorAll('#run-screen .rn-pstrip .rn-ptab')].find((x) => x.dataset.seat === String(k) && x.getBoundingClientRect().width > 0);
+        if (tab) tab.click();
+      }, s);
+      await waitFn((k) => { const b = document.querySelector('#run-screen .rn-owner'); return !!b && b.dataset.seat === String(k); }, s, 30000).catch(() => null);
+      const text = await page.evaluate(() => { const b = document.querySelector('#run-screen .rn-owner'); return b ? `${b.dataset.seat}:${b.textContent.trim()}` : ''; });
+      const exp = `${s}:${s === pc.seat ? bandWant[want[s]].you : bandWant[want[s]].other}`;
+      check(text === exp, `[${tag}] seat ${s} (${want[s]}) owner band reads "${exp}" (${text})`);
+      if (s === pc.seat) await page.screenshot({ path: `${OUT}/seat-labels-${tag}-foryou-${LANG}.png` });
+    }
+  }
   await page.screenshot({ path: `${OUT}/seat-labels-${tag}-party-${LANG}.png` });
 
   // Leave the reward for the path page, then open the socket screen (B).
