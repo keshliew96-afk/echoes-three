@@ -54,9 +54,10 @@ import { createTechFx } from './render/techfx/index.js';
 import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 import { createBossLayer } from './render/boss/index.js';
 import { createRunUi } from './ui/run/index.js';
-import { updateNumberPools, flushNumberPools, prewarmNumberPools } from './render/numbers.js';
+import { updateNumberPools, flushNumberPools, prewarmNumberPools, numeralTally } from './render/numbers.js';
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
 import { parseBootParams, wipeEchoesStorage } from './app/params.js';
+import { HARNESS, pageQuery } from './app/harness.js';
 import { createApp } from './app/app.js';
 import { registerLanguageSetting, i18nDebug } from './i18n/index.js';
 import { service, provide } from './app/registry.js';
@@ -93,7 +94,7 @@ await new Promise((resolve) => {
 });
 // @gnt:INT-FIRST-PAINT end
 
-const params = new URLSearchParams(window.location.search);
+const params = pageQuery(); // PLAYER BUILD: harness params already dropped (src/app/harness.js)
 const flag = (name, def = true) => {
   const v = params.get(name);
   return v === null ? def : v !== '0' && v !== 'false';
@@ -1143,12 +1144,19 @@ const simDebug = {
 };
 
 // --- Debug API (docs/TESTING.md). cmd surface grows as systems land.
-window.__echoes = {
+// PLAYER BUILD (src/app/harness.js): only the version is on window there; the
+// game itself reaches the bus and the net client through the registry.
+provide('bus', bus);
+window.__echoes = !HARNESS
+  ? Object.freeze({ version: VERSION })
+  : {
   cloud: () => cloudSaves.debug(),
   daily: () => dailyClient, // docs/DAILY.md: { today, omen, board, last, debug() ... }
   version: VERSION,
   // CLASS SELECT (docs/CLASS_SELECT.md): the class the local player plays.
   playClass: () => playClass.debug(),
+  // ATTACK FEEDBACK (docs/HIT_FEEDBACK.md): outgoing numerals per look.
+  numerals: () => numeralTally(),
   i18n: () => i18nDebug(), // docs/I18N.md: { lang, misses, seen }
   tutorial: () => service('tutorial'), // docs/TUTORIAL.md: { startNow, skip, debug() ... }
   story: () => service('story'), // docs/STORY.md: { showPrologue, voice, debug() }
@@ -1309,6 +1317,6 @@ window.__echoes = {
 };
 // VFX lab (src/ui/vfxlab.js): ?vfxlab=1 opens a review panel that triggers
 // every class skill, enemy and boss beat in the live game.
-if (PLAYABLE && new URLSearchParams(location.search).has('vfxlab')) {
+if (HARNESS && PLAYABLE && params.has('vfxlab')) {
   import('./ui/vfxlab.js').then((m) => m.mountVfxLab());
 }

@@ -17,6 +17,7 @@ import { BOSS_VOICE, NPCS, voiceKeyFor, RILL_VOICE, TOLLY_VOICE, SABLE_VOICE } f
 import { WATER_BOSSES, STONE_BOSSES, HEART_BOSSES } from '../../data/unlocks.js';
 import { activeLineup } from '../../data/lineup.js';
 import { t } from '../../i18n/index.js';
+import { pageQuery } from '../../app/harness.js';
 
 const POLL_MS = 200;
 const VOICE_MS = 6500;
@@ -38,7 +39,7 @@ const CSS = `
 
 export function createStory({ app, world, scene: campScene = null, params = null }) {
   const harness = !!(params && params.menuSkip);
-  const query = new URLSearchParams(window.location.search);
+  const query = pageQuery();
   const popupsOn = query.get('story') === '1' || (!harness && query.get('story') !== '0');
 
   if (!document.getElementById('story-voice-style')) {

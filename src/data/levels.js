@@ -51,6 +51,7 @@
 //                              a seed always meets the same boss and a replay
 //                              on another seed can end differently.
 //   unlock                     null | { afterVictory: act }
+import { pageQuery } from '../app/harness.js';
 export const LEVELS = Object.freeze({
   1: Object.freeze({
     id: 'hollow_wood',
@@ -343,7 +344,7 @@ export const CAMPAIGN_ACTS = 5;
 // everyone; with CAMPAIGN_ACTS at 5 it changes nothing.
 export const ACT5_PREVIEW = (() => {
   try {
-    if (typeof location !== 'undefined' && location && typeof location.search === 'string' && /[?&]act5=1(&|$)/.test(location.search)) return true;
+    if (pageQuery().get('act5') === '1') return true;
   } catch {
     /* no location */
   }
@@ -359,7 +360,7 @@ const PLAYED_ACTS = Math.max(CAMPAIGN_ACTS, ACT5_PREVIEW ? 5 : 0);
 // opened it for everyone (docs/KILN_BOSSES.md); now it changes nothing.
 export const ACT6_PREVIEW = (() => {
   try {
-    if (typeof location !== 'undefined' && location && typeof location.search === 'string' && /[?&]act6=1(&|$)/.test(location.search)) return true;
+    if (pageQuery().get('act6') === '1') return true;
   } catch {
     /* no location */
   }

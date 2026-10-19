@@ -19,6 +19,7 @@ import { CAMERA } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
 import { toonMaterial } from '../render/toon.js';
 import { createCritter, CRITTER_CLASSES, CLIPS, setInkViewport } from '../render/critters/index.js';
+import { pageQuery } from '../app/harness.js';
 
 const CAM_ELEV = (33 * Math.PI) / 180; // low 3/4 — straight-on enough to
 const CAM_DIST = 10.5; //                 measure head % against standing height
@@ -29,7 +30,7 @@ const CAM_FOV = 28; // long lens: at the stock 45° fov the off-centre critters
 const LOOK_Y = 0.5;
 
 export function createCharTestScene(stage, toggles, { cosmetic }) {
-  const params = new URLSearchParams(window.location.search);
+  const params = pageQuery();
   const anim = CLIPS.includes(params.get('anim')) ? params.get('anim') : 'idle';
   const zoomcheck = params.get('zoomcheck') === '1';
   const overlap = params.get('overlap') === '1';

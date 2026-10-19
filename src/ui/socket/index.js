@@ -1077,7 +1077,7 @@ export function createSocketScreen({ bus, world }) {
         lines.push(`<span>${statsLine(sk)}</span>`);
       }
     } else {
-      title = `<span>${viewSeat === 0 ? t('Your build') : t("The {cls}'s build", { cls: esc(t(CLASS_NAME[classOfSeat(viewSeat)])) })}</span>`;
+      title = `<span>${viewSeat === ownSeat() ? t('Your build') : t("The {cls}'s build", { cls: esc(t(CLASS_NAME[classOfSeat(viewSeat)])) })}</span>`;
       lines.push(t('4 skills · 8 sockets each · grey cells socket freely but contribute nothing'));
     }
     detailEl.innerHTML = `
@@ -1666,7 +1666,8 @@ export function createSocketScreen({ bus, world }) {
       let guest = false;
       let who = 'Healer';
       try {
-        const n = (window.__echoes && window.__echoes.net) || null;
+        const svc = service('net');
+        const n = svc ? (svc.debug ?? svc) : null;
         guest = !!(n && typeof n.isGuest === 'function' && n.isGuest());
         // The host decides (net/seats.js chooserSeat: the Tank after a
         // migration once a human is back on the Healer).

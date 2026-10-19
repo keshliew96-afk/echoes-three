@@ -7677,6 +7677,11 @@
    "src/ui/run/shop.js"
   ]
  },
+ "FOR YOU — THE {cls}": {
+  "files": [
+   "src/ui/run/partystrip.js"
+  ]
+ },
  "FOR YOU — THE HEALER": {
   "files": [
    "src/ui/run/partystrip.js"
