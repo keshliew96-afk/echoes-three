@@ -1,0 +1,24 @@
+# The test safety net (docs/TESTING.md "npm test"): every push and pull request
+# runs the curated headless probes and a player build.
+name: test
+
+on:
+  push:
+    branches: [gauntlet]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      # --ignore-scripts: puppeteer's postinstall would download a browser the
+      # headless suite never opens.
+      - run: npm ci --ignore-scripts
+      - run: npm test
+      - run: npx vite build
