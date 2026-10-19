@@ -165,8 +165,9 @@ export function lifeAfter(meta, facts) {
   return { ...marksAfter(meta && meta.marks, facts), bosses: [...bosses] };
 }
 const markCount = (life, k) => ((life && life[k]) || []).length;
-// Wayfarer's event rooms: every kind but the Ember Kiln's (sim/encounters.js
-// WAYFARER_IDS), so its count stays where it was before the Kiln's event.
+// Wayfarer's event rooms: every kind, the Kiln's Molten Bell included
+// (sim/encounters.js WAYFARER_IDS; Small fixes 10, Kesh's pick). A profile that
+// already holds the deed keeps it.
 // Signbreaker counts all twelve affixes (Small fixes 9, Kesh's pick: batch two
 // joined it). A profile that already holds the deed keeps it; the lifetime
 // marks always recorded all twelve, so earlier progress carries over.

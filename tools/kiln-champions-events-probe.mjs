@@ -12,7 +12,7 @@
 //            untouchable while veiled, reforms behind a hero and rakes, then
 //            takes x1.3 while spent; both are campaign-only Kiln creatures
 //   event    the Molten Bell pours 40 Glint a relic, up to three; it refuses
-//            under 40; it rolls only in the Kiln; Wayfarer does not widen
+//            under 40; it rolls only in the Kiln; Wayfarer counts it (Small fixes 10)
 //   shrine   the Forge Shrine refuses with no common relic, then melts the
 //            newest common relic for Tempered on every hero
 //   relics   Slag Greaves cuts a vent's hit 35 %; Founder's Ingot heats per
@@ -372,7 +372,7 @@ function atBell(seed, wallet) {
 {
   const E = ENCOUNTERS.molten_bell;
   check('event', 'the Molten Bell is the Kiln\'s own, safe for the AI', !!E && E.land === 'kiln' && E.safe === true && ENCOUNTER_IDS.includes('molten_bell'));
-  check('event', 'Wayfarer keeps the sixteen events it counted before', !WAYFARER_IDS.includes('molten_bell') && WAYFARER_IDS.length === 16);
+  check('event', 'Wayfarer counts every event, the Molten Bell included (Small fixes 10)', WAYFARER_IDS.includes('molten_bell') && WAYFARER_IDS.length === ENCOUNTER_IDS.length);
   for (const [wallet, n] of [[100, 2], [200, 3], [45, 1]]) {
     let W = null;
     for (let k = 0; k < 8 && !W; k++) W = atBell(30 + wallet + k * 101, wallet);

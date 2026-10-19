@@ -72,8 +72,8 @@ Glint, say) the card opens on Leave and says why.
 - **Molten Bell** (Kiln): pour Glint into the half-cast bell, 40 for each relic,
   up to three (`pourStep`, `pourMax`); the rest stays in the purse. Needs at
   least 40. If the relic pool runs dry, each missing relic pays the empty-pool
-  Glint. AI-safe. It does not count toward **Wayfarer**, which keeps the
-  sixteen events it counted before (`WAYFARER_IDS`).
+  Glint. AI-safe. It counts toward **Wayfarer** like every other event
+  (Small fixes 10; content plan 5 slice 9 had left it out).
 
 ## Co-op, AI and autopilot
 

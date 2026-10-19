@@ -133,10 +133,15 @@ export function freshProfile() {
 // SECRET ROOMS (docs/SECRET_ROOMS.md): 'lore', the pages the hidden chambers hold.
 // Small fixes 9: 'affix', the elite powers (met, then felled with).
 export const JOURNAL_KINDS = Object.freeze(['enemy', 'boss', 'relic', 'curse', 'event', 'lore', 'affix']);
+// Small fixes 10: `early.affix`, the elite powers felled before the Journal
+// counted powers (v0.5.304). Worked out once, from the deeds' lifetime marks,
+// when a profile without it is read (`meta` given), then kept as stored, so
+// the Journal can say those kills are missing from the count after the power
+// is felled again.
 export function freshJournal() {
-  return { seen: Object.fromEntries(JOURNAL_KINDS.map((k) => [k, {}])) };
+  return { seen: Object.fromEntries(JOURNAL_KINDS.map((k) => [k, {}])), early: { affix: [] } };
 }
-export function saneJournal(j) {
+export function saneJournal(j, meta = null) {
   const out = freshJournal();
   if (!j || typeof j !== 'object' || !j.seen || typeof j.seen !== 'object') return out;
   for (const k of JOURNAL_KINDS) {
@@ -144,6 +149,8 @@ export function saneJournal(j) {
     if (!m || typeof m !== 'object') continue;
     for (const [id, n] of Object.entries(m).slice(0, 200)) if (STORY_ID.test(id) && Number.isFinite(n) && n >= 0) out.seen[k][id] = Math.min(999999, Math.floor(n));
   }
+  if (j.early && typeof j.early === 'object' && Array.isArray(j.early.affix)) out.early.affix = [...new Set(j.early.affix.filter((x) => typeof x === 'string' && STORY_ID.test(x)))].slice(0, 64);
+  else if (meta && meta.marks && Array.isArray(meta.marks.affix)) out.early.affix = [...new Set(meta.marks.affix.filter((x) => typeof x === 'string' && STORY_ID.test(x) && !(out.seen.affix[x] > 0)))].slice(0, 64);
   return out;
 }
 
@@ -183,7 +190,7 @@ function sane(p) {
   out.playtimeSec = Number.isFinite(p.playtimeSec) ? p.playtimeSec : 0;
   out.meta = saneMeta(p.meta);
   out.story = saneStory(p.story);
-  out.journal = saneJournal(p.journal);
+  out.journal = saneJournal(p.journal, out.meta);
   return out;
 }
 

@@ -7313,7 +7313,17 @@
   ],
   "data": true
  },
+ "Felled before the Journal kept count.": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Felled: {n}": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Felled: {n}, and more before the Journal kept count.": {
   "files": [
    "src/ui/story/journal.js"
   ]

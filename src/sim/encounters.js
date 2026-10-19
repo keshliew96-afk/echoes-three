@@ -217,10 +217,10 @@ export const ENCOUNTERS = Object.freeze({
   },
 });
 export const ENCOUNTER_IDS = Object.freeze(Object.keys(ENCOUNTERS));
-// The event rooms the Wayfarer deed counts: every kind but the Ember Kiln's
-// (content plan 5 slice 9), so the deed does not widen when the Kiln's
-// event arrives (Kesh: a slice never widens an existing deed).
-export const WAYFARER_IDS = Object.freeze(ENCOUNTER_IDS.filter((id) => ENCOUNTERS[id].land !== 'kiln'));
+// The event rooms the Wayfarer deed counts: every kind, the Ember Kiln's
+// Molten Bell included (Small fixes 10, Kesh's pick; content plan 5 slice 9
+// had left it out).
+export const WAYFARER_IDS = ENCOUNTER_IDS;
 
 // The stream's seed, salted so it never shadows the run or relic streams.
 export function encounterSeed(seed) {

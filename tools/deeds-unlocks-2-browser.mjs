@@ -7,6 +7,7 @@
 //   node tools/deeds-unlocks-2-browser.mjs [--url http://127.0.0.1:5199/] [--lang de] [--out dir]
 import { mkdirSync } from 'node:fs';
 import puppeteer from 'puppeteer';
+import { WAYFARER_IDS } from '../src/sim/encounters.js';
 
 const argv = process.argv.slice(2);
 const opt = (k, d = null) => {
@@ -76,7 +77,7 @@ const wayfarer = await page.evaluate(() => {
   const c = document.querySelector('.ul-unlocks .ul-card[data-id="wayfarer"]');
   return c ? { text: c.textContent, bar: !!c.querySelector('.ul-goal i') } : null;
 });
-check(!!wayfarer && wayfarer.bar && /7/.test(wayfarer.text) && /14/.test(wayfarer.text), `Wayfarer shows its progress (${wayfarer && wayfarer.text.replace(/\s+/g, ' ').slice(0, 90)})`);
+check(!!wayfarer && wayfarer.bar && /7/.test(wayfarer.text) && new RegExp(`\\b${WAYFARER_IDS.length}\\b`).test(wayfarer.text), `Wayfarer shows its progress (${wayfarer && wayfarer.text.replace(/\s+/g, ' ').slice(0, 90)})`);
 const done = await page.evaluate(() => [...document.querySelectorAll('.ul-unlocks .ul-card[data-state="done"]')].map((c) => c.dataset.id));
 check(['run_to_ground', 'safe_home', 'crownbreaker', 'keyholder'].every((d) => done.includes(d)) && !done.includes('down_the_river'), `the deeds the runs met read done (${done.length})`);
 await shot('kit', 'deeds-2-kits');

@@ -78,7 +78,7 @@ elite carries and how often elites appear are unchanged.
 - Colours: gale aqua, rose quartz, cold bell iron (kept off the Bellwright's
   verdigris), banked-coal red (darker than Ember and never the Kiln's gold).
 - The **Signbreaker** deed counts all twelve (Small fixes 9; a profile that already holds it keeps it).
-- The Journal (J) lists all twelve on its Bestiary page, under Elite powers: met when an elite wearing one arrives, counted when it falls.
+- The Journal (J) lists all twelve on its Bestiary page, under Elite powers: met when an elite wearing one arrives, counted when it falls. A power felled before the Journal listed powers (before v0.5.304; only the deeds' lifetime marks hold it) shows as met with "Felled before the Journal kept count."; the profile keeps those powers in `journal.early.affix` (worked out once from the lifetime marks), so once one is felled again its tile reads "n+" and its page "Felled: n, and more before the Journal kept count." (Small fixes 10).
 
 ## Fairness
 
