@@ -105,4 +105,6 @@ shrines, consumables, relics and secrets under `src/sim/`; vows `src/data/vows.j
 shop `src/ui/run/shop.js`; unlocks `src/data/unlocks.js`; profile `src/save/profile.js`; deeds
 `src/save/deedrun.js`; VFX `src/render/vfx/`, lab `src/ui/vfxlab.js`; audio `src/audio/`; text `src/i18n/`.
 Debug: `?rill=1`, `?tolly=1`, `?sable=1`, `?dressings=N`, `?vfxlab=1`, `?rush=1`, `?p2p=0`, `?lang=<code>`;
-`run.cmd('bossPick', [kind])`, `run.cmd('championPick', [id])`, `run.cmd('pickRoad', ...)`.
+`run.cmd('bossPick', [kind])`, `run.cmd('championPick', [id])`, `run.cmd('pickRoad', ...)`. The debug API and the
+harness params exist only in a harness build (dev server, or `VITE_ECHOES_HARNESS=1 npx vite build` for probes on a
+built dist); a player build keeps only `PLAYER_PARAMS` (`src/app/harness.js`, docs/TESTING.md "Player build").

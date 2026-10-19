@@ -55,6 +55,7 @@ import { ALLY_CLASSES, ALLY_KITS, REVIVE } from '../../sim/allies.js';
 import { vfxClassStyle } from '../../data/vfx.js';
 import { impactFx } from '../vfx/hub.js';
 import { cap, onHintsChange } from '../../app/controls.js';
+import { pageQuery } from '../../app/harness.js';
 
 const PARCH = PALETTE.parchment;
 const AMBER = PALETTE.hearthAmber;
@@ -295,7 +296,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   // instrument then falls back into the main scene and blooms again, so it is
   // a profiling toggle, not a shipping mode).
   const inkEnabled =
-    typeof location === 'undefined' || new URLSearchParams(location.search).get('ink') !== '0';
+    typeof location === 'undefined' || pageQuery().get('ink') !== '0';
   if (inkEnabled && stage.composer?.passes) {
     inkPass = new InkOverlayPass(inkScene, stage.camera);
     // COST GATE. Every renderer.render() that ends on a multisampled target

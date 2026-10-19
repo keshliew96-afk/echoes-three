@@ -15,7 +15,7 @@
 // the page that owns the strip maps its keys to setView().
 import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
 import { CLASS_NAME } from '../../data/classes.js';
-import { classOfSeat } from '../../data/lineup.js';
+import { classOfSeat, activeLineup } from '../../data/lineup.js';
 import { iconHtml } from '../hud/icons.js';
 import { portraitCache } from '../hud/portraits.js';
 import { esc } from './style.js';
@@ -175,7 +175,16 @@ const faceHtml = (classId, px = 40) => {
 export function ownerBandHtml(seat, { you = false } = {}) {
   const classId = classOfSeat(seat);
   const acc = CLASS_ACCENTS[classId];
-  const label = seat === 0 ? (you ? t('FOR YOU — THE HEALER') : t('FOR THE HEALER')) : t('FOR THE {cls}', { cls: t(CLASS_NAME[classId]).toUpperCase() });
+  // FOR YOU marks the viewer's own hero (any class, any seat); the Healer
+  // keeps its own wording.
+  const cls = t(CLASS_NAME[classId]).toUpperCase();
+  const label = you
+    ? seat === 0
+      ? t('FOR YOU — THE HEALER')
+      : t('FOR YOU — THE {cls}', { cls })
+    : seat === 0
+      ? t('FOR THE HEALER')
+      : t('FOR THE {cls}', { cls });
   return `<div class="rn-owner" data-seat="${seat}" style="--acc:${acc}"><span class="rn-ownerface">${faceHtml(classId, 22)}</span>${iconHtml(`cls_${classId}`, { size: 18 })}<span>${esc(label)}</span></div>`;
 }
 
@@ -236,15 +245,20 @@ export function createPartyStrip({ onSelect = null, host = null } = {}) {
   const tabs = [];
   let view = 0;
   let faces = '';
+  // The tabs are dressed for the portraits on hand AND the run's lineup: the
+  // strip is built once at boot (default four), so a run whose lineup puts
+  // the Tidecaller, the Bellwright or the Duskwing in a seat re-dresses it.
+  const dressKey = () => `${Object.keys(portraitCache()).join(',')}|${activeLineup().join(',')}`;
   function build() {
     el.innerHTML = '';
     tabs.length = 0;
-    faces = Object.keys(portraitCache()).join(',');
+    faces = dressKey();
     for (let seat = 0; seat < 4; seat++) {
       const classId = classOfSeat(seat);
       const tab = document.createElement('div');
       tab.className = 'rn-ptab';
       tab.dataset.seat = String(seat);
+      tab.dataset.class = classId;
       tab.setAttribute('role', 'tab');
       tab.innerHTML = `<span class="rn-pcaret">▼</span>
         <span class="rn-pface">${faceHtml(classId)}<span class="rn-pglyph">${iconHtml(`cls_${classId}`, { size: 16 })}</span></span>
@@ -265,7 +279,7 @@ export function createPartyStrip({ onSelect = null, host = null } = {}) {
 
   // update(rows, viewSeat): rows[seat] = { chip, tone: 'take'|'wait'|'', owner }
   function update(rows, viewSeat) {
-    if (Object.keys(portraitCache()).join(',') !== faces) build();
+    if (dressKey() !== faces) build();
     view = viewSeat;
     let owners = null;
     for (let s = 0; s < 4; s++) {

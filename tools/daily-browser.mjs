@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // DAILY DESCENT in the real game (docs/DAILY.md): against a served build
-// (`npm run build && node server/index.mjs --static dist --port 7821
+// (`VITE_ECHOES_HARNESS=1 npm run build && node server/index.mjs --static dist --port 7821
 // --origins self`), seeds today's board with a few runs, opens the Level
 // Select, clicks the Daily card, reads the day's screen (relic, curse,
 // board), sets out, checks the run and the HUD, ends it on a fall and reads

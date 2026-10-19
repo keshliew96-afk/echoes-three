@@ -78,6 +78,7 @@ import { lineupFromSettings } from '../app/playclass.js';
 import { bindings, PAD } from '../core/bindings.js';
 import { createCampNpcs } from './campnpcs.js';
 import { cap, padCap, usingPad, onHintsChange } from '../app/controls.js';
+import { pageQuery } from '../app/harness.js';
 
 // §18: "deep indigo/teal ambient". Two numbers carry the whole night read —
 // the key drops to a cold moon (a twelfth of the Act-1 sun) and the hemisphere
@@ -662,7 +663,7 @@ export function createCampScene(stage, toggles, ctx) {
   const svc = (name) => (appReg && typeof appReg.service === 'function' ? appReg.service(name) : null);
   // The harness level of a menu-skip boot: ?level=N, else ?act=N, else null.
   const bootLevel = () => {
-    const q = new URLSearchParams(window.location.search);
+    const q = pageQuery();
     for (const k of ['level', 'act']) {
       const n = parseInt(q.get(k) ?? '', 10);
       if (isLevel(n)) return n;
@@ -677,7 +678,7 @@ export function createCampScene(stage, toggles, ctx) {
   };
   let picking = false; // the Level Select is open for this camp visit
   // ENDLESS: ?endless=1 (harness) / the profile's won flag.
-  const endlessParam = () => new URLSearchParams(window.location.search).get('endless') === '1';
+  const endlessParam = () => pageQuery().get('endless') === '1';
   function endlessOpen() {
     if (endlessParam()) return true;
     const save = svc('save');
@@ -688,7 +689,7 @@ export function createCampScene(stage, toggles, ctx) {
     }
   }
   // BOSS RUSH (docs/BOSS_RUSH.md): ?rush=1 (harness) / opens with Endless.
-  const rushParam = () => new URLSearchParams(window.location.search).get('rush') === '1';
+  const rushParam = () => pageQuery().get('rush') === '1';
   function rushOpen() {
     if (rushParam()) return true;
     const save = svc('save');
