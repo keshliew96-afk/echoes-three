@@ -115,7 +115,7 @@ replaced:
    profile are coming.
 3. **Swap.** Slots first, then the profile, as before: a slot the bundle
    holds is written with the usual atomic write (its old copy goes to
-   `.bak`); a slot it does not hold is removed with its backup. When the
+   `.bak`, only when it is readable: a damaged slot keeps its good backup); a slot it does not hold is removed with its backup. When the
    atomic write does not fit, that slot's old copies are removed first, so
    the swap needs no room beyond what staging proved. The plan key goes last.
 4. **Finish at boot.** A page closed during the swap leaves the plan: the
@@ -146,4 +146,4 @@ the sim.
 `node tools/save-safety-probe.mjs` (headless) covers "Loading safely": a
 refused staging changes nothing and turns the autosave back on, a clean load
 replaces as before, a partial swap is finished at boot, orphan staging is
-dropped.
+dropped, and a damaged slot keeps its good backup through a save or a load.

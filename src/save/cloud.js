@@ -112,13 +112,14 @@ export function applyBundle(store, value) {
   return { ok: true, summary: r.summary };
 }
 
-// One staged file into its key. The old copy goes to .bak as any save does;
+// One staged file into its key. The old copy goes to .bak as any save does
+// (only when it is readable: a damaged one never replaces a good backup);
 // when that does not fit, the old copies make room first.
-function swapFile(store, key) {
+function swapFile(store, key, readable) {
   const text = store.read(`${key}${INCOMING}`);
   if (text === null) return { ok: true }; // swapped in before a reload
   store.remove(`${key}.tmp`);
-  let w = store.writeAtomic(key, text);
+  let w = store.writeAtomic(key, text, { backupIf: readable });
   if (!w.ok) {
     store.remove(`${key}.bak`);
     store.remove(key);
@@ -142,7 +143,7 @@ function swapIn(store, plan) {
     const key = slotKey(id);
     store.remove(`${key}.thumb`);
     if (slots.includes(id)) {
-      const w = swapFile(store, key);
+      const w = swapFile(store, key, (cur) => parseFile(cur).ok);
       if (!w.ok) return w;
     } else {
       store.remove(`${key}.tmp`);
@@ -153,7 +154,7 @@ function swapIn(store, plan) {
   }
   store.remove(INDEX_KEY); // rebuilt from the slots on the next boot
   if (plan.profile) {
-    const w = swapFile(store, PROFILE_KEY);
+    const w = swapFile(store, PROFILE_KEY, (cur) => parseProfile(cur) !== null || newerProfile(cur));
     if (!w.ok) return w;
   }
   store.remove(APPLY_KEY);

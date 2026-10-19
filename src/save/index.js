@@ -154,6 +154,9 @@ export function createSaveSystem({
   storage,
 }) {
   const store = createSaveStorage(storage !== undefined ? { storage } : {});
+  // SAVE SAFETY (code review, Saves): a slot's .bak only ever receives a
+  // readable file, so saving over a damaged slot keeps its good backup.
+  const slotReadable = (cur) => parseFile(cur).ok;
   // SAVE SAFETY: a cloud / backup load a closed page left part-way is
   // finished before anything reads the profile or the slots (save/cloud.js).
   let pendingApply = null;
@@ -362,7 +365,7 @@ export function createSaveSystem({
       const m = mainText !== null ? parseFile(mainText) : null;
       const newer = t.ok && (!m || !m.ok || String(t.file.savedAt || '') > String(m.file.savedAt || ''));
       if (newer) {
-        const w = store.writeAtomic(key, tmp);
+        const w = store.writeAtomic(key, tmp, { backupIf: slotReadable });
         recovery.push({ slot: id, action: w.ok ? 'promoted' : 'promote_failed', savedAt: t.file.savedAt, error: w.ok ? null : w.error });
       } else {
         store.remove(`${key}.tmp`);
@@ -548,7 +551,7 @@ export function createSaveSystem({
     }
     const t3 = performance.now();
     if (typeof superseded === 'function' && superseded()) return { ok: false, error: 'superseded', calmMs, reason };
-    const w = store.writeAtomic(key, built.text);
+    const w = store.writeAtomic(key, built.text, { backupIf: slotReadable });
     if (!w.ok) return { ok: false, error: w.error, detail: w.detail };
     // This save's own picture, or none: a previous save's picture never
     // stands in for this one (a late one is attached below when it lands).
@@ -604,7 +607,7 @@ export function createSaveSystem({
     if (!check.ok || check.file.hash !== built.hash) {
       return { ok: false, error: 'corrupt', detail: `self-check failed (${check.ok ? 'hash' : check.detail})` };
     }
-    const w = store.writeAtomic(key, built.text);
+    const w = store.writeAtomic(key, built.text, { backupIf: slotReadable });
     if (!w.ok) return { ok: false, error: w.error, detail: w.detail };
     const pic = shot && shot.dataUrl ? shot : null;
     if (pic) store.writePlain(`${key}.thumb`, pic.dataUrl);
@@ -774,7 +777,7 @@ export function createSaveSystem({
     if (!pf.ok) return { ok: false, error: pf.error, detail: pf.detail };
     const clean = String(name ?? '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, 32) || defaultSlotName(id);
     const f = { ...pf.file, slot: { ...pf.file.slot, name: clean } };
-    const w = store.writeAtomic(key, encodeOrdered(f));
+    const w = store.writeAtomic(key, encodeOrdered(f), { backupIf: slotReadable });
     if (!w.ok) return { ok: false, error: w.error };
     rescan();
     return { ok: true, meta: slots[id] };
@@ -838,7 +841,7 @@ export function createSaveSystem({
     const out = encodeOrdered(f);
     const again = parseFile(out);
     if (!again.ok || again.file.hash !== pf.file.hash) return { ok: false, error: 'corrupt', detail: 'import self-check failed' };
-    const w = store.writeAtomic(slotKey(id), out);
+    const w = store.writeAtomic(slotKey(id), out, { backupIf: slotReadable });
     if (!w.ok) return { ok: false, error: w.error };
     store.remove(`${slotKey(id)}.thumb`);
     rescan();

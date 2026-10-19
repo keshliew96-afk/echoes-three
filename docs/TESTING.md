@@ -774,7 +774,8 @@ over canonical JSON), body written in insertion key order (so a loaded object
 iterates like the saved one); `MIGRATIONS` chain runs after the hash check of
 the stored tree; a newer schema is refused and never modified.
 
-**Storage.** `echoes.save.v1.<slot>` (+ `.bak` = the previous good file,
+**Storage.** `echoes.save.v1.<slot>` (+ `.bak` = the previous good file, only
+ever a readable one since v0.5.308: saving over a damaged slot keeps its good backup,
 `.tmp` only mid-write, `.thumb` 256×144 JPEG data URL), `echoes.save.v1.index`
 (a cache — rebuilt by scanning), `echoes.profile.v1` (+ `.bak`). Slots:
 `manual-1…8`, `auto-1/auto-2` (alternating), `quick` (F5 / F9 in play). Atomic

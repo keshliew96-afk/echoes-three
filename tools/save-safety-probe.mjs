@@ -344,6 +344,27 @@ const bundle = {
   check('F.round-trip', JSON.stringify(D.save.capture().app) === JSON.stringify(t.app));
 }
 
+// ----------------------------- G. a damaged slot keeps its good backup --
+{
+  const { parseFile } = await import(u('src/save/codec.js'));
+  const good = slotFile('manual-2', '2026-10-19T10:00:00Z');
+  const damaged = good.slice(0, good.length - 50);
+  // Saving over a damaged slot (the import path writes it as a save does).
+  const ls = memStorage({ 'echoes.save.v1.manual-2': damaged, 'echoes.save.v1.manual-2.bak': good });
+  const s = sim(6);
+  const save = createSaveSystem({ clock: s.clock, rng: s.rng, registry: s.registry, world: s.world, bus: s.bus, storage: ls });
+  const r = save.importText(slotFile('manual-2', '2026-10-19T11:00:00Z'), 'manual-2');
+  check('G.damaged-main-keeps-good-bak', r.ok && parseFile(ls.getItem('echoes.save.v1.manual-2')).ok && ls.getItem('echoes.save.v1.manual-2.bak') === good, JSON.stringify({ ok: r.ok }));
+  // A readable main still goes to .bak, as before.
+  const prev = ls.getItem('echoes.save.v1.manual-2');
+  save.importText(slotFile('manual-2', '2026-10-19T12:00:00Z'), 'manual-2');
+  check('G.readable-main-to-bak', ls.getItem('echoes.save.v1.manual-2.bak') === prev);
+  // A cloud load over a damaged slot keeps its good backup too.
+  const ls2 = memStorage({ 'echoes.save.v1.manual-1': damaged, 'echoes.save.v1.manual-1.bak': good });
+  const r2 = applyBundle(createSaveStorage({ storage: ls2 }), bundle);
+  check('G.cloud-load-keeps-good-bak', r2.ok && ls2.getItem('echoes.save.v1.manual-1.bak') === good);
+}
+
 const failed = results.filter((r) => !r.ok);
 console.log(JSON.stringify({ probe: 'save-safety', version: VERSION, ok: failed.length === 0, passed: results.length - failed.length, of: results.length, failed: failed.map((r) => r.id) }));
 process.exit(failed.length ? 1 : 0);
