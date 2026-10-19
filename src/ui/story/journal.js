@@ -73,7 +73,9 @@ export function journalInfo(p) {
     pages,
     deeds: deedRows,
     totals: {
-      bestiary: { met: met(bestiary) + met(affixes), of: bestiary.length + affixes.length },
+      bestiary: { met: met(bestiary), of: bestiary.length },
+      // ELITE POWERS: their own count, shown on their section (not the tab).
+      affixes: { met: met(affixes), of: affixes.length },
       relics: { met: met(relics) + met(curses), of: relics.length + curses.length },
       events: { met: met(events) + met(pages), of: events.length + pages.length },
       deeds: { met: deedRows.filter((d) => d.done).length, of: deedRows.length },
@@ -93,6 +95,7 @@ export const JOURNAL_CSS = `
 .jr-pane { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: ${px(24)}; width: 100%; min-height: ${px(560)}; }
 .jr-list { display: flex; flex-direction: column; gap: ${px(10)}; min-width: 0; max-height: 64vh; overflow: auto; padding: ${px(4)}; }
 .jr-sec { font-size: ${px(18)}; font-weight: 800; letter-spacing: 0.22em; color: ${P.warmGrey}; margin-top: ${px(6)}; }
+.jr-sec-n { font-size: ${px(16)}; letter-spacing: 0.04em; margin-left: ${px(8)}; }
 .jr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(${px(92)}, 1fr)); gap: ${px(10)}; }
 .jr-tile { position: relative; aspect-ratio: 1; padding: 0; border-radius: ${px(12)}; cursor: pointer; overflow: hidden;
   display: flex; align-items: center; justify-content: center; color: var(--rim, ${P.bone});
@@ -199,7 +202,7 @@ export function createJournalPage(kind, getInfo) {
       groups.push([t('Champions'), all.filter((e) => e.kind === 'enemy' && CHAMPION_SET.has(e.id))]);
       groups.push([t('Bosses'), all.filter((e) => e.kind === 'boss')]);
       // ELITE POWERS (Small fixes 9): the twelve affixes, after the bosses.
-      groups.push([t('Elite powers'), all.filter((e) => e.kind === 'affix')]);
+      groups.push([t('Elite powers'), all.filter((e) => e.kind === 'affix'), getInfo().totals.affixes]);
     } else if (kind === 'relics') {
       groups.push([t('Relics'), all.filter((e) => e.kind === 'relic')]);
       groups.push([t('Curses'), all.filter((e) => e.kind === 'curse')]);
@@ -208,11 +211,17 @@ export function createJournalPage(kind, getInfo) {
       groups.push([t('Lore pages'), all.filter((e) => e.kind === 'lore')]);
     }
     list.innerHTML = '';
-    for (const [title, rows] of groups) {
+    for (const [title, rows, tot] of groups) {
       if (!rows.length) continue;
       const sec = document.createElement('div');
       sec.className = 'jr-sec';
       sec.textContent = title.toUpperCase();
+      if (tot) {
+        const n = document.createElement('small');
+        n.className = 'jr-sec-n';
+        n.textContent = ` ${tot.met}/${tot.of}`;
+        sec.appendChild(n);
+      }
       list.appendChild(sec);
       const grid = document.createElement('div');
       grid.className = 'jr-grid';

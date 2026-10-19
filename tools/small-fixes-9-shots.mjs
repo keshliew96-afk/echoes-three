@@ -196,7 +196,9 @@ if (!ONLY || ONLY === 'journal') {
       b.click();
     }
     const secs = [...document.querySelectorAll('.jr-sec')].map((s) => s.textContent);
-    return { tiles: tiles.length, unseen: tiles.filter((x) => x.classList.contains('jr-unseen')).length, secs };
+    const tab = [...document.querySelectorAll('.st-story .st-tab')].find((x) => x.classList.contains('st-on'))?.textContent ?? '';
+    const tot = document.querySelector('.st-story')?.__journal?.()?.journal?.totals ?? null;
+    return { tiles: tiles.length, unseen: tiles.filter((x) => x.classList.contains('jr-unseen')).length, secs, tab, tot };
   });
   await sleep(1200);
   const detail = await page.evaluate(() => document.querySelector('.jr-detail')?.textContent.replace(/\s+/g, ' ').trim() ?? '');
@@ -205,6 +207,11 @@ if (!ONLY || ONLY === 'journal') {
   const met = Object.keys(seen || {}).length;
   check(grid.tiles === 12 && grid.unseen === 12 - met, `sf9-journal${sfx}.png: twelve elite powers on the Bestiary, the ${met} met in the run lit (${grid.tiles} / ${grid.unseen} unseen)`);
   check(/1/.test(detail) && detail.length > 60, 'the Gusting page shows its line and its count');
+  // Kesh's "Fix counter first": the tab counts the bestiary as before; the
+  // powers carry their own count on their heading.
+  const head = grid.secs[grid.secs.length - 1] ?? '';
+  check(!!grid.tot && grid.tab.includes(`${grid.tot.bestiary.met}/${grid.tot.bestiary.of}`) && grid.tot.bestiary.of === 70, `the Bestiary tab leaves the powers out (${grid.tab.trim()})`);
+  check(head.includes(`${met}/12`), `the Elite powers heading carries their own count (${head.trim()})`);
   if (LANG && LANG !== 'en') {
     const miss = await page.evaluate(() => (window.__echoes.i18n ? window.__echoes.i18n().misses : []));
     check(miss.length === 0, `no missing translations on these screens (${miss.slice(0, 4).join(' | ')})`);
