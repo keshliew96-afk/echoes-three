@@ -134,7 +134,6 @@ export const TRANSIT_CSS = `
   .rn-road.rn-on { border-color: #E8A23D; transform: translateY(-2px); }
   .rn-road.rn-taken { border-color: #E8A23D; background: #3A2E22e0; }
   .rn-road.rn-left { opacity: 0.35; }
-  .rn-fork.rn-guest .rn-road { cursor: default; }
 `;
 
 // PARTY (BUILD_BRIEF §25.6): "Tank · 4 skills · 12/32 · ◉ 30" × 4.
@@ -187,7 +186,7 @@ export function createTransitScreen({ run }) {
   };
   forkEl.addEventListener('click', (e) => {
     const card = e.target && e.target.closest ? e.target.closest('.rn-road') : null;
-    if (!card || guest()) return;
+    if (!card) return;
     pick(card.dataset.road);
   });
   function pick(road) {
@@ -284,7 +283,6 @@ export function createTransitScreen({ run }) {
       const name = card.name ? t(card.name) : card.name;
       const fork = card.fork && Array.isArray(card.fork.roads) ? card.fork : null;
       forkEl.innerHTML = fork ? forkHtml(fork) : '';
-      forkEl.classList.toggle('rn-guest', guest());
       nextName.textContent = fork && !fork.pick ? t('Choose your road') :
         depth !== null
           ? beyondCampaign(depth)
@@ -314,7 +312,8 @@ export function createTransitScreen({ run }) {
     // (a network guest sees the party leader's build — it says whose it is)
     kitEl.textContent = guest() && names.length ? t('The Healer carries · {skills}', { skills: names.join(' · ') }) : names.join(' · ');
     const choosing = card.fork && !card.fork.pick;
-    hintEl.innerHTML = guest() ? (choosing ? t('The Healer chooses the road…') : t('The Healer leads on…')) : choosing ? t('<b>← →</b> choose a road · <b>Enter</b> take it') : t('<b>Enter</b> set out now');
+    // GUEST VS HOST: any human picks the road and sets out (the first call leads).
+    hintEl.innerHTML = choosing ? t('<b>← →</b> choose a road · <b>Enter</b> take it') : t('<b>Enter</b> set out now');
     // PARTY: all four builds carry (skills in slot order, sockets, bench, purse).
     buildsEl.innerHTML = buildsHtml(s.builds);
     buildsEl.style.display = s.builds ? '' : 'none';
@@ -346,7 +345,7 @@ export function createTransitScreen({ run }) {
   // is choosing).
   function forkKey(code) {
     const card = liveCard(null);
-    if (!card || !card.fork || card.fork.pick || guest()) return false;
+    if (!card || !card.fork || card.fork.pick) return false;
     const n = card.fork.roads.length;
     if (code === 'ArrowLeft' || code === 'KeyA') roadFocus = (roadFocus + n - 1) % n;
     else if (code === 'ArrowRight' || code === 'KeyD') roadFocus = (roadFocus + 1) % n;

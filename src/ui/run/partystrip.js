@@ -21,6 +21,7 @@ import { portraitCache } from '../hud/portraits.js';
 import { esc } from './style.js';
 import { service } from '../../app/registry.js';
 import { t } from '../../i18n/index.js';
+import { viewerSeat } from '../../app/viewerseat.js';
 
 export const PARTY_STRIP_CSS = `
   .rn-pstrip { display: flex; gap: 8px; margin: 0 0 10px; justify-content: center; }
@@ -206,7 +207,9 @@ export function netOwners(kinds = null) {
     return none;
   }
   if (!guest && !host) return none;
-  const own = guest && Number.isInteger(n.seat) ? n.seat : 0;
+  // The viewer's own seat: a guest's, or the host's (any class it plays —
+  // the Healer tab is "you" only for the Healer's player).
+  const own = viewerSeat();
   const seats = (n.room && Array.isArray(n.room.seats) && n.room.seats) || [];
   const seatOf = (i) => seats.find((x) => x && x.index === i) || null;
   let k = Array.isArray(kinds) ? kinds : null;

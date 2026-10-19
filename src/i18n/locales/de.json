@@ -3517,5 +3517,6 @@
  "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "Dein Profil wurde von einer neueren Version von Echoes gespeichert. Lade die Seite neu, um das Spiel zu aktualisieren: Bis dahin speichert dieser Tab keine Rekorde, Glut oder Freischaltungen.",
  "The host has not unlocked that yet": "Der Host hat das noch nicht freigeschaltet",
  "The host could not set out just now — try again": "Der Host konnte gerade nicht aufbrechen — versuch es noch einmal",
- "{name} set out — the run begins": "{name} ist aufgebrochen — der Lauf beginnt"
+ "{name} set out — the run begins": "{name} ist aufgebrochen — der Lauf beginnt",
+ "Anyone can choose — the first choice leads the party": "Alle können wählen — die erste Wahl führt die Gruppe"
 }

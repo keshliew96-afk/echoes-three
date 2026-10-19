@@ -3436,5 +3436,6 @@
  "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "프로필이 더 새로운 버전의 Echoes로 저장되었습니다. 페이지를 새로고침해 게임을 업데이트하세요. 그때까지 이 탭은 기록, 불씨, 해금을 저장하지 않습니다.",
  "The host has not unlocked that yet": "호스트가 아직 해금하지 않았습니다",
  "The host could not set out just now — try again": "호스트가 지금은 출발할 수 없습니다 — 다시 시도하세요",
- "{name} set out — the run begins": "{name}님이 출발했습니다 — 런이 시작됩니다"
+ "{name} set out — the run begins": "{name}님이 출발했습니다 — 런이 시작됩니다",
+ "Anyone can choose — the first choice leads the party": "누구나 고를 수 있습니다 — 먼저 고른 쪽으로 파티가 갑니다"
 }

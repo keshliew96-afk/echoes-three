@@ -3436,5 +3436,6 @@
  "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "プロフィールは新しいバージョンのEchoesで保存されています。ページを再読み込みしてゲームを更新してください。それまでこのタブは記録、残り火、解放を保存しません。",
  "The host has not unlocked that yet": "ホストはまだそれを解放していません",
  "The host could not set out just now — try again": "ホストは今は出発できませんでした — もう一度試してください",
- "{name} set out — the run begins": "{name}が出発しました — ランが始まります"
+ "{name} set out — the run begins": "{name}が出発しました — ランが始まります",
+ "Anyone can choose — the first choice leads the party": "誰でも選べます——最初の選択でパーティが進みます"
 }

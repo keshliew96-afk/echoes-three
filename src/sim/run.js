@@ -2855,7 +2855,7 @@ export function createRunSystem({
     // The host's Advance countdown is running and this was the last human
     // it waited on: leave at once.
     const v = pages.shopView();
-    if (v && v.leaveTick !== null && pages.humansNotDone(hostSeat()).length === 0) advanceFromShop({ force: true });
+    if (v && v.leaveTick !== null && pages.humansNotDone(v.leaveBy ?? hostSeat()).length === 0) advanceFromShop({ force: true });
     return true;
   }
   // The seat whose Advance is the host's (the Healer; a migrated host's
@@ -3000,7 +3000,7 @@ export function createRunSystem({
       const waiting = pages.humansNotDone(by ?? hostSeat());
       if (waiting.length > 0) {
         const v = pages.shopView();
-        const leaveTick = v && v.leaveTick !== null ? v.leaveTick : pages.startAdvanceCountdown(getTick());
+        const leaveTick = v && v.leaveTick !== null ? v.leaveTick : pages.startAdvanceCountdown(getTick(), by ?? hostSeat());
         return { countdown: true, leaveTick, waiting };
       }
     }

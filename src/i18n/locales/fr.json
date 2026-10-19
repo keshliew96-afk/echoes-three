@@ -3548,5 +3548,6 @@
  "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "Votre profil a été enregistré par une version plus récente d’Echoes. Rechargez la page pour mettre le jeu à jour : d’ici là, cet onglet n’enregistre ni records, ni Braises, ni déblocages.",
  "The host has not unlocked that yet": "L’hôte ne l’a pas encore débloqué",
  "The host could not set out just now — try again": "L’hôte n’a pas pu partir pour l’instant — réessaie",
- "{name} set out — the run begins": "{name} est parti — la partie commence"
+ "{name} set out — the run begins": "{name} est parti — la partie commence",
+ "Anyone can choose — the first choice leads the party": "Chacun peut choisir — le premier choix guide le groupe"
 }
