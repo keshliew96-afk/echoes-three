@@ -62,8 +62,13 @@ old one; each blessing lasts 60 s and lies on every hero.
   Tempered reads for its whole 60 s (Small fixes 7, render only,
   `src/render/vfx/shrinefx.js`): a held Kiln Gold body glow that breathes,
   a heat pool and a closing forge hoop at the feet, rising gold flakes and
-  a falling anvil spark now and then; it gutters in the last 5 s. The other
-  blessings keep their motes.
+  a falling anvil spark now and then; it gutters in the last 5 s. In a
+  crowded fight it calms (Small fixes 9): each tempered hero past the
+  first, each enemy near the party past four and each live effect past
+  ten raise a 0-to-1 calm (eased over about a second), and the heat pool,
+  the hoop, the chest flash, the flakes and the spark spits thin and slow
+  while the body glow and the gold rim stay. The other blessings keep
+  their motes.
 - An escort room's pilgrim road is built after the shrine stands (the
   blockers are refreshed first), so it bends round the shrine instead of
   running a stop into it (Small fixes 7).

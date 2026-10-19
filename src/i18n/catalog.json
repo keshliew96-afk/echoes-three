@@ -3649,7 +3649,7 @@
   ],
   "data": true
  },
- "Begin every run holding Pumice Soles. Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest.": {
+ "Begin every run holding Pumice Soles. Floor patches never slow the party (frost, thorn, moss, ash, glass, crystal and the rest), and slick floors never make it slide.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -4089,6 +4089,7 @@
  },
  "Blinking": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -4131,6 +4132,12 @@
  "Bloodbite": {
   "files": [
    "src/sim/allies.js"
+  ],
+  "data": true
+ },
+ "Blows struck from within 2.6 u sting back for 20% of their damage, at most 8. Strike it from range.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -4882,6 +4889,7 @@
  },
  "Cinder": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -5605,6 +5613,7 @@
  },
  "Crystal": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -6535,8 +6544,14 @@
   ],
   "data": true
  },
+ "ELITE POWER": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
  "Elite powers": {
   "files": [
+   "src/ui/story/journal.js",
    "src/ui/tutorial/index.js"
   ]
  },
@@ -6823,6 +6838,12 @@
   "files": [
    "src/ui/socket/index.js"
   ]
+ },
+ "Every 7.5 s a ward shimmers round it for a moment, then makes it immune for 2.5 s. Strike between wards.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Every ally within 3 u, the beetle too: a 6 shield and 25% faster for 3 s.": {
   "files": [
@@ -7129,7 +7150,7 @@
   ],
   "data": true
  },
- "Fell an elite with each of the eight affixes.": {
+ "Fell an elite with each of the twelve affixes.": {
   "files": [
    "src/data/unlocks.js"
   ],
@@ -7596,7 +7617,7 @@
   ],
   "data": true
  },
- "Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest.": {
+ "Floor patches never slow the party (frost, thorn, moss, ash, glass, crystal and the rest), and slick floors never make it slide.": {
   "files": [
    "src/sim/relics.js"
   ],
@@ -7874,6 +7895,30 @@
    "src/ui/menu/lobby.js"
   ]
  },
+ "From room 4 of a level on. Plants a crystal spur that erupts under a warning ring 1 s later for 8 and leaves a bed that slows by 30%.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "From room 4 of a level on. Stops under a warning ring for 0.9 s, then a gust hits for 5 and throws everyone inside 2.4 u away.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "From room 4 of a level on. Stops under a wide warning ring and tolls: no damage, but everyone inside is slowed by 40% for 2 s.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "From room 4 of a level on. Trails small burning cinders as it walks: a hero standing in one takes 2 every half second.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "Frost Bomb": {
   "files": [
    "src/sim/consumables.js"
@@ -7882,6 +7927,7 @@
  },
  "Frozen": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -8305,6 +8351,7 @@
  },
  "Gusting": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -8392,6 +8439,7 @@
  },
  "Hasted": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -8524,6 +8572,12 @@
  "Heals every ally within 3.8 u for 10, and they take 20% less damage for 3 s.": {
   "files": [
    "src/ui/run/cards.js"
+  ],
+  "data": true
+ },
+ "Heals for 40% of the damage it deals. Keep out of its reach, or hit it harder than it can drink.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -10328,6 +10382,7 @@
  },
  "Molten": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -10456,6 +10511,12 @@
   "files": [
    "src/ui/menu/tabs/controls.js"
   ]
+ },
+ "Moves 40% faster than the rest of its kind.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "Moves much faster.": {
   "files": [
@@ -10974,6 +11035,16 @@
   ]
  },
  "Not met yet": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Not met yet. Elites carry it from room 4 of a level on.": {
+  "files": [
+   "src/ui/story/journal.js"
+  ]
+ },
+ "Not met yet. Elites carry it in the campaign.": {
   "files": [
    "src/ui/story/journal.js"
   ]
@@ -14117,6 +14188,7 @@
  },
  "Splitting": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -14301,6 +14373,12 @@
  "Stone@@verse": {
   "files": [
    "src/data/story.js"
+  ],
+  "data": true
+ },
+ "Stops and charges a frost nova under a warning ring for 1 s. The nova hits for 6, and the frost it leaves slows by 45%.": {
+  "files": [
+   "src/data/journal.js"
   ],
   "data": true
  },
@@ -17280,6 +17358,7 @@
  },
  "Thorned": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -17503,6 +17582,7 @@
  },
  "Tolling": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -17833,6 +17913,7 @@
  },
  "Vampiric": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -18187,6 +18268,7 @@
  },
  "Warded": {
   "files": [
+   "src/data/journal.js",
    "src/sim/affixes.js"
   ],
   "data": true
@@ -18355,6 +18437,18 @@
   ],
   "data": true
  },
+ "When it dies it splits into two smaller copies with less health and a weaker bite.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
+ "When it dies, its molten core swells under a warning ring for 1 s and bursts for 14, leaving a burning pool for 4 s. Step away from the body.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
+ },
  "when this skill reaches 3 or more enemies, the bat runs 25% faster for 2 s.": {
   "files": [
    "src/ui/run/cards.js"
@@ -18365,6 +18459,12 @@
   "files": [
    "src/ui/run/hitfeedback.js"
   ]
+ },
+ "When you keep away from it, it marks a ring beside you and blinks into it 0.7 s later.": {
+  "files": [
+   "src/data/journal.js"
+  ],
+  "data": true
  },
  "whenever a teammate hits a soaked enemy, this skill cools 0.1 s faster (at most every 0.5 s).": {
   "files": [

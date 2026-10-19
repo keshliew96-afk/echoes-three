@@ -29,6 +29,13 @@
 //                             flakes and, now and then, an anvil spark spits
 //                             off; all of it thins in the last 5 s.
 //                             Kiln Gold only, never Ember (attack warnings).
+//                             In a crowd (Small fixes 9) it calms: with
+//                             several tempered heroes, a press of enemies or
+//                             a screen full of other effects, the pool, the
+//                             hoop, the flakes and the sparks thin and slow
+//                             while the body glow and the rim stay, so each
+//                             hero still reads as Tempered. One hero in a
+//                             quiet room looks exactly as before.
 //
 // createShrineFx(h) takes the signature director's helpers and returns
 // { frame(dt, entities) } for its per-frame loop.
@@ -157,6 +164,30 @@ export function createShrineFx({ kit, bus, byId, spray, flare, shock, after, ant
   const GOLD = VFX_MATTER.kilngold;
   const HEAT = VFX_MATTER.kilnheat;
   const tempered = new Map();
+  // How crowded the fight is, 0 (one hero, a quiet room) to 1, eased so the
+  // look never jumps: each tempered hero past the first, each enemy near the
+  // party past four and each live effect near it past what the Tempered
+  // heroes draw themselves.
+  let calm = 0;
+  let crowd = 0;
+  let seen = { foes: 0, fx: 0 };
+  const CALM = Object.freeze({ perHero: 0.45, foeFree: 4, perFoe: 0.07, foeReach: 7, fxReach: 9, ownFx: 5, fxFree: 10, perFx: 0.025, ease: 1.5 });
+  function crowdOf(heroes, entities) {
+    const n = heroes.length;
+    if (!n) return 0;
+    let cx = 0;
+    let cz = 0;
+    for (const h of heroes) {
+      cx += h.x / n;
+      cz += h.z / n;
+    }
+    let foes = 0;
+    for (const e of entities) if (e.faction === 'hostile' && e.hp > 0 && Math.hypot(e.x - cx, e.z - cz) < CALM.foeReach) foes += 1;
+    const fx = Math.max(0, kit.liveNear(cx, cz, CALM.fxReach) - CALM.ownFx * n);
+    seen = { foes, fx };
+    const busy = CALM.perHero * (n - 1) + CALM.perFoe * Math.max(0, foes - CALM.foeFree) + CALM.perFx * Math.max(0, fx - CALM.fxFree);
+    return Math.min(1, Math.max(0, busy));
+  }
   function temperedFrame(dt, e, left) {
     let t = tempered.get(e.id);
     if (!t) {
@@ -168,7 +199,7 @@ export function createShrineFx({ kit, bus, byId, spray, flare, shock, after, ant
     const gutter = fading && Math.sin(left * 9) > 0.2;
     if (t.g.owner === e.id) {
       kit.setGlow(t.g, e.x, 0.72, e.z);
-      t.g.op = (fading ? (gutter ? 0.08 : 0.26) : 0.5) * 0.85;
+      t.g.op = (fading ? (gutter ? 0.08 : 0.26) : 0.5) * 0.85 * (1 - 0.3 * calm);
     }
     t.clock += dt;
     t.hoop -= dt;
@@ -176,29 +207,35 @@ export function createShrineFx({ kit, bus, byId, spray, flare, shock, after, ant
     t.phase += dt * 1.6;
     if (t.clock >= 0.12) {
       t.clock = 0;
+      t.beat = !t.beat;
       if (!gutter) {
-        // The heat pool on the floor and a white-hot core at the chest.
-        kit.light({ x: e.x, z: e.z, radius: 1.5, color: GOLD, opacity: fading ? 0.35 : 0.75, life: 0.22, attack: 0.04 });
+        // The heat pool on the floor and a white-hot core at the chest (the
+        // core only while the fight is not crowded: in a press of heroes the
+        // flashes stack into noise).
+        kit.light({ x: e.x, z: e.z, radius: 1.5 * (1 - 0.15 * calm), color: GOLD, opacity: (fading ? 0.35 : 0.75) * (1 - 0.55 * calm), life: 0.22, attack: 0.04 });
         // A steady gold band round the feet: the forged rim (it reads
-        // through a crowd where the motes do not).
-        kit.ring({ x: e.x, z: e.z, r0: 0.7, r1: 0.74, width: 0.07, life: 0.2, core: HEAT, glow: GOLD, soft: 0.35, y: 0.045, opacity: fading ? 0.45 : 0.9, thin: 0 });
-        kit.flash({ x: e.x + Math.cos(t.phase) * 0.06, y: 0.82, z: e.z + Math.sin(t.phase) * 0.06, color: HEAT, size: 0.5, life: 0.18, opacity: fading ? 0.3 : 0.6 });
-        // Rising gold flakes, two a beat, off the shoulders and the hands.
-        for (let k = 0; k < 2; k++) {
+        // through a crowd where the motes do not, so it stays nearly whole).
+        kit.ring({ x: e.x, z: e.z, r0: 0.7, r1: 0.74, width: 0.07, life: 0.2, core: HEAT, glow: GOLD, soft: 0.35, y: 0.045, opacity: (fading ? 0.45 : 0.9) * (1 - 0.2 * calm), thin: 0 });
+        if (calm < 0.55) kit.flash({ x: e.x + Math.cos(t.phase) * 0.06, y: 0.82, z: e.z + Math.sin(t.phase) * 0.06, color: HEAT, size: 0.5, life: 0.18, opacity: (fading ? 0.3 : 0.6) * (1 - calm) });
+        // Rising gold flakes, two a beat off the shoulders and the hands; one
+        // in a crowd, and one every other beat in a thick one.
+        const flakes = calm < 0.35 ? 2 : calm < 0.75 || t.beat ? 1 : 0;
+        for (let k = 0; k < flakes; k++) {
           const a = rnd(0, TAU);
           spray('spark', e.x + Math.cos(a) * 0.3, rnd(0.35, 1.0), e.z + Math.sin(a) * 0.3, 1, { color: k ? HEAT : GOLD, speed: [0.02, 0.1], up: [0.7, 1.4], size: [0.035, 0.065], life: [0.55, 0.9], gravity: -0.35, drag: 1.5, jitter: 0.08, opacity: 0.95 });
         }
       }
     }
-    // The forge hoop: a gold band closes on the feet like a quench ring.
+    // The forge hoop: a gold band closes on the feet like a quench ring
+    // (slower and fainter in a crowd, so a party's hoops do not strobe).
     if (t.hoop <= 0) {
-      t.hoop = fading ? 1.1 : 0.7;
-      kit.ring({ x: e.x, z: e.z, r0: 1.15, r1: 0.6, width: 0.09, life: 0.65, core: HEAT, glow: GOLD, soft: 0.45, y: 0.05, opacity: fading ? 0.5 : 0.95, thin: 0.3 });
+      t.hoop = (fading ? 1.1 : 0.7) * (1 + 1.6 * calm);
+      kit.ring({ x: e.x, z: e.z, r0: 1.15, r1: 0.6, width: 0.09, life: 0.65, core: HEAT, glow: GOLD, soft: 0.45, y: 0.05, opacity: (fading ? 0.5 : 0.95) * (1 - 0.35 * calm), thin: 0.3 });
     }
     // Now and then a spark spits off the hot metal and falls.
     if (t.spit <= 0) {
-      t.spit = rnd(0.8, 1.5);
-      if (!fading || rnd(0, 1) < 0.4) spray('spark', e.x, rnd(0.6, 1.1), e.z, 5, { color: GOLD, speed: [1.0, 2.4], up: [0.6, 1.6], size: [0.025, 0.05], life: [0.3, 0.55], gravity: 7, drag: 0.5, jitter: 0.25, opacity: 1 });
+      t.spit = rnd(0.8, 1.5) * (1 + 1.5 * calm);
+      if (!fading || rnd(0, 1) < 0.4) spray('spark', e.x, rnd(0.6, 1.1), e.z, Math.round(5 * (1 - 0.5 * calm)), { color: GOLD, speed: [1.0, 2.4], up: [0.6, 1.6], size: [0.025, 0.05], life: [0.3, 0.55], gravity: 7, drag: 0.5, jitter: 0.25, opacity: 1 });
     }
   }
 
@@ -207,8 +244,11 @@ export function createShrineFx({ kit, bus, byId, spray, flare, shock, after, ant
   function frame(dt, entities) {
     const tick = world?.tick ?? 0;
     const hot = new Set();
-    for (const e of entities) {
-      if (e.partyIndex === undefined || !e.blessing || e.blessing.id !== 'tempered' || !(e.blessing.untilTick > tick) || !(e.hp > 0)) continue;
+    const heroes = entities.filter((e) => e.partyIndex !== undefined && e.blessing && e.blessing.id === 'tempered' && e.blessing.untilTick > tick && e.hp > 0);
+    crowd = crowdOf(heroes, entities);
+    calm += (crowd - calm) * Math.min(1, dt * CALM.ease);
+    if (!heroes.length) calm = 0;
+    for (const e of heroes) {
       hot.add(e.id);
       temperedFrame(dt, e, (e.blessing.untilTick - tick) / 60);
     }
@@ -237,5 +277,7 @@ export function createShrineFx({ kit, bus, byId, spray, flare, shock, after, ant
       }
     }
   }
-  return { frame };
+  // Probe view (__echoes.content.vfx().tempered).
+  const debug = () => ({ heroes: tempered.size, calm: Math.round(calm * 1000) / 1000, crowd: Math.round(crowd * 1000) / 1000, ...seen });
+  return { frame, debug };
 }

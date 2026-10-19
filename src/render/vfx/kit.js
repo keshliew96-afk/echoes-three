@@ -1018,6 +1018,22 @@ export function createVfxKit({ stage, cosmetic }) {
     return n;
   }
 
+  // How many live arcs, flashes and stars sit within r of (x, z): the Tempered
+  // look's crowd read (shrinefx.js, Small fixes 9), so a fight off screen
+  // never counts.
+  function liveNear(x, z, r) {
+    let n = 0;
+    const rr = r * r;
+    for (const p of [arcs, flashes, stars]) {
+      for (const s of p.slots) {
+        if (!s.live) continue;
+        const dx = s.obj.position.x - x;
+        const dz = s.obj.position.z - z;
+        if (dx * dx + dz * dz <= rr) n += 1;
+      }
+    }
+    return n;
+  }
   function counts() {
     return {
       arcs: arcs.live(),
@@ -1051,5 +1067,5 @@ export function createVfxKit({ stage, cosmetic }) {
     lightGain = l;
   }
 
-  return { root, slash, ring, light, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, prewarm, setIntensity };
+  return { root, slash, ring, light, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, prewarm, setIntensity };
 }

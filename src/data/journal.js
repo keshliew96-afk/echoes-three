@@ -9,6 +9,7 @@
 // keys the UI shows through t() (docs/I18N.md).
 import { LEVELS, ACT_IDS, campaignLevel } from './levels.js';
 import { CHAMPION_LIST } from '../sim/champions.js';
+import { AFFIXES, AFFIX_IDS, LATE_AFFIX_IDS } from '../sim/affixes.js';
 
 // One row per enemy kind (sim etype), in the order a campaign meets them.
 //   name   shown name          role  one word for its job in a fight
@@ -143,3 +144,24 @@ export const ENEMY_JOURNAL_IDS = Object.freeze(BESTIARY.filter((b) => !b.boss).m
 export const BOSS_JOURNAL_IDS = Object.freeze(BESTIARY.filter((b) => b.boss).map((b) => b.id));
 // A Broodling is the Brood Spider's young: its kills count on the spider's page.
 export const JOURNAL_ALIAS = Object.freeze({ broodling: 'brood' });
+
+// ELITE POWERS (Small fixes 9; docs/ELITE_AFFIXES.md): one row per affix on
+// the Bestiary page, after the bosses. Met when an elite wearing it arrives,
+// counted when one wearing it falls. The name is the affix's own (the elite's
+// name plate); the line says what it does and the tell that warns of it.
+const AFFIX_ROWS = {
+  molten: 'When it dies, its molten core swells under a warning ring for 1 s and bursts for 14, leaving a burning pool for 4 s. Step away from the body.',
+  frozen: 'Stops and charges a frost nova under a warning ring for 1 s. The nova hits for 6, and the frost it leaves slows by 45%.',
+  vampiric: 'Heals for 40% of the damage it deals. Keep out of its reach, or hit it harder than it can drink.',
+  warded: 'Every 7.5 s a ward shimmers round it for a moment, then makes it immune for 2.5 s. Strike between wards.',
+  blinking: 'When you keep away from it, it marks a ring beside you and blinks into it 0.7 s later.',
+  splitting: 'When it dies it splits into two smaller copies with less health and a weaker bite.',
+  hasted: 'Moves 40% faster than the rest of its kind.',
+  thorned: 'Blows struck from within 2.6 u sting back for 20% of their damage, at most 8. Strike it from range.',
+  gusting: 'From room 4 of a level on. Stops under a warning ring for 0.9 s, then a gust hits for 5 and throws everyone inside 2.4 u away.',
+  crystal: 'From room 4 of a level on. Plants a crystal spur that erupts under a warning ring 1 s later for 8 and leaves a bed that slows by 30%.',
+  tolling: 'From room 4 of a level on. Stops under a wide warning ring and tolls: no damage, but everyone inside is slowed by 40% for 2 s.',
+  cinder: 'From room 4 of a level on. Trails small burning cinders as it walks: a hero standing in one takes 2 every half second.',
+};
+export const AFFIX_JOURNAL = Object.freeze(AFFIX_IDS.map((id) => Object.freeze({ id, name: AFFIXES[id].name, text: AFFIX_ROWS[id] ?? AFFIXES[id].text, late: LATE_AFFIX_IDS.includes(id) })));
+export const AFFIX_JOURNAL_IDS = Object.freeze(AFFIX_JOURNAL.map((a) => a.id));

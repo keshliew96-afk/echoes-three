@@ -26,7 +26,7 @@ import { LEVELS, ACT_IDS, bossFor } from './levels.js';
 import { endlessBossIndex, CYCLE } from './endless.js';
 import { RUSH_RULES, LAP as RUSH_LAP } from './rush.js';
 import { ENCOUNTER_IDS, WAYFARER_IDS } from '../sim/encounters.js';
-import { AFFIX_IDS, FIRST_AFFIX_IDS } from '../sim/affixes.js';
+import { AFFIX_IDS } from '../sim/affixes.js';
 import { CHAMPION_IDS, FOUR_CROWN_ACTS, FIVE_CROWN_ACTS, crownLands, championsOfAct } from '../sim/champions.js';
 import { LAYOUTS, LAYOUT_IDS } from './layouts.js';
 import { dayDiff, isDailyKey } from './daily.js';
@@ -167,9 +167,10 @@ export function lifeAfter(meta, facts) {
 const markCount = (life, k) => ((life && life[k]) || []).length;
 // Wayfarer's event rooms: every kind but the Ember Kiln's (sim/encounters.js
 // WAYFARER_IDS), so its count stays where it was before the Kiln's event.
-// Signbreaker counts the first eight affixes only (batch two came later and
-// does not widen it).
-const signCount = (life) => ((life && life.affix) || []).filter((id) => FIRST_AFFIX_IDS.includes(id)).length;
+// Signbreaker counts all twelve affixes (Small fixes 9, Kesh's pick: batch two
+// joined it). A profile that already holds the deed keeps it; the lifetime
+// marks always recorded all twelve, so earlier progress carries over.
+const signCount = (life) => ((life && life.affix) || []).filter((id) => AFFIX_IDS.includes(id)).length;
 const wayCount = (life) => ((life && life.event) || []).filter((id) => WAYFARER_IDS.includes(id)).length;
 const crownCount = (life, acts = FOUR_CROWN_ACTS) => crownLands((life && life.champion) || [], acts);
 // The Ember Kiln's two champions (content plan 5 slice 9): Kiln Crowns.
@@ -215,7 +216,7 @@ export const DEEDS = Object.freeze(
     // ROUND TWO (docs/UNLOCKS.md): the event rooms, affixes, objectives,
     // champions, vaults, arenas, relics, bosses, Rill and the Daily.
     ['wayfarer', { name: 'Wayfarer', text: 'Enter every kind of event room.', embers: 60, test: (r, l) => wayCount(l) >= WAYFARER_IDS.length, goal: (l) => [wayCount(l), WAYFARER_IDS.length] }],
-    ['signbreaker', { name: 'Signbreaker', text: 'Fell an elite with each of the eight affixes.', embers: 60, test: (r, l) => signCount(l) >= FIRST_AFFIX_IDS.length, goal: (l) => [signCount(l), FIRST_AFFIX_IDS.length] }],
+    ['signbreaker', { name: 'Signbreaker', text: 'Fell an elite with each of the twelve affixes.', embers: 60, test: (r, l) => signCount(l) >= AFFIX_IDS.length, goal: (l) => [signCount(l), AFFIX_IDS.length] }],
     ['run_to_ground', { name: 'Run to Ground', text: 'Win a Hunt room: catch the quarry before it escapes.', embers: 20, test: (r) => (r.objectives || []).includes('hunt') }],
     ['scorched_nests', { name: 'Scorched Nests', text: 'Win a Purge room: break every nest in time.', embers: 20, test: (r) => (r.objectives || []).includes('purge') }],
     ['safe_home', { name: 'Safe Home', text: 'Win an Escort room: bring the pilgrim home.', embers: 20, test: (r) => (r.objectives || []).includes('escort') }],

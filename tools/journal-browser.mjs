@@ -134,7 +134,11 @@ const misses = async () => (LANG && LANG !== 'en' ? page.evaluate(() => (window.
   await sleep(3000);
   d = await dbg();
   const pg = d && d.page;
-  check(pg && pg.tiles === 60 && pg.unseen === 60, `60 entries (every enemy, champion and boss of the five lands), all unmet (${pg && pg.tiles} / ${pg && pg.unseen})`);
+  // (The count grows with the game: every enemy, champion and boss of the
+  // lands, and since Small fixes 9 the twelve elite powers.)
+  // (The tab counts the bestiary; the elite powers keep their own count.)
+  const want = d && d.journal && d.journal.totals ? d.journal.totals.bestiary.of + (d.journal.totals.affixes ? d.journal.totals.affixes.of : 0) : -1;
+  check(pg && pg.tiles === want && pg.unseen === want, `${want} entries (every enemy, champion and boss, and the elite powers), all unmet (${pg && pg.tiles} / ${pg && pg.unseen})`);
   check(pg && pg.viewer && pg.viewer.rigs.length > 0 && pg.viewer.rigs.every((r) => r.ok), `the model viewer builds its rigs (${pg && pg.viewer && JSON.stringify(pg.viewer.rigs.filter((r) => !r.ok))})`);
   check(pg && /\?\?\?/.test(pg.detail), 'an unmet entry has no name');
   console.log('viewer', JSON.stringify(pg && pg.viewer));
@@ -242,7 +246,7 @@ let eventSeen = null;
   await shot('journal-5-events');
   d = await toTab('deeds');
   await sleep(800);
-  check(d.page && d.page.rows === 18 && d.page.done >= 1, `the deeds page lists every deed, First Light done (${d.page && d.page.done}/${d.page && d.page.rows})`);
+  check(d.page && d.journal && d.page.rows === d.journal.deeds.length && d.page.done >= 1, `the deeds page lists every deed, First Light done (${d.page && d.page.done}/${d.page && d.page.rows})`);
   await shot('journal-6-deeds');
   await page.keyboard.press('Escape');
   await sleep(600);

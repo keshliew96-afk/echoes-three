@@ -148,3 +148,23 @@ const MAJOR_SVG = `<circle cx="16" cy="16" r="14" fill="none" stroke="currentCol
 export function curseIconHtml(size = 32, major = false) {
   return svg(major ? MAJOR_SVG : CURSE_SVG, size);
 }
+
+// ELITE POWERS (Small fixes 9): the Journal's mark for each affix, drawn in
+// the same grammar (its colour is the power's own, AFFIX_COLORS).
+const AFFIX_SVG = {
+  molten: `<path d="M16 4 Q23 13 23 18 A7 7 0 0 1 9 18 Q9 13 16 4 Z" ${STROKE}/><circle cx="16" cy="18" r="2.6" ${FILL}/><path d="M5 28 Q16 24 27 28" ${STROKE}/>`,
+  frozen: `<path d="M16 3 V29 M4.7 9.5 L27.3 22.5 M4.7 22.5 L27.3 9.5" ${STROKE}/><path d="M12.5 5.5 L16 9 L19.5 5.5 M12.5 26.5 L16 23 L19.5 26.5" ${STROKE}/>`,
+  vampiric: `<path d="M7 7 Q16 13 25 7" ${STROKE}/><path d="M11 9.5 L13 17 L15 11 M17 11 L19 17 L21 9.5" ${STROKE}/><path d="M16 20 Q19.5 24.5 16 28.5 Q12.5 24.5 16 20 Z" ${FILL}/>`,
+  warded: `<path d="M16 3.5 L26 7.5 Q26 21 16 28.5 Q6 21 6 7.5 Z" ${STROKE}/><path d="M16 10 V22 M12 14 L16 17.5 L20 14" ${STROKE}/>`,
+  blinking: `<circle cx="8.5" cy="23.5" r="4.5" ${STROKE} stroke-dasharray="2.2 2.4"/><circle cx="23.5" cy="8.5" r="4.5" ${STROKE}/><path d="M12 20 L19.5 12.5 M14.5 12.5 H19.5 V17.5" ${STROKE}/>`,
+  splitting: `<path d="M13 5.5 A10.5 10.5 0 0 0 13 26.5 M19 5.5 A10.5 10.5 0 0 1 19 26.5" ${STROKE}/><path d="M16 4 L14 10 L18 15 L14 21 L16 28" ${STROKE}/>`,
+  hasted: `<path d="M19 3.5 L10.5 17 H16 L13 28.5 L23 13.5 H17.5 Z" ${STROKE}/><path d="M3.5 12 H7.5 M3 18 H7" ${STROKE}/>`,
+  thorned: `<circle cx="16" cy="16" r="6" ${STROKE}/><path d="M16 3 V9 M16 23 V29 M3 16 H9 M23 16 H29 M7 7 L11 11 M21 21 L25 25 M25 7 L21 11 M7 25 L11 21" ${STROKE}/>`,
+  gusting: `<path d="M4 11 H19 A4 4 0 1 0 15 7" ${STROKE}/><path d="M4 17 H24 A4 4 0 1 1 20 21" ${STROKE}/><path d="M4 23 H12" ${STROKE}/>`,
+  crystal: `<path d="M16 3 L20 10 L18.5 27 H13.5 L12 10 Z" ${STROKE}/><path d="M8 13 L11 16 V27 H7 L5 17 Z M24 13 L21 16 V27 H25 L27 17 Z" ${STROKE}/>`,
+  tolling: `<path d="M16 5 V9 M9 22 Q9 9 16 9 Q23 9 23 22 Z M7 22 H25" ${STROKE}/><circle cx="16" cy="25.5" r="2" ${FILL}/><path d="M4.5 12 Q2.5 17 4.5 22 M27.5 12 Q29.5 17 27.5 22" ${STROKE}/>`,
+  cinder: `<path d="M16 5 Q21.5 11 19.5 16.5 Q17.5 14.5 16 16.5 Q14.5 14.5 12.5 16.5 Q10.5 11 16 5 Z" ${FILL}/><path d="M7.5 17 Q10.5 21 9.5 24 Q8 22.5 7 24 Q4.5 21 7.5 17 Z M24.5 17 Q27.5 21 26.5 24 Q25 22.5 24 24 Q21.5 21 24.5 17 Z" ${STROKE}/><path d="M3 28 H29" ${STROKE}/>`,
+};
+export function affixIconHtml(id, size = 32) {
+  return svg(AFFIX_SVG[id] ?? `<circle cx="16" cy="16" r="10" ${STROKE}/>`, size);
+}

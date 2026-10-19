@@ -131,7 +131,7 @@ export const RELICS = Object.freeze({
   // late affixes and their floor patches). No dice either.
   delvers_lantern: { name: "Delver's Lantern", rarity: 'common', text: 'A cracked wall is marked the moment you enter its room, and any blow from a hero a person plays breaks it open.', lantern: true },
   kiln_coal: { name: 'Kiln Coal', rarity: 'common', text: 'Enemies a bomb bursts on catch fire: for 4 s they lose 3% of max HP every half second (2% for elites, 0.5% for champions and bosses).', coal: Object.freeze({ ticks: 240, every: 30, dmg: 0.03, elite: 0.02, big: 0.005 }) },
-  pumice_soles: { name: 'Pumice Soles', rarity: 'common', text: 'Floor patches never slow the party: frost, thorn, moss, ash, glass, crystal and the rest.', soles: Object.freeze({ everyTicks: 30 }) },
+  pumice_soles: { name: 'Pumice Soles', rarity: 'common', text: 'Floor patches never slow the party (frost, thorn, moss, ash, glass, crystal and the rest), and slick floors never make it slide.', soles: Object.freeze({ everyTicks: 30 }) },
   wing_bone: { name: 'Wing Bone', rarity: 'rare', text: 'Each dodge ends in a dive: enemies within 1.4 u of where the hero lands take 10 damage and are knocked back.', wing: Object.freeze({ radius: 1.4, dmg: 10 }) },
   crown_shard: { name: 'Crown Shard', rarity: 'rare', text: 'Each elite the party fells pays 5 Glint for every power it carried.', crown: Object.freeze({ perPower: 5 }) },
   dusk_lens: { name: 'Dusk Lens', rarity: 'rare', text: 'Party critical hits blind the enemy for 1 s (never a boss; once per enemy every 3 s).', lens: Object.freeze({ ticks: 60, everyTicks: 180 }) },
