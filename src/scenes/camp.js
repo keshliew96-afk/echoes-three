@@ -724,9 +724,9 @@ export function createCampScene(stage, toggles, ctx) {
   }
   function canBegin() {
     if (mode !== 'camp' || begin) return false;
-    // M5b (W4): the portal is the HOST's — a network guest never starts a run
-    // (its camp prompt stays hidden; the net HUD says who leads).
-    if (isGuest()) return false;
+    // A network guest walks through the portal and picks levels too: its
+    // press goes to the host (beginLevel below), which runs the same checks
+    // on its own world and starts the run for the whole party.
     const run = world.runSystem();
     if (run.isActive()) return false;
     const phase = run.view().phase;
@@ -756,11 +756,46 @@ export function createCampScene(stage, toggles, ctx) {
 
   function beginLevel(level, { harness = false, via = 'portal', endless = false, tutorial = false, daily = null, rush = false } = {}) {
     if (!canBegin()) return false;
+    if (isGuest()) return askHost(endless ? 'endless' : rush ? 'rush' : via === 'portal' ? 'portal' : level, via);
     begin = { pressedAt: performance.now(), started: false, level, act: level, harness, via, endless, tutorial, daily, rush };
     fade.classList.add('cp-on');
     prompt.classList.remove('cp-on');
     if (tablePrompt) tablePrompt.classList.remove('cg-on');
     return true;
+  }
+
+  // A guest's Begin Run / level pick: the host starts it (net session
+  // campBegin -> the host's guestBegin). A refusal comes back as a note.
+  let asked = 0;
+  function askHost(level, via) {
+    const n = svc('net');
+    const s = n && n.session;
+    if (!s || typeof s.campBegin !== 'function') return false;
+    const now = performance.now();
+    if (now - asked < 1000) return true; // one press per second reaches the host
+    asked = now;
+    return !!s.campBegin(level, via);
+  }
+  // HOST: a guest asked to set out. 'portal' = the guest stood in the gate
+  // (checked on this world, with a little slack for lag); anything else is a
+  // Level Select card, checked against the host's own unlocks like the
+  // host's own pick. Returns { ok } or { ok: false, reason }.
+  function guestBegin(seat, level) {
+    if (isGuest() || !inSession()) return { ok: false, reason: 'closed' };
+    if (picking || !canBegin()) return { ok: false, reason: 'busy' };
+    if (level === 'portal') {
+      const e = world.entities().find((x) => x.kind === 'ally' && x.partyIndex === seat);
+      if (!e) return { ok: false, reason: 'closed' };
+      const dx = e.x - PORTAL.x;
+      const dz = e.z - (PORTAL.z + 0.55);
+      const r = PORTAL.radius + 0.75;
+      if (dx * dx + dz * dz > r * r) return { ok: false, reason: 'far' };
+      beginLevel(FIRST_LEVEL, { harness: false, via: 'guest' });
+      return { ok: true, level: FIRST_LEVEL };
+    }
+    if (level === 'daily') return { ok: false, reason: 'solo' };
+    const r = chooseLevel(level, 'guest');
+    return r && r.ok ? r : { ok: false, reason: (r && r.reason) || 'busy' };
   }
 
   // TUTORIAL (docs/TUTORIAL.md): the guided first room, from anywhere in
@@ -773,7 +808,7 @@ export function createCampScene(stage, toggles, ctx) {
 
   // The Level Select (app screen 'levels', src/ui/run/levels.js).
   function openLevels(via = 'table') {
-    if (mode !== 'camp' || begin || picking || isGuest()) return false;
+    if (mode !== 'camp' || begin || picking) return false;
     const app = svc('app');
     if (!app || !app.screens || !appReg || !appReg.screenFactory?.('levels')) return false;
     if (app.state !== 'playing' || app.screens.isOpen()) return false;
@@ -929,7 +964,6 @@ export function createCampScene(stage, toggles, ctx) {
     // BOSS RUSH: a co-op lobby plays it too; the host sets out, as with Endless.
     if (level === 'rush') {
       if (!rushOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
-      if (isGuest()) return { ok: false, reason: 'guest', level };
       if (!canBegin()) return { ok: false, reason: 'busy', level };
       beginLevel(FIRST_LEVEL, { harness: false, via, rush: true });
       return { ok: true, level, rush: true };
@@ -937,7 +971,6 @@ export function createCampScene(stage, toggles, ctx) {
     // ENDLESS (docs/ENDLESS.md): the Endless Descent card, open once the game is won.
     if (level === 'endless') {
       if (!endlessOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
-      if (isGuest()) return { ok: false, reason: 'guest', level };
       if (!canBegin()) return { ok: false, reason: 'busy', level };
       beginLevel(FIRST_LEVEL, { harness: false, via, endless: true });
       return { ok: true, level, endless: true };
@@ -945,7 +978,6 @@ export function createCampScene(stage, toggles, ctx) {
     const n = Number(level);
     if (!isLevel(n)) return { ok: false, reason: 'no_such_level', level: n };
     if (!unlockedLevels().includes(n)) return { ok: false, reason: 'locked', level: n, line: lockLine(n) };
-    if (isGuest()) return { ok: false, reason: 'guest', level: n };
     if (!canBegin()) return { ok: false, reason: 'busy', level: n };
     beginLevel(n, { harness: false, via });
     return { ok: true, level: n };
@@ -1231,7 +1263,7 @@ export function createCampScene(stage, toggles, ctx) {
       if (tablePrompt) {
         const appSvc = svc('app');
         const menusOpen = !!(appSvc && appSvc.screens && appSvc.screens.isOpen());
-        const show = inTable && !begin && !picking && !menusOpen && !isGuest() && canBegin();
+        const show = inTable && !begin && !picking && !menusOpen && canBegin();
         if (show !== tablePrompt.classList.contains('cg-on')) tablePrompt.classList.toggle('cg-on', show);
         if (show) {
           const a = toScreen(MAP_TABLE.x, 1.35, MAP_TABLE.z);
@@ -1449,6 +1481,8 @@ export function createCampScene(stage, toggles, ctx) {
         return openLevels('cmd');
       case 'campChoose':
         return chooseLevel(args[0], 'cmd');
+      case 'campGuestBegin':
+        return guestBegin(Number(args[0]), args[1]);
       case 'campClasses':
         return openClasses('cmd');
       case 'campDaily':

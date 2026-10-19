@@ -3544,5 +3544,8 @@
  "Felled before the Journal kept count.": "Abatido antes de o Diário manter a contagem.",
  "Felled: {n}, and more before the Journal kept count.": "Abatidos: {n}, e mais antes de o Diário manter a contagem.",
  "The load stopped part-way. Reload the page: the game finishes loading it when it starts.": "O carregamento parou no meio. Recarregue a página: o jogo termina de carregá-lo ao iniciar.",
- "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "Seu perfil foi salvo por uma versão mais nova de Echoes. Recarregue a página para atualizar o jogo: até lá, esta aba não salva recordes, Brasas nem desbloqueios."
+ "Your profile was saved by a newer version of Echoes. Reload the page to update the game: until then this tab saves no records, Embers or unlocks.": "Seu perfil foi salvo por uma versão mais nova de Echoes. Recarregue a página para atualizar o jogo: até lá, esta aba não salva recordes, Brasas nem desbloqueios.",
+ "The host has not unlocked that yet": "O anfitrião ainda não desbloqueou isso",
+ "The host could not set out just now — try again": "O anfitrião não pôde partir agora — tente de novo",
+ "{name} set out — the run begins": "{name} partiu — a jornada começa"
 }

@@ -230,10 +230,12 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
       const n = npcs[id];
       if (n.spot.talk > 0 && dist(body, n.spot) <= n.spot.talk) return talk(id);
     }
-    for (const h of Object.values(heroes)) if (h.at && dist(body, h.at) <= RILL_TALK) return talkHero(h.id);
+    for (const h of Object.values(heroes)) if (h.at && !isSelf(body, h) && dist(body, h.at) <= RILL_TALK) return talkHero(h.id);
     return false;
   }
   const dist = (b, s) => Math.hypot(b.x - s.x, b.z - s.z);
+  // The player walking Rill or Tolly is that hero: no bubble, no talk to herself.
+  const isSelf = (b, h) => !!b && b.classId === h.cls;
 
   let shown = true;
   function setVisible(on) {
@@ -319,7 +321,7 @@ export function createCampNpcs({ root, stage, cosmetic, svc, toScreen, openUnloc
     const pos = heroAt(h.cls);
     const spot = CAMP_SPOTS[h.cls];
     h.at = pos && Math.hypot(pos.x - spot.x, pos.z - spot.z) <= RILL_SEATED ? pos : null;
-    const near = !quiet && !!h.at && dist(body, h.at) <= RILL_NEAR;
+    const near = !quiet && !!h.at && !isSelf(body, h) && dist(body, h.at) <= RILL_NEAR;
     if (near !== h.near) {
       h.near = near;
       h.bubble.classList.toggle('nb-on', near);

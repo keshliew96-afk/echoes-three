@@ -8,7 +8,9 @@
 //     still: its Tank faces the mouse on the guest's own page and on the
 //     host's, and keeps facing it (no slow turn back to the fire);
 //   - it walks south with the mouse still west: the Tank still faces west;
-//   - the AI seats nobody holds still idle toward the hearth.
+//   - the AI seats nobody holds still idle toward the hearth;
+//   - the guest walks into the portal, sees Begin Run and presses E: the
+//     host starts the run and both pages are in room 1.
 //   node tools/camp-guest-facing.mjs [--port 7931] [--shots <dir>] [--tag after]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=<chrome> ECHOES_CHROME_ARGS="--no-sandbox".
 import { mkdirSync } from 'node:fs';
@@ -100,6 +102,56 @@ try {
   await waitTicks(host, 60);
   const ar = await netEval(host, 'const s = E.cmd("campState"); const r = s.party.rigs.find((x) => x.classId === "archer"); const h = s.hearth; return { yaw: r.yaw, fireYaw: Math.atan2(h.x - r.x, h.z - r.z) };');
   check('the AI Archer still idles toward the hearth', angle(ar.yaw, ar.fireYaw) < 0.4, ar);
+
+  // The guest walks into the portal and presses E: the host starts the run
+  // for the whole party (scenes/camp.js askHost -> the host's guestBegin).
+  const portal = await netEval(host, 'return E.cmd("campState").portal;');
+  const goal = { x: portal.x, z: portal.z + 0.55 };
+  for (let i = 0; i < 40; i++) {
+    const b = await netEval(host, 'const e = E.state().party.find((p) => p.partyIndex === 1); return { x: e.x, z: e.z };');
+    const dx = goal.x - b.x;
+    const dz = goal.z - b.z;
+    if (Math.hypot(dx, dz) < portal.radius * 0.6) break;
+    const keys = [];
+    if (dz < -0.3) keys.push('KeyW');
+    if (dz > 0.3) keys.push('KeyS');
+    if (dx < -0.3) keys.push('KeyA');
+    if (dx > 0.3) keys.push('KeyD');
+    for (const k of keys) await guest.page.keyboard.down(k);
+    try {
+      await waitTicks(host, 15);
+    } finally {
+      for (const k of keys) await guest.page.keyboard.up(k);
+    }
+  }
+  const inGate = await netEval(guest, 'return E.cmd("campState").inPortal;');
+  check('the guest stands in the portal on its own page', inGate === true, inGate);
+  const gPrompt = await netEval(guest, 'return E.cmd("campState").promptVisible;');
+  check('the guest sees the Begin Run prompt there', gPrompt === true, gPrompt);
+  await guest.page.screenshot({ path: `${shots}/${tag}-guest-portal.png` });
+  await guest.page.keyboard.down('KeyE');
+  await sleep(300);
+  await guest.page.keyboard.up('KeyE');
+  const t0 = Date.now();
+  let started = null;
+  while (Date.now() - t0 < 120000) {
+    const v = await netEval(host, 'const v = E.state().run; return { phase: v.phase, room: v.room };');
+    if (v.phase === 'combat') {
+      started = v;
+      break;
+    }
+    await sleep(500);
+  }
+  check('the guest\'s E at the portal starts the run on the host', started && started.room === 1, started);
+  const g0 = Date.now();
+  let gv = null;
+  while (Date.now() - g0 < 90000) {
+    gv = await netEval(guest, 'const v = E.state().run; return { phase: v.phase, room: v.room };');
+    if (gv.phase === 'combat') break;
+    await sleep(500);
+  }
+  check('the guest is in the run too', gv && gv.phase === 'combat' && gv.room === 1, gv);
+  await host.page.screenshot({ path: `${shots}/${tag}-host-run.png` });
 
   const errs = [...host.errors, ...guest.errors];
   check('no page errors', errs.length === 0, errs.slice(0, 3));

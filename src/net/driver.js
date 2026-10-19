@@ -41,7 +41,7 @@ const now = () => (typeof performance !== 'undefined' ? performance.now() : Date
 // a remote human's frames drive the Healer, 'ai' = nobody does: the leader
 // bot). The session switches the leader bot with it, so the bot never
 // overrides a human Healer's input (NET3-F1).
-export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null, onPartyCmd = null }) {
+export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null, onPartyCmd = null, onCampCmd = null }) {
   const snap = createSnapshotHost();
   const ring = createRewindRing({ registry });
   const feeds = new Map(); // seat -> feed
@@ -518,6 +518,22 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
         // state it shows is past that tick (it then carries the change).
         stats.partyAcks = (stats.partyAcks || 0) + 1;
         sendCmd(c.seat, { kind: 'party_ack', re: c.cmdSeq, what: cmd.op ?? null, tick: clock.tick });
+      }
+      return;
+    }
+    if (cmd.kind === 'camp') {
+      // CAMP: a guest's Begin Run or Level Select pick; the session asks the
+      // host's camp to start it with the host's own checks.
+      let r = null;
+      try {
+        r = onCampCmd ? onCampCmd(c) : { reason: 'unsupported' };
+      } catch (err) {
+        r = { reason: 'error' };
+        log('camp_cmd_error', { error: String(err && err.message) });
+      }
+      if (r && r.reason) {
+        stats.rejected += 1;
+        sendCmd(c.seat, { kind: 'command_rejected', re: c.cmdSeq, what: 'camp', reason: r.reason });
       }
       return;
     }

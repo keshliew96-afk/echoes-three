@@ -119,6 +119,12 @@ function hostDecidesCopy(what, w) {
   if (LEVEL_FLOW_OPS.has(what)) return t('The host leads the party between levels — your press was shown to the party');
   return t('That is the Healer’s build, not yours — your own character is on your tab');
 }
+// CAMP: a guest's Begin Run or level pick the host could not start.
+function campRejectCopy(reason) {
+  if (reason === 'locked') return t('The host has not unlocked that yet');
+  if (reason === 'solo') return t('Single player only');
+  return t('The host could not set out just now — try again');
+}
 const PARTY_REJECT_COPY = {
   get not_owner() {
     return t('That is another player’s character — only your own tab is yours to change');
@@ -518,6 +524,24 @@ export function createNetSession(ctx) {
     partyProxy = null;
     hostRunProxy = null;
   }
+  // The host applies a guest's `camp` CMD (net/driver.js): a Begin Run at
+  // the portal or a Level Select pick, started by the host's own camp with
+  // the host's checks (scenes/camp.js guestBegin). Null = started.
+  function hostCampCmd(c) {
+    const cmd = c.cmd || {};
+    if (!(Number.isInteger(c.seat) && c.seat >= 1 && c.seat <= 3) || seatControllers()[c.seat] !== 'human') return { reason: 'not_owner' };
+    const level = typeof cmd.level === 'string' ? cmd.level : Number(cmd.level);
+    let r = null;
+    try {
+      r = scene && typeof scene.cmd === 'function' ? scene.cmd('campGuestBegin', [c.seat, level]) : null;
+    } catch {
+      r = null;
+    }
+    if (!r || !r.ok) return { reason: (r && r.reason) || 'closed' };
+    if (hud) hud.note(t('{name} set out — the run begins', { name: nameOfSeat(c.seat) || t(seatLabel(c.seat)) }));
+    log('camp_cmd', { seat: c.seat, level });
+    return null;
+  }
   // The host applies a guest's `party` CMD (net/driver.js) — ownership, then
   // the SAME sim entry point single-player / the host UI uses. Returns null
   // when applied, else { reason } (answered command_rejected).
@@ -785,6 +809,7 @@ export function createNetSession(ctx) {
       onCmd: (ping) => showPing(ping),
       onPlayerController: (ctrl, tick) => setLeaderBot(ctrl !== 'human', tick),
       onPartyCmd: (c) => hostPartyCmd(c),
+      onCampCmd: (c) => hostCampCmd(c),
     });
     installHostGuards();
     role = 'host';
@@ -1495,6 +1520,8 @@ export function createNetSession(ctx) {
         partyStats.rejected += 1;
         partyStats.byReason[cmd.reason] = (partyStats.byReason[cmd.reason] || 0) + 1;
         if (hud && cmd.what !== 'screen' && cmd.what !== 'pref') hud.note(PARTY_REJECT_COPY[cmd.reason] ?? t('Not applied ({reason})', { reason: cmd.reason }));
+      } else if (cmd.what === 'camp') {
+        if (hud) hud.note(campRejectCopy(cmd.reason));
       } else if (hud) hud.note(hostDecidesCopy(cmd.what, seatLabel(chooserSeat(net.room))));
     }
   }
@@ -2133,6 +2160,15 @@ export function createNetSession(ctx) {
       if (role !== 'guest' || !body) return false;
       cmdSeq += 1;
       net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: 'party', ...body }));
+      return true;
+    },
+    // CAMP: a guest's Begin Run ('portal') or Level Select pick (a level
+    // number, 'endless' or 'rush') goes to the host, which starts it.
+    campBegin(level, via = 'portal') {
+      if (role !== 'guest' || !net.transport) return false;
+      cmdSeq += 1;
+      net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: 'camp', level: typeof level === 'string' ? level : Number(level) || 0, area: String(via) }));
+      log('camp_ask', { level, via });
       return true;
     },
     // CAMPAIGN (PLAN §12.9): guests tell the host when they can draw the next

@@ -785,6 +785,11 @@
    "src/net/session.js"
   ]
  },
+ "{name} set out — the run begins": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
  "{name} stands in this room. {trade}": {
   "files": [
    "src/ui/run/index.js"
@@ -13744,6 +13749,7 @@
  },
  "Single player only": {
   "files": [
+   "src/net/session.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -16179,6 +16185,16 @@
    "src/data/journal.js"
   ],
   "data": true
+ },
+ "The host could not set out just now — try again": {
+  "files": [
+   "src/net/session.js"
+  ]
+ },
+ "The host has not unlocked that yet": {
+  "files": [
+   "src/net/session.js"
+  ]
  },
  "The host is back": {
   "files": [
