@@ -197,15 +197,27 @@ const seatOf = (page, cls) =>
 async function equipAll(page, sets) {
   return page.evaluate((sets) => {
     const X = __echoes;
-    for (let i = 0; i < 60 && (X.state().run || {}).phase === 'combat'; i++) {
-      X.cmd('killAllEnemies');
-      X.sim.stepN(30, null);
+    const inCombat = () => (X.state().run || {}).phase === 'combat';
+    // A room that will not clear by kills (a timed hold) is skipped for the next one.
+    for (let tries = 0; tries < 5 && inCombat(); tries++) {
+      for (let i = 0; i < 60 && inCombat(); i++) {
+        X.cmd('killAllEnemies');
+        X.sim.stepN(30, null);
+      }
+      if (inCombat()) {
+        X.cmd('skipToRoom', ((X.state().run || {}).room || 1) + 1);
+        X.sim.stepN(60, null);
+      }
     }
+    const denied = [];
     for (const { seat, set } of sets) {
       if (seat === 0) X.cmd('restoreSkillState', { slots: set.map((id) => ({ id, remaining: 0 })), override: null, auras: {} });
       else {
         X.cmd('partyPurse', seat, 999); // swaps cost Glint; the probe pays
-        set.forEach((id, k) => X.cmd('partySwap', seat, id, k));
+        set.forEach((id, k) => {
+          const r = X.cmd('partySwap', seat, id, k);
+          if (r && r.denied && r.denied !== 'owned') denied.push(`${id}: ${r.denied} (phase ${(X.state().run || {}).phase})`);
+        });
       }
     }
     X.cmd('partyMode', 'manual');
@@ -215,6 +227,7 @@ async function equipAll(page, sets) {
     X.cmd('killAllEnemies');
     X.sim.stepN(4, null);
     const out = {};
+    if (denied.length) out.denied = denied;
     for (const { seat } of sets) out[seat] = seat === 0 ? ((X.cmd('skillState') || {}).slots || []).map((s) => s && s.id) : (X.cmd('partyView', seat) || {}).slots || [];
     return out;
   }, sets);
@@ -273,6 +286,7 @@ async function teamReel(page, team, heroes) {
   for (let r = 0; r < rounds; r++) {
     const sets = plan.map((p) => ({ seat: p.seat, set: p.kit.slice(r * 4, r * 4 + 4) })).filter((x) => x.set.length);
     const slots = await equipAll(page, sets);
+    if (slots.denied) console.log(`info ${team} round ${r + 1} swaps denied: ${slots.denied.join(', ')}`);
     for (const p of plan) {
       for (const id of p.kit.slice(r * 4, r * 4 + 4)) {
         const slot = (slots[p.seat] || []).indexOf(id);
