@@ -291,3 +291,109 @@ Review tools:
 - `node tools/vfx-clips.mjs` records real-speed 30 fps clips of each class,
   the enemies and each boss fight on a machine with no GPU, by running the
   page on a virtual clock (one 1/30 s step per captured frame).
+
+## 11. The VFX direction: Kesh's three templates (2026-10-19)
+
+**This section is the standing direction for every VFX build thread.** Kesh's
+words (2026-10-19): *"the vfx of all character and enemy need rework, current
+one too simple, use below template when doing vfx"*, and *"often use below
+prompt for vfx build thread"*. Where it clashes with §3-§10 (one hue per
+class, the soft Healer lantern, the Archer's thin jade lines), this section
+wins; the reserved gameplay colours of §2 still hold.
+
+### The templates (his words, the target look)
+
+| Template | His prompt | Plays for |
+|---|---|---|
+| **Magic** | Magical spell VFX, celestial energy burst, glowing runes and arcane circles, vibrant purple and gold particles, floating stardust, ethereal light beams, highly detailed, fantasy game concept art. | spells and magical attacks |
+| **Knife and sword** (`blade`) | Epic sword slash VFX, blazing fiery trail, golden light energy waves, sharp particle effects, motion blur, impactful explosion, stylized action game style, cinematic lighting. | blades, claws, bites and other melee; the closest fit for physical shots (arrows) and blows (a swung bell) |
+| **Sci-fi** | Sci-fi laser beam VFX, holographic matrix particles, neon cyan and magenta energy, digital glitch effects, futuristic weapon fire, high-tech glow, sharp lines, clean vector rendering. | technological weapons |
+
+### The enhancer words (use them in every VFX build thread)
+
+- **Enhancers** (增加华丽度的修饰词): highly detailed, cinematic lighting, masterpiece, epic.
+- **Glow and particles** (发光与粒子): glowing effects, floating particles, stardust, ethereal light.
+- **Dynamics** (动态与冲击感): energy burst, impactful explosion, dynamic motion.
+- **Rendering** (渲染引擎暗示): Unreal Engine 5 render, Octane render, volumetric lighting.
+
+The game draws everything in code in its own real-time Three.js renderer
+(no model, texture or video files), so the rendering words are the finish to
+reach, not tools: every beat has a hot white core over its colour, real
+bloom, a light pool on the floor (cinematic lighting), shafts of light
+(volumetric lighting) and particles that hang after the hit.
+
+### How a beat is built
+
+Each template is a recipe set in `src/render/vfx/templates.js` over the
+template kit `src/render/vfx/tplkit.js`. The class layers (§4, the
+Tidecaller's, Bellwright's and Duskwing's own files) still play underneath,
+so a hero keeps its own shapes; the template is the finish on top.
+
+| Primitive | What it draws | Templates |
+|---|---|---|
+| `circle` | an arcane circle on the floor or standing at the hand: a rune ring and an inner sigil spinning against each other; faces `arcane` (runes and a hexagram), `sun` (flame rays), `hex` (a targeting hexagon) | magic, blade (sun), sci-fi (hex) |
+| `beam` | an ethereal light beam: a tall camera-facing shaft, hot core, soft volumetric halo, light rising up it | magic, sci-fi |
+| `blaze` | a burning ribbon on the blade's path (`fire`: flame licks eat it from the tail) or a clean golden energy wave that keeps travelling (`wave`); arcs or full rings | blade, magic waves |
+| `blast` | an animated burst: `fire` (a turbulent fireball that erodes away), `celestial` (a starburst of rays and a ring), `holo` (a square glitching shell with scanlines) | all three |
+| `dust` | twinkling particles that float and swirl: `star` stardust, `square` holographic matrix bits | magic, sci-fi |
+| `sparks` | sharp particles drawn as short lines along their own speed (the motion blur) | blade, sci-fi |
+
+| Beat | Magic | Blade |
+|---|---|---|
+| Swing / melee skill | a crescent of light rolling out, a circle at the caster, stardust on the front | a fire ribbon along the cut, two motion-blur afterimages, sharp sparks off the edge; a skill adds a golden energy wave that travels past the reach and an explosion at the tip |
+| Shot leaves the hand | a small circle stands up at the hand, a celestial burst, stardust down the aim | a fire muzzle flash, a small golden wave thrown forward, sparks and speed lines down the line |
+| In flight | the shot sheds stardust | the shot sheds fire sparks |
+| Nova | circle, gather, celestial burst, a beam, rising stardust, beams round the edge | a sun circle, a fire ring, a golden wave ring, the explosion, sparks all round |
+| Placed skill | a beam strikes down out of the sky onto a circle there, a burst, a stardust fountain | a sun circle, the explosion, a fire ring; a rain skill drops flaming shafts that each burst |
+| Ward / call | a circle under each body and light pouring onto it | golden waves out of the caster and a ring on each body |
+| Dash | stardust down the path, a circle where it lands | a fire wake, afterimage lines, sparks off the heels, a burst on arrival |
+| Hit | a celestial star and a stardust puff; a crit adds runes and a short beam | sparks through the target and a small fireball; a crit adds a golden wave ring |
+| Kill | light going up out of it | a last fireball |
+| Zone pulse | the circle breathes, stardust lifts | embers and a flicker of flame |
+
+### Colours
+
+`VFX_TEMPLATE` in `src/data/palette.js`; the template rows in
+`src/data/vfx.js` (`VFX_TEMPLATES`, `CLASS_TEMPLATE`, `SKILL_TEMPLATE`).
+
+- Magic: Arcane Purple `#A24BFF`, Celestial Gold `#FFC94A`, Star White `#FFF4D6`.
+  A magic heal swaps the purple for Bright Heal and keeps the gold.
+- Blade: Blaze Core `#FFF3C4`, Blaze Gold `#FFB43C`, Flame `#F5952E`, Wave Gold `#FFD866`.
+- Sci-fi: Neon Cyan `#3DF2FF`, Neon Magenta `#FF3DD8`.
+- Kept clear of the gameplay signals: the blade's fire leans gold (Ember is
+  about 25° redder and stays enemy-only); Arcane Purple is deep and saturated
+  where corruption Violet is pale, but their hues sit about 10° apart, so the
+  lab's **Purple** button switches the magic to a magenta (`#D84CF0`, 32°
+  away) to compare (an open choice); the blade's sun circle is drawn in
+  gold, never orange, so it cannot pass for an enemy telegraph; Hearth Amber own damage numbers are drawn on top
+  with their outline.
+
+### Which heroes take which (2026-10-19)
+
+| Hero | Basic | Skills |
+|---|---|---|
+| Healer | magic | magic (heals in green and gold) |
+| Tank | blade | blade (Shield Wall and Rallying Cry as golden waves) |
+| Swordsman | blade | blade |
+| Archer | blade (arrows: the closest fit) | blade |
+| Tidecaller | magic | magic |
+| Bellwright | magic | magic, except Bell Swing (blade) |
+| Duskwing | blade (the bite) | blade for the bite, rake, dive and scent; magic for Nightfall, Echo Screech, Bat Swarm, Shadow Veil, Flit, Blood Moon and Night Wings |
+
+No hero carries a technological weapon; sci-fi plays in the VFX lab and
+waits for the enemy pass (enemies, champions and bosses are the next PR).
+
+### Review
+
+- `?vfxlab=1` ▸ **VFX templates**: Magic / Blade / Sci-fi play every beat of
+  one template in front of the party; **Purple** switches the magic purple.
+- `node tools/vfx-rework.mjs` checks every hero skill maps to a template and
+  plays it, and with `--shots <dir>` records each hero's reel and a busy
+  four-hero fight as stills and real-speed clips (virtual clock, no GPU).
+  It runs both teams in a campaign (campaign-only skills), clears each room
+  to its reward to rebuild the bars, and gives the probe's seats Glint for
+  the swaps; `--only data|<hero>|fightA|fightB` and `--purple safe` narrow it.
+- Budget: the template kit adds 4 pooled meshes kinds (circles 16, beams 14,
+  blazes 28, blasts 18), two particle clouds (360 stardust, 160 bits) and one
+  instanced spark draw (320); Reduced effects halves the particles and dims
+  the beams with the light setting.

@@ -88,6 +88,22 @@ export const VFX_SIGNATURE = Object.freeze({
   duskwing: Object.freeze({ glow: '#E0509E', second: '#F2D9E6', debris: '#7A4E66' }), // Dusk Rose / Pale Moon / Wing Leather
 });
 
+// VFX templates (docs/gauntlet/design-VFX.md §11, Kesh's 2026-10-19 VFX
+// direction). Each hero effect plays one of three templates on top of its
+// class look: MAGIC (celestial burst, runes and arcane circles, purple and
+// gold particles, stardust, ethereal beams), BLADE (a blazing fiery trail,
+// golden light energy waves, sharp particles, motion blur, an impactful
+// explosion) and SCI-FI (a laser beam, holographic matrix particles, neon
+// cyan and magenta, digital glitch). Kept clear of the reserved hues: the
+// blade fire leans gold (Ember is 25 deg redder) and Arcane Purple is deep and
+// saturated where corruption Violet is pale (the hue gap is an open choice;
+// `arcaneSafe` is the magenta alternative the VFX lab can switch to).
+export const VFX_TEMPLATE = Object.freeze({
+  magic: Object.freeze({ purple: '#A24BFF', gold: '#FFC94A', star: '#FFF4D6', deep: '#5B2BB8', arcaneSafe: '#D84CF0' }),
+  blade: Object.freeze({ core: '#FFF3C4', fire: '#FFB43C', flame: '#F5952E', wave: '#FFD866', smoke: '#3A2A22' }),
+  scifi: Object.freeze({ cyan: '#3DF2FF', magenta: '#FF3DD8', white: '#E8FFFF', grid: '#1E6F86' }),
+});
+
 // Biome air (AAA VFX pass, design-VFX.md §10): the tone each act's smoke and
 // dust lean toward, so a puff belongs to the room it is in. Act I the Hollow
 // Wood's moss, Act II the Sunken Mill's cold slate, Act III the Barrow's ash.
