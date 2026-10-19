@@ -6,7 +6,7 @@
 // changes — and an enemy with no row falls back to a sensible default.
 //
 // Render-only data: nothing in the sim reads this file.
-import { PALETTE, VFX_SIGNATURE, VFX_MATTER, VFX_TEMPLATE } from './palette.js';
+import { PALETTE, VFX_SIGNATURE, VFX_MATTER, VFX_TEMPLATE, VFX_FOE } from './palette.js';
 import { CLASS_SKILLS } from './classes.js';
 
 // --------------------------------------------------------------- classes --
@@ -253,6 +253,53 @@ export function vfxTemplateFor(classId, skillId = null) {
   const cls = classId ?? (skillId ? vfxSkillClass(skillId) : null);
   return CLASS_TEMPLATE[cls] ?? 'magic';
 }
+
+// ----------------------------------------------------------- foe templates --
+// VFX rework PR 2: which of Kesh's templates each enemy, champion and boss
+// plays when its attack lands, when its shot leaves, when it hits the party.
+// The pick follows the brief: claws, bites, slams, stings, spears, darts and
+// thrown things are the knife-and-sword template; spells, songs, spores,
+// spirit light and wards are magic; machines are sci-fi. A magic foe of the
+// Hollow Heart, and every boss's magic, casts in the corrupted tone.
+export const FOE_TEMPLATE = Object.freeze({
+  // Act I and II and the slices' beasts.
+  boar: 'blade', mantis: 'blade', quillback: 'blade', toad: 'magic', moth: 'magic', ram: 'blade', mole: 'blade',
+  rotcap: 'magic', snail: 'magic', crow: 'blade', brood: 'blade', broodling: 'blade',
+  wasp: 'blade', thornling: 'blade', crab: 'blade', lamprey: 'blade', gravewisp: 'magic', knight: 'blade',
+  // The Hollow Heart (corrupted).
+  husk: 'blade', lancer: 'magic', geode: 'blade', censer: 'magic', bloom: 'magic', siphon: 'magic',
+  // Wood and Mill, Barrow and Heart.
+  owl: 'magic', lasher: 'blade', leech: 'blade', miller: 'blade', keener: 'magic', sexton: 'magic',
+  // The Still Spire: the bronze volley and the bell are machines.
+  kite: 'blade', chime: 'scifi', gargoyle: 'blade', hanger: 'blade', vane: 'scifi', sacristan: 'magic',
+  // The Ember Kiln: the bellows is a machine.
+  newt: 'blade', slag: 'blade', bellows: 'scifi', cindermoth: 'magic', hurler: 'blade', ashwraith: 'magic',
+  // Champions.
+  briar_knight: 'blade', sluice_warden: 'blade', bone_reeve: 'blade', hollow_choir: 'magic', gale_herald: 'blade',
+  moss_hart: 'blade', lockkeeper: 'scifi', gravebell_ringer: 'magic', vein_matron: 'magic', bell_abbess: 'magic',
+  furnace_knight: 'blade', glassblower: 'scifi',
+  // Bosses.
+  stag: 'blade', heron: 'blade', wyrm: 'blade', thornmother: 'magic', millwheel: 'scifi', lichram: 'magic',
+  cantor: 'magic', colossus: 'blade', gloamwolf: 'blade', mireking: 'magic', ashraven: 'blade', veinweaver: 'magic',
+  hush: 'magic', skyhorn: 'blade', hourwarden: 'scifi', founder: 'scifi', cinderback: 'blade',
+});
+// Who weighs how much: a champion plays half again as big, a boss twice.
+export const FOE_CHAMPIONS = Object.freeze(new Set(['briar_knight', 'sluice_warden', 'bone_reeve', 'hollow_choir', 'gale_herald', 'moss_hart', 'lockkeeper', 'gravebell_ringer', 'vein_matron', 'bell_abbess', 'furnace_knight', 'glassblower']));
+export const FOE_BOSSES = Object.freeze(new Set(['stag', 'heron', 'wyrm', 'thornmother', 'millwheel', 'lichram', 'cantor', 'colossus', 'gloamwolf', 'mireking', 'ashraven', 'veinweaver', 'hush', 'skyhorn', 'hourwarden', 'founder', 'cinderback']));
+const FOE_TONES = Object.freeze({
+  blade: Object.freeze({ id: 'blade', foe: true, a: VFX_FOE.blade.fire, b: VFX_FOE.blade.wave, core: VFX_FOE.blade.core, deep: VFX_FOE.blade.flame, smoke: VFX_FOE.blade.smoke }),
+  magic: Object.freeze({ id: 'magic', foe: true, a: VFX_FOE.magic.a, b: VFX_FOE.magic.b, core: VFX_FOE.magic.star, deep: VFX_FOE.magic.deep }),
+  corrupt: Object.freeze({ id: 'magic', foe: true, corrupt: true, a: VFX_FOE.corrupt.a, b: VFX_FOE.corrupt.b, core: VFX_FOE.corrupt.star, deep: VFX_FOE.corrupt.deep }),
+  scifi: Object.freeze({ id: 'scifi', foe: true, a: VFX_FOE.scifi.a, b: VFX_FOE.scifi.b, core: VFX_FOE.scifi.white, deep: VFX_FOE.scifi.grid }),
+});
+// The tone one foe plays: its template, corrupted when it is a boss or a
+// Heart body casting magic. Unknown kinds fall back to the blade.
+export function vfxFoeTone(kind) {
+  const id = FOE_TEMPLATE[kind] ?? 'blade';
+  if (id === 'magic' && (FOE_BOSSES.has(kind) || ENEMY_VFX[kind]?.heart)) return FOE_TONES.corrupt;
+  return FOE_TONES[id];
+}
+export const vfxFoeWeight = (kind) => (FOE_BOSSES.has(kind) ? 2 : FOE_CHAMPIONS.has(kind) ? 1.5 : 1);
 
 // --------------------------------------------------------------- enemies --
 // matter: what the body and its attack are made of (VFX_MATTER key).

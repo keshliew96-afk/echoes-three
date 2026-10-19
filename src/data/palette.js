@@ -103,6 +103,18 @@ export const VFX_TEMPLATE = Object.freeze({
   blade: Object.freeze({ core: '#FFF3C4', fire: '#FFB43C', flame: '#F5952E', wave: '#FFD866', smoke: '#3A2A22' }),
   scifi: Object.freeze({ cyan: '#3DF2FF', magenta: '#FF3DD8', white: '#E8FFFF', grid: '#1E6F86' }),
 });
+// The same three templates on the other side (VFX rework PR 2: enemies,
+// champions, bosses). An enemy's attack IS a threat, so its fire and its
+// spell light burn Ember (the one colour a threat may wear); a corrupted
+// body (the Hollow Heart's kin, every boss's god-stuff) casts in Violet with
+// an Ember edge; the sci-fi pair keeps its neon, magenta first. No foe tone
+// is ever green, and no hero tone is ever Ember or Violet.
+export const VFX_FOE = Object.freeze({
+  blade: Object.freeze({ core: '#FFE2C4', fire: '#FF5A36', flame: '#C8361F', wave: '#FF9C5E', smoke: '#2A1814' }),
+  magic: Object.freeze({ a: '#FF5A36', b: '#FFC94A', star: '#FFF0DC', deep: '#7A1E2E' }),
+  corrupt: Object.freeze({ a: '#B79CF0', b: '#FF5A36', star: '#F4ECFF', deep: '#3E2A6E' }),
+  scifi: Object.freeze({ a: '#FF3DD8', b: '#3DF2FF', white: '#FFE8FA', grid: '#5A1E6E' }),
+});
 
 // Biome air (AAA VFX pass, design-VFX.md §10): the tone each act's smoke and
 // dust lean toward, so a puff belongs to the room it is in. Act I the Hollow
