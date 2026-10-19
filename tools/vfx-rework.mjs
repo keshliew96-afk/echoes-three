@@ -203,7 +203,10 @@ async function equipAll(page, sets) {
     }
     for (const { seat, set } of sets) {
       if (seat === 0) X.cmd('restoreSkillState', { slots: set.map((id) => ({ id, remaining: 0 })), override: null, auras: {} });
-      else set.forEach((id, k) => X.cmd('partySwap', seat, id, k));
+      else {
+        X.cmd('partyPurse', seat, 999); // swaps cost Glint; the probe pays
+        set.forEach((id, k) => X.cmd('partySwap', seat, id, k));
+      }
     }
     X.cmd('partyMode', 'manual');
     const next = ((X.state().run || {}).room || 1) + 1;
@@ -290,15 +293,8 @@ async function fight(page, team) {
   const r0 = await recipes(page);
   await page.evaluate(() => {
     const X = __echoes;
-    // Walk into a fresh room (a cleared one sits on its reward page, which
-    // pauses the sim) and add a pack on top of its own enemies.
-    for (let i = 0; i < 60 && (X.state().run || {}).phase === 'combat'; i++) {
-      X.cmd('killAllEnemies');
-      X.sim.stepN(30, null);
-    }
+    // A fresh campaign's first room: its own enemies plus a pack on top.
     X.cmd('partyMode', 'auto');
-    X.cmd('skipToRoom', ((X.state().run || {}).room || 1) + 1);
-    X.sim.stepN(120, null);
     const p = X.content.world().player;
     const kinds = ['boar', 'mantis', 'boar', 'quillback', 'mantis', 'moth', 'boar'];
     kinds.forEach((k, i) => X.cmd('spawn', k, p.x + (i - 3) * 0.9, p.z - 2.2 - (i % 2) * 0.9));
@@ -321,12 +317,22 @@ for (const team of ['A', 'B']) {
   // (the B team's Healer is the A team's: its kit is cast once)
   const fightKey = `fight${team}`;
   if (!heroes.some(want) && !want(fightKey)) continue;
-  const page = await open(team === 'A' ? 11 : 12);
-  await setupTeam(page, team);
-  await wait(800);
-  if (heroes.some(want)) await teamReel(page, team, heroes.filter(want));
-  if (want(fightKey)) await fight(page, team);
-  await page.close();
+  if (heroes.some(want)) {
+    const page = await open(team === 'A' ? 11 : 12);
+    await setupTeam(page, team);
+    await wait(800);
+    await teamReel(page, team, heroes.filter(want));
+    await page.close();
+  }
+  if (want(fightKey)) {
+    // The fight on a fresh page: the reels leave the run on a shop page.
+    const fp = await open(team === 'A' ? 21 : 22);
+    await fp.evaluate((lineup) => __echoes.cmd('startCampaign', { level: 1, lineup }), team === 'A' ? ['healer', 'tank', 'swordsman', 'archer'] : ['healer', 'tidecaller', 'bellwright', 'duskwing']);
+    await fp.waitForFunction(() => (__echoes.state().run || {}).phase === 'combat', { timeout: 180000, polling: 250 });
+    await fp.evaluate(() => __echoes.sim.freeze());
+    await fight(fp, team);
+    await fp.close();
+  }
 }
 check(errors.length === 0, `no page or shader errors${errors.length ? `: ${errors.slice(0, 4).join(' | ')}` : ''}`);
 await browser.close();

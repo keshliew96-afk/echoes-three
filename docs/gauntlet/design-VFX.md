@@ -362,9 +362,10 @@ so a hero keeps its own shapes; the template is the finish on top.
 - Sci-fi: Neon Cyan `#3DF2FF`, Neon Magenta `#FF3DD8`.
 - Kept clear of the gameplay signals: the blade's fire leans gold (Ember is
   about 25° redder and stays enemy-only); Arcane Purple is deep and saturated
-  where corruption Violet is pale, but their hues sit about 13° apart, so the
-  lab's **Purple** button switches the magic to a magenta (`#D84CF0`) to
-  compare (an open choice); Hearth Amber own damage numbers are drawn on top
+  where corruption Violet is pale, but their hues sit about 10° apart, so the
+  lab's **Purple** button switches the magic to a magenta (`#D84CF0`, 32°
+  away) to compare (an open choice); the blade's sun circle is drawn in
+  gold, never orange, so it cannot pass for an enemy telegraph; Hearth Amber own damage numbers are drawn on top
   with their outline.
 
 ### Which heroes take which (2026-10-19)
@@ -389,6 +390,9 @@ waits for the enemy pass (enemies, champions and bosses are the next PR).
 - `node tools/vfx-rework.mjs` checks every hero skill maps to a template and
   plays it, and with `--shots <dir>` records each hero's reel and a busy
   four-hero fight as stills and real-speed clips (virtual clock, no GPU).
+  It runs both teams in a campaign (campaign-only skills), clears each room
+  to its reward to rebuild the bars, and gives the probe's seats Glint for
+  the swaps; `--only data|<hero>|fightA|fightB` and `--purple safe` narrow it.
 - Budget: the template kit adds 4 pooled meshes kinds (circles 16, beams 14,
   blazes 28, blasts 18), two particle clouds (360 stardust, 160 bits) and one
   instanced spark draw (320); Reduced effects halves the particles and dims
