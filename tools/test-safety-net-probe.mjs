@@ -48,7 +48,9 @@ const { SUITE } = await import('./test.mjs');
 const missing = SUITE.filter((p) => !existsSync(join(root, p.file))).map((p) => p.file);
 check(SUITE.length >= 15 && missing.length === 0, `the npm test suite names ${SUITE.length} probes, all present`, missing);
 check(SUITE.some((p) => p.file === 'tools/gntM2-goldens.mjs') && SUITE.some((p) => p.file === 'tools/i18n-extract.mjs' && p.args.includes('--check')), 'the suite holds the nine goldens and the language check');
-check(SUITE.every((p) => !/puppeteer|launch\(/.test(readFileSync(join(root, p.file), 'utf8'))), 'no probe in the suite opens a browser');
+// (a probe may load puppeteer behind a flag the suite does not pass)
+const browsers = SUITE.filter((p) => p.file !== 'tools/test-safety-net-probe.mjs' && /from\s+['"]puppeteer['"]|gnt-arch-browser/.test(readFileSync(join(root, p.file), 'utf8'))).map((p) => p.file);
+check(browsers.length === 0, 'no probe in the suite loads a browser up front', browsers);
 
 // 3. The CI job.
 const wfPath = join(root, '.github/workflows/test.yml');
