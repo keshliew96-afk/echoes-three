@@ -79,7 +79,7 @@ try {
   fails.push('error');
 } finally {
   if (browser) await browser.close().catch(() => {});
-  if (srv) await srv.close().catch(() => {});
+  if (srv && srv.stop) await srv.stop();
 }
 console.log(fails.length ? `\n${fails.length} FAILED` : '\nall passed');
 process.exit(fails.length ? 1 : 0);

@@ -9,7 +9,7 @@ import { service } from '../../app/registry.js';
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
-import { t, tn } from '../../i18n/index.js';
+import { t, tn, getLanguage } from '../../i18n/index.js';
 
 const ACT_NAME = {
   get 1() { return t('The Hollow Wood'); },
@@ -50,7 +50,7 @@ const CSS = `
 .sv-rside dd { margin: 0; color: ${P.parchment}; text-align: right; font-variant-numeric: tabular-nums; }
 .sv-formula { font-size: ${px(22)}; color: ${P.warmGrey}; line-height: 1.4; }
 .sv-rempty { margin: auto; text-align: center; font-size: ${px(24)}; color: ${P.bone}; line-height: 1.5; }
-.sv-kept { display: flex; flex-direction: column; gap: ${px(8)}; padding-top: ${px(12)}; border-top: 1px solid ${P.warmGrey}44; }
+.sv-kept { display: flex; flex-direction: column; gap: ${px(8)}; padding-bottom: ${px(12)}; border-bottom: 1px solid ${P.warmGrey}44; }
 .sv-kept p { margin: 0; font-size: ${px(21)}; color: ${P.bone}; line-height: 1.35; }
 .sv-kept .sv-kacts { display: flex; flex-wrap: wrap; gap: ${px(8)}; }
 .sv-kept .ap-btn { font-size: ${px(20)}; padding: ${px(6)} ${px(14)}; min-height: 0; }
@@ -85,6 +85,17 @@ const day = (iso) => {
   const d = new Date(t);
   const sameYear = d.getFullYear() === new Date().getFullYear();
   return d.toLocaleDateString(undefined, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' });
+};
+// The kept file's save date, in the game's language.
+const keptDay = (iso) => {
+  const ms = Date.parse(iso);
+  if (!Number.isFinite(ms)) return '—';
+  try {
+    // (Russian ends its date in "г."; the sentence brings its own stop.)
+    return new Date(ms).toLocaleDateString(getLanguage(), { day: 'numeric', month: 'short', year: 'numeric' }).replace(/\.$/, '');
+  } catch {
+    return day(iso);
+  }
 };
 const cap = (s) => (s ? CHALLENGE_NAME[s] || s[0].toUpperCase() + s.slice(1) : '');
 // CAMPAIGN (PLAN §12.8) record cells.
@@ -220,8 +231,9 @@ export function createRecordsScreen(ctx) {
     f.textContent =
       t('Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).');
     side.append(h3, dl, f);
+    // First in the panel, so it shows without scrolling.
     const kept = keptBlock(s);
-    if (kept) side.appendChild(kept);
+    if (kept) side.prepend(kept);
   }
 
   // GAMEPLAY FIXES (records restore): the kept-aside records file.
@@ -236,7 +248,7 @@ export function createRecordsScreen(ctx) {
     h.textContent = t('Kept aside');
     const line = document.createElement('p');
     line.textContent = k.readable
-      ? tn(k.runs, 'A records file with {n} run, saved {date}.', 'A records file with {n} runs, saved {date}.', { date: k.savedAt ? day(k.savedAt) : '—' })
+      ? tn(k.runs, 'A records file with {n} run, saved {date}.', 'A records file with {n} runs, saved {date}.', { date: k.savedAt ? keptDay(k.savedAt) : '—' })
       : k.newer
         ? t('A records file written by a newer version of the game.')
         : t('A records file that cannot be read.');
