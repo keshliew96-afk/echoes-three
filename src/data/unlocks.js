@@ -191,7 +191,7 @@ export const DEEDS = Object.freeze(
   Object.fromEntries([
     ['first_light', { name: 'First Light', text: 'Clear Level I.', embers: 20, test: (r) => r.cleared.includes(1) }],
     ...bossDeeds,
-    ['long_road', { name: 'The Long Road', text: ACT_IDS.length >= 5 ? 'Complete a campaign (Levels I to V).' : ACT_IDS.length >= 4 ? 'Complete a campaign (Levels I to IV).' : 'Complete a campaign (Levels I to III).', embers: 60, test: (r) => r.complete }],
+    ['long_road', { name: 'The Long Road', text: 'Complete a campaign (Levels I to V).', embers: 60, test: (r) => r.complete }],
     // Act IV (docs/ACT_IV.md): the first clear of the Hollow Heart.
     ...(ACT_IDS.includes(4) ? [['heart_cleared', { name: 'Heartbreaker', text: 'Clear Level IV, the Hollow Heart.', embers: 50, test: (r) => r.cleared.includes(4) }]] : []),
     ['harrowed', { name: 'Harrowed', text: 'Clear a level on the Harrowing challenge.', embers: 40, test: (r) => r.cleared.length > 0 && r.challenge === 'harrowing' }],
@@ -228,7 +228,7 @@ export const DEEDS = Object.freeze(
     ['four_crowns', { name: 'Four Crowns', text: 'Fell a champion in each of the first four lands. Either of a land\'s two champions counts.', embers: 60, test: (r, l) => crownCount(l) >= FOUR_CROWN_ACTS.length, goal: (l) => [crownCount(l), FOUR_CROWN_ACTS.length] }],
     ['keyholder', { name: 'Keyholder', text: 'Open a vault.', embers: 20, test: (r) => (r.vaults || 0) >= 1 }],
     ['treasure_seeker', { name: 'Treasure Seeker', text: 'Open 3 vaults in one run.', embers: 50, test: (r) => (r.vaults || 0) >= 3 }],
-    ['ringwalker', { name: 'Ringwalker', text: ACT_IDS.includes(5) ? 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre, the Hollow Nave and Windward Court.' : 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre and the Hollow Nave.', embers: 40, test: (r, l) => markCount(l, 'arena') >= ARENA_IDS.length, goal: (l) => [markCount(l, 'arena'), ARENA_IDS.length] }],
+    ['ringwalker', { name: 'Ringwalker', text: 'Fight in every arena: the Thornwood Ring, the Millrace Basin, the Ash Amphitheatre, the Hollow Nave and Windward Court.', embers: 40, test: (r, l) => markCount(l, 'arena') >= ARENA_IDS.length, goal: (l) => [markCount(l, 'arena'), ARENA_IDS.length] }],
     ['hoarder', { name: 'Hoarder', text: 'Hold 8 relics at once.', embers: 40, test: (r) => r.relics.length >= 8 }],
     ['kingslayer', { name: 'Kingslayer', text: 'Fell every boss at least once, the Vein Weaver included.', embers: 120, test: (r, l) => allFelled(l), goal: (l) => [BOSSES.filter((b) => ((l && l.bosses) || []).includes(b.kind)).length, BOSSES.length] }],
     ['down_the_river', { name: 'Down the River', text: 'Complete a campaign with the Tidecaller in the party.', embers: 60, test: (r) => r.complete && (r.party || []).includes('tidecaller') }],
