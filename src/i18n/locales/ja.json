@@ -3437,5 +3437,22 @@
  "The host has not unlocked that yet": "ホストはまだそれを解放していません",
  "The host could not set out just now — try again": "ホストは今は出発できませんでした — もう一度試してください",
  "{name} set out — the run begins": "{name}が出発しました — ランが始まります",
- "Anyone can choose — the first choice leads the party": "誰でも選べます——最初の選択でパーティが進みます"
+ "Anyone can choose — the first choice leads the party": "誰でも選べます——最初の選択でパーティが進みます",
+ "Kept aside": "退避中",
+ "A records file with {n} runs, saved {date}.": {
+  "other": "{n} 回のランを含む記録ファイル({date} に保存)。"
+ },
+ "A records file written by a newer version of the game.": "新しいバージョンのゲームで書かれた記録ファイル。",
+ "A records file that cannot be read.": "読み込めない記録ファイル。",
+ "Restore it": "復元する",
+ "Save a copy": "コピーを保存",
+ "Remove it": "削除する",
+ "Couldn't save the copy": "コピーを保存できませんでした",
+ "Restore the kept records?": "退避した記録を復元しますか?",
+ "Its records, Embers and unlocks replace the current ones. The current ones are kept aside here, so you can swap back.": "その記録・残り火・解放が現在のものと入れ替わります。現在のものはここに退避されるので、元に戻せます。",
+ "Records restored": "記録を復元しました",
+ "Couldn't restore the records": "記録を復元できませんでした",
+ "Remove the kept file?": "退避したファイルを削除しますか?",
+ "It cannot be brought back.": "元に戻すことはできません。",
+ "The kept file was removed": "退避したファイルを削除しました"
 }

@@ -41,7 +41,7 @@ const now = () => (typeof performance !== 'undefined' ? performance.now() : Date
 // a remote human's frames drive the Healer, 'ai' = nobody does: the leader
 // bot). The session switches the leader bot with it, so the bot never
 // overrides a human Healer's input (NET3-F1).
-export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null, onPartyCmd = null, onCampCmd = null, onPickCmd = null }) {
+export function createHostDriver({ net, world, clock, bus, registry, capture, sampleLocal, localSeat = 0, snapEvery = SNAPSHOT_EVERY_TICKS, log = () => {}, onCmd = null, onPlayerController = null, onPartyCmd = null, onCampCmd = null, onCampOpen = null, onPickCmd = null }) {
   const snap = createSnapshotHost();
   const ring = createRewindRing({ registry });
   const feeds = new Map(); // seat -> feed
@@ -520,6 +520,18 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
         stats.partyAcks = (stats.partyAcks || 0) + 1;
         sendCmd(c.seat, { kind: 'party_ack', re: c.cmdSeq, what: cmd.op ?? null, tick: clock.tick });
       }
+      return;
+    }
+    if (cmd.kind === 'camp_open_ask') {
+      // GAMEPLAY FIXES: a guest's Level Select asks which levels the host's
+      // profile has open (the host's unlocks decide a guest's pick).
+      let r = null;
+      try {
+        r = onCampOpen ? onCampOpen(c) : null;
+      } catch (err) {
+        log('camp_open_error', { error: String(err && err.message) });
+      }
+      if (r) sendCmd(c.seat, { kind: 'camp_open', acts: r.acts, endless: r.endless, rush: r.rush });
       return;
     }
     if (cmd.kind === 'camp') {

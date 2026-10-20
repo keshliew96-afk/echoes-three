@@ -3580,5 +3580,25 @@
  "The host has not unlocked that yet": "Хост ещё не открыл это",
  "The host could not set out just now — try again": "Хост не смог выступить прямо сейчас — попробуй ещё раз",
  "{name} set out — the run begins": "{name} выступает — забег начинается",
- "Anyone can choose — the first choice leads the party": "Выбрать может любой — первый выбор ведёт отряд"
+ "Anyone can choose — the first choice leads the party": "Выбрать может любой — первый выбор ведёт отряд",
+ "Kept aside": "Отложено",
+ "A records file with {n} runs, saved {date}.": {
+  "one": "Файл рекордов с {n} забегом, сохранён {date}.",
+  "few": "Файл рекордов с {n} забегами, сохранён {date}.",
+  "many": "Файл рекордов с {n} забегами, сохранён {date}.",
+  "other": "Файл рекордов с {n} забега, сохранён {date}."
+ },
+ "A records file written by a newer version of the game.": "Файл рекордов из более новой версии игры.",
+ "A records file that cannot be read.": "Файл рекордов, который не удаётся прочитать.",
+ "Restore it": "Восстановить его",
+ "Save a copy": "Сохранить копию",
+ "Remove it": "Удалить его",
+ "Couldn't save the copy": "Не удалось сохранить копию",
+ "Restore the kept records?": "Восстановить отложенные рекорды?",
+ "Its records, Embers and unlocks replace the current ones. The current ones are kept aside here, so you can swap back.": "Его рекорды, угли и открытия заменят текущие. Текущие будут отложены здесь, чтобы можно было вернуть их обратно.",
+ "Records restored": "Рекорды восстановлены",
+ "Couldn't restore the records": "Не удалось восстановить рекорды",
+ "Remove the kept file?": "Удалить отложенный файл?",
+ "It cannot be brought back.": "Его нельзя будет вернуть.",
+ "The kept file was removed": "Отложенный файл удалён"
 }

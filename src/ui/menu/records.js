@@ -2,7 +2,9 @@
 // G2.8). Owner: M2. The top-10 high scores (score = the §3.4 formula) and the
 // lifetime records, read from the persistent profile (echoes.profile.v1).
 // Read-only; Esc / B / Back returns. The score formula is printed so a
-// player can see why a run ranked where it did.
+// player can see why a run ranked where it did. GAMEPLAY FIXES: a records
+// file kept aside (the main copy could not be read) shows below the lifetime
+// list, with Restore it (the two swap places), Save a copy and Remove it.
 import { service } from '../../app/registry.js';
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
@@ -48,6 +50,10 @@ const CSS = `
 .sv-rside dd { margin: 0; color: ${P.parchment}; text-align: right; font-variant-numeric: tabular-nums; }
 .sv-formula { font-size: ${px(22)}; color: ${P.warmGrey}; line-height: 1.4; }
 .sv-rempty { margin: auto; text-align: center; font-size: ${px(24)}; color: ${P.bone}; line-height: 1.5; }
+.sv-kept { display: flex; flex-direction: column; gap: ${px(8)}; padding-top: ${px(12)}; border-top: 1px solid ${P.warmGrey}44; }
+.sv-kept p { margin: 0; font-size: ${px(21)}; color: ${P.bone}; line-height: 1.35; }
+.sv-kept .sv-kacts { display: flex; flex-wrap: wrap; gap: ${px(8)}; }
+.sv-kept .ap-btn { font-size: ${px(20)}; padding: ${px(6)} ${px(14)}; min-height: 0; }
 .sv-rfoot { display: flex; align-items: center; gap: ${px(16)}; padding-top: ${px(12)}; border-top: 1px solid ${P.warmGrey}44; margin-top: ${px(10)}; }
 .sv-rfoot .ap-hints { flex: 1 1 auto; }
 @media (max-width: 1180px) { .sv-scores td.sv-opt, .sv-scores th.sv-opt { display: none; } }
@@ -214,6 +220,88 @@ export function createRecordsScreen(ctx) {
     f.textContent =
       t('Score = the sum over the levels played of (100 × rooms + 5 × kills + 1000 if cleared) × level (I 1.0 · II 1.5 · III 2.0 · IV 2.5), × challenge (relaxed 0.75 · standard 1 · harrowing 1.5), plus a speed bonus on a completed campaign (900 × levels played − seconds).');
     side.append(h3, dl, f);
+    const kept = keptBlock(s);
+    if (kept) side.appendChild(kept);
+  }
+
+  // GAMEPLAY FIXES (records restore): the kept-aside records file.
+  let busy = false;
+  const toast = (text, tone) => app && typeof app.toast === 'function' && app.toast(text, { tone, ms: tone === 'error' ? 4600 : 2600 });
+  function keptBlock(s) {
+    const k = typeof s.profileKept === 'function' ? s.profileKept() : null;
+    if (!k) return null;
+    const box = document.createElement('div');
+    box.className = 'sv-kept';
+    const h = document.createElement('h3');
+    h.textContent = t('Kept aside');
+    const line = document.createElement('p');
+    line.textContent = k.readable
+      ? tn(k.runs, 'A records file with {n} run, saved {date}.', 'A records file with {n} runs, saved {date}.', { date: k.savedAt ? day(k.savedAt) : '—' })
+      : k.newer
+        ? t('A records file written by a newer version of the game.')
+        : t('A records file that cannot be read.');
+    const acts = document.createElement('div');
+    acts.className = 'sv-kacts';
+    const btn = (label, id, fn) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ap-btn';
+      b.id = id;
+      b.textContent = label;
+      b.setAttribute('data-nav', '');
+      b.addEventListener('click', () => {
+        if (busy) return;
+        busy = true;
+        Promise.resolve(fn()).finally(() => {
+          busy = false;
+        });
+      });
+      acts.appendChild(b);
+    };
+    if (k.readable) btn(t('Restore it'), 'sv-kept-restore', restoreKept);
+    btn(t('Save a copy'), 'sv-kept-export', () => {
+      const r = s.exportProfileKept();
+      if (r.ok) toast(t('Exported {file}', { file: r.filename }), 'good');
+      else toast(t("Couldn't save the copy"), 'error');
+    });
+    btn(t('Remove it'), 'sv-kept-remove', removeKept);
+    box.append(h, line, acts);
+    return box;
+  }
+  async function restoreKept() {
+    const s = service('save');
+    const ok = await app.confirm({
+      title: t('Restore the kept records?'),
+      body: t('Its records, Embers and unlocks replace the current ones. The current ones are kept aside here, so you can swap back.'),
+      confirmLabel: t('Restore'),
+      cancelLabel: t('Cancel'),
+      defaultFocus: 'cancel',
+    });
+    if (!ok || !s) return;
+    const r = s.restoreProfileKept();
+    if (r.ok) toast(t('Records restored'), 'good');
+    else toast(t("Couldn't restore the records"), 'error');
+    if (manager.top() === 'records') {
+      render();
+      manager.refocus();
+    }
+  }
+  async function removeKept() {
+    const s = service('save');
+    const ok = await app.confirm({
+      title: t('Remove the kept file?'),
+      body: t('It cannot be brought back.'),
+      confirmLabel: t('Remove it'),
+      cancelLabel: t('Cancel'),
+      defaultFocus: 'cancel',
+    });
+    if (!ok || !s) return;
+    const r = s.dropProfileKept();
+    if (r.ok) toast(t('The kept file was removed'), 'good');
+    if (manager.top() === 'records') {
+      render();
+      manager.refocus();
+    }
   }
 
   return {

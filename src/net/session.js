@@ -245,6 +245,7 @@ export function createNetSession(ctx) {
   let role = 'none'; // none | host | guest
   let host = null; // host driver
   let guest = null; // guest context
+  const hostOpenListeners = new Set(); // GAMEPLAY FIXES: Level Selects waiting on the host's open levels
   let hud = null;
   let cosmetics = null;
   const metronome = createMetronome();
@@ -640,6 +641,18 @@ export function createNetSession(ctx) {
     log('camp_cmd', { seat: c.seat, level });
     return null;
   }
+  // GAMEPLAY FIXES: the levels the host's profile has open, for a guest's
+  // Level Select (scenes/camp.js campOpen). Null = no camp to ask.
+  function hostCampOpen() {
+    let r = null;
+    try {
+      r = scene && typeof scene.cmd === 'function' ? scene.cmd('campOpen') : null;
+    } catch {
+      r = null;
+    }
+    if (!r || !Array.isArray(r.acts)) return null;
+    return { acts: r.acts.map(Number).filter(Number.isFinite), endless: !!r.endless, rush: !!r.rush };
+  }
   // GUEST VS HOST: the host applies a guest's party call (a `pick` CMD,
   // net/driver.js) through the entry point its own page uses; the first call
   // the host receives decides, a later one finds the choice closed. Null =
@@ -967,6 +980,7 @@ export function createNetSession(ctx) {
       onPlayerController: (ctrl, tick) => setLeaderBot(ctrl !== 'human', tick),
       onPartyCmd: (c) => hostPartyCmd(c),
       onCampCmd: (c) => hostCampCmd(c),
+      onCampOpen: () => hostCampOpen(),
       onPickCmd: (c) => hostPickCmd(c),
     });
     installHostGuards();
@@ -1671,6 +1685,19 @@ export function createNetSession(ctx) {
     else if (cmd.kind === 'party_ack') {
       // fix-M5b-r6: the host applied an own party CMD at host tick `tick`.
       if (guest && guest.party) guest.party.ack(Number(cmd.re), Number(cmd.tick));
+    } else if (cmd.kind === 'camp_open') {
+      // GAMEPLAY FIXES: the host's open levels; a Level Select on screen
+      // redraws with them.
+      if (guest && Array.isArray(cmd.acts)) {
+        guest.hostOpen = { acts: cmd.acts.map(Number).filter(Number.isFinite), endless: !!cmd.endless, rush: !!cmd.rush };
+        for (const fn of [...hostOpenListeners]) {
+          try {
+            fn(guest.hostOpen);
+          } catch {
+            /* listener */
+          }
+        }
+      }
     } else if (cmd.kind === 'command_rejected') {
       guest.rejected += 1;
       if (guest.party && Number.isInteger(cmd.re)) guest.party.reject(cmd.re);
@@ -2334,6 +2361,23 @@ export function createNetSession(ctx) {
       net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: 'camp', level: typeof level === 'string' ? level : Number(level) || 0, area: String(via) }));
       log('camp_ask', { level, via });
       return true;
+    },
+    // GAMEPLAY FIXES: a guest's Level Select shows the HOST's unlocks (the
+    // host's profile decides a guest's pick). askHostOpen() asks once more;
+    // hostOpen() is the last answer ({ acts, endless, rush }) or null before
+    // one arrives; onHostOpen(fn) is told of each answer (returns an off).
+    askHostOpen() {
+      if (role !== 'guest' || !net.transport) return false;
+      cmdSeq += 1;
+      net.transport.sendBinary(encodeCmd(localSeat(), cmdSeq, { kind: 'camp_open_ask' }));
+      return true;
+    },
+    hostOpen() {
+      return role === 'guest' && guest && guest.hostOpen ? { ...guest.hostOpen, acts: [...guest.hostOpen.acts] } : null;
+    },
+    onHostOpen(fn) {
+      hostOpenListeners.add(fn);
+      return () => hostOpenListeners.delete(fn);
     },
     // CAMPAIGN (PLAN §12.9): guests tell the host when they can draw the next
     // level; the host's level manager waits for every connected guest (or its

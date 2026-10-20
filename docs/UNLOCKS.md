@@ -213,6 +213,8 @@ no door ever carries them.
 
 ## Save data
 
+- **Records kept aside** (v0.5.324). When the stored profile cannot be read at boot, its text is kept under `echoes.profile.v1.corrupt` (the backup is tried first). The Records screen shows such a file under the lifetime list: its runs and save date when it reads now, otherwise that it cannot be read or that a newer version wrote it. **Restore it** (readable files only, after a confirm) swaps it with the current profile, records, Embers and unlocks together, so the replaced profile is the one kept aside next and a second restore swaps back. **Save a copy** downloads the file; **Remove it** deletes it after a confirm. A newer-format file is never restored. (`keptAside`, `restoreKeptAside`, `dropKeptAside` in `src/save/profile.js`; `profileKept`, `restoreProfileKept`, `exportProfileKept`, `dropProfileKept` on the save service.)
+
 `echoes.profile.v1` gains one block, `meta`, versioned on its own (`mv: 1`):
 
 ```

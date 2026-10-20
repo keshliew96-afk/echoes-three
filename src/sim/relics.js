@@ -424,7 +424,9 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     kbMul: () => 1 + sum('kb'),
     healMul() {
       let m = 1 + sum('heal');
-      if (curse && CURSES[curse.id] && CURSES[curse.id].healCut && !CURSES[curse.id].major) m *= 1 - CURSES[curse.id].healCut;
+      // Gameplay fixes: a room curse cuts healing in its own room only (a
+      // door's curse is taken in the room before, during its reward phase).
+      if (cursedHere() && CURSES[curse.id] && CURSES[curse.id].healCut && !CURSES[curse.id].major) m *= 1 - CURSES[curse.id].healCut;
       for (const id of majors) if (CURSES[id].healCut) m *= 1 - CURSES[id].healCut * majorScale();
       // VOW RANKS: Thin Air.
       const vm = vowMods();

@@ -3518,5 +3518,23 @@
  "The host has not unlocked that yet": "Der Host hat das noch nicht freigeschaltet",
  "The host could not set out just now — try again": "Der Host konnte gerade nicht aufbrechen — versuch es noch einmal",
  "{name} set out — the run begins": "{name} ist aufgebrochen — der Lauf beginnt",
- "Anyone can choose — the first choice leads the party": "Alle können wählen — die erste Wahl führt die Gruppe"
+ "Anyone can choose — the first choice leads the party": "Alle können wählen — die erste Wahl führt die Gruppe",
+ "Kept aside": "Beiseitegelegt",
+ "A records file with {n} runs, saved {date}.": {
+  "one": "Eine Rekorddatei mit {n} Lauf, gespeichert am {date}.",
+  "other": "Eine Rekorddatei mit {n} Läufen, gespeichert am {date}."
+ },
+ "A records file written by a newer version of the game.": "Eine Rekorddatei aus einer neueren Version des Spiels.",
+ "A records file that cannot be read.": "Eine Rekorddatei, die nicht gelesen werden kann.",
+ "Restore it": "Wiederherstellen",
+ "Save a copy": "Kopie speichern",
+ "Remove it": "Entfernen",
+ "Couldn't save the copy": "Die Kopie konnte nicht gespeichert werden",
+ "Restore the kept records?": "Die beiseitegelegten Rekorde wiederherstellen?",
+ "Its records, Embers and unlocks replace the current ones. The current ones are kept aside here, so you can swap back.": "Ihre Rekorde, Glut und Freischaltungen ersetzen die aktuellen. Die aktuellen werden hier beiseitegelegt, damit du zurücktauschen kannst.",
+ "Records restored": "Rekorde wiederhergestellt",
+ "Couldn't restore the records": "Die Rekorde konnten nicht wiederhergestellt werden",
+ "Remove the kept file?": "Die beiseitegelegte Datei entfernen?",
+ "It cannot be brought back.": "Sie lässt sich nicht zurückholen.",
+ "The kept file was removed": "Die beiseitegelegte Datei wurde entfernt"
 }
