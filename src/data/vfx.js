@@ -299,6 +299,10 @@ export function vfxFoeTone(kind) {
   if (id === 'magic' && (FOE_BOSSES.has(kind) || ENEMY_VFX[kind]?.heart)) return FOE_TONES.corrupt;
   return FOE_TONES[id];
 }
+// An enemy shot's own colour: its shooter's template hue (Foe Crimson,
+// Violet or neon magenta), never Ember, which is left to the floor warnings
+// (Kesh's "Crimson cores" pick, VFX rework PR 3).
+export const vfxFoeShotColor = (kind) => vfxFoeTone(kind).a;
 export const vfxFoeWeight = (kind) => (FOE_BOSSES.has(kind) ? 2 : FOE_CHAMPIONS.has(kind) ? 1.5 : 1);
 
 // --------------------------------------------------------------- enemies --

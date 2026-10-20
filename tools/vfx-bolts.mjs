@@ -19,13 +19,14 @@
 //   npx vite --port 5199 &
 //   PUPPETEER_EXECUTABLE_PATH=... node tools/vfx-bolts.mjs [--url http://127.0.0.1:5199/]
 //     [--only data|heroes|fights|foes|bosses|shots] [--kinds mantis,crow] [--shots captures/vfx-bolts]
-import { mkdirSync, rmSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { CLASS_SKILLS } from '../src/data/classes.js';
 import { SKILLS } from '../src/sim/skills.js';
-import { VFX_TEMPLATES, FOE_TEMPLATE, vfxTemplateFor, vfxFoeTone } from '../src/data/vfx.js';
+import { VFX_TEMPLATES, FOE_TEMPLATE, vfxTemplateFor, vfxFoeTone, vfxFoeShotColor } from '../src/data/vfx.js';
+import { PALETTE } from '../src/data/palette.js';
 import { LEVELS } from '../src/data/levels.js';
 
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -67,6 +68,18 @@ const BOSS_SHOTS = ['millwheel', 'skyhorn', 'colossus', 'cantor', 'lichram', 've
   const foes = [...SHOOTERS, ...LOBBERS, ...BOSS_SHOTS];
   const stray = foes.filter((k) => !FOE_TEMPLATE[k]);
   check(stray.length === 0, `all ${foes.length} shooting foes have a template${stray.length ? ` (missing: ${stray.join(', ')})` : ''}`);
+  // Kesh's "Crimson cores" pick: an enemy shot is its shooter's hue all
+  // the way through, its core, glow, trail and spits included; Ember is
+  // left to the floor warnings.
+  const ember = PALETTE.emberDanger.toUpperCase();
+  const hot = [...foes, null].filter((k) => vfxFoeShotColor(k).toUpperCase() === ember);
+  const src = (f) => readFileSync(join(here, f), 'utf8');
+  const rig = src('src/render/enemies/index.js');
+  const rigShot = rig.slice(rig.indexOf("bus.on('enemy_fire'"), rig.indexOf("bus.on('telegraph_resolve'")) + rig.slice(rig.indexOf('function makeShotRig'), rig.indexOf('first-draw warm-up')) + rig.slice(rig.indexOf('// --- Enemy shots.'), rig.indexOf('for (let i = trails.length'));
+  const sig = src('src/render/vfx/signature.js');
+  const sigShot = sig.slice(sig.indexOf('const ENEMY_SHOT_TRAIL'), sig.indexOf('export function createSignatureFx')) + sig.slice(sig.indexOf("bus.on('enemy_fire'"), sig.indexOf("bus.on('enemy_lob'"));
+  const embered = [/emberDanger|EMBER_EXACT/.test(rigShot) && 'render/enemies/index.js', /EMBER\b/.test(sigShot) && 'render/vfx/signature.js'].filter(Boolean);
+  check(hot.length === 0 && embered.length === 0, `no enemy shot wears Ember (core, glow, trail, muzzle or stop)${hot.length ? `; Ember hue: ${hot.join(', ')}` : ''}${embered.length ? `; Ember in ${embered.join(', ')}` : ''}`);
   console.log(`info foe shots: ${foes.map((k) => `${k} ${vfxFoeTone(k).corrupt ? 'corrupt' : vfxFoeTone(k).id}`).join(', ')}`);
 }
 if (only && [...only].every((k) => k === 'data')) process.exit(fails ? 1 : 0);

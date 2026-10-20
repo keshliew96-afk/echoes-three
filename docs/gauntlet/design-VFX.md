@@ -478,14 +478,19 @@ elite-affix globs are pools, not shots.
 
 The class and enemy layers underneath keep their own bodies (the Healer's
 parchment bolt, the arrow, the enemy shot's core and its streak), so a shot
-is still told apart by shape. Budget: 64 heads, and at most 70 trail
+is still told apart by shape. **Crimson cores** (Kesh's pick on the PR 3
+card): an enemy shot wears no Ember anywhere. Its glow, trail, streak, muzzle
+flash and stop spit (render/enemies/index.js, signature.js) take its
+shooter's hue (`vfxFoeShotColor` = the foe tone's `a`: Foe Crimson, Violet or
+neon magenta), and a shot whose shooter went unseen plays Foe Crimson. Ember
+stays on the floor warnings. Budget: 64 heads, and at most 70 trail
 particles a frame across every shot.
 
 Review: `?vfxlab=1` ▸ **Projectile templates** flies the heroes' three
 templates and a heal bolt, foe shots of each tone (Mantis, Keener, Lancer,
 Vane), and champion and boss shots (Briar Knight, Hollow Choir, Millwheel,
 Cantor). `node tools/vfx-bolts.mjs` checks every shooter above resolves to a
-template, casts every projectile skill at dummies, runs a fight per team,
+template and that no enemy shot wears Ember, casts every projectile skill at dummies, runs a fight per team,
 spawns every shooting enemy and champion alone and meets every shooting boss
 in its boss room, and each must draw its head; `--shots <dir>` films the lab
 and the fights (`--only data|heroes|fights|foes|bosses|shots`, `--kinds a,b`).

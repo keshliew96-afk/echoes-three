@@ -26,13 +26,14 @@ import { Group } from 'three';
 import { HITFLASH, TICK_HZ } from '../../core/constants.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
-import { groundShadow, cachedSphere } from '../critters/common.js';
+import { groundShadow, cachedSphere, exactColor } from '../critters/common.js';
 import { Mesh, MeshBasicMaterial } from 'three';
 import { buildBoar } from './boar.js';
 import { buildMantis } from './mantis.js';
 import { buildWaystone } from './waystone.js';
 import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
-import { EMBER_EXACT, SHOT_CORE, HIDE } from './style.js';
+import { SHOT_CORE, HIDE } from './style.js';
+import { vfxFoeShotColor } from '../../data/vfx.js';
 import { ARCH_BUILDERS, CROWN_Y, makeEliteMark } from './archetypes.js';
 import { createTelegraphShapes } from './shapes.js';
 import { createContentExtras } from './extras.js';
@@ -68,6 +69,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
 
   const rigs = new Map(); // enemy id -> rig record
   const shots = new Map(); // eshot id -> group
+  const shotHue = new Map(); // eshot id -> its shooter's hue (enemy_fire)
   const decals = new Map(); // enemy id -> attack telegraph
   const shimmers = new Map(); // spawn key -> shimmer record
   const lastTelegraph = new Map(); // enemy id -> { x, z } live telegraph impact
@@ -110,10 +112,15 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   bus.on('enemy_fire', (ev) => {
     const r = rigs.get(ev.id);
     if (r) r.fireLeft = 0.2;
+    // The shot wears its shooter's template hue, never Ember (Kesh's
+    // "Crimson cores" pick): Ember is for the floor warnings.
+    const owner = world.entities().find((q) => q.id === ev.id);
+    const hex = vfxFoeShotColor(owner ? (owner.telegraph && owner.telegraph.champion) || owner.kind : null);
+    if (ev.shot != null) shotHue.set(ev.shot, hex);
+    if (shotHue.size > 64) shotHue.delete(shotHue.keys().next().value);
     // Muzzle spit (§19.4 3-layer: the shot already carries core + glow +
     // trail; this is the particle layer at its source).
-    if (ev.x !== undefined)
-      impactFx.impact(ev.x, ev.z, { color: PALETTE.emberDanger, dir: { x: ev.dx ?? 0, z: ev.dz ?? 0 }, n: 4 });
+    if (ev.x !== undefined) impactFx.impact(ev.x, ev.z, { color: hex, dir: { x: ev.dx ?? 0, z: ev.dz ?? 0 }, n: 4 });
   });
   // A telegraph that MATURES burns the ground it warned about (REFERENCE_BAR
   // check 5 / reference D: "lingering ground fire patches where shots land").
@@ -190,9 +197,10 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     }
   }
 
-  // --- Enemy shot rigs (§19.4 enemy shots: white core + Ember glow + trail;
-  // §19.2 grounding: blob shadow under every entity incl. projectiles).
-  function makeShotRig() {
+  // --- Enemy shot rigs (§19.4 enemy shots: white core + glow + trail, the
+  // glow in the shooter's hue; §19.2 grounding: blob shadow under every
+  // entity incl. projectiles).
+  function makeShotRig(hex) {
     const g = new Group();
     const core = new Mesh(
       cachedSphere('eshot-core', 0.06, 10, 8),
@@ -200,8 +208,8 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     );
     core.position.y = SHOT_Y;
     g.add(core);
-    const glow = makeGlowSprite({ color: PALETTE.emberDanger, size: 0.55, opacity: 0.85 });
-    glow.material.color.copy(EMBER_EXACT);
+    const glow = makeGlowSprite({ color: hex, size: 0.55, opacity: 0.85 });
+    glow.material.color.copy(exactColor(hex));
     glow.material.toneMapped = false;
     glow.position.y = SHOT_Y;
     g.add(glow);
@@ -209,13 +217,13 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     return g;
   }
 
-  function spawnTrail(x, z) {
+  function spawnTrail(x, z, hex) {
     let s = trailPool.pop();
     if (!s) {
-      s = makeGlowSprite({ color: PALETTE.emberDanger, size: 0.26, opacity: 0.45 });
-      s.material.color.copy(EMBER_EXACT);
+      s = makeGlowSprite({ color: hex, size: 0.26, opacity: 0.45 });
       s.material.toneMapped = false;
     }
+    s.material.color.copy(exactColor(hex));
     s.position.set(x, SHOT_Y, z);
     s.material.opacity = 0.45;
     root.add(s);
@@ -236,7 +244,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     warmPark(root, buildWaystone().group);
     warmPark(root, makeAttackTelegraph().group);
     warmPark(root, makeSpawnShimmer(cosmetic).group);
-    warmPark(root, makeShotRig());
+    warmPark(root, makeShotRig(vfxFoeShotColor(null)));
     for (const k of Object.keys(ARCH_BUILDERS)) warmPark(root, BUILDERS[k](cosmetic).group);
     warmPark(root, makeEliteMark(1, 0.6).group);
     const back = shapes.prewarm();
@@ -480,20 +488,22 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       shotSeen.add(e.id);
       let g = shots.get(e.id);
       if (!g) {
-        g = makeShotRig();
+        g = makeShotRig(shotHue.get(e.id) ?? vfxFoeShotColor(null));
+        g.userData.hue = shotHue.get(e.id) ?? vfxFoeShotColor(null);
         shots.set(e.id, g);
         root.add(g);
       }
       const sx = e.px + (e.x - e.px) * alpha;
       const sz = e.pz + (e.z - e.pz) * alpha;
       g.position.set(sx, 0, sz);
-      spawnTrail(sx, sz);
+      spawnTrail(sx, sz, g.userData.hue);
     }
     for (const [id, g] of shots) {
       if (!shotSeen.has(id)) {
-        // Where the shot stopped: a small Ember spit + a hot spark (§19.4 —
-        // "instant impacts hold >= 3-5 frames").
-        impactFx.impact(g.position.x, g.position.z, { color: PALETTE.emberDanger, n: 5 });
+        // Where the shot stopped: a small spit in its hue + a hot spark
+        // (§19.4 — "instant impacts hold >= 3-5 frames").
+        impactFx.impact(g.position.x, g.position.z, { color: g.userData.hue, n: 5 });
+        shotHue.delete(id);
         root.remove(g);
         releaseTree(g); // the core sphere + shadow disc are shared; the three materials are not
         shots.delete(id);

@@ -61,7 +61,8 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
   function toneOf(e) {
     if (e.kind === 'eshot' || e.kind === 'eglob') {
       const kind = shooter.get(e.id) ?? (e.ownerKind && isFoe(e.ownerKind) ? e.ownerKind : null);
-      if (!kind) return null;
+      if (!kind && e.kind === 'eglob') return null;
+      if (!kind) return { tp: vfxFoeTone(null), w: 1, src: 'foe', foe: true }; // a shot whose shooter went unseen: Foe Crimson
       return { tp: vfxFoeTone(kind), w: vfxFoeWeight(kind), src: kind, foe: true };
     }
     if (e.faction === 'hostile') return null;
