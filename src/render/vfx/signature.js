@@ -33,6 +33,7 @@ import { createVfxKit } from './kit.js';
 import { createTemplateKit } from './tplkit.js';
 import { createTemplateFx } from './templates.js';
 import { createFoeFx } from './foefx.js';
+import { createBoltFx } from './boltfx.js';
 import { createCameraFx } from './camerafx.js';
 import { createTideFx } from './tidefx.js';
 import { createBellFx } from './bellfx.js';
@@ -869,6 +870,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const tplFx = createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area: (id) => SKILL_AREA.get(id) ?? null });
   // The same templates on the enemies, champions and bosses (foefx.js).
   const foeFx = createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, ink: INK, player });
+  // Every projectile in flight, party and foe, in its template (boltfx.js).
+  const boltFx = createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, player, heroTone: tplFx.boltTone });
   bus.on('ally_cast', (ev) => {
     const fn = SKILL_SIG[ev.skill];
     if (!fn || ev.x == null) return;
@@ -6602,8 +6605,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     tonicFx.frame(dt, world.entities());
     shrineFx.frame(dt, world.entities());
     relic6Fx.frame(dt, world.entities());
-    tplFx.frame(dt, world.entities());
-    foeFx.frame(dt, world.entities());
+    boltFx.frame(dt, world.entities());
     kit.update(dt);
     tk.update(dt);
   }
@@ -7528,6 +7530,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     relic6Fx.teardown();
     tplFx.teardown();
     foeFx.teardown();
+    boltFx.teardown();
     return kit.clear() + tk.clear();
   }
   bus.on('level_transit', levelTeardown);
@@ -7541,10 +7544,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   }
 
   function debugCounts() {
-    return { ...kit.counts(), tpl: tk.counts(), foe: foeFx.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
+    return { ...kit.counts(), tpl: tk.counts(), foe: foeFx.counts(), bolt: boltFx.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
   }
 
-  return { update, applyCamera, prewarm, debugCounts, kit, camfx, showcase: (id, at) => tplFx.showcase(id, at), foeShowcase: (kind, at) => foeFx.showcase(kind, at) };
+  return { update, applyCamera, prewarm, debugCounts, kit, camfx, showcase: (id, at) => tplFx.showcase(id, at), foeShowcase: (kind, at) => foeFx.showcase(kind, at), boltShowcase: (names, at) => boltFx.showcase(names, at) };
 }
 
 // Healer skills that restore (their casts get petals + light, never damage FX).

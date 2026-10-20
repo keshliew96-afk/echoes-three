@@ -21,6 +21,12 @@
 //   sparks  sharp particles: short camera-facing lines along their own
 //           velocity, the motion-blurred spark of a blade (one instanced
 //           draw for all of them).
+//   head    the flying body of a projectile in its template (PR 3), held
+//           for as long as the shot flies: 'fire' a blazing comet with a
+//           white-hot head and a flame tail, 'celestial' a star orb in a
+//           ring of turning runes with an ethereal ribbon behind it, 'holo'
+//           a neon laser bolt with a hot core, scanlines and glitch tears.
+//           It faces the camera and stretches down its own heading.
 //
 // Same contract as kit.js: one shared program per primitive over a fixed
 // pool, no allocation after boot, every program warmed in camp (prewarm()).
@@ -48,7 +54,7 @@ import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 
-export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400 }); // PR 2 raised them for the foes
+export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400, head: 64 }); // PR 2 raised them for the foes; PR 3 added heads
 
 const colorCache = new Map();
 function col(hex) {
@@ -456,6 +462,95 @@ void main() {
 }
 `;
 
+// ----------------------------------------------------------------- head --
+// A camera-facing quad stretched down the shot's heading: vP is the pixel's
+// place in head radii, x forward (the head sits at 0), y across.
+const HEAD_VERT = /* glsl */ `
+uniform vec3 uCenter;
+uniform vec3 uDir;
+uniform float uSize;
+uniform float uLen;
+varying vec2 vP;
+void main() {
+  vec4 mv = viewMatrix * vec4( uCenter, 1.0 );
+  vec2 d = ( viewMatrix * vec4( uDir, 0.0 ) ).xy;
+  float dl = length( d );
+  d = dl > 1e-4 ? d / dl : vec2( 1.0, 0.0 );
+  vec2 n = vec2( -d.y, d.x );
+  float r = uSize * 0.5;
+  float along = mix( -uLen - r, r * 1.6, position.x + 0.5 );
+  float across = position.y * 3.2 * r;
+  mv.xy += d * along + n * across;
+  vP = vec2( along, across ) / r;
+  gl_Position = projectionMatrix * mv;
+}
+`;
+const HEAD_FRAG = /* glsl */ `
+uniform vec3 uCore;
+uniform vec3 uA;
+uniform vec3 uB;
+uniform float uMode;
+uniform float uT;
+uniform float uSeed;
+uniform float uOpacity;
+uniform float uGain;
+uniform float uLenR;
+varying vec2 vP;
+${NOISE}
+void main() {
+  vec2 p = vP;
+  float dh = length( p );
+  float ang = atan( p.y, p.x );
+  float tail = clamp( -p.x / max( uLenR, 0.01 ), 0.0, 1.0 );
+  float behind = step( p.x, 0.0 );
+  vec3 c;
+  float a;
+  if ( uMode < 0.5 ) {
+    // FIRE: a blazing comet. A white-hot head, flame licking back down a
+    // tail that narrows and breaks up into fire at its end.
+    float n = tplF( vec2( p.x * 0.8 + uT * 7.0 + uSeed, p.y * 1.4 ) );
+    float w = mix( 1.05, 0.1, pow( tail, 0.8 ) );
+    float edge = abs( p.y ) + ( n - 0.5 ) * 0.9 * ( 0.2 + tail );
+    float body = behind * ( 1.0 - smoothstep( w * 0.45, w, edge ) ) * ( 1.0 - smoothstep( 0.8, 1.0, tail + ( n - 0.5 ) * 0.3 ) );
+    float headG = exp( -dh * dh * 2.2 );
+    float hot = exp( -dh * dh * 9.0 );
+    float heat = headG * 0.9 + body * ( 1.0 - tail ) * 0.75 - abs( p.y ) * 0.25 + ( n - 0.5 ) * 0.5;
+    c = mix( uB * 0.9, uA, smoothstep( 0.0, 0.5, heat ) );
+    c = mix( c, uCore * uGain, clamp( hot * 1.1 + smoothstep( 0.85, 1.1, heat ) * 0.5, 0.0, 1.0 ) );
+    a = clamp( headG + body * ( 0.55 + 0.45 * ( 1.0 - tail ) ), 0.0, 1.0 );
+  } else if ( uMode < 1.5 ) {
+    // CELESTIAL: a star orb (a hot core, four turning rays), a ring of runes
+    // round it, an ethereal ribbon of stardust light streaming behind.
+    float core = exp( -dh * dh * 8.0 );
+    float halo = exp( -dh * dh * 1.6 ) * 0.45;
+    float rays = ( pow( abs( cos( ang * 2.0 + uT * 3.0 ) ), 40.0 ) + 0.5 * pow( abs( cos( ang * 2.0 + 0.785 + uT * 3.0 ) ), 60.0 ) ) * smoothstep( 1.6, 0.2, dh );
+    float ring = exp( -pow( ( dh - 1.15 ) * 9.0, 2.0 ) );
+    float runes = step( 0.4, fract( ang * 1.909 + uT * 0.8 ) ) * step( fract( ang * 5.727 + uT * 0.8 ), 0.7 );
+    ring *= 0.4 + 0.6 * runes;
+    float rib = behind * exp( -p.y * p.y * 5.0 / ( 0.25 + 0.75 * ( 1.0 - tail ) ) ) * pow( 1.0 - tail, 1.4 );
+    float tw = tplN( vec2( p.x * 2.0 - uT * 6.0 + uSeed, p.y * 3.0 ) );
+    c = mix( uA, uB, clamp( smoothstep( 0.3, 0.8, tw ) * rib + rays * 0.5 + ring * 0.45, 0.0, 1.0 ) );
+    c = mix( c, uCore * uGain, clamp( core * 1.1 + rays * 0.25, 0.0, 1.0 ) );
+    a = clamp( core + halo + rays * 0.7 + ring * 0.9 + rib * 0.85 * ( 0.55 + 0.45 * tw ), 0.0, 1.0 );
+  } else {
+    // HOLO: a neon laser bolt with clean vector edges, a white core,
+    // scanlines running down it and rows that tear sideways (the glitch).
+    float row = floor( p.x * 2.0 + uT * 25.0 );
+    float tear = step( 0.84, tplH( vec2( row, floor( uT * 20.0 ) + uSeed ) ) );
+    vec2 q = p + vec2( 0.0, tear * 0.4 * ( tplH( vec2( row, uSeed ) ) - 0.5 ) );
+    float live = q.x > 0.0 ? 1.0 : 1.0 - smoothstep( 0.8, 1.0, tail );
+    float dl = q.x > 0.0 ? length( q ) : abs( q.y );
+    float core = exp( -dl * dl * 20.0 ) * live * ( q.x > 0.0 ? 1.0 : 1.0 - tail * 0.5 );
+    float edge = exp( -pow( ( dl - 0.6 ) * 9.0, 2.0 ) ) * live * ( q.x > 0.0 ? 1.0 : 1.0 - tail * 0.7 );
+    float scan = 0.72 + 0.28 * sin( p.x * 9.0 - uT * 40.0 );
+    c = mix( uA, uB, clamp( tear + edge * 0.6, 0.0, 1.0 ) );
+    c = mix( c, uCore * uGain, clamp( core, 0.0, 1.0 ) );
+    a = clamp( ( core * 1.1 + edge * 0.85 ) * scan + tear * 0.25 * live * exp( -dl * dl * 2.0 ), 0.0, 1.0 );
+  }
+  gl_FragColor = vec4( c, a * uOpacity );
+}
+`;
+
 // --------------------------------------------------------------- sparks --
 const SPARK_VERT = /* glsl */ `
 attribute vec3 aA;
@@ -806,6 +901,85 @@ export function createTemplateKit({ stage, cosmetic }) {
   });
   const BLAST_MODE = { fire: 0, celestial: 1, holo: 2 };
   crowdPools = [circles, beams, blazes, blasts];
+
+  // ----------------------------------------------------------------- head --
+  const heads = makePool(TPL_CAPS.head, () => {
+    const u = {
+      uCenter: { value: new Vector3() },
+      uDir: { value: new Vector3(1, 0, 0) },
+      uSize: { value: 0.4 },
+      uLen: { value: 0.5 },
+      uLenR: { value: 2.5 },
+      uCore: { value: new Color() },
+      uA: { value: new Color() },
+      uB: { value: new Color() },
+      uMode: { value: 0 },
+      uT: { value: 0 },
+      uSeed: { value: 0 },
+      uOpacity: { value: 0 },
+      uGain: { value: 1.3 },
+    };
+    const mat = new ShaderMaterial({ uniforms: u, vertexShader: HEAD_VERT, fragmentShader: HEAD_FRAG, transparent: true, depthWrite: false, blending: AdditiveBlending });
+    const mesh = new Mesh(planeGeo, mat);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 11;
+    return { obj: mesh, u };
+  });
+  let headTokens = 0;
+  // opts: x, y, z, dx, dz (heading), size (u across the head), len (u of
+  // tail), mode ('fire' | 'celestial' | 'holo'), core, a, b (hex), opacity,
+  // gain. Returns the slot; it lives until endHead(). The caller keeps the
+  // token it is handed and moves the head only while slot.token matches
+  // (a full pool recycles the oldest head).
+  function head(o) {
+    const s = heads.take();
+    start(s, o, Infinity);
+    s.token = ++headTokens;
+    s.ending = -1;
+    const u = s.u;
+    u.uCore.value.copy(col(o.core ?? '#FFF3C4'));
+    u.uA.value.copy(col(o.a ?? '#FFB43C'));
+    u.uB.value.copy(col(o.b ?? '#F5952E'));
+    u.uMode.value = BLAST_MODE[o.mode] ?? 0;
+    u.uSeed.value = rnd(0, 40);
+    u.uGain.value = o.gain ?? 1.3;
+    u.uOpacity.value = 0;
+    s.op = o.opacity ?? 1;
+    moveHead(s, o.x, o.y ?? 0.55, o.z, o.dx ?? 1, o.dz ?? 0, o.len ?? 0.5, o.size ?? 0.4);
+    return s;
+  }
+  function moveHead(s, x, y, z, dx, dz, len, size) {
+    const u = s.u;
+    u.uCenter.value.set(x, y, z);
+    const l = Math.hypot(dx, dz);
+    if (l > 1e-5) u.uDir.value.set(dx / l, 0, dz / l);
+    if (size != null) u.uSize.value = size;
+    u.uLen.value = Math.max(0, len);
+    u.uLenR.value = Math.max(0.01, len / (u.uSize.value * 0.5));
+    s.cx = x;
+    s.cz = z;
+  }
+  function endHead(s, fade = 0.1) {
+    if (!s.live || s.ending >= 0) return;
+    s.ending = fade;
+    s.fade = fade;
+  }
+  function stepHead(s, t, dt) {
+    const u = s.u;
+    u.uT.value = t;
+    if (s.ending >= 0) {
+      s.ending -= dt;
+      if (s.ending <= 0) {
+        s.life = t; // the update loop parks it next frame
+        u.uOpacity.value = 0;
+        return;
+      }
+      u.uOpacity.value = s.op * (s.ending / s.fade);
+      u.uSize.value *= 1 + dt * 3; // it flares open as it goes
+      return;
+    }
+    u.uOpacity.value = s.op * Math.min(1, t / 0.04);
+  }
   // opts: x, y, z, size (u across), mode ('fire' | 'celestial' | 'holo'),
   // core, a, b (hex), life, opacity, delay, spin, gain.
   function blast(o) {
@@ -1121,6 +1295,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     [beams, stepBeam],
     [blazes, stepBlaze],
     [blasts, stepBlast],
+    [heads, stepHead],
   ];
   const liveCount = { dust: 0, bits: 0, sparks: 0 };
   function update(dt) {
@@ -1159,7 +1334,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     return n;
   }
   function counts() {
-    return { circles: circles.live(), beams: beams.live(), blazes: blazes.live(), blasts: blasts.live(), dust: liveCount.dust, bits: liveCount.bits, sparks: liveCount.sparks };
+    return { circles: circles.live(), beams: beams.live(), blazes: blazes.live(), blasts: blasts.live(), heads: heads.live(), dust: liveCount.dust, bits: liveCount.bits, sparks: liveCount.sparks };
   }
   // Camp warm-up: one slot of each pool drawn for a few frames, and one
   // particle of each cloud parked out of sight, so no program compiles in
@@ -1183,5 +1358,5 @@ export function createTemplateKit({ stage, cosmetic }) {
     lightGain = l;
     particleGain = p;
   }
-  return { root, circle, beam, blaze, blast, dust, sparks, update, clear, counts, prewarm, setIntensity };
+  return { root, circle, beam, blaze, blast, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity };
 }

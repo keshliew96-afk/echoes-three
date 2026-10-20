@@ -47,7 +47,7 @@ export function createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark
   // The live telegraph of each body, captured as it starts (the sim clears
   // it before the resolve event fires).
   const tells = new Map();
-  const shotKind = new Map(); // shot / glob entity id -> its shooter's kind
+  const shotKind = new Map(); // glob entity id -> its thrower's kind (its landing is the thrower's strike)
   const kindOf = (e) => (e ? (e.telegraph && e.telegraph.champion) || e.kind : null);
   const isFoe = (k) => k != null && Object.prototype.hasOwnProperty.call(FOE_TEMPLATE, k);
 
@@ -261,7 +261,8 @@ export function createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark
     if (!e) return;
     // A foe's own wind-up, or a lobbed glob's landing (its thrower's kind);
     // hazards and wards are not foes.
-    const kind = isFoe(kindOf(e)) ? kindOf(e) : shotKind.get(ev.id);
+    const thrower = e.kind === 'eglob' && !e.affix ? kindOf(byId(e.ownerId)) ?? e.ownerKind : null;
+    const kind = isFoe(kindOf(e)) ? kindOf(e) : shotKind.get(ev.id) ?? thrower;
     if (!isFoe(kind)) return;
     const rec = e.telegraph ? { ...e.telegraph } : { kind: ev.shape, x: ev.x, z: ev.z };
     // A shooter's aim (no shape): the shot it fires is its strike.
@@ -282,17 +283,19 @@ export function createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark
     if (!rec || rec.x == null || !rec.kind) return;
     as(rec.foe, () => strike(byId(ev.id), rec));
   });
-  // Shots: who fired each one, so its trail plays the shooter's template.
+  // Shots: the muzzle (the flight itself is boltfx.js).
   bus.on('enemy_fire', (ev) => {
     const kind = kindOf(byId(ev.id));
     if (!isFoe(kind)) return;
-    if (ev.shot != null) shotKind.set(ev.shot, kind);
     as(kind, () => shot(vfxFoeTone(kind), ev.x, ev.z, ev.dx ?? 1, ev.dz ?? 0, vfxFoeWeight(kind)));
   });
   bus.on('enemy_lob', (ev) => {
     const kind = kindOf(byId(ev.id));
     if (!isFoe(kind)) return;
-    if (ev.glob != null) shotKind.set(ev.glob, kind);
+    if (ev.glob != null) {
+      if (shotKind.size > 64) shotKind.clear();
+      shotKind.set(ev.glob, kind);
+    }
     as(kind, () => shot(vfxFoeTone(kind), ev.x, ev.z, (ev.tx ?? ev.x + 1) - ev.x, (ev.tz ?? ev.z) - ev.z, vfxFoeWeight(kind)));
   });
   bus.on('hit', (ev) => {
@@ -313,27 +316,6 @@ export function createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark
     as(ev.kind, () => fall(vfxFoeTone(ev.kind), ev.x, ev.z, 2));
   });
 
-  // A hostile shot sheds its template as it flies (a few particles a frame
-  // at most; the cap keeps a volley cheap).
-  let shed = 0;
-  function frame(dt, entities) {
-    shed += dt;
-    if (shed < 0.05) return;
-    shed = 0;
-    let n = 0;
-    const seen = new Set();
-    for (const p of entities) {
-      const kind = shotKind.get(p.id);
-      if (kind === undefined) continue;
-      seen.add(p.id);
-      if (n >= 10) continue;
-      n++;
-      const tp = vfxFoeTone(kind);
-      if (tp.id === 'blade') tk.sparks(p.x, 0.5, p.z, 1, { color: tp.a, color2: tp.core, speed: [0.2, 0.6], up: [0.2, 0.8], life: [0.18, 0.3], len: 0.03 });
-      else tk.dust(p.x, 0.5, p.z, 1, { tex: tp.id === 'scifi' ? 'square' : 'star', color: tp.a, color2: tp.b, speed: [0.05, 0.2], up: [0.1, 0.4], size: [0.04, 0.07], life: [0.35, 0.6], gravity: 0, drag: 1.5 });
-    }
-    for (const id of shotKind.keys()) if (!seen.has(id)) shotKind.delete(id);
-  }
   function teardown() {
     tells.clear();
     shotKind.clear();
@@ -353,5 +335,5 @@ export function createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark
     return 5;
   }
   const counts = () => Object.fromEntries([...byKind].map(([k, v]) => [k, { ...v }]));
-  return { frame, teardown, showcase, counts };
+  return { teardown, showcase, counts };
 }
