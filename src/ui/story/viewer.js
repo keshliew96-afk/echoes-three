@@ -20,43 +20,29 @@ import {
   Box3,
   Vector3,
 } from 'three';
-import { buildBoar } from '../../render/enemies/boar.js';
-import { buildMantis } from '../../render/enemies/mantis.js';
-import { ARCH_BUILDERS } from '../../render/enemies/archetypes.js';
-import { buildStag } from '../../render/boss/stag.js';
-import { buildHeron } from '../../render/boss/heron.js';
-import { buildWyrm } from '../../render/boss/wyrm.js';
-import { buildThornmother, buildMillwheel, buildLichram } from '../../render/boss/slice2.js';
-import { buildCantor, buildColossus } from '../../render/boss/heart.js';
-import { buildGloamWolf, buildMireKing, buildAshRaven, buildVeinWeaver } from '../../render/boss/third.js';
-import { buildHush, buildSkyhorn, buildHourwarden } from '../../render/boss/spire.js';
-import { buildFounder, buildCinderback } from '../../render/boss/kiln.js';
 import { setInkViewport } from '../../render/critters/index.js';
 import { EXPOSURE } from '../../render/stage.js';
 import { PALETTE } from '../../data/palette.js';
 
-const BUILDERS = {
-  boar: buildBoar,
-  mantis: buildMantis,
-  ...ARCH_BUILDERS,
-  stag: buildStag,
-  heron: buildHeron,
-  wyrm: buildWyrm,
-  thornmother: buildThornmother,
-  millwheel: buildMillwheel,
-  lichram: buildLichram,
-  cantor: buildCantor,
-  colossus: buildColossus,
-  gloamwolf: buildGloamWolf,
-  mireking: buildMireKing,
-  ashraven: buildAshRaven,
-  veinweaver: buildVeinWeaver,
-  hush: buildHush,
-  skyhorn: buildSkyhorn,
-  hourwarden: buildHourwarden,
-  founder: buildFounder,
-  cinderback: buildCinderback,
-};
+// The rig builders are the combat art chunk's (render/enemies, render/boss),
+// loaded with import() the first time a viewer is made, so they stay out of
+// the boot (docs/CODE_HEALTH.md). Until they land a viewer draws nothing:
+// show() keeps the pick and draws it on arrival; thumb() answers null and
+// `ready` is false, so the Journal waits to pump its tile stills.
+let BUILDERS = null;
+let rigsLoad = null;
+export function loadViewerRigs() {
+  if (!rigsLoad) {
+    rigsLoad = import('./viewerrigs.js').then(
+      (m) => (BUILDERS = m.BUILDERS),
+      (err) => {
+        rigsLoad = null;
+        throw err;
+      }
+    );
+  }
+  return rigsLoad;
+}
 
 const LIVE_PX = 560; // render size of the turning model (CSS scales it)
 const THUMB_PX = 112; // tile still
@@ -123,6 +109,7 @@ export function createModelViewer() {
   }
   const canvas = renderer.domElement;
   canvas.className = 'jr-canvas';
+  loadViewerRigs().catch((err) => console.warn('[journal] the rig builders failed to load', err));
 
   const scene = new Scene();
   const key = new DirectionalLight(new Color(PALETTE.hearthAmber).lerp(new Color('#FFFFFF'), 0.45), 4.2);
@@ -145,6 +132,7 @@ export function createModelViewer() {
   const thumbCtx = thumbCanvas.getContext('2d');
 
   function rigFor(kind) {
+    if (!BUILDERS) return null; // not landed yet: nothing cached, asked again later
     if (rigs.has(kind)) return rigs.get(kind);
     const build = BUILDERS[kind];
     let rec = null;
@@ -195,6 +183,14 @@ export function createModelViewer() {
   function tick() {
     raf = 0;
     if (disposed || !current) return;
+    if (!BUILDERS) {
+      raf = requestAnimationFrame(tick); // the pick waits for the rigs
+      return;
+    }
+    if (!BUILDERS[current]) {
+      current = null;
+      return;
+    }
     const t = (performance.now() - t0) / 1000;
     const rec = rigFor(current);
     if (rec) draw(rec, t, -0.5 + t * TURN);
@@ -206,17 +202,22 @@ export function createModelViewer() {
     // Turn `kind` on the live canvas (null stops it).
     show(kind) {
       if (disposed) return false;
-      current = BUILDERS[kind] ? kind : null;
+      current = kind && (!BUILDERS || BUILDERS[kind]) ? kind : null;
       if (current && current !== this.shown) t0 = performance.now();
       this.shown = current;
       if (current && !raf) raf = requestAnimationFrame(tick);
       return !!(current && rigFor(current));
     },
     shown: null,
+    // False until the rig builders have landed (the Journal holds its tile
+    // stills until then).
+    get ready() {
+      return !!BUILDERS;
+    },
     // A still for a tile (cached for the session).
     thumb(kind) {
       if (THUMBS.has(kind)) return THUMBS.get(kind);
-      if (disposed || !BUILDERS[kind]) return null;
+      if (disposed || !BUILDERS || !BUILDERS[kind]) return null;
       const rec = rigFor(kind);
       if (!rec) return null;
       draw(rec, 0.4, -0.55);

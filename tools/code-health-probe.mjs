@@ -6,15 +6,17 @@
 //             stepped alone, and neither sees the other's patch
 //   save      capture/restore reads and writes the world's own movement state
 //   split     vite.config.js uses codeSplitting (no deprecated advancedChunks);
-//             main.js loads the four test scenes and the co-op session lazily
+//             main.js loads the four test scenes, the co-op session and the
+//             combat art (enemy and boss layers) lazily; the Journal viewer
+//             loads its rig builders lazily
 //   dead      the removed dead exports and src/ui/run/expedition.js are gone
 //   audit     package-lock.json pins sharp >= 0.35.5 and source-map-js >= 1.2.2
-//   build     with --dist DIR (a built dist): the entry chunk holds no session
-//             code and a session chunk exists
+//   build     with --dist DIR (a built dist): no chunk the entry loads at boot
+//             (statically, followed through) holds session or combat art code
 //   node tools/code-health-probe.mjs [--dist dist]   exit 1 on any failure
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
-import { readFileSync, existsSync, readdirSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const u = (p) => pathToFileURL(join(here, p)).href;
@@ -123,10 +125,12 @@ const hashOf = (W) =>
   check('split: vite.config.js uses codeSplitting, not the deprecated advancedChunks', /codeSplitting\s*:/.test(cfg) && !/advancedChunks\s*:/.test(cfg) && /rolldownOptions/.test(cfg));
   const main = read('src/main.js');
   const statics = [...main.matchAll(/^import\s.*from\s+'([^']+)'/gm)].map((m) => m[1]);
-  const lazy = ['./scenes/rendertest.js', './scenes/simtest.js', './scenes/graybox.js', './scenes/chartest.js', './net/session.js'];
+  const lazy = ['./scenes/rendertest.js', './scenes/simtest.js', './scenes/graybox.js', './scenes/chartest.js', './net/session.js', './render/enemies/index.js', './render/boss/index.js'];
   const bad = lazy.filter((p) => statics.includes(p));
   const dyn = lazy.filter((p) => main.includes(`import('${p}')`));
-  check('split: main.js imports the test scenes and the co-op session only dynamically', bad.length === 0 && dyn.length === lazy.length, { bad, dyn: dyn.length });
+  check('split: main.js imports the test scenes, the co-op session and the combat art only dynamically', bad.length === 0 && dyn.length === lazy.length, { bad, dyn: dyn.length });
+  const viewer = read('src/ui/story/viewer.js');
+  check('split: the Journal viewer loads its rig builders with import(), never statically', !/^import\s.*render\/(enemies|boss)\//m.test(viewer) && viewer.includes(['import(', "'./viewerrigs.js')"].join('')));
 }
 
 // ------------------------------------------------------------------ dead --
@@ -177,11 +181,25 @@ const hashOf = (W) =>
     const dir = join(here, process.argv[i + 1] || 'dist', 'assets');
     const files = existsSync(dir) ? readdirSync(dir) : [];
     const entry = files.find((f) => /^index-.*\.js$/.test(f));
-    const session = files.find((f) => /^session-.*\.js$/.test(f));
-    const src = entry ? readFileSync(join(dir, entry), 'utf8') : '';
-    // A string only session.js carries (its lost-host toast).
-    const marker = 'rejoin_offer_skipped';
-    check('build: a session chunk exists and the entry chunk holds no session code', !!session && !!entry && !src.includes(marker), { entry, session: session || null, entryKb: Math.round(src.length / 1024) });
+    // Every chunk the entry pulls in statically, followed through: what a
+    // player's browser must fetch before the game can run.
+    const boot = new Set();
+    const walk = (f) => {
+      if (boot.has(f) || !files.includes(f)) return;
+      boot.add(f);
+      const src = readFileSync(join(dir, f), 'utf8');
+      for (const m of src.matchAll(/(?:^|[;\n}])\s*import\s*(?:[^"'()]*?from\s*)?["']\.\/([^"']+\.js)["']/g)) walk(m[1]);
+    };
+    if (entry) walk(entry);
+    const bootSrc = [...boot].map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
+    // Strings only those modules carry: the lost-session rejoin log
+    // (net/session.js), the layer roots (render/enemies, render/boss) and a rig name.
+    const MARKERS = { session: /rejoin_offer_skipped/, enemyfx: /\.name\s*=\s*[`'"]enemyfx[`'"]/, bossfx: /\.name\s*=\s*[`'"]bossfx[`'"]/, rig: /\.name\s*=\s*[`'"]quillback[`'"]/ };
+    const markers = Object.keys(MARKERS).filter((k) => MARKERS[k].test(bootSrc));
+    const lazySrc = files.filter((f) => !boot.has(f)).map((f) => readFileSync(join(dir, f), 'utf8')).join('\n');
+    const found = Object.keys(MARKERS).filter((k) => MARKERS[k].test(lazySrc));
+    const bootKb = Math.round([...boot].reduce((a, f) => a + statSync(join(dir, f)).size, 0) / 1024);
+    check('build: nothing the boot loads holds session or combat art code', !!entry && markers.length === 0 && found.length === 4, { entry, bootChunks: boot.size, bootKb, markers, lazyHas: found });
   }
 }
 

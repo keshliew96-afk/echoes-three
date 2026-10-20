@@ -37,11 +37,36 @@ patch): the hashes match. On gauntlet 66d7bbb they differ.
   once when the title is already up) and the update prompt (offers a newer build the net client
   already heard of).
 
-Entry chunk: 3,672 kB to 3,149 kB (gzip 1,120 kB to 940 kB). Rolldown also moves code the lazy
-chunks share into small shared chunks the entry imports, so the bytes a player downloads at boot
-fall by the test scenes only; the gain is a smaller entry to parse before the session arrives and
-finer caching across deploys. Loading the combat-only render code (`render/enemies`, `render/boss`,
-the signature FX) during the camp-to-run transition is the next step and is not in this slice.
+### Combat art (Kesh's "Lazy combat art first" pick)
+
+- The enemy and boss render layers (`src/render/enemies/`, `src/render/boss/`: every enemy, champion
+  and boss rig, telegraph and the boss light) are the combat art chunk. `src/main.js` fetches it with
+  `import()` once the title (or play) is up, on a `run_start` or `state_restored` that comes first,
+  or 4 s after boot at the latest; a scene that boots straight into a fight (`?scene=arena`, `graybox`)
+  fetches it at once. The layers are built as it lands, so their warm-up parking is still paid in
+  camp, not in a fight.
+- Both layers draw from `world.entities()` every frame, so one built after a run or a loaded save
+  began picks up every live body. Until then `enemyfx` and `bossfx` are null; every caller already
+  used `?.`. Probe surface: `__echoes.content.combatArt()` -> `{ requested, ready }`.
+- The Journal model viewer's rig builders moved to `src/ui/story/viewerrigs.js`, which
+  `src/ui/story/viewer.js` loads with `import()` when a viewer is made. Until it lands, `show()` keeps
+  the pick and draws it on arrival, `thumb()` answers null and `viewer.ready` is false, and the
+  Journal holds its tile stills until then.
+- The class-signature director (`src/render/vfx/signature.js`) stays in the boot: it draws the heroes'
+  swings and the camera kick in camp too.
+
+### What the player downloads
+
+| | gauntlet 66d7bbb | this slice |
+|---|---|---|
+| entry chunk | 3,672 kB | 2,380 kB |
+| everything the boot loads (entry plus its static chunks, `three` included) | 4,223 kB | 3,769 kB |
+| co-op session, fetched in parallel at boot | in the entry | 106 kB |
+| combat art, fetched at the title | in the entry | about 360 kB |
+
+The probe's `--dist` check walks the boot graph and fails if session or combat art code is in it.
+Rolldown also moves code shared by the lazy chunks into small shared chunks the entry imports, so
+the boot is 24 files instead of 4 (HTTP/2 fetches them together).
 
 ## Dead code
 

@@ -43,12 +43,10 @@ import { bindings } from './core/bindings.js';
 import { rebind, resetControls } from './app/controls.js';
 import { createWorld } from './sim/world.js';
 import { createSkillFx } from './render/skillfx/index.js';
-import { createEnemyLayer } from './render/enemies/index.js';
 import { createAllyLayer } from './render/allies/index.js';
 import { createSocketScreen } from './ui/socket/index.js';
 import { createTechFx } from './render/techfx/index.js';
 import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
-import { createBossLayer } from './render/boss/index.js';
 import { createRunUi } from './ui/run/index.js';
 import { updateNumberPools, flushNumberPools, prewarmNumberPools, numeralTally } from './render/numbers.js';
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
@@ -362,10 +360,13 @@ const skillfx =
 
 // Enemy render layer (enemies block): boar/mantis rigs, Ember attack
 // telegraphs, violet spawn shimmers, enemy shots, the defend-room Waystone.
-const enemyfx =
-  PLAYABLE
-    ? createEnemyLayer({ stage, world, bus, cosmetic })
-    : null;
+// It and the boss layer below are the COMBAT ART chunk (docs/CODE_HEALTH.md):
+// fetched with import() once the title (or play) is up, so it stays out of
+// the boot, and built as it lands, still in camp, where its warm-up parking
+// is paid. Both layers draw from world.entities() every frame, so one built
+// after a run (or a loaded save) began picks up every live body; until then
+// they are null and every caller already reads them with ?. .
+let enemyfx = null;
 
 // Ally render layer (ally block): the three party critters ride their sim AI
 // bodies, plus the §17 Signal Blue mark reticle, the §10 revive rings and the
@@ -412,10 +413,34 @@ const fizzleCue =
 // Boss render layer (run block, §11 Hollow Stag): the Stag rig, its
 // feverish warm boss-light (the room's brightest emitter, room dimmed a stop),
 // and the Antler Quake Ember ring telegraph.
-const bossfx =
-  PLAYABLE
-    ? createBossLayer({ stage, world, bus, cosmetic })
-    : null;
+let bossfx = null;
+let combatArt = null;
+function loadCombatArt() {
+  if (!PLAYABLE || combatArt) return combatArt;
+  combatArt = Promise.all([import('./render/enemies/index.js'), import('./render/boss/index.js')]).then(
+    ([enemies, boss]) => {
+      enemyfx = enemies.createEnemyLayer({ stage, world, bus, cosmetic });
+      bossfx = boss.createBossLayer({ stage, world, bus, cosmetic });
+      return true;
+    },
+    (err) => {
+      console.error('[render] the combat art chunk failed to load', err);
+      combatArt = null; // the next title / run start tries again
+      return false;
+    }
+  );
+  return combatArt;
+}
+if (PLAYABLE) {
+  // A scene that boots straight into a fight (?scene=arena / graybox) loads
+  // it at once; camp waits for the title, or a run that starts first.
+  if (sceneKey !== 'camp') loadCombatArt();
+  app.events.on('app_state', (p) => {
+    if (p.state === 'title' || p.state === 'playing') loadCombatArt();
+  });
+  for (const evt of ['run_start', 'state_restored']) bus.on(evt, () => loadCombatArt());
+  setTimeout(loadCombatArt, 4000); // whatever happens, never later than this
+}
 // Run meta screens (run block, §16/§18): draft, path doors, shop shelf,
 // victory/defeat pages + the §13 transition fade. `?run=1` boots into room 1
 // (the camp hub that normally starts a run is its own block).
@@ -434,6 +459,8 @@ import { registerChallengeSetting } from './ui/run/challenge.js';
 import { createContentFx } from './render/skillfx/content.js';
 import { registerContentCues } from './render/skillfx/cues.js';
 provide('content', createContentService({ world, bus, service }));
+// Probe surface: the combat art chunk's state (docs/CODE_HEALTH.md).
+service('content').combatArt = () => ({ requested: !!combatArt, ready: !!(enemyfx && bossfx) });
 // The Gameplay tab's Challenge row (gameplay.challenge, read at the portal
 // press). (The §4.1 expedition picker is superseded by the CAMPAIGN block's
 // Level Select — PLAN §12.7.)
