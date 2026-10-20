@@ -136,7 +136,7 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
       if (rec.h && rec.token) return rec; // recycled by a fuller pool: no head this flight
       const tp = rec.tp;
       const fire = tp.id === 'blade';
-      rec.h = tk.head({ x, y, z, dx: rec.dx, dz: rec.dz, size, len, mode: MODE[tp.id] ?? 'celestial', core: tp.core, a: tp.a, b: fire ? tp.deep : tp.b, opacity: 0.9, gain: 1.1 });
+      rec.h = tk.head({ x, y, z, dx: rec.dx, dz: rec.dz, size, len, mode: MODE[tp.id] ?? 'celestial', core: tp.core, a: tp.a, b: fire ? tp.deep : tp.b, opacity: fire && !rec.foe ? 0.7 : 0.9, gain: fire && !rec.foe ? 1.0 : 1.1 }); // gold fire blooms hottest: a hero comet runs softer
       rec.token = rec.h.token;
     } else tk.moveHead(rec.h, x, y, z, rec.dx, rec.dz, len, size);
     rec.owe += (rec.tp.dust?.trail ?? 26 * rec.w) * dt;
