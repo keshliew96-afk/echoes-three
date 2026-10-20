@@ -24,6 +24,7 @@ import {
   vfxMatterColor,
   vfxBossStyle,
   isVfxBoss,
+  vfxFoeShotColor,
   VFX_INTENSITY,
 } from '../../data/vfx.js';
 import { TELL_INDIGO, TELL_INDIGO_GLOW } from '../enemies/style.js';
@@ -33,6 +34,7 @@ import { createVfxKit } from './kit.js';
 import { createTemplateKit } from './tplkit.js';
 import { createTemplateFx } from './templates.js';
 import { createFoeFx } from './foefx.js';
+import { createBoltFx } from './boltfx.js';
 import { createCameraFx } from './camerafx.js';
 import { createTideFx } from './tidefx.js';
 import { createBellFx } from './bellfx.js';
@@ -55,18 +57,18 @@ const ESHOT_Y = 0.5;
 // the flyer's scale-dust wake. Speed in u/tick of sim travel.
 const TRAIL_SPEED = 0.045;
 
-// Enemy shots with their own trail (kind -> trail spec); the rest use the
-// mantis's Ember sickle. The Barrow Crow's darts: thin, bone-cored, short.
+// Enemy shots with their own trail shape (kind -> trail spec); the rest use
+// the mantis's sickle. Every glow is the shooter's template hue, set per
+// shot (vfxFoeShotColor). The Barrow Crow's darts: thin, bone-cored, short.
 const ENEMY_SHOT_TRAIL = Object.freeze({
-  crow: Object.freeze({ y: ESHOT_Y, len: 0.55, width: 0.07, core: BONE, glow: EMBER, tailW: 0.05 }),
+  crow: Object.freeze({ y: ESHOT_Y, len: 0.55, width: 0.07, core: BONE, tailW: 0.05 }),
   // The Millwheel's cog shards: a hot iron splinter, short and bright.
-  millwheel: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.09, core: PARCH, glow: PALETTE.hearthAmber, tailW: 0.1 }),
+  millwheel: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.09, core: PARCH, tailW: 0.1 }),
   // Act IV: the Cantor's echo and the Colossus' burst throw crystal shards.
-  cantor: Object.freeze({ y: ESHOT_Y, len: 0.7, width: 0.1, core: PARCH, glow: PALETTE.godstuffViolet, tailW: 0.1 }),
-  colossus: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.1, core: '#DCD6F2', glow: EMBER, tailW: 0.1 }),
-  // Act V: the Vane Cock's gust darts — long thin streaks of cold air with
-  // an Ember edge (they hurt).
-  vane: Object.freeze({ y: ESHOT_Y, len: 0.95, width: 0.07, core: '#DCE6EE', glow: EMBER, tailW: 0.04 }),
+  cantor: Object.freeze({ y: ESHOT_Y, len: 0.7, width: 0.1, core: PARCH, tailW: 0.1 }),
+  colossus: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.1, core: '#DCD6F2', tailW: 0.1 }),
+  // Act V: the Vane Cock's gust darts — long thin streaks of cold air.
+  vane: Object.freeze({ y: ESHOT_Y, len: 0.95, width: 0.07, core: '#DCE6EE', tailW: 0.04 }),
 });
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
@@ -869,6 +871,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const tplFx = createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area: (id) => SKILL_AREA.get(id) ?? null });
   // The same templates on the enemies, champions and bosses (foefx.js).
   const foeFx = createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, ink: INK, player });
+  // Every projectile in flight, party and foe, in its template (boltfx.js).
+  const boltFx = createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, player, heroTone: tplFx.boltTone });
   bus.on('ally_cast', (ev) => {
     const fn = SKILL_SIG[ev.skill];
     if (!fn || ev.x == null) return;
@@ -1014,13 +1018,18 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // its body, and a Barrow Crow's feather darts trail differently.
   const globKind = new Map();
   const shotKind = new Map();
+  const shotHue = new Map(); // eshot id -> its shooter's template hue
   bus.on('enemy_fire', (ev) => {
     const owner = byId(ev.id);
     if (owner && ev.shot != null && ENEMY_SHOT_TRAIL[owner.kind]) shotKind.set(ev.shot, owner.kind);
+    // A shot glows in its shooter's hue, never Ember (Kesh's "Crimson
+    // cores" pick): Ember is for the floor warnings.
+    const hue = vfxFoeShotColor(owner ? (owner.telegraph && owner.telegraph.champion) || owner.kind : null);
+    if (ev.shot != null) shotHue.set(ev.shot, hue);
     // The crow's caw flash and the Millwheel's fan are their own recipes.
     if (owner?.kind !== 'crow' && owner?.kind !== 'millwheel') {
-      kit.flash({ x: ev.x, y: ESHOT_Y, z: ev.z, color: EMBER, size: 0.34, life: 0.12 });
-      flare(ev.x + (ev.dx ?? 0) * 0.3, ESHOT_Y, ev.z + (ev.dz ?? 0) * 0.3, EMBER, 0.5, { life: 0.12, angle: Math.atan2(ev.dz ?? 0, ev.dx ?? 1) });
+      kit.flash({ x: ev.x, y: ESHOT_Y, z: ev.z, color: hue, size: 0.34, life: 0.12 });
+      flare(ev.x + (ev.dx ?? 0) * 0.3, ESHOT_Y, ev.z + (ev.dz ?? 0) * 0.3, hue, 0.5, { life: 0.12, angle: Math.atan2(ev.dz ?? 0, ev.dx ?? 1) });
     }
   });
   bus.on('enemy_lob', (ev) => {
@@ -6295,7 +6304,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       const st = vfxClassStyle('healer');
       return { y: BOLT_Y, len: 0.9, width: 0.14, core: PARCH, glow: st.glow, tailW: 0.45 };
     }
-    if (e.kind === 'eshot') return ENEMY_SHOT_TRAIL[shotKind.get(e.id)] ?? { y: ESHOT_Y, len: 0.75, width: 0.12, core: PARCH, glow: EMBER, tailW: 0.15 };
+    if (e.kind === 'eshot') {
+      const glow = shotHue.get(e.id) ?? vfxFoeShotColor(null);
+      return { ...(ENEMY_SHOT_TRAIL[shotKind.get(e.id)] ?? { y: ESHOT_Y, len: 0.75, width: 0.12, core: PARCH, tailW: 0.15 }), glow };
+    }
     return null;
   };
   let last = null;
@@ -6586,6 +6598,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     for (const [id, rec] of trails) {
       if (seen.has(id)) continue;
       shotKind.delete(id);
+      shotHue.delete(id);
       if (rec.s.owner === id) kit.release(rec.s, 0.12);
       if (rec.g && rec.g.owner === id) {
         kit.release(rec.g, 0.14);
@@ -6595,6 +6608,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
     if (wakeClock.size > 64) wakeClock.clear();
     if (shotKind.size > 64) shotKind.clear();
+    if (shotHue.size > 64) shotHue.clear();
     if (globKind.size > 64) globKind.clear();
     tide.frame(dt, world.entities());
     bellFx.frame(dt);
@@ -6602,8 +6616,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     tonicFx.frame(dt, world.entities());
     shrineFx.frame(dt, world.entities());
     relic6Fx.frame(dt, world.entities());
-    tplFx.frame(dt, world.entities());
-    foeFx.frame(dt, world.entities());
+    boltFx.frame(dt, world.entities());
     kit.update(dt);
     tk.update(dt);
   }
@@ -7528,6 +7541,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     relic6Fx.teardown();
     tplFx.teardown();
     foeFx.teardown();
+    boltFx.teardown();
     return kit.clear() + tk.clear();
   }
   bus.on('level_transit', levelTeardown);
@@ -7541,10 +7555,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   }
 
   function debugCounts() {
-    return { ...kit.counts(), tpl: tk.counts(), foe: foeFx.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
+    return { ...kit.counts(), tpl: tk.counts(), foe: foeFx.counts(), bolt: boltFx.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
   }
 
-  return { update, applyCamera, prewarm, debugCounts, kit, camfx, showcase: (id, at) => tplFx.showcase(id, at), foeShowcase: (kind, at) => foeFx.showcase(kind, at) };
+  return { update, applyCamera, prewarm, debugCounts, kit, camfx, showcase: (id, at) => tplFx.showcase(id, at), foeShowcase: (kind, at) => foeFx.showcase(kind, at), boltShowcase: (names, at) => boltFx.showcase(names, at) };
 }
 
 // Healer skills that restore (their casts get petals + light, never damage FX).

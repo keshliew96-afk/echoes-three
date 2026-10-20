@@ -516,34 +516,9 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     }
   });
 
-  // ----------------------------------------------------- per frame: shots --
-  // Every party shot sheds its template as it flies: stardust off a spell,
-  // fire sparks and a motion-blur streak off an arrow or a thrown blade.
-  const shed = new Map(); // entity id -> accumulated particles owed
-  function frame(dt, entities) {
-    const seen = new Set();
-    for (const e of entities) {
-      const k = e.kind;
-      if (k !== 'skillbolt' && k !== 'bolt') continue;
-      if (e.faction === 'hostile') continue;
-      seen.add(e.id);
-      const skill = k === 'bolt' ? 'healer_basic' : e.skill;
-      const tp = e.heal ? healTone(vfxTemplate('magic')) : toneFor(k === 'bolt' ? 'healer' : null, skill);
-      const vx = e.vx ?? 0;
-      const vz = e.vz ?? 0;
-      const vl = Math.hypot(vx, vz) || 1;
-      const owe = (shed.get(e.id) ?? 0) + tp.dust.trail * dt;
-      const n = Math.floor(owe);
-      shed.set(e.id, owe - n);
-      if (n <= 0) continue;
-      if (tp.id === 'blade') {
-        tk.sparks(e.x, 0.55, e.z, n, { color: tp.a, color2: tp.core, dir: { x: -vx / vl, z: -vz / vl }, dirBias: 0.9, spread: 0.35, speed: [0.8, 2.2], up: [-0.2, 0.6], life: [0.12, 0.25], gravity: 1.5, len: 0.06, width: [0.03, 0.06] });
-      } else {
-        tk.dust(e.x, 0.55, e.z, n, { tex: tp.dust.tex === 'square' ? 'square' : 'star', color: tp.b, color2: tp.a, radius: 0.08, speed: [0.05, 0.3], up: [-0.1, 0.3], size: [0.04, 0.09], life: [0.35, 0.7], gravity: 0, drag: 2.5 });
-      }
-    }
-    for (const id of shed.keys()) if (!seen.has(id)) shed.delete(id);
-  }
+  // The template a party shot plays in flight (boltfx.js draws it): a heal
+  // bolt is green and gold, the Healer's plain bolt her basic's.
+  const boltTone = (e) => (e.heal ? healTone(vfxTemplate('magic')) : toneFor(e.kind === 'bolt' ? 'healer' : null, e.kind === 'bolt' ? 'healer_basic' : e.skill));
 
   // ------------------------------------------------------------ the lab --
   // showcase('magic' | 'blade' | 'scifi', { x, z }): every beat of one
@@ -583,9 +558,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     side.clear();
     lastHit.clear();
     tickClock.clear();
-    shed.clear();
   }
 
-  return { frame, showcase, teardown, recipes: { magicCast, magicNova, magicZone, bladeSwing, bladeBlast, bladeNova, laser } };
+  return { boltTone, showcase, teardown, recipes: { magicCast, magicNova, magicZone, bladeSwing, bladeBlast, bladeNova, laser } };
 }
 

@@ -482,6 +482,7 @@ if (signaturefx) {
   // The VFX lab's template reels (design-VFX.md §11).
   service('content').vfxShowcase = (id, at) => signaturefx.showcase(id, at);
   service('content').vfxFoeShowcase = (kind, at) => signaturefx.foeShowcase(kind, at);
+  service('content').vfxBoltShowcase = (names, at) => signaturefx.boltShowcase(names, at);
 }
 // Hit feedback (docs/HIT_FEEDBACK.md): the red edge pulse toward the
 // attacker, the party's hit flash and the heavy-hit kick — render and HUD

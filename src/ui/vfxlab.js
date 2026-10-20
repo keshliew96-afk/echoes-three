@@ -490,6 +490,21 @@ export function mountVfxLab() {
       await wait(n * 800 + 600);
     }, `a ring, a cone, a lane, a shot and a fall as ${kind}`);
   }
+  // Every projectile in flight in its template (VFX rework PR 3): the
+  // heroes' three and a heal bolt, then foe shots of each tone.
+  const boltRow = section('Projectile templates');
+  for (const [label, names] of [
+    ['Hero shots', ['blade', 'magic', 'scifi', 'heal']],
+    ['Foe shots', ['mantis', 'keener', 'lancer', 'vane']],
+    ['Champion + boss', ['briar_knight', 'hollow_choir', 'millwheel', 'cantor']],
+  ]) {
+    button(boltRow, label, async () => {
+      await ensureCombat(run().act || 1);
+      const n = X().content.vfxBoltShowcase(names);
+      say(`${label}: ${n} shots`);
+      await wait(n * 450 + 1400);
+    }, `one shot each: ${names.join(', ')}`);
+  }
   const party = section('Party skills (reels)');
   CLASS_SETS.tidecaller.forEach((set, i) => button(party, `Tidecaller ${'ABC'[i]}`, () => tideReel(set), set.join(', ')));
   CLASS_SETS.bellwright.forEach((set, i) => button(party, `Bellwright ${'ABC'[i]}`, () => tideReel(set, 'bellwright'), set.join(', ')));

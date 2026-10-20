@@ -438,3 +438,60 @@ alone, and that each boss plays its strikes and its fall in its own boss
 room; `--shots <dir>` films the lab strikes, a busy fight and three bosses
 (`--only data|enemies|bosses|shots`, `--kinds a,b`). The per-kind tally is
 `__echoes.content.vfx().foe`.
+
+### Projectiles (VFX rework PR 3, 2026-10-20)
+
+Kesh's ask: "For all characters and enemy and boss projectiles need the same
+rework." Every shot in flight now wears its template as its body
+(`src/render/vfx/boltfx.js`, drawn with the template kit's `head`):
+
+| Template | The head in flight | The trail | Where it stops |
+|---|---|---|---|
+| blade | a blazing comet: a white-hot head and a flame tail that narrows and breaks into fire | fire sparks streaming back (motion blur) and embers that hang | a small fireball and sparks thrown back |
+| magic | a star orb: a hot core, four turning rays, a ring of runes, an ethereal ribbon behind | stardust that twinkles and hangs | a celestial burst and stardust |
+| sci-fi | a neon laser bolt: a white core in clean neon edges, scanlines, rows tearing sideways | holographic squares | a holo burst and squares |
+
+The tail stretches with the shot's speed. A shot that runs out of range
+fizzles instead of bursting; a shot cleared with its room or charmed away by
+a tonic plays nothing here (those have their own beats). A target hit keeps
+the hit layer's impact (templates.js for the party, foefx.js for the foes).
+
+Who plays what: a party shot plays its skill's template (`toneFor`, so a heal
+bolt is green and gold and the Healer's plain bolt her basic's); an enemy
+shot or lobbed glob plays its shooter's tone and weight (`vfxFoeTone`,
+`vfxFoeWeight`: Foe Crimson fire and spells, Violet for corrupted casters and
+boss magic, neon magenta first for machines; champions half again as big,
+bosses twice). A lobbed glob's head rides the same arc as its body, and its
+landing is now its thrower's ring strike (foefx.js reads the thrower from the
+glob at `telegraph_start`).
+
+The shooters, every one in the data: the Healer's bolt and the Archer,
+Tidecaller and Bellwright basics; 14 projectile skills (Archer piercing_shot,
+volley, vault_shot, pinning_arrow, hunters_mark, feather_fan; Tidecaller
+riverbolt, torrent; Bellwright clapper, knell; Healer mending_bolt,
+spirit_bolt, lantern_flurry, pale_lance); the Tank, Swordsman and Duskwing
+fire none. Foes: Mantis, Crow, Vane, the Hollow Choir and the Vein Matron
+shoot; Toad, Rotcap, Miller and Geode lob; the Millwheel, Skyhorn, Colossus,
+Cantor, Lich Ram, Veinweaver, Cinderback and Thornmother fire or lob. The
+Hourwarden's weight drops rather than flies and keeps its own look, and
+elite-affix globs are pools, not shots.
+
+The class and enemy layers underneath keep their own bodies (the Healer's
+parchment bolt, the arrow, the enemy shot's core and its streak), so a shot
+is still told apart by shape. **Crimson cores** (Kesh's pick on the PR 3
+card): an enemy shot wears no Ember anywhere. Its glow, trail, streak, muzzle
+flash and stop spit (render/enemies/index.js, signature.js) take its
+shooter's hue (`vfxFoeShotColor` = the foe tone's `a`: Foe Crimson, Violet or
+neon magenta), and a shot whose shooter went unseen plays Foe Crimson. Ember
+stays on the floor warnings. Budget: 64 heads, and at most 70 trail
+particles a frame across every shot.
+
+Review: `?vfxlab=1` ▸ **Projectile templates** flies the heroes' three
+templates and a heal bolt, foe shots of each tone (Mantis, Keener, Lancer,
+Vane), and champion and boss shots (Briar Knight, Hollow Choir, Millwheel,
+Cantor). `node tools/vfx-bolts.mjs` checks every shooter above resolves to a
+template and that no enemy shot wears Ember, casts every projectile skill at dummies, runs a fight per team,
+spawns every shooting enemy and champion alone and meets every shooting boss
+in its boss room, and each must draw its head; `--shots <dir>` films the lab
+and the fights (`--only data|heroes|fights|foes|bosses|shots`, `--kinds a,b`).
+The per-source tally is `__echoes.content.vfx().bolt`.
