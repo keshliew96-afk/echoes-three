@@ -57,7 +57,7 @@ import { esc, isCompact } from './style.js';
 import { nodeCardHtml, kitVerdictText, RARITY_COLOR } from './cards.js';
 import { iconHtml } from '../hud/icons.js';
 import { NODES } from '../../sim/nodes.js';
-import { PALETTE, CLASS_ACCENTS } from '../../data/palette.js';
+import { CLASS_ACCENTS } from '../../data/palette.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { classOfSeat } from '../../data/lineup.js';
 import { createPartyStrip } from './partystrip.js';
@@ -1520,4 +1520,3 @@ export function createShopScreen({ run, build, party = () => null }) {
   return { el, render, key, pad, open, denyShake, denyShakeSeat, onPurchase, onRelicPurchase, onRelicDenied, onTonicBuy, onTonicDenied, onRefresh, onRefreshDenied, animState, pin, probe, sel, setView, resetView, dirty, name: 'shop' };
 }
 
-export { PALETTE as _shopPalette };

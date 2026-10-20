@@ -265,6 +265,10 @@ export function createJournalPage(kind, getInfo) {
   function pumpThumbs() {
     thumbRaf = 0;
     if (!viewer || !thumbQueue.length) return;
+    if (viewer.ready === false) {
+      thumbRaf = requestAnimationFrame(pumpThumbs); // the rigs are still loading
+      return;
+    }
     for (let i = 0; i < 2 && thumbQueue.length; i++) {
       const id = thumbQueue.shift();
       const url = viewer.thumb(id);

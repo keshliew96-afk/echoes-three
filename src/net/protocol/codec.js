@@ -213,15 +213,6 @@ export function isUnreliableChannel(channel) {
   return channel === BIN.SNAP || channel === BIN.INPUT || channel === BIN.EVENTS_U;
 }
 
-// hex16 <-> two u32 lanes (the §3.4 state hash on the wire as a u64).
-export function writeHash(w, hex) {
-  w.u32(parseInt(hex.slice(0, 8), 16));
-  w.u32(parseInt(hex.slice(8, 16), 16));
-}
-export function readHash(r) {
-  return r.u32().toString(16).padStart(8, '0') + r.u32().toString(16).padStart(8, '0');
-}
-
 // -------------------------------------------------------------- INPUT --
 // Guest -> host, unreliable, one packet per guest tick carrying the newest
 // <= INPUT_REDUNDANCY unacked frames (oldest first), so a lost packet costs

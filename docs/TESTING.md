@@ -9,7 +9,7 @@ node tools/<slice>-probe.mjs            # the slice's own probe (Node or browser
 npm test                                # the headless suite below; holds the next two lines
 node tools/gntM2-goldens.mjs            # the nine goldens, 9/9 against tools/goldens.json
 node tools/i18n-extract.mjs --check     # every language has every key (writes nothing)
-npx vite build                          # clean apart from the advancedChunks and chunk-size warnings
+npx vite build                          # clean apart from the chunk-size warning
 ```
 
 - `tools/goldens.json` holds the nine expected hashes. Record it (`--record`) only when a

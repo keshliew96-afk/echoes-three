@@ -543,9 +543,6 @@ export const SKILLS = Object.freeze({
   }),
 });
 
-// A skill's class (Healer rows carry no `cls`).
-export const classOfSkill = (id) => (SKILLS[id] ? SKILLS[id].cls ?? 'healer' : null);
-
 // §7 starting kit: Mending Bolt slot 1, Swift Mend slot 2 (the draft block
 // re-owns loadout initialization when it lands).
 // v0.5.227 (CAMP FIXES): the Healer starts with NO skills, like every class;
@@ -576,7 +573,6 @@ export const PARTY_ALLIES = Object.freeze([
   Object.freeze({ classId: 'archer', partyIndex: 3, maxHp: 80, x: -0.35, z: -2.2, radius: 0.3 }),
 ]);
 
-export const isPassiveSkill = (id) => !!SKILLS[id] && SKILLS[id].shape === 'aura';
 const cdTicks = (def) => Math.max(CD_FLOOR_TICKS, secTicks(def.cd ?? 0));
 
 // resolve(def) -> def is the build-system stat hook (§15.4): the node block

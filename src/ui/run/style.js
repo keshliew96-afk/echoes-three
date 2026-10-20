@@ -878,8 +878,3 @@ export const RUN_CSS = `
   #run-screen.rn-compact .rn-summary { font-size: 18px; gap: 4px 22px; margin: 4px 0 2px; }
 `;
 
-// Uniform 1920x1080 virtual-canvas scale (§17 / ruling A7) — kept as the
-// shared reference for anything that wants the HUD's exact scale factor.
-export function virtualScale() {
-  return Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
-}

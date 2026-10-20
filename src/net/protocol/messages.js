@@ -40,9 +40,6 @@ export function normalizeCode(s) {
   const c = s.toUpperCase().replace(/[\s-]/g, '');
   return CODE_RE.test(c) ? c : null;
 }
-export function isRoomCode(s) {
-  return typeof s === 'string' && CODE_RE.test(s);
-}
 
 // C0/C1 controls, zero-width and bidi-override code points (built from code
 // points so the source file carries no literal control characters).
@@ -120,8 +117,6 @@ const C2S = {
           : 'bad_request',
 };
 
-export const CLIENT_TYPES = Object.freeze(Object.keys(C2S));
-
 export function decodeClientMessage(text) {
   if (typeof text !== 'string') return { ok: false, reason: 'bad_request', detail: 'not text' };
   if (text.length > MAX_CONTROL_BYTES) return { ok: false, reason: 'bad_request', detail: 'too large' };
@@ -143,18 +138,6 @@ export function decodeClientMessage(text) {
 // Server -> client (and client -> server) encoder.
 export function encodeMessage(t, payload = {}) {
   return JSON.stringify({ ...payload, t });
-}
-
-// Tolerant decoder for server -> client messages (the client trusts the
-// server's shape but never throws on garbage).
-export function decodeServerMessage(text) {
-  try {
-    const m = JSON.parse(text);
-    if (m && typeof m === 'object' && typeof m.t === 'string') return m;
-  } catch {
-    /* fall through */
-  }
-  return null;
 }
 
 // Human copy for every rejection / error reason (the lobby UI and the logs

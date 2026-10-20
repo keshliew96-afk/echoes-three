@@ -36,9 +36,6 @@ export function markShared(geo) {
   return geo;
 }
 
-// Probe surface for the perf captures.
-export const sharedGeoCount = () => cache.size;
-
 // ---------------------------------------------------------------------------
 // Teardown sweep
 // ---------------------------------------------------------------------------

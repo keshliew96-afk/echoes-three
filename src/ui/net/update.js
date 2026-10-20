@@ -97,5 +97,12 @@ export function installUpdatePrompt({ app, net }) {
     const off2 = app.events.on('overlay', () => setTimeout(tryOffer, 50));
     if (typeof off2 === 'function') offs.push(off2);
   }
+  // The session chunk (and so this prompt) loads after the boot: a newer
+  // build the net client already heard of is offered as if it came now.
+  const known = net.updateInfo;
+  if (known) {
+    pending = { ...known };
+    setTimeout(tryOffer, 0);
+  }
   return () => offs.forEach((f) => f && f());
 }

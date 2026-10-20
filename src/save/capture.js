@@ -79,7 +79,7 @@ export function createStateIO({ clock, rng, registry, world, scene = null, appSt
       rng: rng.getState(),
       registry: registry.serialize(),
       world: ws.world,
-      systems: { ...ws.systems, movement: serializeMovement(), shapes: serializeShapes() },
+      systems: { ...ws.systems, movement: serializeMovement(world.movementState ? world.movementState() : null), shapes: serializeShapes() },
       scene: sceneState(),
       app: appState ? appState.save() : {},
     });
@@ -102,7 +102,7 @@ export function createStateIO({ clock, rng, registry, world, scene = null, appSt
     registry.restore(tree.registry);
     world.loadState({ world: tree.world, systems: tree.systems });
     restoreShapes(tree.systems.shapes);
-    restoreMovement(tree.systems.movement);
+    restoreMovement(tree.systems.movement, world.movementState ? world.movementState() : null);
     if (appState) appState.load(tree.app ?? {});
   }
 

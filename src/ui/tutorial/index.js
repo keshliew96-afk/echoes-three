@@ -45,7 +45,6 @@ import { pageQuery } from '../../app/harness.js';
 
 export const TUTORIAL_SEEN_KEY = 'tutorial.seen';
 export const TUTORIAL_TIPS_KEY = 'tutorial.tips';
-export const TIP_IDS = Object.freeze(['classes', 'relic', 'curse', 'peddler', 'slick', 'event', 'hunt', 'purge', 'affix', 'champion', 'vault', 'lineup', 'soaked', 'escort', 'hold', 'bells', 'secret', 'night']);
 
 const MOVE_DIST = 2.5; // world units walked to pass the move step
 const ATTACK_MS = 450; // right button held this long (in total) passes the attack step

@@ -52,9 +52,6 @@ import { validateServerUrl, resolveServerAddress, pageLocation, isNewerVersion, 
 import { createTabSessions } from './tabsession.js';
 import { createMesh, CONNECT_MS, SILENT_MS } from './mesh.js';
 
-// The single-record key of builds <= v0.5.133; sessions are stored PER TAB
-// since fix-M5b-r4 (tabsession.js, `echoes.net.sessions`).
-export const SESSION_KEY = 'echoes.net.session';
 export const IDENTITY_KEY = 'echoes.net.identity';
 export const REJOIN_WINDOW_MS = 60000;
 // Close codes that end the session instead of retrying: protocol mismatch,

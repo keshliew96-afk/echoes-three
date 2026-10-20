@@ -50,10 +50,6 @@ const FROM_HOST = Object.freeze({ [BIN.SNAP]: 256 * 1024, [BIN.EVENTS]: 256 * 10
 
 const defaultNow = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 
-export function meshSupported(RTC = typeof RTCPeerConnection !== 'undefined' ? RTCPeerConnection : null) {
-  return typeof RTC === 'function';
-}
-
 // connectMs / silentMs: the connect window and the silence limit (the
 // defaults above; ?p2pwait=ms stretches both alike for a machine whose pages
 // crawl, such as a software-GL probe browser).

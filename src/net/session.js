@@ -1052,7 +1052,7 @@ export function createNetSession(ctx) {
       seat,
       entityId: null,
       dec: createSnapshotClient(),
-      replica: createReplica({ world, registry, bus, scene, restoreShapes, restoreMovement, log }),
+      replica: createReplica({ world, registry, bus, scene, restoreShapes, restoreMovement: (data) => restoreMovement(data, world.movementState ? world.movementState() : null), log }),
       interp: createInterpClock({ snapshotEveryTicks: net.snapshotEveryTicks || SNAPSHOT_EVERY_TICKS }),
       own: createOwnSeat({ seat, kit: () => seatKit(seat), dodgeCd: () => partyDodgeCd(), slipProof: () => partyOwns('pumice_soles') }),
       shadow: null,
@@ -2085,8 +2085,13 @@ export function createNetSession(ctx) {
   // A host is told the truth: the party is waiting and the run carries on.
   let rejoinOffered = null;
   let elsewhereNoted = null;
+  // The session chunk loads lazily (main.js): when the title is already up
+  // as it lands, the check runs at once instead of waiting for the next one.
   app.events.on('app_state', (p) => {
-    if (p.state !== 'title' || role !== 'none') return;
+    if (p.state === 'title') offerRejoin();
+  });
+  function offerRejoin() {
+    if (role !== 'none') return;
     const t0 = now();
     const check = typeof net.rejoinCandidate === 'function' ? net.rejoinCandidate() : Promise.resolve({ info: net.rejoinInfo(), elsewhere: [] });
     check
@@ -2132,7 +2137,8 @@ export function createNetSession(ctx) {
         }, Math.max(0, 400 - (now() - t0)));
       })
       .catch((err) => log('rejoin_check_error', { error: String(err && err.message) }));
-  });
+  }
+  if (app.state === 'title') offerRejoin();
 
   // DEPLOY (PLAN §14.5): a redeploy never strands a player — when the net
   // client learns a newer build exists, "A new version of Echoes is

@@ -21,7 +21,7 @@ anything you need from the data tables in `src/data/` and `src/sim/`, not from o
 - All new player-facing text in all ten languages (`docs/I18N.md`; `node tools/i18n-extract.mjs --check`).
 - One probe for the feature under `tools/`. The nine goldens stay identical
   (`node tools/gntM2-goldens.mjs`, against the committed `tools/goldens.json`). `npx vite build` is clean
-  (only the advancedChunks deprecation and the chunk-size warning are expected).
+  (only the chunk-size warning is expected).
 - Update the system's doc under `docs/`. Screenshots go under `/mnt/project-files/<slice>/` when the
   project folder exists.
 - Nothing merges before Kesh's go.

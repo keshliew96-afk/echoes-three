@@ -28,7 +28,7 @@
 // Unchanged entities cost nothing; a moving actor costs ~5-7 bytes; a linear
 // mover costs its spawn entry once and then nothing until it despawns (or
 // re-anchors).
-import { ByteWriter, ByteReader } from './codec.js';
+import { ByteWriter } from './codec.js';
 import { diff, apply, isEmptyPatch, plainClone } from './treediff.js';
 import { sameAnchor } from './quantize.js';
 import { encodeValue, decodeValue, encodePatch, decodePatch } from './bvalue.js';
@@ -225,7 +225,4 @@ export function encodeHotBytes(cur, base) {
   const w = new ByteWriter(64 + cur.length * 16);
   encodeHot(w, cur, base);
   return w.finish();
-}
-export function decodeHotBytes(u8, base) {
-  return decodeHot(new ByteReader(u8), base);
 }

@@ -456,7 +456,3 @@ export function nodeCardHtml(
     }`;
 }
 
-export function rarityOf(type, id) {
-  if (type === 'node') return NODES[id] ? NODES[id].rarity : 'common';
-  return 'common';
-}

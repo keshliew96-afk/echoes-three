@@ -1160,7 +1160,6 @@ const ICONS = {
   ],
 };
 
-export const ICON_IDS = Object.freeze(Object.keys(ICONS));
 export const hasIcon = (id) => Object.prototype.hasOwnProperty.call(ICONS, id);
 
 const STROKE = { fill: 'none', stroke: 'currentColor', 'stroke-width': 2.4, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' };

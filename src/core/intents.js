@@ -5,13 +5,6 @@
 // shared by the controller layer (core/input.js, AI controllers later) and the
 // sim; it must never touch the DOM.
 
-export const CONTINUOUS_INTENTS = Object.freeze([
-  'move', // Vec2, pre-normalized (no faster diagonals)
-  'aim', // world position under the cursor (y=0 plane)
-  'basic_attack', // held bool
-  'revive_hold', // held bool
-]);
-
 export const DISCRETE_INTENTS = Object.freeze([
   'dodge',
   'skill_1',

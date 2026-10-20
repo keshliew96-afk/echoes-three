@@ -1328,11 +1328,6 @@ function* waterSteps(ctx, channels, ppu, cx, cz, cosmetic) {
   }
 }
 
-export function buildGroundMesh(spec, cosmetic) {
-  const canvas = paintGroundCanvas(spec, cosmetic);
-  return groundMeshFromCanvas(canvas);
-}
-
 export function groundMeshFromCanvas(canvas) {
   // Debug hook for the capture harness: the painted floor is the single
   // largest colour surface in the frame, so "which painted feature is putting

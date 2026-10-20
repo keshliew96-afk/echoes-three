@@ -120,9 +120,6 @@ const BOSS_ROWS = {
   cinderback: ['The Kiln\'s warden, a great fire salamander that basked in the kiln\'s mouth and kept the fire fed. The Ember Newts are its brood.', 'Magma Dive: it sinks into the floor and bursts up under a warning ring at you for 16, leaving slag, then lies spent: hit it then. Tail Lash: a cone at its flank for 12 that throws you. From half health it spits fire onto every hero.'],
 };
 
-// The lands, in campaign order, and which of them each enemy lives in (its
-// level rosters; a boss's adds borrow it from there).
-export const JOURNAL_LANDS = Object.freeze(ACT_IDS.map((a) => Object.freeze({ level: a, name: LEVELS[a].name })));
 const landsOf = (etype) => ACT_IDS.filter((a) => (campaignLevel(LEVELS[a]).roster ?? {})[etype] > 0);
 
 export const BESTIARY = Object.freeze([
@@ -139,7 +136,6 @@ export const BESTIARY = Object.freeze([
     })
   ).filter((b, i, all) => all.findIndex((o) => o.id === b.id) === i),
 ]);
-export const BESTIARY_IDS = Object.freeze(BESTIARY.map((b) => b.id));
 export const ENEMY_JOURNAL_IDS = Object.freeze(BESTIARY.filter((b) => !b.boss).map((b) => b.id));
 export const BOSS_JOURNAL_IDS = Object.freeze(BESTIARY.filter((b) => b.boss).map((b) => b.id));
 // A Broodling is the Brood Spider's young: its kills count on the spider's page.

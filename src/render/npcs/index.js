@@ -27,8 +27,6 @@ import { buildWarden } from './wardens.js';
 
 export { setInkViewport };
 
-export const NPC_IDS = ['keeper', 'peddler', 'chronicler', 'warden_stag', 'warden_heron', 'warden_wyrm', 'warden_ibex', 'warden_salamander'];
-
 const BUILDERS = {
   keeper: buildKeeper,
   peddler: buildPeddler,

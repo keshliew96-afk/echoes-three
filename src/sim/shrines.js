@@ -49,7 +49,6 @@ export const SHRINES = Object.freeze({
   spire: Object.freeze({ id: 'spire', name: 'Wind Shrine', cost: 'tonic', gift: 'tailwind', trade: 'Your tonic → Tailwind, 60 s', text: 'Give your tonic or bomb for a Tailwind: +20% move speed and +15% damage for 60 s.' }),
   kiln: Object.freeze({ id: 'kiln', name: 'Forge Shrine', cost: 'relic', gift: 'tempered', trade: 'A common relic → Tempered, 60 s', text: 'Melt down your newest common relic for Tempered: the party deals 25% more damage and takes 20% less for 60 s.' }),
 });
-export const SHRINE_IDS = Object.freeze(Object.keys(SHRINES));
 
 // The blessings (read by sim/status.js off `e.blessing`).
 export const BLESSINGS = Object.freeze({

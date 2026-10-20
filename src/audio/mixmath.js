@@ -59,12 +59,3 @@ export function formatDb(db) {
   return `${r > 0 ? '+' : r < 0 ? '−' : ''}${Math.abs(r).toFixed(1)} dB`;
 }
 
-// Reference table for the audio gate (G3.1) — computed, not typed.
-export function referenceTable() {
-  const pts = [0, 0.25, 0.5, 0.75, 1];
-  return pts.map((s) => ({
-    s,
-    linearDb: Math.round(sliderToDb(s, 'linear') * 100) / 100,
-    logDb: Math.round(sliderToDb(s, 'log') * 100) / 100,
-  }));
-}

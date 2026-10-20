@@ -445,10 +445,3 @@ export function createSnapshotClient({ hotPath = HOT_PATH, ringSize = BASELINE_R
   };
 }
 
-// Stateless reference: the quantised view of a tree exactly as a guest would
-// reconstruct it from a FULL snapshot taken at `tick` (tests / tools).
-export function quantisedView(tree, tick, hotPath = HOT_PATH) {
-  const { hot, cold, hadHot } = splitTree(cloneTree(tree), hotPath);
-  const rec = { tick, q: hot.map((e) => quantizeEntity(e, tick, null)), cold, hadHot: hadHot !== false };
-  return plainClone(viewTreeOf(rec, hotPath));
-}

@@ -363,9 +363,6 @@ export const SABLE_CLEAR = Object.freeze({
   along: { text: 'Sable flies the Heart\'s dark one last time. Nothing in it beats now but his wings.' },
 });
 
-// The level-clear card: the verse the bell catches.
-export const VERSE_LINE = 'The bell catches a verse: {verse}.';
-
 // The campaign's last line, by how many levels the campaign has: three end
 // at the Barrow, four with the Heart falling quiet, five (since the Spire's
 // bosses) with the bell ringing in the gods' own belfry.

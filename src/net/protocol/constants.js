@@ -36,9 +36,6 @@ export const SEAT_HOLD_MS = 60000; // a dropped guest's seat is held (AI plays i
 // the full snapshot (< 2 s), at <= 0.67 attempts/s per reconnecting client.
 export const RECONNECT_BACKOFF_MS = Object.freeze([250, 500, 1000, 1500]);
 
-// --------------------------------------------------- client-side timing --
-export const INTERP_DELAY_MIN_MS = 100;
-export const INTERP_DELAY_MAX_MS = 250;
 // Lag compensation window. PLAN §3.7 text: 15 ticks (250 ms). M5b raises it
 // to 24 ticks (400 ms): at the PLAN's own interp delay (2 × 50 ms + 2σ jitter
 // = 130-140 ms at N1) and the depth-2 input buffer, a guest's view at N1

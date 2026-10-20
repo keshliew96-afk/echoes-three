@@ -177,5 +177,3 @@ export function registerContentCues(engine) {
   return n;
 }
 
-export const M4B_CUE_IDS = Object.freeze(Object.keys(CUES));
-export const M4B_EVENT_CUE_TYPES = Object.freeze(Object.keys(EVENT_CUES));
