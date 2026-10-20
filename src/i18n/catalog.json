@@ -3382,6 +3382,12 @@
    "src/ui/run/classpick.js"
   ]
  },
+ "Bat": {
+  "files": [
+   "src/net/seats.js"
+  ],
+  "data": true
+ },
  "Bat Swarm": {
   "files": [
    "src/sim/skills.js"
@@ -3408,6 +3414,12 @@
  "Beaten Clearing": {
   "files": [
    "src/data/layouts.js"
+  ],
+  "data": true
+ },
+ "Beetle": {
+  "files": [
+   "src/net/seats.js"
   ],
   "data": true
  },
@@ -11484,6 +11496,12 @@
  "Otherwise the race carries down a relic and 30 Glint.": {
   "files": [
    "src/sim/encounters.js"
+  ],
+  "data": true
+ },
+ "Otter": {
+  "files": [
+   "src/net/seats.js"
   ],
   "data": true
  },

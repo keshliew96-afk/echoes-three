@@ -18,6 +18,7 @@ export const SUITE = [
   { file: 'tools/test-safety-net-probe.mjs', args: [], what: 'the safety net checks itself' },
   { file: 'tools/gntM2-goldens.mjs', args: [], what: 'the nine goldens against tools/goldens.json' },
   { file: 'tools/i18n-extract.mjs', args: ['--check'], what: 'every language has every key' },
+  { file: 'tools/prune-strings-probe.mjs', args: [], what: 'no unused translations, and the check fails on one' },
   { file: 'tools/data-xcheck-probe.mjs', args: [], what: 'every id a data table names exists' },
   { file: 'tools/gntM4b-layoutcheck.mjs', args: [], what: 'layout placements clear the spawn ring and entries' },
   // Saves.
