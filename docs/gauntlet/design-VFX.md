@@ -380,8 +380,8 @@ so a hero keeps its own shapes; the template is the finish on top.
 | Bellwright | magic | magic, except Bell Swing (blade) |
 | Duskwing | blade (the bite) | blade for the bite, rake, dive and scent; magic for Nightfall, Echo Screech, Bat Swarm, Shadow Veil, Flit, Blood Moon and Night Wings |
 
-No hero carries a technological weapon; sci-fi plays in the VFX lab and
-waits for the enemy pass (enemies, champions and bosses are the next PR).
+No hero carries a technological weapon; sci-fi is the machines' template
+on the foe side (below).
 
 ### Review
 
@@ -393,7 +393,48 @@ waits for the enemy pass (enemies, champions and bosses are the next PR).
   It runs both teams in a campaign (campaign-only skills), clears each room
   to its reward to rebuild the bars, and gives the probe's seats Glint for
   the swaps; `--only data|<hero>|fightA|fightB` and `--purple safe` narrow it.
-- Budget: the template kit adds 4 pooled meshes kinds (circles 16, beams 14,
-  blazes 28, blasts 18), two particle clouds (360 stardust, 160 bits) and one
-  instanced spark draw (320); Reduced effects halves the particles and dims
-  the beams with the light setting.
+- Budget: the template kit adds 4 pooled mesh kinds (circles 28, beams 18,
+  blazes 48, blasts 40 since the foe pass), two particle clouds (420
+  stardust, 160 bits) and one instanced spark draw (400); Reduced effects
+  halves the particles and dims the beams with the light setting. A piece
+  that lands within 2 u of many live pieces comes in fainter (down to 40%),
+  so a stacked fight does not wash out to white.
+
+### The foes (VFX rework PR 2, 2026-10-20)
+
+`src/render/vfx/foefx.js` plays the same templates on every enemy,
+champion and boss, on top of their own matter beats in `signature.js`:
+
+| Moment | Event | What plays |
+|---|---|---|
+| Wind-up | `telegraph_start` | the template gathers on the body (sparks, stardust or matrix squares drawn in; a champion or boss also opens a circle). The Ember floor shape stays the enemy layer's |
+| Strike | `telegraph_resolve` | the captured telegraph's shape fills: a **ring** bursts (fire ring and fireball / arcane circle and celestial burst / hex circle and holo burst), a **cone** slashes (fire crescent / spell wave / three lasers), a **lane** streaks (fire wake / light pillars / one laser). A shooter's aim has no shape: its shot is its strike |
+| Shot | `enemy_fire`, `enemy_lob` | a muzzle flash in the template, and the shot sheds it as it flies |
+| Hit | `hit` on a hero by a foe | a small template impact |
+| Fall | `champion_fall`, a boss's `death` | the template's biggest burst |
+
+Which template (data/vfx.js `FOE_TEMPLATE`): claws, bites, slams, stings,
+spears, darts and thrown things are knife-and-sword; spells, songs, spores,
+spirit light and wards are magic; machines are sci-fi (the Spire's Vane and
+Chime, the Kiln's Bellows, the Lockkeeper and the Glassblower, the
+Millwheel, the Hourwarden and the Founder). Size by weight: a champion
+plays half again as big, a boss twice.
+
+Colours (palette.js `VFX_FOE`): Ember belongs to the floor's telegraph
+shapes alone (Kesh's pick on PR #103). An enemy's fire and spell light burn
+a darker **Foe Crimson** `#B8141F` (hue 356; CIEDE2000 about 22 from Ember
+and 23 from the Swordsman's lighter, pinker Fox Crimson `#E8577A`), over a
+pale rose core and a deep blood flame; heroes' fire is gold, so the two
+sides never read alike. A magic caster of the Hollow Heart and every boss's
+magic cast in **Violet** with a crimson edge (corruption); machines keep the
+neon, magenta first. No foe tone is green or Ember; no hero tone is Ember or
+Violet.
+
+Review: `?vfxlab=1` ▸ **Foe templates** plays a ring, a cone, a lane, a shot
+and a fall for a boar, a keener, a lancer, a vane, the Briar Knight and the
+Stag. `node tools/vfx-foes.mjs` checks every enemy, champion and boss maps
+to a template, that each kind plays its strike, shot or hit when spawned
+alone, and that each boss plays its strikes and its fall in its own boss
+room; `--shots <dir>` films the lab strikes, a busy fight and three bosses
+(`--only data|enemies|bosses|shots`, `--kinds a,b`). The per-kind tally is
+`__echoes.content.vfx().foe`.

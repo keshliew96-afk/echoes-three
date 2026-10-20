@@ -16,8 +16,8 @@
 // hero is still told apart by shape first while every beat reaches the
 // template's finish: a gather, a white-hot burst, light, particles that hang.
 //
-// Gameplay signals keep their own colours: enemy warnings stay Ember (no
-// template touches an enemy here), heals keep Bright Heal (a magic heal
+// Gameplay signals keep their own colours: enemy warnings stay Ember (the
+// enemies' own template layer is foefx.js, in foe tones), heals keep Bright Heal (a magic heal
 // swaps the purple for green and keeps the gold), and damage numbers are a
 // separate layer drawn on top (render/numbers.js).
 //

@@ -103,6 +103,21 @@ export const VFX_TEMPLATE = Object.freeze({
   blade: Object.freeze({ core: '#FFF3C4', fire: '#FFB43C', flame: '#F5952E', wave: '#FFD866', smoke: '#3A2A22' }),
   scifi: Object.freeze({ cyan: '#3DF2FF', magenta: '#FF3DD8', white: '#E8FFFF', grid: '#1E6F86' }),
 });
+// The same three templates on the other side (VFX rework PR 2: enemies,
+// champions, bosses). Ember stays the floor's alone: the telegraph shapes
+// are the only thing that wears it. An enemy's fire and spell light burn
+// Foe Crimson #B8141F instead (hue 356, dark: CIEDE2000 about 22 from Ember
+// #FF5A36 and 23 from the Swordsman's Fox Crimson #E8577A, which is lighter
+// and pinker at hue 344); a corrupted body (the Hollow Heart's kin, every
+// boss's god-stuff) casts in Violet with a crimson edge; the sci-fi pair
+// keeps its neon, magenta first. No foe tone is ever green or Ember, and no
+// hero tone is ever Ember or Violet.
+export const VFX_FOE = Object.freeze({
+  blade: Object.freeze({ core: '#FFD8D2', fire: '#B8141F', flame: '#6E0A14', wave: '#C82828', smoke: '#2A1814' }),
+  magic: Object.freeze({ a: '#B8141F', b: '#FFC94A', star: '#FFF0DC', deep: '#4E0A14' }),
+  corrupt: Object.freeze({ a: '#B79CF0', b: '#B8141F', star: '#F4ECFF', deep: '#3E2A6E' }),
+  scifi: Object.freeze({ a: '#FF3DD8', b: '#3DF2FF', white: '#FFE8FA', grid: '#5A1E6E' }),
+});
 
 // Biome air (AAA VFX pass, design-VFX.md §10): the tone each act's smoke and
 // dust lean toward, so a puff belongs to the room it is in. Act I the Hollow

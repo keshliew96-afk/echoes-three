@@ -479,6 +479,17 @@ export function mountVfxLab() {
     purple.textContent = `Purple: ${v}`;
     say(v === 'safe' ? 'magic purple: the magenta, further from corruption Violet' : 'magic purple: the vivid purple of the template');
   }, 'switch the magic purple between the template purple and a magenta further from Violet');
+  // The same templates on the foes (VFX rework PR 2): a ring, a cone, a
+  // lane, a shot and a fall for one foe of each tone.
+  const foeRow = section('Foe templates');
+  for (const [label, kind] of [['Boar (blade)', 'boar'], ['Keener (magic)', 'keener'], ['Lancer (corrupt)', 'lancer'], ['Vane (sci-fi)', 'vane'], ['Briar Knight', 'briar_knight'], ['Stag (boss)', 'stag']]) {
+    button(foeRow, label, async () => {
+      await ensureCombat(run().act || 1);
+      const n = X().content.vfxFoeShowcase(kind);
+      say(`${label}: ${n} beats`);
+      await wait(n * 800 + 600);
+    }, `a ring, a cone, a lane, a shot and a fall as ${kind}`);
+  }
   const party = section('Party skills (reels)');
   CLASS_SETS.tidecaller.forEach((set, i) => button(party, `Tidecaller ${'ABC'[i]}`, () => tideReel(set), set.join(', ')));
   CLASS_SETS.bellwright.forEach((set, i) => button(party, `Bellwright ${'ABC'[i]}`, () => tideReel(set, 'bellwright'), set.join(', ')));
