@@ -173,6 +173,21 @@ function installStyle() {
   document.head.appendChild(st);
 }
 
+// GAMEPLAY FIXES: a network guest's cards show the HOST's open levels (the
+// host's profile decides a guest's pick, net session hostOpen); null when
+// this page is not a guest or the host has not answered yet (the guest's own
+// profile shows until it does). Clear counts and bests stay the viewer's own.
+function guestHostOpen() {
+  try {
+    const n = service('net');
+    if (!n || typeof n.isGuest !== 'function' || !n.isGuest()) return null;
+    return n.session && typeof n.session.hostOpen === 'function' ? n.session.hostOpen() : null;
+  } catch {
+    return null;
+  }
+}
+const HOST_LOCK = () => t('The host has not unlocked that yet');
+
 // Unlock truth (the content service: profile unlocks + this session's clears
 // + a probe override) and the per-level clear count (profile records).
 export function levelInfo() {
@@ -191,6 +206,8 @@ export function levelInfo() {
     profile = null;
   }
   const rec = profile && profile.records ? profile.records : {};
+  const ho = guestHostOpen();
+  if (ho) unlocked = ho.acts;
   // THE LEVEL V FORK (docs/KILN_BOSSES.md): both Level Vs have a card; a
   // campaign from Levels I to IV picks its road on the Level IV clear card.
   return ALL_LEVELS.map((level) => {
@@ -202,7 +219,7 @@ export function levelInfo() {
       biome: lv.biome,
       unlocked: unlocked.includes(level),
       clears: (rec.levelClears && rec.levelClears[level]) || 0,
-      lockLine: lockText(level),
+      lockLine: ho ? HOST_LOCK() : lockText(level),
       grant: grantFor(level),
     };
   });
@@ -220,14 +237,15 @@ export function endlessInfo() {
   }
   const rec = profile && profile.records ? profile.records : {};
   const harness = typeof window !== 'undefined' && pageQuery().get('endless') === '1';
+  const ho = guestHostOpen();
   return {
     level: 'endless',
     name: t('The Endless Descent'),
     blurb: t('Past the Heart the road turns back into the wood, darker each time. The four lands repeat, harder at every depth, until the party falls.'),
-    unlocked: harness || endlessUnlockedFrom(profile),
+    unlocked: ho ? ho.endless : harness || endlessUnlockedFrom(profile),
     bestDepth: rec.endlessBestDepth || 0,
     runs: rec.endlessRuns || 0,
-    lockLine: t('Win the campaign to unlock'),
+    lockLine: ho ? HOST_LOCK() : t('Win the campaign to unlock'),
   };
 }
 
@@ -289,7 +307,8 @@ export function rushInfo() {
   }
   const rec = profile && profile.records ? profile.records : {};
   const harness = typeof window !== 'undefined' && pageQuery().get('rush') === '1';
-  const open = harness || rushUnlockedFrom(profile);
+  const ho = guestHostOpen();
+  const open = ho ? ho.rush : harness || rushUnlockedFrom(profile);
   return {
     level: 'rush',
     name: t('The Boss Rush'),
@@ -305,7 +324,7 @@ export function rushInfo() {
     mostFelled: (coop ? rec.rushCoopMostFelled : rec.rushMostFelled) || 0,
     runs: rec.rushRuns || 0,
     fights: RUSH_RULES.fights,
-    lockLine: t('Win the campaign to unlock'),
+    lockLine: ho ? HOST_LOCK() : t('Win the campaign to unlock'),
   };
 }
 
@@ -368,6 +387,33 @@ export function createLevelsScreen(ctx) {
   let denied = 0;
   let lastDenied = null;
   let infos = [];
+  // GAMEPLAY FIXES: a guest asks the host for its open levels each time the
+  // screen opens and redraws when the answer lands.
+  let offHost = null;
+  function askHost() {
+    try {
+      const n = service('net');
+      const s = n && n.session;
+      if (!s || typeof n.isGuest !== 'function' || !n.isGuest() || typeof s.askHostOpen !== 'function') return;
+      if (!offHost && typeof s.onHostOpen === 'function') {
+        offHost = s.onHostOpen(() => {
+          if (!settled && manager.top() === 'levels') redraw();
+        });
+      }
+      s.askHostOpen();
+    } catch {
+      /* no session */
+    }
+  }
+  // Redraw in place, keeping the focused card focused when it still exists.
+  function redraw() {
+    const f = el.querySelector('.cg-card.ap-focus');
+    const at = f ? f.dataset.level : null;
+    render();
+    const again = at !== null ? cardsEl.querySelector(`.cg-card[data-level="${at}"]:not([aria-disabled="true"])`) : null;
+    if (again && typeof manager.focusElement === 'function') manager.focusElement(again, 'api');
+    else if (typeof manager.refocus === 'function') manager.refocus();
+  }
 
   function finish(level) {
     if (settled) return;
@@ -380,7 +426,7 @@ export function createLevelsScreen(ctx) {
     }
     const r = p?.onChoose?.(level);
     if (r && r.ok === false && app && typeof app.toast === 'function') {
-      const line = r.line ? (typeof level === 'number' ? lockText(level) : t(r.line)) : t('That level is locked');
+      const line = guestHostOpen() ? HOST_LOCK() : r.line ? (typeof level === 'number' ? lockText(level) : t(r.line)) : t('That level is locked');
       app.toast(r.reason === 'locked' || r.reason === 'solo' ? line : t("Can't set out right now"), { tone: 'warn' });
     }
   }
@@ -582,8 +628,11 @@ export function createLevelsScreen(ctx) {
       denied = 0;
       lastDenied = null;
       render();
+      askHost();
     },
     onClose() {
+      if (offHost) offHost();
+      offHost = null;
       // Popped by anything other than a choice (a quit to title, a clear):
       // nothing starts, the camp is told.
       if (!settled) {

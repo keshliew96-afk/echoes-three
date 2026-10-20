@@ -905,6 +905,35 @@ export function createSaveSystem({
     const p = (n) => String(n).padStart(2, '0');
     return `echoes-backup-${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.json`;
   }
+  // GAMEPLAY FIXES (records restore): the records file kept aside when the
+  // main copy could not be read — shown, restored (swapped in), saved to a
+  // file or removed from the Records screen.
+  function restoreProfileKept() {
+    const r = profileStore.restoreKeptAside();
+    if (r.ok) notify(profileListeners, 'profile');
+    return r;
+  }
+  function exportProfileKept() {
+    const text = profileStore.keptAsideText();
+    if (text === null) return { ok: false, error: 'missing' };
+    try {
+      const filename = backupName().replace('echoes-backup-', 'echoes-records-kept-');
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.style.display = 'none';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        a.remove();
+      }, 1000);
+      return { ok: true, filename, bytes: text.length };
+    } catch (err) {
+      return { ok: false, error: 'unavailable', detail: String(err && err.message) };
+    }
+  }
   function exportBackup() {
     try {
       const text = JSON.stringify(bundle());
@@ -1649,6 +1678,10 @@ export function createSaveSystem({
     newGameImpact,
     profile: () => profileStore.get(),
     profileReport: () => profileStore.report,
+    profileKept: () => profileStore.keptAside(),
+    restoreProfileKept,
+    exportProfileKept,
+    dropProfileKept: () => profileStore.dropKeptAside(),
     recordRun,
     lastRecord: () => lastRecord,
     // CROSS-RUN UNLOCKS (docs/UNLOCKS.md)

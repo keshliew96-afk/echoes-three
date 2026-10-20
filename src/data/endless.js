@@ -22,13 +22,16 @@
 //
 // Pure data + helpers (sim-importable): no DOM, no three.
 import { difficulty } from './difficulty.js';
-import { LEVELS, ACT_IDS, ENDLESS_ACTS, levelFor, bossIndexFor, bossPool, campaignLevel } from './levels.js';
+import { LEVELS, ROADS, ENDLESS_ACTS, levelFor, bossIndexFor, bossPool, campaignLevel } from './levels.js';
 
 // The descent cycles every act's biome, Act IV included even when the
 // campaign keeps three levels (levels.js CAMPAIGN_ACTS).
 const ORDER = Object.freeze([...ENDLESS_ACTS].sort((a, b) => a - b));
 export const CYCLE = ORDER.length; // one biome per act (5 with the Still Spire)
-const FINAL = Math.max(...ACT_IDS); // the campaign's final level
+// The campaign's final levels: the act each Level V road ends on (the Spire
+// and the Kiln). Gameplay fixes: this was the largest act id (the Kiln), so
+// an old save's Spire clear never opened the descent.
+const FINALS = Object.freeze(Object.values(ROADS));
 
 // Per depth past the first cycle (k = depth - CYCLE - 1; the first depth past
 // it plays the Act IV numbers). Tuned against the headless
@@ -131,11 +134,10 @@ export function endlessRules() {
 }
 
 // The unlock rule (Level Select, camp): the descent opens once the game has
-// been won — any campaign completed (profile records.gameWon) or the final
-// level cleared once (records.levelClears).
+// been won — any campaign completed (profile records.gameWon) or either
+// road's final level cleared once (records.levelClears).
 export function endlessUnlockedFrom(profile) {
   const r = profile && profile.records ? profile.records : null;
   if (!r) return false;
-  const final = FINAL;
-  return !!(r.gameWon || (r.campaignsCompleted ?? 0) > 0 || (r.levelClears && r.levelClears[final] > 0));
+  return !!(r.gameWon || (r.campaignsCompleted ?? 0) > 0 || (r.levelClears && FINALS.some((act) => r.levelClears[act] > 0)));
 }

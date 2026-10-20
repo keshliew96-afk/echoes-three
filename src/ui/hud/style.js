@@ -105,7 +105,7 @@ export const ACCENTS = Object.fromEntries(
 );
 
 export const FONT_STACK =
-  "system-ui, 'Segoe UI Variable Display', 'Segoe UI', ui-rounded, 'Nunito', 'Trebuchet MS', sans-serif";
+  "system-ui, 'Segoe UI Variable Display', 'Segoe UI', ui-rounded, 'Nunito', 'Trebuchet MS', var(--i18n-font, sans-serif)";
 
 export function hudCss() {
   return `

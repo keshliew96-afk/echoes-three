@@ -733,6 +733,24 @@ export function createCampScene(stage, toggles, ctx) {
     const phase = run.view().phase;
     return phase === 'idle';
   }
+  // GAMEPLAY FIXES: a guest's Level Select reads the HOST's open levels (the
+  // host's profile decides a guest's pick): the host's last answer, or null
+  // before one arrives (the guest then leaves the check to the host).
+  function hostOpen() {
+    if (!isGuest()) return null;
+    const n = svc('net');
+    try {
+      return n && n.session && typeof n.session.hostOpen === 'function' ? n.session.hostOpen() : null;
+    } catch {
+      return null;
+    }
+  }
+  // HOST: what this camp would let a Level Select pick start (net session
+  // camp_open, answered to a guest's ask).
+  function hostOpenInfo() {
+    if (isGuest()) return null;
+    return { acts: unlockedLevels(), endless: endlessOpen(), rush: rushOpen() };
+  }
   // Unlocked levels, from the one source every surface reads (the content
   // service: profile unlocks + this session's clears + a probe override).
   function unlockedLevels() {
@@ -964,22 +982,23 @@ export function createCampScene(stage, toggles, ctx) {
     }
     // BOSS RUSH (docs/BOSS_RUSH.md): the rush card, open with Endless. CO-OP
     // BOSS RUSH: a co-op lobby plays it too; the host sets out, as with Endless.
+    const ho = hostOpen();
     if (level === 'rush') {
-      if (!rushOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
+      if (isGuest() ? ho && !ho.rush : !rushOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
       if (!canBegin()) return { ok: false, reason: 'busy', level };
       beginLevel(FIRST_LEVEL, { harness: false, via, rush: true });
       return { ok: true, level, rush: true };
     }
     // ENDLESS (docs/ENDLESS.md): the Endless Descent card, open once the game is won.
     if (level === 'endless') {
-      if (!endlessOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
+      if (isGuest() ? ho && !ho.endless : !endlessOpen()) return { ok: false, reason: 'locked', level, line: 'Win the campaign to unlock' };
       if (!canBegin()) return { ok: false, reason: 'busy', level };
       beginLevel(FIRST_LEVEL, { harness: false, via, endless: true });
       return { ok: true, level, endless: true };
     }
     const n = Number(level);
     if (!isLevel(n)) return { ok: false, reason: 'no_such_level', level: n };
-    if (!unlockedLevels().includes(n)) return { ok: false, reason: 'locked', level: n, line: lockLine(n) };
+    if (isGuest() ? ho && !ho.acts.includes(n) : !unlockedLevels().includes(n)) return { ok: false, reason: 'locked', level: n, line: lockLine(n) };
     if (!canBegin()) return { ok: false, reason: 'busy', level: n };
     beginLevel(n, { harness: false, via });
     return { ok: true, level: n };
@@ -1485,6 +1504,8 @@ export function createCampScene(stage, toggles, ctx) {
         return chooseLevel(args[0], 'cmd');
       case 'campGuestBegin':
         return guestBegin(Number(args[0]), args[1]);
+      case 'campOpen':
+        return hostOpenInfo();
       case 'campClasses':
         return openClasses('cmd');
       case 'campDaily':

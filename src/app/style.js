@@ -17,7 +17,7 @@
 import { PALETTE as P } from '../data/palette.js';
 
 export const AP_FONT =
-  "system-ui, 'Segoe UI Variable Display', 'Segoe UI', ui-rounded, 'Nunito', 'Trebuchet MS', sans-serif";
+  "system-ui, 'Segoe UI Variable Display', 'Segoe UI', ui-rounded, 'Nunito', 'Trebuchet MS', var(--i18n-font, sans-serif)";
 
 // Authored px -> CSS length that follows --ap-s.
 export const px = (n) => `calc(${n}px * var(--ap-s, 1))`;

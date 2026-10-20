@@ -3437,5 +3437,22 @@
  "The host has not unlocked that yet": "房主尚未解鎖該內容",
  "The host could not set out just now — try again": "房主暫時無法出發——請再試一次",
  "{name} set out — the run begins": "{name}已出發——本輪開始",
- "Anyone can choose — the first choice leads the party": "任何人都能選擇——最先做出的選擇帶領隊伍"
+ "Anyone can choose — the first choice leads the party": "任何人都能選擇——最先做出的選擇帶領隊伍",
+ "Kept aside": "已另存",
+ "A records file with {n} runs, saved {date}.": {
+  "other": "一個含 {n} 次冒險的紀錄檔案,儲存於 {date}。"
+ },
+ "A records file written by a newer version of the game.": "一個由較新版本遊戲寫入的紀錄檔案。",
+ "A records file that cannot be read.": "一個無法讀取的紀錄檔案。",
+ "Restore it": "還原它",
+ "Save a copy": "儲存副本",
+ "Remove it": "刪除它",
+ "Couldn't save the copy": "無法儲存副本",
+ "Restore the kept records?": "還原另存的紀錄?",
+ "Its records, Embers and unlocks replace the current ones. The current ones are kept aside here, so you can swap back.": "其中的紀錄、餘燼和解鎖將取代目前的。目前的會另存在這裡,你可以再換回來。",
+ "Records restored": "紀錄已還原",
+ "Couldn't restore the records": "無法還原紀錄",
+ "Remove the kept file?": "刪除另存的檔案?",
+ "It cannot be brought back.": "刪除後無法找回。",
+ "The kept file was removed": "另存的檔案已刪除"
 }

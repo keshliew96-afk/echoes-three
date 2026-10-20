@@ -14,7 +14,11 @@ and curses you can choose to walk into for a relic. Code: `src/sim/relics.js`
   carries a curse (violet mark on the door, a note naming the curse under the
   legend). The other door is always clean, so the player trades the reward
   type they wanted against the risk.
-- **Curse reward.** A curse lasts its room only. Clearing a cursed room opens
+- **Curse reward.** A curse lasts its room only. Its rules hold in that room
+  only, too: a door's curse is taken in the room before (on the path screen),
+  and that room's healing stays whole until the party walks into the cursed
+  one (Famine, v0.5.324; before, Famine already cut the heals of the room it
+  was taken in). Major curses hold everywhere. Clearing a cursed room opens
   "THE CURSE LIFTS", a relic page with three more relics. A defend soft-fail
   forfeits it with the room's reward.
 - Relics ride across level clears and appear in the run summary

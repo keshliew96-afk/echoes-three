@@ -3549,5 +3549,24 @@
  "The host has not unlocked that yet": "L’hôte ne l’a pas encore débloqué",
  "The host could not set out just now — try again": "L’hôte n’a pas pu partir pour l’instant — réessaie",
  "{name} set out — the run begins": "{name} est parti — la partie commence",
- "Anyone can choose — the first choice leads the party": "Chacun peut choisir — le premier choix guide le groupe"
+ "Anyone can choose — the first choice leads the party": "Chacun peut choisir — le premier choix guide le groupe",
+ "Kept aside": "Mis de côté",
+ "A records file with {n} runs, saved {date}.": {
+  "one": "Un fichier de records avec {n} partie, enregistré le {date}.",
+  "many": "Un fichier de records avec {n} parties, enregistré le {date}.",
+  "other": "Un fichier de records avec {n} parties, enregistré le {date}."
+ },
+ "A records file written by a newer version of the game.": "Un fichier de records écrit par une version plus récente du jeu.",
+ "A records file that cannot be read.": "Un fichier de records illisible.",
+ "Restore it": "Le restaurer",
+ "Save a copy": "Enregistrer une copie",
+ "Remove it": "Le supprimer",
+ "Couldn't save the copy": "Impossible d’enregistrer la copie",
+ "Restore the kept records?": "Restaurer les records mis de côté ?",
+ "Its records, Embers and unlocks replace the current ones. The current ones are kept aside here, so you can swap back.": "Ses records, braises et déblocages remplacent les actuels. Les actuels sont mis de côté ici, pour pouvoir revenir en arrière.",
+ "Records restored": "Records restaurés",
+ "Couldn't restore the records": "Impossible de restaurer les records",
+ "Remove the kept file?": "Supprimer le fichier mis de côté ?",
+ "It cannot be brought back.": "Il ne pourra pas être récupéré.",
+ "The kept file was removed": "Le fichier mis de côté a été supprimé"
 }

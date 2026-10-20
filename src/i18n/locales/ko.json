@@ -3437,5 +3437,22 @@
  "The host has not unlocked that yet": "호스트가 아직 해금하지 않았습니다",
  "The host could not set out just now — try again": "호스트가 지금은 출발할 수 없습니다 — 다시 시도하세요",
  "{name} set out — the run begins": "{name}님이 출발했습니다 — 런이 시작됩니다",
- "Anyone can choose — the first choice leads the party": "누구나 고를 수 있습니다 — 먼저 고른 쪽으로 파티가 갑니다"
+ "Anyone can choose — the first choice leads the party": "누구나 고를 수 있습니다 — 먼저 고른 쪽으로 파티가 갑니다",
+ "Kept aside": "따로 보관됨",
+ "A records file with {n} runs, saved {date}.": {
+  "other": "런 {n}회가 담긴 기록 파일, {date}에 저장됨."
+ },
+ "A records file written by a newer version of the game.": "더 새로운 버전의 게임이 쓴 기록 파일.",
+ "A records file that cannot be read.": "읽을 수 없는 기록 파일.",
+ "Restore it": "복원하기",
+ "Save a copy": "사본 저장",
+ "Remove it": "삭제하기",
+ "Couldn't save the copy": "사본을 저장하지 못했습니다",
+ "Restore the kept records?": "따로 보관한 기록을 복원할까요?",
+ "Its records, Embers and unlocks replace the current ones. The current ones are kept aside here, so you can swap back.": "그 파일의 기록, 불씨, 해금이 현재 것을 대신합니다. 현재 것은 여기에 따로 보관되므로 다시 바꿀 수 있습니다.",
+ "Records restored": "기록을 복원했습니다",
+ "Couldn't restore the records": "기록을 복원하지 못했습니다",
+ "Remove the kept file?": "따로 보관한 파일을 삭제할까요?",
+ "It cannot be brought back.": "되돌릴 수 없습니다.",
+ "The kept file was removed": "따로 보관한 파일을 삭제했습니다"
 }

@@ -2274,6 +2274,28 @@
    "src/ui/run/relic.js"
   ]
  },
+ "A records file that cannot be read.": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "A records file with {n} run, saved {date}.": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "A records file with {n} runs, saved {date}.": {
+  "files": [
+   "src/ui/menu/records.js"
+  ],
+  "plural": true,
+  "one": "A records file with {n} run, saved {date}."
+ },
+ "A records file written by a newer version of the game.": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
  "A relic from the hoard. Choose one.": {
   "files": [
    "src/ui/run/relic.js"
@@ -4585,6 +4607,7 @@
    "src/ui/menu/cloud.js",
    "src/ui/menu/confirm.js",
    "src/ui/menu/mpmenu.js",
+   "src/ui/menu/records.js",
    "src/ui/menu/saves.js",
    "src/ui/menu/settings.js",
    "src/ui/menu/tabs/gameplay.js",
@@ -5473,6 +5496,11 @@
    "src/ui/menu/saves.js"
   ]
  },
+ "Couldn't restore the records": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
  "Couldn't restore the session on this page — another player carries on hosting.": {
   "files": [
    "src/net/session.js"
@@ -5481,6 +5509,11 @@
  "Couldn't save": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "Couldn't save the copy": {
+  "files": [
+   "src/ui/menu/records.js"
   ]
  },
  "Couldn’t start ({reason})": {
@@ -7076,6 +7109,7 @@
  },
  "Exported {file}": {
   "files": [
+   "src/ui/menu/records.js",
    "src/ui/menu/saves.js"
   ]
  },
@@ -9277,6 +9311,11 @@
   ],
   "data": true
  },
+ "It cannot be brought back.": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
  "It drinks your newest major curse: that curse is lifted for the rest of the run.": {
   "files": [
    "src/sim/encounters.js"
@@ -9417,6 +9456,11 @@
    "src/data/journal.js"
   ],
   "data": true
+ },
+ "Its records, Embers and unlocks replace the current ones. The current ones are kept aside here, so you can swap back.": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
  },
  "Its shell carries a lantern it never lets go out.": {
   "files": [
@@ -9571,6 +9615,11 @@
  "Keeps the party standing: heals, wards and the revive. Fragile, so stay behind the line.": {
   "files": [
    "src/ui/run/classpick.js"
+  ]
+ },
+ "Kept aside": {
+  "files": [
+   "src/ui/menu/records.js"
   ]
  },
  "Kept for a year after your last cloud save.": {
@@ -12396,6 +12445,11 @@
    "src/ui/menu/records.js"
   ]
  },
+ "Records restored": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
  "Red edge pulse, flash and camera kick when you are hit": {
   "files": [
    "src/ui/run/hitfeedback.js"
@@ -12525,6 +12579,16 @@
  "remove": {
   "files": [
    "src/ui/socket/index.js"
+  ]
+ },
+ "Remove it": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
+ },
+ "Remove the kept file?": {
+  "files": [
+   "src/ui/menu/records.js"
   ]
  },
  "Rename": {
@@ -12698,12 +12762,18 @@
  },
  "Restore": {
   "files": [
+   "src/ui/menu/records.js",
    "src/ui/menu/saves.js"
   ]
  },
  "Restore backup": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "Restore it": {
+  "files": [
+   "src/ui/menu/records.js"
   ]
  },
  "Restore the backup from {date}?": {
@@ -12714,6 +12784,11 @@
  "Restore the backup?": {
   "files": [
    "src/ui/menu/saves.js"
+  ]
+ },
+ "Restore the kept records?": {
+  "files": [
+   "src/ui/menu/records.js"
   ]
  },
  "restored to full": {
@@ -13247,6 +13322,11 @@
  "Save a backup file": {
   "files": [
    "src/ui/menu/cloud.js"
+  ]
+ },
+ "Save a copy": {
+  "files": [
+   "src/ui/menu/records.js"
   ]
  },
  "Save and quit to the title?": {
@@ -16183,7 +16263,8 @@
  },
  "The host has not unlocked that yet": {
   "files": [
-   "src/net/session.js"
+   "src/net/session.js",
+   "src/ui/run/levels.js"
   ]
  },
  "The host is back": {
@@ -16284,6 +16365,11 @@
    "src/data/journal.js"
   ],
   "data": true
+ },
+ "The kept file was removed": {
+  "files": [
+   "src/ui/menu/records.js"
+  ]
  },
  "The Kiln's warden falls. The great fire gutters, then burns clean.": {
   "files": [

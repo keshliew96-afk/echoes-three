@@ -32,6 +32,7 @@ export const SUITE = [
   { file: 'tools/player-build-gating-probe.mjs', args: [], what: 'harness params and debug API gating' },
   // The run.
   { file: 'tools/gameplay-bugs-probe.mjs', args: [], what: 'Daily boss credit, room leftovers, shrine curses' },
+  { file: 'tools/gameplay-fixes-probe.mjs', args: [], what: 'Famine, Endless on a Spire clear, fonts, guest Level Select, records restore' },
   { file: 'tools/lineup-probe.mjs', args: [], what: 'the party lineup' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
   { file: 'tools/champions-probe.mjs', args: [], what: 'champion rooms' },

@@ -448,6 +448,49 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     return profile;
   }
 
+  // GAMEPLAY FIXES (records restore): the file load() keeps aside when the
+  // main copy cannot be read (`.corrupt`). The Records screen shows it and
+  // can restore it: the two swap places, so the replaced records are the ones
+  // kept aside next and the player can swap back. null = nothing kept.
+  const KEPT_KEY = `${PROFILE_KEY}.corrupt`;
+  function keptAside() {
+    const text = store.read(KEPT_KEY);
+    if (text === null) return null;
+    if (newerProfile(text)) return { readable: false, newer: true, bytes: text.length };
+    const p = parse(text);
+    if (!p) return { readable: false, newer: false, bytes: text.length };
+    return { readable: true, newer: false, bytes: text.length, savedAt: p.savedAt ?? null, runs: p.records.runs ?? 0, victories: p.records.victories ?? 0 };
+  }
+  const keptAsideText = () => store.read(KEPT_KEY);
+  function restoreKeptAside() {
+    if (readOnly) return { ok: false, error: 'newer' };
+    const text = store.read(KEPT_KEY);
+    if (text === null) return { ok: false, error: 'missing' };
+    if (newerProfile(text)) return { ok: false, error: 'newer' };
+    if (parse(text) === null) return { ok: false, error: 'corrupt' };
+    // This tab's unwritten changes go into the copy that is kept aside.
+    if (isDirty()) persist();
+    const cur = store.read(PROFILE_KEY);
+    if (cur !== null) {
+      const k = store.writePlain(KEPT_KEY, cur);
+      if (!k.ok) return k;
+    }
+    const w = store.writeAtomic(PROFILE_KEY, text, { backupIf: keepAsBackup });
+    if (!w.ok) {
+      store.writePlain(KEPT_KEY, text);
+      return w;
+    }
+    if (cur === null) store.remove(KEPT_KEY);
+    pending = [];
+    deferred = noDeferred();
+    load();
+    return { ok: true };
+  }
+  function dropKeptAside() {
+    if (store.read(KEPT_KEY) === null) return { ok: false, error: 'missing' };
+    return store.remove(KEPT_KEY) ? { ok: true } : { ok: false, error: 'unavailable' };
+  }
+
   // Write: storage's current profile + this tab's changes. A failed write
   // (quota, blocked storage) keeps them pending for the next write.
   function persist() {
@@ -861,6 +904,10 @@ export function createProfileStore({ store, now = () => new Date().toISOString()
     get report() {
       return report;
     },
+    keptAside, // GAMEPLAY FIXES: the records file kept aside (Records screen)
+    keptAsideText,
+    restoreKeptAside,
+    dropKeptAside,
     // SAVE SAFETY: a newer-format profile is on disk; nothing is written.
     get readOnly() {
       return readOnly;
