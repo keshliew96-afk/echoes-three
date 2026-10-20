@@ -48,7 +48,7 @@ import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 
-export const TPL_CAPS = Object.freeze({ circle: 22, beam: 18, blaze: 36, blast: 28, dust: 420, bits: 160, sparks: 400 }); // PR 2 raised them for the foes
+export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400 }); // PR 2 raised them for the foes
 
 const colorCache = new Map();
 function col(hex) {

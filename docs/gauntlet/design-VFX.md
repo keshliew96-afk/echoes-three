@@ -393,8 +393,8 @@ on the foe side (below).
   It runs both teams in a campaign (campaign-only skills), clears each room
   to its reward to rebuild the bars, and gives the probe's seats Glint for
   the swaps; `--only data|<hero>|fightA|fightB` and `--purple safe` narrow it.
-- Budget: the template kit adds 4 pooled mesh kinds (circles 22, beams 18,
-  blazes 36, blasts 28 since the foe pass), two particle clouds (420
+- Budget: the template kit adds 4 pooled mesh kinds (circles 28, beams 18,
+  blazes 48, blasts 40 since the foe pass), two particle clouds (420
   stardust, 160 bits) and one instanced spark draw (400); Reduced effects
   halves the particles and dims the beams with the light setting. A piece
   that lands within 2 u of many live pieces comes in fainter (down to 40%),
