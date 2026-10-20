@@ -274,7 +274,9 @@ async function heroes() {
             missed.push(`${id} (not on a key)`);
             continue;
           }
-          const n = await castOne(page, seat, id, slot);
+          // One retry: a cast can be eaten by the room turning over under it.
+          let n = await castOne(page, seat, id, slot);
+          if (n <= 0) n = await castOne(page, seat, id, slot);
           cast++;
           if (n <= 0) missed.push(id);
           else console.log(`ok   ${cls} ${id} (${vfxTemplateFor(null, id)}): ${n} head(s)`);
