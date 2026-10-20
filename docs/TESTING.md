@@ -37,6 +37,9 @@ needs no dev server and runs in a few minutes on one core. Browser probes stay m
 
 CI (`.github/workflows/test.yml`) runs `npm ci --ignore-scripts`, `npm test` and
 `npx vite build` on Node 22 for every push to `gauntlet` and every pull request.
+On a shared runner the refused 3 MB uploads in `server-hardening-probe` often see their
+connection reset before the 429 or 503 reaches them; a reset (ECONNRESET or EPIPE) counts as a
+refusal, any other failed request fails the check (v0.5.320).
 
 House rules the safety-net probe checks:
 - every relative import in `tools/` resolves. The 76 probes whose critic libraries
