@@ -104,15 +104,18 @@ export const VFX_TEMPLATE = Object.freeze({
   scifi: Object.freeze({ cyan: '#3DF2FF', magenta: '#FF3DD8', white: '#E8FFFF', grid: '#1E6F86' }),
 });
 // The same three templates on the other side (VFX rework PR 2: enemies,
-// champions, bosses). An enemy's attack IS a threat, so its fire and its
-// spell light burn Ember (the one colour a threat may wear); a corrupted
-// body (the Hollow Heart's kin, every boss's god-stuff) casts in Violet with
-// an Ember edge; the sci-fi pair keeps its neon, magenta first. No foe tone
-// is ever green, and no hero tone is ever Ember or Violet.
+// champions, bosses). Ember stays the floor's alone: the telegraph shapes
+// are the only thing that wears it. An enemy's fire and spell light burn
+// Foe Crimson #B8141F instead (hue 356, dark: CIEDE2000 about 22 from Ember
+// #FF5A36 and 23 from the Swordsman's Fox Crimson #E8577A, which is lighter
+// and pinker at hue 344); a corrupted body (the Hollow Heart's kin, every
+// boss's god-stuff) casts in Violet with a crimson edge; the sci-fi pair
+// keeps its neon, magenta first. No foe tone is ever green or Ember, and no
+// hero tone is ever Ember or Violet.
 export const VFX_FOE = Object.freeze({
-  blade: Object.freeze({ core: '#FFE2C4', fire: '#FF5A36', flame: '#C8361F', wave: '#FF9C5E', smoke: '#2A1814' }),
-  magic: Object.freeze({ a: '#FF5A36', b: '#FFC94A', star: '#FFF0DC', deep: '#7A1E2E' }),
-  corrupt: Object.freeze({ a: '#B79CF0', b: '#FF5A36', star: '#F4ECFF', deep: '#3E2A6E' }),
+  blade: Object.freeze({ core: '#FFD8D2', fire: '#B8141F', flame: '#6E0A14', wave: '#C82828', smoke: '#2A1814' }),
+  magic: Object.freeze({ a: '#B8141F', b: '#FFC94A', star: '#FFF0DC', deep: '#4E0A14' }),
+  corrupt: Object.freeze({ a: '#B79CF0', b: '#B8141F', star: '#F4ECFF', deep: '#3E2A6E' }),
   scifi: Object.freeze({ a: '#FF3DD8', b: '#3DF2FF', white: '#FFE8FA', grid: '#5A1E6E' }),
 });
 

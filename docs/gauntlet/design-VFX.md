@@ -420,11 +420,15 @@ Chime, the Kiln's Bellows, the Lockkeeper and the Glassblower, the
 Millwheel, the Hourwarden and the Founder). Size by weight: a champion
 plays half again as big, a boss twice.
 
-Colours (palette.js `VFX_FOE`): an enemy attack is a threat, so its fire and
-its spell light burn **Ember** (heroes' fire is gold, so the two sides never
-read alike); a magic caster of the Hollow Heart and every boss's magic cast
-in **Violet** with an Ember edge (corruption); machines keep the neon,
-magenta first. No foe tone is green; no hero tone is Ember or Violet.
+Colours (palette.js `VFX_FOE`): Ember belongs to the floor's telegraph
+shapes alone (Kesh's pick on PR #103). An enemy's fire and spell light burn
+a darker **Foe Crimson** `#B8141F` (hue 356; CIEDE2000 about 22 from Ember
+and 23 from the Swordsman's lighter, pinker Fox Crimson `#E8577A`), over a
+pale rose core and a deep blood flame; heroes' fire is gold, so the two
+sides never read alike. A magic caster of the Hollow Heart and every boss's
+magic cast in **Violet** with a crimson edge (corruption); machines keep the
+neon, magenta first. No foe tone is green or Ember; no hero tone is Ember or
+Violet.
 
 Review: `?vfxlab=1` ▸ **Foe templates** plays a ring, a cone, a lane, a shot
 and a fall for a boar, a keener, a lancer, a vane, the Briar Knight and the

@@ -12,8 +12,8 @@
 //   the hit        an enemy blow landing on the party
 //   the fall       a champion's fall and a boss's death end in a big burst
 //
-// Colours: data/vfx.js vfxFoeTone (palette.js VFX_FOE): Ember fire and Ember
-// spell light (an enemy attack is a threat), Violet for corrupted casters,
+// Colours: data/vfx.js vfxFoeTone (palette.js VFX_FOE): Foe Crimson fire and
+// spell light (Ember stays the floor shapes'), Violet for corrupted casters,
 // magenta-first neon for machines; never Bright Heal. Size scales by weight:
 // a champion plays half again as big, a boss twice (vfxFoeWeight).
 //

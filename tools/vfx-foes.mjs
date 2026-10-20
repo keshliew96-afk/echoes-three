@@ -4,7 +4,7 @@
 //
 //   1. Data (no browser): every enemy kind the sim knows (ENEMY_KINDS, the
 //      champions among them) and every boss (BOSS_KINDS) has a template row;
-//      foe tones never wear Bright Heal; a corrupted tone goes only to a
+//      foe tones never wear Bright Heal or Ember; a corrupted tone goes only to a
 //      Heart body or a boss; hero tones never wear Ember or Violet.
 //   2. Live, enemies: each kind is spawned alone (tough, nearly harmless)
 //      in a Level I room and stepped until it plays a foe beat; every kind
@@ -60,6 +60,7 @@ const BOSSES = [...BOSS_KINDS];
   const up = (h) => h.toUpperCase();
   const foeHex = Object.values(VFX_FOE).flatMap((r) => Object.values(r)).map(up);
   check(!foeHex.includes(up(PALETTE.brightHeal)), 'no foe tone wears Bright Heal');
+  check(!foeHex.includes(up(PALETTE.emberDanger)), 'no foe tone wears Ember (the floor shapes keep it)');
   const heroHex = Object.values(VFX_TEMPLATE).flatMap((r) => Object.values(r)).map(up);
   check(![PALETTE.emberDanger, PALETTE.godstuffViolet, PALETTE.brightHeal].map(up).some((h) => heroHex.includes(h)), 'hero tones never wear Ember, Violet or Bright Heal');
   const corrupt = all.filter((k) => vfxFoeTone(k).corrupt);
