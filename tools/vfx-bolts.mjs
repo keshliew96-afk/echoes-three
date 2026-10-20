@@ -328,17 +328,21 @@ async function foes() {
   const quiet = [];
   for (const kind of list) {
     const before = heads((await tally(page))[kind]);
-    await page.evaluate((kind) => {
+    const id = await page.evaluate((kind) => {
       const X = __echoes;
       const p = X.content.world().player;
       const ids = new Set(X.content.world().entities().map((q) => q.id));
-      X.cmd('spawn', kind, p.x + 0.4, p.z - 4, { hpMul: 60, dmgMul: 0.02 });
+      // The Miller tosses its sack from 3 to 6.5 u; everyone else from 4.
+      X.cmd('spawn', kind, p.x + 0.4, p.z - (kind === 'miller' ? 5.5 : 4), { hpMul: 60, dmgMul: 0.02 });
       const e = X.content.world().entities().find((q) => !ids.has(q.id) && q.kind === kind);
       for (const q of X.content.world().entities()) if (q !== e && q.faction === 'hostile' && q.hp > 0 && q.hittable) X.cmd('setHp', q.id, 0);
+      return e ? e.id : null;
     }, kind);
     let t = 0;
     let n = 0;
     for (; t < 1500 && n <= 0; t += 10) {
+      // The Rotcap lobs only in death (its spore burst at the corpse).
+      if (kind === 'rotcap' && t === 60) await page.evaluate((id) => __echoes.cmd('setHp', id, 0), id);
       await drawStep(page, 10);
       n = heads((await tally(page))[kind]) - before;
     }
@@ -362,6 +366,9 @@ async function bosses() {
       X.cmd('skipToRoom', 8);
       for (let i = 0; i < 80 && (X.state().run || {}).phase !== 'combat'; i++) X.sim.stepN(30, null);
       X.cmd('partyMode', 'manual');
+      // The Skyhorn's leap (its shards) opens in phase 2, the Cantor's echo
+      // shards in its second verse: both are met past half health.
+      if (kind === 'skyhorn' || kind === 'cantor') X.cmd('bossHp', 0.45, true);
     }, kind);
     let t = 0;
     let n = 0;
