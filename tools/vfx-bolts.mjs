@@ -367,8 +367,8 @@ async function bosses() {
       for (let i = 0; i < 80 && (X.state().run || {}).phase !== 'combat'; i++) X.sim.stepN(30, null);
       X.cmd('partyMode', 'manual');
       // The Skyhorn's leap (its shards) opens in phase 2, the Cantor's echo
-      // shards in its later verses: both are met at a fifth of their health.
-      if (kind === 'skyhorn' || kind === 'cantor') X.cmd('bossHp', 0.2, true);
+      // shards in its later verses: both are met at a quarter of their health (their phases still play).
+      if (kind === 'skyhorn' || kind === 'cantor') X.cmd('bossHp', 0.25, false);
     }, kind);
     let t = 0;
     let n = 0;
