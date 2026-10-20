@@ -98,8 +98,17 @@ const VCLOCK = () => {
   performance.now = () => (on ? vt : realNow());
   window.__vclock = {
     start() {
-      vt = realNow();
+      // Never backwards: the loop's clock guard holds at the last virtual
+      // time it saw, so a restart behind it would stall the sim.
+      vt = Math.max(realNow(), vt);
       on = true;
+      // The page's loop may still sit on a real frame (slow under software
+      // GL): wait until it has handed its next frame to the virtual clock.
+      return new Promise((ok) => {
+        const t0 = realNow();
+        const look = () => (queue.length || realNow() - t0 > 20000 ? ok(queue.length) : setTimeout(look, 15));
+        look();
+      });
     },
     stop() {
       on = false;
@@ -156,6 +165,9 @@ function clipEnd(name) {
 async function frames(page, n, still = {}, ticks = 0) {
   for (let i = 0; i < n; i++) {
     await page.evaluate((ms, k) => (k && __echoes.sim.stepN(k, null), __vclock.step(ms)), 1000 / FPS, ticks);
+    // Unfilmed, let the page's own loop turn once between virtual frames
+    // (a screenshot does that when filming).
+    if (!clipDir) await page.evaluate(() => new Promise((ok) => setTimeout(ok, 30)));
     if (clipDir) await page.screenshot({ path: join(clipDir, `f${String(clipN++).padStart(5, '0')}.jpg`), type: 'jpeg', quality: 86 });
     if (SHOTS && still[i]) await page.screenshot({ path: join(SHOTS, `${still[i]}.png`) });
   }
@@ -181,9 +193,8 @@ async function campaign(page, level, lineup = ['healer', 'tank', 'swordsman', 'a
 // --------------------------------------------------------------- heroes --
 const seatOf = (page, cls) =>
   page.evaluate((c) => {
-    if (c === 'healer') return 0;
     for (const e of __echoes.content.world().entities()) if (e.classId === c && e.partyIndex !== undefined) return e.partyIndex;
-    return null;
+    return 0; // the player's own body carries no seat
   }, cls);
 // Keys change only out of combat: clear the room, put the set on the keys,
 // walk into the next room (the vfx-rework.mjs recipe).
@@ -213,7 +224,13 @@ async function equip(page, seat, set) {
       X.cmd('partyMode', 'manual');
       X.cmd('skipToRoom', ((X.state().run || {}).room || 1) + 1);
       X.sim.stepN(160, null);
-      X.cmd('killAllEnemies');
+      // A far, tough boar keeps the room in combat (a cleared room takes
+      // the keys' casts away and drops every shot in flight).
+      const p = X.content.world().player;
+      const ids = new Set(X.content.world().entities().map((q) => q.id));
+      X.cmd('spawn', 'boar', p.x + 7, p.z + 7, { hpMul: 400, dmgMul: 0.01 });
+      window.__keeper = (X.content.world().entities().find((q) => !ids.has(q.id) && q.kind === 'boar') || {}).id ?? null;
+      for (const q of X.content.world().entities()) if (q.id !== window.__keeper && q.faction === 'hostile' && q.hp > 0 && q.hittable) X.cmd('setHp', q.id, 0);
       X.sim.stepN(4, null);
       const keys = () => (seat === 0 ? ((X.cmd('skillState') || {}).slots || []).map((s) => s && s.id) : (X.cmd('partyView', seat) || {}).slots || []);
       if (seat === 0 && !set.every((id) => keys().includes(id))) put();
@@ -226,7 +243,7 @@ async function equip(page, seat, set) {
 async function castOne(page, seat, id, slot) {
   const aim = await page.evaluate((seat) => {
     const X = __echoes;
-    X.cmd('killAllEnemies');
+    for (const q of X.content.world().entities()) if (q.id !== window.__keeper && q.faction === 'hostile' && q.hp > 0 && q.hittable) X.cmd('setHp', q.id, 0);
     const me = X.content.world().entities().find((e) => e.partyIndex === seat) ?? X.content.world().player;
     const f = { x: me.x, z: me.z - 3.2 };
     for (const [dx, dz] of [[-0.9, 0], [0, -0.5], [0.9, 0]]) X.cmd('spawn', 'dummy', f.x + dx, f.z + dz);
@@ -238,14 +255,27 @@ async function castOne(page, seat, id, slot) {
     if (pt) await page.mouse.move(pt.x, pt.y);
   }
   const before = heads((await tally(page))[id]);
-  await page.evaluate(() => (__echoes.sim.thaw(), __vclock.start()));
-  if (seat === 0) {
-    await page.evaluate((k) => window.dispatchEvent(new KeyboardEvent('keydown', { code: `Digit${k + 1}`, key: String(k + 1) })), slot);
-    await frames(page, 3);
-    await page.evaluate((k) => window.dispatchEvent(new KeyboardEvent('keyup', { code: `Digit${k + 1}`, key: String(k + 1) })), slot);
-  } else await page.evaluate((seat, slot, f) => __echoes.cmd('partyCast', seat, slot, f), seat, slot, aim);
-  await frames(page, 16, { 7: `cast-${id}` });
-  await page.evaluate(() => (__echoes.sim.freeze(), __vclock.stop()));
+  if (seat !== 0) {
+    // An ally seat casts at once (partyCast); the sim then steps through
+    // stepN, which never waits on the page's own loop.
+    await page.evaluate((seat, slot, f) => __echoes.cmd('partyCast', seat, slot, f), seat, slot, aim);
+    if (SHOTS) {
+      await page.evaluate(() => __vclock.start());
+      await frames(page, 16, { 7: `cast-${id}` }, 2);
+      await page.evaluate(() => __vclock.stop());
+    } else for (let i = 0; i < 12; i++) await drawStep(page, 3);
+  } else {
+    // The Healer's keys are the keyboard's: the page's own loop runs on the
+    // virtual clock, a 30 fps frame at a time, so a fast lance is drawn in
+    // flight however slow the GL is.
+    const down = (k, type) => page.evaluate((k, type) => window.dispatchEvent(new KeyboardEvent(type, { code: `Digit${k + 1}`, key: String(k + 1) })), k, type);
+    await page.evaluate(() => (__echoes.sim.thaw(), __vclock.start()));
+    await down(slot, 'keydown');
+    await frames(page, 8); // about 250 ms of held key
+    await down(slot, 'keyup');
+    await frames(page, 16, { 7: `cast-${id}` });
+    await page.evaluate(() => (__echoes.sim.freeze(), __vclock.stop()));
+  }
   return heads((await tally(page))[id]) - before;
 }
 async function heroes() {
@@ -325,21 +355,30 @@ async function fights() {
 async function foes() {
   const page = await open(81);
   await campaign(page, 1);
-  await page.evaluate(() => __echoes.cmd('partyMode', 'manual'));
+  // A far, tough boar keeps the room in combat: the Rotcap's death (and
+  // each kill below) must never clear it (a room clear drops every shot).
+  const keeper = await page.evaluate(() => {
+    const X = __echoes;
+    X.cmd('partyMode', 'manual');
+    const p = X.content.world().player;
+    const ids = new Set(X.content.world().entities().map((q) => q.id));
+    X.cmd('spawn', 'boar', p.x + 7, p.z + 7, { hpMul: 400, dmgMul: 0.01 });
+    return (X.content.world().entities().find((q) => !ids.has(q.id) && q.kind === 'boar') || {}).id ?? null;
+  });
   const list = KINDS ? [...SHOOTERS, ...LOBBERS].filter((k) => KINDS.includes(k)) : [...SHOOTERS, ...LOBBERS];
   const quiet = [];
   for (const kind of list) {
     const before = heads((await tally(page))[kind]);
-    const id = await page.evaluate((kind) => {
+    const id = await page.evaluate((kind, keeper) => {
       const X = __echoes;
       const p = X.content.world().player;
       const ids = new Set(X.content.world().entities().map((q) => q.id));
       // The Miller tosses its sack from 3 to 6.5 u; everyone else from 4.
       X.cmd('spawn', kind, p.x + 0.4, p.z - (kind === 'miller' ? 5.5 : 4), { hpMul: 60, dmgMul: 0.02 });
       const e = X.content.world().entities().find((q) => !ids.has(q.id) && q.kind === kind);
-      for (const q of X.content.world().entities()) if (q !== e && q.faction === 'hostile' && q.hp > 0 && q.hittable) X.cmd('setHp', q.id, 0);
+      for (const q of X.content.world().entities()) if (q !== e && q.id !== keeper && q.faction === 'hostile' && q.hp > 0 && q.hittable) X.cmd('setHp', q.id, 0);
       return e ? e.id : null;
-    }, kind);
+    }, kind, keeper);
     let t = 0;
     let n = 0;
     for (; t < 1500 && n <= 0; t += 10) {
@@ -393,7 +432,7 @@ async function shots() {
   await page.evaluate(() => {
     __echoes.cmd('killAllEnemies');
     __echoes.sim.stepN(4, null);
-    __vclock.start();
+    return __vclock.start();
   });
   const rows = [
     ['hero', ['blade', 'magic', 'scifi', 'heal']],
