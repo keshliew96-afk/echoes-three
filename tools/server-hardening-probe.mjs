@@ -242,8 +242,13 @@ try {
     const by = {};
     for (const r of rs) by[r.status] = (by[r.status] || 0) + 1;
     // A refused upload is answered, then its connection is closed mid-body:
-    // a client still writing may see the reset (status 0) instead.
-    check('uploads', '80 concurrent 3 MB uploads from one address: most refused unread, memory stays small', peak - before < 150 && (by[200] || 0) <= 30 && (by[429] || 0) + (by[503] || 0) >= 50, { statuses: by, rssBefore: before, rssPeak: peak });
+    // a client still writing may see the reset (status 0) instead, so a reset
+    // counts as a refusal. Any other failure (refused connect, a dead server)
+    // does not.
+    const resets = rs.filter((r) => r.status === 0 && (r.error === 'ECONNRESET' || r.error === 'EPIPE')).length;
+    const failed = rs.filter((r) => r.status === 0).length - resets;
+    const refused = (by[429] || 0) + (by[503] || 0) + resets;
+    check('uploads', '80 concurrent 3 MB uploads from one address: most refused unread (answered or reset), memory stays small', peak - before < 150 && (by[200] || 0) <= 30 && refused >= 50 && failed === 0, { statuses: by, resets, failed, rssBefore: before, rssPeak: peak });
     const tooBig = await httpReq('POST', '/cloud/save', { ip: newIp(), body: '{}', headers: { 'content-length': String(8 * 1024 * 1024) } });
     check('declared', 'an upload declaring more than the cap is refused before its body', tooBig.status === 413, { status: tooBig.status });
     const small = await httpReq('POST', '/cloud/save', { ip: newIp(), body: JSON.stringify({ bundle: { kind: 'echoes-cloud', v: 1, profile: '{}', slots: {} } }) });
