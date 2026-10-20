@@ -179,6 +179,8 @@ async function campaign(page, level, { film = false, lineup = ['healer', 'tank',
 // ------------------------------------------------------------ enemies --
 // Each kind on its own: spawned three units in front of the party (tough,
 // nearly harmless), the last one killed only after the next stands.
+// Foes whose beat is a mend, a burial or a tether on another foe.
+const SUPPORTS = new Set(['snail', 'gravewisp', 'censer', 'sexton']);
 async function enemies() {
   const page = await open(31);
   await campaign(page, 1);
@@ -187,7 +189,7 @@ async function enemies() {
   const silent = [];
   for (const kind of list) {
     const res = await page.evaluate(
-      (kind, hold) => {
+      (kind, hold, support) => {
         const X = __echoes;
         const p = X.content.world().player;
         const ids = new Set(X.content.world().entities().map((q) => q.id));
@@ -196,6 +198,14 @@ async function enemies() {
         // Everything else hostile falls, so this kind has the attack
         // governor to itself (the run stays in combat while it stands).
         for (const q of X.content.world().entities()) if (q !== e && q.faction === 'hostile' && q.hp > 0 && q.hittable) X.cmd('setHp', q.id, 0);
+        // A support needs someone to mend, bury or tether: one wounded
+        // companion stands beside it.
+        if (support) {
+          const had = new Set(X.content.world().entities().map((q) => q.id));
+          X.cmd('spawn', 'boar', p.x + 2.4, p.z - 4, { hpMul: 60, dmgMul: 0.02 });
+          const c = X.content.world().entities().find((q) => !had.has(q.id) && q.kind === 'boar');
+          if (c) X.cmd('setHp', c.id, 0.5);
+        }
         const before = (X.content.vfx().foe || {})[kind] || {};
         const sum = (r) => ['ring', 'cone', 'lane', 'laser', 'shot', 'hit', 'ward', 'tether'].reduce((n, k) => n + (r[k] ?? 0), 0);
         let t = 0;
@@ -205,13 +215,17 @@ async function enemies() {
           const row = (X.content.vfx().foe || {})[kind] || {};
           if (sum(row) > sum(before)) break;
         }
-        return { id: e && e.id, ticks: t, row: (X.content.vfx().foe || {})[kind] || {} };
+        return { id: e && e.id, ticks: t, phase: (X.state().run || {}).phase, alive: !!(e && e.hp > 0), row: (X.content.vfx().foe || {})[kind] || {} };
       },
       kind,
-      `(${HOLD})()`
+      `(${HOLD})()`,
+      SUPPORTS.has(kind)
     );
     if (struck(res.row) > 0) console.log(`ok   ${kind} (${FOE_TEMPLATE[kind]}): ${desc(res.row)} within ${res.ticks} ticks`);
-    else silent.push(`${kind} (${desc(res.row)})`);
+    else {
+      silent.push(`${kind} (${desc(res.row)})`);
+      console.log(`info ${kind}: id ${res.id}, phase ${res.phase}, alive ${res.alive}, ${res.ticks} ticks`);
+    }
   }
   check(silent.length === 0, `every enemy and champion played a foe beat: a strike, shot or hit, or a support's ward or tether (${list.length - silent.length}/${list.length})${silent.length ? `; none from: ${silent.join(', ')}` : ''}`);
   await page.close();
