@@ -5,8 +5,11 @@
 //   node tools/i18n-extract.mjs            rewrite src/i18n/catalog.json
 //   node tools/i18n-extract.mjs --check    write nothing; list, per language,
 //                                          missing keys and placeholder
-//                                          mismatches, and say if catalog.json
-//                                          is out of date (exit 1 when any)
+//                                          mismatches and unused entries, and
+//                                          say if catalog.json is out of date
+//                                          (exit 1 when any)
+//   --locales=<dir>                        check the tables in <dir> instead of
+//                                          src/i18n/locales (the prune probe)
 //
 // Keys come from two places:
 //   1. literal first arguments of t('...') and the two literal forms of
@@ -23,6 +26,7 @@ const LANGUAGE_GLOSSES = LANGUAGES.map((l) => l.english);
 const root = new URL('..', import.meta.url).pathname;
 const SRC = join(root, 'src');
 const CHECK = process.argv.includes('--check');
+const LOCALES_ARG = process.argv.find((a) => a.startsWith('--locales='));
 
 function walk(dir, out = []) {
   for (const n of readdirSync(dir)) {
@@ -80,7 +84,7 @@ function harvest(v, rel, field, depth, all = false) {
   }
   for (const [k, x] of Object.entries(v)) harvest(x, rel, k, depth + 1, all);
 }
-const NAME_TABLES = new Set(['NODE_EFFECT', 'NODE_EFFECT_SHORT', 'SKILL_BODY', 'SHAPE_LABEL', 'SUBSTITUTE_LINE', 'EMPTY_LINE', 'SIPHON_CARD_LINE', 'CLASS_NAME', 'SEAT_NAMES', 'SEAT_LABELS', 'SEAT_CRITTERS', 'ENEMY_NAMES', 'BOSS_NAMES', 'REASON_TEXT', 'KIND_LABEL', 'CURRENCY']);
+const NAME_TABLES = new Set(['NODE_EFFECT', 'NODE_EFFECT_SHORT', 'SKILL_BODY', 'SHAPE_LABEL', 'SUBSTITUTE_LINE', 'EMPTY_LINE', 'SIPHON_CARD_LINE', 'CLASS_NAME', 'SEAT_NAMES', 'SEAT_LABELS', 'SEAT_CRITTERS', 'ENEMY_NAMES', 'BOSS_NAMES', 'CLASS_CRITTER', 'REASON_TEXT', 'KIND_LABEL', 'CURRENCY']);
 for (const f of dataFiles) {
   const rel = relative(root, f);
   let mod;
@@ -142,7 +146,7 @@ if (CHECK) {
   const holders = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
   const tags = (s) => [...String(s).matchAll(/<\/?[a-z]+[^>]*>/g)].length;
   let bad = 0;
-  const locDir = join(SRC, 'i18n/locales');
+  const locDir = LOCALES_ARG ? LOCALES_ARG.slice('--locales='.length) : join(SRC, 'i18n/locales');
   for (const f of readdirSync(locDir).filter((n) => n.endsWith('.json')).sort()) {
     const table = JSON.parse(readFileSync(join(locDir, f), 'utf8'));
     const missing = [];
@@ -163,11 +167,14 @@ if (CHECK) {
         if (!ok || tags(s) !== tags(k)) mism.push(`${k} => ${s}`);
       }
     }
-    const extra = Object.keys(table).filter((k) => !keys.has(k)).length;
-    console.log(`${f}: ${Object.keys(table).length} entries, missing ${missing.length}, placeholder/tag mismatches ${mism.length}, unused ${extra}`);
+    // An entry no key asks for is a line the game no longer shows (since
+    // v0.5.326 it fails the check: delete it from every table).
+    const unused = Object.keys(table).filter((k) => !keys.has(k));
+    console.log(`${f}: ${Object.keys(table).length} entries, missing ${missing.length}, placeholder/tag mismatches ${mism.length}, unused ${unused.length}`);
     for (const m of missing.slice(0, 15)) console.log(`  missing: ${m}`);
     for (const m of mism.slice(0, 15)) console.log(`  mismatch: ${m}`);
-    bad += missing.length + mism.length;
+    for (const m of unused.slice(0, 15)) console.log(`  unused: ${m}`);
+    bad += missing.length + mism.length + unused.length;
   }
   process.exit(bad || stale ? 1 : 0);
 }

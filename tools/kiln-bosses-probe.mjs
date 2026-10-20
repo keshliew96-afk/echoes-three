@@ -167,7 +167,7 @@ const inLane = (t, p) => {
     S.KEEPER_LINES.byVerses.text[6], S.KEEPER_LINES.flameFive.text, S.CHRONICLER_LINES.byVerses.text[6], S.CHRONICLER_LINES.flameFive.text,
     S.RILL_LINES.flameFive.text, S.TOLLY_LINES.flameFive.text, S.SABLE_LINES.flameFive.text,
     'The Bellfounder’s crucible cracks. In the gods’ kiln, the last bell rings true.', 'The Cinderback sinks into the coals. The kiln’s fire burns clean again.',
-    'Choose your road', 'Verse of {verse}', 'No road chosen in {secs} s: the party takes the Spire', 'The Healer chooses the road…', '<b>← →</b> choose a road · <b>Enter</b> take it',
+    'Choose your road', 'Verse of {verse}', 'No road chosen in {secs} s: the party takes the Spire', '<b>← →</b> choose a road · <b>Enter</b> take it',
     'The gods’ high belfry, where they sat down to watch and never rose.', 'The gods’ kiln, where the first bells were fired. The fire never went out.',
     ...['founder', 'cinderback'].flatMap((k) => { const r = BESTIARY.find((x) => x.id === k); return [r.lore, r.text]; }),
   ];
