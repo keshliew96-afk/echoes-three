@@ -167,10 +167,12 @@ const HOLD = () => {
   for (const m of __echoes.state().party || []) __echoes.cmd('setHp', m.id, 1);
 };
 
-async function campaign(page, level, lineup = ['healer', 'tank', 'swordsman', 'archer']) {
+async function campaign(page, level, { film = false, lineup = ['healer', 'tank', 'swordsman', 'archer'] } = {}) {
   await page.evaluate((level, lineup) => __echoes.cmd('startCampaign', { level, lineup }), level, lineup);
   await page.waitForFunction(() => (__echoes.state().run || {}).phase === 'combat', { timeout: 180000, polling: 250 });
-  await page.evaluate(() => __echoes.sim.freeze());
+  // The sim steps only through stepN; filming, the page draws on the
+  // virtual clock (and the director's events drain as it draws).
+  await page.evaluate((film) => (__echoes.sim.freeze(), film && __vclock.start()), film);
 }
 
 // ------------------------------------------------------------ enemies --
@@ -257,7 +259,7 @@ async function shots() {
   // The lab strikes of one foe per tone, at play zoom on a Level I floor.
   const page = await open(51);
   await page.addStyleTag({ content: '.rn-page, #run-veil { display: none !important; }' });
-  await campaign(page, 1);
+  await campaign(page, 1, { film: true });
   await page.evaluate(() => __echoes.cmd('killAllEnemies'));
   for (const kind of ['boar', 'keener', 'lancer', 'vane', 'briar_knight', 'stag']) {
     clipStart(`lab-${kind}`);
@@ -269,7 +271,7 @@ async function shots() {
   // A busy fight: the four heroes on auto against a mixed pack.
   const fp = await open(52);
   await fp.addStyleTag({ content: '.rn-page, #run-veil { display: none !important; }' });
-  await campaign(fp, 1);
+  await campaign(fp, 1, { film: true });
   await fp.evaluate(() => {
     const X = __echoes;
     X.cmd('partyMode', 'auto');
@@ -285,7 +287,7 @@ async function shots() {
   for (const kind of ['stag', 'thornmother', 'hourwarden']) {
     const bp = await open(60 + kind.length);
     await bp.addStyleTag({ content: '.rn-page, #run-veil { display: none !important; }' });
-    await campaign(bp, actOf(kind));
+    await campaign(bp, actOf(kind), { film: true });
     await bp.evaluate((kind) => {
       const X = __echoes;
       X.cmd('bossPick', kind);
