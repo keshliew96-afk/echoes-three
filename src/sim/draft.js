@@ -66,7 +66,6 @@ export const PRICES = Object.freeze({ common: 15, rare: 20, legendary: 25 });
 // two cards affordable (72 - 5 = 67 >= 20 + 25).
 export const REFRESH_PRICE = Object.freeze({ base: 5, step: 5 });
 export const refreshPrice = (n) => REFRESH_PRICE.base + REFRESH_PRICE.step * Math.max(0, n | 0);
-export const RARITY_ORDER = Object.freeze(['common', 'rare', 'legendary']);
 // Shelf strata, in draw order: two commons, one rare, one legendary.
 export const SHOP_STRATA = Object.freeze(['common', 'common', 'rare', 'legendary']);
 export const SHOP_SIZE = SHOP_STRATA.length;

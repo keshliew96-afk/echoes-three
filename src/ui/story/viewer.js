@@ -57,7 +57,6 @@ const BUILDERS = {
   founder: buildFounder,
   cinderback: buildCinderback,
 };
-export const VIEWER_KINDS = Object.freeze(Object.keys(BUILDERS));
 
 const LIVE_PX = 560; // render size of the turning model (CSS scales it)
 const THUMB_PX = 112; // tile still

@@ -265,22 +265,6 @@ export function viewEntity(q, tick) {
   return e;
 }
 
-// Quantised-channel equality (rest compared separately by the tree diff).
-export function sameChannels(a, b) {
-  return (
-    a.ch === b.ch &&
-    a.qx === b.qx &&
-    a.qz === b.qz &&
-    a.hp === b.hp &&
-    a.yaw === b.yaw &&
-    a.yawf === b.yawf &&
-    a.ax === b.ax &&
-    a.az === b.az &&
-    a.fp === b.fp &&
-    a.fv === b.fv &&
-    sameAnchor(a.mv, b.mv)
-  );
-}
 export function sameAnchor(a, b) {
   if (!a || !b) return a === b;
   return a.t0 === b.t0 && a.x0 === b.x0 && a.z0 === b.z0 && a.tr0 === b.tr0;

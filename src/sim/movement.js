@@ -34,24 +34,59 @@
 // blocker's entity id, so a bolt stops ON a barricade and the barricade takes
 // the hit. The list is empty unless a layout placed a blocker, so every legacy
 // path (the ?room= harness, the golden traces) is untouched.
+//
+// PER-WORLD STATE. The three lists (statics, dynamics, slip patches) live in a
+// movement state object, one per sim world (createWorld makes its own and
+// binds it on every step, cmd and load), so two worlds stepped in turn in one
+// process (headless probes, the net round-trip harness) never see each
+// other's blockers. A browser page runs one world, so the binding is the same
+// object every tick. With no world bound, the module default is used.
 import { ARENA } from '../core/constants.js';
+
+export function createMovementState() {
+  return { statics: [], dynamics: [], slips: [] };
+}
+let S = createMovementState();
+
+// Bind `state` as the one the helpers below read and write; returns the
+// previous binding (null or a non-state leaves the binding unchanged).
+export function useMovementState(state) {
+  const prev = S;
+  if (state && Array.isArray(state.statics) && Array.isArray(state.dynamics) && Array.isArray(state.slips)) S = state;
+  return prev;
+}
+
+export function movementState() {
+  return S;
+}
+
+// Run fn with `state` bound, then restore the previous binding.
+function within(state, fn) {
+  if (!state || state === S) return fn();
+  const prev = useMovementState(state);
+  try {
+    return fn();
+  } finally {
+    S = prev;
+  }
+}
 
 export function innerBounds(radius) {
   return { mx: ARENA.halfW - radius, mz: ARENA.halfD - radius };
 }
 
 // --- Static colliders ------------------------------------------------------
-let statics = [];
 
 // Install (or clear, with null / []) the static collider list. Boxes are
 // stored with their rotation pre-solved. Returns the installed count.
-export function setStaticColliders(list) {
-  statics = [];
+export function setStaticColliders(list, state = null) {
+  if (state && state !== S) return within(state, () => setStaticColliders(list));
+  S.statics = [];
   if (!list) return 0;
   for (const c of list) {
     if (c.hx !== undefined) {
       const yaw = c.yaw ?? 0;
-      statics.push({
+      S.statics.push({
         kind: 'box',
         id: c.id ?? null,
         x: c.x,
@@ -62,18 +97,17 @@ export function setStaticColliders(list) {
         s: Math.sin(yaw),
       });
     } else {
-      statics.push({ kind: 'circle', id: c.id ?? null, x: c.x, z: c.z, r: c.r });
+      S.statics.push({ kind: 'circle', id: c.id ?? null, x: c.x, z: c.z, r: c.r });
     }
   }
-  return statics.length;
+  return S.statics.length;
 }
 
 export function staticColliders() {
-  return statics;
+  return S.statics;
 }
 
 // --- Dynamic (entity-owned) colliders --------------------------------------
-let dynamics = [];
 
 function solveCollider(c) {
   if (c.hx !== undefined) {
@@ -90,34 +124,36 @@ function solveCollider(c) {
 // systems at the start of every tick they own blockers, so a collider exists
 // exactly while its entity does. Returns the installed count.
 export function setDynamicColliders(list) {
-  dynamics = [];
+  S.dynamics = [];
   if (!list) return 0;
-  for (const c of list) dynamics.push({ ...solveCollider(c), dyn: true });
-  return dynamics.length;
+  for (const c of list) S.dynamics.push({ ...solveCollider(c), dyn: true });
+  return S.dynamics.length;
 }
 
 export function dynamicColliders() {
-  return dynamics;
+  return S.dynamics;
 }
 
-// Module-level state for the save system (PLAN §3.4 rule 4): the dynamic list
+// The world's movement state for the save system (PLAN §3.4 rule 4): the dynamic list
 // is DERIVED from entities (the content systems rebuild it every tick), and
 // statics are re-installed by re-entering the saved scene mode — so the
 // serialised form is the dynamic list as plain data, for completeness.
-export function serializeMovement() {
+export function serializeMovement(state = null) {
+  if (state && state !== S) return within(state, () => serializeMovement());
   return {
-    dynamics: dynamics.map((c) =>
+    dynamics: S.dynamics.map((c) =>
       c.kind === 'box'
         ? { id: c.id, x: c.x, z: c.z, hx: c.hx, hz: c.hz, yaw: Number.isFinite(c.yaw) ? c.yaw : Math.atan2(c.s, c.c) }
         : { id: c.id, x: c.x, z: c.z, r: c.r }
     ),
     // Slick floor: only while a room has patches, so every tree without one
     // (the goldens, Level 1, camp) keeps its exact shape and hash.
-    ...(slips.length > 0 ? { slips: slips.map((p) => ({ id: p.id, x: p.x, z: p.z, r: p.r, grip: p.grip })) } : {}),
+    ...(S.slips.length > 0 ? { slips: S.slips.map((p) => ({ id: p.id, x: p.x, z: p.z, r: p.r, grip: p.grip })) } : {}),
   };
 }
 
-export function restoreMovement(data) {
+export function restoreMovement(data, state = null) {
+  if (state && state !== S) return within(state, () => restoreMovement(data));
   setDynamicColliders(data && Array.isArray(data.dynamics) ? data.dynamics : null);
   setSlipPatches(data && Array.isArray(data.slips) ? data.slips : null);
 }
@@ -144,23 +180,22 @@ export const SLIP = Object.freeze({
   teleport: 0.4, // u per tick: anything faster is a reposition, never momentum
   rest: 1e-4, // u per tick: momentum below this is dropped
 });
-let slips = [];
 
 // Install (or clear) the slip patch list: [{ id, x, z, r, grip }].
 export function setSlipPatches(list) {
-  slips = [];
+  S.slips = [];
   if (!list) return 0;
-  for (const p of list) slips.push({ id: p.id ?? null, x: p.x, z: p.z, r: p.r, grip: Number.isFinite(p.grip) ? p.grip : SLIP.grip });
-  return slips.length;
+  for (const p of list) S.slips.push({ id: p.id ?? null, x: p.x, z: p.z, r: p.r, grip: Number.isFinite(p.grip) ? p.grip : SLIP.grip });
+  return S.slips.length;
 }
 
 export function slipPatches() {
-  return slips;
+  return S.slips;
 }
 
 // The patch under (x, z), or null.
 export function slipAt(x, z) {
-  for (const p of slips) {
+  for (const p of S.slips) {
     const dx = x - p.x;
     const dz = z - p.z;
     if (dx * dx + dz * dz <= p.r * p.r) return p;
@@ -172,7 +207,7 @@ export function slipAt(x, z) {
 // rule, given the step (ix, iz) it took on its own. null = no slip applies.
 export function slipBlend(e, ix, iz, gripMul = 1) {
   if (e.flier || e.burrowed) return null;
-  const p = slips.length > 0 ? slipAt(e.x, e.z) : null;
+  const p = S.slips.length > 0 ? slipAt(e.x, e.z) : null;
   const has = e.slipVx !== undefined;
   if (!p && !has) return null;
   if (!has) return null; // entering a patch: the first step seeds the momentum
@@ -191,7 +226,7 @@ export function slipFollow(e, x0, z0, { snap = false, gripMul = 1, proof = false
     if (e.slipVx !== undefined) dropSlip(e);
     return false;
   }
-  const p = slips.length > 0 ? slipAt(e.x, e.z) : null;
+  const p = S.slips.length > 0 ? slipAt(e.x, e.z) : null;
   const has = e.slipVx !== undefined;
   if (!p && !has) return false;
   const ix = e.x - x0;
@@ -243,12 +278,12 @@ function dropSlip(e) {
 // Signed clearance of a circle at (x, z) from the nearest static collider
 // (negative = penetrating). Probe helper; the step helpers use resolveStatics.
 export function staticClearance(x, z, radius) {
-  return clearanceOf(statics, x, z, radius);
+  return clearanceOf(S.statics, x, z, radius);
 }
 // ESCORT AND HOLD: the same against the statics AND the entity-owned
 // blockers (barricades, bells, rubble) standing in the room right now.
 export function blockerClearance(x, z, radius) {
-  return Math.min(clearanceOf(statics, x, z, radius), clearanceOf(dynamics, x, z, radius));
+  return Math.min(clearanceOf(S.statics, x, z, radius), clearanceOf(S.dynamics, x, z, radius));
 }
 function clearanceOf(list, x, z, radius) {
   let best = Infinity;
@@ -276,9 +311,9 @@ function clearanceOf(list, x, z, radius) {
 // wall re-clamp so a prop can never project a body outside the rect. Returns
 // true if any contact was resolved.
 export function resolveStatics(e, radius) {
-  const useDyn = dynamics.length > 0 && !e.flier && !e.burrowed; // fliers pass over, burrowers under
-  if (statics.length === 0 && !useDyn) return false;
-  const list = useDyn ? (statics.length > 0 ? statics.concat(dynamics) : dynamics) : statics;
+  const useDyn = S.dynamics.length > 0 && !e.flier && !e.burrowed; // fliers pass over, burrowers under
+  if (S.statics.length === 0 && !useDyn) return false;
+  const list = useDyn ? (S.statics.length > 0 ? S.statics.concat(S.dynamics) : S.dynamics) : S.statics;
   let pushed = false;
   for (let pass = 0; pass < 3; pass++) {
     let any = false;
@@ -358,7 +393,7 @@ export function walkStep(e, dx, dz, radius) {
   else if (e.x > mx) { e.x = mx; hit = true; }
   if (e.z < -mz) { e.z = -mz; hit = true; }
   else if (e.z > mz) { e.z = mz; hit = true; }
-  if ((statics.length > 0 || dynamics.length > 0) && resolveStatics(e, radius)) hit = true;
+  if ((S.statics.length > 0 || S.dynamics.length > 0) && resolveStatics(e, radius)) hit = true;
   return hit;
 }
 
@@ -393,7 +428,7 @@ export function sweptStep(e, dx, dz, radius) {
   else if (e.x > mx) e.x = mx;
   if (e.z < -mz) e.z = -mz;
   else if (e.z > mz) e.z = mz;
-  if ((statics.length > 0 || dynamics.length > 0) && resolveStatics(e, radius)) hit = true;
+  if ((S.statics.length > 0 || S.dynamics.length > 0) && resolveStatics(e, radius)) hit = true;
   return { hit, t };
 }
 
@@ -453,7 +488,7 @@ function colliderContactT(c, x, z, dx, dz, radius) {
 export function sweptDynamicContact(x, z, dx, dz, radius) {
   let best = Infinity;
   let id = null;
-  for (const c of dynamics) {
+  for (const c of S.dynamics) {
     const t = colliderContactT(c, x, z, dx, dz, radius);
     if (t < best) {
       best = t;
@@ -471,11 +506,11 @@ export function sweptDynamicContact(x, z, dx, dz, radius) {
 export function sweptContact(x, z, dx, dz, radius) {
   let t = Math.max(0, Math.min(1, sweptContactT(x, z, dx, dz, radius)));
   let entityId = null;
-  for (const c of statics) {
+  for (const c of S.statics) {
     const ct = colliderContactT(c, x, z, dx, dz, radius);
     if (ct < t) t = ct;
   }
-  for (const c of dynamics) {
+  for (const c of S.dynamics) {
     const ct = colliderContactT(c, x, z, dx, dz, radius);
     if (ct < t) {
       t = ct;

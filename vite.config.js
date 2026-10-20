@@ -135,12 +135,13 @@ export default defineConfig({
   build: {
     target: 'es2022',
     sourcemap: false,
-    // three is ~75% of the bundle and changes only when the dependency does:
-    // its own chunk keeps it in the browser cache across game updates.
-    rollupOptions: {
+    // three (~600 kB) changes only when the dependency does: its own chunk
+    // keeps it in the browser cache across game updates. codeSplitting
+    // replaces the deprecated advancedChunks (same `three` chunk).
+    rolldownOptions: {
       output: {
-        advancedChunks: {
-          groups: [{ name: 'three', test: /[\/]node_modules[\/]three[\/]/ }],
+        codeSplitting: {
+          groups: [{ name: 'three', test: /[\\/]node_modules[\\/]three[\\/]/ }],
         },
       },
     },

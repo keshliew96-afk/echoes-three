@@ -30,10 +30,6 @@
 import { Plane, Raycaster, Vector2, Vector3 } from 'three';
 import { VERSION } from './version.js';
 import { createStage } from './render/stage.js';
-import { createRenderTestScene } from './scenes/rendertest.js';
-import { createSimTestScene } from './scenes/simtest.js';
-import { createGrayboxScene } from './scenes/graybox.js';
-import { createCharTestScene } from './scenes/chartest.js';
 import { createArenaScene } from './scenes/arena.js';
 import { createCampScene } from './scenes/camp.js';
 import { createDebugOverlay } from './ui/debug.js';
@@ -227,13 +223,15 @@ function padAim(dir, { move } = {}) {
 const input = createInputController({ screenToWorld, padAim });
 
 // Scene registry — later blocks add camp/combat rooms on top of graybox.
+// The four test scenes load only when ?scene= names one (a harness build:
+// a player build never reads ?scene=), so they stay out of the main chunk.
 const SCENES = {
-  graybox: createGrayboxScene,
-  simtest: createSimTestScene,
-  rendertest: createRenderTestScene,
-  chartest: createCharTestScene,
-  arena: createArenaScene,
-  camp: createCampScene,
+  graybox: () => import('./scenes/graybox.js').then((m) => m.createGrayboxScene),
+  simtest: () => import('./scenes/simtest.js').then((m) => m.createSimTestScene),
+  rendertest: () => import('./scenes/rendertest.js').then((m) => m.createRenderTestScene),
+  chartest: () => import('./scenes/chartest.js').then((m) => m.createCharTestScene),
+  arena: async () => createArenaScene,
+  camp: async () => createCampScene,
 };
 // v0.5.0: the game BOOTS INTO CAMP (§2 "the camp hub scene bookends runs").
 // The camp scene wraps the arena and swaps between them on run start/end, so
@@ -323,7 +321,7 @@ import { registerHitCues } from './audio/hitcues.js';
 registerHitCues(service('audio'), { world, settings: app.settings });
 // @gnt:AUDIO end
 
-const buildScene = SCENES[sceneKey];
+const buildScene = await SCENES[sceneKey]();
 const activeScene = buildScene(stage, toggles, { world, cosmetic, bus, rng });
 
 // --- Run-block wiring (append-only; see src/sim/run.js + src/render/numbers.js).
@@ -716,12 +714,15 @@ provide(
 // replica is written by snapshots). Leaving the session restores exactly
 // the single-player step above. The multiplayer screens + Network tab
 // register here (the title shows Multiplayer once 'mp-menu' exists).
-import { createNetSession } from './net/session.js';
+// The session code (driver, replica, prediction, the net HUD) is its own
+// chunk, fetched now, in parallel with the rest of the boot: the net client
+// above is idle until a player opens Multiplayer, so nothing can need the
+// session before it lands. net.session is unset until then.
 import { registerMultiplayerScreens } from './ui/menu/mpmenu.js';
 import { registerNetworkTab } from './ui/menu/tabs/network.js';
 {
   const spStep = simStep;
-  createNetSession({
+  const netSession = import('./net/session.js').then(({ createNetSession }) => createNetSession({
     net: service('net'),
     world,
     clock,
@@ -737,7 +738,9 @@ import { registerNetworkTab } from './ui/menu/tabs/network.js';
       simStep = typeof fn === 'function' ? fn : spStep;
     },
     service,
-  });
+  }));
+  netSession.catch((err) => console.error('[net] the session chunk failed to load; Multiplayer is unavailable', err));
+  service('net').sessionReady = () => netSession;
   registerMultiplayerScreens();
   registerNetworkTab();
 }

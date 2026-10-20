@@ -312,8 +312,3 @@ export function buildWalls(root, spec, cosmetic) {
   };
 }
 
-// Approximate display-space HSL helper kept next to the tone maths so callers
-// can log what was actually authored.
-export function toneHex(color) {
-  return `#${color.clone().convertLinearToSRGB().getHexString()}`;
-}

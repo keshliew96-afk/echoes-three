@@ -203,7 +203,6 @@ export const THREAT = Object.freeze({
   ashwraith: 1.7,
 });
 export const ELITE_COST = 1.8;
-export const ELITE_MUL = Object.freeze({ hp: 1.8, dmg: 1.25, scale: 1.2 });
 
 const ELITE = Object.freeze([
   null,

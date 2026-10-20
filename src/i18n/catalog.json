@@ -860,21 +860,6 @@
    "src/ui/run/index.js"
   ]
  },
- "{name}. Danger {level}.": {
-  "files": [
-   "src/ui/run/expedition.js"
-  ]
- },
- "{name}. Danger {level}. Locked: win {prev} to unlock.": {
-  "files": [
-   "src/ui/run/expedition.js"
-  ]
- },
- "{name}. Danger {level}. Locked: win the previous act to unlock.": {
-  "files": [
-   "src/ui/run/expedition.js"
-  ]
- },
  "{name}'s connection is unstable — {loss} packet loss": {
   "files": [
    "src/ui/net/hud.js"
@@ -2617,11 +2602,6 @@
    "src/ui/menu/saves.js"
   ]
  },
- "ACT {act}": {
-  "files": [
-   "src/ui/run/expedition.js"
-  ]
- },
  "Address": {
   "files": [
    "src/ui/menu/mpmenu.js"
@@ -3318,7 +3298,6 @@
   "files": [
    "src/ui/run/classpick.js",
    "src/ui/run/daily.js",
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js",
    "src/ui/run/unlocks.js",
    "src/ui/story/page.js"
@@ -4446,7 +4425,6 @@
  },
  "Burial mounds": {
   "files": [
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -4832,7 +4810,6 @@
    "src/ui/menu/saves.js",
    "src/ui/menu/title.js",
    "src/ui/run/classpick.js",
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -4850,11 +4827,6 @@
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": {
   "files": [
    "src/ui/menu/saves.js"
-  ]
- },
- "Choose an expedition": {
-  "files": [
-   "src/ui/run/expedition.js"
   ]
  },
  "Choose one of three legendary relics (rare when none are left).": {
@@ -5821,7 +5793,6 @@
  },
  "Danger {level}": {
   "files": [
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -7655,7 +7626,6 @@
  },
  "Flooded mill": {
   "files": [
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -9842,11 +9812,6 @@
   ],
   "data": true
  },
- "LAST PLAYED": {
-  "files": [
-   "src/ui/run/expedition.js"
-  ]
- },
  "LAST RUN": {
   "files": [
    "src/ui/run/unlocks.js"
@@ -10188,7 +10153,6 @@
  "Locked": {
   "files": [
    "src/save/index.js",
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -10732,11 +10696,6 @@
    "src/ui/menu/saves.js"
   ]
  },
- "NEWEST": {
-  "files": [
-   "src/ui/run/expedition.js"
-  ]
- },
  "NEXT": {
   "files": [
    "src/ui/run/transit.js"
@@ -10783,7 +10742,6 @@
  },
  "Night woodland": {
   "files": [
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -13593,7 +13551,6 @@
  "Set out": {
   "files": [
    "src/ui/run/daily.js",
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -15183,7 +15140,6 @@
  },
  "The Ashen Barrow": {
   "files": [
-   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -15691,7 +15647,6 @@
  },
  "The Ember Kiln": {
   "files": [
-   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -15847,11 +15802,6 @@
  "The gamepad layout is fixed": {
   "files": [
    "src/ui/menu/tabs/controls.js"
-  ]
- },
- "The gate opens onto three roads. Each is a full run of eight rooms.": {
-  "files": [
-   "src/ui/run/expedition.js"
   ]
  },
  "The Geode Colossus": {
@@ -16180,7 +16130,6 @@
  },
  "The Hollow Heart": {
   "files": [
-   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -16226,7 +16175,6 @@
  },
  "The hollow under the Barrow": {
   "files": [
-   "src/ui/run/expedition.js",
    "src/ui/run/levels.js"
   ]
  },
@@ -16238,7 +16186,6 @@
  },
  "The Hollow Wood": {
   "files": [
-   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -17011,7 +16958,6 @@
  },
  "The Still Spire": {
   "files": [
-   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -17019,7 +16965,6 @@
  },
  "The Sunken Mill": {
   "files": [
-   "src/data/journal.js",
    "src/data/levels.js",
    "src/ui/menu/records.js"
   ],
@@ -18655,11 +18600,6 @@
    "src/sim/nodes.js"
   ],
   "data": true
- },
- "Win {name} to unlock": {
-  "files": [
-   "src/ui/run/expedition.js"
-  ]
  },
  "Win a Boss Rush in under 12 minutes.": {
   "files": [

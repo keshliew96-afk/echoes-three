@@ -36,7 +36,6 @@ import { LEGACY_HARNESS_PARAMS } from './params.js';
 import { registerCoreMenus } from '../ui/menu/index.js';
 import { t } from '../i18n/index.js';
 
-export const APP_STATES = Object.freeze(['boot', 'title', 'playing', 'farewell']);
 export const APP_UI_ROOT_ID = 'app-ui';
 const NET_SESSION_STATES = new Set(['host', 'guest', 'reconnecting', 'migrating']);
 // Background work yields to menu input for this long after the last press /

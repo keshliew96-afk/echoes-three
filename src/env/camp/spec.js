@@ -208,10 +208,3 @@ export const CAMP_SPEC = Object.freeze({
   ]),
 });
 
-// Nothing in the camp may sit outside the traversable rect.
-export function campBoundsOk() {
-  for (const [, x, z] of CAMP_SPEC.props) {
-    if (Math.abs(x) > ARENA.halfW - 0.4 || Math.abs(z) > ARENA.halfD - 0.4) return false;
-  }
-  return true;
-}

@@ -276,10 +276,6 @@ export function registerAmbientBed(id, builder) {
   BEDS[id] = builder;
 }
 
-export function bedIds() {
-  return Object.keys(BEDS);
-}
-
 export function createAmbient({ ctx, kit, dest, trims = BED_TRIM }) {
   let bed = null;
   let cur = null; // { id, out, srcs, details, nextDetail }

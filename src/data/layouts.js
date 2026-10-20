@@ -1028,16 +1028,10 @@ export function arenaOf(table) {
   return null;
 }
 
-export function layoutFor(id) {
-  return LAYOUTS[id] ?? null;
-}
-
 // Act of a layout id (4-6, 12-13 -> II; 7-9, 14-15 -> III; 16-20 -> IV), used by ?variant=N / ?layout=N.
 export function actOfLayout(id) {
   return LAYOUTS[id] ? LAYOUTS[id].act : 1;
 }
-
-export const BIOME_OF_ACT = Object.freeze({ 1: 'wood', 2: 'mill', 3: 'barrow', 4: 'heart', 5: 'spire', 6: 'kiln' });
 
 // §11 spawn ring + the constraints tools/gntM4b-layoutcheck.mjs audits.
 export const PLACEMENT_RULES = Object.freeze({

@@ -66,7 +66,6 @@ export const RUSH_RULES = Object.freeze({
   swiftSec: 720,
 });
 
-export const isRushFight = (n) => Number.isInteger(n) && n >= 1 && n <= RUSH_RULES.fights;
 // The land of fight `n` (1..10) and its lap (1 | 2).
 export const rushAct = (n) => ORDER[(Math.max(1, n | 0) - 1) % LAP];
 export const rushLap = (n) => (Math.max(1, n | 0) > LAP ? 2 : 1);

@@ -712,10 +712,6 @@ export function stateSpec(state, themeId = 'wood', bossKind = null) {
   }
 }
 
-export function themeIds() {
-  return Object.keys(THEMES);
-}
-
 export function registerMusicTheme(id, params) {
   THEMES[id] = { ...THEMES.wood, ...params, id };
   if (params.motif) MOTIFS[id] = params.motif;
@@ -736,7 +732,6 @@ function eqCurve(n, from, to, kind) {
 
 // Note counters (debug: music().notes) — baked sample plays vs live synthesis.
 const noteStats = { baked: 0, live: 0 };
-export const musicNoteStats = () => ({ ...noteStats });
 
 // Instruments whose sound depends on the note length (the rest ignore it).
 const LEN_INSTR = new Set(['lute', 'flute', 'reed', 'choir', 'bass', 'air']);

@@ -31,7 +31,7 @@ import {
   SKILL_SLOTS,
 } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
-import { innerBounds, walkStep, sweptStep, slipPatches, slipFollow, SLIP } from './movement.js';
+import { innerBounds, walkStep, sweptStep, slipPatches, slipFollow, SLIP, createMovementState, useMovementState } from './movement.js';
 import { createProjectileSystem } from './projectiles.js';
 import { createCombat } from './combat.js';
 import { createEnemySystem, ENEMY_KINDS } from './enemies.js';
@@ -65,6 +65,11 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   // skips them (docs/gauntlet/PLAN.md §3.7 "replica bus").
   if (events && typeof events.sim === 'function') events = events.sim();
   let currentTick = 0;
+  // This world's colliders and slip patches (sim/movement.js): bound now, so
+  // the systems built below install into it, and again on every step, cmd and
+  // load, so a second world in the same process keeps its own.
+  const movement = createMovementState();
+  useMovementState(movement);
 
   // ① deferred maturations: { carrierOrdinal, resolve() } — sorted by carrier
   // spawn ordinal each tick. Delayed Echo recasts land here in later blocks.
@@ -937,6 +942,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     'partyView', 'partyState', 'partyPools', 'partyVerdicts', 'partyAiLog',
   ]);
   function step(tick, snapshot, seatInputs) {
+    useMovementState(movement);
     if (replicaMode) {
       refusals.steps += 1;
       return;
@@ -1108,6 +1114,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
   }
 
   function cmd(name, ...args) {
+    useMovementState(movement);
     switch (name) {
       case 'spawn': {
         const [type, x, z] = args; // ('dummy'|'wisp'|'boar'|'mantis', x, z)
@@ -1452,6 +1459,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     // ESCORT AND HOLD: the live room view (the sigil ring's light) — read-only.
     roomState: () => waves.roomState(),
     snapshotState,
+    // This world's movement state (sim/movement.js): the save layer, the
+    // replica and the camp scene read and write the world's own lists.
+    movementState: () => movement,
     get tick() {
       return currentTick;
     },
@@ -1499,6 +1509,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       const w = data && data.world;
       const s = data && data.systems;
       if (!w || !s || !Number.isFinite(w.tick)) throw new TypeError('world.loadState: expected { world, systems }');
+      useMovementState(movement);
       currentTick = w.tick;
       // `stats` is shared by reference with the combat pipeline: patch in place.
       for (const k of Object.keys(stats)) if (!(k in (w.stats ?? {}))) delete stats[k];

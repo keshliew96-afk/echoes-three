@@ -1,0 +1,60 @@
+# Code health (v0.5.325)
+
+The "Code health" slice from the code review (`/mnt/project-files/review/CODE_REVIEW.md`, finding 13,
+"Structure and dead code", and the movement finding in the test safety net notes). No gameplay,
+text or save change. Probe: `node tools/code-health-probe.mjs [--dist dist]` (in `npm test`).
+
+## Movement state per world
+
+`src/sim/movement.js` used to keep its static colliders, dynamic (entity-owned) colliders and slip
+patches in module-level variables, so two sim worlds stepped in turn in one process (headless probes,
+the net round-trip harness) read and wrote each other's lists and drifted.
+
+- The three lists now live in a movement state object (`createMovementState()`).
+- `createWorld` makes one per world and binds it (`useMovementState`) when it is built and at the start
+  of every `step`, `cmd` and `loadState`. Every helper (`walkStep`, `sweptStep`, `slipAt`, ...) reads
+  the bound state, so no call site changed.
+- `world.movementState()` hands out the world's own state. `serializeMovement(state)`,
+  `restoreMovement(data, state)` and `setStaticColliders(list, state)` take it, and the save layer
+  (`src/save/capture.js`), the co-op replica (`src/net/session.js`) and the camp scene pass it.
+- A page runs one world, so the binding is the same object every tick. The nine goldens are identical.
+
+The probe steps a world alone and the same world in turn with a second one (each with its own wet
+patch): the hashes match. On gauntlet 66d7bbb they differ.
+
+## Bundle split
+
+- `vite.config.js`: `build.rolldownOptions.output.codeSplitting` replaces the deprecated
+  `advancedChunks` (same `three` chunk); the build now prints only the chunk-size warning.
+- `src/main.js` loads the four test scenes (`graybox`, `simtest`, `rendertest`, `chartest`) with
+  `import()` only when `?scene=` names one. A player build never reads `?scene=`, so players never
+  fetch them.
+- The co-op session (`src/net/session.js`: host driver, replica, prediction, the net HUD) is its own
+  chunk, fetched with `import()` at boot in parallel with the rest of the boot. The net client is idle
+  until a player opens Multiplayer, so nothing needs the session before it lands. `net.session` is
+  unset until then (every reader already checked for it); `net.sessionReady()` returns the load promise.
+  Two things that used to run at boot run when the chunk lands instead: the "Rejoin?" offer (run at
+  once when the title is already up) and the update prompt (offers a newer build the net client
+  already heard of).
+
+Entry chunk: 3,672 kB to 3,149 kB (gzip 1,120 kB to 940 kB). Rolldown also moves code the lazy
+chunks share into small shared chunks the entry imports, so the bytes a player downloads at boot
+fall by the test scenes only; the gain is a smaller entry to parse before the session arrives and
+finer caching across deploys. Loading the combat-only render code (`render/enemies`, `render/boss`,
+the signature FX) during the camp-to-run transition is the next step and is not in this slice.
+
+## Dead code
+
+Removed: `src/ui/run/expedition.js` (never imported, the old three-roads screen) and 46 exports that
+nothing in `src/`, `tools/` or `server/` reads (the review's `truly_dead.txt` list less the eleven
+still read: `STEER_OFF_POOLS`, `STEER_OFF_SLOW_POOLS`, `DEFAULT_TEAM`, `seatCritter`, `DEFAULT_COND`,
+`DROP_KEYS`, `BOSS_KINDS`, `seatControlText`, `fromUtf8`, `SPIRE_PAGES`, `KILN_PAGES` stay), plus three
+imports left unused by them. The nine strings only the expedition screen used are gone from
+`catalog.json` and the nine language tables; the 32 older unused entries are untouched.
+Probe-only code that ships (`campaign.census()`, `glTrack()`) stays: probes call it.
+
+## npm audit
+
+`npm audit fix` moved the two dev-only packages with high alerts: `sharp` 0.35.3 to 0.35.5 (libheif,
+librsvg) and `source-map-js` 1.2.1 to 1.2.2 (via vite's postcss). Neither ships to players or runs
+on the server (`npm audit --omit=dev` was already clean). `npm audit` now reports 0.

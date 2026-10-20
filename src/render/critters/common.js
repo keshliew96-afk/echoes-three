@@ -40,7 +40,6 @@ import {
   Mesh,
   MeshBasicMaterial,
   PlaneGeometry,
-  RingGeometry,
   ShaderMaterial,
   SphereGeometry,
   SRGBColorSpace,
@@ -844,24 +843,6 @@ export function getShadowTexture() {
     [1.0, A(0.0)],
   ]);
   return shadowTex;
-}
-
-// Value-lifted derivative of a class accent: same hue, pushed to a near-white
-// pastel. Saturation is deliberately taken DOWN as lightness goes up — a
-// lifted-and-saturated Sage would land inside the Bright Heal reserved band
-// (hue 133, sat >0.35) and a lifted Swordsman wine inside Ember Danger.
-// Pastels sit under the analyzer's 0.35 saturation gate, so no ring can ever
-// contaminate a reserved hue count.
-// L/S chosen against measured pixels, not taste: L 0.85 puts the band at
-// display luma 205-233 (about 2.1x the Act-1 floor) while S 0.52 keeps a
-// visible class tint whose HSV saturation lands ~0.21-0.26 — under the frame
-// analyzer's 0.35 reserved-hue gate, so a lifted Sage ring can never be
-// counted as Bright Heal, nor a lifted wine ring as Ember Danger. `underBloom`
-// then caps whichever hue lands hottest (olive) below the bloom threshold.
-export function liftAccent(hex, lightness = 0.85, sat = 0.52) {
-  const hsl = { h: 0, s: 0, l: 0 };
-  new Color(hex).getHSL(hsl, SRGBColorSpace);
-  return new Color().setHSL(hsl.h, sat, lightness, SRGBColorSpace).getHex();
 }
 
 // Clamp an AUTHORED (pre-tonemap, linear) colour to just under the composer's

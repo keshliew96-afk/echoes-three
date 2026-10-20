@@ -40,19 +40,6 @@
 import { EventEmitterLite } from './emitter.js';
 import { screenFactory } from './registry.js';
 
-export const NAV_ACTIONS = Object.freeze([
-  'up',
-  'down',
-  'left',
-  'right',
-  'confirm',
-  'back',
-  'tabPrev',
-  'tabNext',
-  'secondary',
-  'tertiary',
-]);
-
 const FADE_OUT_MS = 160;
 const LAYERS = new Set(['screen', 'overlay', 'dialog', 'loading', 'farewell']);
 

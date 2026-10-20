@@ -88,7 +88,6 @@ function tellViolet(l = 0.55, s = 0.65) {
   return exactColor(new Color().setHSL(hsl.h, s, l, SRGBColorSpace).getHex());
 }
 export const TELL_VIOLET = tellViolet();
-export const TELL_VIOLET_DIM = tellViolet(0.34, 0.5);
 
 // --- Regular-enemy corruption tell: INDIGO, not violet -----------------------
 // Certification fix round 1 (2026-09-09): all three scorers marked the boar's

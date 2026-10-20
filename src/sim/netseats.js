@@ -31,8 +31,6 @@ const TARGET_INDEX_SHIFT = 14;
 // Every party-command bit (rally, target_cycle, target_select + its index).
 export const PARTY_PRESS_MASK = (1 << PRESS_BITS.rally) | (1 << PRESS_BITS.target_cycle) | (1 << PRESS_BITS.target_select) | (3 << TARGET_INDEX_SHIFT);
 
-export const SEAT_REASONS = Object.freeze(['join', 'drop', 'away', 'return', 'migrate']);
-
 export function pressBitsOf(presses) {
   let bits = 0;
   for (const p of presses || []) {

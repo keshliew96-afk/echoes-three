@@ -416,7 +416,7 @@ export function createCampScene(stage, toggles, ctx) {
     return out;
   };
   function applyCampSim() {
-    setStaticColliders(colliders);
+    setStaticColliders(colliders, world.movementState ? world.movementState() : null);
     world.cmd('campSeats', seatsNow());
   }
   // THE TIDECALLER: the camp shows the party the next campaign takes. Solo,
@@ -444,7 +444,7 @@ export function createCampScene(stage, toggles, ctx) {
     return true;
   }
   function applyRunSim() {
-    setStaticColliders(null);
+    setStaticColliders(null, world.movementState ? world.movementState() : null);
     world.cmd('campSeats', null);
   }
 
