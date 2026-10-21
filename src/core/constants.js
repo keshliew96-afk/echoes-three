@@ -57,9 +57,15 @@ export const KNOCKBACK = Object.freeze({
 // §9 juice contract #1: victim mesh flashes white ~3 frames (emissive
 // modulation, never a material swap). Tick-denominated (3 ticks = 3 render
 // frames at 60 fps) so the flash freezes with the sim during kill hitstop.
+// intensity 0.4 (was 1.0; docs/VFX_READABILITY.md): at 1.0 the whole chibi
+// body sat above the bloom threshold for every hit and for the 0.26 s kill
+// pop, and in a melee that bloom was what hid the hero beside the corpse
+// (worst blob 16,700 px at 1.0 against 7,000 px at 0.4, the kill shots down
+// 5-10x). Lit albedo plus 0.4 still reads as a white flash; it just stops
+// blooming. Champions and bosses keep their own flashScale.
 export const HITFLASH = Object.freeze({
   ticks: 3,
-  intensity: 1.0, // emissiveIntensity while lit
+  intensity: 0.4, // emissiveIntensity while lit
 });
 
 // §1 + §17 damage numerals: cap 12 simultaneous (oldest fades early), numeral
