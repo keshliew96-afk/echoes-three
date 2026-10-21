@@ -22,6 +22,33 @@ export const DAILY_RULES = Object.freeze({
   boardSize: 20,
 });
 
+// How many patch versions behind the server a posting game may be (a run
+// that started just before a deploy still counts; SERVER HARDENING #92).
+export const VERSION_PATCH_WINDOW = 3;
+const VERSION_RE = /^(\d+)\.(\d+)\.(\d+)$/;
+// The game's version must be the server's line (major.minor), no newer than
+// the server and at most VERSION_PATCH_WINDOW patches older: the day's relic
+// and curse come from the version's relic list, a build the server does not
+// know cannot be checked, and an old build's rules are not today's. The
+// server checks every post with it; the game checks itself against the
+// version the board reports before Set out (SERVER HARDENING 2).
+export function versionOk(v, server) {
+  const a = VERSION_RE.exec(typeof v === 'string' ? v : '');
+  const b = VERSION_RE.exec(typeof server === 'string' ? server : '');
+  if (!a || !b) return false;
+  return a[1] === b[1] && a[2] === b[2] && Number(a[3]) <= Number(b[3]) && Number(b[3]) - Number(a[3]) <= VERSION_PATCH_WINDOW;
+}
+// The first build that takes a signed run ticket at Set out and posts it with
+// its score (server/daily.mjs): a post from this build on needs one.
+export const TICKET_SINCE = '0.5.328';
+export function versionAtLeast(v, min) {
+  const a = VERSION_RE.exec(typeof v === 'string' ? v : '');
+  const b = VERSION_RE.exec(min);
+  if (!a || !b) return false;
+  for (let i = 1; i <= 3; i++) if (Number(a[i]) !== Number(b[i])) return Number(a[i]) > Number(b[i]);
+  return true;
+}
+
 const DAY_MS = 86400000;
 const KEY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 

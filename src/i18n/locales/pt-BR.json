@@ -3530,5 +3530,7 @@
  "Couldn't restore the records": "Não foi possível restaurar os recordes",
  "Remove the kept file?": "Remover o arquivo guardado à parte?",
  "It cannot be brought back.": "Não será possível recuperá-lo.",
- "The kept file was removed": "O arquivo guardado à parte foi removido"
+ "The kept file was removed": "O arquivo guardado à parte foi removido",
+ "This page is out of date: reload it. Until then runs are practice.": "Página desatualizada: recarregue. Até lá, as partidas são treino.",
+ "Not posted: reload the page to update": "Não publicado: recarregue a página"
 }

@@ -109,6 +109,8 @@ function installStyle() {
 .dl-daily .dl-gap { text-align: center; color: ${P.warmGrey}; font-size: ${px(18)}; padding: ${px(2)} 0; }
 .dl-daily .dl-empty { flex: 1 1 auto; display: flex; align-items: center; justify-content: center; text-align: center; color: ${P.bone}; font-size: ${px(20)}; padding: ${px(18)}; line-height: 1.4; }
 .dl-daily .dl-boardnote { font-size: ${px(16)}; color: ${P.warmGrey}; min-height: ${px(20)}; }
+.dl-daily .dl-stale { font-size: ${px(16)}; font-weight: 600; color: ${P.hearthAmber}; margin-top: ${px(6)}; }
+.dl-daily .dl-stale:empty { display: none; }
 .dl-daily .dl-actions { display: flex; gap: ${px(16)}; justify-content: center; align-items: center; flex-wrap: wrap; }
 .dl-daily .dl-go.ap-btn { min-width: ${px(260)}; font-size: ${px(26)}; border-color: ${P.hearthAmber}CC;
   background: linear-gradient(180deg, #4A3A22 0%, #2E2618 100%); }
@@ -155,6 +157,7 @@ export function createDailyScreen(ctx) {
           <div class="dl-label">${t("Today's board")}</div>
           <div class="dl-board" aria-live="polite"></div>
           <div class="dl-boardnote"></div>
+          <div class="dl-stale"></div>
         </div>
       </div>
       <div class="dl-actions">
@@ -170,6 +173,7 @@ export function createDailyScreen(ctx) {
   const dayEl = el.querySelector('.dl-day');
   const boardEl = el.querySelector('.dl-board');
   const boardNote = el.querySelector('.dl-boardnote');
+  const staleEl = el.querySelector('.dl-stale');
   const bestEl = el.querySelector('.dl-best');
   const practiceEl = el.querySelector('.dl-once');
   let p = null;
@@ -227,7 +231,10 @@ export function createDailyScreen(ctx) {
       : state === 'open'
         ? `${t('You have not gone down today.')} · ${esc(next)}`
         : `${t('Your counted run today was not finished.')} · ${esc(next)}`;
-    const practice = state !== 'open';
+    // SERVER HARDENING 2: a board on another build would refuse this run, so
+    // Set out plays a practice run and the counted run stays open.
+    const stale = state === 'open' && typeof d.outdated === 'function' && d.outdated();
+    const practice = state !== 'open' || stale;
     el.classList.toggle('dl-practice', practice);
     const go = el.querySelector('.dl-go');
     const goLabel = practice ? t('Practice run') : t('Set out');
@@ -235,6 +242,9 @@ export function createDailyScreen(ctx) {
     const footGo = el.querySelector('.dl-footgo');
     if (footGo.textContent !== goLabel) footGo.textContent = goLabel;
     practiceEl.textContent = practice ? t('Practice runs stay off the board.') : t('Only this first run reaches the board.');
+    // The out-of-date line sits under the board (the left column has no
+    // room for it at 1024 x 640 in the longer languages).
+    staleEl.textContent = stale ? t('This page is out of date: reload it. Until then runs are practice.') : '';
     const b = d.cached(key);
     if (!b) {
       boardEl.innerHTML = `<div class="dl-empty">${t('Reading the board…')}</div>`;

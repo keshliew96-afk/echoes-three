@@ -48,6 +48,7 @@ export const SUITE = [
   // Modes.
   { file: 'tools/endless-probe.mjs', args: [], what: 'Endless' },
   { file: 'tools/daily-probe.mjs', args: [], what: 'the Daily Descent' },
+  { file: 'tools/server-hardening-2-probe.mjs', args: [], what: 'daily tickets and the co-op input cap' },
 ];
 
 const PER_PROBE_MS = 10 * 60 * 1000;

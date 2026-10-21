@@ -33,7 +33,14 @@ const { createWorld } = await import(u('src/sim/world.js'));
 const { emptySnapshot } = await import(u('src/core/intents.js'));
 const { dailySeed, dailyLevelSeed, dailyDepth, depthPlace } = await import(u('src/data/daily.js'));
 const { dailyOmen, RELICS, CURSES } = await import(u('src/sim/relics.js'));
-const { createDailyStore, MIN_ROOM_TICKS, versionOk } = await import(u('server/daily.mjs'));
+const { createDailyStore, MIN_ROOM_TICKS, versionOk, signTicket } = await import(u('server/daily.mjs'));
+// SERVER HARDENING 2: posts from this build carry a run ticket; the probe
+// signs its own with a known secret, issued early on the run's day.
+process.env.ECHOES_DAILY_SECRET = 'daily-probe';
+const tk = (id, key = DAY) => {
+  const at = Date.parse(`${key}T00:00:05Z`);
+  return { at, sig: signTicket('daily-probe', key, id, at) };
+};
 const { VERSION } = await import(u('src/version.js'));
 const bumpPatch = (v, d) => v.replace(/\d+$/, (n) => String(Number(n) + d));
 const { createEchoesServer } = await import(u('server/server.mjs'));
@@ -185,10 +192,10 @@ async function clearLevelOne(w, extraDraws) {
 // ----------------------------------------------------------------- board --
 {
   let now = Date.parse(`${DAY}T10:00:00Z`);
-  const s = createDailyStore({ env: {}, now: () => now });
+  const s = createDailyStore({ env: { ECHOES_DAILY_SECRET: 'daily-probe' }, now: () => now });
   const id = (n) => `player-${String(n).padStart(12, '0')}`;
   const ok = { seed: dailySeed(DAY), version: VERSION };
-  const post = (n, depth, ticks, extra = {}) => s.score({ key: DAY, id: id(n), name: `P${n}`, cls: 'archer', depth, ticks, won: false, ...ok, ...extra }, `10.0.0.${n}`);
+  const post = (n, depth, ticks, extra = {}) => s.score({ key: DAY, id: id(n), name: `P${n}`, cls: 'archer', depth, ticks, won: false, ...ok, ticket: tk(id(n)), ...extra }, `10.0.0.${n}`);
   await post(1, 10, 9000);
   await post(2, 12, 20000);
   await post(3, 10, 7000);
@@ -217,19 +224,19 @@ async function clearLevelOne(w, extraDraws) {
   check('plausible', 'a won run of every room, a fast but possible run, an older build of this line are taken', fine.every((r) => r.status === 200 && r.body.ok), fine.map((r) => r.body.error || r.body.rank));
   // SERVER HARDENING (v0.5.307): at most three patches behind the server.
   check('plausible', 'versionOk keeps to the line, at most three patches back, and refuses newer builds', versionOk('0.5.271', '0.5.274') && versionOk('0.5.274', '0.5.274') && !versionOk('0.5.270', '0.5.274') && !versionOk('0.5.1', '0.5.274') && !versionOk('0.5.275', '0.5.274') && !versionOk('0.6.0', '0.5.274') && !versionOk('probe', '0.5.274'));
-  const old = await s.score({ key: '2026-10-06', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok }, '10.0.0.4');
+  const old = await s.score({ key: '2026-10-06', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok, ticket: tk(id(4), '2026-10-06') }, '10.0.0.4');
   check('board', 'an old day is closed', old.status === 400 && old.body.error === 'closed_day');
-  const fut = await s.score({ key: '2026-10-09', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok }, '10.0.0.4');
+  const fut = await s.score({ key: '2026-10-09', id: id(4), name: 'X', depth: 3, ticks: 1000, ...ok, ticket: tk(id(4), '2026-10-09') }, '10.0.0.4');
   check('board', 'a future day is closed', fut.status === 400 && fut.body.error === 'closed_day');
   now = Date.parse('2026-10-09T00:20:00Z');
-  const late = await s.score({ key: DAY, id: id(5), name: '<b>Late</b>  Owl', depth: 4, ticks: 1000, ...ok }, '10.0.0.5');
+  const late = await s.score({ key: DAY, id: id(5), name: '<b>Late</b>  Owl', depth: 4, ticks: 1000, ...ok, ticket: tk(id(5)) }, '10.0.0.5');
   check('board', 'yesterday still takes a run past midnight; names cleaned', late.status === 200 && late.body.entry.name === 'bLate/b Owl', late.body.entry);
   const bad = await Promise.all([
     s.score({ key: DAY, id: 'short', depth: 3, ticks: 1000, ...ok }, 'x'),
-    s.score({ key: DAY, id: id(6), depth: 999, ticks: 1000, ...ok }, 'x'),
-    s.score({ key: DAY, id: id(6), depth: 33, ticks: 99000, won: true, ...ok }, 'x'),
-    s.score({ key: DAY, id: id(6), depth: 3, ticks: 0, ...ok }, 'x'),
-    s.score({ key: 'yesterday', id: id(6), depth: 3, ticks: 1000, ...ok }, 'x'),
+    s.score({ key: DAY, id: id(6), depth: 999, ticks: 1000, ...ok, ticket: tk(id(6)) }, 'x'),
+    s.score({ key: DAY, id: id(6), depth: 33, ticks: 99000, won: true, ...ok, ticket: tk(id(6)) }, 'x'),
+    s.score({ key: DAY, id: id(6), depth: 3, ticks: 0, ...ok, ticket: tk(id(6)) }, 'x'),
+    s.score({ key: 'yesterday', id: id(6), depth: 3, ticks: 1000, ...ok, ticket: tk(id(6), 'yesterday') }, 'x'),
   ]);
   check('board', 'bad id, depth, time and day are refused', bad.every((r) => r.status === 400), bad.map((r) => r.body.error));
   // Upstash: the same store over the REST command API (a fake Redis).
@@ -247,10 +254,10 @@ async function clearLevelOne(w, extraDraws) {
     else if (args[0] === 'EXPIRE') result = 1;
     return { ok: true, json: async () => ({ result }) };
   };
-  const rs = createDailyStore({ env: { ECHOES_CLOUD_REDIS_URL: 'https://fake.upstash.io/', ECHOES_CLOUD_REDIS_TOKEN: 't' }, fetchImpl: fakeFetch, now: () => Date.parse(`${DAY}T10:00:00Z`) });
-  await rs.score({ key: DAY, id: id(1), name: 'A', depth: 5, ticks: 5000, ...ok }, 'r');
-  await rs.score({ key: DAY, id: id(2), name: 'B', depth: 7, ticks: 9000, ...ok }, 'r');
-  const rd = await rs.score({ key: DAY, id: id(2), name: 'B', depth: 8, ticks: 9900, ...ok }, 'r');
+  const rs = createDailyStore({ env: { ECHOES_CLOUD_REDIS_URL: 'https://fake.upstash.io/', ECHOES_CLOUD_REDIS_TOKEN: 't', ECHOES_DAILY_SECRET: 'daily-probe' }, fetchImpl: fakeFetch, now: () => Date.parse(`${DAY}T10:00:00Z`) });
+  await rs.score({ key: DAY, id: id(1), name: 'A', depth: 5, ticks: 5000, ...ok, ticket: tk(id(1)) }, 'r');
+  await rs.score({ key: DAY, id: id(2), name: 'B', depth: 7, ticks: 9000, ...ok, ticket: tk(id(2)) }, 'r');
+  const rd = await rs.score({ key: DAY, id: id(2), name: 'B', depth: 8, ticks: 9900, ...ok, ticket: tk(id(2)) }, 'r');
   check('board', 'Upstash: a second run the same day is refused too', rd.status === 409 && rd.body.error === 'counted');
   const rb = await rs.board(DAY, null, 'r');
   check('board', 'Upstash: kept under echoes:daily:<day>, durable, ranked', rs.durable && rs.kind === 'redis' && hashes.has(`echoes:daily:${DAY}`) && rb.body.entries.map((e) => e.name).join(',') === 'B,A' && cmds.includes('EXPIRE'), { cmds: [...new Set(cmds)] });
@@ -263,7 +270,12 @@ async function clearLevelOne(w, extraDraws) {
   const base = `http://127.0.0.1:${info.port}`;
   const today = new Date().toISOString().slice(0, 10);
   const id = 'http-probe-000000000001';
-  const p = await fetch(`${base}/daily/score`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id, name: 'Probe', cls: 'tank', depth: 9, ticks: 9 * 600, won: false, seed: dailySeed(today), version: VERSION }) });
+  // SERVER HARDENING 2: the run ticket from POST /daily/ticket, then a short
+  // run (its wall time is within the ticket's slack).
+  const tr = await fetch(`${base}/daily/ticket`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id, seed: dailySeed(today), version: VERSION }) });
+  const tj = await tr.json();
+  check('http', 'POST /daily/ticket', tr.status === 200 && tj.ok && tj.ticket && Number.isSafeInteger(tj.ticket.at) && typeof tj.ticket.sig === 'string' && tj.version === VERSION, tj);
+  const p = await fetch(`${base}/daily/score`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id, name: 'Probe', cls: 'tank', depth: 4, ticks: 4 * MIN_ROOM_TICKS, won: false, seed: dailySeed(today), version: VERSION, ticket: tj.ticket }) });
   const pj = await p.json();
   check('http', 'POST /daily/score', p.status === 200 && pj.ok && pj.rank === 1 && pj.store === 'memory' && pj.durable === false, pj);
   const g = await fetch(`${base}/daily/board/${today}?me=${id}`);

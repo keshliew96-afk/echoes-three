@@ -3530,5 +3530,7 @@
  "Couldn't restore the records": "No se pudieron restaurar los récords",
  "Remove the kept file?": "¿Quitar el archivo guardado aparte?",
  "It cannot be brought back.": "No se podrá recuperar.",
- "The kept file was removed": "Se quitó el archivo guardado aparte"
+ "The kept file was removed": "Se quitó el archivo guardado aparte",
+ "This page is out of date: reload it. Until then runs are practice.": "Página desactualizada: recárgala. Hasta entonces, todo es práctica.",
+ "Not posted: reload the page to update": "Sin publicar: recarga la página"
 }

@@ -32,6 +32,16 @@ import { createRewindRing } from './lagcomp.js';
 
 export const TARGET_INPUT_DEPTH = 2;
 const DRAIN_ABOVE = TARGET_INPUT_DEPTH + 2;
+// SERVER HARDENING 2 (docs/CODE_REVIEW.md, co-op): a seat's input buffer
+// holds at most INPUT_BUFFER_CAP frames, and a frame more than
+// INPUT_SEQ_WINDOW past the last one consumed is dropped. A guest's frames
+// run at most a few ticks ahead of the host's consumption (target depth 2),
+// so neither bites a real player; a guest sending far-future seqs no longer
+// grows the host's memory. A seat whose whole line jumped past the window
+// (a long outage on an unreliable channel) and has nothing buffered restarts
+// its line at the new frames rather than freezing.
+export const INPUT_BUFFER_CAP = 128;
+export const INPUT_SEQ_WINDOW = 120;
 const FULL_GAP_MIN_MS = 100;
 const FULL_GAP_MAX_MS = 600;
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -76,6 +86,8 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
     cmds: 0,
     rejected: 0,
     pings: 0,
+    inputDropped: 0, // frames refused by the window or the cap
+    seqJumps: 0, // seat lines restarted past the window
   };
   let frameNet = 0; // net ms accumulated in the current rendered frame
   const ledger = [];
@@ -141,7 +153,21 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       if (f.link.acked) f.fullsRequested += 1;
       f.link.acked = 0;
     } else snap.ack(f.link, p.ackSnapSeq);
+    // A line that jumped past the window with nothing buffered (and nothing
+    // late to land) restarts at the packet's first new frame.
+    if (f.lastConsumed !== null && f.buffer.size === 0 && p.frames.length && p.frames[0].seq > f.lastConsumed + INPUT_SEQ_WINDOW) {
+      f.lastConsumed = p.frames[0].seq - 1;
+      stats.seqJumps += 1;
+    }
     for (const fr of p.frames) {
+      if (!Number.isSafeInteger(fr.seq)) {
+        stats.inputDropped += 1;
+        continue;
+      }
+      if (f.lastConsumed !== null && fr.seq > f.lastConsumed + INPUT_SEQ_WINDOW) {
+        stats.inputDropped += 1;
+        continue;
+      }
       if (f.lastConsumed !== null && fr.seq <= f.lastConsumed) {
         // Late: already consumed (as a repeat when it went missing). Its
         // presses land on the next tick, exactly once.
@@ -154,6 +180,16 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
         continue;
       }
       if (!f.buffer.has(fr.seq)) {
+        if (f.buffer.size >= INPUT_BUFFER_CAP) {
+          // Full: keep the frames nearest the line (drop the furthest).
+          const far = Math.max(...f.buffer.keys());
+          if (fr.seq >= far) {
+            stats.inputDropped += 1;
+            continue;
+          }
+          f.buffer.delete(far);
+          stats.inputDropped += 1;
+        }
         f.buffer.set(fr.seq, fr);
         f.frames += 1;
       }
@@ -676,6 +712,8 @@ export function createHostDriver({ net, world, clock, bus, registry, capture, sa
       gapsFilled: stats.gapsFilled,
       latePresses: stats.latePresses,
       drains: stats.drains,
+      inputDropped: stats.inputDropped,
+      seqJumps: stats.seqJumps,
       awaySeats: [...feeds.values()].filter((f) => f.state === 'away').map((f) => f.seat),
       humanSeats: [...feeds.values()].filter((f) => f.state === 'human').map((f) => f.seat),
       rewindTicksAvg: rs.avgTicks,
