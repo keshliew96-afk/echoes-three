@@ -15,8 +15,10 @@
 //      in one tick) sums to under 2.0 heart-luminance, against about 4.9
 //      before, and the first piece at a point keeps its whole heart.
 //   3. The wiring: every heart piece in tplkit.js (beam, blaze, blast, head)
-//      goes through setHeart(), every core mix in the four shaders is scaled
-//      by uHeart, and no piece still multiplies its core by a raw gain.
+//      and kit.js (slash, ring, streak, pillar) goes through the cap and the
+//      budget, every core mix in the six shaders is scaled by uHeart, no piece
+//      still multiplies its core by a raw gain, and the two kits share one
+//      budget (signature.js wires each kit's load into the other).
 // The look itself is checked in the game by tools/vfx-readability-browser.mjs.
 // Exit code 1 on any failure.
 import { readFileSync } from 'node:fs';
@@ -93,6 +95,15 @@ check('wiring: every core mix in the shaders is scaled by uHeart', mixes.length 
 check('wiring: the four heart shaders declare uHeart', count(/uniform float uHeart;/g) === 4);
 check('wiring: no piece multiplies its core by a raw gain any more', count(/u\.uGain\.value = o\.gain/g) === 0);
 check('wiring: the heart pools are the beams, blazes, blasts and heads', /heartPools = \[beams, blazes, blasts, heads\]/.test(src));
+// the class kit (kit.js): slashes, rings and streaks through setHeart(), pillars capped inline, the two kits sharing one budget
+const ksrc = readFileSync(join(here, 'src/render/vfx/kit.js'), 'utf8');
+const kcount = (re) => (ksrc.match(re) || []).length;
+check('wiring: the class kit sets the slash, ring and streak hearts through setHeart()', kcount(/^\s*setHeart\(s, /gm) === 3, { calls: kcount(/^\s*setHeart\(s, /gm) });
+const kmixes = ksrc.match(/mix\( uGlow, uCore[^\n]*\)/g) || [];
+check('wiring: the class kit\'s arc and streak core mixes are scaled by uHeart', kmixes.length === 2 && kmixes.every((m) => m.includes('uHeart')), { mixes: kmixes.length });
+check('wiring: the pillar colour is capped and its opacity takes the share', /heartColor\(col\(o\.color \?\? PALETTE\.parchment\)/.test(ksrc) && /s\.op \*= s\.heart;/.test(ksrc));
+const sig = readFileSync(join(here, 'src/render/vfx/signature.js'), 'utf8');
+check('wiring: the two kits share one budget (setHeartSibling both ways)', /\.setHeartSibling\(tk\.heartLoad\)/.test(sig) && /tk\.setHeartSibling\(\w+\.heartLoad\)/.test(sig));
 
 console.log(fails.length ? `\n${fails.length} FAILED` : '\nall pass');
 process.exit(fails.length ? 1 : 0);

@@ -148,15 +148,25 @@ function blob(raw, w) {
 }
 
 const rows = [];
+let lastTick = -1;
+let lastRec = {};
 for (let f = 0; f < N; f++) {
   await page.evaluate((ms) => (__echoes.sim.stepN(2, null), __vclock.step(ms)), 1000 / FPS);
   if (f % EVERY) continue;
   const buf = await page.screenshot({ type: 'png' });
   const { data, info } = await sharp(buf).removeAlpha().raw().toBuffer({ resolveWithObject: true });
-  const tick = await page.evaluate(() => __echoes.tick);
-  rows.push({ f, tick, ...blob(data, info.width), buf });
+  const info2 = await page.evaluate((lt) => {
+    const X = __echoes;
+    const rec = (X.content.vfx && X.content.vfx().recipes) || {};
+    const ev = (X.events || []).filter((e) => e.tick > lt && /^(hit|death|ally_basic|basic_fire|ally_cast|skill_cast|enemy_bite|enemy_fire)$/.test(e.type)).map((e) => `${e.type}${e.kind ? ':' + e.kind : ''}${e.classId ? ':' + e.classId : ''}`);
+    return { tick: X.tick, rec, ev };
+  }, lastTick);
+  lastTick = info2.tick;
+  const fired = Object.entries(info2.rec).filter(([k, v]) => v !== (lastRec[k] || 0)).map(([k, v]) => `${k.replace(/^tpl:/, '')}x${v - (lastRec[k] || 0)}`);
+  lastRec = info2.rec;
+  rows.push({ f, tick: info2.tick, ...blob(data, info.width), fired, ev: info2.ev, buf });
   const r = rows[rows.length - 1];
-  console.log(`shot f${f} tick ${tick}: blob ${r.blobPx} px at ${r.blobAt.join(',')} (${r.whitePct}% near-white)`);
+  console.log(`shot f${f} tick ${r.tick}: blob ${r.blobPx} px at ${r.blobAt.join(',')} (${r.whitePct}% near-white) | ${fired.join(' ')} | ${info2.ev.slice(-8).join(' ')}`);
 }
 await browser.close();
 const bySize = [...rows].sort((a, b) => b.blobPx - a.blobPx);

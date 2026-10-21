@@ -693,6 +693,10 @@ export function createTemplateKit({ stage, cosmetic }) {
   // melee kill lands in one tick have not been stepped yet); an older one at
   // the opacity it shows.
   let heartPools = [];
+  let heartSibling = null; // the class kit's own heartLoad (hub.js wires it)
+  const setHeartSibling = (fn) => {
+    heartSibling = fn;
+  };
   function heartLoad(x, z, self = null) {
     let sum = 0;
     for (const pool of heartPools) {
@@ -711,7 +715,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.u.uCore.value.setRGB(h[0], h[1], h[2]);
     s.u.uGain.value = 1;
     s.heartLum = lum(h[0], h[1], h[2]);
-    s.heart = heartShare(heartLoad(o.x, o.z, s), s.heartLum * s.op);
+    s.heart = heartShare(heartLoad(o.x, o.z, s) + (heartSibling ? heartSibling(o.x, o.z) : 0), s.heartLum * s.op);
     s.u.uHeart.value = s.heart;
   }
   const start = (s, o, life) => {
@@ -1393,5 +1397,5 @@ export function createTemplateKit({ stage, cosmetic }) {
     lightGain = l;
     particleGain = p;
   }
-  return { root, circle, beam, blaze, blast, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity, heartLoad };
+  return { root, circle, beam, blaze, blast, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity, heartLoad, setHeartSibling };
 }
