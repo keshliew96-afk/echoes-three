@@ -38,6 +38,7 @@ export const SUITE = [
   { file: 'tools/code-health-probe.mjs', args: [], what: 'per-world colliders, the bundle split, dead code, audit pins' },
   { file: 'tools/lineup-probe.mjs', args: [], what: 'the party lineup' },
   { file: 'tools/mouse-healer-probe.mjs', args: [], what: 'the mouse healer model, its clips and the switch-back' },
+  { file: 'tools/vfx-readability-probe.mjs', args: [], what: 'template hearts capped and budgeted (the overbright blob)' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
   { file: 'tools/champions-probe.mjs', args: [], what: 'champion rooms' },
   { file: 'tools/vaults-probe.mjs', args: [], what: 'keys and vaults' },

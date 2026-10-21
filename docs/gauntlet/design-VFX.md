@@ -398,7 +398,11 @@ on the foe side (below).
   stardust, 160 bits) and one instanced spark draw (400); Reduced effects
   halves the particles and dims the beams with the light setting. A piece
   that lands within 2 u of many live pieces comes in fainter (down to 40%),
-  so a stacked fight does not wash out to white.
+  so a stacked fight does not wash out to white. That dimming alone never
+  bounded the sum: from v0.5.331 every piece's hot core (its heart) is capped
+  at 1.0 linear and the hearts within 2 u share a budget of 1.25, dimming a
+  late piece's core toward its own body colour (`src/render/vfx/heart.js`,
+  docs/VFX_READABILITY.md).
 
 ### The foes (VFX rework PR 2, 2026-10-20)
 
