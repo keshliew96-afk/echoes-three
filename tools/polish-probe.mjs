@@ -9,7 +9,8 @@
 //      in keeps its warnings whole; in the cursed room they are 20% shorter.
 //      The Short Fuse vow still shortens them in every room.
 //   2. Records dates: the high-score day reads in the game's language (the
-//      records screen formats with getLanguage(), not the browser's).
+//      records screen formats with getLanguage(), not the browser's). So do
+//      every score (Records, the end card) and the Saves screen's slot times.
 //   3. Level Select: past one row's room the cards stand in two rows
 //      (fitRows), the blurb moves under them, and the screen says so in its
 //      debug view. The look itself is tools/polish-browser.mjs.
@@ -66,8 +67,24 @@ const check = (ok, what) => {
 {
   const rec = src('src/ui/menu/records.js');
   const day = rec.slice(rec.indexOf('const day = '), rec.indexOf('const keptDay'));
-  check(/toLocaleDateString\(getLanguage\(\), opts\)/.test(day), "a high score's day formats in the game's language");
+  check(/fmtDate\(d, sameYear/.test(day), "a high score's day formats in the game's language");
   check(!/toLocaleDateString\(undefined, sameYear/.test(rec), "no high-score date reads the browser's language first");
+  // Every score, date and time on screen (his "Local numbers and times
+  // first" pick): only the i18n helpers' fallbacks may use the browser's.
+  const { readdirSync, statSync } = await import('node:fs');
+  const walk = (d) => readdirSync(join(here, d)).flatMap((f) => (statSync(join(here, d, f)).isDirectory() ? walk(`${d}/${f}`) : f.endsWith('.js') ? [`${d}/${f}`] : []));
+  const loose = walk('src/ui').concat(walk('src/app')).flatMap((f) =>
+    src(f).split('\n').map((l, i) => [f, i + 1, l]).filter(([, , l]) => /toLocale(Date|Time)?String\((undefined|\))/.test(l) && !/fallback/.test(l))
+  );
+  const allowed = loose.filter(([f, , l]) => f === 'src/ui/menu/cloud.js' && /return d\.toLocaleString\(\);/.test(l)); // its own fallback in a catch
+  const bad = loose.filter((x) => !allowed.includes(x));
+  check(bad.length === 0, `no score, date or time on screen reads the browser's language${bad.length ? `: ${bad.map(([f, n]) => `${f}:${n}`).join(', ')}` : ''}`);
+  const i18n = await import(u('src/i18n/index.js'));
+  check(typeof i18n.fmtNumber === 'function' && typeof i18n.fmtDate === 'function' && typeof i18n.fmtDateTime === 'function', 'i18n has fmtNumber, fmtDate and fmtDateTime');
+  check(/fmtNumber\(h\.score\)/.test(rec) && /fmtNumber\(r\.bestScore\)/.test(rec), 'the Records scores and best score use fmtNumber');
+  check(/fmtNumber\(rec\.score\)/.test(src('src/ui/run/endscreens.js')), "the end card's SCORE uses fmtNumber");
+  check(/return fmtDateTime\(ms,/.test(src('src/ui/menu/saves.js')), "the Saves screen's slot times use fmtDateTime");
+  console.log('     3960 reads:', ['en', 'de', 'fr', 'ru', 'pt-BR'].map((c) => `${c} "${(3960).toLocaleString(c)}"`).join(', '));
   // What that means for each of the ten languages (Node's ICU).
   const { LANGUAGES } = await import(u('src/i18n/index.js')).catch(() => ({}));
   const codes = Array.isArray(LANGUAGES) ? LANGUAGES.map((l) => (typeof l === 'string' ? l : l.code)) : ['en', 'de', 'es', 'fr', 'pt-BR', 'ru', 'ja', 'ko', 'zh-Hans', 'zh-Hant'];

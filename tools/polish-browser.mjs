@@ -149,9 +149,12 @@ async function records(lang) {
   const got = await page.evaluate((lang) => {
     const want = new Date().toLocaleDateString(lang, { day: 'numeric', month: 'short' });
     const cells = [...document.querySelectorAll('.sv-opt')].map((c) => c.textContent.trim());
-    return { want, cells };
+    const nums = [...document.querySelectorAll('.sv-num')].map((c) => c.textContent.trim());
+    return { want, cells, nums, top: Math.max(...[...document.querySelectorAll('.sv-num')].map((c) => Number(c.textContent.replace(/\D/g, '')) || 0)) };
   }, lang);
   check(got.cells.length > 0 && got.cells.includes(got.want), `${lang}: a high score's day reads "${got.want}" (${got.cells.slice(0, 4).join(' | ')})`);
+  const wantNum = got.top.toLocaleString(lang);
+  check(got.nums.includes(wantNum), `${lang}: the scores read in the game's language ("${wantNum}"; ${got.nums.slice(0, 6).join(' | ')})`);
   await page.screenshot({ path: join(SHOTS, `records-${lang}.png`) });
   await page.close();
 }

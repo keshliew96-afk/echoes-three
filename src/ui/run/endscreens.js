@@ -11,7 +11,7 @@ import { service } from '../../app/registry.js'; // M2 NEW-BEST: the save servic
 import { levelFor, bossNameOfRun, roadOfAct } from '../../data/levels.js';
 import { chorusLine, endingFor } from '../../data/story.js';
 import { verseLine } from './transit.js';
-import { t } from '../../i18n/index.js';
+import { t, fmtNumber } from '../../i18n/index.js';
 
 // Per-act victory line (matches ui/run/transit.js FLAVOUR).
 const WIN_FLAVOUR = {
@@ -285,7 +285,7 @@ export function createEndScreen({ run }) {
       // (CAMPAIGN: matched by seed + length — a campaign's rooms span levels.)
       const same = rec && rec.summary && rec.summary.seed === s.seed && Math.round(rec.summary.timeSec * 60) === s.ticks;
       if (same && !rush) {
-        const score = rec.score.toLocaleString();
+        const score = fmtNumber(rec.score);
         scoreRow = row(t('SCORE'), rec.newBest ? t('{score} · New best!', { score }) : rec.rank ? t('{score} · #{rank} on your records', { score, rank: rec.rank }) : score);
       }
     }

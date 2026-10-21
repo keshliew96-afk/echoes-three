@@ -154,6 +154,33 @@ export function getLanguage() {
   return lang;
 }
 
+// POLISH: numbers, dates and times read in the game's language (3,960 in
+// English, 3.960 in German), falling back to the browser's if the game's
+// is refused. Every on-screen score, date and time goes through these.
+export function fmtNumber(n, opts) {
+  try {
+    return Number(n).toLocaleString(lang, opts);
+  } catch {
+    return Number(n).toLocaleString(undefined, opts);
+  }
+}
+export function fmtDate(d, opts) {
+  const v = d instanceof Date ? d : new Date(d);
+  try {
+    return v.toLocaleDateString(lang, opts);
+  } catch {
+    return v.toLocaleDateString(undefined, opts);
+  }
+}
+export function fmtDateTime(d, opts) {
+  const v = d instanceof Date ? d : new Date(d);
+  try {
+    return v.toLocaleString(lang, opts);
+  } catch {
+    return v.toLocaleString(undefined, opts);
+  }
+}
+
 export function languageName(code = lang) {
   const l = LANGUAGES.find((x) => x.code === code);
   return l ? l.name : code;
