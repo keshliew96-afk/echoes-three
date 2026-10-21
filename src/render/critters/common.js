@@ -41,6 +41,7 @@ import {
   MeshBasicMaterial,
   PlaneGeometry,
   ShaderMaterial,
+  SkinnedMesh,
   SphereGeometry,
   SRGBColorSpace,
   TubeGeometry,
@@ -343,6 +344,64 @@ function getInkMaterial() {
   });
   inkMat.userData.shared = true; // one ink material for the whole game — never disposed
   return inkMat;
+}
+
+// The same ink for a SKINNED mesh (the mouse healer, docs/MOUSE_HEALER.md):
+// the hull is skinned by the body's own skeleton, so the line follows every
+// clip, and it is expanded in screen space exactly like the rigid hulls.
+let skinnedInkMat = null;
+function getSkinnedInkMaterial() {
+  if (skinnedInkMat) return skinnedInkMat;
+  skinnedInkMat = new ShaderMaterial({
+    uniforms: inkUniforms,
+    side: BackSide,
+    polygonOffset: true,
+    polygonOffsetFactor: 3,
+    polygonOffsetUnits: 3,
+    vertexShader: /* glsl */ `
+      #include <common>
+      #include <skinning_pars_vertex>
+      uniform float uPx;
+      uniform vec2 uViewport;
+      void main() {
+        #include <beginnormal_vertex>
+        #include <skinbase_vertex>
+        #include <skinnormal_vertex>
+        #include <begin_vertex>
+        #include <skinning_vertex>
+        vec4 mv = modelViewMatrix * vec4( transformed, 1.0 );
+        vec4 clip = projectionMatrix * mv;
+        vec2 np = ( projectionMatrix * vec4( normalize( normalMatrix * objectNormal ), 0.0 ) ).xy;
+        float l = length( np );
+        if ( l > 1e-5 ) clip.xy += ( np / l ) * ( uPx * 2.0 / uViewport ) * clip.w;
+        gl_Position = clip;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      void main() { gl_FragColor = vec4( uColor, 1.0 ); }
+    `,
+  });
+  skinnedInkMat.userData.shared = true;
+  return skinnedInkMat;
+}
+
+// Ink hull for a SkinnedMesh: welded (the split UV seams would tear it open)
+// and re-normalled, keeping the skin attributes, bound to the body's skeleton.
+export function addSkinnedInk(mesh) {
+  let geo = mesh.geometry.clone();
+  for (const name of Object.keys(geo.attributes)) if (!['position', 'skinIndex', 'skinWeight'].includes(name)) geo.deleteAttribute(name);
+  geo = mergeVertices(geo);
+  geo.computeVertexNormals();
+  const hull = new SkinnedMesh(geo, getSkinnedInkMaterial());
+  hull.name = `${mesh.name || 'mesh'}-ink`;
+  hull.frustumCulled = false;
+  hull.position.copy(mesh.position);
+  hull.quaternion.copy(mesh.quaternion);
+  hull.scale.copy(mesh.scale);
+  mesh.parent.add(hull);
+  hull.bind(mesh.skeleton, mesh.bindMatrix);
+  return hull;
 }
 
 // Called once per frame (cheap) with the CSS pixel size of the canvas.
