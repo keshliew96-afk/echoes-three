@@ -82,8 +82,12 @@ export const END_CSS = `
      reads on one line (the names carry the information; the icons repeat
      the command bar's). */
   @media (max-width: 1199px) { .rn-end .rn-chip svg { display: none; } }
+  /* SERVER HARDENING 2: each column is its content's width while the four
+     fit the plate (as before); when they do not (a Russian board line at
+     1024 px), the columns share the plate and the longest lines wrap instead
+     of running off it. */
   .rn-end .rn-summary {
-    grid-template-columns: max-content max-content max-content max-content;
+    grid-template-columns: repeat(4, auto); max-width: 100%;
     justify-content: center; gap: 5px 14px; margin: 4px 0 2px; font-size: 18px;
   }
   .rn-end .rn-summary .rn-k2 { margin-left: 30px; }
@@ -310,7 +314,9 @@ export function createEndScreen({ run }) {
         ? t('#{rank} of {total} today', { rank: mine.rank, total: mine.total })
         : mine.error === 'counted'
         ? t("Not posted: today's counted run is already on the board")
-        : mine.error === 'implausible' || mine.error === 'bad_seed' || mine.error === 'bad_version'
+        : mine.error === 'bad_version'
+        ? t('Not posted: reload the page to update')
+        : mine.error === 'implausible' || mine.error === 'bad_seed' || mine.error === 'no_ticket' || mine.error === 'bad_ticket'
         ? t('Not posted: the board refused this run')
         : t('Not posted: the server could not be reached');
       pairs.push([t('DAILY'), dayLabel(daily.key)], [t('BOARD'), board]);

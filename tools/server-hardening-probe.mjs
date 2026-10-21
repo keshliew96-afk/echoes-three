@@ -37,7 +37,7 @@ const { clientIp, defaultTrustProxy } = await import(u('server/server.mjs'));
 const { dailySeed, dailyKey } = await import(u('src/data/daily.js'));
 const { VERSION } = await import(u('src/version.js'));
 const { MAX_ROOMS_PER_IP } = await import(u('server/lobby.mjs'));
-const { NEW_IDS_PER_IP_DAY } = await import(u('server/daily.mjs'));
+const { NEW_IDS_PER_IP_DAY, signTicket } = await import(u('server/daily.mjs'));
 
 const results = [];
 function check(id, what, ok, detail = null) {
@@ -50,7 +50,7 @@ const newIp = () => `203.0.113.${ipSeq++}`;
 
 // ------------------------------------------------------------ the server --
 const cloudDir = mkdtempSync(join(tmpdir(), 'echoes-hardening-'));
-const child = spawn(process.execPath, [join(ROOT, 'server/index.mjs'), '--port', String(PORT), '--cloud-dir', cloudDir], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, RENDER: '', ECHOES_TRUST_PROXY: '' } });
+const child = spawn(process.execPath, [join(ROOT, 'server/index.mjs'), '--port', String(PORT), '--cloud-dir', cloudDir], { cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'], env: { ...process.env, RENDER: '', ECHOES_TRUST_PROXY: '', ECHOES_DAILY_SECRET: 'hardening-probe' } });
 let childOut = '';
 child.stdout.on('data', (d) => (childOut += d));
 child.stderr.on('data', (d) => (childOut += d));
@@ -261,7 +261,11 @@ try {
   {
     const key = dailyKey(Date.now());
     const ip = newIp();
-    const post = (i, extra = {}) => httpReq('POST', '/daily/score', { ip, body: JSON.stringify({ key, id: `probe-player-${String(i).padStart(4, '0')}-xx`, name: `P${i}`, cls: 'archer', depth: 5, won: false, ticks: 9000, seed: dailySeed(key), version: VERSION, ...extra }) });
+    // Posts from this build carry a run ticket (SERVER HARDENING 2): signed
+    // here with the server's secret, issued at the start of the day.
+    const at = Date.parse(`${key}T00:00:00Z`);
+    const pid = (i) => `probe-player-${String(i).padStart(4, '0')}-xx`;
+    const post = (i, extra = {}) => httpReq('POST', '/daily/score', { ip, body: JSON.stringify({ key, id: pid(i), name: `P${i}`, cls: 'archer', depth: 5, won: false, ticks: 1200, seed: dailySeed(key), version: VERSION, ticket: { at, sig: signTicket('hardening-probe', key, pid(i), at) }, ...extra }) });
     const st = [];
     for (let i = 0; i < NEW_IDS_PER_IP_DAY + 2; i++) st.push((await post(i)).status);
     check('ids', `one address puts at most ${NEW_IDS_PER_IP_DAY} new players on a day's board`, st.slice(0, NEW_IDS_PER_IP_DAY).every((s) => s === 200) && st.slice(NEW_IDS_PER_IP_DAY).every((s) => s === 429), { statuses: st });

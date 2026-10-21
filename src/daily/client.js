@@ -12,11 +12,15 @@
 //                      'started' (set out, not finished) | 'done'
 //   attempt(key)       at Set out: { practice } — the first run of the day is
 //                      the counted one (marked here, so a closed tab spends
-//                      it too); every later run is practice and never posted
+//                      it too, and its run ticket asked for); every later run
+//                      is practice and never posted
+//   outdated()         true when the board last read runs a build this game's
+//                      posts would be refused by (versionOk): Set out plays a
+//                      practice run and the counted run stays open
 //   last()             the last daily run's posting: { key, depth, ticks, won,
 //                      state: 'posting' | 'posted' | 'failed' | 'practice', rank?, total?, best?, error? }
 //   rev()              bumps whenever any of the above changes (UI repaint)
-import { dailyKey, isDailyKey, dailySeed, betterEntry, cleanName } from '../data/daily.js';
+import { dailyKey, isDailyKey, dailySeed, betterEntry, cleanName, versionOk } from '../data/daily.js';
 import { dailyOmen } from '../sim/relics.js';
 import { resolveServerAddress } from '../net/address.js';
 import { VERSION } from '../version.js';
@@ -25,6 +29,9 @@ import { pageQuery } from '../app/harness.js';
 const STORE_KEY = 'echoes.daily.v1';
 const TIMEOUT_MS = 15000;
 const KEEP_DAYS = 14;
+// SERVER HARDENING 2: asking for the counted run's ticket again after a
+// network failure (the run goes on meanwhile).
+const TICKET_RETRY_MS = [3000, 10000, 30000, 60000];
 
 function readStore() {
   try {
@@ -56,6 +63,8 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
   const boards = new Map(); // key -> { at, data }
   let lastPost = null;
   let revision = 0;
+  let serverVersion = null; // the version the board last reported
+  let ticketTimer = 0;
   const bump = () => {
     revision += 1;
   };
@@ -118,6 +127,7 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
     const c = boards.get(key);
     if (c && !fresh && Date.now() - c.at < 30000) return c.data;
     const r = await call(`/daily/board/${encodeURIComponent(key)}?me=${encodeURIComponent(store.id)}`);
+    if (r && typeof r.version === 'string') serverVersion = r.version;
     boards.set(key, { at: Date.now(), data: r });
     bump();
     return r;
@@ -136,14 +146,42 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
     if (d.counted === 'started' && !Number.isFinite(d.depth)) return 'started';
     return 'done';
   }
+  // SERVER HARDENING 2: a board on a build that would refuse this game's
+  // post (the game is older than its window, or newer than the server).
+  const outdated = () => !!serverVersion && !versionOk(VERSION, serverVersion);
   function attempt(key) {
     store = readStore() || store;
-    if (!isDailyKey(key) || counted(key) !== 'open') return { practice: true };
+    if (!isDailyKey(key) || counted(key) !== 'open' || outdated()) return { practice: true };
     store.days[key] = { counted: 'started' };
     trimDays();
     writeStore(store);
     bump();
+    askTicket(key, 0);
     return { practice: false };
+  }
+  // The counted run's ticket (server/daily.mjs): signed by the server at Set
+  // out and posted with the score. Kept on the device with the day, so a
+  // Continue after a reload posts it too.
+  async function askTicket(key, tries) {
+    clearTimeout(ticketTimer);
+    const r = await call('/daily/ticket', { method: 'POST', body: { key, id: store.id, seed: dailySeed(key), version: VERSION } });
+    store = readStore() || store;
+    const d = store.days[key];
+    if (!d) return r;
+    if (r.ok && r.ticket) {
+      d.ticket = r.ticket;
+      delete d.ticketError;
+    } else if (r.error === 'network' || r.error === 'server' || r.error === 'busy' || r.error === 'unavailable') {
+      if (tries < TICKET_RETRY_MS.length) ticketTimer = setTimeout(() => askTicket(key, tries + 1), TICKET_RETRY_MS[tries]);
+    } else {
+      // Refused (an out-of-date build, a closed day): the run plays on, the
+      // board will not take it.
+      d.ticketError = r.error || 'server';
+      if (typeof r.version === 'string') serverVersion = r.version;
+    }
+    writeStore(store);
+    bump();
+    return r;
   }
   function trimDays() {
     const keys = Object.keys(store.days).sort();
@@ -151,7 +189,8 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
   }
   function noteLocal(key, run) {
     store = readStore() || store;
-    if (betterEntry(run, localBest(key))) store.days[key] = { depth: run.depth, ticks: run.ticks, won: !!run.won, counted: 'done' };
+    const prev = store.days[key] || {};
+    if (betterEntry(run, localBest(key))) store.days[key] = { depth: run.depth, ticks: run.ticks, won: !!run.won, counted: 'done', ...(prev.ticket ? { ticket: prev.ticket } : {}), ...(prev.ticketError ? { ticketError: prev.ticketError } : {}) };
     trimDays();
     writeStore(store);
   }
@@ -176,10 +215,20 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
   async function post(run) {
     lastPost = { ...run, state: 'posting' };
     bump();
-    const r = await call('/daily/score', {
-      method: 'POST',
-      body: { key: run.key, id: store.id, name: playerName(), cls: classOf(), depth: run.depth, won: run.won, ticks: run.ticks, seed: dailySeed(run.key), version: VERSION },
-    });
+    store = readStore() || store;
+    let d = store.days[run.key] || {};
+    // The ticket may still be on its way (a late network); ask once more.
+    if (!d.ticket && !d.ticketError) {
+      await askTicket(run.key, TICKET_RETRY_MS.length);
+      d = (readStore() || store).days[run.key] || {};
+    }
+    const r = d.ticketError
+      ? { ok: false, error: d.ticketError }
+      : await call('/daily/score', {
+          method: 'POST',
+          body: { key: run.key, id: store.id, name: playerName(), cls: classOf(), depth: run.depth, won: run.won, ticks: run.ticks, seed: dailySeed(run.key), version: VERSION, ticket: d.ticket || null },
+        });
+    if (r && typeof r.version === 'string') serverVersion = r.version;
     if (lastPost && lastPost.key === run.key && lastPost.ticks === run.ticks) {
       lastPost = r.ok ? { ...lastPost, state: 'posted', rank: r.rank, total: r.total, best: !!r.best } : { ...lastPost, state: 'failed', error: r.error || 'server' };
     }
@@ -222,10 +271,12 @@ export function createDailyClient({ bus, world, service, settings, classOf = () 
     localBest,
     counted,
     attempt,
+    outdated,
+    serverVersion: () => serverVersion,
     last: () => lastPost,
     rev: () => revision,
     playerName,
     post,
-    debug: () => ({ today: today(), id: store.id ? `${store.id.slice(0, 4)}…` : null, last: lastPost, boards: [...boards.keys()], days: { ...store.days } }),
+    debug: () => ({ serverVersion, outdated: outdated(), today: today(), id: store.id ? `${store.id.slice(0, 4)}…` : null, last: lastPost, boards: [...boards.keys()], days: { ...store.days } }),
   };
 }

@@ -3562,5 +3562,7 @@
  "Couldn't restore the records": "Не удалось восстановить рекорды",
  "Remove the kept file?": "Удалить отложенный файл?",
  "It cannot be brought back.": "Его нельзя будет вернуть.",
- "The kept file was removed": "Отложенный файл удалён"
+ "The kept file was removed": "Отложенный файл удалён",
+ "This page is out of date: reload it. Until then runs are practice.": "Страница устарела: обновите её. До тех пор забеги тренировочные.",
+ "Not posted: reload the page to update": "Не отправлено: обновите страницу"
 }

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // DAILY DESCENT in the real game (docs/DAILY.md): against a served build
-// (`VITE_ECHOES_HARNESS=1 npm run build && node server/index.mjs --static dist --port 7821
-// --origins self`), seeds today's board with a few runs, opens the Level
+// (`VITE_ECHOES_HARNESS=1 npm run build && ECHOES_DAILY_SECRET=daily-browser node server/index.mjs
+// --static dist --port 7821 --origins self`; the secret signs the seeded runs' tickets), seeds today's board with a few runs, opens the Level
 // Select, clicks the Daily card, reads the day's screen (relic, curse,
 // board), sets out, checks the run and the HUD, ends it on a fall and reads
 // the end card's board place. Captures (to --dir, default captures/):
@@ -21,6 +21,7 @@ import { mkdirSync } from 'node:fs';
 import puppeteer from 'puppeteer';
 import { dailySeed } from '../src/data/daily.js';
 import { VERSION } from '../src/version.js';
+import { signTicket } from '../server/daily.mjs';
 
 const argv = process.argv.slice(2);
 const opt = (k, d = null) => {
@@ -44,8 +45,13 @@ const others = [
   ['Tamsin', 'healer', 9, 21000],
   ['Corvo', 'archer', 4, 9000],
 ];
+// SERVER HARDENING 2: each carries a run ticket signed with the server's
+// ECHOES_DAILY_SECRET (--secret), issued at the start of the day.
+const SECRET = opt('secret', 'daily-browser');
+const at = Date.parse(`${today}T00:00:00Z`);
 for (const [i, [name, cls, depth, ticks]] of others.entries()) {
-  await fetch(new URL('/daily/score', URL0), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id: `browser-probe-other-${i}-000`, name, cls, depth, ticks, won: false, seed: dailySeed(today), version: VERSION }) });
+  const id = `browser-probe-other-${i}-000`;
+  await fetch(new URL('/daily/score', URL0), { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ key: today, id, name, cls, depth, ticks, won: false, seed: dailySeed(today), version: VERSION, ticket: { at, sig: signTicket(SECRET, today, id, at) } }) });
 }
 
 const extra = (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean);

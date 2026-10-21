@@ -128,6 +128,22 @@ handshake waits on the page, so the probe passes `?p2pwait=30000` (links took
 8 to 11 s to open here). A browser at a normal frame rate should need well
 under the 6 s window, but that is not measured from this machine.
 
+## Input buffer cap (Server hardening 2, v0.5.328)
+
+The host keeps each human seat's input frames in a jitter buffer
+(`src/net/driver.js`, target depth 2). It now holds at most
+`INPUT_BUFFER_CAP` (128) frames, keeping those nearest the seat's line, and
+drops any frame more than `INPUT_SEQ_WINDOW` (120 ticks, 2 s) past the last one
+consumed, or with a seq that is not a safe integer. Before, a guest sending
+far-future seqs grew the host's memory without bound (300,001 entries in the
+code review's proof). A real guest runs a few frames ahead, so neither limit
+bites; over WebSocket nothing is lost. When a seat's line comes back more
+than the window ahead with nothing buffered (a long outage on the unreliable
+WebRTC channel), the host restarts the line at the new frames instead of
+freezing the seat. `stats()` counts `inputDropped` and `seqJumps`;
+`tools/server-hardening-2-probe.mjs` checks a normal line, a flood and an
+outage.
+
 ## Known limits
 
 - No TURN: players behind symmetric NATs or strict firewalls stay on the relay.

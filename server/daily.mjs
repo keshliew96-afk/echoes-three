@@ -2,7 +2,8 @@
 // dependencies.
 //
 //   GET  /daily/board/<YYYY-MM-DD>[?me=<id>] -> { ok, key, today, entries: [...top], total, me?, store, durable }
-//   POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version }
+//   POST /daily/ticket { key, id, seed, version } -> { ok, ticket: { at, sig } }
+//   POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version, ticket }
 //                                          -> { ok, rank, total, best, entry }
 //
 // One entry per player per day: the player's counted run, the day's first
@@ -19,7 +20,17 @@
 // (ECHOES_CLOUD_REDIS_URL + ECHOES_CLOUD_REDIS_TOKEN), one hash per day;
 // without it, in this process's memory (gone on a restart or redeploy, like
 // cloud saves on the free Render disk).
-import { dailyKey, dayDiff, isDailyKey, compareEntries, cleanName, dailySeed, DAILY_RULES } from '../src/data/daily.js';
+//
+// SERVER HARDENING 2: the board reports the server's version so the game can
+// tell before Set out that it is out of date; the game takes a run ticket
+// at Set out (the server's HMAC over the day, the player id and the time it
+// was issued) and posts it with the score, and a score that took less wall
+// time since its ticket than its own ticks need is refused; each player id
+// has its own post and ticket limits beside the per-address ones. A forged
+// score now needs a ticket held for as long as the run it claims.
+import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { dailyKey, dayDiff, isDailyKey, compareEntries, cleanName, dailySeed, DAILY_RULES, versionOk, versionAtLeast, VERSION_PATCH_WINDOW, TICKET_SINCE } from '../src/data/daily.js';
+import { SIM_HZ } from '../src/net/protocol/constants.js';
 import { CAMPAIGN_ACTS } from '../src/data/levels.js';
 import { VERSION } from '../src/version.js';
 import { windowCounter, REDIS_TIMEOUT_MS } from './cloud.mjs';
@@ -27,13 +38,27 @@ import { windowCounter, REDIS_TIMEOUT_MS } from './cloud.mjs';
 const KEEP_DAYS = 30;
 const MAX_ENTRIES = 5000; // per day, in memory and in Redis
 // SERVER HARDENING (docs/CODE_REVIEW.md #4): new player ids one client IP may
-// put on a day's board (a household, a reinstall or two), and how many
-// patch versions behind this server a posting game may be (a run that
-// started just before a deploy still counts).
+// put on a day's board (a household, a reinstall or two). VERSION_PATCH_WINDOW
+// (src/data/daily.js) is how many patch versions behind this server a posting
+// game may be.
 export const NEW_IDS_PER_IP_DAY = 6;
-export const VERSION_PATCH_WINDOW = 3;
+export { versionOk, VERSION_PATCH_WINDOW, TICKET_SINCE };
+// SERVER HARDENING 2: per player id (beside the per-address RATE): score
+// posts and ticket asks in RATE.windowMs (a retry or two after a lost answer;
+// several players behind one address no longer share one budget), and new
+// players one address may take tickets for in a day.
+export const ID_RATE = { score: 6, ticket: 6 };
+export const NEW_TICKETS_PER_IP_DAY = NEW_IDS_PER_IP_DAY;
+// A run's wall time from its ticket to its post must be at least this share
+// of its own ticks at SIM_HZ, less TICKET_SLACK_MS (the sim never runs faster
+// than real time; a pause or a slow frame only adds wall time).
+export const TICKET_MIN_SHARE = 0.9;
+export const TICKET_SLACK_MS = 15000;
+// Tickets this process remembers (one per player and day; a restart forgets
+// them, and a player who asks again gets a fresh, later one).
+const MAX_TICKETS = 50000;
 const CLASSES = new Set(['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright', 'duskwing']);
-const RATE = { score: 30, board: 120, windowMs: 10 * 60 * 1000 };
+const RATE = { score: 30, board: 120, ticket: 30, windowMs: 10 * 60 * 1000 };
 const MAX_TICKS = 60 * 60 * 60 * 6; // six hours of play
 // Every room of every level (a won run).
 const MAX_DEPTH = DAILY_RULES.roomsPerLevel * CAMPAIGN_ACTS;
@@ -41,18 +66,6 @@ const MAX_DEPTH = DAILY_RULES.roomsPerLevel * CAMPAIGN_ACTS;
 // whole level over 64 seeds took 6046 ticks (756 a room, shop included), so a
 // real run sits far above this; a made-up post (depth 40 in a minute) does not.
 export const MIN_ROOM_TICKS = 240;
-const VERSION_RE = /^(\d+)\.(\d+)\.(\d+)$/;
-// The game's version must be this server's line (major.minor), no newer
-// than the server and at most VERSION_PATCH_WINDOW patches older: the day's
-// relic and curse come from the version's relic list, a build the server
-// does not know cannot be checked, and an old build's rules are not today's.
-export function versionOk(v, server = VERSION) {
-  const a = VERSION_RE.exec(typeof v === 'string' ? v : '');
-  const b = VERSION_RE.exec(server);
-  if (!a || !b) return false;
-  return a[1] === b[1] && a[2] === b[2] && Number(a[3]) <= Number(b[3]) && Number(b[3]) - Number(a[3]) <= VERSION_PATCH_WINDOW;
-}
-
 function memoryBackend() {
   const days = new Map(); // key -> Map(id -> entry)
   return {
@@ -146,6 +159,32 @@ export function checkScore(b, today, { version = VERSION } = {}) {
   };
 }
 
+// The key that signs run tickets: ECHOES_DAILY_SECRET, else one derived from
+// the Redis token (so tickets outlive a redeploy when the board does), else a
+// random one for this process (its memory board is gone on a restart anyway).
+export function ticketSecret(env = process.env) {
+  if (env.ECHOES_DAILY_SECRET) return String(env.ECHOES_DAILY_SECRET);
+  if (env.ECHOES_CLOUD_REDIS_TOKEN) return createHmac('sha256', 'echoes-daily-ticket').update(String(env.ECHOES_CLOUD_REDIS_TOKEN)).digest('base64url');
+  return randomBytes(32).toString('base64url');
+}
+export function signTicket(secret, key, id, at) {
+  return createHmac('sha256', secret).update(`${key}|${id}|${at}`).digest('base64url');
+}
+// A posted ticket checked against its score: null when it holds, else the
+// reason it is refused. Builds before TICKET_SINCE never took one.
+export function checkTicket(b, secret, nowMs) {
+  if (!versionAtLeast(b.version, TICKET_SINCE)) return null;
+  const tk = b.ticket;
+  if (!tk || typeof tk !== 'object' || typeof tk.sig !== 'string' || !Number.isSafeInteger(tk.at)) return 'no_ticket';
+  const want = Buffer.from(signTicket(secret, b.key, b.id, tk.at));
+  const got = Buffer.from(tk.sig);
+  if (want.length !== got.length || !timingSafeEqual(want, got)) return 'bad_ticket';
+  if (dailyKey(tk.at) !== b.key || tk.at > nowMs) return 'bad_ticket';
+  const needMs = (Number(b.ticks) / SIM_HZ) * 1000 * TICKET_MIN_SHARE - TICKET_SLACK_MS;
+  if (nowMs - tk.at < needMs) return 'implausible';
+  return null;
+}
+
 export function createDailyStore({ env = process.env, fetchImpl, now = () => Date.now() } = {}) {
   const redisUrl = env.ECHOES_CLOUD_REDIS_URL;
   const redisToken = env.ECHOES_CLOUD_REDIS_TOKEN;
@@ -153,10 +192,17 @@ export function createDailyStore({ env = process.env, fetchImpl, now = () => Dat
   const backend = durable ? redisBackend(String(redisUrl).replace(/\/$/, ''), String(redisToken), fetchImpl) : memoryBackend();
   const hits = windowCounter(RATE.windowMs);
   const newIds = windowCounter(86400 * 1000);
+  const idHits = windowCounter(RATE.windowMs);
+  const newTickets = windowCounter(86400 * 1000);
+  const secret = ticketSecret(env);
+  const tickets = new Map(); // `${key}|${id}` -> at
   function allow(kind, ip) {
     return hits.add(`${kind}:${ip || '?'}`, 1, now()) <= RATE[kind];
   }
-  const info = () => ({ store: backend.kind, durable });
+  const allowId = (kind, id) => idHits.add(`${kind}:${id}`, 1, now()) <= ID_RATE[kind];
+  // `version` is this server's build: the game compares it with its own
+  // (versionOk) and plays a practice run when the board would refuse it.
+  const info = () => ({ store: backend.kind, durable, version: VERSION });
   // Public view of an entry (the id stays on the server).
   const pub = (e, rank) => ({ rank, name: e.name, cls: e.cls, depth: e.depth, won: e.won, ticks: e.ticks, at: e.at });
 
@@ -178,11 +224,38 @@ export function createDailyStore({ env = process.env, fetchImpl, now = () => Dat
     return { status: 200, body };
   }
 
+  // A run ticket at Set out: the same checks as a score's (day, id, seed,
+  // version), then one ticket per player and day (asked again, the same).
+  async function ticket(b, ip) {
+    if (!allow('ticket', ip)) return { status: 429, body: { ok: false, error: 'busy' } };
+    const today = dailyKey(now());
+    const c = checkScore({ ...(b && typeof b === 'object' ? b : {}), depth: 0, ticks: 1, won: false }, today);
+    if (c.error) return { status: 400, body: { ok: false, error: c.error, today, version: VERSION } };
+    if (b.key !== today) return { status: 400, body: { ok: false, error: 'closed_day', today } };
+    if (!allowId('ticket', b.id)) return { status: 429, body: { ok: false, error: 'busy', today } };
+    const tk = `${b.key}|${b.id}`;
+    let at = tickets.get(tk);
+    if (at === undefined) {
+      if (newTickets.peek(`${b.key}:${ip || '?'}`, now()) >= NEW_TICKETS_PER_IP_DAY) return { status: 429, body: { ok: false, error: 'busy', today } };
+      if (tickets.size >= MAX_TICKETS) {
+        for (const k of tickets.keys()) if (!(dayDiff(k.slice(0, 10), today) <= DAILY_RULES.graceDays)) tickets.delete(k);
+        if (tickets.size >= MAX_TICKETS) return { status: 503, body: { ok: false, error: 'full', today } };
+      }
+      at = now();
+      tickets.set(tk, at);
+      newTickets.add(`${b.key}:${ip || '?'}`, 1, now());
+    }
+    return { status: 200, body: { ok: true, key: b.key, ticket: { at, sig: signTicket(secret, b.key, b.id, at) }, version: VERSION } };
+  }
+
   async function score(b, ip) {
     if (!allow('score', ip)) return { status: 429, body: { ok: false, error: 'busy' } };
     const today = dailyKey(now());
     const c = checkScore(b, today);
-    if (c.error) return { status: 400, body: { ok: false, error: c.error, today } };
+    if (c.error) return { status: 400, body: { ok: false, error: c.error, today, ...(c.error === 'bad_version' ? { version: VERSION } : {}) } };
+    if (!allowId('score', b.id)) return { status: 429, body: { ok: false, error: 'busy', today } };
+    const bad = checkTicket(b, secret, now());
+    if (bad) return { status: 400, body: { ok: false, error: bad, today } };
     const entry = { ...c.entry, id: b.id, at: new Date(now()).toISOString() };
     const cur = await backend.get(b.key, b.id);
     // One counted run a day: the first post stands. The same run sent again
@@ -204,7 +277,7 @@ export function createDailyStore({ env = process.env, fetchImpl, now = () => Dat
     return { status: 200, body: { ok: true, key: b.key, best, rank: i + 1, total: list.length, entry: pub(best ? entry : cur, i + 1), ...info() } };
   }
 
-  return { board, score, info, kind: backend.kind, durable };
+  return { board, score, ticket, info, kind: backend.kind, durable };
 }
 
 function readJson(req, max) {
@@ -253,6 +326,16 @@ export async function handleDaily(req, res, { store, ip, cors }) {
         return send(err.code === 'too_large' ? 413 : 400, { ok: false, error: err.code || 'bad_score' }), true;
       }
       const r = await store.score(body || {}, ip);
+      return send(r.status, r.body), true;
+    }
+    if (req.method === 'POST' && url.pathname === '/daily/ticket') {
+      let body;
+      try {
+        body = await readJson(req, 1024);
+      } catch (err) {
+        return send(err.code === 'too_large' ? 413 : 400, { ok: false, error: err.code || 'bad_score' }), true;
+      }
+      const r = await store.ticket(body || {}, ip);
       return send(r.status, r.body), true;
     }
     const m = /^\/daily\/board\/([^/]+)$/.exec(url.pathname);

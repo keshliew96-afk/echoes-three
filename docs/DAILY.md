@@ -54,8 +54,9 @@ the nine goldens are byte-identical.
 ## Server (server/daily.mjs)
 
 ```
-GET  /daily/board/<YYYY-MM-DD>[?me=<id>]  -> { ok, key, today, total, entries[≤20], me?, store, durable }
-POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version } -> { ok, rank, total, best, entry }
+GET  /daily/board/<YYYY-MM-DD>[?me=<id>]  -> { ok, key, today, total, entries[≤20], me?, store, durable, version }
+POST /daily/ticket { key, id, seed, version } -> { ok, key, ticket: { at, sig }, version }
+POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version, ticket } -> { ok, rank, total, best, entry }
 ```
 
 - `id` is a random id the game keeps in `localStorage['echoes.daily.v1']`
@@ -85,6 +86,33 @@ POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version } -> { 
     a real run, and it cannot rise much: below 20 rooms the god-mode runs dip
     to about 100 a room through shops and event rooms. `tools/small-fixes-3-probe.mjs`
     re-runs three of those days against the server's check.
+- **Run tickets** (Server hardening 2, v0.5.328). At Set out the counted run
+  asks `POST /daily/ticket` (the same day, id, seed and version checks; today
+  only). The server answers `{ at, sig }`: `at` is when it issued the ticket
+  and `sig` its HMAC-SHA256 over `key|id|at`. One ticket per id and day (asked
+  again, the same one, while the process lives). The game keeps it with the
+  day in `echoes.daily.v1`, so a Continue after a reload still posts it, and
+  asks again on a network failure (3, 10, 30 and 60 s, then once more at the
+  run's end). A post from a build at or after `TICKET_SINCE` (0.5.328) must
+  carry it: `no_ticket` without one, `bad_ticket` for a wrong signature,
+  another player's ticket or one issued on another day, and `implausible`
+  when the wall time from `at` to the post is under 90% of the run's own
+  ticks at 60 Hz less 15 s (`TICKET_MIN_SHARE`, `TICKET_SLACK_MS`; the sim
+  never runs faster than real time, a pause only adds wall time). Older builds
+  inside the version window still post without one. The key is
+  `ECHOES_DAILY_SECRET`, else derived from `ECHOES_CLOUD_REDIS_TOKEN` (tickets
+  outlive a redeploy along with the board), else random per process.
+- **Version check before Set out.** The board and the ticket report the
+  server's `version`; the game compares its own with `versionOk` (shared in
+  `src/data/daily.js`). When the board would refuse it, the day's screen says
+  so under the board ("This page is out of date: reload it. Until then runs
+  are practice."), Set out reads Practice run and plays one, and the counted
+  run stays open for after the reload. A ticket refused as `bad_version`
+  (the board was not read first) marks the day; that run's end card reads
+  "Not posted: reload the page to update".
+- **Per-player limits** beside the per-address ones: 6 posts and 6 ticket
+  asks per id per 10 minutes (`ID_RATE`), and tickets for at most 6 new ids
+  per address per day (`NEW_TICKETS_PER_IP_DAY`, like `NEW_IDS_PER_IP_DAY`).
 - **Storage:** the cloud saves' Upstash Redis (`ECHOES_CLOUD_REDIS_URL` and
   `ECHOES_CLOUD_REDIS_TOKEN`), one hash `echoes:daily:<day>` per day kept 30
   days. Without it, the board is kept in memory and is gone after a restart
@@ -93,22 +121,37 @@ POST /daily/score { key, id, name, cls, depth, won, ticks, seed, version } -> { 
 
 ## Probes
 
-- `node tools/daily-probe.mjs` (headless, 25 checks): seed, omen, Level II
+- `node tools/server-hardening-2-probe.mjs` (headless, in `npm test`): run
+  tickets (issue, reuse, forged, another player's, too fast, older builds),
+  per-player limits, the game's out-of-date check and ticket round trip, and
+  the co-op input buffer cap (docs/WEBRTC_COOP.md).
+- `node tools/server-hardening-2-browser.mjs [--lang de] [--w 1024 --h 640]`
+  against a served harness build: the out-of-date day screen and the end card
+  of a run whose ticket was refused (both answers rewritten in the page).
+- `node tools/daily-probe.mjs` (headless, 32 checks): seed, omen, Level II
   reseed, rules, depth, board order, closed days, bad input, Upstash
   commands, and the HTTP routes on a live server.
 - `node tools/gameplay-bugs-probe.mjs` (headless): two whole Daily wins
   credit the bosses they fought; a summary without per-level bosses still
   reads the old way.
 - `node tools/daily-browser.mjs [--lang de] [--dir …]` against a served build
-  (`npm run build && node server/index.mjs --static dist --port 7821
-  --origins self`): card, day screen, run, HUD, end card, board.
+  (`VITE_ECHOES_HARNESS=1 npx vite build && ECHOES_DAILY_SECRET=daily-browser
+  node server/index.mjs --static dist --port 7821 --origins self`; the secret
+  signs the seeded players' tickets): card, day screen, run, HUD, end card,
+  board.
 
 ## Known limits
 
 - The board still trusts the game within the checks above: a modified
-  client can post a plausible run it never played, and a cleared browser
+  client can post a plausible run it never played, though now only after
+  holding a ticket for as long as the run it claims, and a cleared browser
   storage (a new device id) gets a new counted run. A real fix would replay
   the run's inputs on the server.
+- A counted run that could not reach the server at Set out takes its ticket
+  later (retries, then at its end); a ticket issued late makes a long run
+  read as too fast, so that run is refused as `implausible`. A server restart
+  without Redis or `ECHOES_DAILY_SECRET` changes the key, so tickets issued
+  before it no longer verify (its memory board is gone too).
 - A day's omen comes from the relic list of the running version, so on the
   day a new relic batch ships, players on the old and new build can roll
   different relics.

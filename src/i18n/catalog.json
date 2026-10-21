@@ -11115,6 +11115,11 @@
    "src/ui/run/endscreens.js"
   ]
  },
+ "Not posted: reload the page to update": {
+  "files": [
+   "src/ui/run/endscreens.js"
+  ]
+ },
  "Not posted: the board refused this run": {
   "files": [
    "src/ui/run/endscreens.js"
@@ -17330,6 +17335,11 @@
  "This page is older than the game on the server. Reload to update — your settings, saves and records stay in this browser.": {
   "files": [
    "src/ui/net/update.js"
+  ]
+ },
+ "This page is out of date: reload it. Until then runs are practice.": {
+  "files": [
+   "src/ui/run/daily.js"
   ]
  },
  "This page is served over https, so the browser only allows secure (wss://) servers.": {
