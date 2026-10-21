@@ -66,6 +66,33 @@ const playing = async (page, clip) => (await clips(page)).some((s) => s.clip ===
   const page = await open('?scene=chartest&cam=game');
   await waitFor(async () => (await clips(page)).length > 0, 60000);
   check((await clips(page)).length > 0, 'the gallery builds the mouse healer');
+  // Turning on the spot (Kesh's rule 2, live): planted feet hold the floor
+  // while the game turns her, and step (lifted) once the twist is too big.
+  const turn = await page.evaluate(() => {
+    const h = window.__echoesClipHeroes[0];
+    const rows = [];
+    let yaw = 0;
+    for (let i = 0; i < 30; i++) h.update(1 / 60);
+    for (let i = 0; i < 240; i++) {
+      yaw += i < 120 ? 0.02 : -0.035;
+      h.setYaw(yaw);
+      h.update(1 / 60);
+      const st = h.clipState();
+      rows.push([st.feet.L, st.feet.R, st.ik]);
+    }
+    return rows;
+  });
+  let slide = 0;
+  let steps = 0;
+  for (let i = 1; i < turn.length; i++) {
+    for (const j of [0, 1]) {
+      const a = turn[i - 1][j];
+      const c = turn[i][j];
+      if (a.locked && c.locked && !a.stepping && !c.stepping) slide = Math.max(slide, Math.hypot(c.x - a.x, c.z - a.z) * 100);
+      if (c.stepping && !a.stepping) steps++;
+    }
+  }
+  check(turn[60][2] === 1 && slide < 0.1 && steps >= 4, 'turning on the spot: planted feet hold (worst slide under 0.1 cm a frame) and she steps round', { slideCmPerFrame: +slide.toFixed(3), steps });
   await sleep(2500);
   await page.screenshot({ path: join(DIR, 'mouse-1-gallery.png') });
   await page.close();
@@ -223,6 +250,29 @@ async function fight(query, shot) {
   await page.mouse.up({ button: 'right' });
   await page.keyboard.up('w');
   check(!!layered, 'casting while running plays the cast on the upper body over the running legs', layered && { clip: layered.clip, legs: layered.loco.legs });
+  // Hand-offs never blend toward the bind pose: upper and lower body weights
+  // stay at 1 through run -> cast -> stop -> idle -> run.
+  let minW = 2;
+  const sampleW = async (ms) => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < ms) {
+      for (const c of await clips(page)) if (c.wsum) minW = Math.min(minW, c.wsum.upper, c.wsum.lower);
+      await sleep(30);
+    }
+  };
+  await page.keyboard.down('d');
+  await sampleW(500);
+  await page.mouse.down({ button: 'right' });
+  await sampleW(700);
+  await page.keyboard.up('d');
+  await sampleW(700);
+  await page.mouse.up({ button: 'right' });
+  await sampleW(900);
+  await page.keyboard.down('s');
+  await sampleW(600);
+  await page.keyboard.up('s');
+  await sampleW(600);
+  check(minW > 0.99, 'every hand-off keeps the body fully weighted (no bind-pose blend)', +minW.toFixed(3));
   await page.close();
 }
 

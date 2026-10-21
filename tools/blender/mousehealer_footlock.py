@@ -173,17 +173,16 @@ def upper(fr, kind):
         d=add({k:v for k,v in d.items() if k not in ('Bone_012','Bone_011','Bone_010','Bone_024','Bone_023')},spine(8,sg*7,0),head(-6,-sg*5,0))
     return d
 def foot_target(s, fr, dirv, kind):
-    off=0.5 if kind in ('fwd','back') else 0.22  # strafes skip: trail foot follows the lead foot
-    lead='L' if kind=='left' else 'R'
-    u=((fr/N)+(0.0 if (s=='L' if kind in ('fwd','back') else s==lead) else off))%1.0
+    # every run plants L at phase 0 and R at 0.5, so any two blend in step
+    u=((fr/N)+(0.0 if s=='L' else 0.5))%1.0
     if u<SF:
         k=u/SF; along=STRIDE/2-STRIDE*k; up=0.0
     else:
         k=(u-SF)/(1-SF); k2=k*k*(3-2*k); along=-STRIDE/2+STRIDE*k2; up=LIFT_H*math.sin(math.pi*k)
     base=REST[s].copy()
     if kind in ('left','right'):
-        base.y += (-0.06 if s=='L' else 0.08)   # stagger so the feet never cross
-        base.x += (0.05 if s=='L' else -0.05)
+        base.y += (-0.1 if s=='L' else 0.1)   # stagger so the feet never cross
+        base.x += (0.15 if s=='L' else -0.15)
     p=base+Vector((dirv[0],dirv[1],0))*along
     p.z+=up
     return p, u<SF

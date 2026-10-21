@@ -149,7 +149,7 @@ export function createCritter(classId, { cosmetic = null } = {}) {
         const vz = (group.position.z - lastPos.z) / dt;
         lastPos.copy(group.position);
         if (Math.hypot(vx, vz) < 12) {
-          const k = Math.min(1, dt * 12);
+          const k = Math.min(1, dt * 30); // ~1/30 s: a stop reads as a stop
           vel.x += (vx - vel.x) * k;
           vel.z += (vz - vel.z) * k;
         }

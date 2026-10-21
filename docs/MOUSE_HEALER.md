@@ -159,9 +159,42 @@ The fixes:
   the run's legs, hips and root, so her feet keep stepping the way she
   travels. Standing, the clip plays whole, its planted steps included.
 
-What it is not: real-time IK in the game. The locks are baked, so a planted
-foot can still slide on a slope or stairs (the arenas are flat) or while the
-game turns her on the spot.
+- **Live foot locks in the game** (Kesh's follow-up pick; `liveLocks` in
+  `mousehealer.js`). The game turns her on the spot whenever her aim moves,
+  and it blends clips into each other. Both used to swing her planted feet
+  round with the body. Now, while she stands:
+  - Each planted foot is held where it landed, by a two-bone IK on the thigh
+    and shin (knee kept in the clip's own plane, foot kept at its landed
+    angle).
+  - A foot steps once the body has shifted 7 cm or twisted 0.6 rad over it.
+    The step is lifted 3.5 cm, takes 0.14 s, and lands on the clip's own foot
+    position.
+  - One foot steps at a time, the one most out of place first; the other
+    anchors.
+  - A foot the clip itself lifts (a hop, a baked step) follows the clip.
+  - The locks fade in over about 0.17 s when she stops, and off while she
+    runs, lies down or gets up (those clips carry their own foot work).
+  - Checked in the game: turning 2.4 rad and back, the worst planted slide is
+    0.01 cm a frame, and she steps round 14 times.
+  - A foot the clip lifts hands back from its lock over 0.1 s (no pop). A lock
+    the body has jumped away from (a teleport, a room change) is dropped. The
+    locks switch off at once when she sets off.
+- **Blending rules** (from an independent review of the change):
+  - The clips are normalised to a total weight of 1, and the run fills
+    whatever they leave, so no hand-off ever blends toward the bind pose. The
+    game check asserts this for upper and lower body through
+    run, cast, stop, idle and run.
+  - The bones edited after the mixer (chest, head, legs) go back to the clip
+    pose before each update, so the IK never reads its own output.
+  - The four runs all plant the left foot at phase 0 and the right at 0.5,
+    so diagonals blend in step. On a diagonal the rate is divided by
+    |sum of w_i d_i|, so the blended planted foot still moves at her speed.
+  - Casting on the move puts the cast's own pelvis turn back on the chest,
+    so the torso still winds and unwinds through the strike over the running
+    legs (rule 3).
+
+Limits: the arenas are flat, so the locks hold the feet at the clip's own
+height; on a slope or stairs a foot would float or sink.
 
 ## Look
 
@@ -205,6 +238,7 @@ game turns her on the spot.
   - `?healer=classic` keeps the old rig;
   - running toward, away from and across the aim plays `Run_F`, `Run_B` and a strafe, at a stride rate matching her speed;
   - casting while running plays the cast's upper half over the running legs.
+  - turning on the spot keeps the planted feet still (worst slide under 0.1 cm a frame) while she steps round.
 
   It also writes the shots `captures/mouse-1..6`, the combo hits
   `mouse-2-hit1..3` and a skill cast `mouse-2-skill`.
