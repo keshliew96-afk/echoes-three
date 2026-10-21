@@ -12,7 +12,9 @@
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
 //   ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader"
 //
-// Bars (v0.5.331, measured on seed 21; v0.5.329 is in the doc):
+// Bars (v0.5.331 measured 7,024 px and 10 of 50 on seed 21; v0.5.329 was
+// 18,560 px and 28 of 50; the residual busy shots sit under the top torch
+// where the pale moth is fought, not on the party):
 //   - no shot has a near-white blob over MAX_BLOB px;
 //   - at most BUSY_SHOTS of the shots have one over BUSY_BLOB px;
 //   - no page or shader error.
@@ -28,9 +30,9 @@ const DIR = resolve(arg('--dir', 'captures/vfx-readability'));
 const SEED = Number(arg('--seed', 21));
 const N = Number(arg('--frames', 200));
 const EVERY = Number(arg('--every', 4));
-const MAX_BLOB = 9000; // px at 1600x900 (v0.5.329 reached 44,000)
+const MAX_BLOB = 9000; // px at 1600x900 (v0.5.329: 18,560, and 44,000 in another run)
 const BUSY_BLOB = 3000;
-const BUSY_SHOTS = 6; // of 50 (v0.5.329: 28 of 50)
+const BUSY_SHOTS = 12; // of 50 (v0.5.329: 28 of 50)
 mkdirSync(DIR, { recursive: true });
 const W = 1600;
 const H = 900;
