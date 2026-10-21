@@ -105,6 +105,7 @@ const STEP_TIME = 0.14; // s a step takes
 const STEP_LIFT = 0.035; // u a step lifts the foot
 const PLANT_TOL = 0.02; // u above its rest height a foot still counts as planted
 const IK_RATE = 6; // 1/s the live locks fade in and out
+const HOP_K = 1.6; // past this many times a step's limit the anchor lifts too
 const REVIVE_RATE = 2;
 const DEATH_RATE = 1.5;
 // Cross-fade lengths (s): the hurt snap and the cast pop must land at once.
@@ -495,7 +496,7 @@ export function buildMouseHealer(rig, trackAccent) {
   const ik = {};
   for (const [side, names] of Object.entries(IK_LEGS)) {
     const [th, sh, ft] = names.map((n) => model.getObjectByName(n));
-    if (th && sh && ft) ik[side] = { th, sh, ft, lock: null, lockQ: new Quaternion(), step: null, restY: 0, w: 0 };
+    if (th && sh && ft) ik[side] = { th, sh, ft, lock: null, lockQ: new Quaternion(), step: null, restY: 0, w: 0, drawn: new Vector3(), drawnQ: new Quaternion() };
   }
   model.updateWorldMatrix(true, true);
   {
@@ -606,6 +607,12 @@ export function buildMouseHealer(rig, trackAccent) {
       if (lifted) {
         // the clip itself lifts this foot (a hop, a baked step): hand it back
         // to the clip over RELEASE_TIME instead of snapping it there
+        // A step cut short keeps the spot it had swung to, not the one it
+        // left: the foot hands back from where it is drawn, never from behind.
+        if (leg.step && leg.lock) {
+          leg.lock.set(leg.drawn.x, leg.lock.y, leg.drawn.z);
+          leg.lockQ.copy(leg.drawnQ);
+        }
         leg.step = null;
         if (leg.lock && leg.w > 0) {
           leg.w = Math.max(0, leg.w - dt / RELEASE_TIME);
@@ -619,6 +626,11 @@ export function buildMouseHealer(rig, trackAccent) {
         // a fresh lock sits exactly where the clip has the foot: no pop
         leg.lock = vDesired.clone();
         leg.lockQ.copy(qDesired);
+      } else if (leg.w < 1) {
+        // landing part-way through a hand-back: plant where the foot is drawn
+        // now, not back on the old lock (that snapped it 15 cm in a frame)
+        leg.lock.set(leg.drawn.x, vDesired.y, leg.drawn.z);
+        leg.lockQ.copy(leg.drawnQ);
       }
       leg.w = 1;
       if (leg.step) {
@@ -637,11 +649,19 @@ export function buildMouseHealer(rig, trackAccent) {
       }
       const drift = Math.hypot(vDesired.x - leg.lock.x, vDesired.z - leg.lock.z);
       const twist = 2 * Math.acos(Math.min(1, Math.abs(qDesired.dot(leg.lockQ))));
-      if ((drift > STEP_DIST || twist > STEP_TWIST) && !(other && other.step)) {
+      // One foot at a time; but a turn faster than one foot can follow lifts
+      // the anchor too (a hop-turn) instead of dragging it over the floor.
+      const due = drift > STEP_DIST || twist > STEP_TWIST;
+      const hop = drift > STEP_DIST * HOP_K || twist > STEP_TWIST * HOP_K;
+      if (due && (!(other && other.step) || hop)) {
         leg.step = { t: 0, from: leg.lock.clone(), fromQ: leg.lockQ.clone() };
       }
       vStep.set(leg.lock.x, vDesired.y, leg.lock.z);
       solveLeg(leg, vStep, leg.lockQ, ikW);
+    }
+    for (const leg of Object.values(ik)) {
+      leg.ft.getWorldPosition(leg.drawn);
+      leg.ft.getWorldQuaternion(leg.drawnQ);
     }
   }
 

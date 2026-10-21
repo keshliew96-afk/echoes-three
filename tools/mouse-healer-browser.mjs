@@ -93,6 +93,45 @@ const playing = async (page, clip) => (await clips(page)).some((s) => s.clip ===
     }
   }
   check(turn[60][2] === 1 && slide < 0.1 && steps >= 4, 'turning on the spot: planted feet hold (worst slide under 0.1 cm a frame) and she steps round', { slideCmPerFrame: +slide.toFixed(3), steps });
+  // Fast turns, a flick and the combo while turning: no planted foot slides
+  // or snaps (a foot the clip lifts, a step or a hand-back is not planted).
+  const hard = await page.evaluate(() => {
+    const h = window.__echoesClipHeroes[0];
+    const D = Math.PI / 180;
+    const one = (frames, drive) => {
+      h.setAnim('idle');
+      let yaw = 0;
+      h.setYaw(0);
+      for (let i = 0; i < 60; i++) h.update(1 / 60);
+      const rows = [];
+      for (let i = 0; i < frames; i++) {
+        yaw = drive(i, yaw);
+        h.setYaw(yaw);
+        h.update(1 / 60);
+        rows.push(h.clipState().feet);
+      }
+      let worst = 0;
+      for (const s of ['L', 'R']) {
+        const floor = Math.min(...rows.map((r) => r[s].y));
+        for (let i = 1; i < rows.length; i++) {
+          const a = rows[i - 1][s];
+          const c = rows[i][s];
+          if (a.locked && c.locked && !a.stepping && !c.stepping && a.y < floor + 0.005 && c.y < floor + 0.005) worst = Math.max(worst, Math.hypot(c.x - a.x, c.z - a.z) * 100);
+        }
+      }
+      return +worst.toFixed(3);
+    };
+    return {
+      turn240: one(180, (i, y) => y + (i < 90 ? 1 : -1) * 240 * D / 60),
+      turn480: one(120, (i, y) => y + (i < 60 ? 1 : -1) * 480 * D / 60),
+      flick150: one(60, (i, y) => (i === 5 ? y + 150 * D : y)),
+      combo: one(240, (i, y) => {
+        if (i % 25 === 0) h.setAnim('cast', 0, ((i / 25) % 3) + 1);
+        return y + (i < 120 ? 1 : -1) * 120 * D / 60;
+      }),
+    };
+  });
+  check(Object.values(hard).every((v) => v < 0.05), 'fast turns, a flick and the combo while turning: no planted foot slides (cm a frame)', hard);
   await sleep(2500);
   await page.screenshot({ path: join(DIR, 'mouse-1-gallery.png') });
   await page.close();

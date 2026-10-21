@@ -170,7 +170,9 @@ The fixes:
     The step is lifted 3.5 cm, takes 0.14 s, and lands on the clip's own foot
     position.
   - One foot steps at a time, the one most out of place first; the other
-    anchors.
+    anchors. A turn faster than one foot can follow (the anchor 1.6 times
+    past a step's limit) lifts the anchor too, a hop-turn, rather than drag
+    it over the floor.
   - A foot the clip itself lifts (a hop, a baked step) follows the clip.
   - The locks fade in over about 0.17 s when she stops, and off while she
     runs, lies down or gets up (those clips carry their own foot work).
@@ -179,6 +181,23 @@ The fixes:
   - A foot the clip lifts hands back from its lock over 0.1 s (no pop). A lock
     the body has jumped away from (a teleport, a room change) is dropped. The
     locks switch off at once when she sets off.
+  - A step the clip cuts short (its own lift arrives mid-swing) hands back
+    from where the foot is drawn, and a foot that lands part-way through a
+    hand-back plants where it is drawn, never back on its old lock.
+  - Second self-check (cloud, against the three rules, at 60 fps in the
+    gallery, turning on the spot at 90, 240 and 480 deg/s, a 150 deg flick,
+    and the Bolt combo while turning at 120 deg/s). Flaws caught and fixed:
+    - Rule 2: in the combo, a step cut short by the clip's own lift snapped
+      the foot back 5 cm, and a foot landing mid hand-back snapped 15 cm back
+      to its old lock in one frame. Fixed as above; no planted foot now
+      moves over 0.05 cm a frame in any of the runs.
+    - Rule 2: at 240 and 480 deg/s and in the flick, the anchor foot was
+      dragged up to 0.38 cm a frame while the other stepped. Fixed by the
+      hop-turn.
+    - Rule 1 holds: every step swings toward where the body now faces, and
+      the combo's baked steps go the way the strike moves.
+    - Rule 3 holds: the steps alternate feet, and the slam's front foot
+      still steps with the strike when she casts standing.
 - **Blending rules** (from an independent review of the change):
   - The clips are normalised to a total weight of 1, and the run fills
     whatever they leave, so no hand-off ever blends toward the bind pose. The
