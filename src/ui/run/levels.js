@@ -75,8 +75,8 @@ function installStyle() {
 .cg-levels .cg-name { font-size: ${px(32)}; font-weight: 800; letter-spacing: 0.03em; line-height: 1.1; }
 .cg-levels .cg-blurb { font-size: ${px(21)}; color: ${P.bone}; line-height: 1.32; flex: 1 1 auto; }
 .cg-levels .cg-biome { font-size: ${px(19)}; color: ${P.warmGrey}; letter-spacing: 0.05em; }
-.cg-levels .cg-danger { display: flex; align-items: center; gap: ${px(10)}; font-size: ${px(20)}; font-weight: 700; letter-spacing: 0.08em; }
-.cg-levels .cg-pips { display: inline-flex; gap: ${px(6)}; }
+.cg-levels .cg-danger { display: flex; flex-wrap: wrap; align-items: center; gap: ${px(10)}; row-gap: ${px(4)}; font-size: ${px(20)}; font-weight: 700; letter-spacing: 0.08em; }
+.cg-levels .cg-pips { display: inline-flex; gap: ${px(6)}; } /* POLISH: wraps under its label on a narrow card */
 .cg-levels .cg-pip { width: ${px(15)}; height: ${px(15)}; transform: rotate(45deg); border: max(2px, ${px(2)}) solid ${P.bone}; }
 .cg-levels .cg-pip.cg-on { background: ${P.hearthAmber}; border-color: ${P.hearthAmber}; }
 .cg-levels .cg-status { font-size: ${px(19)}; color: ${P.parchment}; letter-spacing: 0.02em; }
@@ -116,7 +116,7 @@ function installStyle() {
   border-color: ${RUSH_RED}88;
 }
 .cg-levels .cg-card.cg-rush .cg-lvl { color: ${RUSH_RED}; }
-.cg-levels .cg-skulls { display: inline-flex; gap: ${px(5)}; }
+.cg-levels .cg-skulls { display: inline-flex; flex-wrap: wrap; gap: ${px(5)}; row-gap: ${px(4)}; }
 .cg-levels .cg-skull { width: ${px(13)}; height: ${px(13)}; border-radius: 50%; border: max(2px, ${px(2)}) solid ${P.bone}; }
 .cg-levels .cg-skull.cg-on { background: ${RUSH_RED}; border-color: ${RUSH_RED}; }
 /* CO-OP BOSS RUSH: in a lobby, the card says the party sets out together
@@ -154,6 +154,17 @@ function installStyle() {
 .cg-levels .cg-vows .cg-vbest { color: ${P.warmGrey}; }
 .cg-levels .cg-vows .cg-vbest b { color: ${P.parchment}; }
 .cg-levels .cg-note { min-height: ${px(28)}; font-size: ${px(21)}; color: ${P.bone}; text-align: center; }
+/* POLISH: when the one row does not fit the window (nine cards at 1024x640,
+   the longer languages first), the cards stand in two rows (fitRows()) and
+   the focused card's blurb reads in the line below them instead of on the card. */
+.cg-levels .cg-cards.cg-rows { display: grid; grid-template-columns: repeat(var(--cg-cols, 5), minmax(0, 1fr)); }
+.cg-levels .cg-cards.cg-rows .cg-card { min-height: 0; max-width: none; }
+.cg-levels .cg-cards.cg-rows .cg-blurb { display: none; }
+.cg-levels .cg-detail { display: none; width: 100%; min-height: calc(2 * 1.3 * ${px(18)}); font-size: ${px(18)}; line-height: 1.3; color: ${P.bone}; text-align: center; }
+.cg-levels .cg-wrap.cg-rowsmode .cg-detail { display: block; }
+.cg-levels .cg-wrap.cg-rowsmode .cg-note { min-height: 0; } /* a refusal still takes its line */
+.cg-levels .cg-wrap.cg-rowsmode { gap: ${px(8)}; padding-top: ${px(16)}; }
+.cg-levels .cg-cards.cg-rows .cg-card { gap: ${px(5)}; }
 .cg-levels .cg-foot { display: flex; gap: ${px(24)}; align-items: center; flex-wrap: wrap; justify-content: center; font-size: ${px(20)}; color: ${P.warmGrey}; }
 .cg-levels .cg-foot b { display: inline-flex; align-items: center; justify-content: center; min-width: ${px(34)}; height: ${px(32)}; padding: 0 ${px(8)}; margin-right: ${px(6)};
   border-radius: ${px(7)}; border: max(1px, ${px(2)}) solid ${P.warmGrey}AA; background: ${P.voidCharcoal}; color: ${P.bone}; font-weight: 700; }
@@ -371,6 +382,7 @@ export function createLevelsScreen(ctx) {
       </div>
       <div class="cg-vows" hidden></div>
       <div class="cg-cards"></div>
+      <div class="cg-detail"></div>
       <div class="cg-note" aria-live="polite"></div>
       <div class="cg-foot">
         <span><b>←</b><b>→</b>${t('Choose')}</span>
@@ -381,6 +393,36 @@ export function createLevelsScreen(ctx) {
   const cardsEl = el.querySelector('.cg-cards');
   const vowsEl = el.querySelector('.cg-vows');
   const noteEl = el.querySelector('.cg-note');
+  const wrapEl = el.querySelector('.cg-wrap');
+  const detailEl = el.querySelector('.cg-detail');
+  // POLISH: one row while it fits, else two rows (more cards than fit side by
+  // side: nine at 1024x640). Measured, so a language or a vow band that needs
+  // the room takes two rows and one that does not keeps one.
+  function fitRows() {
+    if (!el.isConnected) return;
+    const n = cardsEl.children.length;
+    cardsEl.classList.remove('cg-rows');
+    wrapEl.classList.remove('cg-rowsmode');
+    if (n < 6) return;
+    const spills = () =>
+      wrapEl.scrollHeight > wrapEl.clientHeight + 1 ||
+      [...cardsEl.children].some((c) => c.scrollWidth > c.clientWidth + 1 || [...c.querySelectorAll('.cg-name, .cg-pips, .cg-skulls, .cg-status, .cg-grant')].some((x) => x.getBoundingClientRect().right > c.getBoundingClientRect().right + 1));
+    if (!spills()) return;
+    cardsEl.style.setProperty('--cg-cols', String(Math.ceil(n / 2)));
+    cardsEl.classList.add('cg-rows');
+    wrapEl.classList.add('cg-rowsmode');
+    showDetail(cardsEl.querySelector('.cg-card.ap-focus') ?? cardsEl.querySelector('[data-nav-default]'));
+  }
+  function showDetail(card) {
+    const b = card && card.querySelector('.cg-blurb');
+    detailEl.textContent = b ? b.textContent : '';
+  }
+  cardsEl.addEventListener('focusin', (ev) => showDetail(ev.target.closest('.cg-card')));
+  cardsEl.addEventListener('pointerover', (ev) => {
+    const c = ev.target.closest && ev.target.closest('.cg-card');
+    if (c) showDetail(c);
+  });
+  const onResize = () => fitRows();
   let p = null;
   let settled = false;
   let chosen = null;
@@ -613,6 +655,7 @@ export function createLevelsScreen(ctx) {
       cardsEl.appendChild(card);
     }
     noteEl.textContent = '';
+    fitRows();
   }
 
   return {
@@ -629,8 +672,12 @@ export function createLevelsScreen(ctx) {
       lastDenied = null;
       render();
       askHost();
+      window.addEventListener('resize', onResize);
+      requestAnimationFrame(fitRows);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitRows).catch(() => {});
     },
     onClose() {
+      window.removeEventListener('resize', onResize);
       if (offHost) offHost();
       offHost = null;
       // Popped by anything other than a choice (a quit to title, a clear):
@@ -649,6 +696,15 @@ export function createLevelsScreen(ctx) {
         return true;
       }
       if (action === 'tabPrev') return true;
+      // POLISH: in two rows, ← → still walk the cards in order (Level V's
+      // end of the top row steps on to the bottom row); ↑ ↓ move by row.
+      if ((action === 'left' || action === 'right') && cardsEl.classList.contains('cg-rows')) {
+        const open = [...cardsEl.querySelectorAll('.cg-card[data-nav]:not([aria-disabled="true"])')];
+        const at = open.indexOf(el.querySelector('.cg-card.ap-focus'));
+        const to = open[at < 0 ? 0 : at + (action === 'left' ? -1 : 1)];
+        if (to && typeof manager.focusElement === 'function') manager.focusElement(to, source);
+        return true;
+      }
       return false;
     },
     back() {
@@ -657,6 +713,9 @@ export function createLevelsScreen(ctx) {
     },
     debug: () => ({
       vows: vowsEl.hidden ? null : vowsEl.textContent.replace(/\s+/g, ' ').trim(),
+      rows: cardsEl.classList.contains('cg-rows'),
+      detail: detailEl.textContent,
+      fits: wrapEl.scrollHeight <= wrapEl.clientHeight + 1,
       chosen,
       denied,
       lastDenied,

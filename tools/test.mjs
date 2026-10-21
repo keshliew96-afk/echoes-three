@@ -34,6 +34,7 @@ export const SUITE = [
   // The run.
   { file: 'tools/gameplay-bugs-probe.mjs', args: [], what: 'Daily boss credit, room leftovers, shrine curses' },
   { file: 'tools/gameplay-fixes-probe.mjs', args: [], what: 'Famine, Endless on a Spire clear, fonts, guest Level Select, records restore' },
+  { file: 'tools/polish-probe.mjs', args: [], what: 'Short Fuse in its room, Records dates, Level Select rows, Hourwarden weights' },
   { file: 'tools/code-health-probe.mjs', args: [], what: 'per-world colliders, the bundle split, dead code, audit pins' },
   { file: 'tools/lineup-probe.mjs', args: [], what: 'the party lineup' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },

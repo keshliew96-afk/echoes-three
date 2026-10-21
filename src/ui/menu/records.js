@@ -79,12 +79,19 @@ const hours = (sec) => {
   const m = Math.floor((s % 3600) / 60);
   return h > 0 ? t('{h} h {m} min', { h, m }) : t('{m} min', { m });
 };
+// A high score's day, in the game's language (POLISH; it read the browser's
+// language before), falling back to the browser's if the game's is refused.
 const day = (iso) => {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return '—';
   const d = new Date(t);
   const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString(undefined, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' });
+  const opts = sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' };
+  try {
+    return d.toLocaleDateString(getLanguage(), opts);
+  } catch {
+    return d.toLocaleDateString(undefined, opts);
+  }
 };
 // The kept file's save date, in the game's language.
 const keptDay = (iso) => {

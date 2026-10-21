@@ -777,9 +777,11 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   }
 
   // Short Fuse: the live room's telegraph rule ({ mul, minTicks }) or null.
-  // sim/enemies.js shortens every new telegraph by it.
+  // sim/enemies.js shortens every new telegraph by it. POLISH: only in the
+  // cursed room itself, like Famine (a door's curse is taken on the path
+  // screen of the room before).
   function fuse() {
-    if (!on || !curse) return null;
+    if (!on || !cursedHere()) return null;
     const c = CURSES[curse.id];
     return c && c.fuse ? c.fuse : null;
   }

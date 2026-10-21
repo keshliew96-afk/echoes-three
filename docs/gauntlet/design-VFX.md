@@ -473,8 +473,22 @@ spirit_bolt, lantern_flurry, pale_lance); the Tank, Swordsman and Duskwing
 fire none. Foes: Mantis, Crow, Vane, the Hollow Choir and the Vein Matron
 shoot; Toad, Rotcap, Miller and Geode lob; the Millwheel, Skyhorn, Colossus,
 Cantor, Lich Ram, Veinweaver, Cinderback and Thornmother fire or lob. The
-Hourwarden's weight drops rather than flies and keeps its own look, and
-elite-affix globs are pools, not shots.
+Hourwarden's weight drops rather than flies (its template beats are below),
+and elite-affix globs are pools, not shots.
+
+**The Hourwarden's weights (Polish, v0.5.327).** Toll of the Hours hangs a
+bronze clock weight over each hour mark and lets it fall, so it gets no muzzle
+and no flying head. In the Hourwarden's sci-fi tone (neon magenta first,
+foefx.js `weightHang` and `weightDrop`): each weight blinks in over its mark
+as a holo burst with matrix squares, a thin thread of neon light hangs from
+it to the floor while it waits, and when it lets go (its last 18 ticks) it
+drops trailing a laser streak and squares falling with it. Its landing is the
+template's ring strike (hex circle, holo burst, squares) like any lobbed glob,
+and the landing flare and shock in `signature.js` now burn the Hourwarden's
+shot colour instead of Ember. The Ember ring on the floor before it lands is
+the warning and stays. Tally: `content.vfx().foe.hourwarden.weight` and
+`.drop`; check: `tools/polish-probe.mjs`, stills: `tools/polish-browser.mjs
+--only weights`.
 
 The class and enemy layers underneath keep their own bodies (the Healer's
 parchment bolt, the arrow, the enemy shot's core and its streak), so a shot
