@@ -11,6 +11,7 @@
 //   mouse-4-rise.png      the healer getting up after a revive
 //   mouse-5-camp.png      the camp, the mouse at the fire
 //   mouse-6-classic.png   the same fight with ?healer=classic (the fallback)
+// and checks the run follows where she goes against where she faces.
 //
 //   node tools/mouse-healer-browser.mjs [--url http://localhost:5199/] [--dir captures]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
@@ -181,6 +182,47 @@ async function fight(query, shot) {
   await page.screenshot({ path: join(DIR, 'mouse-4-rise.png') });
   const up = await waitFor(async () => (await clips(page)).every((s) => s.clip !== 'Revive' && s.clip !== 'Death'), 15000);
   check(!!up, 'after Revive the body is back on its feet', await clips(page));
+  await page.close();
+}
+
+// 4b. Run direction follows travel against facing (Kesh's rule 1): she faces
+// her aim, so running away from the cursor must backpedal, across it strafe.
+{
+  const page = await open('?seed=3');
+  const cmd = (name, ...args) => page.evaluate((n, a) => window.__echoes.cmd(n, ...a), name, args);
+  await cmd('startRun', { act: 1 });
+  await waitFor(async () => (await cmd('runState')).phase === 'combat', 240000);
+  await cmd('killAllEnemies');
+  await sleep(800);
+  const mainLoco = async () => {
+    const st = (await clips(page)).find((c) => c.loco && c.loco.full > 0.5);
+    return st ? st.loco : null;
+  };
+  const runWith = async (aim, key) => {
+    await page.mouse.move(aim[0], aim[1]);
+    await sleep(400);
+    await page.keyboard.down(key);
+    await sleep(900);
+    const l = await mainLoco();
+    await page.keyboard.up(key);
+    await sleep(500);
+    return l;
+  };
+  const fwd = await runWith([800, 120], 'w');
+  check(!!fwd && fwd.F > 0.7, 'running toward the aim plays Run_F', fwd);
+  const back = await runWith([800, 820], 'w');
+  check(!!back && back.B > 0.7, 'running away from the aim backpedals (Run_B)', back);
+  const side = await runWith([800, 120], 'a');
+  check(!!side && side.L + side.R > 0.7, 'running across the aim strafes', side);
+  check(!!fwd && Math.abs(fwd.rate - 1) < 0.15, 'the stride rate matches her speed (rate ~1 at 2.4 u/s)', fwd && fwd.rate);
+  // Casting on the move: the cast's upper half over the run's legs.
+  await page.mouse.move(800, 120);
+  await page.keyboard.down('w');
+  await page.mouse.down({ button: 'right' });
+  const layered = await waitFor(async () => (await clips(page)).find((c) => /_upper$/.test(c.clip || '') && c.loco.legs > 0.5), 8000, 50);
+  await page.mouse.up({ button: 'right' });
+  await page.keyboard.up('w');
+  check(!!layered, 'casting while running plays the cast on the upper body over the running legs', layered && { clip: layered.clip, legs: layered.loco.legs });
   await page.close();
 }
 

@@ -11,9 +11,12 @@
 //
 //   idle    Idle (loop), with Idle_Look played now and then (the procedural
 //           idle's look-around flourish)
-//   walk    Run (loop). The healer moves at 2.4 u/s, about two body heights a
-//           second, which is a trot for a figure this size; the clip's cadence
-//           (1.5 strides a second) matches the procedural walk's 1.55 Hz.
+//   walk    a four-way run blended by where she is going relative to where
+//           she faces (she faces her aim, so she can run backward or sideways
+//           while shooting): Run_F, Run_B, Strafe_L, Strafe_R. Each is built
+//           from IK foot paths whose planted foot moves back at exactly the
+//           body's speed (2.4 u/s at rate 1), and the rate follows her real
+//           speed, so a planted foot stays still on the floor.
 //   cast    the three-hit staff combo Bolt_1, Bolt_2, Bolt_3 (below). Every
 //           shot is one hit; the strike lands 2-3 frames after the shot.
 //   hurt    Hit (once, held on its last frame)
@@ -32,7 +35,7 @@
 // to the left (hit 1's wind-up). The arena tells the model which hit a shot
 // is (setAnim's third argument); a caller that does not (the AI seats) gets
 // the same count from the time since the last shot.
-import { AnimationMixer, Color, Group, LoopOnce, LoopRepeat, MeshToonMaterial, Quaternion, SRGBColorSpace, Vector3 } from 'three';
+import { AnimationClip, AnimationMixer, Color, Group, LoopOnce, LoopRepeat, MeshToonMaterial, Quaternion, SRGBColorSpace, Vector3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import glbUrl from '../../assets/heroes/mousehealer.glb?url';
@@ -50,7 +53,7 @@ const MODEL_HEIGHT = 1.7;
 const STAND_HEIGHT = 1.1;
 const SCALE = STAND_HEIGHT / MODEL_HEIGHT;
 
-const CLIP_OF = Object.freeze({ idle: 'Idle', walk: 'Run', cast: 'Bolt_1', hurt: 'Hit', downed: 'Death' });
+const CLIP_OF = Object.freeze({ idle: 'Idle', walk: 'Run_F', cast: 'Bolt_1', hurt: 'Hit', downed: 'Death' });
 const COMBO = Object.freeze(['Bolt_1', 'Bolt_2', 'Bolt_3']);
 // A shot within this long of the last one is the next hit; later, hit 1.
 export const COMBO_WINDOW = 0.9;
@@ -76,7 +79,17 @@ export const SKILL_CAST = Object.freeze({
 // CHIN_UP); the body carries the party's ink line (common.js addSkinnedInk).
 const LIFT = 1.18;
 const CHIN_UP = 0.2; // rad
-const RUN_RATE = 1.05;
+// The four-way run, and the speed its strides are built for (u/s at rate 1).
+export const LOCO = Object.freeze({ F: 'Run_F', B: 'Run_B', L: 'Strafe_L', R: 'Strafe_R' });
+export const LOCO_SPEED = 2.4;
+const MOVING = 0.3; // u/s, the game's MOVE_EPS
+// LOWER BODY: the root, the hips and spine base the legs hang from, the legs
+// and the tail. While she casts or flinches on the move, these come from the
+// run (so her feet keep stepping the way she travels) and the rest from the
+// cast; standing, the cast plays whole, its own planted steps included.
+const LOWER = new Set(['Bone_000', 'Bone_001', 'Bone_003', 'Bone_002', 'Bone_004', 'Bone_005', 'Bone_006', 'Bone_007', 'Bone_008', 'Bone_009',
+  'Bone_013', 'Bone_014', 'Bone_015', 'Bone_016', 'Bone_017', 'Bone_018', 'Bone_019', 'Bone_020', 'Bone_021', 'Bone_022']);
+const boneOf = (trackName) => trackName.split('.')[0];
 const REVIVE_RATE = 2;
 const DEATH_RATE = 1.5;
 // Cross-fade lengths (s): the hurt snap and the cast pop must land at once.
@@ -157,15 +170,26 @@ export function buildMouseHealer(rig, trackAccent) {
   const mixer = new AnimationMixer(model);
   const actions = {};
   for (const clip of gltf.animations) actions[clip.name] = mixer.clipAction(clip);
+  // Split versions: the cast/hurt clips without the lower body, the run without
+  // the upper body (see LOWER).
+  const split = (name, keepLower) => {
+    const c = gltf.animations.find((x) => x.name === name);
+    if (!c) return null;
+    const tracks = c.tracks.filter((t) => LOWER.has(boneOf(t.name)) === keepLower);
+    return mixer.clipAction(new AnimationClip(`${name}_${keepLower ? 'legs' : 'upper'}`, c.duration, tracks));
+  };
+  const upper = {};
+  for (const n of [...COMBO, ...Object.values(SKILL_CAST).map((k) => k.clip), 'Hit']) if (!upper[n]) upper[n] = split(n, false);
   const once = (a) => {
+    if (!a) return a;
     a.setLoop(LoopOnce, 1);
     a.clampWhenFinished = true;
     return a;
   };
-  for (const n of ['Hit', 'Death', 'Revive', 'Idle_Look', ...COMBO]) if (actions[n]) once(actions[n]);
-  for (const k of Object.values(SKILL_CAST)) if (actions[k.clip]) once(actions[k.clip]);
-  for (const n of ['Idle', 'Run']) if (actions[n]) actions[n].setLoop(LoopRepeat, Infinity);
-  if (actions.Run) actions.Run.timeScale = RUN_RATE;
+  for (const n of ['Hit', 'Death', 'Revive', 'Idle_Look', ...COMBO]) once(actions[n]);
+  for (const k of Object.values(SKILL_CAST)) once(actions[k.clip]);
+  for (const a of Object.values(upper)) once(a);
+  if (actions.Idle) actions.Idle.setLoop(LoopRepeat, Infinity);
   // The sim revives a body at once; the rise is played quick so the healer is
   // on her feet before she can be steered far (~0.85 s, the procedural rise 0.42 s).
   if (actions.Revive) actions.Revive.timeScale = REVIVE_RATE;
@@ -173,23 +197,63 @@ export function buildMouseHealer(rig, trackAccent) {
   // downed healer reads as down while the revive prompt is already up.
   if (actions.Death) actions.Death.timeScale = DEATH_RATE;
 
-  let current = null; // the action playing
+  // The run: four full clips and four legs-only clips, all playing in step
+  // from the start; only their weights change.
+  const loco = {};
+  const locoLegs = {};
+  for (const [k, n] of Object.entries(LOCO)) {
+    loco[k] = actions[n];
+    locoLegs[k] = split(n, true);
+    for (const a of [loco[k], locoLegs[k]]) {
+      if (!a) continue;
+      a.setLoop(LoopRepeat, Infinity);
+      a.setEffectiveWeight(0);
+      a.play();
+    }
+  }
+  let locoW = 0; // full run weight
+  let legsW = 0; // legs-only run weight (casting on the move)
+  const dirW = { F: 1, B: 0, L: 0, R: 0 };
+  let speed = 0;
+  let localX = 0;
+  let localZ = 0;
+
+  // Hand-run fades: every one-shot / idle action has a weight easing to its
+  // target, so the run's weights and the clips' can be mixed freely.
+  const fades = new Map(); // action -> { w, target, rate }
+  let current = null; // the main (non-run) action
   let anim = null; // the game's clip name
   let pending = null; // what to play once the body has risen
   let lookIn = LOOK_EVERY * (0.4 + 0.6 * Math.random());
   let clock = 0;
   let lastShot = -Infinity;
   let hit = 0; // the combo hit last played, 1-3 (0 = none)
+  let full = null; // the whole-body clip behind `current` (its upper half may be playing)
 
   function fadeTo(action, fade, time = 0) {
     if (!action) return;
+    const rate = 1 / Math.max(0.02, fade);
+    for (const [a, f] of fades) if (a !== action) {
+      f.target = 0;
+      f.rate = rate;
+    }
+    const f = fades.get(action) || { w: 0, target: 1, rate };
+    f.target = 1;
+    f.rate = rate;
+    if (action !== current) f.w = Math.min(f.w, current ? 0 : 1);
+    fades.set(action, f);
     action.reset();
     action.time = time;
     action.enabled = true;
-    action.setEffectiveWeight(1);
-    if (current && current !== action) current.crossFadeTo(action, fade, false);
+    action.setEffectiveWeight(f.w);
     action.play();
     current = action;
+  }
+  // A clip that splits: standing it plays whole, on the move its upper half.
+  function playSplit(name, fade, time = 0) {
+    full = actions[name] || null;
+    const a = speed > MOVING && upper[name] ? upper[name] : full;
+    fadeTo(a, fade, time);
   }
 
   function start(name, phase, step) {
@@ -197,10 +261,24 @@ export function buildMouseHealer(rig, trackAccent) {
       // One shot = one hit. Explicit step from the arena, else the shot clock.
       hit = step >= 1 && step <= 3 ? step : clock - lastShot <= COMBO_WINDOW ? (hit % 3) + 1 : 1;
       lastShot = clock;
-      fadeTo(actions[COMBO[hit - 1]], FADE.cast);
+      playSplit(COMBO[hit - 1], FADE.cast);
       return;
     }
     if (name === 'hurt' || name === 'downed') hit = 0;
+    full = null;
+    if (name === 'walk') {
+      // the run takes over: fade every clip out
+      for (const f of fades.values()) {
+        f.target = 0;
+        f.rate = 1 / FADE.walk;
+      }
+      current = null;
+      return;
+    }
+    if (name === 'hurt') {
+      playSplit('Hit', FADE.hurt);
+      return;
+    }
     fadeTo(actions[CLIP_OF[name]], FADE[name] ?? 0.15);
     if (name === 'idle') lookIn = LOOK_EVERY * (0.6 + 0.4 * Math.random());
   }
@@ -230,7 +308,14 @@ export function buildMouseHealer(rig, trackAccent) {
     anim = 'cast';
     pending = null;
     hit = 0; // a skill breaks the basic combo
-    fadeTo(actions[k.clip], FADE.cast, k.from);
+    playSplit(k.clip, FADE.cast, k.from);
+  }
+
+  // Where she is going, relative to where she faces (critters/index.js).
+  function setMove(lx, lz) {
+    localX = lx;
+    localZ = lz;
+    speed = Math.hypot(lx, lz);
   }
 
   mixer.addEventListener('finished', (e) => {
@@ -270,6 +355,54 @@ export function buildMouseHealer(rig, trackAccent) {
         fadeTo(actions.Idle_Look, FADE.look);
       }
     }
+    // A split clip follows her: whole when she stops, upper half when she moves.
+    if (full && current && (anim === 'cast' || anim === 'hurt')) {
+      const want = speed > MOVING && upper[full.getClip().name] ? upper[full.getClip().name] : full;
+      if (want !== current) {
+        const t = current.time;
+        const f = fades.get(current);
+        fadeTo(want, 0.08, t);
+        if (f) fades.get(want).w = f.w;
+      }
+    }
+    // The run's weights: full while walking, legs-only under a cast or flinch
+    // on the move, nothing otherwise; split by direction.
+    const moving = speed > MOVING;
+    const wantLoco = anim === 'walk' && current !== actions.Revive ? 1 : 0;
+    const wantLegs = (anim === 'cast' || anim === 'hurt') && moving ? 1 : 0;
+    const k = Math.min(1, dt / FADE.walk);
+    locoW += (wantLoco - locoW) * k;
+    legsW += (wantLegs - legsW) * k;
+    if (moving) {
+      const f = Math.max(0, localZ);
+      const b = Math.max(0, -localZ);
+      const l = Math.max(0, localX);
+      const r = Math.max(0, -localX);
+      const sum = f + b + l + r || 1;
+      const kd = Math.min(1, dt * 10);
+      dirW.F += (f / sum - dirW.F) * kd;
+      dirW.B += (b / sum - dirW.B) * kd;
+      dirW.L += (l / sum - dirW.L) * kd;
+      dirW.R += (r / sum - dirW.R) * kd;
+      // The strides are built for LOCO_SPEED: the rate follows her real speed.
+      const rate = Math.min(1.6, Math.max(0.35, speed / LOCO_SPEED));
+      for (const key of Object.keys(LOCO)) {
+        if (loco[key]) loco[key].timeScale = rate;
+        if (locoLegs[key]) locoLegs[key].timeScale = rate;
+      }
+    }
+    for (const key of Object.keys(LOCO)) {
+      if (loco[key]) loco[key].setEffectiveWeight(locoW * dirW[key]);
+      if (locoLegs[key]) locoLegs[key].setEffectiveWeight(legsW * dirW[key]);
+    }
+    for (const [a, f] of fades) {
+      f.w = f.target > f.w ? Math.min(f.target, f.w + f.rate * dt) : Math.max(f.target, f.w - f.rate * dt);
+      a.setEffectiveWeight(f.w);
+      if (f.w <= 0 && f.target <= 0) {
+        a.stop();
+        fades.delete(a);
+      }
+    }
     mixer.update(dt);
     chinUp(1 - P.collapse);
 
@@ -289,14 +422,16 @@ export function buildMouseHealer(rig, trackAccent) {
     clipDriven: true,
     play,
     castSkill,
+    setMove,
     tick,
     // Read by tools/mouse-healer-browser.mjs through critters/index.js (harness only).
     clipState: () => ({
       anim,
-      clip: current ? current.getClip().name : null,
+      clip: current ? current.getClip().name : locoW > 0.5 ? LOCO[Object.keys(dirW).reduce((a, b) => (dirW[a] >= dirW[b] ? a : b))] : null,
       time: current ? current.time : 0,
       pending,
       hit,
+      loco: { full: +locoW.toFixed(2), legs: +legsW.toFixed(2), rate: loco.F ? +loco.F.timeScale.toFixed(2) : 0, ...Object.fromEntries(Object.entries(dirW).map(([k, v]) => [k, +v.toFixed(2)])) },
     }),
     apply() {},
     torso,
