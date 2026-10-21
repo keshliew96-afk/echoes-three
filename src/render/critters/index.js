@@ -230,9 +230,9 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     group,
     metrics: { ...M, ringRadius },
     setAnim: clipDriven
-      ? (name, phase) => {
+      ? (name, phase, step) => {
           driver.setAnim(name, phase);
-          built.play(name, phase);
+          built.play(name, phase, step);
         }
       : driver.setAnim,
     getAnim: () => driver.anim,

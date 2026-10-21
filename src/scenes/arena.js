@@ -55,6 +55,7 @@ import {
 } from 'three';
 import { ARENA, CAMERA, DODGE, DUMMY, TICK_HZ } from '../core/constants.js';
 import { createCritter, setInkViewport } from '../render/critters/index.js';
+import { COMBO_WINDOW } from '../render/critters/mousehealer.js';
 import { PALETTE } from '../data/palette.js';
 import { LAYOUTS } from '../data/layouts.js';
 import { ACT_IDS } from '../data/levels.js';
@@ -630,6 +631,12 @@ export function createArenaScene(stage, toggles, ctx) {
   let hurtLeft = 0;
   let firedFlag = false;
   let hurtFlag = false;
+  // The mouse healer's basic-attack combo (docs/MOUSE_HEALER.md): render-only
+  // state counting shots 1, 2, 3 while they come within COMBO_WINDOW of each
+  // other. The procedural rig ignores the step.
+  let comboStep = 0;
+  let lastFireAt = -Infinity;
+  let renderClock = 0;
   let healerYaw = 0;
   bus.on('basic_fire', () => {
     firedFlag = true;
@@ -1668,13 +1675,17 @@ export function createArenaScene(stage, toggles, ctx) {
     // raised during this frame's sim ticks; holds are wall-clock render state.
     const simSpeed = Math.hypot(p.x - p.px, p.z - p.pz) * TICK_HZ;
     const moving = simSpeed > MOVE_EPS;
+    renderClock += dt;
     if (firedFlag) {
       firedFlag = false;
       castLeft = moving ? CAST_HOLD_MOVING : CAST_HOLD_STILL;
-      healerRig.setAnim('cast', CAST_PHASE); // re-trigger AT the release pop
+      comboStep = renderClock - lastFireAt <= COMBO_WINDOW ? (comboStep % 3) + 1 : 1;
+      lastFireAt = renderClock;
+      healerRig.setAnim('cast', CAST_PHASE, comboStep); // re-trigger AT the release pop
     }
     if (hurtFlag) {
       hurtFlag = false;
+      comboStep = 0;
       hurtLeft = HURT_HOLD;
       healerRig.setAnim('hurt', 0); // hurt beats a cast raised the same frame
     }

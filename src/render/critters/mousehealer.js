@@ -14,13 +14,24 @@
 //   walk    Run (loop). The healer moves at 2.4 u/s, about two body heights a
 //           second, which is a trot for a figure this size; the clip's cadence
 //           (1.5 strides a second) matches the procedural walk's 1.55 Hz.
-//   cast    Cast_Bolt. An instant cast (a phase is passed) starts AT the
-//           release, so the gem is already thrusting forward when the bolt
-//           leaves it.
+//   cast    the three-hit staff combo Bolt_1, Bolt_2, Bolt_3 (below). Every
+//           shot is one hit; the strike lands 2-3 frames after the shot.
 //   hurt    Hit (once, held on its last frame)
 //   downed  Death (once, held lying on the floor)
 //   rise    Revive, whenever a downed body is asked for anything else; the
 //           requested clip plays when the body is up.
+//
+// THE COMBO (render only; bolt timing, damage and the sim are untouched).
+// Hit 1 is a wide horizontal sweep, back-left to front-right; hit 2 a rising
+// reverse sweep, low right to high front; hit 3 an overhead slam that drives
+// the crystal into the ground in front. Each clip ENDS in the next hit's
+// wind-up pose and holds it there, so the momentum of one hit carries into the
+// next instead of passing through idle: the sweep's follow-through keeps
+// rotating up behind the right shoulder (hit 2's wind-up), the rising sweep
+// carries on overhead (hit 3's wind-up), and the slam's recovery swings back
+// to the left (hit 1's wind-up). The arena tells the model which hit a shot
+// is (setAnim's third argument); a caller that does not (the AI seats) gets
+// the same count from the time since the last shot.
 import { AnimationMixer, Color, Group, LoopOnce, LoopRepeat, MeshToonMaterial, SRGBColorSpace } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
@@ -39,13 +50,14 @@ const MODEL_HEIGHT = 1.7;
 const STAND_HEIGHT = 1.1;
 const SCALE = STAND_HEIGHT / MODEL_HEIGHT;
 
-const CLIP_OF = Object.freeze({ idle: 'Idle', walk: 'Run', cast: 'Cast_Bolt', hurt: 'Hit', downed: 'Death' });
-// Seconds into Cast_Bolt where the staff starts its thrust (frame 12 of 30 fps).
-const CAST_RELEASE = 0.4;
+const CLIP_OF = Object.freeze({ idle: 'Idle', walk: 'Run', cast: 'Bolt_1', hurt: 'Hit', downed: 'Death' });
+const COMBO = Object.freeze(['Bolt_1', 'Bolt_2', 'Bolt_3']);
+// A shot within this long of the last one is the next hit; later, hit 1.
+export const COMBO_WINDOW = 0.9;
 const RUN_RATE = 1.05;
 const REVIVE_RATE = 2;
 // Cross-fade lengths (s): the hurt snap and the cast pop must land at once.
-const FADE = Object.freeze({ idle: 0.25, walk: 0.18, cast: 0.06, hurt: 0.05, downed: 0.12, rise: 0.15, look: 0.3 });
+const FADE = Object.freeze({ idle: 0.25, walk: 0.18, cast: 0.04, hurt: 0.05, downed: 0.12, rise: 0.15, look: 0.3 });
 // The look-around plays about every 6.4 s of idling, like the procedural idle.
 const LOOK_EVERY = 6.4;
 
@@ -124,8 +136,8 @@ export function buildMouseHealer(rig, trackAccent) {
     a.clampWhenFinished = true;
     return a;
   };
-  for (const n of ['Hit', 'Death', 'Revive', 'Idle_Look']) if (actions[n]) once(actions[n]);
-  for (const n of ['Idle', 'Run', 'Cast_Bolt']) if (actions[n]) actions[n].setLoop(LoopRepeat, Infinity);
+  for (const n of ['Hit', 'Death', 'Revive', 'Idle_Look', ...COMBO]) if (actions[n]) once(actions[n]);
+  for (const n of ['Idle', 'Run']) if (actions[n]) actions[n].setLoop(LoopRepeat, Infinity);
   if (actions.Run) actions.Run.timeScale = RUN_RATE;
   // The sim revives a body at once; the rise is played quick so the healer is
   // on her feet before she can be steered far (~0.85 s, the procedural rise 0.42 s).
@@ -135,6 +147,9 @@ export function buildMouseHealer(rig, trackAccent) {
   let anim = null; // the game's clip name
   let pending = null; // what to play once the body has risen
   let lookIn = LOOK_EVERY * (0.4 + 0.6 * Math.random());
+  let clock = 0;
+  let lastShot = -Infinity;
+  let hit = 0; // the combo hit last played, 1-3 (0 = none)
 
   function fadeTo(action, fade, time = 0) {
     if (!action) return;
@@ -147,14 +162,20 @@ export function buildMouseHealer(rig, trackAccent) {
     current = action;
   }
 
-  function start(name, phase) {
-    const a = actions[CLIP_OF[name]];
-    if (name === 'cast') fadeTo(a, FADE.cast, phase === undefined || phase === 0 ? 0 : CAST_RELEASE);
-    else fadeTo(a, FADE[name] ?? 0.15);
+  function start(name, phase, step) {
+    if (name === 'cast') {
+      // One shot = one hit. Explicit step from the arena, else the shot clock.
+      hit = step >= 1 && step <= 3 ? step : clock - lastShot <= COMBO_WINDOW ? (hit % 3) + 1 : 1;
+      lastShot = clock;
+      fadeTo(actions[COMBO[hit - 1]], FADE.cast);
+      return;
+    }
+    if (name === 'hurt' || name === 'downed') hit = 0;
+    fadeTo(actions[CLIP_OF[name]], FADE[name] ?? 0.15);
     if (name === 'idle') lookIn = LOOK_EVERY * (0.6 + 0.4 * Math.random());
   }
 
-  function play(name, phase) {
+  function play(name, phase, step) {
     if (!CLIP_OF[name]) return;
     if (name === anim && phase === undefined) return;
     const was = anim;
@@ -169,7 +190,7 @@ export function buildMouseHealer(rig, trackAccent) {
       return;
     }
     pending = null;
-    start(name, phase);
+    start(name, phase, step);
   }
 
   mixer.addEventListener('finished', (e) => {
@@ -183,6 +204,7 @@ export function buildMouseHealer(rig, trackAccent) {
   });
 
   function tick(dt, P) {
+    clock += dt;
     if (anim === 'idle' && current === actions.Idle && actions.Idle_Look) {
       lookIn -= dt;
       if (lookIn <= 0) {
@@ -214,6 +236,7 @@ export function buildMouseHealer(rig, trackAccent) {
       clip: current ? current.getClip().name : null,
       time: current ? current.time : 0,
       pending,
+      hit,
     }),
     apply() {},
     torso,

@@ -5,6 +5,7 @@
 // default captures/):
 //   mouse-1-gallery.png   the party gallery at the game camera, mouse first
 //   mouse-2-fight.png     room 1 of Level I in a busy fight, casting bolts
+//   mouse-2-hit1/2/3.png  the basic-attack combo: sweep, rising sweep, slam
 //   mouse-3-downed.png    the healer down, lying, greyed, ring grown
 //   mouse-4-rise.png      the healer getting up after a revive
 //   mouse-5-camp.png      the camp, the mouse at the fire
@@ -82,15 +83,27 @@ async function fight(query, shot) {
   for (let i = 0; i < 4; i++) await cmd('spawn', 'boar', me.x + 1.6 + (i % 2) * 0.7, me.z + (i < 2 ? -0.8 : 0.9), { hpMul: 60 });
   await page.mouse.move(1000, 430);
   await page.mouse.down({ button: 'right' });
-  const cast = await waitFor(() => playing(page, 'Cast_Bolt'), 20000);
-  await sleep(600);
+  // Hold fire: the shots should walk the combo 1, 2, 3, 1, ... and shoot each hit.
+  const seen = [];
+  const t0 = Date.now();
+  const shots = new Set();
+  while (Date.now() - t0 < 6000) {
+    const st = (await clips(page)).find((c) => /^Bolt_/.test(c.clip || ''));
+    if (st && seen[seen.length - 1] !== st.clip) seen.push(st.clip);
+    if (st && shot === 'mouse-2-fight.png' && st.time > 0.06 && st.time < 0.2 && !shots.has(st.clip)) {
+      shots.add(st.clip);
+      await page.screenshot({ path: join(DIR, `mouse-2-hit${st.clip.slice(-1)}.png`) });
+    }
+    await sleep(40);
+  }
   await page.screenshot({ path: join(DIR, shot) });
   await page.mouse.up({ button: 'right' });
-  return { page, cmd, me, cast };
+  return { page, cmd, me, seen };
 }
 {
-  const { page, cmd, me, cast } = await fight('?seed=3', 'mouse-2-fight.png');
-  check(!!cast, 'firing plays Cast_Bolt');
+  const { page, cmd, me, seen } = await fight('?seed=3', 'mouse-2-fight.png');
+  const order = seen.join(' ');
+  check(/Bolt_1 Bolt_2 Bolt_3/.test(order), 'held fire walks the combo hit 1, 2, 3', order);
   const hurt = await waitFor(() => playing(page, 'Hit'), 30000);
   check(!!hurt, 'a hit plays Hit');
   await cmd('killAllEnemies');

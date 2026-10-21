@@ -9,12 +9,13 @@
 //      mesh, the staff-tip and head nodes the game reads, WebP textures, and
 //      stays under its 2 MB budget.
 //   2. The clips: every clip the rig plays is in the file (Idle, Idle_Look,
-//      Run, Walk, Cast_Bolt, Hit, Death, Revive), each at least 0.5 s long.
+//      Run, Walk, Bolt_1-3, Hit, Death, Revive), each at least 0.5 s long.
 //   3. The mapping: every clip name the game drives (critters/driver.js
-//      CLIPS) has a model clip in mousehealer.js's CLIP_OF, and the cast's
-//      release time sits inside Cast_Bolt.
-//   4. The rise: Revive starts in the pose Death ends in (every bone within
-//      6 degrees), so a revived body gets up from where it fell.
+//      CLIPS) has a model clip in mousehealer.js's CLIP_OF.
+//   4. Continuity: Revive starts in the pose Death ends in, and each combo
+//      hit starts in the pose the hit before it ends in (Bolt_1 -> 2 -> 3 ->
+//      1), every bone within 6 degrees: momentum carries hit to hit, and a
+//      revived body gets up from where it fell.
 //   5. The switch-back: the procedural healer is still built when the model
 //      is off or missing (critters/index.js keeps buildHealer as the fallback).
 // Exit code 1 on any failure.
@@ -55,9 +56,9 @@ function accessor(i) {
 }
 const clips = Object.fromEntries((gltf.animations || []).map((a) => [a.name, a]));
 const duration = (a) => Math.max(...a.samplers.map((s) => accessor(s.input).max[0]));
-const NEED = ['Idle', 'Idle_Look', 'Run', 'Walk', 'Cast_Bolt', 'Hit', 'Death', 'Revive'];
+const NEED = ['Idle', 'Idle_Look', 'Run', 'Walk', 'Bolt_1', 'Bolt_2', 'Bolt_3', 'Hit', 'Death', 'Revive'];
 const missing = NEED.filter((n) => !clips[n]);
-check('clips: all eight the rig plays are in the file', missing.length === 0, missing.length ? { missing } : NEED.map((n) => `${n} ${duration(clips[n]).toFixed(2)}s`).join(', '));
+check('clips: all ten the rig plays are in the file', missing.length === 0, missing.length ? { missing } : NEED.map((n) => `${n} ${duration(clips[n]).toFixed(2)}s`).join(', '));
 check('clips: each at least 0.5 s long', NEED.every((n) => clips[n] && duration(clips[n]) >= 0.5));
 
 // --- 3. the mapping
@@ -66,8 +67,6 @@ const { CLIPS } = await import(pathToFileURL(join(here, 'src/render/critters/dri
 const clipOf = Object.fromEntries([...src.match(/CLIP_OF = Object\.freeze\(\{([^}]*)\}/)[1].matchAll(/(\w+):\s*'(\w+)'/g)].map((m) => [m[1], m[2]]));
 const unmapped = CLIPS.filter((c) => !clipOf[c] || !clips[clipOf[c]]);
 check('mapping: every game clip plays a model clip', unmapped.length === 0, unmapped.length ? { unmapped } : clipOf);
-const release = Number(src.match(/const CAST_RELEASE = ([\d.]+)/)[1]);
-check('mapping: the cast release sits inside Cast_Bolt', release > 0 && release < duration(clips.Cast_Bolt), `${release}s of ${duration(clips.Cast_Bolt).toFixed(2)}s`);
 
 // --- 4. the rise starts where the fall ends
 function rotationAt(anim, pickLast) {
@@ -81,21 +80,27 @@ function rotationAt(anim, pickLast) {
   }
   return out;
 }
-const end = rotationAt(clips.Death, true);
-const start = rotationAt(clips.Revive, false);
-let worst = 0;
-let worstBone = '';
-for (const [bone, a] of Object.entries(end)) {
-  const b = start[bone];
-  if (!b) continue;
-  const dot = Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3]);
-  const deg = (2 * Math.acos(Math.min(1, dot)) * 180) / Math.PI;
-  if (deg > worst) {
-    worst = deg;
-    worstBone = bone;
+function seam(from, to) {
+  const end = rotationAt(clips[from], true);
+  const start = rotationAt(clips[to], false);
+  let worst = 0;
+  let worstBone = '';
+  for (const [bone, a] of Object.entries(end)) {
+    const b = start[bone];
+    if (!b) continue;
+    const dot = Math.abs(a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3]);
+    const deg = (2 * Math.acos(Math.min(1, dot)) * 180) / Math.PI;
+    if (deg > worst) {
+      worst = deg;
+      worstBone = bone;
+    }
   }
+  check(`continuity: ${to} starts in the pose ${from} ends in (every bone within 6 degrees)`, worst <= 6, `${worst.toFixed(2)} deg at ${worstBone}`);
 }
-check('rise: Revive starts in the pose Death ends in (every bone within 6 degrees)', worst <= 6, `${worst.toFixed(2)} deg at ${worstBone}`);
+seam('Death', 'Revive');
+seam('Bolt_1', 'Bolt_2');
+seam('Bolt_2', 'Bolt_3');
+seam('Bolt_3', 'Bolt_1');
 
 // --- 5. the switch-back
 const idx = readFileSync(join(here, 'src/render/critters/index.js'), 'utf8');
