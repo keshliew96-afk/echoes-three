@@ -9,9 +9,10 @@
 //      mesh, the staff-tip and head nodes the game reads, WebP textures, and
 //      stays under its 2 MB budget.
 //   2. The clips: every clip the rig plays is in the file (Idle, Idle_Look,
-//      Run, Walk, Bolt_1-3, Hit, Death, Revive), each at least 0.5 s long.
+//      Run, Walk, Bolt_1-3, Hit, Death, Revive and the four skill casts), each at least 0.5 s long.
 //   3. The mapping: every clip name the game drives (critters/driver.js
-//      CLIPS) has a model clip in mousehealer.js's CLIP_OF.
+//      CLIPS) has a model clip in mousehealer.js's CLIP_OF, and every shape
+//      in the Healer's kit has its own skill cast clip (SKILL_CAST).
 //   4. Continuity: Revive starts in the pose Death ends in, and each combo
 //      hit starts in the pose the hit before it ends in (Bolt_1 -> 2 -> 3 ->
 //      1), every bone within 6 degrees: momentum carries hit to hit, and a
@@ -56,9 +57,9 @@ function accessor(i) {
 }
 const clips = Object.fromEntries((gltf.animations || []).map((a) => [a.name, a]));
 const duration = (a) => Math.max(...a.samplers.map((s) => accessor(s.input).max[0]));
-const NEED = ['Idle', 'Idle_Look', 'Run', 'Walk', 'Bolt_1', 'Bolt_2', 'Bolt_3', 'Hit', 'Death', 'Revive'];
+const NEED = ['Idle', 'Idle_Look', 'Run', 'Walk', 'Bolt_1', 'Bolt_2', 'Bolt_3', 'Hit', 'Death', 'Revive', 'Cast_Bolt', 'Cast_Quick', 'Cast_Area', 'Attack'];
 const missing = NEED.filter((n) => !clips[n]);
-check('clips: all ten the rig plays are in the file', missing.length === 0, missing.length ? { missing } : NEED.map((n) => `${n} ${duration(clips[n]).toFixed(2)}s`).join(', '));
+check('clips: all fourteen the rig plays are in the file', missing.length === 0, missing.length ? { missing } : NEED.map((n) => `${n} ${duration(clips[n]).toFixed(2)}s`).join(', '));
 check('clips: each at least 0.5 s long', NEED.every((n) => clips[n] && duration(clips[n]) >= 0.5));
 
 // --- 3. the mapping
@@ -67,6 +68,13 @@ const { CLIPS } = await import(pathToFileURL(join(here, 'src/render/critters/dri
 const clipOf = Object.fromEntries([...src.match(/CLIP_OF = Object\.freeze\(\{([^}]*)\}/)[1].matchAll(/(\w+):\s*'(\w+)'/g)].map((m) => [m[1], m[2]]));
 const unmapped = CLIPS.filter((c) => !clipOf[c] || !clips[clipOf[c]]);
 check('mapping: every game clip plays a model clip', unmapped.length === 0, unmapped.length ? { unmapped } : clipOf);
+const skillCast = Object.fromEntries([...src.match(/SKILL_CAST = Object\.freeze\(\{([\s\S]*?)\n\}\);/)[1].matchAll(/(\w+): Object\.freeze\(\{ clip: '(\w+)', from: ([\d.]+) \}\)/g)].map((m) => [m[1], { clip: m[2], from: Number(m[3]) }]));
+const { SKILLS } = await import(pathToFileURL(join(here, 'src/sim/skills.js')).href);
+const { AI_PRIORITY } = await import(pathToFileURL(join(here, 'src/data/classes.js')).href);
+const kitShapes = [...new Set(AI_PRIORITY.healer.map((id) => SKILLS[id]?.shape))].filter((sh) => sh && sh !== 'aura');
+const missingShape = kitShapes.filter((sh) => !skillCast[sh] || !clips[skillCast[sh].clip]);
+check('skills: every healer skill shape has its own cast clip in the file', missingShape.length === 0, missingShape.length ? { missingShape } : Object.fromEntries(kitShapes.map((sh) => [sh, skillCast[sh].clip])));
+check('skills: each cast starts inside its clip', Object.values(skillCast).every((k) => clips[k.clip] && k.from < duration(clips[k.clip])));
 
 // --- 4. the rise starts where the fall ends
 function rotationAt(anim, pickLast) {

@@ -6,6 +6,7 @@
 //   mouse-1-gallery.png   the party gallery at the game camera, mouse first
 //   mouse-2-fight.png     room 1 of Level I in a busy fight, casting bolts
 //   mouse-2-hit1/2/3.png  the basic-attack combo: sweep, rising sweep, slam
+//   mouse-2-skill.png     a skill cast with its own clip
 //   mouse-3-downed.png    the healer down, lying, greyed, ring grown
 //   mouse-4-rise.png      the healer getting up after a revive
 //   mouse-5-camp.png      the camp, the mouse at the fire
@@ -104,19 +105,78 @@ async function fight(query, shot) {
   const { page, cmd, me, seen } = await fight('?seed=3', 'mouse-2-fight.png');
   const order = seen.join(' ');
   check(/Bolt_1 Bolt_2 Bolt_3/.test(order), 'held fire walks the combo hit 1, 2, 3', order);
+  // A skill: the healer's first slot, cast with its key, plays its shape's clip.
+  // (Clear the pack and heal up first, so the boars cannot down her mid-test.)
+  await cmd('killAllEnemies');
+  await cmd('setHp', me.id, 1);
+  await cmd('giveSkill', 'nova_bloom'); // a nova: plays Cast_Area
+  await sleep(800);
+  const skillClips = ['Cast_Bolt', 'Cast_Quick', 'Cast_Area', 'Attack', 'Bolt_1'];
+  await page.mouse.move(1000, 430);
+  let skillSeen = null;
+  for (const key of ['1', '2', '3', '4']) {
+    await page.keyboard.down(key);
+    await sleep(250);
+    await page.keyboard.up(key);
+    skillSeen = await waitFor(async () => (await clips(page)).map((c) => c.clip).find((c) => skillClips.slice(0, 4).includes(c)), 3000, 50);
+    if (skillSeen) break;
+  }
+  check(!!skillSeen, 'a skill key plays its own cast clip', skillSeen);
+  if (skillSeen) await page.screenshot({ path: join(DIR, 'mouse-2-skill.png') });
+  // Every shape maps to its clip.
+  const shapes = await page.evaluate(async () => {
+    const h = window.__echoesClipHeroes.find((x) => x.castSkill);
+    const out = {};
+    for (const s of ['projectile', 'direct', 'nova', 'ground_aoe', 'melee_arc']) {
+      h.castSkill(s);
+      h.update(1 / 60);
+      out[s] = h.clipState().clip;
+    }
+    return out;
+  });
+  check(shapes.projectile === 'Cast_Bolt' && shapes.direct === 'Cast_Quick' && shapes.nova === 'Cast_Area' && shapes.ground_aoe === 'Attack' && shapes.melee_arc === 'Bolt_1', 'each skill shape plays its own clip', shapes);
+  await waitFor(async () => (await clips(page)).every((c) => c.clip !== 'Cast_Area' && c.clip !== 'Attack'), 5000);
+  const here = await page.evaluate(() => {
+    const p = window.__echoes.content.world().player;
+    return { x: p.x, z: p.z };
+  });
+  for (let i = 0; i < 3; i++) await cmd('spawn', 'boar', here.x + 1.2, here.z + (i - 1) * 0.7, { hpMul: 60 });
   const hurt = await waitFor(() => playing(page, 'Hit'), 30000);
   check(!!hurt, 'a hit plays Hit');
+  // Clear the pack, heal her and let her stand (the boars may have downed her
+  // and an ally revived her), then down her on purpose.
   await cmd('killAllEnemies');
+  await cmd('setHp', me.id, 1);
+  await waitFor(async () => (await clips(page)).every((c) => c.clip !== 'Death' && c.clip !== 'Revive'), 10000);
+  await sleep(500);
   await cmd('setHp', me.id, 0);
   const down = await waitFor(() => playing(page, 'Death'), 15000);
   check(!!down, 'downed plays Death');
-  await sleep(2600);
-  const lying = (await clips(page)).find((s) => s.clip === 'Death');
-  check(!!lying && lying.time > 2.1, 'Death holds on its last frame', lying);
-  await page.screenshot({ path: join(DIR, 'mouse-3-downed.png') });
-  await cmd('setHp', me.id, 1);
-  const rise = await waitFor(() => playing(page, 'Revive'), 15000);
-  check(!!rise, 'a revive plays Revive');
+  // Watch the fall: an AI ally may revive her on its own, which is fine, as
+  // long as she lay held first and got up through Revive.
+  let held = null;
+  let rise = false;
+  let shotDown = false;
+  let maxDeath = 0;
+  const t1 = Date.now();
+  while (Date.now() - t1 < 8000 && !rise) {
+    const cs = await clips(page);
+    const d = cs.find((c) => c.clip === 'Death');
+    if (d) maxDeath = Math.max(maxDeath, d.time);
+    if (d && d.time > 2.1) {
+      held = d;
+      if (!shotDown) {
+        shotDown = true;
+        await page.screenshot({ path: join(DIR, 'mouse-3-downed.png') });
+        await cmd('setHp', me.id, 1);
+      }
+    }
+    if (cs.some((c) => c.clip === 'Revive')) rise = true;
+    await sleep(40);
+  }
+  // Held on the floor, or (an ally got to her first) still falling until the revive.
+  check(!!held || (rise && maxDeath > 0.5), 'Death plays until it holds lying, or until a revive', { held: !!held, maxDeath: +maxDeath.toFixed(2) });
+  check(rise, 'a revive plays Revive');
   await sleep(250);
   await page.screenshot({ path: join(DIR, 'mouse-4-rise.png') });
   const up = await waitFor(async () => (await clips(page)).every((s) => s.clip !== 'Revive' && s.clip !== 'Death'), 15000);

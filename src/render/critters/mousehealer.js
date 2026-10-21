@@ -32,14 +32,14 @@
 // to the left (hit 1's wind-up). The arena tells the model which hit a shot
 // is (setAnim's third argument); a caller that does not (the AI seats) gets
 // the same count from the time since the last shot.
-import { AnimationMixer, Color, Group, LoopOnce, LoopRepeat, MeshToonMaterial, SRGBColorSpace } from 'three';
+import { AnimationMixer, Color, Group, LoopOnce, LoopRepeat, MeshToonMaterial, Quaternion, SRGBColorSpace, Vector3 } from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { clone as cloneSkinned } from 'three/addons/utils/SkeletonUtils.js';
 import glbUrl from '../../assets/heroes/mousehealer.glb?url';
 import { PALETTE } from '../../data/palette.js';
 import { getGradientMap } from '../toon.js';
 import { makeGlowSprite } from '../glow.js';
-import { exactColorNearest } from './common.js';
+import { exactColorNearest, addSkinnedInk } from './common.js';
 
 // 'mouse' plays the model; 'classic' keeps the procedural chibi (healer.js).
 export const HEALER_MODEL = 'mouse';
@@ -54,8 +54,31 @@ const CLIP_OF = Object.freeze({ idle: 'Idle', walk: 'Run', cast: 'Bolt_1', hurt:
 const COMBO = Object.freeze(['Bolt_1', 'Bolt_2', 'Bolt_3']);
 // A shot within this long of the last one is the next hit; later, hit 1.
 export const COMBO_WINDOW = 0.9;
+// SKILL CASTS (render only). A skill plays the cast that fits its shape, from
+// the frame just before its strike, so the strike lands within ~0.25 s of the
+// cast while the wind-up still shows:
+//   projectile  Cast_Bolt   the two-hand staff thrust, the gem leads the bolt
+//   direct      Cast_Quick  the free palm pushed toward the ally it lands on
+//   nova        Cast_Area   staff high overhead, then slammed down: the burst
+//   ground_aoe  Attack      an overhead staff strike on the ground ahead
+//   melee_arc   Bolt_1      the wide horizontal sweep: the wave's arc
+// Any other shape (the auras) plays Cast_Bolt.
+export const SKILL_CAST = Object.freeze({
+  projectile: Object.freeze({ clip: 'Cast_Bolt', from: 0.33 }),
+  direct: Object.freeze({ clip: 'Cast_Quick', from: 0.37 }),
+  nova: Object.freeze({ clip: 'Cast_Area', from: 0.8 }),
+  ground_aoe: Object.freeze({ clip: 'Attack', from: 0.3 }),
+  melee_arc: Object.freeze({ clip: 'Bolt_1', from: 0 }),
+});
+// READABILITY (Kesh's pick): the painted textures read darker than the toon
+// party, so the lit colour is lifted; the head tips back a little so the face
+// shows under the hood at the 52 deg gameplay camera (the procedural rigs'
+// CHIN_UP); the body carries the party's ink line (common.js addSkinnedInk).
+const LIFT = 1.18;
+const CHIN_UP = 0.2; // rad
 const RUN_RATE = 1.05;
 const REVIVE_RATE = 2;
+const DEATH_RATE = 1.5;
 // Cross-fade lengths (s): the hurt snap and the cast pop must land at once.
 const FADE = Object.freeze({ idle: 0.25, walk: 0.18, cast: 0.04, hurt: 0.05, downed: 0.12, rise: 0.15, look: 0.3 });
 // The look-around plays about every 6.4 s of idling, like the procedural idle.
@@ -97,6 +120,7 @@ function gemColor() {
 
 export function buildMouseHealer(rig, trackAccent) {
   const model = cloneSkinned(gltf.scene);
+  const inks = [];
   model.scale.setScalar(SCALE);
   rig.add(model);
 
@@ -107,14 +131,16 @@ export function buildMouseHealer(rig, trackAccent) {
     if (!o.isMesh) return;
     const src = o.material;
     const mat = new MeshToonMaterial({
-      color: 0xffffff,
+      color: new Color(LIFT, LIFT, LIFT),
       map: src.map || null,
       normalMap: src.normalMap || null,
       gradientMap: getGradientMap(),
     });
     o.material = trackAccent(mat);
     o.frustumCulled = false; // skinned bounds do not follow the clips
+    if (o.isSkinnedMesh) inks.push(o);
   });
+  for (const o of inks) addSkinnedInk(o);
 
   const head = model.getObjectByName('Bone_023') || model;
   const tip = model.getObjectByName('StaffTip') || head;
@@ -137,11 +163,15 @@ export function buildMouseHealer(rig, trackAccent) {
     return a;
   };
   for (const n of ['Hit', 'Death', 'Revive', 'Idle_Look', ...COMBO]) if (actions[n]) once(actions[n]);
+  for (const k of Object.values(SKILL_CAST)) if (actions[k.clip]) once(actions[k.clip]);
   for (const n of ['Idle', 'Run']) if (actions[n]) actions[n].setLoop(LoopRepeat, Infinity);
   if (actions.Run) actions.Run.timeScale = RUN_RATE;
   // The sim revives a body at once; the rise is played quick so the healer is
   // on her feet before she can be steered far (~0.85 s, the procedural rise 0.42 s).
   if (actions.Revive) actions.Revive.timeScale = REVIVE_RATE;
+  // The fall lands in ~0.75 s (the procedural collapse takes 0.45 s), so a
+  // downed healer reads as down while the revive prompt is already up.
+  if (actions.Death) actions.Death.timeScale = DEATH_RATE;
 
   let current = null; // the action playing
   let anim = null; // the game's clip name
@@ -193,6 +223,16 @@ export function buildMouseHealer(rig, trackAccent) {
     start(name, phase, step);
   }
 
+  // A skill cast: the game names the skill's shape (critters/index.js castSkill).
+  function castSkill(shape) {
+    const k = SKILL_CAST[shape] || SKILL_CAST.projectile;
+    if (anim === 'downed' || current === actions.Revive) return;
+    anim = 'cast';
+    pending = null;
+    hit = 0; // a skill breaks the basic combo
+    fadeTo(actions[k.clip], FADE.cast, k.from);
+  }
+
   mixer.addEventListener('finished', (e) => {
     if (e.action === actions.Revive) {
       const next = pending || 'idle';
@@ -202,6 +242,24 @@ export function buildMouseHealer(rig, trackAccent) {
       fadeTo(actions.Idle, FADE.look);
     }
   });
+
+  // The chin-up: a small tilt back of the head, added on top of the clip and
+  // turned about the model's own sideways axis, so it reads the same whatever
+  // the head bone's rest frame is. Faded out while the body is down.
+  const qParent = new Quaternion();
+  const qModel = new Quaternion();
+  const qTilt = new Quaternion();
+  const qWorld = new Quaternion();
+  const XAXIS = new Vector3(1, 0, 0);
+  function chinUp(k) {
+    if (k <= 0 || head === model) return;
+    qTilt.setFromAxisAngle(XAXIS, -CHIN_UP * k); // +Z faces forward: -X tips the face up
+    model.getWorldQuaternion(qModel);
+    head.parent.getWorldQuaternion(qParent);
+    // local' = P^-1 * (M * tilt * M^-1) * P * local
+    qWorld.copy(qModel).multiply(qTilt).multiply(qModel.invert());
+    head.quaternion.premultiply(qParent.clone().invert().multiply(qWorld).multiply(qParent));
+  }
 
   function tick(dt, P) {
     clock += dt;
@@ -213,6 +271,7 @@ export function buildMouseHealer(rig, trackAccent) {
       }
     }
     mixer.update(dt);
+    chinUp(1 - P.collapse);
 
     // Emitter heat, as healer.js: the halo carries the cast and dims when down.
     const heat = P.gem * (1 - P.desat);
@@ -229,6 +288,7 @@ export function buildMouseHealer(rig, trackAccent) {
   return {
     clipDriven: true,
     play,
+    castSkill,
     tick,
     // Read by tools/mouse-healer-browser.mjs through critters/index.js (harness only).
     clipState: () => ({

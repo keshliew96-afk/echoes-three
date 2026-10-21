@@ -259,6 +259,15 @@ export function createCritter(classId, { cosmetic = null } = {}) {
   };
   // Harness builds list the clip-driven heroes so a probe can drive and read
   // their clips (tools/mouse-healer-browser.mjs).
+  // Clip-driven heroes cast each skill with its own animation (the skill's
+  // shape picks it, docs/MOUSE_HEALER.md); the procedural rigs have no such
+  // method and keep their single cast pose.
+  if (clipDriven) {
+    api.castSkill = (shape) => {
+      driver.setAnim('cast');
+      built.castSkill(shape);
+    };
+  }
   if (clipDriven && HARNESS && typeof window !== 'undefined') {
     api.clipState = built.clipState;
     (window.__echoesClipHeroes ||= []).push(api);
