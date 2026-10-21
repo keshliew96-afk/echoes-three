@@ -20,6 +20,7 @@
 // Render-only: reads sim entities and events, never writes either; all
 // randomness from the COSMETIC stream.
 import { vfxFoeTone, vfxFoeWeight, FOE_TEMPLATE } from '../../data/vfx.js';
+import { TICK_HZ } from '../../core/constants.js';
 
 const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
@@ -228,6 +229,38 @@ export function createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark
     camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.03, 0.14);
   }
 
+  // POLISH: the Hourwarden's clock weights (Toll of the Hours) wear its
+  // template too. They hang over their hour marks and fall, never thrown, so
+  // in place of a muzzle: each weight blinks in over its mark, hangs on a thin
+  // thread of the template's light, and drops trailing it; the landing is the
+  // ring strike every lobbed glob gets. The Ember ring on the floor is the
+  // enemy layer's warning and stays as it is.
+  const HANG_Y = 5.8; // render/enemies/extras.js: a weight hangs ~5.6 u up
+  const DROP_TICKS = 18; // ...and drops in its last 18 ticks
+  function weightHang(tp, ev, w) {
+    fire(`${tp.id}_weight`);
+    const x = ev.tx;
+    const z = ev.tz;
+    const mode = tp.id === 'blade' ? 'fire' : tp.id === 'scifi' ? 'holo' : 'celestial';
+    tk.blast({ x, y: HANG_Y, z, size: 0.75 * Math.sqrt(w), mode, core: tp.core, a: tp.a, b: tp.id === 'blade' ? tp.deep : tp.b, life: 0.32 });
+    tk.dust(x, HANG_Y, z, Math.round(5 * w), { tex: tp.id === 'scifi' ? 'square' : 'star', color: tp.a, color2: tp.b, radius: 0.45, speed: [0.2, 0.7], up: [-0.3, 0.3], size: [0.05, 0.08], life: [0.35, 0.6], gravity: 0, drag: 0.8, twinkle: 40 });
+    const left = Math.max(0, (ev.landTick ?? ev.tick) - ev.tick);
+    const dropIn = Math.max(0, left - DROP_TICKS) / TICK_HZ;
+    kit.streak({ a: { x, y: HANG_Y, z }, b: { x, y: 0.12, z }, width: 0.035, tailW: 1, core: tp.core, glow: tp.a, life: Math.max(0.3, dropIn), fall: 0.2, opacity: 0.4 });
+    const kind = cur;
+    after(dropIn, () => {
+      if (ev.glob != null && !byId(ev.glob)) return; // gone with its room
+      as(kind, () => weightDrop(tp, x, z, w));
+    });
+  }
+  function weightDrop(tp, x, z, w) {
+    fire(`${tp.id}_drop`);
+    const t = DROP_TICKS / TICK_HZ;
+    kit.streak({ a: { x, y: HANG_Y, z }, b: { x, y: 0.4, z }, width: 0.14 * Math.sqrt(w), tailW: 0.25, core: tp.core, glow: tp.a, life: t + 0.15, fall: 0.5, opacity: 0.85 });
+    kit.streak({ a: { x, y: HANG_Y, z }, b: { x, y: 0.4, z }, width: 0.4 * Math.sqrt(w), tailW: 0.4, core: tp.a, glow: tp.b, life: t + 0.2, fall: 0.6, opacity: 0.35 });
+    tk.dust(x, HANG_Y * 0.5, z, Math.round(5 * w), { tex: tp.id === 'scifi' ? 'square' : 'star', color: tp.a, color2: tp.b, radius: 0.3, speed: [0, 0.3], up: [-3, -1.5], size: [0.04, 0.07], life: [0.25, 0.45], gravity: 0, drag: 0.4, twinkle: 40 });
+  }
+
   // A support's work (a mend, a ward, a tether): not a blow, but still the
   // enemy's magic, so it wears the foe tone (never Bright Heal).
   function ward(tp, x, z, r, w) {
@@ -295,6 +328,10 @@ export function createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark
     if (ev.glob != null) {
       if (shotKind.size > 64) shotKind.clear();
       shotKind.set(ev.glob, kind);
+    }
+    if (ev.weight) {
+      as(kind, () => weightHang(vfxFoeTone(kind), ev, vfxFoeWeight(kind)));
+      return;
     }
     as(kind, () => shot(vfxFoeTone(kind), ev.x, ev.z, (ev.tx ?? ev.x + 1) - ev.x, (ev.tz ?? ev.z) - ev.z, vfxFoeWeight(kind)));
   });

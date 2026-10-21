@@ -9,7 +9,7 @@ import { service } from '../../app/registry.js';
 import { px } from '../../app/style.js';
 import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
-import { t, tn, getLanguage } from '../../i18n/index.js';
+import { t, tn, getLanguage, fmtNumber, fmtDate } from '../../i18n/index.js';
 
 const ACT_NAME = {
   get 1() { return t('The Hollow Wood'); },
@@ -79,12 +79,14 @@ const hours = (sec) => {
   const m = Math.floor((s % 3600) / 60);
   return h > 0 ? t('{h} h {m} min', { h, m }) : t('{m} min', { m });
 };
+// A high score's day, in the game's language (POLISH; it read the browser's
+// language before), falling back to the browser's if the game's is refused.
 const day = (iso) => {
   const t = Date.parse(iso);
   if (!Number.isFinite(t)) return '—';
   const d = new Date(t);
   const sameYear = d.getFullYear() === new Date().getFullYear();
-  return d.toLocaleDateString(undefined, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' });
+  return fmtDate(d, sameYear ? { day: 'numeric', month: 'short' } : { day: 'numeric', month: 'short', year: '2-digit' });
 };
 // The kept file's save date, in the game's language.
 const keptDay = (iso) => {
@@ -175,7 +177,7 @@ export function createRecordsScreen(ctx) {
         if (last && last.entry && last.entry.date === h.date && last.entry.score === h.score) tr.classList.add('sv-fresh');
         const cells = [
           [String(i + 1), 'sv-num'],
-          [h.score.toLocaleString(), 'sv-num'],
+          [fmtNumber(h.score), 'sv-num'],
           // CAMPAIGN (PLAN §12.8): a campaign entry names its span ("I → III");
           // a single-level entry its level. Result: Campaign complete /
           // Victory / Defeat / Abandoned (Quit to Lobby).
@@ -215,7 +217,7 @@ export function createRecordsScreen(ctx) {
     add(t('Abandoned'), String(r.abandoned ?? 0));
     add(t('Furthest level'), r.furthestLevel ? t('Level {level}', { level: ROMAN[r.furthestLevel] ?? r.furthestLevel }) : '—');
     add(t('Fastest campaign'), mmss(r.fastestCampaignSec));
-    add(t('Best score'), r.bestScore ? r.bestScore.toLocaleString() : '—');
+    add(t('Best score'), r.bestScore ? fmtNumber(r.bestScore) : '—');
     add(t('Most kills in a run'), r.mostKills ? String(r.mostKills) : '—');
     // One row per level: clears · fastest clear · deepest room.
     for (const a of [1, 2, 3]) {

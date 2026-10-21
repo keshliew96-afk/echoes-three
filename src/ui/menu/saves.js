@@ -24,7 +24,7 @@ import { PALETTE as P } from '../../data/palette.js';
 import { createHints } from './hints.js';
 import { createRecordsScreen } from './records.js';
 import { transitWhere, slotDisplayName } from '../../save/describe.js';
-import { t, tn } from '../../i18n/index.js';
+import { t, tn, fmtDateTime } from '../../i18n/index.js';
 import { iconEl } from '../hud/icons.js';
 import { SKILLS } from '../../sim/skills.js';
 import { SKILL_SLOTS, SOCKETS_PER_SKILL } from '../../core/constants.js';
@@ -106,7 +106,7 @@ export function fmtAgo(iso) {
 export function fmtDate(iso) {
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return '—';
-  return new Date(ms).toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  return fmtDateTime(ms, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }); // POLISH: the game's language
 }
 export function whereLine(m) {
   const meta = (m && m.meta) || {};

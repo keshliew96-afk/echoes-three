@@ -6,7 +6,8 @@
 // opens Levels I to IV (content.unlock), the guest's own profile only I:
 //   - the guest's Level Select opens I to IV, Endless and Boss Rush follow
 //     the host's, and a locked card says the host has not unlocked it;
-//   - the guest picks Level III: the host starts the run at Level III;
+//   - the guest picks Level III: the host starts the run at Level III (the
+//     guest's tab in front, so it is not away and the host counts its seat);
 //   - the host's own Level Select is unchanged (its own unlocks).
 //   node tools/gameplay-fixes-guest.mjs [--port 7932] [--shots <dir>] [--lang de]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=<chrome> ECHOES_CHROME_ARGS="--no-sandbox".
@@ -67,7 +68,14 @@ try {
   console.log('guest open:', open(gc), '| lock line:', v && v.lock);
   await guest.page.screenshot({ path: `${shots}/guest-level-select-${lang}.png` });
 
-  // The guest picks Level III: the host starts it.
+  // The guest picks Level III: the host starts it. POLISH: the guest's tab
+  // is brought to the front first and the host must see seat 1 as a human
+  // (a hidden guest page sends away frames, and the host rightly plays an
+  // away seat as AI and refuses its pick as not_owner: the step failed
+  // whenever the host's tab was the one in front).
+  await guest.page.bringToFront();
+  const human = await until(() => netEval(host, 'const a = E.content.world().allySystem(); return a.controllers()[1] === "human";'), 90000);
+  check("the host sees the guest's seat as a human before the pick", !!human, human);
   await netEval(guest, 'document.querySelector(\'.cg-card[data-level="3"]\').click(); return true;');
   const started = await until(async () => {
     const r = await netEval(host, 'const c = E.cmd("campaignState"); return c && c.active ? { level: c.level, mode: c.mode } : null;');

@@ -5729,8 +5729,11 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   function weightLand(ev) {
     mark('hourwarden_weight');
     const r = ev.radius ?? 1.3;
-    flare(ev.x, 0.4, ev.z, EMBER, 1.6, { kind: 'burst', life: 0.2, core: PARCH });
-    shock(ev.x, ev.z, r, EMBER, { life: 0.26, width: 0.12 });
+    // POLISH: the blow in the Hourwarden's template tone (foefx.js), not Ember
+    // (Ember is the floor ring's warning before it lands).
+    const hit = vfxFoeShotColor('hourwarden');
+    flare(ev.x, 0.4, ev.z, hit, 1.6, { kind: 'burst', life: 0.2, core: PARCH });
+    shock(ev.x, ev.z, r, hit, { life: 0.26, width: 0.12 });
     kit.ring({ x: ev.x, z: ev.z, r0: 0.3, r1: r * 1.4, width: 0.1, life: 0.45, core: DIALC, glow: BRONZE, soft: 0.5, y: 0.06 });
     kit.mark({ x: ev.x, z: ev.z, radius: r * 0.8, kind: 'crater', stain: LIMESTONE, glow: BRONZE, glowOpacity: 0.3, cool: 1.0, life: 3.2, opacity: 0.45 });
     spray('chunk', ev.x, 0.2, ev.z, HOUR.hours.chunk, { color: LIMESTONE, speed: [0.8, 2.0], up: [1.0, 2.2], size: [0.05, 0.11], life: [0.5, 0.8], jitter: 0.3 });
