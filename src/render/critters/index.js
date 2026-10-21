@@ -132,6 +132,8 @@ export function createCritter(classId, { cosmetic = null } = {}) {
 
   let t = 0;
   let lastDesat = -1;
+  const lastPos = new Vector3();
+  const vel = new Vector3();
 
   function update(dt) {
     t += dt;
@@ -140,6 +142,22 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     const upright = 1 - c;
 
     if (clipDriven) {
+      // Where the body is going, from its own position, turned into the
+      // facing frame: the model blends its run by it (docs/MOUSE_HEALER.md).
+      if (dt > 0) {
+        const vx = (group.position.x - lastPos.x) / dt;
+        const vz = (group.position.z - lastPos.z) / dt;
+        lastPos.copy(group.position);
+        if (Math.hypot(vx, vz) < 12) {
+          const k = Math.min(1, dt * 30); // ~1/30 s: a stop reads as a stop
+          vel.x += (vx - vel.x) * k;
+          vel.z += (vz - vel.z) * k;
+        }
+        const yaw = yawGroup.rotation.y;
+        const c = Math.cos(yaw);
+        const s = Math.sin(yaw);
+        built.setMove(vel.x * c - vel.z * s, vel.x * s + vel.z * c);
+      }
       built.tick(dt, P);
       decalsAndDesat(P, c);
       return;

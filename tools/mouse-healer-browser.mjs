@@ -11,6 +11,7 @@
 //   mouse-4-rise.png      the healer getting up after a revive
 //   mouse-5-camp.png      the camp, the mouse at the fire
 //   mouse-6-classic.png   the same fight with ?healer=classic (the fallback)
+// and checks the run follows where she goes against where she faces.
 //
 //   node tools/mouse-healer-browser.mjs [--url http://localhost:5199/] [--dir captures]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
@@ -65,6 +66,72 @@ const playing = async (page, clip) => (await clips(page)).some((s) => s.clip ===
   const page = await open('?scene=chartest&cam=game');
   await waitFor(async () => (await clips(page)).length > 0, 60000);
   check((await clips(page)).length > 0, 'the gallery builds the mouse healer');
+  // Turning on the spot (Kesh's rule 2, live): planted feet hold the floor
+  // while the game turns her, and step (lifted) once the twist is too big.
+  const turn = await page.evaluate(() => {
+    const h = window.__echoesClipHeroes[0];
+    const rows = [];
+    let yaw = 0;
+    for (let i = 0; i < 30; i++) h.update(1 / 60);
+    for (let i = 0; i < 240; i++) {
+      yaw += i < 120 ? 0.02 : -0.035;
+      h.setYaw(yaw);
+      h.update(1 / 60);
+      const st = h.clipState();
+      rows.push([st.feet.L, st.feet.R, st.ik]);
+    }
+    return rows;
+  });
+  let slide = 0;
+  let steps = 0;
+  for (let i = 1; i < turn.length; i++) {
+    for (const j of [0, 1]) {
+      const a = turn[i - 1][j];
+      const c = turn[i][j];
+      if (a.locked && c.locked && !a.stepping && !c.stepping) slide = Math.max(slide, Math.hypot(c.x - a.x, c.z - a.z) * 100);
+      if (c.stepping && !a.stepping) steps++;
+    }
+  }
+  check(turn[60][2] === 1 && slide < 0.1 && steps >= 4, 'turning on the spot: planted feet hold (worst slide under 0.1 cm a frame) and she steps round', { slideCmPerFrame: +slide.toFixed(3), steps });
+  // Fast turns, a flick and the combo while turning: no planted foot slides
+  // or snaps (a foot the clip lifts, a step or a hand-back is not planted).
+  const hard = await page.evaluate(() => {
+    const h = window.__echoesClipHeroes[0];
+    const D = Math.PI / 180;
+    const one = (frames, drive) => {
+      h.setAnim('idle');
+      let yaw = 0;
+      h.setYaw(0);
+      for (let i = 0; i < 60; i++) h.update(1 / 60);
+      const rows = [];
+      for (let i = 0; i < frames; i++) {
+        yaw = drive(i, yaw);
+        h.setYaw(yaw);
+        h.update(1 / 60);
+        rows.push(h.clipState().feet);
+      }
+      let worst = 0;
+      for (const s of ['L', 'R']) {
+        const floor = Math.min(...rows.map((r) => r[s].y));
+        for (let i = 1; i < rows.length; i++) {
+          const a = rows[i - 1][s];
+          const c = rows[i][s];
+          if (a.locked && c.locked && !a.stepping && !c.stepping && a.y < floor + 0.005 && c.y < floor + 0.005) worst = Math.max(worst, Math.hypot(c.x - a.x, c.z - a.z) * 100);
+        }
+      }
+      return +worst.toFixed(3);
+    };
+    return {
+      turn240: one(180, (i, y) => y + (i < 90 ? 1 : -1) * 240 * D / 60),
+      turn480: one(120, (i, y) => y + (i < 60 ? 1 : -1) * 480 * D / 60),
+      flick150: one(60, (i, y) => (i === 5 ? y + 150 * D : y)),
+      combo: one(240, (i, y) => {
+        if (i % 25 === 0) h.setAnim('cast', 0, ((i / 25) % 3) + 1);
+        return y + (i < 120 ? 1 : -1) * 120 * D / 60;
+      }),
+    };
+  });
+  check(Object.values(hard).every((v) => v < 0.05), 'fast turns, a flick and the combo while turning: no planted foot slides (cm a frame)', hard);
   await sleep(2500);
   await page.screenshot({ path: join(DIR, 'mouse-1-gallery.png') });
   await page.close();
@@ -181,6 +248,70 @@ async function fight(query, shot) {
   await page.screenshot({ path: join(DIR, 'mouse-4-rise.png') });
   const up = await waitFor(async () => (await clips(page)).every((s) => s.clip !== 'Revive' && s.clip !== 'Death'), 15000);
   check(!!up, 'after Revive the body is back on its feet', await clips(page));
+  await page.close();
+}
+
+// 4b. Run direction follows travel against facing (Kesh's rule 1): she faces
+// her aim, so running away from the cursor must backpedal, across it strafe.
+{
+  const page = await open('?seed=3');
+  const cmd = (name, ...args) => page.evaluate((n, a) => window.__echoes.cmd(n, ...a), name, args);
+  await cmd('startRun', { act: 1 });
+  await waitFor(async () => (await cmd('runState')).phase === 'combat', 240000);
+  await cmd('killAllEnemies');
+  await sleep(800);
+  const mainLoco = async () => {
+    const st = (await clips(page)).find((c) => c.loco && c.loco.full > 0.5);
+    return st ? st.loco : null;
+  };
+  const runWith = async (aim, key) => {
+    await page.mouse.move(aim[0], aim[1]);
+    await sleep(400);
+    await page.keyboard.down(key);
+    await sleep(900);
+    const l = await mainLoco();
+    await page.keyboard.up(key);
+    await sleep(500);
+    return l;
+  };
+  const fwd = await runWith([800, 120], 'w');
+  check(!!fwd && fwd.F > 0.7, 'running toward the aim plays Run_F', fwd);
+  const back = await runWith([800, 820], 'w');
+  check(!!back && back.B > 0.7, 'running away from the aim backpedals (Run_B)', back);
+  const side = await runWith([800, 120], 'a');
+  check(!!side && side.L + side.R > 0.7, 'running across the aim strafes', side);
+  check(!!fwd && Math.abs(fwd.rate - 1) < 0.15, 'the stride rate matches her speed (rate ~1 at 2.4 u/s)', fwd && fwd.rate);
+  // Casting on the move: the cast's upper half over the run's legs.
+  await page.mouse.move(800, 120);
+  await page.keyboard.down('w');
+  await page.mouse.down({ button: 'right' });
+  const layered = await waitFor(async () => (await clips(page)).find((c) => /_upper$/.test(c.clip || '') && c.loco.legs > 0.5), 8000, 50);
+  await page.mouse.up({ button: 'right' });
+  await page.keyboard.up('w');
+  check(!!layered, 'casting while running plays the cast on the upper body over the running legs', layered && { clip: layered.clip, legs: layered.loco.legs });
+  // Hand-offs never blend toward the bind pose: upper and lower body weights
+  // stay at 1 through run -> cast -> stop -> idle -> run.
+  let minW = 2;
+  const sampleW = async (ms) => {
+    const t0 = Date.now();
+    while (Date.now() - t0 < ms) {
+      for (const c of await clips(page)) if (c.wsum) minW = Math.min(minW, c.wsum.upper, c.wsum.lower);
+      await sleep(30);
+    }
+  };
+  await page.keyboard.down('d');
+  await sampleW(500);
+  await page.mouse.down({ button: 'right' });
+  await sampleW(700);
+  await page.keyboard.up('d');
+  await sampleW(700);
+  await page.mouse.up({ button: 'right' });
+  await sampleW(900);
+  await page.keyboard.down('s');
+  await sampleW(600);
+  await page.keyboard.up('s');
+  await sampleW(600);
+  check(minW > 0.99, 'every hand-off keeps the body fully weighted (no bind-pose blend)', +minW.toFixed(3));
   await page.close();
 }
 
