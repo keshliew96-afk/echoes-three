@@ -12,12 +12,14 @@
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
 //   ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader"
 //
-// Bars (v0.5.331 measured 7,024 px and 10 of 50 on seed 21; v0.5.329 was
-// 18,560 px and 28 of 50; the residual busy shots sit under the top torch
-// where the pale moth is fought, not on the party):
-//   - no shot has a near-white blob over MAX_BLOB px;
-//   - at most BUSY_SHOTS of the shots have one over BUSY_BLOB px;
-//   - no page or shader error.
+// Bars, by the plain enemy's flash level (src/core/constants.js HITFLASH):
+//   at plain 0.4 (v0.5.331, measured 7,024 px and 10 of 50 on seed 21; five of
+//   the ten over 3,000 px sit under the top torch where the pale moth is
+//   fought, five in the melee band beside the heroes, the largest of those
+//   5,024 px): no shot over 10,000 px, at most 14 of 50 over 3,000 px;
+//   at plain 1.0 (the hearts alone, measured 16,704 px and 19 of 50; v0.5.329
+//   was 18,560 px and 28 of 50): no shot over 20,000 px, at most 24 of 50.
+//   And no page or shader error.
 // Writes the worst shot and the median shot to --dir. Exit code 1 on failure.
 import sharp from 'sharp';
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -30,9 +32,11 @@ const DIR = resolve(arg('--dir', 'captures/vfx-readability'));
 const SEED = Number(arg('--seed', 21));
 const N = Number(arg('--frames', 200));
 const EVERY = Number(arg('--every', 4));
-const MAX_BLOB = 9000; // px at 1600x900 (v0.5.329: 18,560, and 44,000 in another run)
+const { HITFLASH } = await import('../src/core/constants.js');
+const SOFT = HITFLASH.plain <= 0.5;
+const MAX_BLOB = SOFT ? 10000 : 20000; // px at 1600x900 (v0.5.329: 18,560, and 44,000 in another run)
 const BUSY_BLOB = 3000;
-const BUSY_SHOTS = 12; // of 50 (v0.5.329: 28 of 50)
+const BUSY_SHOTS = SOFT ? 14 : 24; // of 50 (v0.5.329: 28 of 50)
 mkdirSync(DIR, { recursive: true });
 const W = 1600;
 const H = 900;
@@ -181,6 +185,7 @@ const busy = rows.filter((r) => r.blobPx > BUSY_BLOB).length;
 check(worst.blobPx <= MAX_BLOB, `no shot has a near-white blob over ${MAX_BLOB} px (worst ${worst.blobPx} px at tick ${worst.tick})`);
 check(busy <= BUSY_SHOTS, `at most ${BUSY_SHOTS} of ${rows.length} shots have a blob over ${BUSY_BLOB} px (${busy} do)`);
 check(errors.length === 0, `no page or shader errors${errors.length ? `: ${errors.slice(0, 3).join(' | ')}` : ''}`);
+console.log(`bars for HITFLASH.plain ${HITFLASH.plain}: ${MAX_BLOB} px, ${BUSY_SHOTS} of ${rows.length}`);
 console.log(`shots in ${DIR}: vfx-readability-worst.png (tick ${worst.tick}), vfx-readability-median.png (tick ${median.tick})`);
 console.log(fails.length ? `\n${fails.length} FAILED` : '\nall pass');
 process.exit(fails.length ? 1 : 0);

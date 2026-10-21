@@ -50,7 +50,7 @@ import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 import { PALETTE } from '../../data/palette.js';
-import { heartColor, heartShare, lum, HEART_RADIUS } from './heart.js';
+import { heartColor, heartShare, lum, HEART_RADIUS, HEART_REFRESH } from './heart.js';
 
 export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 28, streak: 64, cracks: 12, pillar: 8, star: 48, mark: 24, glow: 32 });
 const FLASH_HOLD = 0.066; // s — 4 frames at 60 fps at full strength
@@ -480,12 +480,13 @@ export function createVfxKit({ stage, cosmetic }) {
     const rr = HEART_RADIUS * HEART_RADIUS;
     for (const pool of [arcs, streaks, pillars]) {
       for (const s of pool.slots) {
-        if (s === self || !s.live || !(s.heartLum > 0) || s.cx === undefined) continue;
+        if (s === self || !s.live || !(s.heartLum > 0) || s.cx === undefined || s.age < s.delay) continue; // a delayed piece counts once it shows
         const dx = s.cx - x;
         const dz = s.cz - z;
         if (dx * dx + dz * dz >= rr) continue;
         const shown = s.u ? s.u.uOpacity.value : s.mat.opacity;
         const op = s.age - s.delay < 0.1 ? s.op : shown;
+        if (!(op >= 0)) continue;
         sum += s.heartLum * op * s.heart;
       }
     }
@@ -499,8 +500,22 @@ export function createVfxKit({ stage, cosmetic }) {
     s.u.uCore.value.setRGB(h[0], h[1], h[2]);
     if (s.u.uCoreGain) s.u.uCoreGain.value = 1;
     s.heartLum = lum(h[0], h[1], h[2]);
-    s.heart = heartShare(heartLoadAll(o.x, o.z, s), s.heartLum * s.op);
+    takeHeart(s, o.x, o.z);
+  }
+  // The share at a point, written to the shader; a moving piece takes it
+  // again every HEART_REFRESH u (refreshHeart), a delayed piece when it shows.
+  function takeHeart(s, x, z) {
+    s.hx = x;
+    s.hz = z;
+    s.heart = heartShare(heartLoadAll(x, z, s), s.heartLum * s.op);
     s.u.uHeart.value = s.heart;
+  }
+  function refreshHeart(s, x, z) {
+    if (!(s.heartLum > 0) || !s.u) return;
+    const dx = x - s.hx;
+    const dz = z - s.hz;
+    if (dx * dx + dz * dz < HEART_REFRESH * HEART_REFRESH) return;
+    takeHeart(s, x, z);
   }
   function slash(o) {
     const s = arcs.take();
@@ -754,6 +769,9 @@ export function createVfxKit({ stage, cosmetic }) {
     s.b.x = bx;
     s.b.y = by;
     s.b.z = bz;
+    s.cx = (ax + bx) / 2;
+    s.cz = (az + bz) / 2;
+    refreshHeart(s, s.cx, s.cz);
   }
   // A held streak lets go: it fades over `life` from here.
   function release(s, life = 0.12) {
@@ -777,6 +795,9 @@ export function createVfxKit({ stage, cosmetic }) {
       u.uB.value.x = s.b.x += tr.x * dt;
       u.uB.value.y = s.b.y += tr.y * dt;
       u.uB.value.z = s.b.z += tr.z * dt;
+      s.cx = (s.a.x + s.b.x) / 2;
+      s.cz = (s.a.z + s.b.z) / 2;
+      refreshHeart(s, s.cx, s.cz);
     }
     const k = Math.min(1, t / s.life);
     u.uOpacity.value = s.op * (k < 0.1 ? k / 0.1 : Math.pow(1 - (k - 0.1) / 0.9, 1.2));
@@ -855,9 +876,8 @@ export function createVfxKit({ stage, cosmetic }) {
     s.mat.color.setRGB(h[0], h[1], h[2]);
     s.cx = o.x;
     s.cz = o.z;
-    s.heartLum = lum(h[0], h[1], h[2]);
-    s.heart = heartShare(heartLoadAll(o.x, o.z, s), s.heartLum * s.op);
-    s.op *= s.heart;
+    s.heartLum = lum(h[0], h[1], h[2]); // counted in the budget; a pillar has no core to share, so it keeps its opacity
+    s.heart = 1;
     s.obj.position.set(o.x, s.h / 2, o.z);
     s.obj.scale.set(s.r, s.h, s.r);
     s.obj.visible = s.delay <= 0;
@@ -1041,7 +1061,10 @@ export function createVfxKit({ stage, cosmetic }) {
         }
         const t = s.age - s.delay;
         if (t < 0) continue;
-        if (!s.obj.visible) s.obj.visible = true;
+        if (!s.obj.visible) {
+          s.obj.visible = true;
+          if (s.delay > 0 && s.heartLum > 0 && s.u) takeHeart(s, s.cx, s.cz); // a delayed piece shares what glows when it shows
+        }
         if (t >= s.life) {
           s.live = false;
           s.obj.visible = false;

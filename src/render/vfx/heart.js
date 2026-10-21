@@ -50,8 +50,13 @@ export function heartColor(core, gain = 1) {
 // opacity, `sum` the load already glowing within HEART_RADIUS.
 export function heartShare(sum, load) {
   if (!(load > 0)) return 1;
+  if (!(sum >= 0)) sum = 0; // a NaN neighbour never poisons the share
   return Math.min(1, Math.max(HEART_FLOOR, (HEART_BUDGET - sum) / load));
 }
+// A moving piece takes its share again once it has travelled this far (u)
+// from where it last took it (bolt heads and held trails leave the release
+// blast behind; a travelling streak leaves its launch point).
+export const HEART_REFRESH = 0.5;
 
 // Whether a heart still clears the bloom threshold on its own (the probe
 // checks every template core keeps its hot core after the cap).

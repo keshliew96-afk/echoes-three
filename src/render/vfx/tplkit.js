@@ -53,7 +53,7 @@ import {
 import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
-import { heartColor, heartShare, lum } from './heart.js';
+import { heartColor, heartShare, lum, HEART_REFRESH } from './heart.js';
 
 export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400, head: 64 }); // PR 2 raised them for the foes; PR 3 added heads
 
@@ -701,8 +701,9 @@ export function createTemplateKit({ stage, cosmetic }) {
     let sum = 0;
     for (const pool of heartPools) {
       for (const s of pool.slots) {
-        if (s === self || !near(s, x, z) || !(s.heartLum > 0)) continue;
+        if (s === self || !near(s, x, z) || !(s.heartLum > 0) || s.age < s.delay) continue; // a delayed piece counts once it shows
         const op = s.age - s.delay < 0.1 ? s.op : s.u.uOpacity.value;
+        if (!(op >= 0)) continue;
         sum += s.heartLum * op * s.heart;
       }
     }
@@ -715,8 +716,22 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.u.uCore.value.setRGB(h[0], h[1], h[2]);
     s.u.uGain.value = 1;
     s.heartLum = lum(h[0], h[1], h[2]);
-    s.heart = heartShare(heartLoad(o.x, o.z, s) + (heartSibling ? heartSibling(o.x, o.z) : 0), s.heartLum * s.op);
+    takeHeart(s, o.x, o.z);
+  }
+  // The share at a point, written to the shader; a moving piece takes it
+  // again every HEART_REFRESH u (refreshHeart), a delayed piece when it shows.
+  function takeHeart(s, x, z) {
+    s.hx = x;
+    s.hz = z;
+    s.heart = heartShare(heartLoad(x, z, s) + (heartSibling ? heartSibling(x, z) : 0), s.heartLum * s.op);
     s.u.uHeart.value = s.heart;
+  }
+  function refreshHeart(s, x, z) {
+    if (!(s.heartLum > 0)) return;
+    const dx = x - s.hx;
+    const dz = z - s.hz;
+    if (dx * dx + dz * dz < HEART_REFRESH * HEART_REFRESH) return;
+    takeHeart(s, x, z);
   }
   const start = (s, o, life) => {
     s.live = true;
@@ -998,6 +1013,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uLenR.value = Math.max(0.01, len / (u.uSize.value * 0.5));
     s.cx = x;
     s.cz = z;
+    refreshHeart(s, x, z);
   }
   function endHead(s, fade = 0.1) {
     if (!s.live || s.ending >= 0) return;
@@ -1345,7 +1361,10 @@ export function createTemplateKit({ stage, cosmetic }) {
         s.age += dt;
         const t = s.age - s.delay;
         if (t < 0) continue;
-        if (!s.obj.visible) s.obj.visible = true;
+        if (!s.obj.visible) {
+          s.obj.visible = true;
+          if (s.delay > 0 && s.heartLum > 0) takeHeart(s, s.cx, s.cz); // a delayed piece shares what glows when it shows
+        }
         if (t >= s.life) {
           s.live = false;
           s.obj.visible = false;
