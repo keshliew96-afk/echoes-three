@@ -319,6 +319,12 @@ import { registerHitCues } from './audio/hitcues.js';
 registerHitCues(service('audio'), { world, settings: app.settings });
 // @gnt:AUDIO end
 
+// The mouse healer model (docs/MOUSE_HEALER.md) loads before the first scene
+// builds its heroes. A load that fails or takes over 8 s leaves the procedural
+// healer in place for this session.
+import { preloadMouseHealer } from './render/critters/mousehealer.js';
+await Promise.race([preloadMouseHealer(), new Promise((r) => setTimeout(r, 8000))]);
+
 const buildScene = await SCENES[sceneKey]();
 const activeScene = buildScene(stage, toggles, { world, cosmetic, bus, rng });
 
