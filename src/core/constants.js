@@ -61,7 +61,7 @@ export const KNOCKBACK = Object.freeze({
 // one without a flashScale, and of its kill pop: at 1.0 the whole chibi body
 // sat above the bloom threshold for every hit and for the 0.26 s pop, and in
 // a melee that bloom was what hid the hero beside the corpse (worst blob
-// 16,700 px against 7,000 px at 0.4; the worst kill shots down 4-9x). Lit
+// 16,700 px against 6,500 px at 0.4; the worst kill shots down 4-9x). Lit
 // albedo plus 0.4 still reads as a white flash; it stops blooming. `intensity`
 // stays the base the tuned flashScales multiply (champions 0.4, the Gale
 // Herald 0.25, bosses 0.28) and the level of the waystone, the objective

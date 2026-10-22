@@ -21,15 +21,16 @@ is why the bars carry a margin over the measurement.
 |---|---|---|---|---|
 | v0.5.329 | 18,560 px (44,320 in another run, the whole party inside) | 15 of 50 | 28 of 50 | 4,417 px |
 | hearts capped and budgeted only | 16,704 px | 9 of 50 | 19 of 50 | 3,267 px |
-| plus the plain enemy's flash at 0.4 (v0.5.331) | 7,024 px | 2 of 50 | 10 of 50 | 2,257 px |
+| plus the plain enemy's flash at 0.4 (v0.5.331) | 6,544 px | 3 of 50 | 8 of 50 | 2,227 px |
 
 Shots in `docs/reference/vfx-readability/`: `before-v0.5.329-worst.jpg` (the
 18,560 px shot of the before row), `before-v0.5.329-other-run-44k.jpg` (the
 44,320 px shot of the other run, the whole party inside),
-`hearts-only-v0.5.331-worst.jpg` and `after-v0.5.331-worst.jpg`, software GL at
-play zoom. Of the last row's ten shots over 3,000 px, five sit under the top
-torch where the pale moth is fought (y 142-180) and five in the melee band
-beside the heroes (the largest of those 5,024 px, against 16,704 before).
+`hearts-only-v0.5.331-worst.jpg`, `after-v0.5.331-worst.jpg` and
+`after-v0.5.331-median.jpg`, software GL at play zoom. Of the last row's eight shots over 3,000 px, four sit under the top
+torch where the pale moth is fought (y 140-178, the three over 5,000 px among
+them) and four in the melee band beside the heroes (the largest of those
+4,016 px, against 16,704 before).
 
 ## What it was
 
@@ -55,7 +56,8 @@ Two things, and the second was the big one.
    threshold, so every hit and every kill in a melee bloomed a hero-sized blob
    exactly where the hero stands. At 0.4 the worst kill shots fall 4 to 9
    times (f8 6,208 to 768 px; f120 16,704 to 4,368; f172 8,080 to 1,872) and
-   the quieter ones 1 to 2 times.
+   the quieter ones 1 to 2 times; the final run (the moving hearts refreshed,
+   the flash per build) measures 6,544 px worst and 8 of 50 over 3,000 px.
 
 Not the cause: the floor light pools (held under the threshold by `soft()` and
 hidden under the bodies), the torches, the emitter cores, Settings ▸ Effects ▸

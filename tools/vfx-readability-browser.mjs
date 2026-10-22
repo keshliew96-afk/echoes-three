@@ -13,10 +13,10 @@
 //   ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader"
 //
 // Bars, by the plain enemy's flash level (src/core/constants.js HITFLASH):
-//   at plain 0.4 (v0.5.331, measured 7,024 px and 10 of 50 on seed 21; five of
-//   the ten over 3,000 px sit under the top torch where the pale moth is
-//   fought, five in the melee band beside the heroes, the largest of those
-//   5,024 px): no shot over 10,000 px, at most 14 of 50 over 3,000 px;
+//   at plain 0.4 (v0.5.331, measured 6,544 px and 8 of 50 on seed 21; four of
+//   the eight over 3,000 px sit under the top torch where the pale moth is
+//   fought, four in the melee band beside the heroes, the largest of those
+//   4,016 px): no shot over 10,000 px, at most 14 of 50 over 3,000 px;
 //   at plain 1.0 (the hearts alone, measured 16,704 px and 19 of 50; v0.5.329
 //   was 18,560 px and 28 of 50): no shot over 20,000 px, at most 24 of 50.
 //   And no page or shader error.
