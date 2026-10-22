@@ -53,6 +53,7 @@ import {
 import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
+import { heartColor, heartShare, lum, HEART_REFRESH } from './heart.js';
 
 export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400, head: 64 }); // PR 2 raised them for the foes; PR 3 added heads
 
@@ -309,6 +310,7 @@ uniform float uOpacity;
 uniform float uTime;
 uniform float uSeed;
 uniform float uGain;
+uniform float uHeart;
 varying vec2 vUv;
 ${NOISE}
 void main() {
@@ -319,7 +321,7 @@ void main() {
   float fadeY = smoothstep( 0.0, 0.05, y ) * pow( 1.0 - y, 1.3 );
   float n = tplN( vec2( x * 2.5 + uSeed, y * 7.0 - uTime * 3.2 ) );
   float rays = 0.55 + 0.6 * n;
-  vec3 c = mix( uGlow, uCore * uGain, core );
+  vec3 c = mix( uGlow, uCore * uGain, core * uHeart );
   float a = ( core * 0.95 + halo * 0.42 * rays ) * fadeY * uOpacity;
   gl_FragColor = vec4( c, clamp( a, 0.0, 1.0 ) );
 }
@@ -355,6 +357,7 @@ uniform float uTime;
 uniform float uSeed;
 uniform float uMode;
 uniform float uGain;
+uniform float uHeart;
 varying vec2 vUv;
 ${NOISE}
 void main() {
@@ -373,7 +376,7 @@ void main() {
     float flame = smoothstep( erode - 0.12, erode + 0.16, n );
     float heat = smoothstep( 0.25, 0.95, v ) * ( 1.0 - behind * 0.6 ) + ( n - 0.5 ) * 0.35 + 0.1;
     vec3 c = mix( uB, uA, smoothstep( 0.05, 0.5, heat ) );
-    c = mix( c, uCore * uGain, smoothstep( 0.55, 0.95, heat ) );
+    c = mix( c, uCore * uGain, smoothstep( 0.55, 0.95, heat ) * uHeart );
     float a = along * body * flame * uOpacity;
     gl_FragColor = vec4( c, clamp( a, 0.0, 1.0 ) );
   } else {
@@ -381,7 +384,7 @@ void main() {
     float rim = smoothstep( 0.6, 0.93, v ) * ( 1.0 - smoothstep( 0.965, 1.0, v ) );
     float inner = pow( v, 2.2 ) * 0.5;
     float shimmer = 0.75 + 0.5 * n;
-    vec3 c = mix( uA, uCore * uGain, rim * rim );
+    vec3 c = mix( uA, uCore * uGain, rim * rim * uHeart );
     float a = along * ( rim + inner ) * shimmer * uOpacity;
     gl_FragColor = vec4( c, clamp( a, 0.0, 1.0 ) );
   }
@@ -410,6 +413,7 @@ uniform float uMode;
 uniform float uOpacity;
 uniform float uSpin;
 uniform float uGain;
+uniform float uHeart;
 varying vec2 vUv;
 ${NOISE}
 void main() {
@@ -431,7 +435,7 @@ void main() {
     float heat = ( 1.0 - dd / max( r, 0.01 ) ) * 1.15 + ( n - 0.5 ) * 0.5 - k * 0.95;
     float keep = smoothstep( k * 0.85 - 0.05, k * 0.85 + 0.2, n * 0.7 + body * 0.45 );
     c = mix( uB * 0.75, uA, smoothstep( 0.0, 0.4, heat ) );
-    c = mix( c, uCore * uGain, smoothstep( 0.45, 0.85, heat ) );
+    c = mix( c, uCore * uGain, smoothstep( 0.45, 0.85, heat ) * uHeart );
     a = body * keep * smoothstep( -0.35, 0.1, heat );
   } else if ( uMode < 1.5 ) {
     // CELESTIAL: a hot core, a starburst of thin rays and a fine ring.
@@ -442,7 +446,7 @@ void main() {
     float ring = exp( -pow( ( d - r ) * 16.0, 2.0 ) ) * ( 1.0 - k );
     float n = tplN( vec2( ang * 3.0 + uSeed, d * 6.0 - k * 4.0 ) );
     c = mix( uA, uB, smoothstep( 0.2, 0.8, n ) * ring + rays * 0.6 );
-    c = mix( c, uCore * uGain, clamp( core * 1.4 + rays * 0.5, 0.0, 1.0 ) );
+    c = mix( c, uCore * uGain, clamp( core * 1.4 + rays * 0.5, 0.0, 1.0 ) * uHeart );
     a = clamp( core + rays * 0.9 + ring * 0.8, 0.0, 1.0 );
   } else {
     // HOLO: a square shell that grows, scanlines and a glitch tear.
@@ -455,7 +459,7 @@ void main() {
     float core = exp( -d * d * 30.0 ) * ( 1.0 - k );
     float scan = 0.7 + 0.3 * sin( vUv.y * 120.0 );
     c = mix( uA, uB, tear + 0.4 * step( 0.5, fract( ( q.x + q.y ) * 3.0 ) ) * inner );
-    c = mix( c, uCore * uGain, core );
+    c = mix( c, uCore * uGain, core * uHeart );
     a = clamp( ( shell + inner + core ) * scan, 0.0, 1.0 );
   }
   gl_FragColor = vec4( c, a * uOpacity );
@@ -494,6 +498,7 @@ uniform float uT;
 uniform float uSeed;
 uniform float uOpacity;
 uniform float uGain;
+uniform float uHeart;
 uniform float uLenR;
 varying vec2 vP;
 ${NOISE}
@@ -516,7 +521,7 @@ void main() {
     float hot = exp( -dh * dh * 9.0 );
     float heat = headG * 0.9 + body * ( 1.0 - tail ) * 0.75 - abs( p.y ) * 0.25 + ( n - 0.5 ) * 0.5;
     c = mix( uB * 0.9, uA, smoothstep( 0.0, 0.5, heat ) );
-    c = mix( c, uCore * uGain, clamp( hot * 1.1 + smoothstep( 0.85, 1.1, heat ) * 0.5, 0.0, 1.0 ) );
+    c = mix( c, uCore * uGain, clamp( hot * 1.1 + smoothstep( 0.85, 1.1, heat ) * 0.5, 0.0, 1.0 ) * uHeart );
     a = clamp( headG + body * ( 0.55 + 0.45 * ( 1.0 - tail ) ), 0.0, 1.0 );
   } else if ( uMode < 1.5 ) {
     // CELESTIAL: a star orb (a hot core, four turning rays), a ring of runes
@@ -530,7 +535,7 @@ void main() {
     float rib = behind * exp( -p.y * p.y * 5.0 / ( 0.25 + 0.75 * ( 1.0 - tail ) ) ) * pow( 1.0 - tail, 1.4 );
     float tw = tplN( vec2( p.x * 2.0 - uT * 6.0 + uSeed, p.y * 3.0 ) );
     c = mix( uA, uB, clamp( smoothstep( 0.3, 0.8, tw ) * rib + rays * 0.5 + ring * 0.45, 0.0, 1.0 ) );
-    c = mix( c, uCore * uGain, clamp( core * 1.1 + rays * 0.25, 0.0, 1.0 ) );
+    c = mix( c, uCore * uGain, clamp( core * 1.1 + rays * 0.25, 0.0, 1.0 ) * uHeart );
     a = clamp( core + halo + rays * 0.7 + ring * 0.9 + rib * 0.85 * ( 0.55 + 0.45 * tw ), 0.0, 1.0 );
   } else {
     // HOLO: a neon laser bolt with clean vector edges, a white core,
@@ -544,7 +549,7 @@ void main() {
     float edge = exp( -pow( ( dl - 0.6 ) * 9.0, 2.0 ) ) * live * ( q.x > 0.0 ? 1.0 : 1.0 - tail * 0.7 );
     float scan = 0.72 + 0.28 * sin( p.x * 9.0 - uT * 40.0 );
     c = mix( uA, uB, clamp( tear + edge * 0.6, 0.0, 1.0 ) );
-    c = mix( c, uCore * uGain, clamp( core, 0.0, 1.0 ) );
+    c = mix( c, uCore * uGain, clamp( core, 0.0, 1.0 ) * uHeart );
     a = clamp( ( core * 1.1 + edge * 0.85 ) * scan + tear * 0.25 * live * exp( -dl * dl * 2.0 ), 0.0, 1.0 );
   }
   gl_FragColor = vec4( c, a * uOpacity );
@@ -683,8 +688,55 @@ export function createTemplateKit({ stage, cosmetic }) {
     for (const pool of crowdPools) for (const s of pool.slots) if (near(s, x, z)) n++;
     return Math.max(0.4, 1 / (1 + 0.09 * Math.max(0, n - 1))); // n counts the new piece too
   }
+  // HEARTS (heart.js): the hot cores within 2 u of a point share a budget.
+  // A piece younger than 0.1 s counts at its authored opacity (the pieces a
+  // melee kill lands in one tick have not been stepped yet); an older one at
+  // the opacity it shows.
+  let heartPools = [];
+  let heartSibling = null; // the class kit's own heartLoad (hub.js wires it)
+  const setHeartSibling = (fn) => {
+    heartSibling = fn;
+  };
+  function heartLoad(x, z, self = null) {
+    let sum = 0;
+    for (const pool of heartPools) {
+      for (const s of pool.slots) {
+        if (s === self || !near(s, x, z) || !(s.heartLum > 0) || s.age < s.delay) continue; // a delayed piece counts once it shows
+        const op = s.age - s.delay < 0.1 ? s.op : s.u.uOpacity.value;
+        if (!(op >= 0)) continue;
+        sum += s.heartLum * op * s.heart;
+      }
+    }
+    return sum;
+  }
+  // Sets the piece's heart: the capped core (gain folded in) and its share of
+  // the budget at its point. Call after s.op is known.
+  function setHeart(s, o, coreHex, gain) {
+    const h = heartColor(col(coreHex).toArray(), gain);
+    s.u.uCore.value.setRGB(h[0], h[1], h[2]);
+    s.u.uGain.value = 1;
+    s.heartLum = lum(h[0], h[1], h[2]);
+    takeHeart(s, o.x, o.z);
+  }
+  // The share at a point, written to the shader; a moving piece takes it
+  // again every HEART_REFRESH u (refreshHeart), a delayed piece when it shows.
+  function takeHeart(s, x, z) {
+    s.hx = x;
+    s.hz = z;
+    s.heart = heartShare(heartLoad(x, z, s) + (heartSibling ? heartSibling(x, z) : 0), s.heartLum * s.op);
+    s.u.uHeart.value = s.heart;
+  }
+  function refreshHeart(s, x, z) {
+    if (!(s.heartLum > 0)) return;
+    const dx = x - s.hx;
+    const dz = z - s.hz;
+    if (dx * dx + dz * dz < HEART_REFRESH * HEART_REFRESH) return;
+    takeHeart(s, x, z);
+  }
   const start = (s, o, life) => {
     s.live = true;
+    s.heartLum = 0; // no heart until setHeart() (circles never get one)
+    s.heart = 1;
     s.cx = o.x;
     s.cz = o.z;
     s.age = 0;
@@ -758,6 +810,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       uTime: { value: 0 },
       uSeed: { value: 0 },
       uGain: { value: 1 },
+      uHeart: { value: 1 },
     };
     const mat = new ShaderMaterial({ uniforms: u, vertexShader: BEAM_VERT, fragmentShader: BEAM_FRAG, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
     const mesh = new Mesh(planeGeo, mat);
@@ -776,11 +829,10 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.w = o.width ?? 0.6;
     u.uH.value = s.h;
     u.uW.value = s.w;
-    u.uCore.value.copy(col(o.core ?? '#FFF4D6'));
     u.uGlow.value.copy(soft(o.glow ?? '#A24BFF'));
     u.uSeed.value = rnd(0, 50);
-    u.uGain.value = o.gain ?? 1.15;
     s.op = (o.opacity ?? 0.9) * lightGain * crowd(o.x, o.z);
+    setHeart(s, o, o.core ?? '#FFF4D6', o.gain ?? 1.15);
     u.uOpacity.value = 0;
     return s;
   }
@@ -814,6 +866,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       uSeed: { value: 0 },
       uMode: { value: 0 },
       uGain: { value: 1.2 },
+      uHeart: { value: 1 },
     };
     const mat = new ShaderMaterial({ uniforms: u, vertexShader: BLAZE_VERT, fragmentShader: BLAZE_FRAG, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
     const mesh = new Mesh(arcGeo, mat);
@@ -847,11 +900,10 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uY.value = o.y ?? 0.45;
     u.uLift.value = o.lift ?? 0.16;
     u.uTaper.value = o.ring ? 0 : o.taper ?? 1;
-    u.uCore.value.copy(col(o.core ?? '#FFF3C4'));
     u.uA.value.copy(col(o.a ?? '#FFB43C'));
     u.uB.value.copy(col(o.b ?? '#F5952E'));
     u.uMode.value = o.mode === 'wave' ? 1 : 0;
-    u.uGain.value = o.gain ?? 1.25;
+    setHeart(s, o, o.core ?? '#FFF3C4', o.gain ?? 1.25);
     u.uSeed.value = rnd(0, 60);
     u.uRadius.value = s.r0;
     u.uWidth.value = s.w0;
@@ -892,6 +944,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       uOpacity: { value: 0 },
       uSpin: { value: 0 },
       uGain: { value: 1.2 },
+      uHeart: { value: 1 },
     };
     const mat = new ShaderMaterial({ uniforms: u, vertexShader: BLAST_VERT, fragmentShader: BLAST_FRAG, transparent: true, depthWrite: false, blending: AdditiveBlending });
     const mesh = new Mesh(planeGeo, mat);
@@ -901,6 +954,7 @@ export function createTemplateKit({ stage, cosmetic }) {
   });
   const BLAST_MODE = { fire: 0, celestial: 1, holo: 2 };
   crowdPools = [circles, beams, blazes, blasts];
+  heartPools = [beams, blazes, blasts]; // heads join below
 
   // ----------------------------------------------------------------- head --
   const heads = makePool(TPL_CAPS.head, () => {
@@ -918,6 +972,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       uSeed: { value: 0 },
       uOpacity: { value: 0 },
       uGain: { value: 1.3 },
+      uHeart: { value: 1 },
     };
     const mat = new ShaderMaterial({ uniforms: u, vertexShader: HEAD_VERT, fragmentShader: HEAD_FRAG, transparent: true, depthWrite: false, blending: AdditiveBlending });
     const mesh = new Mesh(planeGeo, mat);
@@ -925,6 +980,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     mesh.renderOrder = 11;
     return { obj: mesh, u };
   });
+  heartPools = [beams, blazes, blasts, heads];
   let headTokens = 0;
   // opts: x, y, z, dx, dz (heading), size (u across the head), len (u of
   // tail), mode ('fire' | 'celestial' | 'holo'), core, a, b (hex), opacity,
@@ -937,14 +993,13 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.token = ++headTokens;
     s.ending = -1;
     const u = s.u;
-    u.uCore.value.copy(col(o.core ?? '#FFF3C4'));
     u.uA.value.copy(col(o.a ?? '#FFB43C'));
     u.uB.value.copy(col(o.b ?? '#F5952E'));
     u.uMode.value = BLAST_MODE[o.mode] ?? 0;
     u.uSeed.value = rnd(0, 40);
-    u.uGain.value = o.gain ?? 1.3;
     u.uOpacity.value = 0;
     s.op = o.opacity ?? 1;
+    setHeart(s, o, o.core ?? '#FFF3C4', o.gain ?? 1.3);
     moveHead(s, o.x, o.y ?? 0.55, o.z, o.dx ?? 1, o.dz ?? 0, o.len ?? 0.5, o.size ?? 0.4);
     return s;
   }
@@ -958,6 +1013,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uLenR.value = Math.max(0.01, len / (u.uSize.value * 0.5));
     s.cx = x;
     s.cz = z;
+    refreshHeart(s, x, z);
   }
   function endHead(s, fade = 0.1) {
     if (!s.live || s.ending >= 0) return;
@@ -989,16 +1045,15 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uCenter.value.set(o.x, o.y ?? 0.5, o.z);
     s.size = o.size ?? 1.4;
     u.uSize.value = s.size;
-    u.uCore.value.copy(col(o.core ?? '#FFF3C4'));
     u.uA.value.copy(col(o.a ?? '#FFB43C'));
     u.uB.value.copy(col(o.b ?? '#F5952E'));
     u.uMode.value = BLAST_MODE[o.mode] ?? 0;
     u.uSeed.value = rnd(0, 40);
     u.uSpin.value = rnd(0, 3);
     s.spinRate = o.spin ?? 0.8;
-    u.uGain.value = o.gain ?? 1.3;
     u.uK.value = 0;
     s.op = (o.opacity ?? 1) * crowd(o.x, o.z);
+    setHeart(s, o, o.core ?? '#FFF3C4', o.gain ?? 1.3);
     u.uOpacity.value = 0;
     return s;
   }
@@ -1306,7 +1361,10 @@ export function createTemplateKit({ stage, cosmetic }) {
         s.age += dt;
         const t = s.age - s.delay;
         if (t < 0) continue;
-        if (!s.obj.visible) s.obj.visible = true;
+        if (!s.obj.visible) {
+          s.obj.visible = true;
+          if (s.delay > 0 && s.heartLum > 0) takeHeart(s, s.cx, s.cz); // a delayed piece shares what glows when it shows
+        }
         if (t >= s.life) {
           s.live = false;
           s.obj.visible = false;
@@ -1358,5 +1416,5 @@ export function createTemplateKit({ stage, cosmetic }) {
     lightGain = l;
     particleGain = p;
   }
-  return { root, circle, beam, blaze, blast, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity };
+  return { root, circle, beam, blaze, blast, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity, heartLoad, setHeartSibling };
 }

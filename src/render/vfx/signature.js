@@ -75,6 +75,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const kit = createVfxKit({ stage, cosmetic });
   // Kesh's VFX templates (design-VFX.md §11): their own primitives.
   const tk = createTemplateKit({ stage, cosmetic });
+  // HEARTS (heart.js): the two kits' hot cores share one budget within 2 u.
+  kit.setHeartSibling(tk.heartLoad);
+  tk.setHeartSibling(kit.heartLoad);
   const rnd = (a, b) => cosmetic.range(a, b);
 
   // ------------------------------------------------------------ settings --

@@ -50,6 +50,7 @@ import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 import { PALETTE } from '../../data/palette.js';
+import { heartColor, heartShare, lum, HEART_RADIUS, HEART_REFRESH } from './heart.js';
 
 export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 28, streak: 64, cracks: 12, pillar: 8, star: 48, mark: 24, glow: 32 });
 const FLASH_HOLD = 0.066; // s — 4 frames at 60 fps at full strength
@@ -110,6 +111,7 @@ uniform float uHead;
 uniform float uTail;
 uniform float uSoft;
 uniform float uCoreGain;
+uniform float uHeart;
 varying vec2 vUv;
 void main() {
   float u = vUv.x;
@@ -120,7 +122,7 @@ void main() {
   float edge = smoothstep( mix( 0.6, 0.25, uSoft ), 1.0, v );
   float body = pow( v, mix( 2.6, 0.9, uSoft ) );
   float rim = smoothstep( 0.0, 0.22, v ) * ( 1.0 - smoothstep( 0.97, 1.0, v ) * 0.35 );
-  vec3 c = mix( uGlow, uCore * uCoreGain, edge * edge );
+  vec3 c = mix( uGlow, uCore * uCoreGain, edge * edge * uHeart );
   float a = along * rim * ( body * 0.7 + edge * 0.65 ) * uOpacity;
   gl_FragColor = vec4( c, clamp( a, 0.0, 1.0 ) );
 }
@@ -152,12 +154,13 @@ uniform vec3 uCore;
 uniform vec3 uGlow;
 uniform float uOpacity;
 uniform float uFall;
+uniform float uHeart;
 varying vec2 vUv;
 void main() {
   float across = 1.0 - abs( vUv.y - 0.5 ) * 2.0;
   float core = smoothstep( 0.45, 1.0, across );
   float along = pow( vUv.x, uFall );
-  vec3 c = mix( uGlow, uCore, core * core * along );
+  vec3 c = mix( uGlow, uCore, core * core * along * uHeart );
   float a = smoothstep( 0.0, 0.5, across ) * along * uOpacity;
   gl_FragColor = vec4( c, clamp( a, 0.0, 1.0 ) );
 }
@@ -446,6 +449,7 @@ export function createVfxKit({ stage, cosmetic }) {
       uTail: { value: 1 },
       uSoft: { value: 0.5 },
       uCoreGain: { value: 1 },
+      uHeart: { value: 1 },
     };
     const mat = new ShaderMaterial({
       uniforms: u,
@@ -467,6 +471,52 @@ export function createVfxKit({ stage, cosmetic }) {
   // y, lift, jag, taper (0 full width .. 1 pointed ends), tail (0..1 of the
   // arc left glowing behind the head), delay (s), grow (radius gain over life),
   // gain (core brightness), opacity.
+  // HEARTS (heart.js): the hot cores of the slashes, rings, streaks and
+  // pillars are capped and share the template kit's budget within
+  // HEART_RADIUS (the hub hands each kit the other's load: setHeartSibling).
+  let heartSibling = null;
+  function heartLoad(x, z, self = null) {
+    let sum = 0;
+    const rr = HEART_RADIUS * HEART_RADIUS;
+    for (const pool of [arcs, streaks, pillars]) {
+      for (const s of pool.slots) {
+        if (s === self || !s.live || !(s.heartLum > 0) || s.cx === undefined || s.age < s.delay) continue; // a delayed piece counts once it shows
+        const dx = s.cx - x;
+        const dz = s.cz - z;
+        if (dx * dx + dz * dz >= rr) continue;
+        const shown = s.u ? s.u.uOpacity.value : s.mat.opacity;
+        const op = s.age - s.delay < 0.1 ? s.op : shown;
+        if (!(op >= 0)) continue;
+        sum += s.heartLum * op * s.heart;
+      }
+    }
+    return sum;
+  }
+  const heartLoadAll = (x, z, self) => heartLoad(x, z, self) + (heartSibling ? heartSibling(x, z) : 0);
+  // The capped core (gain folded in) and its share of the budget; call once
+  // s.op, s.cx and s.cz are set.
+  function setHeart(s, o, coreHex, gain) {
+    const h = heartColor(col(coreHex).toArray(), gain);
+    s.u.uCore.value.setRGB(h[0], h[1], h[2]);
+    if (s.u.uCoreGain) s.u.uCoreGain.value = 1;
+    s.heartLum = lum(h[0], h[1], h[2]);
+    takeHeart(s, o.x, o.z);
+  }
+  // The share at a point, written to the shader; a moving piece takes it
+  // again every HEART_REFRESH u (refreshHeart), a delayed piece when it shows.
+  function takeHeart(s, x, z) {
+    s.hx = x;
+    s.hz = z;
+    s.heart = heartShare(heartLoadAll(x, z, s), s.heartLum * s.op);
+    s.u.uHeart.value = s.heart;
+  }
+  function refreshHeart(s, x, z) {
+    if (!(s.heartLum > 0) || !s.u) return;
+    const dx = x - s.hx;
+    const dz = z - s.hz;
+    if (dx * dx + dz * dz < HEART_REFRESH * HEART_REFRESH) return;
+    takeHeart(s, x, z);
+  }
   function slash(o) {
     const s = arcs.take();
     const u = s.u;
@@ -495,10 +545,11 @@ export function createVfxKit({ stage, cosmetic }) {
     u.uJag.value = o.jag ?? 0;
     u.uSeed.value = rnd(0, 100);
     u.uTaper.value = o.taper ?? 1;
-    u.uCore.value.copy(col(o.core ?? PALETTE.parchment));
     u.uGlow.value.copy(col(o.glow ?? PALETTE.hearthAmber));
     u.uSoft.value = o.soft ?? 0.5;
-    u.uCoreGain.value = o.gain ?? 1;
+    s.cx = o.x;
+    s.cz = o.z;
+    setHeart(s, o, o.core ?? PALETTE.parchment, o.gain ?? 1);
     u.uRadius.value = s.r0;
     u.uWidth.value = s.w0;
     u.uHead.value = 0;
@@ -530,10 +581,11 @@ export function createVfxKit({ stage, cosmetic }) {
     u.uJag.value = o.jag ?? 0;
     u.uSeed.value = rnd(0, 100);
     u.uTaper.value = 0;
-    u.uCore.value.copy(col(o.core ?? PALETTE.parchment));
     u.uGlow.value.copy(col(o.glow ?? PALETTE.hearthAmber));
     u.uSoft.value = o.soft ?? 0.5;
-    u.uCoreGain.value = o.gain ?? 1;
+    s.cx = o.x;
+    s.cz = o.z;
+    setHeart(s, o, o.core ?? PALETTE.parchment, o.gain ?? 1);
     u.uHead.value = 2;
     u.uTail.value = 3;
     u.uRadius.value = s.r0;
@@ -652,6 +704,7 @@ export function createVfxKit({ stage, cosmetic }) {
       uGlow: { value: new Color() },
       uOpacity: { value: 0 },
       uFall: { value: 1.4 },
+      uHeart: { value: 1 },
     };
     const mat = new ShaderMaterial({
       uniforms: u,
@@ -693,8 +746,10 @@ export function createVfxKit({ stage, cosmetic }) {
     u.uWidth.value = o.width ?? 0.1;
     u.uTailW.value = o.tailW ?? 0.2;
     u.uFall.value = o.fall ?? 1.4;
-    u.uCore.value.copy(col(o.core ?? PALETTE.parchment));
     u.uGlow.value.copy(col(o.glow ?? PALETTE.hearthAmber));
+    s.cx = (o.a.x + o.b.x) / 2;
+    s.cz = (o.a.z + o.b.z) / 2;
+    setHeart(s, { x: s.cx, z: s.cz }, o.core ?? PALETTE.parchment, 1);
     u.uOpacity.value = s.hold ? s.op : 0;
     s.obj.visible = s.delay <= 0;
     return s;
@@ -714,6 +769,9 @@ export function createVfxKit({ stage, cosmetic }) {
     s.b.x = bx;
     s.b.y = by;
     s.b.z = bz;
+    s.cx = (ax + bx) / 2;
+    s.cz = (az + bz) / 2;
+    refreshHeart(s, s.cx, s.cz);
   }
   // A held streak lets go: it fades over `life` from here.
   function release(s, life = 0.12) {
@@ -737,6 +795,9 @@ export function createVfxKit({ stage, cosmetic }) {
       u.uB.value.x = s.b.x += tr.x * dt;
       u.uB.value.y = s.b.y += tr.y * dt;
       u.uB.value.z = s.b.z += tr.z * dt;
+      s.cx = (s.a.x + s.b.x) / 2;
+      s.cz = (s.a.z + s.b.z) / 2;
+      refreshHeart(s, s.cx, s.cz);
     }
     const k = Math.min(1, t / s.life);
     u.uOpacity.value = s.op * (k < 0.1 ? k / 0.1 : Math.pow(1 - (k - 0.1) / 0.9, 1.2));
@@ -811,7 +872,12 @@ export function createVfxKit({ stage, cosmetic }) {
     s.op = o.opacity ?? 0.7;
     s.r = o.radius ?? 0.4;
     s.h = o.height ?? 1.6;
-    s.mat.color.copy(col(o.color ?? PALETTE.parchment));
+    const h = heartColor(col(o.color ?? PALETTE.parchment).toArray(), 1);
+    s.mat.color.setRGB(h[0], h[1], h[2]);
+    s.cx = o.x;
+    s.cz = o.z;
+    s.heartLum = lum(h[0], h[1], h[2]); // counted in the budget; a pillar has no core to share, so it keeps its opacity
+    s.heart = 1;
     s.obj.position.set(o.x, s.h / 2, o.z);
     s.obj.scale.set(s.r, s.h, s.r);
     s.obj.visible = s.delay <= 0;
@@ -995,7 +1061,10 @@ export function createVfxKit({ stage, cosmetic }) {
         }
         const t = s.age - s.delay;
         if (t < 0) continue;
-        if (!s.obj.visible) s.obj.visible = true;
+        if (!s.obj.visible) {
+          s.obj.visible = true;
+          if (s.delay > 0 && s.heartLum > 0 && s.u) takeHeart(s, s.cx, s.cz); // a delayed piece shares what glows when it shows
+        }
         if (t >= s.life) {
           s.live = false;
           s.obj.visible = false;
@@ -1067,5 +1136,8 @@ export function createVfxKit({ stage, cosmetic }) {
     lightGain = l;
   }
 
-  return { root, slash, ring, light, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, prewarm, setIntensity };
+  const setHeartSibling = (fn) => {
+    heartSibling = fn;
+  };
+  return { root, slash, ring, light, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, prewarm, setIntensity, heartLoad, setHeartSibling };
 }

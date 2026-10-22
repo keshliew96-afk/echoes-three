@@ -78,14 +78,21 @@ check('version', 'versionOk is shared by the game and the server', versionOk(VER
   now = t1.body.ticket.at + runTicks * (1000 / SIM_HZ) * TICKET_MIN_SHARE - TICKET_SLACK_MS + 1000;
   const r4 = await score(1, runTicks, { ticket: t1.body.ticket });
   check('score', 'the same run once its wall time has passed is taken', r4.status === 200 && r4.body.ok && r4.body.rank === 1, r4.body);
-  const r5 = await score(4, runTicks, { version: bump(TICKET_SINCE, -1) });
-  check('score', 'an older build in the window (before tickets) still posts without one', r5.status === 200 && r5.body.ok, r5.body);
+  // The builds before tickets age out of the window as the version moves on
+  // (VERSION_PATCH_WINDOW patches behind this one), so the check follows them.
+  const preTicket = bump(TICKET_SINCE, -1);
+  const r5 = await score(4, runTicks, { version: preTicket });
+  if (versionOk(preTicket, VERSION)) check('score', 'an older build in the window (before tickets) still posts without one', r5.status === 200 && r5.body.ok, r5.body);
+  else check('score', `a build before tickets (${preTicket}) is outside the window now and is told so`, r5.status === 400 && r5.body.error === 'bad_version', r5.body);
   check('score', 'checkTicket: a ticket issued on another day is refused', checkTicket({ key: DAY, id: id(9), version: VERSION, ticks: 60, ticket: { at: Date.parse('2026-10-20T23:00:00Z'), sig: signTicket('k', DAY, id(9), Date.parse('2026-10-20T23:00:00Z')) } }, 'k', Date.parse(`${DAY}T10:00:00Z`)) === 'bad_ticket');
 
   // Per-player limits: posts and tickets per id over many addresses.
   const st = [];
-  // (a build before tickets, so the same run is simply answered again)
-  for (let i = 0; i < ID_RATE.score + 2; i++) st.push((await s.score({ ...base(8, { version: bump(TICKET_SINCE, -1) }), name: 'P8', cls: 'tank', depth: 5, won: false, ticks: runTicks }, `10.2.0.${i}`)).status);
+  // (the same ticketed run posted again and again, so it is simply answered
+  // again until the per-player limit answers 429)
+  const t8 = await s.ticket(base(8), '10.2.0.0');
+  now = Math.max(now, t8.body.ticket.at + runTicks * (1000 / SIM_HZ) * TICKET_MIN_SHARE - TICKET_SLACK_MS + 1000);
+  for (let i = 0; i < ID_RATE.score + 2; i++) st.push((await s.score({ ...base(8), name: 'P8', cls: 'tank', depth: 5, won: false, ticks: runTicks, ticket: t8.body.ticket }, `10.2.0.${i}`)).status);
   check('limits', `one player posts at most ${ID_RATE.score} times in ten minutes, from any address`, st.slice(0, ID_RATE.score).every((x) => x === 200) && st.slice(ID_RATE.score).every((x) => x === 429), st);
   const tt = [];
   for (let i = 0; i < ID_RATE.ticket + 2; i++) tt.push((await s.ticket(base(7), `10.3.0.${i}`)).status);

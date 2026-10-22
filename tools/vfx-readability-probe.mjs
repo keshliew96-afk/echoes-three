@@ -1,0 +1,124 @@
+#!/usr/bin/env node
+// VFX READABILITY probe (docs/VFX_READABILITY.md) — headless Node, no browser.
+//
+//   node tools/vfx-readability-probe.mjs
+//
+// Kesh (2026-10-21): "for some time the light effect too bright, player
+// cannot see clearly". The cause was the template hearts (the hot cores of
+// the blade/magic/sci-fi pieces) summing without bound at a melee kill. This
+// checks the two rules that bound them (src/render/vfx/heart.js):
+//   1. Every template core, at every gain the kit uses, lands at or under
+//      HEART_MAX linear luminance and still above the bloom threshold (one
+//      piece keeps its hot core and still blooms).
+//   2. The hearts within 2 u share HEART_BUDGET: a melee kill's stack (three
+//      swing arcs, the swing tip, the impact and the kill blast at one point
+//      in one tick) sums to under 2.0 heart-luminance, against about 4.9
+//      before, and the first piece at a point keeps its whole heart.
+//   3. The wiring: every heart piece in tplkit.js (beam, blaze, blast, head)
+//      and kit.js (slash, ring, streak, pillar) goes through the cap and the
+//      budget, every core mix in the six shaders is scaled by uHeart, no piece
+//      still multiplies its core by a raw gain, and the two kits share one
+//      budget (signature.js wires each kit's load into the other); the share
+//      reaches the shader, a moving piece takes it again, a delayed one when
+//      it shows; and a plain enemy's hit flash sits under the threshold.
+// The look itself is checked in the game by tools/vfx-readability-browser.mjs.
+// Exit code 1 on any failure.
+import { readFileSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const fails = [];
+const check = (label, ok, info = '') => {
+  console.log(`${ok ? 'PASS' : 'FAIL'}  ${label}${info ? `  ${typeof info === 'string' ? info : JSON.stringify(info)}` : ''}`);
+  if (!ok) fails.push(label);
+};
+const mod = (p) => import(pathToFileURL(join(here, p)).href);
+const { HEART_MAX, HEART_BUDGET, HEART_FLOOR, heartColor, heartShare, heartHot, lum } = await mod('src/render/vfx/heart.js');
+const { BLOOM } = await mod('src/render/stage.js');
+const { exactColor } = await mod('src/render/critters/common.js');
+const { VFX_TEMPLATES } = await mod('src/data/vfx.js');
+const { VFX_FOE } = await mod('src/data/palette.js');
+
+// --- 1. the cap: every template core at every gain the kit uses
+const GAINS = { beam: 1.15, afterimage: 1.1, ring: 1.2, blaze: 1.25, swing: 1.35, blast: 1.3, head: 1.3 };
+const cores = [];
+for (const [id, t] of Object.entries(VFX_TEMPLATES)) cores.push([`hero ${id}`, t.core]);
+for (const [id, t] of Object.entries(VFX_FOE)) cores.push([`foe ${id}`, t.core ?? t.star ?? t.white]);
+let worstRaw = 0;
+let capped = 0;
+let dull = [];
+let over = [];
+for (const [name, hex] of cores) {
+  const c = exactColor(hex).toArray();
+  for (const [g, gain] of Object.entries(GAINS)) {
+    const raw = lum(c[0] * gain, c[1] * gain, c[2] * gain);
+    worstRaw = Math.max(worstRaw, raw);
+    const h = heartColor(c, gain);
+    const l = lum(h[0], h[1], h[2]);
+    if (raw > HEART_MAX) capped++;
+    if (l > HEART_MAX + 1e-6) over.push(`${name} ${g} ${l.toFixed(3)}`);
+    if (!heartHot(h)) dull.push(`${name} ${g} ${l.toFixed(3)}`);
+  }
+}
+check(`cap: every core at every gain is at most ${HEART_MAX} linear (worst before the cap ${worstRaw.toFixed(2)}, ${capped} of ${cores.length * Object.keys(GAINS).length} capped)`, over.length === 0, over.length ? { over } : '');
+check(`cap: every heart still clears the bloom threshold ${BLOOM.threshold} on its own`, dull.length === 0, dull.length ? { dull } : '');
+check('cap: the blade core at the blast gain was above the cap before (the old 1.6 heart)', lum(...exactColor(VFX_TEMPLATES.blade.core).toArray().map((x) => x * GAINS.blast)) > 1.5);
+
+// --- 2. the budget: a melee kill's stack at one point in one tick
+// What a blade hero's basic melee that kills lands at one point in one tick
+// (templates.js bladeSwing, bladeImpact, bladeKill; signature.js the class
+// slash and enemyDeath's ring), as [name, capped heart luminance x opacity,
+// the same before the cap].
+const STACK = [
+  ['swing arc', 1.0, 1.6],
+  ['swing afterimage', 0.35, 1.6 * 0.35],
+  ['swing afterimage', 0.2, 1.6 * 0.2],
+  ['class slash', 1.0, 1.1],
+  ['swing tip blast', 1.0, 1.6],
+  ['impact blast', 1.0, 1.6],
+  ['kill blast', 1.0, 1.6],
+  ['death ring', 0.38, 0.38],
+];
+let sum = 0;
+const shares = [];
+for (const [name, load] of STACK) {
+  const share = heartShare(sum, load);
+  shares.push(`${name} ${share.toFixed(2)}`);
+  sum += load * share;
+}
+const before = STACK.reduce((a, [, , raw]) => a + raw, 0);
+check(`budget: the kill stack sums to ${sum.toFixed(2)} heart-luminance (before: ${before.toFixed(2)}), under 2.3`, sum < 2.3, shares.join(', '));
+check('budget: the first piece at a point keeps its whole heart', heartShare(0, HEART_MAX) === 1);
+check(`budget: a piece never drops under the floor ${HEART_FLOOR}`, heartShare(99, 1) === HEART_FLOOR && heartShare(HEART_BUDGET, 1) === HEART_FLOOR);
+check('budget: the second heart at a point gets what is left', Math.abs(heartShare(1.0, 1.0) - (HEART_BUDGET - 1.0)) < 1e-9);
+
+// --- 3. the wiring in tplkit.js
+const src = readFileSync(join(here, 'src/render/vfx/tplkit.js'), 'utf8');
+const count = (re) => (src.match(re) || []).length;
+check('wiring: beam, blaze, blast and head set their heart through setHeart()', count(/setHeart\(s, o, o\.core/g) === 4, { calls: count(/setHeart\(s, o, o\.core/g) });
+const mixes = src.match(/mix\( [^\n]*uCore \* uGain[^\n]*\)/g) || [];
+check('wiring: every core mix in the shaders is scaled by uHeart', mixes.length === 9 && mixes.every((m) => m.includes('uHeart')), { mixes: mixes.length, scaled: mixes.filter((m) => m.includes('uHeart')).length });
+check('wiring: the four heart shaders declare uHeart', count(/uniform float uHeart;/g) === 4);
+check('wiring: no piece multiplies its core by a raw gain any more', count(/u\.uGain\.value = o\.gain/g) === 0);
+check('wiring: the heart pools are the beams, blazes, blasts and heads', /heartPools = \[beams, blazes, blasts, heads\]/.test(src));
+// the class kit (kit.js): slashes, rings and streaks through setHeart(), pillars capped inline, the two kits sharing one budget
+const ksrc = readFileSync(join(here, 'src/render/vfx/kit.js'), 'utf8');
+const kcount = (re) => (ksrc.match(re) || []).length;
+check('wiring: the class kit sets the slash, ring and streak hearts through setHeart()', kcount(/^\s*setHeart\(s, /gm) === 3, { calls: kcount(/^\s*setHeart\(s, /gm) });
+const kmixes = ksrc.match(/mix\( uGlow, uCore[^\n]*\)/g) || [];
+check('wiring: the class kit\'s arc and streak core mixes are scaled by uHeart', kmixes.length === 2 && kmixes.every((m) => m.includes('uHeart')), { mixes: kmixes.length });
+check('wiring: the pillar colour is capped and counted, its opacity kept (no core to share)', /heartColor\(col\(o\.color \?\? PALETTE\.parchment\)/.test(ksrc) && /s\.heart = 1;\n    s\.obj\.position\.set\(o\.x, s\.h \/ 2, o\.z\);/.test(ksrc) && !/s\.op \*= s\.heart;/.test(ksrc));
+const sig = readFileSync(join(here, 'src/render/vfx/signature.js'), 'utf8');
+check('wiring: the two kits share one budget (setHeartSibling both ways)', /\.setHeartSibling\(tk\.heartLoad\)/.test(sig) && /tk\.setHeartSibling\(\w+\.heartLoad\)/.test(sig));
+// the load-bearing lines: the share is written to the shader, and a moving piece takes it again
+check('wiring: the share reaches the shader in both kits (s.u.uHeart.value = s.heart)', /s\.u\.uHeart\.value = s\.heart;/.test(src) && /s\.u\.uHeart\.value = s\.heart;/.test(ksrc));
+check('wiring: a bolt head and a moving streak take their share again as they travel', /refreshHeart\(s, x, z\);/.test(src) && (ksrc.match(/refreshHeart\(s, s\.cx, s\.cz\);/g) || []).length === 2);
+check('wiring: a delayed piece takes its share when it shows', /takeHeart\(s, s\.cx, s\.cz\); \/\/ a delayed piece/.test(src) && /takeHeart\(s, s\.cx, s\.cz\); \/\/ a delayed piece/.test(ksrc));
+// the flash: plain enemies at HITFLASH.plain, the tuned scales on the unchanged base
+const { HITFLASH } = await mod('src/core/constants.js');
+const en = readFileSync(join(here, 'src/render/enemies/index.js'), 'utf8');
+check(`flash: a plain enemy lights at ${HITFLASH.plain} (under the threshold ${BLOOM.threshold} with its lit albedo) while the tuned base stays ${HITFLASH.intensity}`, HITFLASH.plain < BLOOM.threshold && HITFLASH.intensity === 1.0 && /flashScale != null \? HITFLASH\.intensity \* b\.flashScale : HITFLASH\.plain/.test(en) && /d\.level \?\? HITFLASH\.plain/.test(en));
+
+console.log(fails.length ? `\n${fails.length} FAILED` : '\nall pass');
+process.exit(fails.length ? 1 : 0);

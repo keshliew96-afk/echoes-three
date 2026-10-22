@@ -54,6 +54,10 @@ const SHOT_Y = 0.5; // enemy shot flight height (render)
 const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
 const POP_STRETCH_SEC = 0.09; // kill pop: anticipation stretch...
 const POP_TOTAL_SEC = 0.26; // ...then collapse (same feel as dummy kills)
+// The hit-flash and kill-pop level of a build: a tuned flashScale (champions,
+// the Gale Herald) multiplies the base; a plain enemy lights at HITFLASH.plain
+// (v0.5.331: under the bloom threshold, docs/VFX_READABILITY.md).
+const flashLevel = (b) => (b.flashScale != null ? HITFLASH.intensity * b.flashScale : HITFLASH.plain);
 const RETREAT_OUT_SEC = 0.22; // shrink-out on retreat despawn
 const EMBER_HZ = 34; // ember motes/s over a live telegraph (r2: the column has to survive a body parked on the decal)
 const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
@@ -146,8 +150,9 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     const r = rigs.get(ev.id);
     if (r) {
       rigs.delete(ev.id);
-      for (const m of r.build.mats) m.emissiveIntensity = HITFLASH.intensity; // white-hot pop
-      dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'kill' });
+      const level = flashLevel(r.build);
+      for (const m of r.build.mats) m.emissiveIntensity = level; // white-hot pop
+      dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'kill', level });
       removeDecal(ev.id);
       releaseShape(ev.id);
       return;
@@ -341,7 +346,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       // through kill hitstop exactly like the dummies).
       // A build may scale its flash down (flashScale): a big pale model lit
       // white floods the bloom pass and veils the room (the Gale Herald).
-      const lit = tick < r.flashUntilTick ? HITFLASH.intensity * (r.build.flashScale ?? 1) : 0;
+      const lit = tick < r.flashUntilTick ? flashLevel(r.build) : 0;
       for (const m of r.build.mats) m.emissiveIntensity = lit;
 
       // --- Archetype telegraphs (M4b): lane / ring / cone Ember shapes.
@@ -541,7 +546,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         } else {
           const t = (d.age - POP_STRETCH_SEC) / (POP_TOTAL_SEC - POP_STRETCH_SEC);
           s.set(0.7 + 0.9 * t, Math.max(0.04, 1.45 * (1 - t) * (1 - t)), 0.7 + 0.9 * t);
-          for (const m of d.mats) m.emissiveIntensity = HITFLASH.intensity * (1 - t);
+          for (const m of d.mats) m.emissiveIntensity = (d.level ?? HITFLASH.plain) * (1 - t);
         }
       } else if (d.mode === 'retreat') {
         if (d.age >= RETREAT_OUT_SEC) {
