@@ -158,7 +158,7 @@ export function createModelViewer() {
   function pose(rig, kind, t) {
     if (typeof rig.pose !== 'function') return;
     try {
-      rig.pose({ t, tick: Math.round(t * 60), walkPhase: t * 1.4, moveK: 0, telegraphK: 0, lungeK: 0, fireK: 0, sealK: 0, hpFrac: 1, e: idleEntity(kind) });
+      rig.pose({ t, tick: Math.round(t * 60), walkPhase: t * 1.4, moveK: 0, telegraphK: 0, lungeK: 0, fireK: 0, sealK: 0, hpFrac: 1, e: idleEntity(kind), turntable: true });
     } catch {
       /* a rig that needs more than an idle stand-in stays in its build pose */
     }

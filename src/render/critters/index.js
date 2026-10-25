@@ -30,6 +30,8 @@ import { groundRing, groundShadow, desatTarget, setInkViewport } from './common.
 import { createPoseDriver, CLIPS } from './driver.js';
 import { buildHealer } from './healer.js';
 import { buildTank } from './tank.js';
+import { buildTankFacet } from './tankfacet.js';
+import { facetOn } from '../facet/flags.js';
 import { buildSwordsman } from './swordsman.js';
 import { buildArcher } from './archer.js';
 import { buildTidecaller } from './tidecaller.js';
@@ -62,9 +64,17 @@ const CHIN_UP = 0.18; // rad (~10.3°) — presents the face to a 52° top-down 
 // Materials already owned by a critter's hit flash (see hitFlash).
 const CLAIMED = new WeakSet();
 
-export function createCritter(classId, { cosmetic = null } = {}) {
+// The model standard (docs/MODEL_STANDARD.md): the faceted twins of the
+// classic rigs. A twin builds unless `?facet=` (harness only) or
+// MODEL_STANDARD asks for the classic one; `facet` forces either (the lab).
+const FACETED = {
+  tank: buildTankFacet,
+};
+
+export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
   const build = BUILDERS[classId];
   if (!build) throw new Error(`unknown critter class: ${classId}`);
+  const twin = FACETED[classId] && (facet ?? facetOn(classId)) ? FACETED[classId] : null;
   const accent = CLASS_ACCENTS[classId];
 
   const group = new Group();
@@ -85,7 +95,7 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     return mat;
   };
 
-  const built = build(rig, trackAccent);
+  const built = (twin || build)(rig, trackAccent);
   const M = built.metrics;
 
   // Ring sized so its bright band (0.74-0.85 of the radius) clears the widest
@@ -152,7 +162,9 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     // its prop flat against the ground instead of letting the collapse fling it
     // behind the body (round-3 F8: the healer's staff and the fox's sword both
     // vanished at the exact moment the player needs to identify who went down).
-    built.apply(P, t, fallSign);
+    // The clip name lets a model-standard rig run its own attack timelines
+    // (docs/MODEL_STANDARD.md); the classic rigs ignore it.
+    built.apply(P, t, fallSign, driver.anim);
 
     // Decals: ring grows to fit the collapsed silhouette, shadow stretches
     // along the fall axis so a downed body is still grounded.
@@ -226,6 +238,16 @@ export function createCritter(classId, { cosmetic = null } = {}) {
           return out;
         }
       : null,
+    // Attack events for a model-standard rig (docs/MODEL_STANDARD.md): the
+    // integrator reports each basic swing and skill cast ('basic' | 'skill',
+    // with the sim event) so the rig can play its combo and ability
+    // timelines. A no-op on the classic rigs.
+    cue: (kind, ev) => {
+      if (built.cue) built.cue(kind, ev);
+    },
+    // The model lab's handle on a model-standard rig (null on the classic).
+    lab: built.lab || null,
+    modelStandard: !!built.lab,
     update,
   };
 }

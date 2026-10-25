@@ -11,6 +11,7 @@
 //                              the wisp harness for determinism captures,
 //                              rendertest for renderer comparisons, chartest
 //                              is the critter gallery)
+//   ?modellab=1                the model lab (docs/MODEL_STANDARD.md)
 //   ?variant=1|2|3             arena layout variant (arena scene only)
 //   ?seed=123                  force the gameplay RNG seed (determinism tests)
 //   ?debug=1                   sim debug overlay (tick / entities / RNG draws)
@@ -221,13 +222,15 @@ function padAim(dir, { move } = {}) {
 const input = createInputController({ screenToWorld, padAim });
 
 // Scene registry — later blocks add camp/combat rooms on top of graybox.
-// The four test scenes load only when ?scene= names one (a harness build:
+// The test scenes load only when ?scene= names one (a harness build:
 // a player build never reads ?scene=), so they stay out of the main chunk.
 const SCENES = {
   graybox: () => import('./scenes/graybox.js').then((m) => m.createGrayboxScene),
   simtest: () => import('./scenes/simtest.js').then((m) => m.createSimTestScene),
   rendertest: () => import('./scenes/rendertest.js').then((m) => m.createRenderTestScene),
   chartest: () => import('./scenes/chartest.js').then((m) => m.createCharTestScene),
+  // The model lab (docs/MODEL_STANDARD.md): ?modellab=1 or ?scene=modellab.
+  modellab: () => import('./scenes/modellab.js').then((m) => m.createModelLabScene),
   arena: async () => createArenaScene,
   camp: async () => createCampScene,
 };
@@ -235,7 +238,7 @@ const SCENES = {
 // The camp scene wraps the arena and swaps between them on run start/end, so
 // ?scene=arena still boots straight into the combat arena for regressions.
 const DEFAULT_SCENE = 'camp';
-const sceneKey = SCENES[params.get('scene')] ? params.get('scene') : DEFAULT_SCENE;
+const sceneKey = params.has('modellab') ? 'modellab' : SCENES[params.get('scene')] ? params.get('scene') : DEFAULT_SCENE;
 // Scenes that carry the full game stack (sim FX layers + HUD + meta screens).
 const PLAYABLE =
   sceneKey === 'graybox' || sceneKey === 'arena' || sceneKey === 'camp';

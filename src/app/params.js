@@ -15,7 +15,8 @@ import { gateQuery, HARNESS } from './harness.js';
 
 // ('layout' is the Gauntlet content-harness param; it skips the title like the rest.)
 // ('level' — CAMPAIGN: a campaign AT that level on the first ticked frame.)
-export const LEGACY_HARNESS_PARAMS = Object.freeze(['scene', 'room', 'run', 'seed', 'variant', 'layout', 'level']);
+// ('modellab' — the model lab scene, docs/MODEL_STANDARD.md.)
+export const LEGACY_HARNESS_PARAMS = Object.freeze(['scene', 'room', 'run', 'seed', 'variant', 'layout', 'level', 'modellab']);
 
 function flagOf(params, name, def) {
   const v = params.get(name);
