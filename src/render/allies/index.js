@@ -333,7 +333,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     }
   }
   const rigState = new Map(); // classId -> { yaw, castLeft, hurtLeft }
-  for (const classId of critters.keys()) rigState.set(classId, { yaw: 0, castLeft: 0, hurtLeft: 0, skillShape: null });
+  for (const classId of critters.keys()) rigState.set(classId, { yaw: 0, castLeft: 0, hurtLeft: 0 });
 
   const allyEntities = () => world.entities().filter((e) => e.kind === 'ally');
   const byId = (id) => world.entities().find((e) => e.id === id) ?? null;
@@ -346,21 +346,13 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   // are kept below only as the fallback when no director is running.
   bus.on('ally_basic', (ev) => {
     const st = rigState.get(ev.classId);
-    if (st) {
-      st.castLeft = CAST_HOLD;
-      st.skillShape = null;
-    }
+    if (st) st.castLeft = CAST_HOLD;
     if (impactFx.directed) return;
     if (ev.shape === 'melee_arc') spawnWedge(ev, ev.reach, ev.halfAngle, 0.28);
   });
   bus.on('ally_cast', (ev) => {
     const st = rigState.get(ev.classId);
-    if (st) {
-      st.castLeft = CAST_HOLD;
-      // A clip-driven hero (the mouse healer) casts each skill with its own
-      // animation, picked by the skill's shape (docs/MOUSE_HEALER.md).
-      st.skillShape = ev.shape || 'projectile';
-    }
+    if (st) st.castLeft = CAST_HOLD;
     if (impactFx.directed) return;
     if (ev.shape === 'melee_arc') spawnWedge(ev, ev.reach, ev.halfAngle, 0.4);
     else if (ev.shape === 'nova') {
@@ -827,10 +819,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       const simSpeed = Math.hypot(a.x - a.px, a.z - a.pz) * TICK_HZ;
       if (a.hp <= 0) c.setAnim('downed');
       else if (st.hurtLeft > 0) c.setAnim('hurt');
-      else if (st.castLeft > 0 && st.skillShape && c.castSkill && st.castLeft > CAST_HOLD - dt * 2) {
-        c.castSkill(st.skillShape);
-        st.skillShape = null;
-      } else if (st.castLeft > 0) c.setAnim('cast', st.castLeft > CAST_HOLD - dt * 2 ? CAST_PHASE : undefined);
+      else if (st.castLeft > 0) c.setAnim('cast', st.castLeft > CAST_HOLD - dt * 2 ? CAST_PHASE : undefined);
       else c.setAnim(simSpeed > MOVE_EPS ? 'walk' : 'idle');
 
       if (!adopted) c.update(dt);
