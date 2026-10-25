@@ -18,8 +18,9 @@
 //      hit starts in the pose the hit before it ends in (Bolt_1 -> 2 -> 3 ->
 //      1), every bone within 6 degrees: momentum carries hit to hit, and a
 //      revived body gets up from where it fell.
-//   5. The switch-back: the procedural healer is still built when the model
-//      is off or missing (critters/index.js keeps buildHealer as the fallback).
+//   5. The switch-back: the original procedural healer is the default again
+//      (v0.5.331); the model plays only on HEALER_MODEL 'mouse' or a harness
+//      ?healer=mouse, and only once loaded (critters/index.js).
 //   6. Kesh's three animation rules (docs/MOUSE_HEALER.md "Self-check"), on
 //      the clips themselves, with a forward-kinematics pass over the skeleton:
 //      a. Direction: in each run clip the planted foot moves opposite to the
@@ -249,8 +250,10 @@ for (const name of STANDING) {
 
 // --- 5. the switch-back
 const idx = readFileSync(join(here, 'src/render/critters/index.js'), 'utf8');
-check('switch-back: the procedural healer stays the fallback', /HEALER_MODEL !== 'mouse' \|\| !mouseHealerReady\(\)\) return buildHealer/.test(idx) && /'classic' \? buildHealer : buildMouseHealer/.test(idx));
-check('switch-back: HEALER_MODEL is set', /export const HEALER_MODEL = '(mouse|classic)'/.test(src), src.match(/export const HEALER_MODEL = '(\w+)'/)?.[1]);
+check('switch-back: the procedural healer stays the fallback', /mouseHealerWanted\(\) && mouseHealerReady\(\) \? buildMouseHealer : buildHealer/.test(idx));
+check('switch-back: the original procedural healer is the default (v0.5.331)', /export const HEALER_MODEL = 'classic'/.test(src), src.match(/export const HEALER_MODEL = '(\w+)'/)?.[1]);
+check('switch-back: ?healer=mouse still previews the model, ?healer=classic forces the chibi', /q === 'mouse'\) return true/.test(src) && /q === 'classic'\) return false/.test(src));
+check('switch-back: the model is not loaded when it is not wanted', /if \(!mouseHealerWanted\(\)\) return Promise\.resolve\(false\)/.test(src));
 
 console.log(fails.length ? `\n${fails.length} FAIL` : '\nall pass');
 process.exit(fails.length ? 1 : 0);

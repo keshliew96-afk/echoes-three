@@ -35,7 +35,7 @@ import { buildArcher } from './archer.js';
 import { buildTidecaller } from './tidecaller.js';
 import { buildBellwright } from './bellwright.js';
 import { buildDuskwing } from './duskwing.js';
-import { buildMouseHealer, mouseHealerReady, HEALER_MODEL } from './mousehealer.js';
+import { buildMouseHealer, mouseHealerReady, mouseHealerWanted } from './mousehealer.js';
 import { pageQuery, HARNESS } from '../../app/harness.js';
 
 export { CLIPS, setInkViewport };
@@ -61,12 +61,12 @@ const PITCH_MIN = -0.36;
 const HEAD_COUNTER = 0.88; // fraction of torso pitch cancelled at the neck
 const CHIN_UP = 0.18; // rad (~10.3°) — presents the face to a 52° top-down cam
 
-// The Healer plays the mouse healer model (docs/MOUSE_HEALER.md) once it has
-// loaded, unless HEALER_MODEL or a harness `?healer=classic` keeps the
-// procedural chibi; a model that failed to load falls back the same way.
+// The Healer is the procedural chibi (healer.js). The mouse healer model
+// (docs/MOUSE_HEALER.md) plays only when it is wanted (HEALER_MODEL or a
+// harness `?healer=mouse`) and has loaded; a model that failed to load falls
+// back to the chibi.
 function healerBuilder() {
-  if (HEALER_MODEL !== 'mouse' || !mouseHealerReady()) return buildHealer;
-  return pageQuery().get('healer') === 'classic' ? buildHealer : buildMouseHealer;
+  return mouseHealerWanted() && mouseHealerReady() ? buildMouseHealer : buildHealer;
 }
 
 // Materials already owned by a critter's hit flash (see hitFlash).

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // MOUSE HEALER in the real game (docs/MOUSE_HEALER.md): against a harness build
-// (`npm run dev`, port 5199), plays the healer through a run's fight and reads
+// (`npm run dev`, port 5199), with ?healer=mouse (the default is the original
+// procedural healer since v0.5.331), plays the healer through a run's fight and reads
 // the clip the model plays at each beat, then shoots it. Captures (to --dir,
 // default captures/):
 //   mouse-1-gallery.png   the party gallery at the game camera, mouse first
@@ -10,7 +11,7 @@
 //   mouse-3-downed.png    the healer down, lying, greyed, ring grown
 //   mouse-4-rise.png      the healer getting up after a revive
 //   mouse-5-camp.png      the camp, the mouse at the fire
-//   mouse-6-classic.png   the same fight with ?healer=classic (the fallback)
+//   mouse-6-classic.png   the same fight with no flag: the original healer (the default)
 // and checks the run follows where she goes against where she faces.
 //
 //   node tools/mouse-healer-browser.mjs [--url http://localhost:5199/] [--dir captures]
@@ -169,7 +170,7 @@ async function fight(query, shot) {
   return { page, cmd, me, seen };
 }
 {
-  const { page, cmd, me, seen } = await fight('?seed=3', 'mouse-2-fight.png');
+  const { page, cmd, me, seen } = await fight('?seed=3&healer=mouse', 'mouse-2-fight.png');
   const order = seen.join(' ');
   check(/Bolt_1 Bolt_2 Bolt_3/.test(order), 'held fire walks the combo hit 1, 2, 3', order);
   // A skill: the healer's first slot, cast with its key, plays its shape's clip.
@@ -254,7 +255,7 @@ async function fight(query, shot) {
 // 4b. Run direction follows travel against facing (Kesh's rule 1): she faces
 // her aim, so running away from the cursor must backpedal, across it strafe.
 {
-  const page = await open('?seed=3');
+  const page = await open('?seed=3&healer=mouse');
   const cmd = (name, ...args) => page.evaluate((n, a) => window.__echoes.cmd(n, ...a), name, args);
   await cmd('startRun', { act: 1 });
   await waitFor(async () => (await cmd('runState')).phase === 'combat', 240000);
@@ -317,7 +318,7 @@ async function fight(query, shot) {
 
 // 5. The camp.
 {
-  const page = await open('?seed=3');
+  const page = await open('?seed=3&healer=mouse');
   await sleep(4000);
   check((await clips(page)).length > 0, 'the camp builds the mouse healer');
   await page.screenshot({ path: join(DIR, 'mouse-5-camp.png') });
@@ -326,8 +327,8 @@ async function fight(query, shot) {
 
 // 6. The fallback.
 {
-  const { page } = await fight('?seed=3&healer=classic', 'mouse-6-classic.png');
-  check((await clips(page)).length === 0, '?healer=classic keeps the procedural healer');
+  const { page } = await fight('?seed=3', 'mouse-6-classic.png');
+  check((await clips(page)).length === 0, 'the default healer is the original procedural one');
   await page.close();
 }
 

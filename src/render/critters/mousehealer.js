@@ -1,9 +1,11 @@
 // Healer — the MOUSE HEALER model (docs/MOUSE_HEALER.md). A skinned, textured
 // model with keyframed clips (src/assets/heroes/mousehealer.glb, built in
 // Blender from Kesh's Meshy mouse), standing in for the procedural chibi in
-// healer.js. The procedural healer stays in the code as the fallback:
-// `HEALER_MODEL` below, `?healer=classic` in a harness build, or a model that
-// failed to load all put the old rig back.
+// healer.js. Since v0.5.331 the procedural healer is the default again (Kesh
+// asked for the original model back); the mouse stays in the code and plays
+// when `HEALER_MODEL` below is 'mouse' or a harness build asks `?healer=mouse`.
+// With the mouse on, `?healer=classic` or a model that failed to load put the
+// old rig back.
 //
 // The game drives five clip names through critters/index.js (idle, walk, cast,
 // hurt, downed) and lets a revived body rise. This file maps each onto the
@@ -43,9 +45,19 @@ import { PALETTE } from '../../data/palette.js';
 import { getGradientMap } from '../toon.js';
 import { makeGlowSprite } from '../glow.js';
 import { exactColorNearest, addSkinnedInk } from './common.js';
+import { pageQuery } from '../../app/harness.js';
 
 // 'mouse' plays the model; 'classic' keeps the procedural chibi (healer.js).
-export const HEALER_MODEL = 'mouse';
+export const HEALER_MODEL = 'classic';
+
+// Whether this page plays the mouse: HEALER_MODEL, overridden by a harness
+// `?healer=mouse` or `?healer=classic` (pageQuery keeps neither in a player build).
+export function mouseHealerWanted() {
+  const q = pageQuery().get('healer');
+  if (q === 'mouse') return true;
+  if (q === 'classic') return false;
+  return HEALER_MODEL === 'mouse';
+}
 
 // The model is authored in metres at 1.70 tall (ear tips); the party stands
 // 1.10 u tall (healer.js EAR_TOP), so it is scaled to match.
@@ -118,7 +130,7 @@ let loadFailed = false;
 let loading = null;
 
 export function preloadMouseHealer() {
-  if (HEALER_MODEL !== 'mouse') return Promise.resolve(false);
+  if (!mouseHealerWanted()) return Promise.resolve(false);
   if (!loading) {
     loading = new GLTFLoader()
       .loadAsync(glbUrl)

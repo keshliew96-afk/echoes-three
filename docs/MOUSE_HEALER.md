@@ -4,6 +4,12 @@ From v0.5.329 the Healer is played by a skinned, textured mouse model with
 keyframed clips, built in Blender from Kesh's Meshy mouse. The procedural chibi
 (`src/render/critters/healer.js`) stays in the code as the fallback.
 
+**From v0.5.331 the original procedural healer is the default again** (Kesh
+asked for the original model back). The mouse files stay in the repo and the
+mouse still plays on `HEALER_MODEL = 'mouse'` or, in a harness build,
+`?healer=mouse`; the model is not even loaded otherwise. The Blender source
+backup is on Kesh's laptop (`Downloads\MouseHealer_backup_2026-10-21`).
+
 ## Files
 
 | What | Where |
@@ -231,12 +237,14 @@ height; on a slope or stairs a foot would float or sink.
     as the procedural rigs' chin-up does.
 - Scaled to the party's 1.10 u standing height (the model is 1.70 m in Blender).
 
-## Switching back
+## Switching
 
-- `HEALER_MODEL = 'classic'` in `src/render/critters/mousehealer.js` puts the
-  procedural healer back everywhere.
-- In a harness build, `?healer=classic` does the same for one page.
-- A model that fails to load, or takes over 8 s, also leaves the procedural
+- `HEALER_MODEL` in `src/render/critters/mousehealer.js` is `'classic'` (the
+  procedural healer everywhere, the default since v0.5.331); `'mouse'` puts the
+  model back everywhere.
+- In a harness build, `?healer=mouse` plays the model for one page and
+  `?healer=classic` forces the procedural healer for one page.
+- With the mouse on, a model that fails to load, or takes over 8 s, also leaves the procedural
   healer in place for that session.
 
 ## Checks
@@ -246,15 +254,15 @@ height; on a slope or stairs a foot would float or sink.
   - the fourteen clips, that every game clip maps to one of them, and that every skill shape's cast clip is in the file;
   - that `Revive` starts within 6° of where `Death` ends, and each combo hit within 6° of where the hit before it ends, for every bone;
   - the three rules by forward kinematics: each run's planted foot moves against its travel at 2.4 u/s, no planted foot in a standing clip moves 0.3 cm a frame, and a foot steps with the body wherever a strike or flinch moves it over 4 cm;
-  - the fallback.
-- `node tools/mouse-healer-browser.mjs` checks, in the real game:
+  - that the procedural healer is the default, `?healer=mouse` still previews the model, and the model is not loaded when not wanted.
+- `node tools/mouse-healer-browser.mjs` checks, in the real game (with `?healer=mouse`):
   - held fire walks the combo 1, 2, 3;
   - a skill key plays its own cast, and every shape maps to its clip;
   - a hit plays `Hit`;
   - 0 HP plays `Death` and holds, unless an ally revives her first;
   - a revive plays `Revive` and ends standing;
   - the camp builds the mouse;
-  - `?healer=classic` keeps the old rig;
+  - with no flag the game builds the original procedural healer;
   - running toward, away from and across the aim plays `Run_F`, `Run_B` and a strafe, at a stride rate matching her speed;
   - casting while running plays the cast's upper half over the running legs.
   - turning on the spot keeps the planted feet still (worst slide under 0.1 cm a frame) while she steps round.

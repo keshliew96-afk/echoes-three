@@ -39,6 +39,8 @@ const { SIM_HZ } = await import(u('src/net/protocol/constants.js'));
 
 const DAY = '2026-10-21';
 const bump = (v, n) => v.replace(/\d+$/, (x) => String(Number(x) + n));
+// Whether a build from before tickets is still inside the version window.
+const preTicketInWindow = versionOk(bump(TICKET_SINCE, -1), VERSION);
 const id = (n) => `hardening2-player-${String(n).padStart(6, '0')}`;
 
 // ------------------------------------------------------------ versions --
@@ -78,14 +80,21 @@ check('version', 'versionOk is shared by the game and the server', versionOk(VER
   now = t1.body.ticket.at + runTicks * (1000 / SIM_HZ) * TICKET_MIN_SHARE - TICKET_SLACK_MS + 1000;
   const r4 = await score(1, runTicks, { ticket: t1.body.ticket });
   check('score', 'the same run once its wall time has passed is taken', r4.status === 200 && r4.body.ok && r4.body.rank === 1, r4.body);
+  // A build before tickets posts without one while it is in the version
+  // window; once the game has moved past that window it is simply out of date.
   const r5 = await score(4, runTicks, { version: bump(TICKET_SINCE, -1) });
-  check('score', 'an older build in the window (before tickets) still posts without one', r5.status === 200 && r5.body.ok, r5.body);
+  if (preTicketInWindow) check('score', 'an older build in the window (before tickets) still posts without one', r5.status === 200 && r5.body.ok, r5.body);
+  else check('score', 'a build before tickets, now past the version window, is told it is out of date', r5.status === 400 && r5.body.error === 'bad_version', r5.body);
   check('score', 'checkTicket: a ticket issued on another day is refused', checkTicket({ key: DAY, id: id(9), version: VERSION, ticks: 60, ticket: { at: Date.parse('2026-10-20T23:00:00Z'), sig: signTicket('k', DAY, id(9), Date.parse('2026-10-20T23:00:00Z')) } }, 'k', Date.parse(`${DAY}T10:00:00Z`)) === 'bad_ticket');
 
   // Per-player limits: posts and tickets per id over many addresses.
   const st = [];
-  // (a build before tickets, so the same run is simply answered again)
-  for (let i = 0; i < ID_RATE.score + 2; i++) st.push((await s.score({ ...base(8, { version: bump(TICKET_SINCE, -1) }), name: 'P8', cls: 'tank', depth: 5, won: false, ticks: runTicks }, `10.2.0.${i}`)).status);
+  // (the same run, posted again from new addresses: a build before tickets
+  // while one is in the version window, else one ticket held long enough)
+  const t8 = preTicketInWindow ? null : (await s.ticket(base(8), '10.2.0.250')).body.ticket;
+  if (t8) now = t8.at + runTicks * (1000 / SIM_HZ) * TICKET_MIN_SHARE - TICKET_SLACK_MS + 1000;
+  const p8 = preTicketInWindow ? { version: bump(TICKET_SINCE, -1) } : { ticket: t8 };
+  for (let i = 0; i < ID_RATE.score + 2; i++) st.push((await s.score({ ...base(8, p8), name: 'P8', cls: 'tank', depth: 5, won: false, ticks: runTicks }, `10.2.0.${i}`)).status);
   check('limits', `one player posts at most ${ID_RATE.score} times in ten minutes, from any address`, st.slice(0, ID_RATE.score).every((x) => x === 200) && st.slice(ID_RATE.score).every((x) => x === 429), st);
   const tt = [];
   for (let i = 0; i < ID_RATE.ticket + 2; i++) tt.push((await s.ticket(base(7), `10.3.0.${i}`)).status);
