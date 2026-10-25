@@ -20,6 +20,10 @@ npx vite build                          # clean apart from the chunk-size warnin
   (`tools/gnt-arch-browser.mjs` and most newer probes read it). Software GL runs at 1 to 25 fps:
   hold keys for about 250 ms and wait on sim state, not on time.
 - Look at the screenshots yourself, and run the readability checks in `CLAUDE.md` "Before READY".
+- Models built to the model standard (`docs/MODEL_STANDARD.md`) are reviewed in the model lab,
+  `?modellab=1` (model tabs, Idle / Move / Ability / Still, rewind, play zoom, the classic
+  model beside); `__echoes.cmd('lab', {model, mode, ability, t, view, classic})` drives it
+  from a probe. `?facet=0` shows the classic models in the game.
 
 ### npm test and CI (v0.5.318)
 
@@ -74,7 +78,7 @@ reads it (`PLAYER_PARAMS` in `src/app/harness.js`):
 Everything else reads as absent there: the legacy params (`?scene=` `?room=` `?run=1`
 `?seed=` `?variant=` `?layout=` `?level=` `?act=`), `?rill=1` `?tolly=1` `?sable=1`
 `?act5=1` `?act6=1`, `?endless=1` `?rush=1` `?daily=`, `?party=` `?partygrant=`, `?fresh=1`
-`?freeze=1` `?slot=` `?debug=1` `?vfxlab=1`, and the co-op harness params (`?nethost=1`
+`?freeze=1` `?slot=` `?debug=1` `?vfxlab=1` `?modellab=1` `?facet=`, and the co-op harness params (`?nethost=1`
 `?netjoin=` `?netquick=1` `?netname=` `?netseat=` `?netcond=` `?netrate=` `?netbot=` `?p2p=0`
 `?p2pwait=`). A new param is a harness param unless it is added to `PLAYER_PARAMS`. Game code
 reads the query only through `pageQuery()` (or `parseBootParams`) and never reads

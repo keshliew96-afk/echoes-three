@@ -347,12 +347,14 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   bus.on('ally_basic', (ev) => {
     const st = rigState.get(ev.classId);
     if (st) st.castLeft = CAST_HOLD;
+    critters.get(ev.classId)?.cue('basic', ev); // the combo (docs/MODEL_STANDARD.md)
     if (impactFx.directed) return;
     if (ev.shape === 'melee_arc') spawnWedge(ev, ev.reach, ev.halfAngle, 0.28);
   });
   bus.on('ally_cast', (ev) => {
     const st = rigState.get(ev.classId);
     if (st) st.castLeft = CAST_HOLD;
+    critters.get(ev.classId)?.cue('skill', ev);
     if (impactFx.directed) return;
     if (ev.shape === 'melee_arc') spawnWedge(ev, ev.reach, ev.halfAngle, 0.4);
     else if (ev.shape === 'nova') {

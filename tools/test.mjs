@@ -38,6 +38,7 @@ export const SUITE = [
   { file: 'tools/code-health-probe.mjs', args: [], what: 'per-world colliders, the bundle split, dead code, audit pins' },
   { file: 'tools/lineup-probe.mjs', args: [], what: 'the party lineup' },
   { file: 'tools/healer-restore-probe.mjs', args: [], what: 'the original healer, the mouse model removed' },
+  { file: 'tools/model-standard-probe.mjs', args: [], what: 'the model standard pilot: faceted Wyrm and Tank, timelines, locked feet' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
   { file: 'tools/champions-probe.mjs', args: [], what: 'champion rooms' },
   { file: 'tools/vaults-probe.mjs', args: [], what: 'keys and vaults' },

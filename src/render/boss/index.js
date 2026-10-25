@@ -32,6 +32,8 @@ import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
 import { buildHeron } from './heron.js';
 import { buildWyrm } from './wyrm.js';
+import { buildWyrmFacet } from './wyrmfacet.js';
+import { facetOn } from '../facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
 import { buildCantor, buildColossus } from './heart.js';
 import { buildHush, buildSkyhorn, buildHourwarden } from './spire.js';
@@ -46,7 +48,9 @@ import { impactFx } from '../vfx/hub.js';
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
-const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
+// The Barrow Wyrm plays the model standard pilot (docs/MODEL_STANDARD.md)
+// unless `?facet=` (harness only) or MODEL_STANDARD asks for the classic rig.
+const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;

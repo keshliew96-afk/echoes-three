@@ -7,6 +7,8 @@ import { ARCH_BUILDERS } from '../../render/enemies/archetypes.js';
 import { buildStag } from '../../render/boss/stag.js';
 import { buildHeron } from '../../render/boss/heron.js';
 import { buildWyrm } from '../../render/boss/wyrm.js';
+import { buildWyrmFacet } from '../../render/boss/wyrmfacet.js';
+import { facetOn } from '../../render/facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from '../../render/boss/slice2.js';
 import { buildCantor, buildColossus } from '../../render/boss/heart.js';
 import { buildGloamWolf, buildMireKing, buildAshRaven, buildVeinWeaver } from '../../render/boss/third.js';
@@ -19,7 +21,7 @@ export const BUILDERS = {
   ...ARCH_BUILDERS,
   stag: buildStag,
   heron: buildHeron,
-  wyrm: buildWyrm,
+  wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, // the model standard pilot (docs/MODEL_STANDARD.md)
   thornmother: buildThornmother,
   millwheel: buildMillwheel,
   lichram: buildLichram,

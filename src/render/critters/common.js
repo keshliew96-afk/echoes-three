@@ -36,6 +36,7 @@ import {
   Color,
   DoubleSide,
   Group,
+  InstancedMesh,
   LatheGeometry,
   Mesh,
   MeshBasicMaterial,
@@ -380,6 +381,59 @@ export function addInk(mesh) {
   const geo = inkHullGeometry(mesh.geometry);
   const hull = new Mesh(geo, getInkMaterial());
   hull.name = `${mesh.name || 'mesh'}-ink`;
+  mesh.add(hull);
+  return hull;
+}
+
+// Instanced ink (docs/MODEL_STANDARD.md): the same constant-pixel hull for an
+// InstancedMesh (the faceted parts kit), drawn per instance off the source's
+// own instance matrices, at its own width so a row of small plates can carry a
+// thinner line than the silhouette. Shares the viewport and the ink colour
+// with every other hull.
+const instancedInkMats = new Map();
+function getInstancedInkMaterial(px) {
+  let m = instancedInkMats.get(px);
+  if (m) return m;
+  m = new ShaderMaterial({
+    uniforms: { uPx: { value: px }, uViewport: inkUniforms.uViewport, uColor: inkUniforms.uColor },
+    side: BackSide,
+    polygonOffset: true,
+    polygonOffsetFactor: 3,
+    polygonOffsetUnits: 3,
+    vertexShader: /* glsl */ `
+      uniform float uPx;
+      uniform vec2 uViewport;
+      void main() {
+        vec4 lp = vec4( position, 1.0 );
+        vec3 ln = normal;
+        #ifdef USE_INSTANCING
+          lp = instanceMatrix * lp;
+          ln = transpose( inverse( mat3( instanceMatrix ) ) ) * normal;
+        #endif
+        vec4 mv = modelViewMatrix * lp;
+        vec4 clip = projectionMatrix * mv;
+        vec2 np = ( projectionMatrix * vec4( normalize( normalMatrix * ln ), 0.0 ) ).xy;
+        float l = length( np );
+        if ( l > 1e-5 ) clip.xy += ( np / l ) * ( uPx * 2.0 / uViewport ) * clip.w;
+        gl_Position = clip;
+      }
+    `,
+    fragmentShader: /* glsl */ `
+      uniform vec3 uColor;
+      void main() { gl_FragColor = vec4( uColor, 1.0 ); }
+    `,
+  });
+  m.userData.shared = true;
+  instancedInkMats.set(px, m);
+  return m;
+}
+
+export function addInstancedInk(mesh, px = INK_PX) {
+  const hull = new InstancedMesh(inkHullGeometry(mesh.geometry), getInstancedInkMaterial(px), mesh.count);
+  hull.instanceMatrix = mesh.instanceMatrix; // one buffer: the hull follows every instance
+  hull.frustumCulled = mesh.frustumCulled;
+  hull.name = `${mesh.name || 'parts'}-ink`;
+  hull.userData.inkHull = true;
   mesh.add(hull);
   return hull;
 }
