@@ -35,8 +35,6 @@ import { buildArcher } from './archer.js';
 import { buildTidecaller } from './tidecaller.js';
 import { buildBellwright } from './bellwright.js';
 import { buildDuskwing } from './duskwing.js';
-import { buildMouseHealer, mouseHealerReady, HEALER_MODEL } from './mousehealer.js';
-import { pageQuery, HARNESS } from '../../app/harness.js';
 
 export { CLIPS, setInkViewport };
 export const CRITTER_CLASSES = ['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright', 'duskwing'];
@@ -61,19 +59,11 @@ const PITCH_MIN = -0.36;
 const HEAD_COUNTER = 0.88; // fraction of torso pitch cancelled at the neck
 const CHIN_UP = 0.18; // rad (~10.3°) — presents the face to a 52° top-down cam
 
-// The Healer plays the mouse healer model (docs/MOUSE_HEALER.md) once it has
-// loaded, unless HEALER_MODEL or a harness `?healer=classic` keeps the
-// procedural chibi; a model that failed to load falls back the same way.
-function healerBuilder() {
-  if (HEALER_MODEL !== 'mouse' || !mouseHealerReady()) return buildHealer;
-  return pageQuery().get('healer') === 'classic' ? buildHealer : buildMouseHealer;
-}
-
 // Materials already owned by a critter's hit flash (see hitFlash).
 const CLAIMED = new WeakSet();
 
 export function createCritter(classId, { cosmetic = null } = {}) {
-  const build = classId === 'healer' ? healerBuilder() : BUILDERS[classId];
+  const build = BUILDERS[classId];
   if (!build) throw new Error(`unknown critter class: ${classId}`);
   const accent = CLASS_ACCENTS[classId];
 
@@ -97,10 +87,6 @@ export function createCritter(classId, { cosmetic = null } = {}) {
 
   const built = build(rig, trackAccent);
   const M = built.metrics;
-  // A keyframed model (the mouse healer) poses itself from its own clips: the
-  // pose vector still drives the ring, shadow, greying and gem heat, but the
-  // procedural collapse, lean and squash are left off its rig.
-  const clipDriven = !!built.clipDriven;
 
   // Ring sized so its bright band (0.74-0.85 of the radius) clears the widest
   // body mass — the band circles the critter on the floor instead of cutting
@@ -132,36 +118,12 @@ export function createCritter(classId, { cosmetic = null } = {}) {
 
   let t = 0;
   let lastDesat = -1;
-  const lastPos = new Vector3();
-  const vel = new Vector3();
 
   function update(dt) {
     t += dt;
     const P = driver.update(dt);
     const c = P.collapse;
     const upright = 1 - c;
-
-    if (clipDriven) {
-      // Where the body is going, from its own position, turned into the
-      // facing frame: the model blends its run by it (docs/MOUSE_HEALER.md).
-      if (dt > 0) {
-        const vx = (group.position.x - lastPos.x) / dt;
-        const vz = (group.position.z - lastPos.z) / dt;
-        lastPos.copy(group.position);
-        if (Math.hypot(vx, vz) < 12) {
-          const k = Math.min(1, dt * 30); // ~1/30 s: a stop reads as a stop
-          vel.x += (vx - vel.x) * k;
-          vel.z += (vz - vel.z) * k;
-        }
-        const yaw = yawGroup.rotation.y;
-        const c = Math.cos(yaw);
-        const s = Math.sin(yaw);
-        built.setMove(vel.x * c - vel.z * s, vel.x * s + vel.z * c);
-      }
-      built.tick(dt, P);
-      decalsAndDesat(P, c);
-      return;
-    }
 
     // Collapse about the body centre (see header).
     fallPivot.position.y = pivotH * upright + LIE_HEIGHT * c;
@@ -192,10 +154,6 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     // vanished at the exact moment the player needs to identify who went down).
     built.apply(P, t, fallSign);
 
-    decalsAndDesat(P, c);
-  }
-
-  function decalsAndDesat(P, c) {
     // Decals: ring grows to fit the collapsed silhouette, shadow stretches
     // along the fall axis so a downed body is still grounded.
     const rs = 1 + (ringDownScale - 1) * c;
@@ -242,17 +200,12 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     }
   }
 
-  const api = {
+  return {
     classId,
     accent,
     group,
     metrics: { ...M, ringRadius },
-    setAnim: clipDriven
-      ? (name, phase, step) => {
-          driver.setAnim(name, phase);
-          built.play(name, phase, step);
-        }
-      : driver.setAnim,
+    setAnim: driver.setAnim,
     getAnim: () => driver.anim,
     hitFlash,
     hitFlashLevel: () => flashK,
@@ -275,20 +228,4 @@ export function createCritter(classId, { cosmetic = null } = {}) {
       : null,
     update,
   };
-  // Harness builds list the clip-driven heroes so a probe can drive and read
-  // their clips (tools/mouse-healer-browser.mjs).
-  // Clip-driven heroes cast each skill with its own animation (the skill's
-  // shape picks it, docs/MOUSE_HEALER.md); the procedural rigs have no such
-  // method and keep their single cast pose.
-  if (clipDriven) {
-    api.castSkill = (shape) => {
-      driver.setAnim('cast');
-      built.castSkill(shape);
-    };
-  }
-  if (clipDriven && HARNESS && typeof window !== 'undefined') {
-    api.clipState = built.clipState;
-    (window.__echoesClipHeroes ||= []).push(api);
-  }
-  return api;
 }

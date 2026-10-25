@@ -37,7 +37,7 @@ export const SUITE = [
   { file: 'tools/polish-probe.mjs', args: [], what: 'Short Fuse in its room, Records dates, Level Select rows, Hourwarden weights' },
   { file: 'tools/code-health-probe.mjs', args: [], what: 'per-world colliders, the bundle split, dead code, audit pins' },
   { file: 'tools/lineup-probe.mjs', args: [], what: 'the party lineup' },
-  { file: 'tools/mouse-healer-probe.mjs', args: [], what: 'the mouse healer model, its clips and the switch-back' },
+  { file: 'tools/healer-restore-probe.mjs', args: [], what: 'the original healer, the mouse model removed' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
   { file: 'tools/champions-probe.mjs', args: [], what: 'champion rooms' },
   { file: 'tools/vaults-probe.mjs', args: [], what: 'keys and vaults' },
