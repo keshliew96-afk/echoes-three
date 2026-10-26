@@ -470,6 +470,41 @@ function geos() {
   // outline), and the gill blades fringing the underside (gill tone), long
   // and short in turn.
   const clear = (p, d) => spotPts.every((q) => q.distanceTo(p) > d);
+  // Seat a crown part on the FACETED dome (its planes sit up to 0.024 inside
+  // the ideal ellipse): cast from the cap's core out through the ideal point
+  // and take the furthest plane it crosses, then lift (sink, < 0) along the
+  // ideal normal from there.
+  const capPos = set.cap.attributes.position;
+  const core = new Vector3(0, 0.02, 0);
+  const ray = new Vector3();
+  const e1 = new Vector3();
+  const e2 = new Vector3();
+  const pv = new Vector3();
+  const tv = new Vector3();
+  const qv = new Vector3();
+  const v0 = new Vector3();
+  const onDome = (phi, a, lift, out, nrm) => {
+    capPt(phi, a, 0, out, nrm);
+    ray.copy(out).sub(core).normalize();
+    let far = -1;
+    for (let i = 0; i + 2 < capPos.count; i += 3) {
+      v0.fromBufferAttribute(capPos, i);
+      e1.fromBufferAttribute(capPos, i + 1).sub(v0);
+      e2.fromBufferAttribute(capPos, i + 2).sub(v0);
+      pv.crossVectors(ray, e2);
+      const det = e1.dot(pv);
+      if (Math.abs(det) < 1e-12) continue;
+      tv.copy(core).sub(v0);
+      const u = tv.dot(pv) / det;
+      if (u < 0 || u > 1) continue;
+      qv.crossVectors(tv, e1);
+      const w = ray.dot(qv) / det;
+      if (w < 0 || u + w > 1) continue;
+      far = Math.max(far, e2.dot(qv) / det);
+    }
+    if (far > 0) out.copy(core).addScaledVector(ray, far);
+    return out.addScaledVector(nrm, lift);
+  };
   set.capd = bakeParts('rotcap:capd', () => {
     const out = [];
     // scales: golden-angle placement on the upper dome, clear of the spots
@@ -477,12 +512,12 @@ function geos() {
     for (let i = 0; i < 40 && placed < 7; i++) {
       const phi = i * 2.39996 + 0.4;
       const a = 0.32 + 0.62 * ((i * 0.618) % 1);
-      capPt(phi, a, -0.012, P, N);
+      onDome(phi, a, -0.012, P, N);
       if (!clear(P, 0.085)) continue;
       basis(N, new Vector3(Math.sin(phi), -1, Math.cos(phi)), X, Y, Z); // Z down the slope
-      tip(X, Y, Z, -0.12);
+      tip(X, Y, Z, -0.05);
       const w = 0.085 + 0.02 * hash01(i, 13, 6);
-      setTRS(m, P, X, Y, Z, w, 0.024, w * 0.9);
+      setTRS(m, P, X, Y, Z, w, 0.016, w * 0.9);
       out.push({ geo: scale, m: m.clone(), tone: placed % 2 ? 1.05 : 1.1 });
       placed++;
     }
@@ -490,10 +525,10 @@ function geos() {
     for (let i = 0; i < 60 && warts < 10; i++) {
       const phi = i * 2.39996 + 1.9;
       const a = 0.18 + 0.95 * ((i * 0.381) % 1);
-      capPt(phi, a, -0.004, P, N);
+      onDome(phi, a, -0.007, P, N);
       if (!clear(P, 0.065)) continue;
       const s = 0.026 + 0.012 * hash01(i, 15, 7);
-      out.push({ geo: wart, m: at(P, N, new Vector3(0, 0, 1), s, s * 0.45, s), tone: 1.15 });
+      out.push({ geo: wart, m: at(P, N, new Vector3(0, 0, 1), s, s * 0.32, s), tone: 1.15 });
       warts++;
     }
     const GILLS = 22;
@@ -528,8 +563,8 @@ function geos() {
     for (const side of [-1, 1]) {
       const zr = Math.sqrt(Math.max(0, stalkR(0.23) ** 2 - 0.07 * 0.07)) + 0.006;
       out.push({ geo: bar, m: new Matrix4().compose(new Vector3(side * 0.07, 0.23, zr), new Quaternion().setFromEuler(new Euler(0, side * -0.3, side * 0.35)), new Vector3(1, 1, 1)) });
-      const zb = Math.sqrt(Math.max(0, stalkR(0.268) ** 2 - 0.06 * 0.06)) + 0.006;
-      out.push({ geo: brow, m: new Matrix4().compose(new Vector3(side * 0.06, 0.268, zb), new Quaternion().setFromEuler(new Euler(0, side * -0.3, side * -0.45)), new Vector3(1, 1, 1)) });
+      const zb = Math.sqrt(Math.max(0, stalkR(0.28) ** 2 - 0.06 * 0.06)) + 0.006;
+      out.push({ geo: brow, m: new Matrix4().compose(new Vector3(side * 0.06, 0.28, zb), new Quaternion().setFromEuler(new Euler(0, side * -0.3, side * 0.45)), new Vector3(1, 1, 1)) });
     }
     return out;
   });
