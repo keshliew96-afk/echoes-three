@@ -429,7 +429,7 @@ function tankRig(facet = true) {
 // --- 5. the flag and the classic rigs -------------------------------------------
 {
   const q = (s) => new URLSearchParams(s);
-  check('the pilot plays the Wyrm and the Tank by default', MODEL_STANDARD.wyrm === true && MODEL_STANDARD.tank === true && facetOn('wyrm', q('')) && facetOn('tank', q('')) && !facetOn('stag', q('')));
+  check('the pilot plays the Wyrm and the Tank by default', MODEL_STANDARD.wyrm === true && MODEL_STANDARD.tank === true && facetOn('wyrm', q('')) && facetOn('tank', q('')) && !facetOn('heron', q('')));
   check('?facet=0 turns every model classic', !facetOn('wyrm', q('facet=0')) && !facetOn('tank', q('facet=0')));
   check('?facet=wyrm keeps only the Wyrm faceted', facetOn('wyrm', q('facet=wyrm')) && !facetOn('tank', q('facet=wyrm')));
   const classic = createCritter('tank', { facet: false });
