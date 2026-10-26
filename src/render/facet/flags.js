@@ -1,15 +1,38 @@
 // MODEL STANDARD (docs/MODEL_STANDARD.md): which models play the faceted
 // model standard. The pilot rebuilt the Barrow Wyrm and the Tank; the Level I
-// slice adds the Hollow Stag, the Thornmother and the Gloam Wolf, then the
-// Briar Knight and the Moss Hart; the heroes slice adds the Healer and the
-// Swordsman. The classic rigs stay in the code beside them.
+// slices add the Hollow Stag, the Thornmother, the Gloam Wolf and the eight
+// Level I foes (render/enemies/facet/), then the Briar Knight and the
+// Moss Hart (render/enemies/champfacet/); the heroes slice adds the Healer and
+// the Swordsman. The classic rigs stay in the code beside them.
 //
 // A harness build reads `?facet=` to compare (a player build never sees it):
 //   ?facet=0       every model classic
 //   ?facet=wyrm    only the listed models faceted (comma list: wyrm,tank,healer,swordsman)
 import { pageQuery } from '../../app/harness.js';
 
-export const MODEL_STANDARD = Object.freeze({ wyrm: true, tank: true, healer: true, swordsman: true, stag: true, thornmother: true, gloamwolf: true, briar_knight: true, moss_hart: true });
+export const MODEL_STANDARD = Object.freeze({
+  wyrm: true,
+  tank: true,
+  // The heroes.
+  healer: true,
+  swordsman: true,
+  // The Level I bosses.
+  stag: true,
+  thornmother: true,
+  gloamwolf: true,
+  // The Level I foes (data/levels.js row 1: its roster and campaign roster).
+  boar: true,
+  mantis: true,
+  quillback: true,
+  rotcap: true,
+  wasp: true,
+  thornling: true,
+  owl: true,
+  lasher: true,
+  // The Level I champions.
+  briar_knight: true,
+  moss_hart: true,
+});
 
 export function facetOn(kind, query = pageQuery()) {
   const q = query.get('facet');

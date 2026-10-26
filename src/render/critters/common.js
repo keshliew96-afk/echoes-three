@@ -438,6 +438,17 @@ export function addInstancedInk(mesh, px = INK_PX) {
   return hull;
 }
 
+// A plain mesh's hull at its own width (docs/MODEL_STANDARD.md "Foes"): a
+// baked row of small parts (a foe's quills, plates, bristles) carries the
+// parts kit's thinner line, not the 2.7 px silhouette ink.
+export function addPartInk(mesh, px) {
+  const hull = new Mesh(inkHullGeometry(mesh.geometry), getInstancedInkMaterial(px));
+  hull.name = `${mesh.name || 'parts'}-ink`;
+  hull.userData.inkHull = true;
+  mesh.add(hull);
+  return hull;
+}
+
 // Toon mesh + ink in one call — the default body-part constructor.
 export function part(geometry, colorHex, { ink = true, mat = null } = {}) {
   const m = new Mesh(geometry, mat || toonMaterial({ color: colorHex }));

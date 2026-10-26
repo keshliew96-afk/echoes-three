@@ -30,8 +30,9 @@ export function createTimeline(id, label, phases, { cues = [] } = {}) {
       return i === undefined ? 0 : starts[i];
     },
     // { t, index, id, label, k } with k = 0..1 inside the phase. A time past
-    // the end samples the last phase at k = 1 (the settle has landed).
-    sample(t) {
+    // the end samples the last phase at k = 1 (the settle has landed). `out`
+    // (optional) is filled instead of a new object (a pose every frame).
+    sample(t, out = null) {
       const tt = t < 0 ? 0 : t > total ? total : t;
       let i = phases.length - 1;
       for (let j = 0; j < phases.length; j++) {
@@ -41,7 +42,14 @@ export function createTimeline(id, label, phases, { cues = [] } = {}) {
         }
       }
       const p = phases[i];
-      return { t: tt, index: i, id: p.id, label: p.label, k: p.dur > 0 ? clamp01((tt - starts[i]) / p.dur) : 1 };
+      const k = p.dur > 0 ? clamp01((tt - starts[i]) / p.dur) : 1;
+      if (!out) return { t: tt, index: i, id: p.id, label: p.label, k };
+      out.t = tt;
+      out.index = i;
+      out.id = p.id;
+      out.label = p.label;
+      out.k = k;
+      return out;
     },
     // The lab's readout, e.g. "0.8s · Ash Breath: strike".
     readout(t) {

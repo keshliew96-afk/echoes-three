@@ -35,6 +35,8 @@ import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
 import { SHOT_CORE, HIDE } from './style.js';
 import { vfxFoeShotColor, vfxSpellHit, spellFlashLevel } from '../../data/vfx.js';
 import { ARCH_BUILDERS, CROWN_Y, makeEliteMark } from './archetypes.js';
+// MODEL STANDARD (docs/MODEL_STANDARD.md "Foes"): the faceted Level I foes.
+import { facetFoeBuilders } from './facet/index.js';
 import { createTelegraphShapes } from './shapes.js';
 import { createContentExtras } from './extras.js';
 import { createAffixLayer } from './affixes.js';
@@ -71,7 +73,7 @@ const EMBER_HZ = 34; // ember motes/s over a live telegraph (r2: the column has 
 const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
 const WALK_HZ = 2.6; // trot cycle per u of travel feel (phase per u below)
 
-const BUILDERS = { boar: buildBoar, mantis: buildMantis, ...ARCH_BUILDERS };
+const BUILDERS = { boar: buildBoar, mantis: buildMantis, ...ARCH_BUILDERS, ...facetFoeBuilders() };
 const RIG_KINDS = new Set(Object.keys(BUILDERS));
 
 export function createEnemyLayer({ stage, world, bus, cosmetic }) {
@@ -290,8 +292,8 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   let warmed = false;
   function prewarm() {
     warmed = true;
-    warmPark(root, buildBoar(cosmetic).group);
-    warmPark(root, buildMantis(cosmetic).group);
+    warmPark(root, BUILDERS.boar(cosmetic).group);
+    warmPark(root, BUILDERS.mantis(cosmetic).group);
     warmPark(root, buildWaystone().group);
     warmPark(root, makeAttackTelegraph().group);
     warmPark(root, makeSpawnShimmer(cosmetic).group);
