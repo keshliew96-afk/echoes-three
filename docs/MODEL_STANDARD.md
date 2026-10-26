@@ -91,6 +91,12 @@ hull, drawn per instance from the part's own `instanceMatrix` buffer.
   `render/allies/index.js` on `ally_basic` / `ally_cast`, and from the camp's seat casts),
   `lab` and `modelStandard`. The classic rigs ignore all three.
 - The classic rigs (`boss/wyrm.js`, `critters/tank.js`) are untouched and stay beside them.
+- The hit reaction and the render hold (v0.5.333, `docs/HIT_FEEDBACK.md` "The hit and the
+  kill") need nothing from a rig: the foe and boss layers wrap its `body` (else
+  `group.children[0]`) in a `hit-react` node and squash that, and every layer poses a rig
+  with the held clock (`renderHold.time(t)`, `renderHold.rigDt(dt)`), so a rig's own clip
+  freezes on the hit frame. A rig whose body must not bend gets a rope or coil entry in
+  `src/render/react.js`.
 
 ## The model lab (`?modellab=1`, harness only)
 

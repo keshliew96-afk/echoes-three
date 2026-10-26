@@ -39,6 +39,7 @@ export const SUITE = [
   { file: 'tools/lineup-probe.mjs', args: [], what: 'the party lineup' },
   { file: 'tools/healer-restore-probe.mjs', args: [], what: 'the original healer, the mouse model removed' },
   { file: 'tools/model-standard-probe.mjs', args: [], what: 'the model standard pilot: faceted Wyrm and Tank, timelines, locked feet' },
+  { file: 'tools/vfx-hit-feedback-probe.mjs', args: [], what: 'the hit and the kill: render hold, hit reaction, kill pop, contact bloom, numbers, kill rumble' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
   { file: 'tools/champions-probe.mjs', args: [], what: 'champion rooms' },
   { file: 'tools/vaults-probe.mjs', args: [], what: 'keys and vaults' },

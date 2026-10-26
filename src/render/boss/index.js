@@ -45,6 +45,8 @@ import { releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { STAG } from '../../sim/boss.js';
 import { impactFx } from '../vfx/hub.js';
+import { renderHold } from '../hold.js';
+import { hitNode, resetNode, measureBody, createReaction, armReaction, evalReaction, writeReaction, createEnvClock } from '../react.js';
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
@@ -166,6 +168,9 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     rig.group.scale.set(1, 1, 1);
     rig.group.visible = true;
     rig.setFlash(0);
+    // The hit reaction's node (render/react.js), back at rest: rigs are
+    // pooled, so one must never come back squashed.
+    resetNode(hitNode(rig));
     return rig;
   }
 
@@ -173,6 +178,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     root.remove(rig.group);
     rig.group.scale.set(1, 1, 1);
     rig.setFlash(0);
+    resetNode(rig.hitNode);
     const pool = spareByKind[rig.kind] ?? spareRigs;
     if (pool.length < 2) pool.push(rig);
   }
@@ -186,6 +192,9 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   // fire can no longer hold the body at peak.
   bus.on('hit', (ev) => {
     if (!rec || ev.target !== rec.id) return;
+    // R5: the squash and flinch at half, never a hop (a boss is never pushed).
+    // Armed before the flash's refractory gap: every hit reacts.
+    armReaction(rec.react, ev, rec.e);
     if (ev.tick - rec.flashStartTick < BOSS_FLASH.refractoryTicks) return;
     rec.flashStartTick = ev.tick;
   });
@@ -226,6 +235,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   bus.on('boss_magma_dive', (ev) => burstAt({ ...ev, radius: ev.radius ?? 2.0 }));
   bus.on('death', (ev) => {
     if (!rec || ev.id !== rec.id) return;
+    resetNode(rec.rig.hitNode); // the collapse owns the body now
     rec.rig.setFlash(BOSS_FLASH.peak);
     dying.push({ rig: rec.rig, age: 0 });
     dropRing();
@@ -334,10 +344,18 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
 
   let lastElapsed = null;
 
+  const env = createEnvClock();
+  const _react = {};
   function update(tSec, alpha) {
     const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastElapsed));
     lastElapsed = tSec;
     const tick = world.tick;
+    // Render hold on hitstop (render/hold.js): the clips and the collapse
+    // pause for the freeze. Every pose of a rig takes the held clock (a
+    // faceted Wyrm resets its coil if t runs backwards).
+    const rdt = renderHold.rigDt(dt);
+    const tPose = renderHold.time(tSec);
+    const envNow = env.step(tick, alpha);
     // A dozen frames in: the boot burst is over, nothing is being fought yet.
     if (!warmed && ++warmFrames > 12) prewarm();
 
@@ -366,6 +384,9 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
           telegraphK: 0,
           lungeK: 0,
           flashStartTick: -999,
+          e: ent,
+          react: createReaction(ent.kind, { boss: true }),
+          body: measureBody(`boss:${ent.kind}`, rig.hitNode),
         };
         darkenRoom();
       }
@@ -378,19 +399,20 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       let dy = targetYaw - rec.yaw;
       while (dy > Math.PI) dy -= Math.PI * 2;
       while (dy < -Math.PI) dy += Math.PI * 2;
-      rec.yaw += dy * (1 - Math.exp(-YAW_RATE * dt));
+      rec.yaw += dy * (1 - Math.exp(-YAW_RATE * rdt));
       rec.rig.setYaw(rec.yaw);
 
       const simSpeed = Math.hypot(ent.x - ent.px, ent.z - ent.pz) * TICK_HZ;
-      rec.walkPhase += simSpeed * dt * Math.PI * WALK_HZ;
+      rec.walkPhase += simSpeed * rdt * Math.PI * WALK_HZ;
       const telTarget = ent.telegraph ? 1 : 0;
-      rec.telegraphK += (telTarget - rec.telegraphK) * (1 - Math.exp(-12 * dt));
+      rec.telegraphK += (telTarget - rec.telegraphK) * (1 - Math.exp(-12 * rdt));
       const lungeTarget = ent.lungeTicksLeft > 0 || ent.mode === 'dash' || ent.mode === 'charge' || ent.mode === 'rush' || ent.mode === 'cut' || ent.mode === 'leap' || ent.mode === 'flop' || ent.mode === 'dive' ? 1 : 0;
-      rec.lungeK += (lungeTarget - rec.lungeK) * (1 - Math.exp(-18 * dt));
+      rec.lungeK += (lungeTarget - rec.lungeK) * (1 - Math.exp(-18 * rdt));
 
       const hpFrac = Math.max(0, ent.hp / ent.maxHp);
+      rec.e = ent;
       rec.rig.pose({
-        t: tSec,
+        t: tPose,
         walkPhase: rec.walkPhase,
         moveK: Math.min(1, simSpeed / 1.4),
         telegraphK: rec.telegraphK,
@@ -407,6 +429,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
           ? BOSS_FLASH.peak * (1 - flashAge / BOSS_FLASH.ticks)
           : 0;
       rec.rig.setFlash(lit);
+      // R2, R3, R5: the half squash and flinch (render/react.js).
+      writeReaction(rec.rig.hitNode, rec.react, evalReaction(rec.react, envNow, _react), rec.body, 1);
 
       // Lane / cone telegraphs (kit bosses): the pooled Ember shapes.
       const tk = ent.telegraph ? ent.telegraph.kind : null;
@@ -474,7 +498,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     // squashes into the floor and the light goes out.
     for (let i = dying.length - 1; i >= 0; i--) {
       const d = dying[i];
-      d.age += dt;
+      d.age += rdt;
       const k = d.age / DEATH_SEC;
       if (k >= 1) {
         // The dead rig goes back to the pool: its lights were parented to the
@@ -486,7 +510,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
       const squash = 1 - k * 0.85;
       d.rig.group.scale.set(1 + k * 0.35, Math.max(0.02, squash), 1 + k * 0.35);
       d.rig.setFlash(Math.max(0, 1 - k * 1.6));
-      d.rig.pose({ t: tSec, walkPhase: 0, moveK: 0, telegraphK: 0, lungeK: 0, hpFrac: 0, e: null });
+      d.rig.pose({ t: tPose, walkPhase: 0, moveK: 0, telegraphK: 0, lungeK: 0, hpFrac: 0, e: null });
     }
 
     frameBoss(dt); // last word on the camera this frame (room 8 only)

@@ -53,6 +53,7 @@ import {
 import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
+import { HOLD_CAP } from '../hold.js';
 
 export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400, head: 64 }); // PR 2 raised them for the foes; PR 3 added heads
 
@@ -688,6 +689,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.cx = o.x;
     s.cz = o.z;
     s.age = 0;
+    s.owe = 0;
     s.delay = o.delay ?? 0;
     s.life = life;
     s.obj.visible = s.delay <= 0;
@@ -1297,13 +1299,37 @@ export function createTemplateKit({ stage, cosmetic }) {
     [blasts, stepBlast],
     [heads, stepHead],
   ];
-  const liveCount = { dust: 0, bits: 0, sparks: 0 };
-  function update(dt) {
+  const liveCount = { dust: 0, bits: 0, sparks: 0, held: 0 };
+  // Render hold on hitstop (render/hold.js, VFX_HIT_RULES F1): a blade
+  // template's blaze holds its sweep and a blast its burst, while the shared
+  // shader time (the flame licks, the glitch) keeps running, so a held trail
+  // still flickers. Rings, circles, beams, heads and the particle clouds run
+  // on. A blast finishes its pop (0.05 s) before it may pause. -1: never held.
+  const holdFloor = (pool, s) => (pool === blazes ? (s.ring ? -1 : 0) : pool === blasts ? 0.05 : -1);
+  // hold: the render hold (renderHold), or null (the model lab, harness
+  // scenes).
+  function update(dt, hold = null) {
     time += dt;
+    const due = hold ? hold.due : 0;
+    liveCount.held = 0;
     for (const [pool, step] of POOLS) {
       for (const s of pool.slots) {
         if (!s.live) continue;
-        s.age += dt;
+        let d = dt;
+        if (hold) {
+          const floor = holdFloor(pool, s);
+          if (floor >= 0) {
+            if (due > 0 && s.age > 0) s.owe = Math.min(HOLD_CAP, (s.owe || 0) + due);
+            const t0 = s.age - s.delay;
+            if (s.owe > 0 && (t0 < 0 || t0 >= floor)) {
+              const h = Math.min(s.owe, d);
+              s.owe -= h;
+              d -= h;
+              liveCount.held += 1;
+            }
+          }
+        }
+        s.age += d;
         const t = s.age - s.delay;
         if (t < 0) continue;
         if (!s.obj.visible) s.obj.visible = true;
@@ -1312,7 +1338,7 @@ export function createTemplateKit({ stage, cosmetic }) {
           s.obj.visible = false;
           continue;
         }
-        step(s, t, dt);
+        step(s, t, d);
       }
     }
     liveCount.dust = starCloud.step(dt);
@@ -1325,6 +1351,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       for (const s of pool.slots) {
         if (s.live) n += 1;
         s.live = false;
+        s.owe = 0;
         s.obj.visible = false;
       }
     starCloud.clear();
@@ -1334,7 +1361,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     return n;
   }
   function counts() {
-    return { circles: circles.live(), beams: beams.live(), blazes: blazes.live(), blasts: blasts.live(), heads: heads.live(), dust: liveCount.dust, bits: liveCount.bits, sparks: liveCount.sparks };
+    return { circles: circles.live(), beams: beams.live(), blazes: blazes.live(), blasts: blasts.live(), heads: heads.live(), dust: liveCount.dust, bits: liveCount.bits, sparks: liveCount.sparks, held: liveCount.held };
   }
   // Camp warm-up: one slot of each pool drawn for a few frames, and one
   // particle of each cloud parked out of sight, so no program compiles in

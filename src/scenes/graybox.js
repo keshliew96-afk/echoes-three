@@ -39,6 +39,7 @@ import { createDecalPool } from '../render/vfx/decals.js';
 import { setImpactFx, impactFx } from '../render/vfx/hub.js';
 import { sharedGeo } from '../render/geocache.js';
 import { service } from '../app/registry.js'; // M1: gameplay.screenshake (SHAKE-SCALE)
+import { renderHold } from '../render/hold.js';
 
 // Graybox scaffold numbers (render-only): wall height 0.75 u sits inside the
 // §13 band (70-80% of the 1.05 u standing height — never fully occludes);
@@ -267,6 +268,8 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
       kind: partyVictim ? 'incoming' : 'damage',
       crit: ev.crit,
       who,
+      tick: ev.tick,
+      absorbed: ev.absorbed ?? 0,
     });
     // REFERENCE_BAR check 5 ("a single hit reads as an event"): every hit
     // throws debris + a spark + a smoke puff along the impact direction, so a
@@ -284,6 +287,9 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
   bus.on('heal', (ev) => {
     numbers.spawn({ x: ev.x, z: ev.z, amount: ev.amount, kind: 'heal', crit: ev.crit });
   });
+  // THE HIT AND THE KILL (docs/HIT_FEEDBACK.md): a hitstop holds the pop of
+  // the numerals its hit printed, through the freeze.
+  bus.on('hitstop', (ev) => numbers.hold?.(ev.tick, ev.ticks));
   bus.on('death', (ev) => {
     const rig = dummies.get(ev.id);
     if (rig) {
@@ -491,10 +497,12 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
       }
     }
 
-    // Kill pops: stretch up + narrow, then collapse flat and vanish.
+    // Kill pops: stretch up + narrow, then collapse flat and vanish. Held
+    // through the kill freeze (render/hold.js), as the foes' pop is.
+    const rdt = renderHold.rigDt(dt);
     for (let i = dying.length - 1; i >= 0; i--) {
       const d = dying[i]; // rig group stays parented to root through the pop
-      d.age += dt;
+      d.age += rdt;
       if (d.age >= POP_TOTAL_SEC) {
         root.remove(d.rig.group);
         dying.splice(i, 1);
