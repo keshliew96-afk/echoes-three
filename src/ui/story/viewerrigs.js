@@ -4,6 +4,7 @@
 import { buildBoar } from '../../render/enemies/boar.js';
 import { buildMantis } from '../../render/enemies/mantis.js';
 import { ARCH_BUILDERS } from '../../render/enemies/archetypes.js';
+import { facetFoeBuilders } from '../../render/enemies/facet/index.js';
 import { buildStag } from '../../render/boss/stag.js';
 import { buildHeron } from '../../render/boss/heron.js';
 import { buildWyrm } from '../../render/boss/wyrm.js';
@@ -22,6 +23,7 @@ export const BUILDERS = {
   boar: buildBoar,
   mantis: buildMantis,
   ...ARCH_BUILDERS,
+  ...facetFoeBuilders(), // the model standard's Level I foes (docs/MODEL_STANDARD.md)
   stag: facetOn('stag') ? buildStagFacet : buildStag, // model standard (docs/MODEL_STANDARD.md)
   heron: buildHeron,
   wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, // the model standard pilot (docs/MODEL_STANDARD.md)

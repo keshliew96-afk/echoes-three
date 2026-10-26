@@ -862,6 +862,15 @@ cue('thorns', { levelDb: -14, maxVoices: 2, cooldownMs: 90 }, (k, t, d) =>
     k.noise(d, t + 0.025, { f0: 2600, q: 5, d: 0.05, gain: 0.7 })
   )
 );
+// A thornling plants its thicket: a low root thud, then a splintering crackle.
+cue('thorn_plant', { levelDb: -15, maxVoices: 2, cooldownMs: 120 }, (k, t, d, p) =>
+  Math.max(
+    k.tone(d, t, { f0: P(p, 110), f1: P(p, 55), a: 0.004, d: 0.14, gain: 0.8 }),
+    k.noise(d, t, { type: 'lowpass', f0: 900, f1: 300, q: 1.2, a: 0.004, d: 0.12, gain: 0.6 }),
+    k.noise(d, t + 0.05, { f0: 3200, q: 4, d: 0.06, gain: 0.55 }),
+    k.noise(d, t + 0.09, { f0: 2400, q: 5, d: 0.07, gain: 0.4 })
+  )
+);
 // Batch two (content plan 5 slice 10).
 // Gusting: air drawn in (a rising whoosh), then the gust (a wide blast and a
 // low thump under it).
@@ -969,6 +978,7 @@ export const DEFAULT_EVENT_CUES = {
   intent_denied: (ev) => [{ cue: ev.reason === 'empty_slot' ? 'deny_empty' : 'deny_cd' }],
   telegraph_start: (ev, h) => one('telegraph', at(ev, h, ev.id)),
   telegraph_resolve: (ev, h) => one('telegraph_hit', at({}, h, ev.id)),
+  thorn_plant: (ev, h) => one('thorn_plant', at(ev, h, ev.id)),
   boss_quake_start: (ev, h) => one('quake_warn', at(ev, h, ev.id)),
   boss_quake_resolve: (ev, h) => one('quake_hit', at(ev, h, ev.id)),
   boss_trample: (ev, h) => one('trample', at(ev, h, ev.id)),
