@@ -1073,7 +1073,43 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       animeFx.play(ev.x, ev.z);
     }
     classImpact(vfxClassStyle(cls), ev.x, ev.z, ev.dirX || 0, ev.dirZ || 0, { crit: !!ev.crit, big: ev.delivery !== 'basic' });
+    spatter(ev, atk);
   });
+
+  // D2 (VFX_HIT_RULES §6.2 m): a hit leaves a mess, in the body's own matter
+  // colour (never red: Ember and the crimsons are taken). A splash on the
+  // floor behind the body 2 frames on, then droplets back toward the hitter
+  // from +3 frames, landing short of the body on its side. The splash stays
+  // a few seconds; one per body every SPATTER.every s keeps the marks pool
+  // for the skills.
+  const SPATTER = Object.freeze({ drops: [8, 14], splash: 0.34, life: 3.5, every: 0.45, behind: 0.35 });
+  const spatterAt = new Map(); // body id -> the time of its last splash
+  const SPATTER_SOFT = new Set(['aura', 'burn', 'molten', 'thorns', 'kindle', 'sear', 'hazard']); // ticks, not blows
+  let fxClock = 0; // s since boot (update)
+  function spatter(ev, atk) {
+    if (SPATTER_SOFT.has(ev.shape) || !(ev.amount > 0)) return;
+    let dx = ev.dirX || 0;
+    let dz = ev.dirZ || 0;
+    if (Math.hypot(dx, dz) < 1e-4 && atk) {
+      dx = ev.x - atk.x;
+      dz = ev.z - atk.z;
+    }
+    const l = Math.hypot(dx, dz);
+    if (l < 1e-4) return;
+    dx /= l;
+    dz /= l;
+    const matter = vfxMatterColor(vfxEnemyStyle(ev.kind).matter);
+    const now = fxClock;
+    if (now - (spatterAt.get(ev.target) ?? -9) >= SPATTER.every) {
+      spatterAt.set(ev.target, now);
+      if (spatterAt.size > 128) spatterAt.clear();
+      kit.mark({ x: ev.x + dx * SPATTER.behind, z: ev.z + dz * SPATTER.behind, radius: SPATTER.splash, kind: 'splash', angle: Math.atan2(dz, dx), stretch: 1.3, stain: matter, glow: null, life: SPATTER.life, opacity: 0.45, delay: 2 / 60 });
+    }
+    const x = ev.x;
+    const z = ev.z;
+    const n = Math.round(rnd(...SPATTER.drops));
+    after(3 / 60, () => spray('shard', x, 0.5, z, n, { color: matter, tile: SHARD_TILE.drop, dir: { x: -dx, z: -dz }, dirBias: 0.85, speed: [1.6, 2.6], up: [0.6, 1.2], size: [0.04, 0.07], life: [0.35, 0.55], gravity: 7 }));
+  }
   bus.on('death', (ev) => {
     if (ev.kind === 'player' || ev.kind === 'ally') return;
     // k and o: an elite, champion or boss kill plays the local anime frame
@@ -6706,6 +6742,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.update(dt, renderHold);
     tk.update(dt, renderHold);
     animeFx.update(dt);
+    fxClock += dt;
   }
 
   // C1: a small kick against the fire direction on your own seat's shots
@@ -7641,6 +7678,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     camfx.clear();
     animeFx.clear();
     animeTick.clear();
+    spatterAt.clear();
     relic6Fx.teardown();
     tplFx.teardown();
     foeFx.teardown();

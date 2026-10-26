@@ -20,8 +20,10 @@
 //
 // Render-only: reads sim entities and events, never writes either; all
 // randomness from the COSMETIC stream.
-import { vfxFoeTone, vfxFoeWeight, vfxTemplate, FOE_TEMPLATE } from '../../data/vfx.js';
+import { CylinderGeometry, ConeGeometry, Group, Mesh, MeshBasicMaterial } from 'three';
+import { vfxFoeTone, vfxFoeWeight, vfxTemplate, vfxSkillClass, FOE_TEMPLATE } from '../../data/vfx.js';
 import { TICK_HZ } from '../../core/constants.js';
+import { PALETTE } from '../../data/palette.js';
 
 const KINDS = new Set(['bolt', 'skillbolt', 'eshot', 'eglob']);
 const MODE = { blade: 'fire', magic: 'celestial', scifi: 'holo' };
@@ -45,6 +47,8 @@ export const SHOT_FX = Object.freeze({
   lights: 6, // at most this many shots light the floor at once
   sparks: [5, 10], // P4: a star of short pale streaks where a shot lands
 });
+// D2: an arrow that lands stays stuck in the floor a few seconds.
+export const STUCK = Object.freeze({ cap: 10, life: 3, fade: 0.3, tilt: 0.6, back: 0.28 });
 const P4_PALE = '#E7D5A3';
 const P4_CORE = '#FFFCC6';
 
@@ -132,6 +136,52 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
     }
   }
 
+  // ------------------------------------------------- arrows in the floor --
+  const stuck = [];
+  {
+    const shaftGeo = new CylinderGeometry(0.014, 0.014, 0.34, 5);
+    shaftGeo.translate(0, 0.17, 0);
+    const fletchGeo = new ConeGeometry(0.045, 0.1, 4);
+    fletchGeo.translate(0, 0.3, 0);
+    for (let i = 0; i < STUCK.cap; i++) {
+      const g = new Group();
+      const mat = new MeshBasicMaterial({ color: PALETTE.bone, transparent: true });
+      g.add(new Mesh(shaftGeo, mat));
+      g.add(new Mesh(fletchGeo, mat));
+      g.visible = false;
+      kit.root.add(g);
+      stuck.push({ g, mat, t: 0, live: false });
+    }
+  }
+  let stuckCursor = 0;
+  function stick(x, z, dx, dz) {
+    const s = stuck.find((q) => !q.live) ?? stuck[stuckCursor++ % stuck.length];
+    s.g.position.set(x, 0, z);
+    // Nose down, tail up and back along its flight.
+    s.g.rotation.set(0, 0, 0);
+    s.g.rotation.order = 'YXZ';
+    s.g.rotation.y = Math.atan2(dx, dz);
+    s.g.rotation.x = -STUCK.tilt;
+    s.mat.opacity = 1;
+    s.t = 0;
+    s.live = true;
+    s.g.visible = true;
+    count('arrow', 'stuck');
+  }
+  function stuckFrame(dt) {
+    for (const s of stuck) {
+      if (!s.live) continue;
+      s.t += dt;
+      if (s.t >= STUCK.life) {
+        s.live = false;
+        s.g.visible = false;
+        continue;
+      }
+      s.mat.opacity = Math.min(1, (STUCK.life - s.t) / STUCK.fade);
+    }
+  }
+  const isArrow = (rec) => !rec.foe && vfxSkillClass(rec.src) === 'archer';
+
   const litCount = () => {
     let n = 0;
     for (const r of live.values()) if (r.lt) n++;
@@ -210,6 +260,7 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
     return rec;
   }
   function frame(dt, entities) {
+    stuckFrame(dt);
     const seen = new Set();
     const tick = world.tick ?? 0;
     for (const e of entities) {
@@ -267,6 +318,7 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
       if (rec.h && rec.h.token === rec.token) tk.endHead(rec.h, ended ? 0.08 : SHOT_FX.drainSec, !ended);
       if (rec.lt) kit.endLight(rec.lt, rec.ltTok, 0.1);
       if (!ended) landSparks(rec);
+      if (why !== 'room_clear' && why !== 'charm' && isArrow(rec)) stick(rec.x - rec.dx * (why === 'impact' ? STUCK.back : 0), rec.z - rec.dz * (why === 'impact' ? STUCK.back : 0), rec.dx, rec.dz);
       if (why === 'impact') {
         const r = { ...rec };
         after(SHOT_FX.holdSec, () => burst(r, why));
@@ -307,6 +359,10 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
     shooter.clear();
     cause.clear();
     demos.length = 0;
+    for (const s of stuck) {
+      s.live = false;
+      s.g.visible = false;
+    }
   }
   const counts = () => Object.fromEntries([...tally].map(([k, v]) => [k, { ...v }]));
   return { frame, showcase, teardown, counts };
