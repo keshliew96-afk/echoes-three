@@ -321,6 +321,11 @@ registerKilnCues(service('audio'));
 // (src/audio/hitcues.js).
 import { registerHitCues } from './audio/hitcues.js';
 registerHitCues(service('audio'), { world, settings: app.settings });
+// THE CAST AND THE SHOT (docs/HIT_FEEDBACK.md): impact families, the cast
+// whoosh, the shot whiz and the wall ping (src/audio/impactcues.js).
+import { registerImpactCues } from './audio/impactcues.js';
+import { DEFAULT_EVENT_CUES } from './audio/cues.js';
+registerImpactCues(service('audio'), { world, defaults: DEFAULT_EVENT_CUES });
 // @gnt:AUDIO end
 
 const buildScene = await SCENES[sceneKey]();
