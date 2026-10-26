@@ -163,10 +163,14 @@ export const THORNLING_PLANT = Object.freeze({
 export const THORNLING_ABILITIES = Object.freeze({ plant: THORNLING_PLANT });
 
 // --- Geometry (built once for the session, shared by every thornling) -------
-// The knot: the classic's icosahedron (r 0.24, x1 / x1.15 / x0.9 at y 0.4),
-// one subdivision finer and gnarled by a seeded jitter.
+// The knot: the classic's icosahedron (x1 / x1.15 / x0.9 at y 0.4), one
+// subdivision finer and gnarled by a seeded jitter. The finer sphere is
+// fuller than the classic's 20 flat faces, so its radius is 0.88 of the
+// classic's 0.24: the same 0.41 u across, and the thorns stand ~0.1 u proud
+// of it like the classic's spikes.
+const KNOT_R = 0.24 * 0.88;
 const BODY_C = new Vector3(0, 0.4, 0);
-const BODY_A = new Vector3(0.24, 0.276, 0.216);
+const BODY_A = new Vector3(KNOT_R, KNOT_R * 1.15, KNOT_R * 0.9);
 const UP = new Vector3(0, 1, 0);
 // A point on the knot's surface (and its outward normal) in a direction given
 // by azimuth (0 = +z, the face; + toward its left, +x) and elevation.
@@ -193,6 +197,9 @@ const fz = (g, jitter, seed) => facetize(g, { jitter, seed });
 // 0.31 u) with the classic's broad cone bases, so they still cut a spiky star
 // at play zoom
 const THORN_W = 1.8;
+// and their length over the table's: the tips out at the classic's 0.31 u
+// from the smaller knot
+const THORN_L = 1.28;
 
 let SET = null;
 function geos() {
@@ -211,7 +218,7 @@ function geos() {
   // with a strong value step, the crown faces a step lighter and the
   // underside two steps darker (the value break that reads at play zoom).
   {
-    const g = new IcosahedronGeometry(0.24, 1);
+    const g = new IcosahedronGeometry(KNOT_R, 1);
     const p = g.attributes.position;
     for (let i = 0; i < p.count; i++) {
       const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
@@ -288,7 +295,7 @@ function geos() {
       // (a rose thorn)
       H.copy(EN).addScaledVector(UP, 0.2);
       basis(H, UP, X, Y, Z);
-      setTRS(m, P, X, Y, Z, len * THORN_W, len, len * THORN_W * 0.8);
+      setTRS(m, P, X, Y, Z, len * THORN_W, len * THORN_L, len * THORN_W * 0.8);
       out.push({ geo: thorn, m: m.clone(), tone: 1.1 + 0.06 * (hash01(i, 5, 227) - 0.5) });
       // a thornlet at its foot, leaning its own way (the cluster)
       onKnot(az + 0.27, el - 0.14, P, null, 0.008);
@@ -404,7 +411,7 @@ const GAIT_REACH = 0.11;
 const TOES = [-0.2, -1.15, -(Math.PI - 0.45)];
 const TOE_REACH = 0.058;
 const PIVOT = new Vector3(0, 0.28, 0);
-const CROWN_Y = 0.71;
+const CROWN_Y = 0.68;
 
 export function buildThornlingFacet() {
   const G = geos();
@@ -441,7 +448,7 @@ export function buildThornlingFacet() {
   // weapon: the patch springs from it), the crown (the tell), the face.
   const tipPt = namedPoint(spawn, 'thornling-tip', 0, 0.02, 0.01);
   const crownPt = namedPoint(crown, 'thornling-crown-point', 0, 0.04, 0);
-  const mouth = namedPoint(body, 'thornling-mouth', 0, 0.38, 0.22);
+  const mouth = namedPoint(body, 'thornling-mouth', 0, 0.38, 0.195);
 
   // (reach: how far a planted foot may trail before it must step, inside
   // the root leg's own sideways reach of about 0.114 u)
@@ -481,6 +488,11 @@ export function buildThornlingFacet() {
   const strike = { id: 'plant', tick: 0 };
   let seenPlant = null; // the last e.plantTick this rig has accounted for
   const recover = { t0: -1, from: { ...REST } };
+  // a stamp whose plant tick a stun or a blind pushed later: it eases back
+  // to the gather apex from wherever it was, holds there, and replays
+  const back = { t0: -1, from: { ...REST } };
+  const BACK_SEC = 4 * FRAME;
+  let lastNow = 0; // the previous frame's clock: the ease back starts from that frame's pose
 
   const lab = {
     abilities: THORNLING_ABILITIES,
@@ -512,6 +524,7 @@ export function buildThornlingFacet() {
     // the stamp coils to alternate sides plant to plant (deterministic)
     plant.side = Math.floor(R / PLANT_EVERY) % 2 ? -1 : 1;
     recover.t0 = -1;
+    back.t0 = -1;
   }
 
   // The live plant: the ability's time (s) this frame, or -1 at rest.
@@ -559,6 +572,17 @@ export function buildThornlingFacet() {
         const st = e.status;
         if (st && st.stun && st.stun.untilTick > due) due = st.stun.untilTick;
         if (st && st.blind && st.blind.untilTick > due) due = st.blind.untilTick;
+      }
+      if (due > plant.due && plant.sk > 0 && !resolved) {
+        // the plant tick moved later mid-stamp (a stun or a blind landed on
+        // the plant tick or the one before): the stamp is called off, the
+        // body eases back to the gather apex and holds it while the status
+        // lasts, and the stamp replays against the new tick, so the contact
+        // only shows once the sim plants
+        Object.assign(back.from, cur);
+        back.t0 = Math.min(now, lastNow);
+        plant.sk = 0;
+        plant.gk = 1;
       }
       plant.due = due;
       // the root's progress up to the strike drives the anticipation; the
@@ -670,9 +694,15 @@ export function buildThornlingFacet() {
     if (lab.override) thornlingPlantPose(Math.min(PLANT_TL.duration, Math.max(0, lab.override.t)), cur, 1);
     else {
       const t = livePlant(e, tick + 1, now);
+      lastNow = now;
       if (t >= 0) {
         poseSide = plant.side;
         thornlingPlantPose(t, cur, poseSide);
+        if (back.t0 >= 0) {
+          const x = (now - back.t0) / BACK_SEC;
+          if (x >= 1 || plant.contact !== null) back.t0 = -1;
+          else lerpPose(cur, back.from, cur, smooth(0, 1, x));
+        }
       } else if (recover.t0 >= 0 && now - recover.t0 < 6 * FRAME) {
         // a plant cut short eases home with one small overshoot (B5)
         lerpPose(cur, recover.from, REST, 1 - settle((now - recover.t0) / (6 * FRAME)));
