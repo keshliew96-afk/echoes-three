@@ -31,7 +31,7 @@ const FOES = {
   boar: { label: 'Thorn Boar', y: 0.4, dist: 3.4, side: 1.3, speed: 2.0, loop: 1.8, sound: { strike: 'bite' } },
   mantis: { label: 'Spitting Mantis', y: 0.6, dist: 3.8, side: 1.3, speed: 1.6, loop: 1.6, sound: { strike: 'spit' } },
   quillback: { label: 'Quillback', y: 0.38, dist: 3.2, side: 1.3, speed: 1.5, loop: 1.6, sound: { strike: 'm4b_roll', thud: 'm4b_thud' } },
-  rotcap: { label: 'Rotcap', y: 0.4, dist: 3.2, side: 1.2, speed: 1.2, loop: 1.4, sound: { strike: 'bite' } },
+  rotcap: { label: 'Rotcap', y: 0.32, dist: 3.0, side: 1.2, speed: 1.1, loop: 1.4, sound: { strike: 'bite', burst: 'kill', land: 'telegraph_hit' } },
   wasp: { label: 'Briar Wasp', y: 0.8, dist: 3.4, side: 1.3, speed: 2.7, loop: 1.8, sound: { strike: 'm4b_swoop' } },
   // the game plays no sound for the thornling's root or plant
   thornling: { label: 'Thornling', y: 0.45, dist: 3.2, side: 1.2, speed: 1.3, loop: 1.6, sound: {} },

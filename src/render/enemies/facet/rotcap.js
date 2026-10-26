@@ -13,25 +13,26 @@
 //     Rotcaps shares one buffer per part and the draw calls stay under the
 //     classic's 16: pale crown scales shingled down the dome and pyramidal
 //     warts between the spots, a fringe of radial gill blades showing under
-//     the rim, a ragged veil ring (annulus) under the cap, stalk fibres, a
-//     torn volva cup round the bulb, rooted nub feet with root toes, the
-//     indigo spots as raised warty domes (bright and dim in one unlit call),
-//     angry brow notches over the slit eyes, and a few spore motes hanging
-//     under the gills;
-//   * WORLD-LOCKED FEET (render/facet/legs.js): a waddle on two root nubs,
-//     each pinned to the floor while it carries weight, the body rocking onto
-//     the planted foot and leaning along its real travel (a backpedal leans
-//     back, a sidestep leans aside). The bulb never touches the floor: when a
-//     lean would sink its rim, the body rocks up on its edge instead (rule 2);
+//     the rim, a ragged veil ring (annulus) under the cap, a torn volva cup
+//     hugging the bulb, the indigo spots as raised warty domes (bright and
+//     dim in one unlit call), angry brow notches over the slit eyes;
+//   * WORLD-LOCKED FEET (render/facet/legs.js): a quick waddle on two root
+//     feet (one instanced row: a root leg out of the bulb, a flat nub and
+//     three root toes each), each pinned to the floor while it carries
+//     weight, the body rocking onto the planted foot and leaning along its
+//     real travel (a backpedal leans back, a sidestep leans aside). The bulb
+//     never touches the floor: a lean that would sink its rim rocks the body
+//     up on that edge instead (rule 2);
 //   * a 3-HIT CAP COMBO on its repeating contact bite (Kesh's combo
 //     template): a cap hook from its right across to its left, a reverse
 //     swipe back across with the cap whirling on its stalk, then the biggest:
 //     the held rear-up (stalk tall, cap thrown back, gills bared) snapping
 //     into a cap SLAM that drives the front rim nearly to the floor with the
 //     deepest squash and the biggest spore puff. Each hit's snap back settles
-//     into the next hit's wind-up; the strike lunges into contact (§6.1 B9:
-//     pull back, a lunge step the lead foot steps into, the lean and the
-//     contact squash). A bite the per-target cooldown predicts starts its
+//     into the next hit's wind-up, which already has the next lead foot
+//     stepped in; the strike lunges into contact over it (§6.1 B9: pull back,
+//     the lunge, the lean and the contact squash). A bite the per-target
+//     cooldown predicts starts its
 //     strike early so the contact lands ON the bite tick; an unannounced bite
 //     strikes on its event (contact 2.5 to 3.5 frames after it);
 //   * the other things the sim does, each with a beat: the retreat (e.mode
