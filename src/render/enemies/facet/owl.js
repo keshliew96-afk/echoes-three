@@ -244,7 +244,12 @@ const HAND_X = [-0.06, 0.04, 0.105, 0.155, 0.22, 0.27, 0.335, 0.385, 0.43];
 const HAND_BAND = new Set([2, 4, 6]);
 const handSt = (x) => {
   const u = (x - HAND_X[0]) / (HAND_X[HAND_X.length - 1] - HAND_X[0]);
-  return { x, zl: 0.11 - 0.08 * u ** 2.2, zt: -0.15 + 0.12 * u ** 1.6, t: 0.024 * (1 - 0.55 * u) };
+  // a broad, round owl hand: the chord swells from the wrist's 0.26 to about
+  // 0.36 mid-hand and stays near the classic's 0.34 band length out to the
+  // last band, then the fingered primaries round off the tip
+  const chord = 0.26 + 0.1 * Math.sin(Math.PI * 0.9 * u);
+  const zl = 0.11 + 0.025 * Math.sin(Math.PI * u);
+  return { x, zl, zt: zl - chord, t: 0.024 * (1 - 0.5 * u) };
 };
 const HAND_ST = HAND_X.map((x, i) => ({ ...handSt(x), band: HAND_BAND.has(i) }));
 
