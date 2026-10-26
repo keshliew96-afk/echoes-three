@@ -524,8 +524,11 @@ export function createCampScene(stage, toggles, ctx) {
     // or not; the rigs of the mode coming in forget whatever they heard while
     // they were hidden and still (docs/MODEL_STANDARD.md). The run's rigs
     // reset before its first room_enter, so their spawn still plays.
-    if (!inCamp) for (const c of [arena.healer, ...arena.allies]) c.cue('reset');
-    else applyRunLighting();
+    if (inCamp) applyCampLighting();
+    else {
+      applyRunLighting();
+      for (const c of [arena.healer, ...arena.allies]) c.cue('reset');
+    }
     if (inCamp) applyCampSim();
     else applyRunSim();
   }

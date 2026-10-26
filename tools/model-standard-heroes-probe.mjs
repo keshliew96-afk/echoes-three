@@ -38,7 +38,7 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 const { Box3, Color, Group, Matrix4, Vector3 } = await import('three');
 const { FACET_HEROES } = await import('../src/render/facet/heroes.js');
 const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
-const { FRAME, LUNGE_PITCH_MAX, RECOIL, SHOT, SPAWN, SPAWN_SEC, LEAD, LAG } = await import('../src/render/facet/hero.js');
+const { FRAME, LUNGE_PITCH_MAX, RECOIL, SHOT, SPAWN, SPAWN_SEC, LEAD, LAG, shotAt } = await import('../src/render/facet/hero.js');
 const { createCritter } = await import('../src/render/critters/index.js');
 const { ALLY_CLASSES } = await import('../src/sim/allies.js');
 const { HEALER } = await import('../src/core/constants.js');
@@ -168,6 +168,17 @@ for (const H of FACET_HEROES) {
   }
 
   // --- 3. the blow -----------------------------------------------------------
+  if (H.ranged) {
+    // one shot and no more: the shove eases back once and stays home
+    let lo = 0;
+    let hi = 0;
+    for (let t = 0; t <= 1.25; t += DT) {
+      const v = shotAt(1, t).shove;
+      lo = Math.min(lo, v);
+      hi = Math.max(hi, v);
+    }
+    check('a lone shot\'s shove stays within its reach and eases home', lo >= 0 && hi <= 1 && shotAt(1, 1.2).shove === 0, { lo: r3(lo), hi: r3(hi) });
+  }
   if (!H.ranged) {
     const pulls = hits.map((h) => r3(h.from.rz));
     check('every melee wind-up pulls the weight back before the blow (B9)', hits.every((h) => h.from.rz <= -0.03), pulls);

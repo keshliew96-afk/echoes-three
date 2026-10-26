@@ -243,7 +243,7 @@ export function shotAt(level, since, out = { sw: 1, sh: 1, shove: 0 }) {
     out.sh = 1 - 0.04 * k;
     out.sw = 1 + 0.02 * k;
   }
-  out.shove = since < 2 * FRAME ? ease.out(since / (2 * FRAME)) : Math.max(0, 1 - ease.inOut((since - 2 * FRAME) / SHOT.shoveBack));
+  out.shove = since < 2 * FRAME ? ease.out(since / (2 * FRAME)) : Math.max(0, 1 - ease.inOut(Math.min(1, (since - 2 * FRAME) / SHOT.shoveBack)));
   return out;
 }
 // B7: a new body grows from the floor in about 7 frames with about 10%

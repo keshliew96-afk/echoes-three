@@ -78,20 +78,39 @@ What every model-standard hero shares, lifted out of the pilot Tank:
   - `cue('hitstop', ev)`: the sim froze the world for `ev.ticks`. Every rig holds its whole
     update for that long (clip, attack and feet), except the attacker of that tick, whose
     strike has not reached its contact yet (the sim hits on the press): it plays on to the
-    contact pose and holds there instead (B2). A shooter never waits (its bolt lands later).
+    contact pose and holds the pose there instead (B2), while the world and its own travel
+    move on. The first stop of a tick decides which; a connect that names the attacker
+    after the stop moves the hold to the contact. A shooter never waits (its bolt lands
+    later).
+  - A connect up to 0.25 s after the contact (a guest's late event) still recoils at once.
+  - A hit taken (the `hurt` or `downed` clip) lets the move go over 4 frames into the
+    stance instead of dropping it, so nothing pops; the combo starts over.
+  - A skill enters its timeline just ahead of its release, mid-phase: that phase eases in
+    from the pose the rig had, never a jump.
   - `cue('spawn')`: the grow-in from the floor on a room entry (B7: 7 frames, 10% overshoot).
+  - `cue('reset')` forgets every move, hold and envelope. The camp calls it on the rigs of
+    the mode coming in (a rig hears every cue on the bus, even while hidden and not updated),
+    the run's before its first `room_enter`, so the spawn still plays.
   - The shooter's squash (B3 for shots): 20%, 29%, then 38% wider and up to 10% shorter over
     steady fire, back in about 3 frames with a 4% stretch, a rig-only shove eased back over
-    0.45 s.
+    0.45 s. A shooter's finisher is a spell throw: it keeps its own hop and stretch, so the
+    third shot does not squash and the 38% lands on the fourth.
 - **The lab combo** (`createComboLab`): the three swings at the class's real cadence, each
   contact held as the hitstop holds it (2 ticks; the finisher 3, as a kill), the recoil or
   the squash after it; pure in t, so it rewinds.
 - **Locked feet** (`createFootLock`): each foot pinned to the floor in world space while it
   carries weight, stepping one at a time toward where the body is going, the lunge foot
-  stepping into a lunge. On a hop, a dash or any travel too fast to walk both feet leave the
-  floor and plant where they land; a teleport, a new room or a move with no time passing
-  stands the feet afresh. `walkBody` gives the walk's bob, roll, hip twist and travel lean
-  from the steps.
+  stepping into a lunge. A step that would pass through the body (a turn on the spot)
+  swings round it. On a hop, a dash or any travel too fast to walk (that frame's own speed
+  too, so a dash lifts on its first frame) both feet lift from where they stand, ease to
+  ride the body over 3 frames and plant where they come down. A held frame (a hitstop)
+  leaves planted feet where they are; a teleport or a new room stands them afresh; only
+  the lab's Still stands them on the pose's homes. `place()` sets the feet again after the
+  walk's bob moves the rig. `walkBody` gives the walk's bob, roll, hip twist and travel
+  lean from the steps.
+- **The weapon clears the head**: above the brow it never enters the skull, below it never
+  more than half way in (a chibi shoulder tucks under the jaw at rest). The heroes probe
+  measures every hit and ability frame by frame.
 - **Named points** (`namedPoint`): `hand` and `tip` on every hero (B8), read through
   `critter.pointWorld(name)`.
 - `LUNGE_PITCH_MAX` (0.44 rad, 25°): an attack's lean at contact may pass the critter
@@ -100,7 +119,8 @@ What every model-standard hero shares, lifted out of the pilot Tank:
 
 A hero module exports a SPEC (`id`, `label`, `build`, `hits`, `moves`, `skillAbility`,
 `swingSec`, `comboLab`, `ranged`, `walkSpeed`, `weaponField`, `lab: { abilities, frame, cues }`);
-its build returns the critter contract plus `cue`, `hold`, `comboHitOf`, `points` and `lab`.
+its build returns the critter contract plus `cue`, `hold`, `comboHitOf`, `atContact`,
+`points` and `lab`.
 
 ## The Tank (`src/render/critters/tankfacet.js`)
 
@@ -115,6 +135,9 @@ its build returns the critter contract plus `cue`, `hold`, `comboHitOf`, `points
   2. *Rising bash*: low on the far side, up across to high on the slab side, clear of the face.
   3. *Crushing slam*: overhead on the toes, both paws on the slab, down into the ground
      ahead with a lunge step.
+
+  The slab goes up and comes down round the head on its own side (the wind-up, the strike,
+  the settle into the overhead and the recover swing out by up to 0.2 u), never through it.
 
   Each hit has key poses (wind-up, strike, overshoot) and frame timing: 1.5 frames of
   wind-up (only from rest), 2.5 strike, 2 overshoot, 5 to settle **into the next hit's
@@ -155,13 +178,21 @@ its build returns the critter contract plus `cue`, `hold`, `comboHitOf`, `points
 
 Heavy Slam and Brace now lean into their blow too (the brace sinks forward over the shield).
 
+The review after the re-measure found the slab inside the top of the head in the rising
+bash's high finish, the slam's overhead wind-up and Heavy Slam's gather (one corner of the
+shoulder block came within a fifth of the skull's radius of its centre). The overhead keys moved out to the slab side and back
+(0.37 u out, 0.2 u behind), the high finish 0.1 u further out, and the paths between them
+arc round the head; the probe now holds every hero to it.
+
 ## The Healer (`src/render/critters/healerfacet.js`)
 
 The player's hero. The classic contract stays: the wide closed bell in Sage (12-sided, 2%
 wider so its flats keep the classic's width), the round ears with their blush, the short
 snout, the head proportions and painted face, the staff held out to the side and forward,
 and the classic gem with its exact colour, glow and flare (Bright Heal on the gem only; it
-stays `tip`, so the player's bolts still leave the gem).
+stays `tip`, so the player's bolts still leave the gem: at birth a bolt reads
+`releaseWorld`, where the gem will be at the shot's release, since the bolt is born on the
+press a few frames before the staff gets there).
 
 - **Detail.** A capelet of 21 folded leaves in two brick-laid rows round the shoulders,
   open over the bone bib; a scalloped hem of 18 leaves; a sash of 12 folded plates (the
@@ -218,6 +249,9 @@ cheek markings, and the classic metrics.
   Draw* (Razor Wake, Crimson Edge: the blade presented, the off paw along the edge, a salute).
 - The drawn blade arrives on the contact frame (a per-hit whip makes up the core's
   one-frame weapon lag on a 2-frame strike); the blade's flat turns toward the camera.
+- The crescent's follow-through finishes high in front of the face on the far side (the
+  guard used to pass through the jaw); a hit taken mid Blade Storm lets the turn go over the
+  let-go instead of snapping back.
 
 ## Integration
 
@@ -227,8 +261,11 @@ cheek markings, and the classic metrics.
 - `critters/index.js` builds each registered hero's faceted twin when `facetOn(id)`. The
   rig's `apply` receives the driver's clip name; a rig with `hold` holds its whole update
   through a hitstop. The critter API gains `cue(kind, ev)`, `comboHitOf(ev)`,
-  `pointWorld(name)`, `lab` and `modelStandard`; the classic rigs ignore them (the classic
-  Healer's staff gem still answers `pointWorld('tip')`).
+  `pointWorld(name)`, `releaseWorld(out)`, `lab` and `modelStandard`; the classic rigs
+  ignore them (the classic Healer's staff gem still answers `pointWorld('tip')` and
+  `releaseWorld` as drawn).
+- The dash afterimages ghost a rig's instanced parts as instanced clones of the part's
+  instances at each spawn.
 - The cues come from the game's own events: `render/allies/index.js` forwards `ally_basic`
   and `ally_cast` to the seat's rig, each `hit` to the rig that struck it (`connect`), each
   `hitstop` to every model-standard rig and `room_enter` as `spawn`; `scenes/arena.js` does
@@ -278,9 +315,10 @@ hit's wind-up with no pop anywhere; the lab's cues sit on each contact; `comboHi
 the contact holds through the hitstop the rig struck, and any hitstop holds the whole rig
 (B2); a connect recoils 0.08 to 0.12 u after the hold and a whiff does not, or a shooter
 squashes 20/29/38% (B3); the spawn grows in (B7); hand and tip are named and the tip
-travels (B8); the hips lead the weapon; planted feet never slide, step one at a time and
-along the travel in eight directions; the walk leans into the travel; a dash lifts both
-feet and they plant where they land; the finisher's hop or lunge moves the feet; downed
+travels (B8); the hips lead the weapon; the weapon never cuts into the head; planted feet
+never slide, stay on the floor through the walk's bob, hold through a hitstop, step one at
+a time and along the travel in eight directions; the walk leans into the travel; a dash
+lifts both feet and they plant where they land; the finisher's hop or lunge moves the feet; downed
 runs; every instanced part inked; no Ember, Violet, amber or stray Bright Heal; the flag and
 the classic twin.
 
