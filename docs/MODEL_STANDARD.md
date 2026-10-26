@@ -81,6 +81,45 @@ hull, drawn per instance from the part's own `instanceMatrix` buffer.
   travel in the Tank's own frame: a backpedal leans back, a sidestep leans aside, whatever
   the aim. A collapse unlocks the feet.
 
+## The Level I foes (`src/render/enemies/facet/`, v0.5.337)
+
+Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
+thornling, its campaign roster's owl and lasher) plays the standard. Same rules as the pilot:
+detail on top of the chibi ink outline, the classic rig kept beside it, visual only. Two
+things change for foes:
+
+- **A crowd budget.** A Level I room holds a dozen foes at once, so a foe's fixed detail
+  (bristles, plates, quills, gills, feathers, thorns) is BAKED: merged once per kind into one
+  faceted geometry the whole crowd shares (`bakeParts`), one draw call per material and no
+  buffer per foe. Only parts that move on their own every frame (legs, wings, a vine) are
+  per-rig instanced rows. Each rig draws no more calls than its classic rig; the probe holds it.
+- **The sim's clock is the anticipation.** A telegraphed attack samples its wind-up by the
+  telegraph's progress on the interpolated tick, so its contact lands on the tick the sim
+  resolves it. An unwarned contact bite strikes on the layer's lunge pulse (contact 3.5
+  frames later, one frame of wind-back inside the strike, B1); once the per-target cooldown
+  says when the next bite comes, the chained strike starts early and its contact lands on
+  that tick.
+
+The foe kit (`render/facet/foe.js`, `render/facet/legs.js`):
+
+| Piece | What it gives |
+|---|---|
+| `bakeParts(key, build)` | A shared, faceted, merged geometry per kind (cached in `geocache`, never disposed). |
+| `foePart`, `foeMaterial` | A mesh with its ink (`'full'` silhouette, `'part'` detail rows); a flashable faceted material. |
+| `createFoeFrame` | group (the enemy layer's: position, elite scale, kill pop, hit envelope) > yaw > spawn (the B7 grow) > body (the rig's motion). A rig never writes the group. |
+| `createAttackWatch`, `telegraphProgress` | The beats a pose can see: a telegraph's wind, release or cancel, the lunge pulse (`enemy_bite`), the fire pulse (`enemy_fire`). |
+| `hitTimelines`, `createChain` | Kesh's 3-hit template on a repeating attack: each hit's overshoot settles into the next hit's wind-up, held for the chain window, pulled back 4 frames before a predicted strike; the third hit is the biggest (B6). `contactAt` says when the playing hit lands. |
+| `spawnScale`, `settle`, `lungePose`, `shotSquash` | §6.1 B7, B5, B9 and B3 as pure curves. |
+| `createLegs`, `solveKnee`, `liftToReach` | World-locked feet for any leg count: each foot pinned to the floor while it carries weight, stepping in gait groups along the real travel (a backpedal steps back, a sidestep sideways); two-bone IK; a foot the body rears out of reach of lifts straight up, never slides. |
+| `hornGeometry`, `scaleGeometry` | A curved tapering horn (tusks, claws, stingers, thorns); a low six-sided scale to sink into a hide. |
+
+Each rig returns the classic interface (`group`, `mats`, `setYaw`, `pose`) plus
+`modelStandard`, `points` (B8: the weapon tip, the hand, the mouth), `react` and `death`
+(the shared hit and death envelopes' tuning, §6.1 items 9 and 10, built by the VFX slice)
+and `lab` (`abilities`, `override`, `feet()`, `lastStrike`).
+
+FOE_ROWS_PLACEHOLDER
+
 ## Integration
 
 - `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet` when

@@ -1,13 +1,26 @@
 // MODEL STANDARD PILOT (docs/MODEL_STANDARD.md): which models play the
 // faceted model standard. The pilot rebuilds two: the Barrow Wyrm and the
-// Tank; the classic rigs stay in the code beside them.
+// Tank; the Level I foes follow (render/enemies/facet/). The classic rigs
+// stay in the code beside them.
 //
 // A harness build reads `?facet=` to compare (a player build never sees it):
 //   ?facet=0       every model classic
 //   ?facet=wyrm    only the listed models faceted (comma list: wyrm,tank)
 import { pageQuery } from '../../app/harness.js';
 
-export const MODEL_STANDARD = Object.freeze({ wyrm: true, tank: true });
+export const MODEL_STANDARD = Object.freeze({
+  wyrm: true,
+  tank: true,
+  // The Level I foes (data/levels.js row 1: its roster and campaign roster).
+  boar: true,
+  mantis: true,
+  quillback: true,
+  rotcap: true,
+  wasp: true,
+  thornling: true,
+  owl: true,
+  lasher: true,
+});
 
 export function facetOn(kind, query = pageQuery()) {
   const q = query.get('facet');

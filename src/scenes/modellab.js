@@ -37,6 +37,8 @@ import { service } from '../app/registry.js';
 import { pageQuery } from '../app/harness.js';
 import { mountModelLab } from '../ui/modellab.js';
 import { IcosahedronGeometry } from 'three';
+// The roster slices' tabs (docs/MODEL_STANDARD.md): the Level I foes.
+import { LAB_ENTRIES as FOE_ENTRIES } from './modellab-foes.js';
 
 const MODELS = [
   ['wyrm', 'Barrow Wyrm'],
@@ -68,6 +70,15 @@ const FRAME = {
   tank: { y: 0.5, z: 0, dist: 3.6, speed: 2.1, loop: 2.2, side: 1.5 },
   kit: { y: 0.6, z: 0, dist: 7.5, speed: 0, loop: 0, side: 0 },
 };
+// LAB ENTRIES: each roster slice brings its own tabs as entries
+// { id, label, abilities, frame, build(ctx) } (scenes/modellab-foes.js), set
+// before the Effect kit tab.
+const ENTRIES = [...FOE_ENTRIES];
+MODELS.splice(MODELS.length - 1, 0, ...ENTRIES.map((e) => [e.id, e.label]));
+for (const e of ENTRIES) {
+  ABILITIES[e.id] = e.abilities;
+  FRAME[e.id] = e.frame;
+}
 const SHOW_FOV = 30;
 const SHOW_ELEV = (24 * Math.PI) / 180;
 
@@ -113,6 +124,14 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     if (a && a.play) a.play(cue, o);
   };
   const tankSig = VFX_SIGNATURE.tank;
+  // The entries' models (each with its classic twin), built once.
+  const built = new Map();
+  for (const e of ENTRIES) {
+    const inst = e.build({ cosmetic, vfx, play });
+    built.set(e.id, inst);
+    root.add(inst.group);
+    if (inst.classic) root.add(inst.classic);
+  }
   function onCue(model, id, at) {
     const x = at.x;
     const z = at.z;
@@ -164,6 +183,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   state.ability = params.get('ability') || ABILITIES[state.model][0][0];
 
   function timelineFor(model, ability) {
+    if (built.has(model)) return built.get(model).timeline(ability);
     if (model === 'wyrm') return WYRM_ABILITIES[ability] || WYRM_ABILITIES.breath;
     if (model === 'tank') {
       if (ability === 'combo') return COMBO_LAB;
@@ -173,6 +193,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   }
   function cuesFor(model, ability) {
     if (model === 'tank' && ability === 'combo') return COMBO_LAB.strikes.map((at) => ({ at, id: 'strike' }));
+    if (built.has(model)) return built.get(model).cues(ability);
     const tl = timelineFor(model, ability);
     return tl.cues || [];
   }
@@ -187,7 +208,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       wyrm.lab.reset();
       resetModels();
     }
-    for (const k of ['mode', 'ability', 'view', 'turntable', 'classic', 'rate']) if (k in patch) state[k] = patch[k];
+    for (const k of ['mode', 'ability', 'view', 'turntable', 'classic', 'rate', 'azimuth']) if (k in patch) state[k] = patch[k];
     if ('t' in patch) state.t = Math.max(0, patch.t);
     if (patch.ability) state.t = patch.t ?? 0;
     if (patch.mode === 'move') state.movePhase = 0;
@@ -201,6 +222,10 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     tank.setYaw(0);
     tankClassic.setYaw(0);
     wyrm.lab.reset();
+    for (const inst of built.values()) {
+      inst.group.position.set(0, 0, 0);
+      if (inst.classic) inst.classic.position.set(0, 0, 0);
+    }
   }
 
   const ui = typeof document !== 'undefined' ? mountModelLab({ models: MODELS, modes: MODES, abilities: (m) => ABILITIES[m], get: () => state, set }) : null;
@@ -310,10 +335,17 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     }
 
     if (state.model === 'kit') kit.update(idleT);
+    for (const [id, inst] of built) {
+      const on = state.model === id;
+      inst.group.visible = on;
+      if (inst.classic) inst.classic.visible = on && state.classic;
+      if (on) inst.update(state, dt, abT);
+    }
 
     // Readout.
     if (state.model === 'tank' && state.ability === 'combo') state.readout = `${abT.toFixed(1)}s · ${COMBO_LAB.at(abT).label}`;
     else if (state.model === 'kit') state.readout = 'parts kit: scales and bands round a moving spine, spikes with tips, a crest fan, teeth, rivets';
+    else if (built.has(state.model) && tl.readout) state.readout = tl.readout(abT);
     else state.readout = `${abT.toFixed(1)}s · ${tl.label}: ${tl.sample(abT).label}`;
     if (state.mode === 'ability' && state.rate < 0) state.readout += ' · rewind';
     if (state.mode !== 'ability' && state.mode !== 'still') state.readout = `${state.mode} · ${state.readout.replace(/^[\d.]+s · /, '')}`;
@@ -325,6 +357,11 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   }
 
   function cueAt(id) {
+    if (built.has(state.model)) {
+      const g = built.get(state.model).group;
+      built.get(state.model).onCue(id, { x: g.position.x, z: g.position.z, yaw: 0 });
+      return;
+    }
     const g = state.model === 'wyrm' ? wyrm.group : tank.group;
     onCue(state.model, id, { x: g.position.x, z: g.position.z, yaw: state.model === 'tank' ? 0 : 0 });
   }
@@ -333,7 +370,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   function placeCamera(dt) {
     const F = FRAME[state.model];
     const cam = stage.camera;
-    const g = state.model === 'wyrm' ? wyrm.group : state.model === 'tank' ? tank.group : kit.group;
+    const g = built.has(state.model) ? built.get(state.model).group : state.model === 'wyrm' ? wyrm.group : state.model === 'tank' ? tank.group : kit.group;
     if (state.view === 'play') {
       cam.fov = CAMERA.fov;
       cam.updateProjectionMatrix();
@@ -357,7 +394,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
 
   // --- Probe surface.
   function debugState() {
-    const g = state.model === 'wyrm' ? wyrm.group : tank.group;
+    const g = built.has(state.model) ? built.get(state.model).group : state.model === 'wyrm' ? wyrm.group : tank.group;
     g.getWorldPosition(tmp);
     return {
       lab: 'modellab',
@@ -372,6 +409,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       duration: state.duration,
       pos: [Math.round(tmp.x * 100) / 100, Math.round(tmp.z * 100) / 100],
       tankFeet: tank.lab && tank.lab.feet ? tank.lab.feet() : null,
+      ...(built.has(state.model) ? { [state.model]: built.get(state.model).debug() } : {}),
     };
   }
   function cmd(name, args) {
