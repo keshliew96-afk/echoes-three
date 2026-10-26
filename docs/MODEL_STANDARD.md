@@ -128,7 +128,23 @@ strikes sample on `P.tick + 1` (clamped to the span), so a 2 to 3 frame strike s
 frame and its contact lands on the release frame, never collapsing into a 1 frame pop.
 `lab.lastStrike.tick` stays the sim's resolve tick.
 
-FOE_ROWS_PLACEHOLDER
+### The eight foes
+
+| Foe | Attack (lab tab) | In game | Calls (faceted / classic) |
+|---|---|---|---|
+| Thorn Boar | Gore combo: hook, backhand, scoop and toss | Repeating contact bite. A predicted bite's contact lands on the bite tick (the per-target cooldown says when); an unwarned one within B1. The front hooves take a lunge step timed to land on each contact and step back out after the snap. | 18 / 23 |
+| Spitting Mantis | Spit: rear and load (wing covers fanned), coil, strike | The 42-tick telegraph (36 under Short Fuse) is the wind-up; the contact lands on the resolve tick, the frame the shot leaves. Only the fire pulse plays the contact, so a stun, blind or retreat folds it back. | 30 / 39 |
+| Quillback | Charge roll; Charge into a wall | The 48-tick lane is the coil; the launch lands on the resolve; the ball spins at the real travel, squashes on each ram (`chargeHits` by length), and ends spent (rolls on into upright) or on a wall (rolls back, the 30-tick daze). Launches only on the sim's charge mode. | 15 / 15 |
+| Rotcap | Cap combo: hook, reverse swipe, rear-up and slam; Spore burst (death) | Repeating contact bite, as the boar (lead foot steps in by the contact). A slow rolling shamble on two root feet; the retreat shiver; the death swell over the burst ring. | 14 / 16 |
+| Briar Wasp | Dart dive; Dart string | The 42-tick lane is the coil (nose down, stinger high); the strike's contact lands on the release frame and holds through the dart; the pull-up and settle after. A swarm's string varies per dart (hook right, hook left, plunge). | 10 / 12 |
+| Thornling | Plant thicket | The 30-tick root is the gather (crown in bloom by the first frame); the stamp's contact lands on the plant tick. No bite, so no chain. | 10 / 20 |
+| Shriek Owl | Shriek | The 54-tick cone is the rise and gather; the strike takes its last 3 frames and lands on the resolve, confirmed by `shriekTick`. A flier: rule 1 is the bank into its measured travel. | 27 / 37 |
+| Vine Lasher | Lash chain: sweep, backhand, overhead slam | The 48-tick lane is the coil (the front roots brace); the throw lands on the release frame, the vine straight down the live lane, and only on `lashTick`; the reel at the sim's drag. Six roots in two tripods. | 20 / 46 |
+
+Draw calls are one rig at rest in the probe's count; the baked detail adds no buffer per copy.
+The heroes' 3-hit template runs on every repeating melee attack (the boar's, the Rotcap's,
+the Lasher's); the telegraphed one-shot attacks (spit, charge, dart, plant, shriek) get their
+own timelines with key poses instead, as the template's ranged clause reads.
 
 ## Integration
 
