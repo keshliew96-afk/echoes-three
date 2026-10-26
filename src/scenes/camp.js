@@ -462,9 +462,11 @@ export function createCampScene(stage, toggles, ctx) {
   let tableTick = 0; // CAMPAIGN: map-table waymark refresh cadence
   let storyRefresh = 0; // STORY: frames until the NPCs re-read the profile
 
-  bus.on('basic_fire', () => {
+  bus.on('basic_fire', (ev) => {
     firedFlag = true;
+    healerRig.cue('basic', ev); // a model-standard rig's combo (docs/MODEL_STANDARD.md)
   });
+  bus.on('skill_cast', (ev) => healerRig.cue('skill', ev));
   // A player-held ally seat (a co-op guest, a host or solo player on a
   // class other than the Healer) casts at camp too: its rig takes the same
   // cast hold the Healer's does.
@@ -518,8 +520,15 @@ export function createCampScene(stage, toggles, ctx) {
     npcs.setVisible(inCamp);
     if (inCamp) storyRefresh = 0;
     for (const r of arenaRoots) r.visible = !inCamp;
+    // A model-standard rig hears every attack cue on the bus, its own mode's
+    // or not; the rigs of the mode coming in forget whatever they heard while
+    // they were hidden and still (docs/MODEL_STANDARD.md). The run's rigs
+    // reset before its first room_enter, so their spawn still plays.
     if (inCamp) applyCampLighting();
-    else applyRunLighting();
+    else {
+      applyRunLighting();
+      for (const c of [arena.healer, ...arena.allies]) c.cue('reset');
+    }
     if (inCamp) applyCampSim();
     else applyRunSim();
   }
@@ -531,8 +540,10 @@ export function createCampScene(stage, toggles, ctx) {
     healerRig.setYaw(healerYaw);
     healerRig.group.position.set(CAMP_SPOTS.healer.x, 0, CAMP_SPOTS.healer.z);
     healerRig.setAnim('idle');
+    healerRig.cue('reset');
     for (const a of allyRigs) {
       const spot = CAMP_SPOTS[a.classId];
+      a.rig.cue('reset');
       if (a.partyIndex !== null) world.cmd('placeAlly', a.partyIndex, spot.x, spot.z);
       a.rig.group.position.set(spot.x, 0, spot.z);
       a.rig.setYaw(spot.yaw);

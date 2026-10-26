@@ -6,9 +6,12 @@
 //
 //   Barrow Wyrm   Idle; Move (it swims a loop, the coil following its path);
 //                 Ash Breath and Burrow Strike on their timelines
-//   Tank          Idle; Move (a loop that turns into a sidestep and a back-
+//   each hero     one tab per model-standard hero (render/facet/heroes.js):
+//                 Idle; Move (a loop that turns into a sidestep and a back-
 //                 pedal, so the locked feet step every way); the 3-hit basic
-//                 combo at its real 0.65 s cadence; Heavy Slam; Brace
+//                 combo at its real cadence, each contact held as the hitstop
+//                 holds it and the recoil or the shooter's squash after it;
+//                 every ability timeline; the spawn grow-in
 //   Effect kit    the parts kit on its own: scales round a moving spine with
 //                 bands, a spike row with tips, a crest fan, teeth, rivets
 //
@@ -17,8 +20,8 @@
 // player sees it. Classic beside puts the classic model next to the new one.
 // Rewind plays the ability backward to its start (the video's "Time Stop:
 // rewind"); the scrub bar holds any moment Still. A cue (the breath, the
-// slam's impact, each combo strike) fires the game's own sound for it and a
-// small VFX kit beat.
+// slam's impact, each combo strike, the finisher bigger) fires the game's own
+// sound for it and a small VFX kit beat at the weapon's named tip.
 //
 // Probe surface: debugState() and cmd('lab', {patch}) through the debug API.
 // A probe on a slow software-GL machine can pass `fixedDt` (s): every drawn
@@ -31,7 +34,8 @@ import { toonMaterial } from '../render/toon.js';
 import { createCritter, setInkViewport } from '../render/critters/index.js';
 import { buildWyrm } from '../render/boss/wyrm.js';
 import { buildWyrmFacet, WYRM_ABILITIES } from '../render/boss/wyrmfacet.js';
-import { COMBO_LAB, TANK_ABILITIES } from '../render/critters/tankfacet.js';
+import { FACET_HEROES } from '../render/facet/heroes.js';
+import { SPAWN_TIMELINE as HERO_SPAWN_TIMELINE } from '../render/facet/hero.js';
 import { createVfxKit } from '../render/vfx/kit.js';
 import { createSpine, createPlateTube, createSpineRow, placeRow, plateGeometry, setTRS, wedgeGeometry } from '../render/facet/kit.js';
 import { facetize, facetMaterial } from '../render/facet/material.js';
@@ -48,12 +52,7 @@ import { LAB_ENTRIES as BOSS_ENTRIES } from './modellab-bosses.js';
 const ENTRIES = [...BOSS_ENTRIES];
 const entryOf = (id) => ENTRIES.find((e) => e.id === id) || null;
 
-const MODELS = [
-  ['wyrm', 'Barrow Wyrm'],
-  ['tank', 'Tank'],
-  ...ENTRIES.map((e) => [e.id, e.label]),
-  ['kit', 'Effect kit'],
-];
+const MODELS = [['wyrm', 'Barrow Wyrm'], ...FACET_HEROES.map((h) => [h.id, h.label]), ...ENTRIES.map((e) => [e.id, e.label]), ['kit', 'Effect kit']];
 const MODES = [
   ['idle', 'Idle'],
   ['move', 'Move'],
@@ -66,11 +65,7 @@ const ABILITIES = {
     ['burrow', 'Burrow Strike'],
     ['spawn', 'Spawn in'],
   ],
-  tank: [
-    ['combo', 'Basic combo'],
-    ['slam', 'Heavy Slam'],
-    ['brace', 'Brace'],
-  ],
+  ...Object.fromEntries(FACET_HEROES.map((h) => [h.id, h.lab.abilities])),
   kit: [['wave', 'Wave']],
   ...Object.fromEntries(ENTRIES.map((e) => [e.id, e.abilities])),
 };
@@ -78,7 +73,7 @@ const REST_GAP = 0.7; // s of rest between ability loops
 // Each model's showcase framing: look-at height, distance, and its game speed.
 const FRAME = {
   wyrm: { y: 0.55, z: -1.2, dist: 8.6, speed: 1.5, loop: 3.4, side: 3.6 },
-  tank: { y: 0.5, z: 0, dist: 3.6, speed: 2.1, loop: 2.2, side: 1.5 },
+  ...Object.fromEntries(FACET_HEROES.map((h) => [h.id, h.lab.frame])),
   kit: { y: 0.6, z: 0, dist: 7.5, speed: 0, loop: 0, side: 0 },
   ...Object.fromEntries(ENTRIES.map((e) => [e.id, e.frame])),
 };
@@ -113,9 +108,16 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   // --- The models (built once; the tabs show one at a time).
   const wyrm = buildWyrmFacet();
   const wyrmClassic = buildWyrm();
-  const tank = createCritter('tank', { cosmetic, facet: true });
-  const tankClassic = createCritter('tank', { cosmetic, facet: false });
-  for (const g of [wyrm.group, wyrmClassic.group, tank.group, tankClassic.group]) root.add(g);
+  // each model-standard hero, faceted, and its classic twin
+  const heroes = Object.fromEntries(
+    FACET_HEROES.map((spec) => [
+      spec.id,
+      { spec, rig: createCritter(spec.id, { cosmetic, facet: true }), classic: createCritter(spec.id, { cosmetic, facet: false }) },
+    ])
+  );
+  const HEROES = Object.values(heroes);
+  const movers = [wyrm.group, wyrmClassic.group, ...HEROES.flatMap((h) => [h.rig.group, h.classic.group])];
+  for (const g of movers) root.add(g);
   const kit = buildKitShowcase();
   root.add(kit.group);
 
@@ -126,6 +128,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     const a = audio();
     if (a && a.play) a.play(cue, o);
   };
+  const tipAt = new Vector3();
   // Entry models, built on first view.
   const built = {};
   function entryModel(id) {
@@ -138,7 +141,6 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     built[id] = b;
     return b;
   }
-  const tankSig = VFX_SIGNATURE.tank;
   function onCue(model, id, at) {
     const x = at.x;
     const z = at.z;
@@ -155,19 +157,24 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
         vfx.ring({ x, z, r0: 0.3, r1: 1.9, width: 0.3, life: 0.5, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
         vfx.pillar({ x, z, radius: 0.7, height: 2.6, color: PALETTE.godstuffViolet, life: 0.6 });
       }
-    } else if (model === 'tank') {
-      const fx = x + Math.sin(at.yaw) * 0.7;
-      const fz = z + Math.cos(at.yaw) * 0.7;
-      if (id === 'strike') {
-        play('swing', { pitch: 0.8 });
-        vfx.flash({ x: fx, y: 0.45, z: fz, size: 0.45, color: tankSig.glow, life: 0.18 });
-      } else if (id === 'impact') {
-        play('impact', { pitch: 0.7 });
-        vfx.crack({ x: fx, z: fz, radius: 1.0, glow: tankSig.glow });
-        vfx.ring({ x: fx, z: fz, r0: 0.2, r1: 1.1, width: 0.22, life: 0.4, core: PALETTE.parchment, glow: tankSig.glow });
-      } else if (id === 'plant') {
-        play('tank_shield');
-        vfx.ring({ x, z, r0: 0.3, r1: 1.4, width: 0.18, life: 0.5, core: PALETTE.parchment, glow: tankSig.glow });
+    } else if (heroes[model]) {
+      // a hero's cue: its own sound and a kit beat at the weapon's tip (B8);
+      // the finisher's beat is the biggest (B6)
+      const H = heroes[model];
+      const c = H.spec.lab.cues[id];
+      if (!c) return;
+      play(c.sound, { pitch: c.pitch ?? 1 });
+      const sig = VFX_SIGNATURE[model];
+      const k = c.size ?? 1;
+      const p = H.rig.pointWorld('tip', tipAt) || tipAt.set(x, 0.45, z);
+      for (const fx of [].concat(c.fx || [])) {
+        if (fx === 'flash') vfx.flash({ x: p.x, y: p.y, z: p.z, size: 0.45 * k, color: sig.glow, life: 0.18 });
+        else if (fx === 'star') vfx.star({ x: p.x, y: p.y, z: p.z, size: 0.7 * k, color: sig.second, kind: 'burst', life: 0.22 });
+        else if (fx === 'crack') {
+          vfx.crack({ x: p.x, z: p.z, radius: 1.0 * k, glow: sig.glow });
+          vfx.ring({ x: p.x, z: p.z, r0: 0.2, r1: 1.1 * k, width: 0.22, life: 0.4, core: PALETTE.parchment, glow: sig.glow });
+        } else if (fx === 'ring') vfx.ring({ x, z, r0: 0.3, r1: 1.4 * k, width: 0.18, life: 0.5, core: PALETTE.parchment, glow: sig.glow });
+        else if (fx === 'pillar') vfx.pillar({ x, z, radius: 0.5 * k, height: 2.2, color: sig.glow, life: 0.5 });
       }
     }
   }
@@ -195,15 +202,21 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   function timelineFor(model, ability) {
     if (entryOf(model)) return entryModel(model).timeline(ability);
     if (model === 'wyrm') return ability === 'spawn' ? SPAWN_TIMELINE : WYRM_ABILITIES[ability] || WYRM_ABILITIES.breath;
-    if (model === 'tank') {
-      if (ability === 'combo') return COMBO_LAB;
-      return TANK_ABILITIES[ability] || TANK_ABILITIES.slam;
+    const H = heroes[model];
+    if (H) {
+      if (ability === 'combo') return H.spec.comboLab;
+      if (ability === 'spawn') return HERO_SPAWN_TIMELINE;
+      return (H.spec.moves[ability] || Object.values(H.spec.moves)[0]).timeline;
     }
     return { label: 'Wave', duration: 4, sample: () => ({ label: 'wave' }) };
   }
   function cuesFor(model, ability) {
     if (entryOf(model)) return entryModel(model).cues(ability);
-    if (model === 'tank' && ability === 'combo') return COMBO_LAB.strikes.map((at) => ({ at, id: 'strike' }));
+    const H = heroes[model];
+    if (H && ability === 'combo') {
+      const s = H.spec.comboLab.strikes;
+      return s.map((at, n) => ({ at, id: n === s.length - 1 ? 'finisher' : 'strike' }));
+    }
     const tl = timelineFor(model, ability);
     return tl.cues || [];
   }
@@ -230,11 +243,13 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     ui?.refresh();
   }
   function resetModels() {
-    for (const g of [wyrm.group, wyrmClassic.group, tank.group, tankClassic.group]) g.position.set(0, 0, 0);
+    for (const g of movers) g.position.set(0, 0, 0);
     wyrm.setYaw(0);
     wyrmClassic.setYaw(0);
-    tank.setYaw(0);
-    tankClassic.setYaw(0);
+    for (const h of HEROES) {
+      h.rig.setYaw(0);
+      h.classic.setYaw(0);
+    }
     wyrm.lab.reset();
     for (const b of Object.values(built)) b.reset?.();
   }
@@ -277,11 +292,13 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
 
     // Show the current model (and its classic twin beside it).
     const showW = state.model === 'wyrm';
-    const showT = state.model === 'tank';
+    const H = heroes[state.model] || null;
     wyrm.group.visible = showW;
     wyrmClassic.group.visible = showW && state.classic;
-    tank.group.visible = showT;
-    tankClassic.group.visible = showT && state.classic;
+    for (const h of HEROES) {
+      h.rig.group.visible = h === H;
+      h.classic.group.visible = h === H && state.classic;
+    }
     kit.group.visible = state.model === 'kit';
     const sideX = state.classic ? F.side : 0;
     const entry = entryOf(state.model) ? entryModel(state.model) : null;
@@ -319,7 +336,9 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       wyrmClassic.pose({ t: idleT, walkPhase: 0, moveK: moving ? 1 : 0, telegraphK: classicTel, hpFrac: 1, e: { telegraph: tel, burrowed, enraged: false } });
     }
 
-    if (showT) {
+    if (H) {
+      const hero = H.rig;
+      const twin = H.classic;
       let x = 0;
       let z = 0;
       let yaw = 0;
@@ -336,28 +355,32 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
         yaw = lap < 0.5 ? travel : toMid + (lap < 0.75 ? 0 : Math.PI / 2);
         clip = 'walk';
       }
-      tank.group.position.set(x + sideX, 0, z);
-      tank.setYaw(yaw);
-      tankClassic.group.position.set(x - sideX, 0, z);
-      tankClassic.setYaw(yaw);
+      hero.group.position.set(x + sideX, 0, z);
+      hero.setYaw(yaw);
+      twin.group.position.set(x - sideX, 0, z);
+      twin.setYaw(yaw);
       if (state.mode === 'ability' || (still && state.t > 0)) {
         if (state.ability === 'combo') {
-          const h = COMBO_LAB.at(abT);
-          tank.lab.override = { kind: 'hit', n: h.n, t: h.t, fresh: h.fresh };
-        } else tank.lab.override = { kind: 'ability', id: state.ability, t: abT };
-        clip = 'cast';
-      } else tank.lab.override = null;
-      tank.setAnim(clip);
+          const h = H.spec.comboLab.at(abT);
+          hero.lab.override = { kind: 'hit', n: h.n, t: h.t, fresh: h.fresh, recoil: h.recoil, shot: h.shot };
+          clip = 'cast';
+        } else if (state.ability === 'spawn') hero.lab.override = { kind: 'spawn', t: abT };
+        else {
+          hero.lab.override = { kind: 'ability', id: state.ability, t: abT };
+          clip = 'cast';
+        }
+      } else hero.lab.override = null;
+      hero.setAnim(clip);
       // classic twin: its single cast pose, re-triggered on each strike
-      tankClassic.setAnim(clip);
-      tank.update(dt);
-      tankClassic.update(dt);
+      twin.setAnim(clip);
+      hero.update(dt);
+      twin.update(dt);
     }
 
     if (state.model === 'kit') kit.update(idleT);
 
     // Readout.
-    if (state.model === 'tank' && state.ability === 'combo') state.readout = `${abT.toFixed(1)}s · ${COMBO_LAB.at(abT).label}`;
+    if (H && state.ability === 'combo') state.readout = `${abT.toFixed(1)}s · ${H.spec.comboLab.at(abT).label}`;
     else if (state.model === 'kit') state.readout = 'parts kit: scales and bands round a moving spine, spikes with tips, a crest fan, teeth, rivets';
     else state.readout = `${abT.toFixed(1)}s · ${tl.label}: ${tl.sample(abT).label}`;
     if (state.mode === 'ability' && state.rate < 0) state.readout += ' · rewind';
@@ -369,21 +392,22 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     ui?.refresh();
   }
 
+  const groupOf = (model) => (entryOf(model) ? entryModel(model).group : model === 'wyrm' ? wyrm.group : heroes[model] ? heroes[model].rig.group : kit.group);
   function cueAt(id) {
     const entry = entryOf(state.model) ? entryModel(state.model) : null;
     if (entry) {
       entry.onCue(id, { x: entry.group.position.x, z: entry.group.position.z, yaw: entry.yaw ?? 0 });
       return;
     }
-    const g = state.model === 'wyrm' ? wyrm.group : tank.group;
-    onCue(state.model, id, { x: g.position.x, z: g.position.z, yaw: state.model === 'tank' ? 0 : 0 });
+    const g = groupOf(state.model);
+    onCue(state.model, id, { x: g.position.x, z: g.position.z });
   }
 
   const look = new Vector3();
   function placeCamera(dt) {
     const F = FRAME[state.model];
     const cam = stage.camera;
-    const g = entryOf(state.model) ? entryModel(state.model).group : state.model === 'wyrm' ? wyrm.group : state.model === 'tank' ? tank.group : kit.group;
+    const g = groupOf(state.model);
     if (state.view === 'play') {
       cam.fov = CAMERA.fov;
       cam.updateProjectionMatrix();
@@ -408,7 +432,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   // --- Probe surface.
   function debugState() {
     const entry = entryOf(state.model) ? entryModel(state.model) : null;
-    const g = entry ? entry.group : state.model === 'wyrm' ? wyrm.group : tank.group;
+    const g = groupOf(state.model);
     g.getWorldPosition(tmp);
     return {
       lab: 'modellab',
@@ -423,7 +447,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       duration: state.duration,
       phases: (timelineFor(state.model, state.ability).phases || []).map((ph) => [ph.id, ph.dur]),
       pos: [Math.round(tmp.x * 100) / 100, Math.round(tmp.z * 100) / 100],
-      tankFeet: tank.lab && tank.lab.feet ? tank.lab.feet() : null,
+      feet: heroes[state.model] ? heroes[state.model].rig.lab.feet() : null,
       ...(entry && entry.debug ? { [state.model]: entry.debug() } : {}),
     };
   }
