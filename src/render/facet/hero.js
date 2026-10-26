@@ -148,11 +148,14 @@ export function createMove(pack, id, label, keys, { contact = null, entry = null
 }
 
 // The three hits of the basic combo (Kesh's template). hits: [{ label, from
-// (wind-up), strike (contact), over (overshoot), timing? }]. Timing at 30
-// fps by default: 1.5 frames of wind (only from rest: a chained hit starts AT
-// its wind-up, which the last hit's settle already holds), 2.5 of strike, 2
-// of overshoot, 5 to settle into the next wind-up, held ready until the
-// combo window lapses, then a recover to the stance with one small overshoot.
+// (wind-up), strike (contact), over (overshoot), timing?, strikeEase? }].
+// Timing at 30 fps by default: 1.5 frames of wind (only from rest: a chained
+// hit starts AT its wind-up, which the last hit's settle already holds), 2.5
+// of strike, 2 of overshoot, 5 to settle into the next wind-up, held ready
+// until the combo window lapses, then a recover to the stance with one small
+// overshoot. The strike runs at full speed from the press frame (B4: the
+// weapon kicks on the press, no ramp) and stops dead on the contact, which
+// the hitstop then holds.
 export const HIT_TIMING = Object.freeze({ wind: 0.05, strike: 0.083, over: 0.067, settle: 0.167, recover: 0.35 });
 export function createCombo(pack, hits, { window = 1.0, timing = HIT_TIMING, recoil = true } = {}) {
   const n = hits.length;
@@ -167,7 +170,7 @@ export function createCombo(pack, hits, { window = 1.0, timing = HIT_TIMING, rec
       `Hit ${i + 1}: ${h.label}`,
       [
         { id: 'wind', label: 'wind-up', dur: T.wind, to: h.from, ease: 'out' },
-        { id: 'strike', label: 'strike', dur: T.strike, to: h.strike, ease: h.strikeEase || 'in' },
+        { id: 'strike', label: 'strike', dur: T.strike, to: h.strike, ease: h.strikeEase || 'linear' },
         { id: 'overshoot', label: 'overshoot', dur: T.over, to: h.over, ease: 'out' },
         { id: 'settle', label: `settle into hit ${after}`, dur: T.settle, to: next, ease: 'inOut' },
         { id: 'ready', label: `hit ${after} wind-up held`, dur: Math.max(0.05, window - lead), to: null, ease: 'hold' },
@@ -595,18 +598,18 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
       state.airborne = false;
       return state;
     }
-    if (dt > 0) {
-      const jump = gp.distanceTo(lastPos);
-      if (jump > 1.5) {
-        plantAll(stance); // a teleport or a new room: stand afresh
-        lastPos.copy(gp);
-        vel.set(0, 0, 0);
-      } else {
-        const k = Math.min(1, dt * 12);
-        vel.x += ((gp.x - lastPos.x) / dt - vel.x) * k;
-        vel.z += ((gp.z - lastPos.z) / dt - vel.z) * k;
-        lastPos.copy(gp);
-      }
+    // A teleport, a new room, or the body moved while no time passed (a
+    // held frame, the lab's Still): stand afresh where it is now.
+    const jump = gp.distanceTo(lastPos);
+    if (jump > 1.0 || (dt <= 0 && jump > 0.01)) {
+      plantAll(stance);
+      lastPos.copy(gp);
+      vel.set(0, 0, 0);
+    } else if (dt > 0) {
+      const k = Math.min(1, dt * 12);
+      vel.x += ((gp.x - lastPos.x) / dt - vel.x) * k;
+      vel.z += ((gp.z - lastPos.z) / dt - vel.z) * k;
+      lastPos.copy(gp);
     }
     const speed = Math.hypot(vel.x, vel.z);
     state.speed = speed;

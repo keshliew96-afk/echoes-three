@@ -183,6 +183,24 @@ for (const H of FACET_HEROES) {
     check('the contact squash snaps back within 3 frames (B9)', snap.every((d) => d < 0.07), snap.map(r3));
   }
   {
+    // B4: the press frame already moves the weapon (no ramp): a chained hit
+    // strikes from its held wind-up, a fresh one winds from the stance
+    const W = H.weaponField;
+    const kick = hits.map((h, n) => {
+      const mv = h.move;
+      const t0 = mv.timeline.startOf('strike');
+      const a = mv.pose(t0, h.from, {}, 1)[W];
+      const b = mv.pose(t0 + DT, h.from, {}, 1)[W];
+      const span = h.strike[W] - h.from[W];
+      return Math.abs(span) < 1e-6 ? 1 : (b - a) / span;
+    });
+    const mv0 = hits[0].move;
+    const REST0 = mv0.ends[mv0.ends.length - 1];
+    const w0 = mv0.pose(DT, REST0, {}, 0)[W];
+    const freshKick = Math.abs(hits[0].from[W] - REST0[W]) < 1e-6 ? 1 : (w0 - REST0[W]) / (hits[0].from[W] - REST0[W]);
+    check('the weapon kicks on the press frame, no ramp (B4)', kick.every((k) => k >= 0.15) && freshKick >= 0.15, { chained: kick.map(r3), fresh: r3(freshKick) });
+  }
+  {
     const sizes = hits.map((h) => r3(size(h.strike)));
     const big = sizes[2] > Math.max(sizes[0], sizes[1]) && (hits[2].strike.hop > 0.1 || hits[2].strike.step >= 0.9 || hits[2].strike.sh >= 1.1);
     check('the third hit is the biggest: a hop, a lunge step or a stretch (B6)', big, sizes);
