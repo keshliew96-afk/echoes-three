@@ -181,11 +181,17 @@ cue('hurt', { slot: 'hit', levelDb: -6, priority: 3, maxVoices: 3, cooldownMs: 6
 cue('whiff', { slot: 'whiff', levelDb: -17, maxVoices: 3 }, (k, t, d) =>
   k.noise(d, t, { f0: 3500, f1: 1700, q: 3, a: 0.01, d: 0.11, gain: 1 })
 );
-// Kill pop (legacy slot `kill`).
+// Kill pop (legacy slot `kill`). THE HIT AND THE KILL (VFX_HIT_RULES A6):
+// the kill's weight comes after the pop, a low rumble (brown noise falling
+// 150 to 60 Hz under a 55 to 38 Hz body) with a high crackle from about
+// +0.3 s, all gone inside a second.
 cue('kill', { slot: 'kill', levelDb: -7, priority: 3, maxVoices: 4 }, (k, t, d, p) =>
   Math.max(
     k.tone(d, t, { type: 'square', f0: P(p, 210), f1: P(p, 58), d: 0.17, gain: 0.55, filter: { f0: 2400, q: 0.7 } }),
-    k.noise(d, t, { f0: 900, q: 0.8, d: 0.14, gain: 0.5 })
+    k.noise(d, t, { f0: 900, q: 0.8, d: 0.14, gain: 0.5 }),
+    k.noise(d, t + 0.03, { src: 'brown', type: 'lowpass', f0: 150, f1: 60, q: 0.7, a: 0.04, hold: 0.1, d: 0.55, gain: 0.7 }),
+    k.tone(d, t + 0.02, { f0: P(p, 55), f1: P(p, 38), a: 0.03, d: 0.5, gain: 0.45 }),
+    k.noise(d, t + 0.3, { src: 'crackle', type: 'highpass', f0: 5000, q: 0.7, a: 0.02, d: 0.45, gain: 0.2 })
   )
 );
 cue('boss_death', { slot: 'kill', levelDb: -6, priority: 5, maxVoices: 1, cooldownMs: 500 }, (k, t, d, p) =>

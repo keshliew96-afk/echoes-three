@@ -253,6 +253,36 @@ export function vfxTemplateFor(classId, skillId = null) {
   const cls = classId ?? (skillId ? vfxSkillClass(skillId) : null);
   return CLASS_TEMPLATE[cls] ?? 'magic';
 }
+// Hero skills that restore (their magic plays green and gold, and never
+// plays a hit's impact: render/vfx/templates.js).
+export const VFX_HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'nova_bloom', 'sanctuary', 'guardian_bond', 'restorative_wave', 'dewfall', 'kindred_shield', 'mending_tide', 'hearthsong', 'lantern_ward']);
+
+// A spell's hit flash (VFX_HIT_RULES R1, docs/HIT_FEEDBACK.md): the foe holds
+// its near-white flash for `holdTicks`, then fades back over `fadeTicks`
+// (half way about 10 ticks after the hit, v3's +6 frames). A melee hit keeps
+// the 3-tick latch (HITFLASH). Ticks, so it holds through hitstop.
+export const SPELL_FLASH = Object.freeze({ holdTicks: 5, fadeTicks: 27, curve: 3.4 });
+// The flash level (0..1 of the body's own flash) `age` ticks after a spell
+// hit; 0 once it has faded.
+export function spellFlashLevel(age) {
+  if (!(age >= 0)) return 0;
+  if (age < SPELL_FLASH.holdTicks) return 1;
+  const u = (age - SPELL_FLASH.holdTicks) / SPELL_FLASH.fadeTicks;
+  return u >= 1 ? 0 : Math.pow(1 - u, SPELL_FLASH.curve);
+}
+// Is this `hit` a spell landing on a foe: a party hit on which the templates
+// play the magic impact (render/vfx/templates.js), heals and relic procs
+// left out? `atk` is the attacker's body, or null when it has none (the
+// Healer's basic bolt).
+export function vfxSpellHit(ev, atk = null) {
+  if (!ev || ev.kind === 'player' || ev.kind === 'ally') return false;
+  if (ev.delivery !== 'basic' && ev.delivery !== 'skill') return false; // items, hazards, contact, techniques
+  if (atk && atk.faction === 'hostile') return false;
+  if (ev.attacker == null && ev.source != null) return false; // relic procs
+  const cls = (atk && (atk.classId || (atk.kind === 'player' ? 'healer' : null))) ?? vfxSkillClass(ev.source) ?? 'healer';
+  const skill = ev.source && !/_basic$/.test(ev.source) ? ev.source : `${cls}_basic`;
+  return !VFX_HEAL_SKILLS.has(skill) && vfxTemplateFor(cls, skill) === 'magic';
+}
 
 // ----------------------------------------------------------- foe templates --
 // VFX rework PR 2: which of Kesh's templates each enemy, champion and boss
