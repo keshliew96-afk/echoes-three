@@ -121,7 +121,7 @@ function restChannels(C) {
 const lerp = (a, b, k) => a + (b - a) * k;
 const ZERO = restChannels({});
 const LOWERED = { neck: 0.85, head: 0.35, rack: 0.22, crouch: 0.3, pitch: 0.12, reach: -0.08, step: 0.5, air: 0, tuck: 0, squash: 0, shove: 0, fever: 1, glow: 1 };
-const FLUNG = { neck: -1.0, head: -0.3, rack: -0.2, crouch: 0.05, pitch: -0.2, reach: 0.18, step: 1, air: 0, tuck: 0, squash: 1, shove: 0, fever: 1, glow: 1 };
+const FLUNG = { neck: -0.62, head: -0.22, rack: -0.16, crouch: 0.05, pitch: -0.2, reach: 0.18, step: 1, air: 0, tuck: 0, squash: 1, shove: 0, fever: 1, glow: 1 };
 const GATHERED = { neck: 0.3, head: 0.12, rack: 0.06, crouch: 1, pitch: 0.12, reach: -0.06, step: 0.25, air: 0, tuck: 0, squash: 0, shove: 0, fever: 1, glow: 0.5 };
 const LANDED = { neck: 0.3, head: 0.1, rack: 0.1, crouch: 0.55, pitch: 0.18, reach: 0.12, step: 1, air: 0, tuck: 0, squash: 1, shove: 0, fever: 0.7, glow: 0.4 };
 function mixPose(C, A, B, k) {
@@ -196,7 +196,7 @@ const G = {
   hoof: () => geo('hoof', () => taperBox(0.15, HOOF_H, 0.18, 0.84, 0.6).translate(0, HOOF_H / 2, 0.02), 323, 0.12),
   beam: () => geo('beam', () => new CylinderGeometry(0.78, 1, 1, 5).translate(0, 0.5, 0), 325),
   lump: () => geo('lump', () => new IcosahedronGeometry(1, 0), 327, 0.12),
-  bud: () => sharedGeo('hart-bud', () => new IcosahedronGeometry(0.055, 0)),
+  bud: () => sharedGeo('hart-bud', () => new IcosahedronGeometry(0.038, 0)),
   eye: () => sharedGeo('hart-eye', () => new BoxGeometry(0.02, 0.035, 0.08)),
   crack: () => sharedGeo('hart-crack', () => new BoxGeometry(0.035, 0.2, 0.02)),
 };
@@ -478,8 +478,8 @@ export function buildMossHartFacet() {
   // the bound: forelegs reach forward, hind legs trail, both drawn up
   const tuck = (i, out) => {
     hipOf(legs[i], out);
-    out.y -= legs[i].front ? 0.72 : 0.68;
-    out.z += legs[i].front ? 0.36 : -0.4;
+    out.y -= legs[i].front ? 0.52 : 0.5;
+    out.z += legs[i].front ? 0.56 : -0.58;
     return out;
   };
 
@@ -593,13 +593,13 @@ export function buildMossHartFacet() {
         const [bx, by, bz] = BEAM[4];
         _a.set(side * bx, by, bz);
       }
-      const sc = 1 + 0.25 * Math.sin(idle * 3 + i) + 0.6 * C.glow;
+      const sc = 1 + 0.2 * Math.sin(idle * 3 + i) + 0.3 * C.glow;
       lay(_m, _a.x, _a.y, _a.z, 0, 1, 0, sc, sc, sc);
       buds.setMatrixAt(i, _m);
     }
     buds.instanceMatrix.needsUpdate = true;
     const glow = 0.5 + 0.5 * Math.sin(idle * 2.4);
-    rackGlow.material.opacity = 0.06 + 0.04 * glow + 0.4 * C.glow * (1 - 0.5 * C.air);
+    rackGlow.material.opacity = 0.06 + 0.04 * glow + 0.16 * C.glow * (1 - 0.5 * C.air);
     tellGlow.material.opacity = Math.min(0.85, 0.28 + 0.35 * C.fever + (rage ? 0.22 + 0.12 * Math.sin(idle * 9) : 0));
     shadow.scale.setScalar(1 - 0.35 * C.air);
     shadow.material.opacity = 0.8 * (1 - 0.45 * C.air);

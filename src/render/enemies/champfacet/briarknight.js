@@ -166,9 +166,9 @@ export function abilityChannels(id, s, C = restChannels({}), from = ZERO) {
 
 // --- The lance hand's key poses (torso space): [hand x, y, z, lance pitch]
 // with the pitch 0 upright, PI/2 level forward, PI point down.
-const HAND_REST = [0.58, 1.16, 0.3, 0.12];
+const HAND_REST = [0.74, 1.12, 0.32, 0.12];
 const HAND_COUCH = [0.36, 1.26, 0.06, Math.PI / 2 + 0.06];
-const HAND_RAISE = [0.4, 2.42, 0.2, Math.PI - 0.08];
+const HAND_RAISE = [0.64, 2.36, 0.42, Math.PI - 0.08];
 const HAND_PLANT = [0.34, 1.62, 0.5, Math.PI - 0.42];
 const SHIELD_REST = [-0.6, 1.3, 0.22];
 const SHIELD_GUARD = [-0.36, 1.42, 0.58];
@@ -332,13 +332,23 @@ export function buildBriarKnightFacet() {
     g.position.set(x, 0, -Math.abs(x) * 0.12);
     cape.add(g);
     const len = 1.18 - Math.abs(i - 2) * 0.08;
-    const strip = new Mesh(sharedGeo(`facet:briar-strip-${len}`, () => facetize(taperBox(0.2, len, 0.05, 1, 1).translate(0, -len / 2, 0), { jitter: 0.1, seed: 251 + i })), i % 2 ? mossDark : moss);
-    addInk(strip);
-    g.add(strip);
+    const mat = i % 2 ? mossDark : moss;
+    // two panels hinged at the middle, so the lower half trails the upper
+    const half = len / 2;
+    const panel = (seed) => sharedGeo(`facet:briar-strip-${half}-${seed}`, () => facetize(taperBox(0.2, half, 0.05, 1, 1).translate(0, -half / 2, 0), { jitter: 0.1, seed }));
+    const top = new Mesh(panel(251 + i), mat);
+    addInk(top);
+    g.add(top);
+    const low = new Group();
+    low.position.y = -half;
+    g.add(low);
+    const bottom = new Mesh(panel(261 + i), mat);
+    addInk(bottom);
+    low.add(bottom);
     // the tattered end: two blades hanging off the strip
-    const ends = placeRow(wedge, mossDark, 2, (j, m) => lay(m, (j ? 0.05 : -0.05), -len + 0.02, 0, j ? 0.15 : -0.15, -1, 0, 0.14, 0.18, 0.4), { name: 'briar-cape-ends', inkPx: PART_INK_PX, mottle: 0.1, seed: 61 + i });
-    g.add(ends);
-    strips.push({ g, ph: i * 1.3, x });
+    const ends = placeRow(wedge, mossDark, 2, (j, m) => lay(m, (j ? 0.05 : -0.05), -half + 0.02, 0, j ? 0.15 : -0.15, -1, 0, 0.14, 0.18, 0.4), { name: 'briar-cape-ends', inkPx: PART_INK_PX, mottle: 0.1, seed: 61 + i });
+    low.add(ends);
+    strips.push({ g, low, ph: i * 1.3, x });
   }
   const collar = placeRow(G.knot(), moss, 7, (i, m) => {
     const a = -1.4 + (i / 6) * 2.8;
@@ -558,7 +568,8 @@ export function buildBriarKnightFacet() {
     head.rotation.set(0.15 * C.couch - 0.1 * C.raise + 0.2 * C.plant + 0.03 * Math.sin(idle * 0.9), 0.06 * Math.sin(idle * 0.5) * (1 - C.fever), 0);
     // the cape: strips sway, stream back in the charge and lift off the run
     for (const s of strips) {
-      s.g.rotation.x = 0.1 + 0.85 * C.run + 0.25 * Math.min(1, sp) + 0.06 * Math.sin(idle * 2.1 + s.ph) + 0.35 * Math.max(0, C.lean) + 0.2 * C.shove;
+      s.g.rotation.x = 0.1 + 0.5 * C.run + 0.2 * Math.min(1, sp) + 0.06 * Math.sin(idle * 2.1 + s.ph) + 0.3 * Math.max(0, C.lean) + 0.2 * C.shove;
+      s.low.rotation.x = 0.35 * C.run + 0.1 * Math.min(1, sp) + 0.08 * Math.sin(idle * 2.1 + s.ph - 0.8);
       s.g.rotation.z = 0.04 * Math.sin(idle * 1.7 + s.ph) + s.x * 0.12 * C.run;
     }
     pivot.updateMatrix();
@@ -570,7 +581,8 @@ export function buildBriarKnightFacet() {
     const R = arms[1];
     R.hand.set(hp[0], hp[1], hp[2] - swing);
     lance.position.copy(R.hand);
-    lance.rotation.set(hp[3] + 0.06 * Math.sin(walkPh) * walkK, 0, -0.05 * C.couch);
+    // at rest the shaft leans out, clear of the pauldron
+    lance.rotation.set(hp[3] + 0.06 * Math.sin(walkPh) * walkK, 0, -0.12 * Math.max(0, 1 - C.couch - C.raise - C.plant) - 0.05 * C.couch);
     // the buckler arm: guard forward in the charge, out to the side in the raise
     const L = arms[0];
     const wG = C.guard;
