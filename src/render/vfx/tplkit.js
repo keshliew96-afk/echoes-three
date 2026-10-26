@@ -335,11 +335,16 @@ uniform float uSpan;
 uniform float uY;
 uniform float uLift;
 uniform float uTaper;
+uniform float uSwipe;
+uniform float uHead;
 varying vec2 vUv;
 void main() {
   vUv = uv;
   float a = uStart + uv.x * uSpan;
   float taper = mix( 1.0, pow( max( sin( 3.14159265 * uv.x ), 0.0 ), 0.5 ), uTaper );
+  // L3: a sword swipe is thickest at the blade (its head) and thins to a
+  // point toward the swing's start.
+  taper = mix( taper, pow( clamp( uv.x / max( uHead, 0.05 ), 0.0, 1.0 ), 0.75 ), uSwipe );
   float r = uRadius + ( uv.y - 1.0 ) * uWidth * taper;
   vec3 p = vec3( cos( a ) * r, uY + uLift * uv.y, sin( a ) * r );
   gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );

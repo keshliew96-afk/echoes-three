@@ -27,7 +27,7 @@ export const TONIC_FX = TONIC_COLORS;
 const INK = PALETTE.voidCharcoal;
 const TAU = Math.PI * 2;
 
-export function createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world = null }) {
+export function createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world = null, elementAir = null }) {
   const fx = (id) => TONIC_FX[id] ?? TONIC_FX.mend_tonic;
 
   // ------------------------------------------------------------ floor --
@@ -215,7 +215,9 @@ export function createTonicFx({ kit, bus, byId, spray, flare, shock, after, anti
         if (!t) continue;
         kit.star({ x: t.x, y: 0.7, z: t.z, color: c.glow, size: 0.9, life: 0.4, kind: 'star', angle: rnd(0, Math.PI) });
         spray('shard', t.x, 0.6, t.z, 3, { color: c.core, tile: SHARD_TILE.drop, speed: [0.3, 0.8], up: [0.5, 1.0], size: [0.06, 0.1], life: [0.5, 0.8], gravity: 5, drag: 0.6 });
+        if (elementAir) elementAir(t.x, t.z, 0.4, c.glow, c.core, 16);
       }
+      if (elementAir) elementAir(x, z, R * 0.75, c.glow, c.core);
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.16, 0.18);
     }
   });

@@ -47,6 +47,8 @@ export const SHOT_FX = Object.freeze({
   lights: 6, // at most this many shots light the floor at once
   sparks: [5, 10], // P4: a star of short pale streaks where a shot lands
 });
+// R6: the near-side light (reach about 1.5 bw from the body's centre).
+export const NEAR_LIGHT = Object.freeze({ reach: 1.0, side: 0.3, y: 0.7, size: 0.8, radius: 0.9, opacity: 0.38, sec: 0.12 });
 // D2: an arrow that lands stays stuck in the floor a few seconds.
 export const STUCK = Object.freeze({ cap: 10, life: 3, fade: 0.3, tilt: 0.6, back: 0.28 });
 const P4_PALE = '#E7D5A3';
@@ -256,13 +258,46 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
       rec.lt = kit.light({ x, z, radius: 0.75 * Math.sqrt(rec.w), color: rec.tp.a, opacity: SHOT_FX.light, life: Infinity, attack: 0.05 });
       rec.ltTok = rec.lt ? rec.lt.token : 0;
     }
+    // R6: the shot lights its target's near side in its last frames before
+    // contact (about 1 bw out), once per flight.
+    if (!rec.nearLit) {
+      const t = nearTarget(rec);
+      if (t) {
+        rec.nearLit = true;
+        const ox = t.x - rec.dx * NEAR_LIGHT.side;
+        const oz = t.z - rec.dz * NEAR_LIGHT.side;
+        kit.flash({ x: ox, y: NEAR_LIGHT.y, z: oz, color: rec.tp.a, size: NEAR_LIGHT.size * Math.sqrt(rec.w), life: NEAR_LIGHT.sec, opacity: NEAR_LIGHT.opacity });
+        kit.light({ x: ox, z: oz, radius: NEAR_LIGHT.radius, color: rec.tp.a, opacity: NEAR_LIGHT.opacity, life: NEAR_LIGHT.sec + 0.05, attack: 0.02 });
+        count(rec.src, 'near');
+      }
+    }
     rec.owe += (rec.tp.dust?.trail ?? 26 * rec.w) * dt;
     return rec;
+  }
+  // The body a shot is about to reach: ahead of it, within NEAR_LIGHT.reach.
+  let bodies = [];
+  function nearTarget(rec) {
+    let best = null;
+    let bd = NEAR_LIGHT.reach;
+    for (const b of bodies) {
+      if (rec.foe ? b.partyIndex === undefined : b.faction !== 'hostile') continue;
+      const ax = b.x - rec.x;
+      const az = b.z - rec.z;
+      if (ax * rec.dx + az * rec.dz <= 0) continue;
+      const d = Math.hypot(ax, az);
+      if (d < bd) {
+        bd = d;
+        best = b;
+      }
+    }
+    return best;
   }
   function frame(dt, entities) {
     stuckFrame(dt);
     const seen = new Set();
     const tick = world.tick ?? 0;
+    bodies = [];
+    for (const e of entities) if (e.hp > 0 && (e.faction === 'hostile' || e.partyIndex !== undefined) && !KINDS.has(e.kind)) bodies.push(e);
     for (const e of entities) {
       if (!KINDS.has(e.kind)) continue;
       let x = e.x;

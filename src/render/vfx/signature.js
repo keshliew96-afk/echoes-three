@@ -45,6 +45,7 @@ import { createShrineFx } from './shrinefx.js';
 import { createSecretFx } from './secretfx.js';
 import { createRelic6Fx } from './relic6fx.js';
 import { createAnimeFx } from './animefx.js';
+import { createFlipbook } from './flipbook.js';
 import { SKILLS } from '../../sim/skills.js';
 import { isOwnBody } from './hitfeedback.js';
 
@@ -86,6 +87,9 @@ const ENEMY_SHOT_TRAIL = Object.freeze({
 const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.6, bloomSkill: 2.0, bloomCrit: 1.25, bloomOpacity: 0.55, bloomGrow: 0.1, crowd: 0.12 });
 const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.3, bloomOpacity: 0.6, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
 
+// D3: the air an element leaves (§6.2 m).
+export const ELEMENT_AIR = Object.freeze({ twinkles: 100, sec: [1.0, 1.9], mist: 3, mistOpacity: 0.12 });
+
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
   const kit = createVfxKit({ stage, cosmetic });
   // Kesh's VFX templates (design-VFX.md §11): their own primitives.
@@ -109,6 +113,9 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const camfx = createCameraFx({ camera: stage.camera, gain: shakeGain });
   // §6.2 k and o (VFX_HIT_RULES): the local anime frame and the camera punch.
   const animeFx = createAnimeFx({ root: kit.root, cosmetic });
+  // l (L4): a crit's contact is drawn as a 5-drawing flipbook in pale gold.
+  const flipbook = createFlipbook({ root: kit.root, cosmetic });
+  const CRIT_BOOK = '#FFE7A8';
   const animeTick = new Map(); // attacker id -> the tick its finisher last played
   // Every combo finisher in the data (a skill with a combo bonus).
   const FINISHERS = new Set(Object.values(SKILLS).filter((d) => d.combo).map((d) => d.id));
@@ -906,7 +913,15 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // Nightfall and the blind over each enemy live in duskfx.js.
   const duskFx = createDuskFx({ kit, bus, byId, spray, flare, shock, after, camfx, N, rnd, mark, world });
   // TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot's beats.
-  const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world });
+  // D3 (VFX_HIT_RULES §6.2 m): an element leaves its air behind. About 100
+  // tiny twinkles and a faint mist hold the place 1 to 2 s after the Frost
+  // Bomb and the Frozen elite's burst, so the cold stays where it landed.
+  function elementAir(x, z, radius, color, core, n = ELEMENT_AIR.twinkles) {
+    tk.dust(x, 0.45, z, n, { tex: 'star', color, color2: core, radius, speed: [0, 0.12], up: [0.02, 0.22], size: [0.025, 0.05], life: ELEMENT_AIR.sec, gravity: 0, drag: 1.2, twinkle: 18, stagger: 0.25 });
+    spray('smoke', x, 0.3, z, N(ELEMENT_AIR.mist), { color: core, speed: [0.02, 0.1], up: [0, 0.06], size: [radius * 0.7, radius * 1.0], grow: 1.25, life: ELEMENT_AIR.sec, opacity: ELEMENT_AIR.mistOpacity, gravity: 0, drag: 2, jitter: radius * 0.4 });
+    mark('element_air');
+  }
+  const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world, elementAir });
   // HAZARDS AND SHRINES (docs/SHRINES.md): crystal spurs, shrines, blessings.
   const shrineFx = createShrineFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world });
   // SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and the chamber.
@@ -1073,6 +1088,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       animeFx.play(ev.x, ev.z);
     }
     classImpact(vfxClassStyle(cls), ev.x, ev.z, ev.dirX || 0, ev.dirZ || 0, { crit: !!ev.crit, big: ev.delivery !== 'basic' });
+    if (ev.crit) flipbook.play(ev.x, 0.8, ev.z, CRIT_BOOK, ev.kind === 'boss' || ev.kind === 'stag' ? 1.4 : 1);
     spatter(ev, atk);
   });
 
@@ -6481,6 +6497,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       spray('smoke', x, 0.2, z, 4, { color: c, speed: [0.6, 1.4], up: [0.1, 0.3], size: [0.4, 0.6], grow: 1.4, life: [0.7, 1.1], opacity: 0.3, gravity: -0.05, drag: 2.4, jitter: r * 0.5 });
       kit.mark({ x, z, radius: r * 1.2, kind: 'sigil', stain: c, glow: c, cool: 1.2, life: 1.6, opacity: 0.35 });
       kit.light({ x, z, radius: r * 1.6, color: c, opacity: 0.6, life: 0.6 });
+      elementAir(x, z, r * 0.8, c, PARCH);
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.05, 0.1);
       return;
     }
@@ -6742,6 +6759,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     kit.update(dt, renderHold);
     tk.update(dt, renderHold);
     animeFx.update(dt);
+    flipbook.update(dt);
     fxClock += dt;
   }
 
@@ -7677,6 +7695,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     swingSide.clear();
     camfx.clear();
     animeFx.clear();
+    flipbook.clear();
     animeTick.clear();
     spatterAt.clear();
     relic6Fx.teardown();
