@@ -83,10 +83,20 @@ What every model-standard hero shares, lifted out of the pilot Tank:
     after the stop moves the hold to the contact. A shooter never waits (its bolt lands
     later).
   - A connect up to 0.25 s after the contact (a guest's late event) still recoils at once.
-  - A hit taken (the `hurt` or `downed` clip) lets the move go over 4 frames into the
-    stance instead of dropping it, so nothing pops; the combo starts over.
-  - A skill enters its timeline just ahead of its release, mid-phase: that phase eases in
-    from the pose the rig had, never a jump.
+  - Every move hands back to the body's live base pose (the walk's lean and twist, or
+    the stance), never to a fixed rest: at its natural end the move lets go over 4
+    frames into whatever the legs are doing, so a swing on the walk takes over from the
+    walk and gives it back without a cut.
+  - A hit taken (the `hurt` or `downed` clip) lets the move go the same way, from where
+    each channel of the body stood (hips, torso and the lagged weapon each from its own
+    pose), so nothing pops; the combo starts over.
+  - A skill enters its timeline just ahead of its release, mid-phase. It cross-fades in
+    over 3 frames from the pose the rig had, and the weapon's lag ramps in with it, so a
+    cast pressed mid-swing never whips the weapon (`atk.entered(shift)` gives a rig the
+    fade for its own aim).
+  - The contact hold waits for the weapon: a melee strike holds where the weapon lands,
+    one weapon lag (2 frames) after the hips, so the held frame shows the blow, not the
+    weapon two frames short of it.
   - `cue('spawn')`: the grow-in from the floor on a room entry (B7: 7 frames, 10% overshoot).
   - `cue('reset')` forgets every move, hold and envelope. The camp calls it on the rigs of
     the mode coming in (a rig hears every cue on the bus, even while hidden and not updated),
@@ -103,7 +113,9 @@ What every model-standard hero shares, lifted out of the pilot Tank:
   stepping into a lunge. A step that would pass through the body (a turn on the spot)
   swings round it. On a hop, a dash or any travel too fast to walk (that frame's own speed
   too, so a dash lifts on its first frame) both feet lift from where they stand, ease to
-  ride the body over 3 frames and plant where they come down. A held frame (a hitstop)
+  ride the body over 3 frames and plant where they come down; the landing eases only their
+  height, so a foot lands where it is drawn. A lunge that rises (the finisher's step) moves
+  the lead foot at once, over 3 frames, so it plants with the blow instead of a step later. A held frame (a hitstop)
   leaves planted feet where they are; a teleport or a new room stands them afresh; only
   the lab's Still stands them on the pose's homes. `place()` sets the feet again after the
   walk's bob moves the rig. `walkBody` gives the walk's bob, roll, hip twist and travel
@@ -133,8 +145,8 @@ its build returns the critter contract plus `cue`, `hold`, `comboHitOf`, `atCont
 - **3-hit combo** (Kesh's template), at the sim's real 0.65 s swing cadence:
   1. *Backhand bash*: horizontal, slab side across to the far side.
   2. *Rising bash*: low on the far side, up across to high on the slab side, clear of the face.
-  3. *Crushing slam*: overhead on the toes, both paws on the slab, down into the ground
-     ahead with a lunge step.
+  3. *Crushing slam*: overhead on the toes, the slab raised one-handed out on its own side
+     (the off paw stays clear of the head), down into the ground ahead with a lunge step.
 
   The slab goes up and comes down round the head on its own side (the wind-up, the strike,
   the settle into the overhead and the recover swing out by up to 0.2 u), never through it.
@@ -182,7 +194,10 @@ The review after the re-measure found the slab inside the top of the head in the
 bash's high finish, the slam's overhead wind-up and Heavy Slam's gather (one corner of the
 shoulder block came within a fifth of the skull's radius of its centre). The overhead keys moved out to the slab side and back
 (0.37 u out, 0.2 u behind), the high finish 0.1 u further out, and the paths between them
-arc round the head; the probe now holds every hero to it.
+arc round the head; the probe now holds every hero to it. A second review found the off
+paw's arm crossing the head on those overhead keys, so the overhead and Heavy Slam's gather
+are one-handed (the paw rejoins nothing there); the lead foot of the slam's lunge now lands
+with the blow (0.42 s against the contact's 0.41 s), not 0.18 s late.
 
 ## The Healer (`src/render/critters/healerfacet.js`)
 
@@ -250,8 +265,9 @@ cheek markings, and the classic metrics.
 - The drawn blade arrives on the contact frame (a per-hit whip makes up the core's
   one-frame weapon lag on a 2-frame strike); the blade's flat turns toward the camera.
 - The crescent's follow-through finishes high in front of the face on the far side (the
-  guard used to pass through the jaw); a hit taken mid Blade Storm lets the turn go over the
-  let-go instead of snapping back.
+  guard used to pass through the jaw); a hit taken mid Blade Storm, or the storm's end,
+  lets the spin go over the 4-frame let-go the short way round instead of snapping back,
+  and the smear trails it.
 
 ## Integration
 
@@ -315,7 +331,10 @@ hit's wind-up with no pop anywhere; the lab's cues sit on each contact; `comboHi
 the contact holds through the hitstop the rig struck, and any hitstop holds the whole rig
 (B2); a connect recoils 0.08 to 0.12 u after the hold and a whiff does not, or a shooter
 squashes 20/29/38% (B3); the spawn grows in (B7); hand and tip are named and the tip
-travels (B8); the hips lead the weapon; the weapon never cuts into the head; planted feet
+travels (B8); the hips lead the weapon; a hit taken mid-swing and a swing on the walk hand
+back with no cut (per-frame spike under 0.08); a skill pressed mid-swing grows the tip's
+speed by under 0.08 u a frame (no whip); the held contact shows the weapon on its strike
+key; the recoil shove of a lone shot stays bounded; the weapon never cuts into the head; planted feet
 never slide, stay on the floor through the walk's bob, hold through a hitstop, step one at
 a time and along the travel in eight directions; the walk leans into the travel; a dash
 lifts both feet and they plant where they land; the finisher's hop or lunge moves the feet; downed
