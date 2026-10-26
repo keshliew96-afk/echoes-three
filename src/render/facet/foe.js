@@ -453,9 +453,9 @@ export function hitPose(hits, tls, rest, n, t, capture, fresh, pull, out, ease) 
 // cooldown) lets the held wind-up pull back into it (`pullBack`), and when the strike is
 // that close the chain starts the next hit itself, timed so its contact lands
 // ON the expected tick; the real event then confirms it instead of starting
-// another. Without a prediction a fresh hit's contact lands 3.5 frames after
-// its event (one frame of wind-back inside the strike, B1), a chained hit's
-// 2.5 frames after.
+// another. Without a prediction a fresh hit's contact lands `freshLead` after
+// its event (3.5 frames by default: one frame of wind-back inside the strike,
+// B1), a chained hit's 2.5 frames after.
 const STRIKE_IN = FRAME; // a timeline's strike phase starts here
 const CONTACT_IN = 3.5 * FRAME; // and its contact here
 // the held wind-up pulls back over the 4 frames before a predicted strike
@@ -465,9 +465,18 @@ export function pullBack(due) {
   if (due === null || due >= PULL_IN) return 0;
   return Math.min(1, (PULL_IN - due) / (4 * FRAME));
 }
-export function createChain({ hits, tls, rest, window, ease }) {
+// A fresh hit started on its event can strike quicker than its timeline:
+// `lead` (seconds from the event to the contact) squeezes the wind-back and
+// strike into it, and after the contact the timeline runs at its own pace.
+// Pure: real seconds since the hit's start to the timeline's.
+export function freshWarp(t, lead) {
+  if (lead === CONTACT_IN) return t;
+  return t < lead ? (t * CONTACT_IN) / lead : t - lead + CONTACT_IN;
+}
+export function createChain({ hits, tls, rest, window, ease, freshLead = CONTACT_IN }) {
   let n = -1; // the hit playing (0..2), -1 at rest
   let t0 = 0;
+  let lead = CONTACT_IN; // the playing hit's start to its contact (freshWarp)
   let lastHit = -99;
   let fresh = true;
   let pullK = 0;
@@ -479,15 +488,17 @@ export function createChain({ hits, tls, rest, window, ease }) {
   const capture = { ...rest };
   const scratch = { ...rest };
   const smp = {};
-  function start(now, chained, contactAt, out) {
+  function start(now, chained, contactAt, out, quick = false) {
     // the pose the new hit starts from: wherever the chain is right now
-    if (n >= 0) hitPose(hits, tls, rest, n, now - t0, capture, fresh, pullK, out, ease);
+    if (n >= 0) hitPose(hits, tls, rest, n, freshWarp(now - t0, lead), capture, fresh, pullK, out, ease);
     else Object.assign(out, rest);
     Object.assign(capture, out);
     fresh = !chained;
     n = fresh ? 0 : (n + 1) % hits.length;
-    // a chained hit skips the wind-back (it strikes from where it is)
-    t0 = contactAt - CONTACT_IN;
+    // a chained hit skips the wind-back (it strikes from where it is); only
+    // an unpredicted fresh hit takes the quick lead
+    lead = fresh && quick ? freshLead : CONTACT_IN;
+    t0 = contactAt - lead;
     pullK = 0;
   }
   const api = {
@@ -500,7 +511,7 @@ export function createChain({ hits, tls, rest, window, ease }) {
     },
     // when the playing hit's contact lands (the clock's seconds), or null
     get contactAt() {
-      return n >= 0 ? t0 + CONTACT_IN : null;
+      return n >= 0 ? t0 + lead : null;
     },
     // An attack event at `now`. Returns true when it started a hit, false when
     // it confirmed the one the prediction already started.
@@ -512,7 +523,7 @@ export function createChain({ hits, tls, rest, window, ease }) {
       }
       predicted = null;
       const chained = n >= 0 && now - lastHit <= window;
-      start(now, chained, now + (chained ? CONTACT_IN - STRIKE_IN : CONTACT_IN), out);
+      start(now, chained, now + (chained ? CONTACT_IN - STRIKE_IN : freshLead), out, true);
       lastHit = now;
       return true;
     },
@@ -526,12 +537,12 @@ export function createChain({ hits, tls, rest, window, ease }) {
         abortAt = null;
       }
       if (n < 0) return false;
-      let t = now - t0;
+      let t = freshWarp(now - t0, lead);
       if (predicted === null && due !== null && due <= CONTACT_IN - STRIKE_IN && t < tls[n].duration && tls[n].sample(t, smp).id === 'ready') {
         start(now, true, now + due, scratch);
         predicted = now + due;
         lastHit = predicted;
-        t = now - t0;
+        t = freshWarp(now - t0, lead);
       }
       // a chained hit starts at its strike: never a float's hair before it
       // (that would flick one frame back to the wind-up key pose)
@@ -560,9 +571,9 @@ export function createChain({ hits, tls, rest, window, ease }) {
     // to its recover, from the pose it holds.
     recover(now) {
       if (n < 0) return;
-      const t = now - t0;
+      const t = freshWarp(now - t0, lead);
       if (t >= tls[n].duration || tls[n].sample(t, smp).id !== 'ready') return;
-      t0 = now - tls[n].startOf('recover');
+      t0 = now - (tls[n].startOf('recover') - CONTACT_IN + lead);
       predicted = null;
     },
     // The sim holds the foe (a stun, a blind, a room clear) while a predicted
@@ -570,8 +581,8 @@ export function createChain({ hits, tls, rest, window, ease }) {
     // stops where it is and eases back to rest over 4 frames. True when it
     // aborted one (the rig takes back its lastStrike).
     abort(now) {
-      if (predicted === null || n < 0 || now >= t0 + CONTACT_IN) return false;
-      hitPose(hits, tls, rest, n, now - t0, capture, fresh, pullK, abortPose, ease);
+      if (predicted === null || n < 0 || now >= t0 + lead) return false;
+      hitPose(hits, tls, rest, n, freshWarp(now - t0, lead), capture, fresh, pullK, abortPose, ease);
       abortAt = now;
       n = -1;
       predicted = null;

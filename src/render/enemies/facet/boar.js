@@ -43,7 +43,7 @@ import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from '../style.j
 import { facetize } from '../../facet/material.js';
 import { instancedPart, plateGeometry, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
-import { FRAME, SPAWN_SEC, bakeParts, heldBy, hornGeometry, pullBack, scaleGeometry, createAttackWatch, createChain, createFoeClock, createFoeFrame, foeMaterial, foePart, hitPose, hitTimelines, namedPoint, placeBody, spawnScale } from '../../facet/foe.js';
+import { FRAME, SPAWN_SEC, freshWarp, bakeParts, heldBy, hornGeometry, pullBack, scaleGeometry, createAttackWatch, createChain, createFoeClock, createFoeFrame, foeMaterial, foePart, hitPose, hitTimelines, namedPoint, placeBody, spawnScale } from '../../facet/foe.js';
 import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
 
 // The sim's boar (sim/enemies.js ENEMY_STATS.boar): a bite every 48 ticks per
@@ -92,21 +92,26 @@ export function boarHitPose(n, t, from, fresh, pull, out = { ...REST }) {
   return hitPose(HITS, HIT_TL, REST, n, t, from, fresh, pull, out, ease);
 }
 
+// An unwarned bite (most live bites: the target or the boar moved) strikes
+// quick: wind-back and strike squeezed into 2.5 frames, so the tusk lands
+// about 1.5 ticks after the damage.
+export const BOAR_FRESH_LEAD = 2.5 * FRAME;
 // The model lab's gore: three bites at the sim's 0.8 s cadence, as the game
-// plays them. The first bite is unwarned: its contact lands 3.5 frames after
+// plays them. The first bite is unwarned: its contact lands 2.5 frames after
 // it. The next two are predicted from the per-target cooldown: each pulls
 // back over 4 frames, then strikes early, so its contact lands ON the bite
 // (pure in t, so it rewinds).
 const CONTACT_IN = 3.5 * FRAME;
-const CONTACTS = [CONTACT_IN, BITE_SEC, 2 * BITE_SEC];
+const CONTACTS = [BOAR_FRESH_LEAD, BITE_SEC, 2 * BITE_SEC];
 export const BOAR_GORE = Object.freeze({
   id: 'gore',
   label: 'Gore combo',
   duration: CONTACTS[2] - CONTACT_IN + HIT_TL[2].duration,
+  // the first hit runs on the quick lead (createChain's freshWarp)
   at(t) {
     // a chained hit enters at its strike, 2.5 frames before its contact
     const n = t < CONTACTS[1] - (CONTACT_IN - FRAME) ? 0 : t < CONTACTS[2] - (CONTACT_IN - FRAME) ? 1 : 2;
-    const tt = t - (CONTACTS[n] - CONTACT_IN);
+    const tt = n === 0 ? freshWarp(t, BOAR_FRESH_LEAD) : t - (CONTACTS[n] - CONTACT_IN);
     const due = n < 2 ? CONTACTS[n + 1] - t : null;
     const s = HIT_TL[n].sample(tt);
     const pull = s.id === 'ready' ? pullBack(due) : 0;
@@ -356,7 +361,7 @@ export function buildBoarFacet() {
   const gait = createLegs({ homes: HOMES, groups: [[0, 3], [1, 2]], trigger: 0.085, reach: 0.17, lift: 0.07, durMin: 0.085, durMax: 0.16 });
   const clock = createFoeClock();
   const watch = createAttackWatch();
-  const chain = createChain({ hits: HITS, tls: HIT_TL, rest: REST, window: GORE_WINDOW, ease });
+  const chain = createChain({ hits: HITS, tls: HIT_TL, rest: REST, window: GORE_WINDOW, ease, freshLead: BOAR_FRESH_LEAD });
   const cur = { ...REST };
   const fr = { x: 0, z: 0, yaw: 0, s: 1 };
   const lv = { x: 0, z: 0 };
