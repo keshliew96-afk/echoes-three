@@ -7,48 +7,56 @@
 //   * faceted masses: the thorax and the wide head are cut into planes with a
 //     strong value step, so the toon light bands plane by plane;
 //   * detail BAKED per kind (render/facet/foe.js), one draw call for the
-//     crowd: big faceted compound eyes, a pale face shield and brow stripe,
+//     crowd: angular brow plates, a pale face shield and brow stripe,
 //     mandibles, jointed antennae, pale scutum stripes, scutellum spot and
-//     wing scales (tegulae), the wasp waist (petiole), six jointed legs
-//     dangling under the hover. One white material carries every tone in its
-//     vertex colours (slate, pale, dark, charcoal), so the lit body is two
-//     meshes with their ink;
-//   * a SEGMENTED abdomen: four overlapping faceted plates on one instanced
-//     row, each pale with a slate rear band (the wasp's stripes; the classic's
-//     one band becomes four), the seams inked, laid every frame along a chain
-//     that curls under and hooks to either side; the faceted, curved indigo
-//     stinger (hornGeometry, dim base, bright point) rides its tip;
+//     wing scales (tegulae), the wasp waist (petiole), six short jointed legs
+//     folded under the thorax (inside its top-down outline, a slate step
+//     lighter than ink, so the pale abdomen keeps the read in a crowd). One
+//     white material carries every tone in its vertex colours (slate, pale,
+//     limb), so the lit body is two meshes with their ink. The eyes stay the
+//     classic's angular charcoal slits, unlit and never flashing (one call);
+//   * a SEGMENTED abdomen riding level like the classic's: four overlapping
+//     faceted plates on one instanced row, each pale with a slate rear band
+//     (the wasp's stripes; the classic's one band becomes four), inked at the
+//     silhouette's full width, laid every frame along a chain that curls
+//     under and hooks to either side; the faceted, curved indigo stinger
+//     (hornGeometry, dim base, bright point) rides its tip, aimed along it;
 //   * four VEINED wings on one instanced row (the classic's two meshes): fore
 //     and hind wings, a dark costa, a stigma and four long veins cut into the
 //     translucent parchment membrane; the beat (the classic's 60 rad/s flap,
-//     plus a figure-eight sweep) and the hover bob stay pure in t;
+//     plus a figure-eight sweep) and the hover bob stay pure in t, the tips
+//     under the elite crown in every phase;
 //   * a FLYER'S LEAN from the real travel (rule 1 of the self-check, legless
 //     form): the velocity is measured in the floor frame off the layer's own
 //     position and turned into the wasp's frame, so it pitches nose-down
 //     advancing, noses up on a backpedal, rolls toward a strafe (its orbit
 //     round the target) and banks into a turn, whatever way it faces;
 //   * the DART on the sim's lane telegraph (sim/enemies/wasp.js: a 42-tick
-//     Ember lane, then a dart at 9 u/s down it). The telegraph IS the coil:
-//     drawn back and up, aimed down the lane, the abdomen curls under, the
-//     wings flare high and a buzz tremor builds. The strike uncoils in the
-//     last 2.5 frames of the telegraph, sampled on the interpolated sim tick,
-//     so its contact pose (nose down 24 degrees, dropped, stretched long, the
-//     abdomen thrust forward under the body: the stab, wings swept back)
-//     lands ON the resolve tick, the tick the dart leaves. The contact holds
-//     while the sim's mode is 'dart'; when the dart ends it pulls up (flares
-//     nose-up, the abdomen whips back past rest) and settles with one
-//     overshoot. Not a repeating melee attack, so no 3-hit chain; its
-//     directional variety is per dart instead: hook from its right, hook from
-//     its left, then the big plunge, offset by the swarm index so a swarm's
-//     opening string of three staggered darts reads as three different stings;
+//     Ember lane, then a dart at 9 u/s down it). The telegraph IS the coil,
+//     the classic's: nose down along the lane, the hover steadied, the
+//     abdomen cocked up behind and aside with the stinger (the tell) held
+//     high where every facing sees it, the wings spread and beating hard, a
+//     buzz tremor building. The strike whips the abdomen under in the last
+//     2.5 frames of the telegraph, sampled on the shown sim tick, so its
+//     contact pose (nose down 24 degrees, dropped, stretched long, the stinger
+//     thrust forward under the body: the stab, wings swept back) lands on the
+//     release frame, the frame the dart's event arrives and the tick before
+//     the body leaves. The contact holds while the sim's mode is 'dart'; when
+//     the dart ends it pulls up (brakes nose-up, the abdomen whips back past
+//     rest) and settles with one overshoot. A stun, blind or room clear that
+//     cancels the telegraph aborts it, even inside the strike frames. Not a
+//     repeating melee attack, so no 3-hit chain; its directional variety is
+//     per dart instead: hook from its right, hook from its left, then the big
+//     plunge, offset by the swarm index so a swarm's opening string of three
+//     staggered darts reads as three different stings;
 //   * the spawn-in grow (B7), named points (B8: the stinger tip, its base, the
 //     mandibles), and the hit and death tuning the shared envelope reads.
 //
 // Faces +Z. Same contract as buildWasp (group, mats, setYaw, pose) plus lab,
 // react, death, points. Render only: the sim, its timing and damage untouched.
-import { BufferGeometry, Color, CylinderGeometry, DoubleSide, Float32BufferAttribute, Matrix4, Mesh, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three';
+import { BoxGeometry, BufferGeometry, Color, CylinderGeometry, DoubleSide, Euler, Float32BufferAttribute, Matrix4, Mesh, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three';
 import { PALETTE } from '../../../data/palette.js';
-import { groundShadow } from '../../critters/common.js';
+import { INK_PX, exactColor, groundShadow } from '../../critters/common.js';
 import { markShared } from '../../geocache.js';
 import { TELL_INDIGO, TELL_INDIGO_DIM } from '../style.js';
 import { facetize } from '../../facet/material.js';
@@ -71,9 +79,14 @@ const SNAP_SEC = 2.5 * FRAME;
 const SETTLE_SEC = 6 * FRAME;
 // The stinger's kick on the strike, settled over 3 frames of the contact (B4).
 const KICK = 0.12;
-// The hover (the classic's 0.9 u, its 0.06 u bob at 7 rad/s, its 60 rad/s beat).
+// The hover (the classic's 0.9 u, its 0.06 u bob at 7 rad/s, its 60 rad/s
+// beat); the beat centred a little lower than the classic's 0.3 rad so the
+// longer veined wings stay under the elite crown (CROWN_Y.wasp 1.2).
 const HOVER_Y = 0.9;
 const WING_W = 60;
+const FLAP0 = 0.12;
+const SPAN_F = 0.25;
+const SPAN_H = 0.17;
 
 // --- Key poses. lift: hover height offset (u); push: the body's shove along
 // +z (u); pitch: nose down (+); roll: about the long axis (+ leans to its
@@ -81,21 +94,25 @@ const WING_W = 60;
 // body's squash (wide, tall, long); curl: the abdomen's curl under (rad,
 // spread over its joints); hook: its swing aside (+ toward its left); sting:
 // the stinger's own bend; wUp / wAmp / wSweep: the wings' raise, beat size and
-// sweep back; buzz: the coil's tremor (0..1).
-const REST = Object.freeze({ lift: 0, push: 0, pitch: 0, roll: 0, twist: 0, sx: 1, sy: 1, sz: 1, curl: 0, hook: 0, sting: 0, wUp: 0, wAmp: 1, wSweep: 0, buzz: 0 });
+// sweep back; buzz: the coil's tremor (0..1); hold: the hover steadied while
+// it aims and darts (0..1 of the bob damped).
+const REST = Object.freeze({ lift: 0, push: 0, pitch: 0, roll: 0, twist: 0, sx: 1, sy: 1, sz: 1, curl: 0, hook: 0, sting: 0, wUp: 0, wAmp: 1, wSweep: 0, buzz: 0, hold: 0 });
 const FIELDS = Object.keys(REST);
 const K = (o) => Object.freeze({ ...REST, ...o });
 const mirror = (p) => K({ ...p, roll: -p.roll, twist: -p.twist, hook: -p.hook });
-// Dart 1, HOOK FROM ITS RIGHT: coiled with the abdomen cocked to its right,
-// it stabs across to its left as it drops into the dive.
-const C1 = K({ lift: 0.07, push: -0.06, pitch: 0.18, roll: 0.14, twist: -0.14, sx: 0.97, sy: 1.04, sz: 0.93, curl: 1.0, hook: -0.5, sting: 0.12, wUp: 0.38, wAmp: 1.45, wSweep: -0.18, buzz: 1 });
-const S1 = K({ lift: -0.2, push: 0.1, pitch: 0.42, roll: -0.2, twist: 0.12, sx: 0.9, sy: 0.92, sz: 1.16, curl: 1.9, hook: 0.32, sting: 0.3, wUp: -0.12, wAmp: 0.5, wSweep: 0.85 });
-const O1 = K({ lift: 0.05, push: 0.03, pitch: -0.3, roll: 0.1, twist: -0.06, sx: 1.04, sy: 1.05, sz: 0.95, curl: -0.15, hook: -0.12, sting: -0.05, wUp: 0.25, wAmp: 1.35, wSweep: -0.3 });
-// Dart 3, PLUNGE (the biggest, §6.1 B6): coiled deepest and highest, square,
-// it drops hardest, stretched longest, and pulls up with the biggest flare.
-const C3 = K({ lift: 0.13, push: -0.08, pitch: 0.12, sx: 0.96, sy: 1.06, sz: 0.9, curl: 1.15, sting: 0.15, wUp: 0.48, wAmp: 1.65, wSweep: -0.22, buzz: 1 });
-const S3 = K({ lift: -0.3, push: 0.12, pitch: 0.55, sx: 0.88, sy: 0.9, sz: 1.22, curl: 2.2, sting: 0.35, wUp: -0.15, wAmp: 0.4, wSweep: 1.0 });
-const O3 = K({ lift: 0.1, push: 0.04, pitch: -0.4, sx: 1.06, sy: 1.06, sz: 0.94, curl: -0.2, sting: -0.06, wUp: 0.32, wAmp: 1.5, wSweep: -0.36 });
+// Dart 1, HOOK FROM ITS RIGHT: the classic's coil, nose down along the lane
+// with the abdomen cocked up behind and aside to its right (the stinger, the
+// tell, held high where every facing sees it), the wings spread and beating
+// hard; it whips the abdomen under and across to its left as it drops into
+// the dive (the stab).
+const C1 = K({ lift: 0.02, push: -0.06, pitch: 0.4, roll: 0.14, twist: -0.14, sx: 0.97, sy: 1.04, sz: 0.93, curl: 0.15, hook: -0.5, sting: -0.28, wUp: -0.08, wAmp: 1.35, wSweep: -0.3, buzz: 1, hold: 1 });
+const S1 = K({ lift: -0.2, push: 0.1, pitch: 0.42, roll: -0.2, twist: 0.12, sx: 0.9, sy: 0.92, sz: 1.16, curl: 1.9, hook: 0.22, sting: 0.3, wUp: -0.12, wAmp: 0.5, wSweep: 0.85, hold: 1 });
+const O1 = K({ lift: 0.03, push: 0.03, pitch: -0.3, roll: 0.1, twist: -0.06, sx: 1.04, sy: 1.05, sz: 0.95, curl: -0.15, hook: -0.12, sting: -0.05, wUp: -0.2, wAmp: 1.15, wSweep: -0.08, hold: 0.5 });
+// Dart 3, PLUNGE (the biggest, §6.1 B6): coiled highest and square, it drops
+// hardest, stretched longest, and pulls up with the biggest flare.
+const C3 = K({ lift: 0.04, push: -0.08, pitch: 0.4, sx: 0.96, sy: 1.06, sz: 0.9, curl: 0.2, sting: -0.28, wUp: -0.12, wAmp: 1.45, wSweep: -0.36, buzz: 1, hold: 1 });
+const S3 = K({ lift: -0.3, push: 0.12, pitch: 0.55, sx: 0.88, sy: 0.9, sz: 1.22, curl: 2.2, sting: 0.35, wUp: -0.15, wAmp: 0.4, wSweep: 1.0, hold: 1 });
+const O3 = K({ lift: 0.05, push: 0.04, pitch: -0.4, sx: 1.06, sy: 1.06, sz: 0.94, curl: -0.2, sting: -0.06, wUp: -0.24, wAmp: 1.2, wSweep: -0.12, hold: 0.5 });
 // Dart 2 is dart 1 mirrored: HOOK FROM ITS LEFT.
 const DARTS = [
   { label: 'hook from its right', coil: C1, strike: S1, over: O1 },
@@ -194,7 +211,8 @@ export const WASP_ABILITIES = Object.freeze({ dart: WASP_DART, string: WASP_STRI
 const SLATE = new Color().setHSL(0.6, 0.3, 0.3);
 const PALE = new Color(PALETTE.bone).multiplyScalar(0.7);
 const DARK = SLATE.clone().multiplyScalar(0.5);
-const EYE = SLATE.clone().multiplyScalar(0.2);
+// the legs and antennae: a step under the thorax, never an ink-dark fringe
+const LIMB = SLATE.clone().multiplyScalar(0.75);
 const MEMBRANE = new Color(PALETTE.parchment);
 const VEIN = SLATE.clone().multiplyScalar(0.32);
 const fz = (g, jitter, seed) => facetize(g, { jitter, seed });
@@ -261,6 +279,29 @@ function wingGeometry() {
   return g;
 }
 
+const XAXIS = new Vector3(1, 0, 0);
+const YAXIS = new Vector3(0, 1, 0);
+// The six legs (the right side; the left mirrors): hip, then femur, tibia and
+// tarsus as [dx, dy, dz, length], short and folded: the tarsi turn in under
+// the thorax (the hind pair forward, clear of the abdomen's curl and hook).
+export const WASP_LEGS = Object.freeze([
+  [[0.03, -0.065, 0.05], [[0.5, -0.6, 0.6, 0.049], [0.0, -0.95, 0.3, 0.056], [-0.35, -0.7, 0.6, 0.028]]],
+  [[0.042, -0.072, 0.0], [[0.75, -0.65, 0.0, 0.0525], [0.08, -0.95, -0.25, 0.06], [-0.4, -0.75, -0.45, 0.028]]],
+  [[0.042, -0.065, -0.05], [[0.65, -0.6, -0.45, 0.06], [0.05, -0.72, -0.68, 0.07], [-0.3, -0.75, 0.55, 0.035]]],
+]);
+const LEG_R = [0.012, 0.0095, 0.007];
+
+// The head ellipsoid (its centre, radii and the face's downward tilt), and a
+// point pushed out onto its surface (lift > 1 stands it proud).
+const HEAD_C = new Vector3(0, 0.01, 0.13);
+const HEAD_R = new Vector3(0.075 * 1.18, 0.075 * 0.95, 0.075 * 0.8);
+const HEAD_TILT = 0.25;
+function onHead(out, x, y, z, lift = 1) {
+  out.set(x, y, z).sub(HEAD_C).applyAxisAngle(XAXIS, -HEAD_TILT);
+  const k = Math.hypot(out.x / HEAD_R.x, out.y / HEAD_R.y, out.z / HEAD_R.z);
+  return out.multiplyScalar(lift / k).applyAxisAngle(XAXIS, HEAD_TILT).add(HEAD_C);
+}
+
 let SET = null;
 function geos() {
   if (SET) return SET;
@@ -284,44 +325,39 @@ function geos() {
   // The lit body: the slate thorax and the wide head (full ink).
   set.body = bakeParts('wasp:body', () => [
     { geo: fz(new SphereGeometry(0.1, 8, 6), 0.14, 201), m: new Matrix4().compose(new Vector3(0, 0, -0.015), new Quaternion(), new Vector3(1, 0.9, 1.12)), tint: SLATE },
-    { geo: fz(new SphereGeometry(0.075, 8, 5), 0.12, 203), m: new Matrix4().compose(new Vector3(0, 0.01, 0.13), new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.25), new Vector3(1.18, 0.95, 0.8)), tint: SLATE },
+    { geo: fz(new SphereGeometry(0.075, 8, 5), 0.12, 203), m: new Matrix4().compose(HEAD_C, new Quaternion().setFromAxisAngle(XAXIS, HEAD_TILT), new Vector3(1.18, 0.95, 0.8)), tint: SLATE },
   ]);
-  // The detail (part ink): eyes, face, mandibles, antennae, thorax marks,
-  // wing scales, the waist and the six dangling legs, every tone in one call.
+  // The detail (part ink): brows, face, mandibles, antennae, thorax marks,
+  // wing scales, the waist and the six legs tucked under the hover, every
+  // tone in one call.
   set.detail = bakeParts('wasp:detail', () => {
     const out = [];
-    const eye = fz(new SphereGeometry(1, 6, 5), 0.22, 205);
     const limb = fz(new CylinderGeometry(0.75, 1, 1, 4).translate(0, 0.5, 0), 0.12, 207);
     const waist = fz(new CylinderGeometry(0.8, 1, 1, 6).translate(0, 0.5, 0), 0.1, 209);
     for (const s of [-1, 1]) {
-      // compound eyes: tall faceted kidneys bulging off the head's sides
-      out.push({ geo: eye, m: new Matrix4().compose(P.set(s * 0.072, 0.02, 0.132), new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), s * 0.35).multiply(new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), -s * 0.2)), new Vector3(0.03, 0.052, 0.046)), tint: EYE });
+      // an angular brow plate over each slit eye, slanted with it
+      onHead(P, s * 0.046, 0.046, 0.166, 0.99);
+      out.push({ geo: plate, m: at(P, new Vector3(s * 0.35, 1, 0.6), new Vector3(-s * 0.5, 0.2, 1), 0.042, 0.022, 0.026), tint: SLATE, tone: 0.84 });
       // mandibles
-      out.push({ geo: wedge, m: at(P.set(s * 0.022, -0.043, 0.18), new Vector3(-s * 0.4, -1, 0.5), new Vector3(0, 0, 1), 0.024, 0.045, 0.012), tint: DARK });
+      out.push({ geo: wedge, m: at(P.set(s * 0.022, -0.043, 0.18), new Vector3(-s * 0.4, -1, 0.5), new Vector3(0, 0, 1), 0.024, 0.04, 0.012), tint: LIMB, tone: 0.8 });
       // antennae: a scape, then the flagellum curving out and down
       A.set(s * 0.022, 0.04, 0.176);
-      B.copy(A).addScaledVector(H.set(s * 0.25, 0.85, 0.45).normalize(), 0.055);
-      out.push({ geo: limb, m: seg(A, B, 0.008), tint: DARK });
-      A.copy(B).addScaledVector(H.set(s * 0.45, 0.3, 0.84).normalize(), 0.06);
-      out.push({ geo: limb, m: seg(B, A, 0.0068), tint: DARK });
-      B.copy(A).addScaledVector(H.set(s * 0.5, -0.12, 0.86).normalize(), 0.06);
-      out.push({ geo: limb, m: seg(A, B, 0.0058), tint: DARK });
+      B.copy(A).addScaledVector(H.set(s * 0.25, 0.85, 0.45).normalize(), 0.05);
+      out.push({ geo: limb, m: seg(A, B, 0.008), tint: LIMB });
+      A.copy(B).addScaledVector(H.set(s * 0.45, 0.3, 0.84).normalize(), 0.05);
+      out.push({ geo: limb, m: seg(B, A, 0.0068), tint: LIMB });
+      B.copy(A).addScaledVector(H.set(s * 0.5, -0.12, 0.86).normalize(), 0.045);
+      out.push({ geo: limb, m: seg(A, B, 0.0058), tint: LIMB });
       // pale scutum stripes and the wing scales (tegulae)
       out.push({ geo: plate, m: at(P.set(s * 0.032, 0.082, 0.005), new Vector3(s * 0.3, 1, 0.05), new Vector3(0, 0, 1), 0.022, 0.014, 0.07), tint: PALE, tone: 0.96 });
       out.push({ geo: scale, m: at(P.set(s * 0.072, 0.05, 0.03), new Vector3(s * 1, 0.8, 0), new Vector3(0, 0, 1), 0.03, 0.012, 0.036), tint: PALE });
-      // six legs hanging under the hover: femur, tibia, tarsus (the front pair
-      // reaching forward, the hind pair trailing under the abdomen)
-      const LEGS = [
-        [[0.03, -0.065, 0.05], [[0.55, -0.6, 0.58, 0.07], [0.1, -0.95, 0.3, 0.08], [0.05, -0.7, 0.7, 0.04]]],
-        [[0.042, -0.072, 0.0], [[0.8, -0.6, 0.0, 0.075], [0.25, -0.92, -0.3, 0.085], [0.1, -0.8, -0.6, 0.04]]],
-        [[0.042, -0.065, -0.05], [[0.7, -0.55, -0.45, 0.085], [0.2, -0.65, -0.73, 0.1], [0.05, -0.5, -0.86, 0.05]]],
-      ];
-      const LR = [0.012, 0.0095, 0.007];
-      for (const [hip, bones] of LEGS) {
+      // six legs folded under the hover: femur, tibia, tarsus, the tarsi
+      // turned in under the thorax (inside its top-down outline)
+      for (const [hip, bones] of WASP_LEGS) {
         A.set(s * hip[0], hip[1], hip[2]);
         bones.forEach(([dx, dy, dz, len], k) => {
           B.copy(A).addScaledVector(H.set(s * dx, dy, dz).normalize(), len);
-          out.push({ geo: limb, m: seg(A, B, LR[k]), tint: DARK, tone: 1 - 0.06 * k });
+          out.push({ geo: limb, m: seg(A, B, LEG_R[k]), tint: LIMB, tone: 1 - 0.06 * k });
           A.copy(B);
         });
       }
@@ -332,8 +368,14 @@ function geos() {
     // the scutellum spot
     out.push({ geo: plate, m: at(P.set(0, 0.081, -0.056), new Vector3(0, 1, -0.6), new Vector3(0, 0, 1), 0.05, 0.012, 0.028), tint: PALE });
     // the wasp waist (petiole)
-    out.push({ geo: waist, m: seg(A.set(0, -0.012, -0.085), B.set(0, -0.028, -0.135), 0.022), tint: DARK });
+    out.push({ geo: waist, m: seg(A.set(0, -0.006, -0.085), B.set(0, -0.012, -0.133), 0.022), tint: DARK });
     return out;
+  });
+  // The eyes: the classic's angular charcoal slits (slitEyes: a thin bar per
+  // side, yawed and slanted), unlit and never flashing.
+  set.eyes = bakeParts('wasp:eyes', () => {
+    const bar = fz(new BoxGeometry(0.056, 0.022, 0.022), 0, 1);
+    return [-1, 1].map((s) => ({ geo: bar, m: new Matrix4().compose(onHead(new Vector3(), s * 0.045, 0.024, 0.174, 0.97), new Quaternion().setFromEuler(new Euler(0, s * -0.3, s * 0.5)), new Vector3(1, 1, 1)) }));
   });
   // One abdomen plate: a faceted ovoid, pale with a slate rear band (its
   // stripe). Unit radius; each instance scales it to its segment.
@@ -363,11 +405,11 @@ const STING_TIP = (() => {
 // The abdomen chain: four plates from the waist, each with its length and
 // radius, the rest hang of the waist joint and the bend at each joint, and
 // the share of the curl each joint takes.
-const GASTER_ROOT = new Vector3(0, -0.028, -0.128);
+const GASTER_ROOT = new Vector3(0, -0.012, -0.126);
 const SEG_L = [0.074, 0.087, 0.078, 0.069];
-const SEG_R = [0.068, 0.09, 0.079, 0.056];
-const REST_A0 = 0.22;
-const REST_BEND = 0.05;
+const SEG_R = [0.074, 0.097, 0.088, 0.063];
+const REST_A0 = 0.0;
+const REST_BEND = 0.02;
 const CURL_W = [0.3, 0.25, 0.25, 0.2];
 const STING_LEN = 0.15;
 // Wing roots (the right side; the left mirrors), their spans and chords.
@@ -380,7 +422,6 @@ const WINGS = [
 const ROOT_F = new Vector3(0.068, 0.062, 0.03);
 const ROOT_H = new Vector3(0.06, 0.058, -0.012);
 const PIVOT = new Vector3(0, 0, -0.03);
-const YAXIS = new Vector3(0, 1, 0);
 const ZAXIS = new Vector3(0, 0, 1);
 const clamp1 = (v) => (v < -1 ? -1 : v > 1 ? 1 : v);
 
@@ -395,8 +436,9 @@ export function buildWaspFacet() {
 
   body.add(foePart(G.body, chitin, 'full', 'wasp-body'));
   body.add(foePart(G.detail, chitin, 'part', 'wasp-detail'));
+  body.add(foePart(G.eyes, new MeshBasicMaterial({ color: exactColor(PALETTE.voidCharcoal), toneMapped: false }), false, 'wasp-eyes'));
   // the abdomen plates and the wings: one instanced row each, laid every frame
-  const gaster = instancedPart(G.plate, chitin, 4, { name: 'wasp-gaster', moving: true, inkPx: 2.0 });
+  const gaster = instancedPart(G.plate, chitin, 4, { name: 'wasp-gaster', moving: true, inkPx: INK_PX });
   const wings = instancedPart(G.wing, wingMat, 4, { name: 'wasp-wings', moving: true, ink: false });
   body.add(gaster);
   body.add(wings);
@@ -439,6 +481,7 @@ export function buildWaspFacet() {
   let telStart = 0;
   let telResolve = 0;
   let released = false;
+  let shownMax = -1e9;
   let t0 = 0;
   let offAt = null;
   let wasDarting = false;
@@ -495,6 +538,7 @@ export function buildWaspFacet() {
       telStart = tel.startTick;
       telResolve = tel.resolveTick;
       released = false;
+      shownMax = -1e9;
       state = 'coil';
     } else if (beat && beat.type === 'release' && (state === 'coil' || state === 'strike')) released = true;
     else if (beat && beat.type === 'cancel' && (state === 'coil' || state === 'strike')) {
@@ -511,26 +555,35 @@ export function buildWaspFacet() {
       darts += 1;
       state = 'snapin';
       t0 = now;
-      noteStrike(`dart:${variant + 1}`, tick + FRAME * TICK_HZ);
+      noteStrike(`dart:${variant + 1}`, tick + 1 + FRAME * TICK_HZ); // the shown tick + one frame
     }
     wasDarting = darting;
     const Dv = DARTS[variant];
     if (state === 'coil' || state === 'strike') {
-      // sampled on the interpolated sim tick: the contact lands ON the resolve
+      // sampled on the SHOWN tick: the layer passes P.tick = state tick - 1 +
+      // alpha while the entity's fields are the state's own, so the release
+      // is seen at about R - 1. On P.tick + 1 the whole 5-tick strike plays
+      // and its contact lands on the release frame, the frame the dart's
+      // event (its VFX and sound) arrives. It never runs backward (a hitstop
+      // saw-tooths the tick).
+      const shown = Math.min(telResolve, Math.max(shownMax, tick + 1));
+      shownMax = shown;
       const span = Math.max(1, telResolve - telStart);
       const sTicks = Math.min(STRIKE_TICKS, span * 0.5);
       const strikeAt = telResolve - sTicks;
-      if (tick < strikeAt) {
-        const kc = (tick - telStart) / (strikeAt - telStart);
+      if (shown < strikeAt) {
+        const kc = (shown - telStart) / (strikeAt - telStart);
         coilPose(Dv, kc < 0 ? 0 : kc > 1 ? 1 : kc, capture, cur);
       } else {
         if (state === 'coil') {
           state = 'strike';
-          noteStrike(`dart:${variant + 1}`, tick + (telResolve - tick)); // P.tick + seconds to contact x 60
+          noteStrike(`dart:${variant + 1}`, shown + (telResolve - shown)); // the shown tick + seconds to contact x 60: the resolve
         }
-        const ks = (tick - strikeAt) / sTicks;
+        const ks = (shown - strikeAt) / sTicks;
         strikePose(Dv, ks > 1 ? 1 : ks, cur);
-        if (tick >= telResolve && (released || darting)) {
+        // the dive only on the sim's own word: the watch's release (a held
+        // resolve is a cancel) or the dart mode itself
+        if (shown >= telResolve && (released || darting)) {
           state = 'dive';
           t0 = now;
           offAt = null;
@@ -633,12 +686,12 @@ export function buildWaspFacet() {
     // --- the body: the dart's pose, the hover and its bob (pure in t), the
     // lean, the coil's tremor, a slow abdomen pump
     const id = e && Number.isFinite(e.id) ? e.id : 0;
-    const bob = 0.06 * Math.sin(tt * 7 + id);
+    const bob = 0.06 * (1 - 0.6 * cur.hold) * Math.sin(tt * 7 + id);
     const shiver = cur.buzz * Math.sin(tt * 83 + id * 1.7);
     body.rotation.set(cur.pitch + leanP + 0.02 * shiver, cur.twist, cur.roll + leanR + 0.05 * shiver);
     body.scale.set(cur.sx, cur.sy, cur.sz);
     placeBody(body, PIVOT, cur.push, HOVER_Y + cur.lift + bob + 0.01 * shiver);
-    // the shadow tightens as the wasp drops, spreads as it rises
+    // the shadow spreads as the wasp drops toward the floor, tightens as it rises
     shadow.scale.setScalar(1 - 0.9 * Math.max(-0.35, Math.min(0.2, cur.lift + bob)));
 
     // --- the abdomen: four plates down a chain that curls under (in the
@@ -662,8 +715,9 @@ export function buildWaspFacet() {
       J.addScaledVector(D, SEG_L[i]);
     }
     gaster.instanceMatrix.needsUpdate = true;
-    // the stinger off the last plate's tip, bent on under (its point leads)
-    const sp = phi + 0.1 + 0.15 * curl + cur.sting;
+    // the stinger off the last plate's tip, along it (a curl bends it on
+    // under, so in the stab its point leads)
+    const sp = phi - 0.08 + 0.15 * curl + cur.sting;
     D.set(0, -Math.sin(sp), -Math.cos(sp)).applyQuaternion(q);
     U.set(0, -Math.cos(sp), Math.sin(sp)).applyQuaternion(q); // its belly: the horn bends this way
     C.copy(J).addScaledVector(D, -0.012).add(GASTER_ROOT);
@@ -676,12 +730,12 @@ export function buildWaspFacet() {
     for (let i = 0; i < 4; i++) {
       const { s, fore } = WINGS[i];
       const ph = tt * WING_W + id * 0.9 + (fore ? 0 : 0.35);
-      const flap = 0.3 + cur.wUp + 0.5 * cur.wAmp * (fore ? 1 : 0.9) * Math.sin(ph);
+      const flap = FLAP0 + cur.wUp + 0.5 * cur.wAmp * (fore ? 1 : 0.9) * Math.sin(ph);
       const sweep = (fore ? 0.22 : 0.5) + cur.wSweep + 0.16 * cur.wAmp * Math.cos(ph);
       q2.setFromAxisAngle(YAXIS, s * sweep).multiply(axisAngle(ZAXIS, s * flap));
       const root = fore ? ROOT_F : ROOT_H;
       pos.set(s * root.x, root.y, root.z);
-      scl.set(s * (fore ? 0.27 : 0.18), 1, fore ? 0.17 : 0.12);
+      scl.set(s * (fore ? SPAN_F : SPAN_H), 1, fore ? 0.17 : 0.12);
       wings.setMatrixAt(i, m.compose(pos, q2, scl));
     }
     wings.instanceMatrix.needsUpdate = true;
