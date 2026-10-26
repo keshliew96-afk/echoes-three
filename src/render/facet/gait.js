@@ -259,7 +259,8 @@ export function createGait(feet, opts = {}) {
       space.updateWorldMatrix(true, false);
       return F.map((f) => {
         const w = space.localToWorld(tmp.copy(f.out));
-        return { planted: f.swing === -1, x: f.planted.x, z: f.planted.z, drawnX: w.x, drawnY: w.y, drawnZ: w.z, steps: f.steps, group: f.group };
+        // a foot riding a leap (up 1) carries no weight
+        return { planted: f.swing === -1 && f.up < 1e-3, x: f.planted.x, z: f.planted.z, drawnX: w.x, drawnY: w.y, drawnZ: w.z, steps: f.steps, group: f.group };
       });
     },
     // The travel in the space's own frame (+z ahead): the lean follows it.

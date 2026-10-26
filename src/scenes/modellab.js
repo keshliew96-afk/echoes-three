@@ -21,6 +21,9 @@
 // small VFX kit beat.
 //
 // Probe surface: debugState() and cmd('lab', {patch}) through the debug API.
+// A probe on a slow software-GL machine can pass `fixedDt` (s): every drawn
+// frame then advances the lab by that step, not by the wall clock, so the
+// locked feet see 60 Hz motion however slowly the frames come.
 import { Color, Group, Mesh, MeshBasicMaterial, PlaneGeometry, RingGeometry, Vector3 } from 'three';
 import { CAMERA } from '../core/constants.js';
 import { PALETTE, VFX_SIGNATURE } from '../data/palette.js';
@@ -183,6 +186,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     readout: '',
     azimuth: 0.6,
     movePhase: 0,
+    fixedDt: 0,
   };
   state.ability = params.get('ability') || ABILITIES[state.model][0][0];
 
@@ -212,11 +216,14 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       wyrm.lab.reset();
       resetModels();
     }
-    for (const k of ['mode', 'ability', 'view', 'turntable', 'classic', 'rate', 'azimuth', 'movePhase']) if (k in patch) state[k] = patch[k];
+    const wasMode = state.mode;
+    for (const k of ['mode', 'ability', 'view', 'turntable', 'classic', 'rate', 'azimuth', 'movePhase', 'fixedDt']) if (k in patch) state[k] = patch[k];
     if ('t' in patch) state.t = Math.max(0, patch.t);
     if (patch.ability) state.t = patch.t ?? 0;
     if (patch.mode === 'move' && !('movePhase' in patch)) state.movePhase = 0;
-    if (patch.mode && patch.mode !== 'move') resetModels();
+    // Still from a playing ability freezes that moment (the locked feet
+    // where the motion left them); any other mode change starts clean
+    if (patch.mode && patch.mode !== 'move' && !(patch.mode === 'still' && wasMode === 'ability')) resetModels();
     ui?.refresh();
   }
   function resetModels() {
@@ -238,7 +245,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   let classicTel = 0;
 
   function update(elapsedSec) {
-    const rawDt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, elapsedSec - lastElapsed));
+    const rawDt = state.fixedDt > 0 ? state.fixedDt : lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, elapsedSec - lastElapsed));
     lastElapsed = elapsedSec;
     setInkViewport(window.innerWidth, window.innerHeight);
     const still = state.mode === 'still';

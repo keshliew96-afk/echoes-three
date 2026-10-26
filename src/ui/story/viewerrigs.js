@@ -10,6 +10,7 @@ import { buildWyrm } from '../../render/boss/wyrm.js';
 import { buildWyrmFacet } from '../../render/boss/wyrmfacet.js';
 import { buildStagFacet } from '../../render/boss/stagfacet.js';
 import { buildThornmotherFacet } from '../../render/boss/thornmotherfacet.js';
+import { buildGloamWolfFacet } from '../../render/boss/gloamwolffacet.js';
 import { facetOn } from '../../render/facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from '../../render/boss/slice2.js';
 import { buildCantor, buildColossus } from '../../render/boss/heart.js';
@@ -29,7 +30,7 @@ export const BUILDERS = {
   lichram: buildLichram,
   cantor: buildCantor,
   colossus: buildColossus,
-  gloamwolf: buildGloamWolf,
+  gloamwolf: facetOn('gloamwolf') ? buildGloamWolfFacet : buildGloamWolf,
   mireking: buildMireKing,
   ashraven: buildAshRaven,
   veinweaver: buildVeinWeaver,

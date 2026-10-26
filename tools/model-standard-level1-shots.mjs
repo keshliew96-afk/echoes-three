@@ -51,7 +51,22 @@ const LAB_SHOTS = {
     ['trample-charge', { ability: 'trample', phase: 'charge', at: 0.7 }],
     ['trample-gore', { ability: 'trample', phase: 'gore', at: 0.5 }],
     ['spawn', { ability: 'spawn', phase: 'grow', at: 0.35 }],
-    ['walk', { mode: 'move', movePhase: 1.2, view: 'play', frames: 40 }],
+    ['walk', { mode: 'move', movePhase: 1.2, view: 'play', frames: 90 }],
+    ['classic-beside', { mode: 'idle', classic: true, azimuth: 0.5 }],
+    ['play-zoom', { mode: 'idle', view: 'play', classic: true }],
+  ],
+  gloamwolf: [
+    ['idle', { mode: 'idle', azimuth: 0.7 }],
+    ['pounce-crouch', { ability: 'pounce', phase: 'crouch', at: 0.85 }],
+    ['pounce-leap', { ability: 'pounce', phase: 'leap', at: 0.5 }],
+    ['pounce-land', { ability: 'pounce', phase: 'hold', at: 0.5 }],
+    ['rend-wind', { ability: 'rend', phase: 'wind', at: 0.85 }],
+    ['rend-rake', { ability: 'rend', phase: 'hold', at: 0.5 }],
+    ['howl-rise', { ability: 'howl', phase: 'rise', at: 0.8 }],
+    ['howl-cry', { ability: 'howl', phase: 'hold', at: 0.5 }],
+    ['rage', { ability: 'rage', phase: 'enraged', at: 0.5 }],
+    ['spawn', { ability: 'spawn', phase: 'grow', at: 0.35 }],
+    ['walk', { mode: 'move', movePhase: 1.2, view: 'play', frames: 90 }],
     ['classic-beside', { mode: 'idle', classic: true, azimuth: 0.5 }],
     ['play-zoom', { mode: 'idle', view: 'play', classic: true }],
   ],
@@ -63,7 +78,7 @@ const LAB_SHOTS = {
     ['charge-run', { ability: 'charge', phase: 'run', at: 0.5 }],
     ['charge-stop', { ability: 'charge', phase: 'hold', at: 0.5 }],
     ['spawn', { ability: 'spawn', phase: 'grow', at: 0.35 }],
-    ['walk', { mode: 'move', movePhase: 1.2, view: 'play', frames: 40 }],
+    ['walk', { mode: 'move', movePhase: 1.2, view: 'play', frames: 90 }],
     ['classic-beside', { mode: 'idle', classic: true, azimuth: 0.5 }],
     ['play-zoom', { mode: 'idle', view: 'play', classic: true }],
   ],
@@ -102,11 +117,12 @@ async function labShots(model) {
         }
         acc += dur;
       }
-      await lab({ mode: 'ability', t: 0, rate: 1, ability: p.ability });
-      await page.waitForFunction((tt) => window.__echoes.cmd('lab', {}).t >= tt, { timeout: 120000, polling: 16 }, Math.max(0, target - 0.12));
-      await lab({ mode: 'still', t: target });
+      // the lab steps 1/60 s per drawn frame, so the run-up is 60 Hz motion
+      await lab({ mode: 'ability', t: 0, rate: 1, ability: p.ability, fixedDt: 1 / 60 });
+      await page.waitForFunction((tt) => window.__echoes.cmd('lab', {}).t >= tt, { timeout: 300000, polling: 'raf' }, Math.max(0, target - 1 / 60));
+      await lab({ mode: 'still', t: target, fixedDt: 0 });
     } else {
-      await lab({ ...base, ...p, model, frames: undefined });
+      await lab({ ...base, ...p, model, frames: undefined, fixedDt: 1 / 60 });
     }
     await frames(p.frames || 4);
     await page.screenshot({ path: `${SHOTS}/${model}-${name}.png` });
@@ -128,6 +144,12 @@ const GAME_SHOTS = {
     ['quake-rear', 'b.tel && b.telK > 0.85', 2],
     ['quake-slam', 'p && p.tel && !b.tel', 1],
     ['trample', 'b.lunge > 0 && b.lunge < 10', 1],
+  ],
+  gloamwolf: [
+    ['pounce-crouch', "b.mode === 'crouch' && b.telK > 0.5", 1],
+    ['pounce-leap', "p && b.mode === 'leap' && p.mode === 'leap' && b.telK > 0.9", 0],
+    ['rend', "b.attack === 'rend' && b.telK > 0.8", 1],
+    ['howl', "b.attack === 'howl' && b.telK > 0.85", 1],
   ],
   thornmother: [
     ['volley', 'p && b.nv !== null && p.nv !== null && b.nv > p.nv', 1],

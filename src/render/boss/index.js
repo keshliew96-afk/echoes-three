@@ -35,6 +35,7 @@ import { buildWyrm } from './wyrm.js';
 import { buildWyrmFacet } from './wyrmfacet.js';
 import { buildStagFacet } from './stagfacet.js';
 import { buildThornmotherFacet } from './thornmotherfacet.js';
+import { buildGloamWolfFacet } from './gloamwolffacet.js';
 import { facetOn } from '../facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
 import { buildCantor, buildColossus } from './heart.js';
@@ -53,7 +54,7 @@ import { impactFx } from '../vfx/hub.js';
 // The Barrow Wyrm and the Level I bosses play the model standard
 // (docs/MODEL_STANDARD.md) unless `?facet=` (harness only) or MODEL_STANDARD
 // asks for the classic rig.
-const BUILDERS = { stag: facetOn('stag') ? buildStagFacet : buildStag, heron: buildHeron, wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
+const BUILDERS = { stag: facetOn('stag') ? buildStagFacet : buildStag, heron: buildHeron, wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: facetOn('gloamwolf') ? buildGloamWolfFacet : buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;

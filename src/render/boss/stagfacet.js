@@ -751,7 +751,7 @@ export function buildStagFacet() {
       abilities: STAG_ABILITIES,
       reset() {
         reset();
-        gait.reset(yaw, null);
+        gait.reset(yaw, stance);
       },
       feet: () => gait.report(yaw),
       grow: () => grow.scale.x,

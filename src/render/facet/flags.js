@@ -7,7 +7,7 @@
 //   ?facet=wyrm    only the listed models faceted (comma list: wyrm,tank)
 import { pageQuery } from '../../app/harness.js';
 
-export const MODEL_STANDARD = Object.freeze({ wyrm: true, tank: true, stag: true, thornmother: true });
+export const MODEL_STANDARD = Object.freeze({ wyrm: true, tank: true, stag: true, thornmother: true, gloamwolf: true });
 
 export function facetOn(kind, query = pageQuery()) {
   const q = query.get('facet');

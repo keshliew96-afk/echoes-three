@@ -98,7 +98,7 @@ const restChannels = (C) => {
 };
 const ZERO = restChannels({});
 const pose = (o) => ({ ...ZERO, ...o });
-const PAWING = pose({ head: 0.4, dip: 0.3, pitch: 0.06, reach: -0.08, load: 0.7, paw: 1 });
+const PAWING = pose({ head: 0.4, dip: 0.22, pitch: 0.05, reach: -0.08, load: 0.6, paw: 1 });
 const RUNNING = pose({ head: 0.38, dip: 0.45, pitch: 0.12, reach: 0.12, stride: 1 });
 const BRACED = pose({ head: 0.12, dip: 0.2, pitch: 0.12, reach: 0.22, squash: 1, brace: 1 });
 const HEAVED = pose({ head: -0.2, dip: -0.15, pitch: -0.03, hump: 1, pop: 1, squash: 0.6 });
@@ -144,13 +144,15 @@ const G = {
   upper: () => geo('upper', () => limbBox(0.32, 0.3, UPPER, 0.62, 0.66), 211),
   lower: () => geo('lower', () => limbBox(0.18, 0.18, LOWER, 0.82, 0.82), 213),
   hoof: () => geo('hoof', () => taperBox(0.18, HOOF_H, 0.18, 0.8, 0.6).translate(0, HOOF_H / 2, 0.02), 215, 0.12),
-  pod: () => geo('pod', () => new IcosahedronGeometry(0.12, 0), 217, 0.06),
+  pod: () => geo('pod', () => new IcosahedronGeometry(0.1, 0), 217, 0.16),
   ear: () => geo('ear', () => taperBox(0.2, 0.04, 0.24, 0.5, 1), 219),
 };
 
 const _m = new Matrix4();
 const _a = new Vector3();
-const POLE_FRONT = new Vector3(0, 0.1, 1);
+// both joints fold back: the sow hunkers down on elbows and hocks, it never
+// kneels forward onto its forelegs
+const POLE_FRONT = new Vector3(0, 0.1, -1);
 const POLE_HIND = new Vector3(0, 0.1, -1);
 
 // The thicket: [x, z, height, lean back, splay]; three lanes along the spine.
@@ -166,7 +168,7 @@ for (let i = 0; i < 8; i++) {
   }
 }
 // The pods nestle between the blades: [x, z].
-const PODS = [[-0.16, 0.42], [0.18, 0.1], [-0.14, -0.24], [0.16, -0.56], [-0.18, -0.86], [0.04, -0.05]];
+const PODS = [[-0.24, 0.42], [0.3, 0.14], [-0.34, -0.2], [0.22, -0.52], [-0.18, -0.86], [0.06, -0.06]];
 
 export function buildThornmotherFacet() {
   const group = new Group();
@@ -197,7 +199,8 @@ export function buildThornmotherFacet() {
   const bristle = track(flashable(BRISTLE));
   const bone = track(flashable(HIDE.bone));
   const hoofMat = track(flashable(HOOF));
-  const podMat = new MeshBasicMaterial({ color: TELL_VIOLET, toneMapped: false });
+  // unlit violet (a God-stuff emitter), stepped per facet by the vertex colours
+  const podMat = new MeshBasicMaterial({ color: TELL_VIOLET, vertexColors: true, toneMapped: false });
   const mesh = (g, mat, parent, ink = true) => {
     const m = new Mesh(g, mat);
     if (ink) addInk(m);
@@ -419,7 +422,7 @@ export function buildThornmotherFacet() {
     for (let i = 0; i < PODS.length; i++) {
       const [x, z] = PODS[i];
       const sc = podScale(i);
-      lay(_m, x, 0.1 + 0.05 * Math.sin(i * 1.7), z + 0.15, 0, 1, 0, sc, sc, sc);
+      lay(_m, x, 0.1 + 0.05 * Math.sin(i * 1.7) - Math.abs(x) * 0.25, z + 0.15, 0, 1, 0, sc, sc, sc);
       pods.setMatrixAt(i, _m);
     }
     pods.instanceMatrix.needsUpdate = true;
@@ -477,7 +480,7 @@ export function buildThornmotherFacet() {
       abilities: THORN_ABILITIES,
       reset() {
         reset();
-        gait.reset(yaw, null);
+        gait.reset(yaw, stance);
       },
       feet: () => gait.report(yaw),
       grow: () => grow.scale.x,
