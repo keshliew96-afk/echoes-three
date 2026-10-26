@@ -9,11 +9,14 @@
 //   * faceted masses: the dome is cut into flat planes with a strong value
 //     step, and its underside steps darker (a belly saddle, no extra call);
 //   * a QUILL COAT, BAKED per kind (render/facet/foe.js) so a room of them
-//     shares one buffer, kept to the classic's read (a slate ball under a few
-//     long spikes): a short dark under-fur raked flat, a main layer of long
-//     BANDED quills (dark root, pale shaft) raked a little back with indigo
-//     spearhead tips (bright and dim alternating), the tallest along the
-//     spine. The spine crest is the only part that moves on its own: seven
+//     shares one buffer, kept to the classic's read (a slate ball under long
+//     radial spikes, full silhouette ink): a main layer of long BANDED quills
+//     (a slate root band in the hide's own value, the pale shaft) standing
+//     near radial with indigo spearhead tips (bright and dim alternating),
+//     the tallest along the spine; a short fur raked back over the hide, in
+//     the hide's own value and draw call (texture, never a pale tuft). Every
+//     quill base is closed and sunk along the hide's normal, past the coat's
+//     flare. The spine crest is the only part that moves on its own: seven
 //     quills on one instanced row that RAISE in the coil, kick upright on the
 //     launch, and droop in the stagger;
 //   * a head that TUCKS into the coat (the curl the Journal names), a muzzle
@@ -25,10 +28,13 @@
 //     launch strike runs in the telegraph's last 2.5 frames so it lands ON
 //     the resolve tick, then the roll spins at the real travel (a slowed ball
 //     rolls slower, a stunned one stops), each body it rams squashes it
-//     (e.chargeHits), and the roll ends either SPENT (a lurch on the lost
-//     momentum, righting itself, the uncurl with one overshoot) or on a WALL
-//     (the thud squash, the bounce back, the dazed 30-tick punish window with
-//     drooping quills, the uncurl);
+//     (e.chargeHits, counted by length), and the roll ends either SPENT (a
+//     lurch on the lost momentum, the spin running down FORWARD into the
+//     upright, the uncurl with one overshoot) or on a WALL (the thud squash,
+//     the bounce rolling BACK off the wall, the dazed 30-tick punish window
+//     with drooping quills, the uncurl). A stun, blind or room clear on the
+//     resolve never launches (only the sim's own charge mode does); a rig
+//     built mid-charge joins the roll or the daze;
 //   * the spawn-in grow (B7), named points (B8: the leading quills, the
 //     snout), and the hit and death tuning the shared envelope reads.
 //
@@ -40,7 +46,7 @@
 // body (the yaw node the hit envelope wraps; the contact shadow stays on the
 // group), lab (with lastStrike: the tick the launch lands), react, death,
 // points. Render only: the sim, its timing and damage untouched.
-import { BoxGeometry, Color, ConeGeometry, CylinderGeometry, Euler, IcosahedronGeometry, Group, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three';
+import { BoxGeometry, BufferAttribute, BufferGeometry, Color, ConeGeometry, CylinderGeometry, Euler, IcosahedronGeometry, Group, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three';
 import { PALETTE } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { makeGlowSprite } from '../../glow.js';
@@ -50,7 +56,7 @@ import { facetize, hash01 } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, SPAWN_SEC, bakeParts, scaleGeometry, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, lerpFields, namedPoint, placeBody, settle, spawnScale } from '../../facet/foe.js';
-import { createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
 
 // --- The sim's quillback (sim/enemies/quillback.js) -------------------------
 const TICK_HZ = 60;
@@ -136,8 +142,10 @@ function rollPose(tr, spin, out) {
   if (tr < HOLD) {
     lerpFields(out, LAUNCH, LAUNCH, 0, FIELDS);
     out.legs = 1 - ease.out(tr / HOLD); // the legs fold in as it leaves
-  } else if (tr < HOLD + ROLL_IN) lerpFields(out, LAUNCH, ROLL, 1 - settle((tr - HOLD) / ROLL_IN), FIELDS);
-  else lerpFields(out, ROLL, ROLL, 0, FIELDS);
+  } else if (tr < HOLD + ROLL_IN) {
+    lerpFields(out, LAUNCH, ROLL, 1 - settle((tr - HOLD) / ROLL_IN), FIELDS);
+    out.legs = 0; // folded in the hold, they stay folded
+  } else lerpFields(out, ROLL, ROLL, 0, FIELDS);
   out.legs = Math.max(0, Math.min(1, out.legs));
   out.pitch += spin;
   out.lift += 0.008 * Math.abs(Math.sin(spin * 1.5)); // the quills bump the floor
@@ -153,36 +161,50 @@ function bumpPose(tb, out) {
   out.bristle += 0.25 * a;
   return out;
 }
-// Spent: from the captured roll pose, the lurch, then righting itself and
-// uncurling with one overshoot (B5). Ends at rest (`done`).
-function stopPose(ts, cap, out) {
-  const lp = cap.pitch + 0.3;
-  if (ts < LURCH_SEC) {
-    lerpFields(out, cap, LURCH, ease.out(ts / LURCH_SEC), FIELDS);
-    out.pitch = cap.pitch + 0.3 * ease.out(ts / LURCH_SEC);
-    return out;
-  }
-  const k = clamp01((ts - LURCH_SEC) / UNCURL_SEC);
-  lerpFields(out, LURCH, REST, 1 - settle(k), FIELDS);
-  const up = 2 * Math.PI * Math.round(lp / (2 * Math.PI));
-  out.pitch = lp + (up - lp) * (1 - settle(k));
+// Spent: from the captured roll pose, the lurch on the lost momentum, then
+// righting itself and uncurling with one overshoot (B5). The spin carries on
+// FORWARD from the roll's own rate (v0, rad/s) and runs down into the next
+// upright, never back against the travel (rule 1); one that is nearly
+// upright already turns once more. A ball that had stopped dead (a stunned
+// roll: no momentum) rights itself the nearest way. Ends at rest.
+function stopPose(ts, cap, out, v0 = ROLL_RATE) {
+  if (ts < LURCH_SEC) lerpFields(out, cap, LURCH, ease.out(ts / LURCH_SEC), FIELDS);
+  else lerpFields(out, LURCH, REST, 1 - settle(clamp01((ts - LURCH_SEC) / UNCURL_SEC)), FIELDS);
+  out.pitch = cap.pitch + stopSpin(ts, cap.pitch, v0);
   return out;
 }
+const TAU = 2 * Math.PI;
+function stopSpin(ts, p0, v0) {
+  const v = Math.max(0, v0);
+  let D;
+  if (v > 2) {
+    D = TAU * Math.ceil(p0 / TAU) - p0;
+    if (D < 0.8 * Math.min(1, v / ROLL_RATE)) D += TAU;
+  } else D = TAU * Math.round(p0 / TAU) - p0;
+  // a cubic from the roll's spin to still on the upright: it lands in
+  // 2D / v0 (a steady run-down), kept inside the stop
+  const T = Math.min(STOP_SEC, Math.max(0.15, v > 0 ? (2 * Math.abs(D)) / v : STOP_SEC));
+  const u = clamp01(ts / T);
+  return (u * u * u - 2 * u * u + u) * T * v + (3 * u * u - 2 * u * u * u) * D;
+}
 const STOP_SEC = LURCH_SEC + UNCURL_SEC;
-// A wall: the thud, the bounce back (it tumbles upright), the daze held for
-// as long as the sim staggers it.
+// A wall: the thud, the bounce back, the daze held for as long as the sim
+// staggers it. The bounce rolls the ball BACK off the wall (the way the body
+// shoves, rule 1) to its dazed upright: never forward into the wall. The
+// tumble's pitch ends 2 pi * n off the daze's (the same orientation); the
+// recovery wraps it first.
+const TUMBLE_SEC = RECOIL_SEC + LAND_SEC + 5 * FRAME;
 function thudPose(ts, cap, out) {
   if (ts < THUD_SEC) {
     lerpFields(out, cap, THUD, ease.out(ts / THUD_SEC), FIELDS);
     out.pitch = cap.pitch;
-  } else if (ts < THUD_SEC + RECOIL_SEC) {
-    const k = ease.out((ts - THUD_SEC) / RECOIL_SEC);
-    lerpFields(out, THUD, RECOIL, k, FIELDS);
-    out.pitch = cap.pitch + (RECOIL.pitch - cap.pitch) * k;
-  } else {
-    const k = clamp01((ts - THUD_SEC - RECOIL_SEC) / LAND_SEC);
-    lerpFields(out, RECOIL, DAZE, 1 - settle(k), FIELDS);
+    return out;
   }
+  if (ts < THUD_SEC + RECOIL_SEC) lerpFields(out, THUD, RECOIL, ease.out((ts - THUD_SEC) / RECOIL_SEC), FIELDS);
+  else lerpFields(out, RECOIL, DAZE, 1 - settle(clamp01((ts - THUD_SEC - RECOIL_SEC) / LAND_SEC)), FIELDS);
+  const back = DAZE.pitch + 2 * Math.PI * Math.floor((cap.pitch - DAZE.pitch) / (2 * Math.PI)); // <= cap.pitch
+  const k = clamp01((ts - THUD_SEC) / TUMBLE_SEC);
+  out.pitch = cap.pitch + (back - cap.pitch) * (1 - (1 - k) * (1 - k)); // the bounce's spin, running down
   return out;
 }
 // Back to rest from any captured pose, with one overshoot (B5).
@@ -198,7 +220,7 @@ const tlCharge = createTimeline('charge', 'Charge roll', [
   { id: 'hold', label: 'launch held, legs fold in', dur: HOLD },
   { id: 'roll', label: 'roll at 6 u/s (rams a body: contact squash)', dur: CHARGE_SEC - HOLD },
   { id: 'lurch', label: 'spent: lurch on the lost momentum', dur: LURCH_SEC },
-  { id: 'uncurl', label: 'right itself, uncurl (one overshoot)', dur: UNCURL_SEC },
+  { id: 'uncurl', label: 'roll on upright, uncurl (one overshoot)', dur: UNCURL_SEC },
 ], { cues: [{ at: TEL_SEC, id: 'strike' }] });
 const CRASH_ROLL = 0.5;
 const tlCrash = createTimeline('crash', 'Charge into a wall', [
@@ -207,7 +229,7 @@ const tlCrash = createTimeline('crash', 'Charge into a wall', [
   { id: 'hold', label: 'launch held, legs fold in', dur: HOLD },
   { id: 'roll', label: 'roll at 6 u/s', dur: CRASH_ROLL - HOLD },
   { id: 'thud', label: 'wall: thud squash', dur: THUD_SEC },
-  { id: 'recoil', label: 'bounce back, tumble upright', dur: RECOIL_SEC },
+  { id: 'recoil', label: 'bounce back, rolling back off the wall upright', dur: RECOIL_SEC },
   { id: 'daze', label: 'stagger: dazed, quills droop (the punish window)', dur: STAGGER_SEC - THUD_SEC - RECOIL_SEC },
   { id: 'recover', label: 'uncurl (one overshoot)', dur: RECOVER_SEC },
 ], { cues: [{ at: TEL_SEC, id: 'strike' }, { at: TEL_SEC + CRASH_ROLL, id: 'thud' }] });
@@ -238,6 +260,7 @@ function crashAt(t, out) {
   const free = wall + STAGGER_SEC;
   if (t < free) return thudPose(t - wall, capA, out);
   thudPose(STAGGER_SEC, capA, capB);
+  capB.pitch = wrapPi(capB.pitch);
   return returnPose(t - free, capB, RECOVER_SEC, out);
 }
 // The classic twin's stand-in inputs at t (the lab's "Classic beside").
@@ -266,7 +289,15 @@ export const QUILLBACK_ABILITIES = Object.freeze({ charge: QUILLBACK_CHARGE, cra
 // --- Geometry (built once for the session, shared by every quillback) -------
 const BALL_Y = 0.34;
 const DOME = new Vector3(0.3, 0.27, 0.3); // the dome's radii (the classic's 0.3 icosahedron, 0.9 tall)
-const SINK = 0.05; // quill roots sunk into the hide (the coat can flare 10% and stay rooted)
+// Quill roots sink ALONG THE SURFACE NORMAL, past the faceted hide's inset
+// (its flat planes sit up to 0.02 u inside the round dome), the root ring's
+// tilt and the coat's flare, and every base is closed: no root lifts off the
+// hide at rest, in the coil's flare or the thud's.
+const SINK_N = 0.075; // the main quills (the coat flares to FLARE_MAX)
+const FUR_SINK = 0.06; // the hide's short fur (raked 0.7 rad: its base ring tilts; never flares)
+const CREST_SINK = 0.07; // the crest (it tilts up to about 0.55 rad, never flares)
+const FLARE = 0.065; // the coat's scale per unit of bristle
+const FLARE_MAX = 1 + FLARE * 1.2;
 const HEAD0 = new Vector3(0, -0.04, 0.2); // the head's pivot, ball space
 const FACE = new Vector3(0, -0.13, 1).normalize(); // the bare face, ball space
 const BACK = new Vector3(0, -0.28, -1).normalize(); // the coat's rake: back and down
@@ -305,17 +336,40 @@ function fib(n, off) {
   return out;
 }
 const fz = (g, jitter, seed) => facetize(g, { jitter, seed });
+// A faceted (non-indexed) geometry without its top cap (the faces at y = 1).
+function dropTopCap(g) {
+  const pos = g.attributes.position;
+  const keep = [];
+  for (let i = 0; i + 2 < pos.count; i += 3) if (!(pos.getY(i) > 0.999 && pos.getY(i + 1) > 0.999 && pos.getY(i + 2) > 0.999)) keep.push(i);
+  const out = new BufferGeometry();
+  for (const name of Object.keys(g.attributes)) {
+    const a = g.attributes[name];
+    const arr = new Float32Array(keep.length * 3 * a.itemSize);
+    keep.forEach((i, k) => {
+      for (let j = 0; j < 3 * a.itemSize; j++) arr[k * 3 * a.itemSize + j] = a.array[i * a.itemSize + j];
+    });
+    out.setAttribute(name, new BufferAttribute(arr, a.itemSize));
+  }
+  out.userData.faceted = true;
+  return out;
+}
+// The coat's quill placements (the roots check reads them; built with SET).
+const LAYOUT = [];
+export function quillbackCoatLayout() {
+  geos();
+  return LAYOUT;
+}
 
 // The spine crest (the instanced, moving quills): angle from the top toward
 // the snout (+) or the rump (-), a hair off the midline, length, root radius.
 const CREST = [
-  [0.62, 0.025, 0.22, 0.044],
-  [0.36, -0.03, 0.27, 0.048],
-  [0.1, 0.03, 0.31, 0.05],
-  [-0.16, -0.03, 0.33, 0.05],
-  [-0.43, 0.03, 0.31, 0.048],
-  [-0.72, -0.025, 0.27, 0.046],
-  [-1.02, 0.02, 0.22, 0.044],
+  [0.62, 0.025, 0.2, 0.044],
+  [0.36, -0.03, 0.245, 0.048],
+  [0.1, 0.03, 0.28, 0.05],
+  [-0.16, -0.03, 0.3, 0.05],
+  [-0.43, 0.03, 0.28, 0.048],
+  [-0.72, -0.025, 0.245, 0.046],
+  [-1.02, 0.02, 0.2, 0.044],
 ].map(([a, x, len, r]) => {
   const dir = new Vector3(x, Math.cos(a), Math.sin(a)).normalize();
   const P = new Vector3();
@@ -323,7 +377,7 @@ const CREST = [
   domeAt(dir, P, N);
   return Object.freeze({ a, x, len, r, P, N });
 });
-const CREST_RAKE = 0.42; // raked back at rest, a touch more than the coat
+const CREST_RAKE = 0.15; // near radial at rest (a hair more raked than the coat)
 const TIP_LEN = 0.09;
 const TIP_R = 0.028; // the indigo spearhead's base (the classic's 0.03)
 
@@ -340,28 +394,31 @@ function geos() {
   const m = new Matrix4();
   const set = {};
   // Quill parts: a four-sided shaft (root radius 1, tapering to 0.42) BANDED
-  // like a real spine (a dark root band, the pale shaft; the value step keeps
-  // the ball reading slate under its spikes, as the classic does), a closed
-  // spearhead tip (the indigo tell), a plain spike (the under-layer).
+  // like a real spine (a root band stepped down to the hide's slate, the pale
+  // shaft: the ball keeps the classic's slate share under its spikes), its
+  // root closed (the open top is under the tip); a closed spearhead tip (the
+  // indigo tell); a closed short spike (the hide's fur).
   {
-    const g = fz(new CylinderGeometry(0.42, 1, 1, 4, 2, true).translate(0, 0.5, 0), 0.14, 201);
+    const g = fz(new CylinderGeometry(0.42, 1, 1, 4, 2, false).translate(0, 0.5, 0), 0.14, 201);
     const pos = g.attributes.position;
     const col = g.attributes.color;
     for (let i = 0; i + 2 < pos.count; i += 3) {
       const cy = (pos.getY(i) + pos.getY(i + 1) + pos.getY(i + 2)) / 3;
       if (cy >= 0.5) continue;
-      for (let j = i; j < i + 3; j++) col.setXYZ(j, col.getX(j) * 0.6, col.getY(j) * 0.62, col.getZ(j) * 0.66);
+      for (let j = i; j < i + 3; j++) col.setXYZ(j, col.getX(j) * 0.36, col.getY(j) * 0.43, col.getZ(j) * 0.56);
     }
-    set.shaft = g;
+    set.shaft = dropTopCap(g);
   }
   set.tip = fz(new ConeGeometry(1, 1, 4, 1, false).translate(0, 0.5, 0), 0.12, 203);
-  const spike = fz(new ConeGeometry(1, 1, 4, 1, true).translate(0, 0.5, 0), 0.14, 205);
+  const spike = fz(new ConeGeometry(1, 1, 4, 1, false).translate(0, 0.5, 0), 0.14, 205);
   const place = (root, dir, sx, sy) => {
     basis(dir, H.set(0, 1, 0).cross(dir).lengthSq() > 1e-4 ? H.set(0, 1, 0) : H.set(0, 0, 1), X, Y, Z);
     return setTRS(m, root, X, Y, Z, sx, sy, sx).clone();
   };
-  // The dome: the classic's faceted ball, its underside stepping darker.
-  {
+  // The hide: the classic's faceted slate ball, its underside stepping
+  // darker, and a short fur of hide-coloured spikes raked back over it (the
+  // texture under the long quills, in the dome's own value and draw call).
+  set.dome = bakeParts('quillback:hide', () => {
     const g = fz(new IcosahedronGeometry(0.3, 1).scale(1, DOME.y / 0.3, 1), 0.14, 207);
     const nor = g.attributes.normal;
     const col = g.attributes.color;
@@ -371,33 +428,38 @@ function geos() {
       const v = 1 - 0.42 * k * k * (3 - 2 * k);
       col.setXYZ(i, col.getX(i) * v, col.getY(i) * v, col.getZ(i) * v);
     }
-    set.dome = g;
-  }
-  // The coat, kept to the classic's read (a slate ball under a few long
-  // spikes): an under-layer of short dark quills raked nearly flat (a fur of
-  // texture, not more spikes), a main layer of long pale quills raked a little
-  // back (longest toward the top), all clear of the bare face and the belly.
-  // Tips for the main layer go in the tell row below.
+    const out = [{ geo: g }];
+    fib(30, 0.7).forEach((dir, i) => {
+      if (dir.y < -0.45 || dir.angleTo(FACE) < 0.6) return;
+      domeAt(dir, P, N);
+      rakeDir(N, 0.7 + 0.1 * hash01(i, 3), D);
+      const run = FUR_SINK / Math.max(0.3, D.dot(N));
+      const len = 0.06 + 0.025 * hash01(i, 5);
+      const root = P.clone().addScaledVector(N, -FUR_SINK);
+      out.push({ geo: spike, m: place(root, D, 0.04, len + run), tone: 0.86 + 0.1 * hash01(i, 7) });
+      LAYOUT.push({ kind: 'fur', root, dir: D.clone(), r: 0.04, len: len + run, geo: 'spike' });
+    });
+    return out;
+  });
+  // The coat, kept to the classic's read (a slate ball under long radial
+  // spikes): the main quills stand near radial, raked only a hair back
+  // (longest toward the top), clear of the bare face and the belly; full
+  // silhouette ink, like the classic's spikes. Their tips go in the tell row.
   const coatTips = [];
   set.coat = bakeParts('quillback:coat', () => {
     const out = [];
-    fib(40, 0.7).forEach((dir, i) => {
-      if (dir.y < -0.45 || dir.angleTo(FACE) < 0.55) return;
-      domeAt(dir, P, N);
-      rakeDir(N, 0.85 + 0.12 * hash01(i, 3), D);
-      const len = 0.085 + 0.035 * hash01(i, 5) + 0.02 * Math.max(0, N.y);
-      out.push({ geo: spike, m: place(P.addScaledVector(D, -SINK), D, 0.032, len + SINK), tone: 0.66 + 0.08 * hash01(i, 7) });
-    });
     fib(26, 2.1).forEach((dir, i) => {
       if (dir.y < -0.42 || dir.angleTo(FACE) < 0.78) return;
       domeAt(dir, P, N);
       // keep the spine line for the crest
       if (Math.abs(dir.x) < 0.16 && dir.y > 0.55) return;
-      rakeDir(N, 0.28 + 0.1 * hash01(i, 11), D);
+      rakeDir(N, 0.1 + 0.06 * hash01(i, 11), D);
       const len = 0.17 + 0.07 * Math.max(0, N.y) + 0.03 * hash01(i, 13);
-      const root = P.clone().addScaledVector(D, -SINK);
-      out.push({ geo: set.shaft, m: place(root, D, 0.045, len + SINK), tone: 0.95 + 0.1 * hash01(i, 17) });
-      coatTips.push({ root: root.clone().addScaledVector(D, (len + SINK) * 0.97), dir: D.clone(), r: TIP_R, bright: N.y > -0.05 && i % 2 === 0 });
+      const run = SINK_N / Math.max(0.3, D.dot(N));
+      const root = P.clone().addScaledVector(N, -SINK_N);
+      out.push({ geo: set.shaft, m: place(root, D, 0.045, len + run), tone: 0.95 + 0.1 * hash01(i, 17) });
+      LAYOUT.push({ kind: 'main', root, dir: D.clone(), r: 0.045, len: len + run, geo: 'shaft' });
+      coatTips.push({ root: root.clone().addScaledVector(D, (len + run) * 0.97), dir: D.clone(), r: TIP_R, bright: N.y > -0.05 && i % 2 === 0 });
     });
     return out;
   });
@@ -427,15 +489,16 @@ function geos() {
         out.push({ geo: scale, m: at(rel(side * 0.07, 0.045, 0.3).clone(), new Vector3(side * 0.3, 0.75, 0.6), new Vector3(side * -0.4, 0, 1), 0.085, 0.03, 0.05), tone: 1.3 });
         out.push({ geo: wedge, m: at(rel(side * 0.16, 0.085, 0.22).clone(), new Vector3(side * 0.7, 0.7, 0.15), new Vector3(0, 0.2, 1), 0.07, 0.07, 0.045), tone: 1.15 });
       }
+      out.push({ geo: fz(new IcosahedronGeometry(0.021, 0), 0, 1), m: new Matrix4().compose(rel(0, -0.105, 0.423).clone(), new Quaternion(), new Vector3(1.2, 0.9, 1)), tone: 0.3 });
       return out;
     });
-    // Slit eyes and the nose (unlit charcoal: never round, never warm).
+    // Slit eyes (unlit charcoal: never round, never warm); they shut as the
+    // head tucks (the nose, a near-black step of the dark hide, rides out
+    // with the snout in the head row above).
     set.eyes = bakeParts('quillback:eyes', () => {
       const out = [];
       const bar = fz(new BoxGeometry(0.075, 0.022, 0.022), 0, 1);
-      const dot = fz(new IcosahedronGeometry(0.021, 0), 0, 1);
       for (const side of [-1, 1]) out.push({ geo: bar, m: new Matrix4().compose(rel(side * 0.068, 0, 0.318).clone(), new Quaternion().setFromEuler(new Euler(0, side * -0.32, side * 0.36)), new Vector3(1, 1, 1)) });
-      out.push({ geo: dot, m: new Matrix4().compose(rel(0, -0.105, 0.423).clone(), new Quaternion(), new Vector3(1.2, 0.9, 1)) });
       return out;
     });
   }
@@ -475,7 +538,7 @@ export function buildQuillbackFacet() {
   ball.position.y = BALL_Y;
   body.add(ball);
   ball.add(foePart(G.dome, hideMat, 'full', 'quillback-dome'));
-  const coat = foePart(G.coat, quillMat, 'part', 'quillback-coat');
+  const coat = foePart(G.coat, quillMat, 'full', 'quillback-coat');
   ball.add(coat);
   const tips = foePart(G.tips, tellMat, false, 'quillback-tips');
   ball.add(tips);
@@ -496,7 +559,8 @@ export function buildQuillbackFacet() {
   head.position.copy(HEAD0);
   ball.add(head);
   head.add(foePart(G.head, darkMat, 'full', 'quillback-face'));
-  head.add(foePart(G.eyes, eyeMat, false, 'quillback-eyes'));
+  const eyes = foePart(G.eyes, eyeMat, false, 'quillback-eyes');
+  head.add(eyes);
   const tellGlow = makeGlowSprite({ color: TELL_INDIGO_GLOW, size: 0.7, opacity: 0.2 });
   tellGlow.material.toneMapped = false;
   tellGlow.material.color.copy(TELL_INDIGO_GLOW);
@@ -531,7 +595,9 @@ export function buildQuillbackFacet() {
   const qX = new Vector3();
   const qZ = new Vector3();
   const m = new Matrix4();
-  const lifted = [0, 0, 0, 0];
+  const reached = [false, false, false, false];
+  const drawn = [new Vector3(), new Vector3(), new Vector3(), new Vector3()];
+  const gaitOpts = { locked: false };
   let age = -1;
   let yawNow = 0;
   let calm = 1;
@@ -543,9 +609,10 @@ export function buildQuillbackFacet() {
   let telR = 0;
   let contactAt = 0;
   let spin = 0;
+  let spinV = 0; // the roll's real spin rate, rad/s (the stop carries it on)
+  let stopV = 0;
   let endAt = -1;
   let endKind = '';
-  let hitsArr = null;
   let hitsSeen = 0;
   let bumpAt = -99;
   let lastX = null;
@@ -558,7 +625,7 @@ export function buildQuillbackFacet() {
     abilities: QUILLBACK_ABILITIES,
     override: null, // { id: 'charge' | 'crash', t } | null
     lastStrike: null, // { id, tick }: the sim tick the latest live launch lands on
-    feet: () => gait.feet().map((q, i) => ({ ...q, planted: q.planted && locked, drawnX: gait.out[i].x, drawnZ: gait.out[i].z, drawnY: gait.out[i].y + lifted[i] })),
+    feet: () => gait.feet().map((q, i) => ({ ...q, planted: q.planted && locked && !reached[i], drawnX: drawn[i].x, drawnZ: drawn[i].z, drawnY: drawn[i].y })),
     pose: () => ({ ...cur, phase, spin }),
     get hit() {
       return phase;
@@ -579,6 +646,28 @@ export function buildQuillbackFacet() {
     lab.lastStrike = strike;
   }
 
+  // A broken wind-up (a stun, a blind, a room clear): no launch, and the
+  // strike it marked in its last frames is unsaid.
+  function cancel(now) {
+    if (struck) {
+      if (prevStrikeTick === null) lab.lastStrike = null;
+      else strike.tick = prevStrikeTick;
+      struck = false;
+    }
+    setPhase('abort', now);
+    cap.pitch = wrapPi(cap.pitch);
+  }
+  function startRoll(now, at, seen) {
+    phase = 'roll';
+    contactAt = at;
+    spin = 0;
+    spinV = 0;
+    endAt = -1;
+    endKind = '';
+    hitsSeen = seen;
+    bumpAt = -99;
+  }
+
   // The live charge, from the sim's entity (telegraph, mode, chargeHits).
   function live(P, e, tick, now) {
     const beat = watch.update(P);
@@ -591,16 +680,14 @@ export function buildQuillbackFacet() {
       telS = tel.startTick;
       telR = tel.resolveTick;
     }
-    if (beat && beat.type === 'cancel') {
-      // a stun or a blind broke the wind-up: no launch (the strike is unsaid)
-      if (struck) {
-        if (prevStrikeTick === null) lab.lastStrike = null;
-        else strike.tick = prevStrikeTick;
-        struck = false;
-      }
-      setPhase('abort', now);
+    if (beat && (beat.type === 'release' || beat.type === 'cancel')) {
+      // the launch only on the sim's own word: the telegraph gone AND the
+      // ball rolling (or already stopped by a wall). A stun, a blind or a
+      // room clear on the resolve leaves the mode alone: a cancel.
+      const launched = e && e.mode ? e.mode === 'charge' || e.mode === 'stagger' : beat.type === 'release';
+      if (!launched) cancel(now);
+      else if (phase === 'coil' || phase === 'idle') phase = 'launch';
     }
-    if (beat && beat.type === 'release' && (phase === 'coil' || phase === 'idle')) phase = 'launch';
     if (phase === 'coil' || phase === 'launch') {
       const left = telR - tick;
       if (left > STRIKE_TICKS) {
@@ -615,31 +702,27 @@ export function buildQuillbackFacet() {
         strikePose(1 - left / STRIKE_TICKS, cur);
       } else if (phase === 'launch') {
         markStrike(telR);
-        phase = 'roll';
-        contactAt = now - (tick - telR) / TICK_HZ;
-        spin = 0;
-        endAt = -1;
-        endKind = '';
         // the sim makes a fresh chargeHits on the resolve tick: every body in
         // it was rammed by THIS roll (one may already be, on its first tick)
-        hitsArr = null;
-        hitsSeen = 0;
-        bumpAt = -99;
+        startRoll(now, now - (tick - telR) / TICK_HZ, 0);
       } else strikePose(1, cur); // resolved, the release not seen yet
+    }
+    // a rig built (or a wind-up missed) mid-charge: straight into the roll,
+    // or the wall's daze
+    if (phase === 'idle' && !tel && e) {
+      if (e.mode === 'charge') startRoll(now, now - HOLD - ROLL_IN, e.chargeHits ? e.chargeHits.length : 0);
+      else if (e.mode === 'stagger') {
+        Object.assign(cur, REST);
+        setPhase('thud', now - (THUD_SEC + RECOIL_SEC + LAND_SEC));
+      }
     }
     if (phase === 'roll') {
       const tr = now - contactAt;
-      // each body it rams (once per body per charge) squashes it
-      if (e && e.chargeHits) {
-        if (e.chargeHits !== hitsArr) {
-          hitsArr = e.chargeHits;
-          hitsSeen = 0;
-        }
-        if (hitsArr.length > hitsSeen) {
-          hitsSeen = hitsArr.length;
-          bumpAt = now + Math.max(0, Math.floor(tick) + 1 - tick) / TICK_HZ; // when the ball arrives (never before)
-        }
-      }
+      // each body it rams (once per body per charge) squashes it; counted by
+      // length (a co-op guest's snapshot is a fresh array every time)
+      const n = e && e.chargeHits ? e.chargeHits.length : 0;
+      if (n > hitsSeen) bumpAt = now + Math.max(0, Math.floor(tick) + 1 - tick) / TICK_HZ; // when the ball arrives (never before)
+      hitsSeen = n;
       rollPose(tr, spin, cur);
       bumpPose(now - bumpAt, cur);
       // the end: a wall's stagger, or the roll spent (when the ball arrives)
@@ -655,16 +738,20 @@ export function buildQuillbackFacet() {
       if (endKind && now >= endAt) {
         setPhase(endKind === 'wall' ? 'thud' : 'stop', now);
         cap.pitch = wrapPi(cap.pitch);
+        stopV = spinV;
         spin = 0;
       }
     }
     if (phase === 'stop') {
-      stopPose(now - t0, cap, cur);
+      stopPose(now - t0, cap, cur, stopV);
       if (now - t0 >= STOP_SEC) phase = 'idle';
     } else if (phase === 'thud') {
       thudPose(now - t0, cap, cur);
       const held = now - t0;
-      if (held > THUD_SEC + RECOIL_SEC && (e ? e.mode !== 'stagger' : held >= STAGGER_SEC)) setPhase('recover', now);
+      if (held > THUD_SEC + RECOIL_SEC && (e ? e.mode !== 'stagger' : held >= STAGGER_SEC)) {
+        setPhase('recover', now);
+        cap.pitch = wrapPi(cap.pitch); // the tumble's turns are whole: the ball looks the same
+      }
     }
     if (phase === 'recover' || phase === 'abort') {
       returnPose(now - t0, cap, phase === 'recover' ? RECOVER_SEC : ABORT_SEC, cur);
@@ -697,7 +784,7 @@ export function buildQuillbackFacet() {
     lastZ = gz;
 
     // --- the charge: the lab's pure override, or the live sim
-    let tw = P.t ?? 0; // the clock the shiver and the wobble run on
+    let tw = now; // the clock the shiver and the wobble run on (held in a hitstop)
     if (lab.override) {
       const ab = QUILLBACK_ABILITIES[lab.override.id] || QUILLBACK_CHARGE;
       tw = lab.override.t;
@@ -705,7 +792,10 @@ export function buildQuillbackFacet() {
       phase = 'idle';
       watch.reset();
     } else {
-      if (phase === 'roll') spin += travel / ROLL_R;
+      if (phase === 'roll') {
+        spin += travel / ROLL_R;
+        if (dt > 0) spinV += (travel / ROLL_R / dt - spinV) * Math.min(1, 25 * dt);
+      }
       live(P, e, tick, now);
     }
     calm += ((phase === 'idle' && !lab.override ? 1 : 0) - calm) * (1 - Math.exp(-8 * dt));
@@ -715,11 +805,13 @@ export function buildQuillbackFacet() {
     fr.z = gz;
     fr.yaw = yawNow;
     fr.s = gs;
-    locked = !turntable && age >= SPAWN_SEC && cur.legs >= 0.98 && !(dt <= 0 && lab.override);
-    gait.update(dt, fr, { locked });
-    const bob = gait.bob * cur.legs;
+    const L = Math.min(1, cur.legs); // the unfold's overshoot never stretches past the planted paw
+    locked = !turntable && age >= SPAWN_SEC && L >= 0.99 && !(dt <= 0 && lab.override);
+    gaitOpts.locked = locked;
+    gait.update(dt, fr, gaitOpts);
+    const bob = gait.bob * L;
     gait.localVelocity(fr, lv);
-    const walkK = cur.legs * calm;
+    const walkK = L * calm;
     const fwd = Math.max(-1, Math.min(1, lv.z / WALK_SPEED)) * walkK;
     const side = Math.max(-1, Math.min(1, lv.x / WALK_SPEED)) * walkK;
 
@@ -732,13 +824,18 @@ export function buildQuillbackFacet() {
     body.scale.set(cur.sx, cur.sy * (1 + 0.014 * breath), cur.sz);
     placeBody(body, PIVOT, cur.push, cur.lift + 0.02 * bob + 0.005 * breath + 0.006 * shiv * Math.sin(tw * 61));
     ball.rotation.x = cur.pitch + 0.035 * shiv * Math.sin(tw * 43);
-    const flare = 1 + 0.085 * cur.bristle;
+    const flare = 1 + FLARE * Math.min(cur.bristle, 1.2); // never past FLARE_MAX (the roots stay sunk)
     coat.scale.setScalar(flare);
     tips.scale.setScalar(flare);
     // the head: curled into the coat, or out and sniffing about
     const tk = cur.tuck;
     head.position.set(HEAD0.x, HEAD0.y - 0.02 * tk, HEAD0.z - 0.075 * tk);
     head.rotation.set(0.45 * tk + calm * 0.05 * Math.sin(now * 1.7) - 0.03 * bob, calm * 0.14 * Math.sin(now * 0.8) + 0.3 * wob * Math.sin(tw * 7), 0);
+    // the slit eyes shut and sink into the muzzle as it tucks (never poking
+    // through the hide in the coil or the roll)
+    const eyeK = clamp01((1 - tk) / 0.5);
+    eyes.scale.setScalar(Math.max(0.001, eyeK));
+    eyes.visible = eyeK > 0.02;
     tellGlow.material.opacity = 0.16 + 0.06 * Math.sin((P.t ?? 0) * 2.4) + 0.25 * cur.glow;
 
     // --- the crest: raked at rest, raised in the coil, kicked on the launch,
@@ -752,8 +849,11 @@ export function buildQuillbackFacet() {
       qD.set(q.x * (1 + 0.5 * Math.max(0, c)), Math.cos(a), Math.sin(a)).normalize();
       qX.copy(XAXIS).addScaledVector(qD, -qD.x).normalize();
       qZ.crossVectors(qX, qD);
-      const len = (q.len + SINK) * (1 + 0.06 * Math.max(0, cur.bristle));
-      qP.copy(q.P).addScaledVector(qD, -SINK);
+      // the root sinks along the hide's normal (closed under the hide at any
+      // rake); the shaft runs out along its own direction past the surface
+      const run = CREST_SINK / Math.max(0.3, qD.dot(q.N));
+      const len = (q.len + run) * (1 + 0.06 * Math.max(0, cur.bristle));
+      qP.copy(q.P).addScaledVector(q.N, -CREST_SINK);
       crest.setMatrixAt(i, setTRS(m, qP, qX, qD, qZ, q.r, len, q.r));
       qP.addScaledVector(qD, len * 0.97);
       crestTips.setMatrixAt(i, setTRS(m, qP, qX, qD, qZ, TIP_R * 1.06, TIP_LEN * 1.05, TIP_R * 1.06));
@@ -763,24 +863,30 @@ export function buildQuillbackFacet() {
 
     // --- legs: the hips ride the body, the paws stand where the gait put
     // them; folded, each paw draws back up into the ball
-    const L = cur.legs;
     legs.visible = L > 0.04; // folded into the ball for the roll (written anyway: pure)
     {
       body.updateMatrix();
-      const rk = 0.35 + 0.65 * L;
+      const Ld = locked ? 1 : L; // standing: exactly on the planted spot
+      const rk = 0.35 + 0.65 * Ld;
       for (let i = 0; i < 4; i++) {
         hipW.copy(HIPS[i]).applyMatrix4(body.matrix);
         tuckPt.copy(hipW);
         tuckPt.y += 0.03;
         foot.copy(gait.out[i]);
         foot.y += ANKLE;
-        foot.lerpVectors(tuckPt, foot, L);
-        lifted[i] = liftToReach(hipW, foot, L1, L2);
+        foot.lerpVectors(tuckPt, foot, Ld);
+        liftToReach(hipW, foot, L1, L2);
+        // past the leg's reach (a fast turn): pulled in, and the paw steps
+        reached[i] = clampReach(hipW, foot, L1, L2) > 0;
+        if (reached[i] && locked) gait.release(i);
         solveKnee(hipW, foot, L1, L2, BEND[i], knee);
         legs.setMatrixAt(i * 2, segmentMatrix(m, hipW, knee, LEG_R[0] * rk, LEG_R[0] * rk, 0.02));
         legs.setMatrixAt(i * 2 + 1, segmentMatrix(m, knee, foot, LEG_R[1] * rk, LEG_R[1] * rk, 0.015));
         foot.y -= ANKLE;
-        qP.set(foot.x, foot.y, foot.z + (i < 2 ? 0.012 : -0.004));
+        drawn[i].copy(foot);
+        // centred on the planted spot (an offset in the rig's frame would
+        // swing round it as the body turns: a slide)
+        qP.copy(foot);
         legs.setMatrixAt(8 + i, setTRS(m, qP, XAXIS, YAXIS, ZAXIS, 0.05 * rk, 0.03 * rk, 0.062 * rk));
       }
       legs.instanceMatrix.needsUpdate = true;
