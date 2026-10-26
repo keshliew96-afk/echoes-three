@@ -31,7 +31,7 @@
 //      the hit and death tuning and the named points the VFX layer reads;
 //   8. colour: no Ember, Bright Heal or Violet anywhere in a rig.
 //
-//   node tools/model-standard-foes-probe.mjs
+//   node tools/model-standard-foes-probe.mjs [kind,kind]
 // Exit code 1 on any failure.
 
 // The rigs paint a few canvases (glow sprites): a stub is enough.
@@ -355,7 +355,10 @@ const LIVE = {
 };
 
 // --- 3 to 8: each foe -------------------------------------------------------
+// `node tools/model-standard-foes-probe.mjs owl,boar` checks only those foes
+const ONLY = process.argv[2] ? new Set(process.argv[2].split(',')) : null;
 for (const kind of ROSTER) {
+  if (ONLY && !ONLY.has(kind)) continue;
   const build = FACET_FOES[kind];
   if (!build) continue;
   const abilities = FOE_ABILITIES[kind];

@@ -1,50 +1,56 @@
 // SHRIEK OWL, MODEL STANDARD (docs/MODEL_STANDARD.md "Foes"). The classic owl
 // of enemies/woodmill.js (docs/WOOD_MILL_ENEMIES.md, campaign-only from room
 // 3 of the Hollow Wood) with the sample video's technique laid ON TOP of its
-// chibi ink look: the same pale barn owl gliding 1.5 u up on broad banded
-// wings, the slate back and wings, the flat pale heart-shaped facial disc,
-// the ear tufts, the hooked beak, the talons hung below, and the one indigo
-// tell (the pupils and their glow). What it gains:
+// chibi ink look: the same soft pale barn owl gliding 1.5 u up on broad
+// wings with three bold dark bands on each wingtip, the slate back, the clean
+// cream heart-shaped face with no ink on it, the ear tufts, the hooked beak,
+// the talons hung below, and the one indigo tell (the pupils and their glow).
+// What it gains, all of it sitting IN the surface so the bird reads calm at
+// play zoom:
 //
-//   * faceted masses: the body, mantle, skull and disc are cut into flat
-//     planes, each with its own value step, so the toon light bands plane by
-//     plane; the pale breast against the slate back is the value break;
+//   * faceted masses: the body, mantle, skull, disc and the lofted wing panels
+//     are cut into flat planes, each with its own value step; the pale breast
+//     against the slate back is the value break;
 //   * detail by repetition, BAKED per kind (render/facet/foe.js), so a room of
-//     owls shares one buffer per material: breast feathers in three
-//     overlapping rows with the barn owl's dark drop spots, scapulars over the
-//     mantle with pale pearl spots, a crown of small feathers, layered ear
-//     tufts, a ruff round the heart-shaped disc and a keel down its middle, a
-//     hooked two-piece beak (hornGeometry), a barred tail fan, feathered legs
-//     with curved talons;
+//     owls shares one buffer per material: breast feathers sunk into the
+//     chest with the barn owl's dark drop spots laid flat on it, scapulars and
+//     pearl spots over the mantle, a crown of small feathers, layered ear
+//     tufts, a slate ruff framing the heart-shaped disc and a keel down its
+//     middle, a hooked two-piece beak (hornGeometry), a tail fan of blunt
+//     feathers, feathered legs with curved talons;
 //   * WINGS AS THE MOVING PARTS: each wing is an arm and a hand on a wrist,
-//     coverts, secondaries and a fan of fingered primaries, barred across like
-//     the classic's three bands. The beat has a real stroke: the hand folds
-//     and lags on the upstroke and the leading edge dips on the downstroke;
-//     the glide holds its wings out between bursts of beats; the hang treads
-//     fast and shallow. A flier has no feet to lock (Kesh's self-check, rule
-//     2, has nothing touching the floor); rule 1 is the body BANKING into its
-//     measured travel: it rolls into a sideways drift and into a turn, noses
-//     down into a forward glide and leans back on a backpedal, sweeping its
-//     wings forward and beating harder; the talons and the tail trail the
-//     travel with a lag;
+//     each panel lofted along its span so the classic's three bands are strips
+//     OF the hand's surface (flush, never boxes hung off it); flat coverts sunk
+//     into the arm, blunt secondaries and fingered primaries at the trailing
+//     edge, and the full silhouette ink round the whole wing. The beat has a
+//     real stroke: the hand folds and lags on the upstroke and the leading
+//     edge dips on the downstroke; the glide holds its wings out between
+//     bursts of beats; the hang treads fast and shallow. A flier has no feet
+//     to lock (Kesh's self-check, rule 2, has nothing touching the floor);
+//     rule 1 is the body BANKING into its measured travel: it rolls into a
+//     sideways drift and into a turn, noses down into a forward glide and
+//     leans back on a backpedal, sweeping its wings forward and beating
+//     harder; the talons and the tail trail the travel with a lag;
 //   * THE SHRIEK on the sim's own clock (sim/enemies/owl.js). The sim hangs
 //     the owl still and holds a cone telegraph (`kind: 'cone'`, 54 ticks,
 //     `e.mode = 'hang'`), resolves it on `resolveTick` (`e.shriekTick`, the
 //     `owl_shriek` event), cooldown 230 ticks. The model samples its gather
-//     from the telegraph's progress on the interpolated tick: it rises into
-//     the hang, then draws its head back, throws its wings wide, up and back,
-//     flares the facial disc, swells the chest, dilates the indigo pupils and
-//     draws the talons up (rule 3: the body coils before it strikes). The
-//     strike runs in the telegraph's last 2.5 frames, so its CONTACT lands on
-//     the resolve tick: the wings drive down and forward, the head snaps out
-//     and down at the cone with the beak wide, the body pitches into it with
-//     the contact squash, the talons rake forward. The release beat holds the
-//     scream (the head trembles), the recoil kicks the body back on a braking
-//     upstroke with a stretch, and the settle lands in the glide with one
-//     overshoot. A stun (the telegraph cancelled) never strikes: the gather
-//     settles back to the glide;
+//     from the telegraph on the SHOWN tick (the layer's interpolated tick + 1:
+//     the telegraph is the state's own): it rises into the hang, then draws
+//     its head back, throws its wings wide, up and back, flares the facial
+//     disc, swells the chest, dilates the indigo pupils and draws the talons
+//     up (rule 3: the body coils before it strikes). The strike takes the
+//     telegraph's last 3 frames, so its CONTACT lands on the resolve tick: the
+//     wings drive down and forward, the head snaps out and down at the cone
+//     with the beak wide, the body pitches into it with the contact squash,
+//     the talons rake forward. The release holds the scream (the head
+//     trembles), the recoil kicks the body back on a braking upstroke with a
+//     stretch, and the settle lands in the glide with one overshoot. A stun
+//     (the telegraph cancelled, or a release the sim never confirmed with
+//     `shriekTick`) never strikes: the gather settles back to the glide;
 //   * the spawn-in grow (B7), named points (B8: the beak tip, the talons, the
-//     mouth), and the hit and death tuning the shared envelope reads.
+//     gape, each following its part), and the hit and death tuning the
+//     shared envelope reads.
 //
 // Not a repeating melee attack (one shriek, then a 230-tick cooldown), so no
 // 3-hit chain: the shriek has its own timeline (Kesh's template, the ranged
@@ -53,7 +59,7 @@
 // Faces +Z. Same contract as buildOwl (group, mats, setYaw, pose) plus lab,
 // body, react, death, points. Render only: the sim, its timing and damage
 // untouched.
-import { BoxGeometry, Color, CylinderGeometry, Euler, Group, IcosahedronGeometry, Matrix4, Mesh, MeshBasicMaterial, OctahedronGeometry, Quaternion, SphereGeometry, Vector3 } from 'three';
+import { BufferGeometry, Color, CylinderGeometry, Euler, Float32BufferAttribute, Group, IcosahedronGeometry, Matrix4, Mesh, MeshBasicMaterial, OctahedronGeometry, Quaternion, SphereGeometry, Vector3 } from 'three';
 import { PALETTE } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { makeGlowSprite } from '../../glow.js';
@@ -72,9 +78,9 @@ const SPEED = 2.4;
 export const SHRIEK_TICKS = 54;
 const GATHER_SEC = SHRIEK_TICKS / TICK_HZ;
 // Inside the telegraph (ticks): the rise into the hang, then the gather, and
-// the strike's last 2.5 frames (5 ticks) so its contact lands on resolveTick.
+// the strike's last 3 frames (6 ticks) so its contact lands on resolveTick.
 const RISE_T = 12;
-const STRIKE_T = 2.5 * FRAME * TICK_HZ;
+const STRIKE_T = 3 * FRAME * TICK_HZ;
 // After the release (s): the held scream, the recoil, the settle.
 const CONTACT_SEC = 4 * FRAME;
 const RECOIL_SEC = 3 * FRAME;
@@ -86,6 +92,9 @@ const BEAT_GLIDE = 5.2;
 const BEAT_TREAD = 13;
 const GLIDE_AMP = 0.5;
 const TREAD_AMP = 0.3;
+// The strike's curve: near even steps with a little acceleration into the
+// contact (at 30 fps its in-betweens show about 24% and 58% of the way).
+const strikeEase = (k) => k * (0.6 + 0.4 * k);
 
 // --- Key poses. lift: up from the hover (u); push: shove along +z (u);
 // pitch: nose down (+) or rearing (-); sx/sy/sz: the body's squash (a chest
@@ -128,8 +137,8 @@ export function owlGatherPose(tt, span, out, from = REST) {
     lerpFields(out, HANG, COIL, ease.inOut((tt - rise) / Math.max(1e-6, s0 - rise)), FIELDS);
     return 'gather';
   }
-  // the fast strike: accelerating into the contact on the resolve tick
-  lerpFields(out, COIL, SHRIEK, ease.in(Math.min(1, (tt - s0) / strikeT)), FIELDS);
+  // the strike: 3 frames from the coil into the contact on the resolve tick
+  lerpFields(out, COIL, SHRIEK, strikeEase(Math.min(1, (tt - s0) / strikeT)), FIELDS);
   return 'strike';
 }
 // Pure: pt seconds after the release (the contact's first frame).
@@ -211,6 +220,33 @@ const L_ARM = 0.36;
 const WRIST = new Vector3(L_ARM, 0, 0);
 const HIPS = [new Vector3(-0.07, -0.19, 0.04), new Vector3(0.07, -0.19, 0.04)];
 const TAIL_AT = new Vector3(0, -0.05, -0.2);
+// The beak horn's tip in its own frame (hornGeometry len 1, bend 1.1, seg 2).
+const BEAK_TIP = (() => {
+  const v = new Vector3();
+  for (let i = 0; i < 2; i++) {
+    const a = (1.1 * (i + 0.5)) / 2;
+    v.y += Math.cos(a) * 0.5;
+    v.z += Math.sin(a) * 0.5;
+  }
+  return v;
+})();
+// The wing panels, lofted along the span: stations { x, zl (leading edge),
+// zt (trailing edge), t (half thickness), band (a dark band strip starts) }.
+const ARM_ST = [
+  { x: -0.04, zl: 0.09, zt: -0.11, t: 0.03 },
+  { x: 0.08, zl: 0.125, zt: -0.165, t: 0.034 },
+  { x: 0.22, zl: 0.125, zt: -0.17, t: 0.03 },
+  { x: 0.4, zl: 0.11, zt: -0.15, t: 0.026 },
+];
+// The hand: the classic's three bands (0.05 wide on the wing's outer half,
+// the classic's own spacing), flush strips of the panel.
+const HAND_X = [-0.06, 0.04, 0.105, 0.155, 0.22, 0.27, 0.335, 0.385, 0.43];
+const HAND_BAND = new Set([2, 4, 6]);
+const handSt = (x) => {
+  const u = (x - HAND_X[0]) / (HAND_X[HAND_X.length - 1] - HAND_X[0]);
+  return { x, zl: 0.11 - 0.08 * u ** 2.2, zt: -0.15 + 0.12 * u ** 1.6, t: 0.024 * (1 - 0.55 * u) };
+};
+const HAND_ST = HAND_X.map((x, i) => ({ ...handSt(x), band: HAND_BAND.has(i) }));
 
 // A point on an ellipsoid (centre c, radii r) and its outward normal: theta
 // from the top (0) down, phi round from the front (+z, 0) toward +x.
@@ -220,6 +256,49 @@ function onEllipsoid(c, r, theta, phi, lift, out, nrm) {
   const z = r.z * Math.sin(theta) * Math.cos(phi);
   out.set(c.x + x * lift, c.y + y * lift, c.z + z * lift);
   if (nrm) nrm.set(x / (r.x * r.x), y / (r.y * r.y), z / (r.z * r.z)).normalize();
+  return out;
+}
+// The same spot cast onto a FACETED surface (local helper): the ray from the
+// centre c toward the ellipsoid point, against the faceted mesh `soup` (a
+// position attribute in the same space). out is the hit pushed `depth` along
+// the facet's own normal (negative sinks it), nrm that normal, so a part laid
+// there sits on the plane it covers instead of floating over a facet's sag.
+const castA = new Vector3();
+const castB = new Vector3();
+const castC = new Vector3();
+const castE1 = new Vector3();
+const castE2 = new Vector3();
+const castP = new Vector3();
+const castQ = new Vector3();
+const castS = new Vector3();
+const castD = new Vector3();
+function onFacets(soup, c, r, theta, phi, depth, out, nrm) {
+  onEllipsoid(c, r, theta, phi, 1, out, nrm);
+  castD.subVectors(out, c).normalize();
+  let best = Infinity;
+  for (let i = 0; i + 2 < soup.count; i += 3) {
+    castA.fromBufferAttribute(soup, i);
+    castB.fromBufferAttribute(soup, i + 1);
+    castC.fromBufferAttribute(soup, i + 2);
+    castE1.subVectors(castB, castA);
+    castE2.subVectors(castC, castA);
+    castP.crossVectors(castD, castE2);
+    const det = castE1.dot(castP);
+    if (Math.abs(det) < 1e-12) continue;
+    castS.subVectors(c, castA);
+    const u = castS.dot(castP) / det;
+    if (u < 0 || u > 1) continue;
+    castQ.crossVectors(castS, castE1);
+    const v = castD.dot(castQ) / det;
+    if (v < 0 || u + v > 1) continue;
+    const t = castE2.dot(castQ) / det;
+    if (t > 0 && t < best) {
+      best = t;
+      nrm.crossVectors(castE1, castE2).normalize();
+      if (nrm.dot(castD) < 0) nrm.negate();
+    }
+  }
+  if (best < Infinity) out.copy(c).addScaledVector(castD, best).addScaledVector(nrm, depth);
   return out;
 }
 const fz = (g, jitter, seed) => facetize(g, { jitter, seed });
@@ -240,6 +319,106 @@ function tip(X, Y, Z, a) {
   Z.set(Z.x * c - Y.x * s, Z.y * c - Y.y * s, Z.z * c - Y.z * s);
   Y.set(yx, yy, yz);
   X.crossVectors(Y, Z).normalize();
+}
+// Wind each triangle of a flat position list to face away from centre(i)
+// (local helper, as the kit's convex parts do).
+function windOut(pos, centre) {
+  const c = [0, 0, 0];
+  for (let i = 0; i + 8 < pos.length; i += 9) {
+    const ux = pos[i + 3] - pos[i], uy = pos[i + 4] - pos[i + 1], uz = pos[i + 5] - pos[i + 2];
+    const vx = pos[i + 6] - pos[i], vy = pos[i + 7] - pos[i + 1], vz = pos[i + 8] - pos[i + 2];
+    const nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx;
+    const mx = (pos[i] + pos[i + 3] + pos[i + 6]) / 3;
+    const my = (pos[i + 1] + pos[i + 4] + pos[i + 7]) / 3;
+    const mz = (pos[i + 2] + pos[i + 5] + pos[i + 8]) / 3;
+    centre(mx, my, mz, c);
+    if (nx * (mx - c[0]) + ny * (my - c[1]) + nz * (mz - c[2]) < 0) {
+      for (let k = 0; k < 3; k++) {
+        const t = pos[i + 3 + k];
+        pos[i + 3 + k] = pos[i + 6 + k];
+        pos[i + 6 + k] = t;
+      }
+    }
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new Float32BufferAttribute(pos, 3));
+  return g;
+}
+// A feather (local helper): a flat blunt paddle, base at y 0, its square-cut
+// tip at y 1, x across (half width 0.5), a low ridge on both faces (z ±0.16),
+// so it reads as a soft feather, never a thorn.
+function featherGeometry() {
+  return sharedGeo('facet:owl:feather', () => {
+    const O = [
+      [0, 0],
+      [0.5, 0.32],
+      [0.36, 1],
+      [-0.36, 1],
+      [-0.5, 0.32],
+    ];
+    const pos = [];
+    for (let i = 0; i < 5; i++) {
+      const a = O[i];
+      const b = O[(i + 1) % 5];
+      pos.push(a[0], a[1], 0, b[0], b[1], 0, 0, 0.55, 0.16);
+      pos.push(a[0], a[1], 0, b[0], b[1], 0, 0, 0.55, -0.16);
+    }
+    return fz(
+      windOut(pos, (x, y, z, c) => {
+        c[0] = 0;
+        c[1] = 0.5;
+        c[2] = 0;
+      }),
+      0.1,
+      229
+    );
+  });
+}
+// A lofted panel (local helper): strips between stations, each with a
+// diamond section (leading edge, upper ridge, trailing edge, lower ridge) and
+// end caps, every strip its own faceted part so a band strip takes its tint.
+function loftParts(stations, seed, bandTint) {
+  const sec = (s) => {
+    const zr = s.zl - 0.35 * (s.zl - s.zt);
+    return [
+      [s.x, 0, s.zl],
+      [s.x, s.t, zr],
+      [s.x, 0, s.zt],
+      [s.x, -0.6 * s.t, zr],
+    ];
+  };
+  const axisAt = (x, c) => {
+    let i = 0;
+    while (i < stations.length - 2 && x > stations[i + 1].x) i++;
+    const a = stations[i];
+    const b = stations[i + 1];
+    const k = clamp((x - a.x) / (b.x - a.x), 0, 1);
+    const zl = a.zl + (b.zl - a.zl) * k;
+    const zt = a.zt + (b.zt - a.zt) * k;
+    c[0] = x;
+    c[1] = 0;
+    c[2] = zl - 0.35 * (zl - zt);
+  };
+  const out = [];
+  for (let i = 0; i + 1 < stations.length; i++) {
+    const A = sec(stations[i]);
+    const B = sec(stations[i + 1]);
+    const pos = [];
+    for (let j = 0; j < 4; j++) {
+      const a0 = A[j], a1 = A[(j + 1) % 4], b0 = B[j], b1 = B[(j + 1) % 4];
+      pos.push(...a0, ...b0, ...b1, ...a0, ...b1, ...a1);
+    }
+    out.push({ geo: fz(windOut(pos, (x, y, z, c) => axisAt(x, c)), 0.1, seed + i), m: null, tint: stations[i].band ? bandTint : null });
+  }
+  for (const [S, dir] of [
+    [sec(stations[0]), -1],
+    [sec(stations[stations.length - 1]), 1],
+  ]) {
+    const pos = [...S[0], ...S[1], ...S[2], ...S[0], ...S[2], ...S[3]];
+    const x = S[0][0];
+    out.push({ geo: fz(windOut(pos, (px, py, pz, c) => axisAt(x - dir * 0.05, c)), 0.1, seed + 40 + dir), m: null });
+  }
+  return out;
 }
 // A baked row's mirror image across x = 0 (the left wing), its winding put
 // back so its faces still face out. (Local helper: an instanced mirror would
@@ -289,12 +468,13 @@ function geos() {
   const H = new Vector3();
   const m = new Matrix4();
   const wedge = wedgeGeometry();
+  const feather = featherGeometry();
   const scale = scaleGeometry({ sides: 5, seed: 211 });
   const at = (pos, up, fwd, sx, sy, sz) => {
     basis(H.copy(up), fwd, X, Y, Z);
     return setTRS(m, pos, X, Y, Z, sx, sy, sz).clone();
   };
-  // a flat blade lying in a surface: its tip along `dir`, its thin side along
+  // a flat part lying in a surface: its tip along `dir`, its thin side along
   // the surface normal `nrm`
   const flat = (pos, dir, nrm, w, len, thick) => {
     Y.copy(dir).normalize();
@@ -306,41 +486,46 @@ function geos() {
   const spotTint = tintOf(OWL_C.band, OWL_C.body, 1.1);
   const pearlTint = tintOf(OWL_C.body, OWL_C.back, 1.05);
   const bandTint = tintOf(OWL_C.band, OWL_C.back);
+  const up = new Vector3(0, 1, 0);
 
   // Torso: the pale egg, faceted (the silhouette, full ink).
-  set.torso = fz(new SphereGeometry(1, 7, 5).scale(TORSO.x, TORSO.y, TORSO.z), 0.14, 201);
-  // Breast: three overlapping rows of feathers shingled downward, the barn
-  // owl's dark drop spots between them (one draw call for the crowd).
+  set.torso = fz(new SphereGeometry(1, 9, 6).scale(TORSO.x, TORSO.y, TORSO.z), 0.12, 201);
+  const torsoSoup = set.torso.attributes.position;
+  const O0 = new Vector3();
+  // Breast: three rows of feathers sunk into the chest (only their low
+  // ridges break the surface: value steps, no outline), the barn owl's dark
+  // drop spots laid flat on it as dots.
   set.breast = bakeParts('owl:breast', () => {
     const out = [];
     const ROWS = [
-      [1.28, [-0.62, -0.2, 0.2, 0.62]],
-      [1.68, [-0.95, -0.48, 0, 0.48, 0.95]],
-      [2.08, [-0.6, -0.2, 0.2, 0.6]],
+      [1.3, [-0.45, 0, 0.45]],
+      [1.7, [-0.85, -0.3, 0.3, 0.85]],
+      [2.1, [-0.45, 0, 0.45]],
     ];
     ROWS.forEach(([th, phis], r) => {
       phis.forEach((ph, j) => {
-        onEllipsoid(new Vector3(), TORSO, th, ph, 0.975, P, N);
+        onFacets(torsoSoup, O0, TORSO, th, ph, -0.006, P, N);
         basis(N, H.set(0, -1, 0), X, Y, Z);
-        tip(X, Y, Z, -0.28);
-        const s = 1 - 0.12 * r;
-        setTRS(m, P, X, Y, Z, 0.085 * s, 0.03, 0.095 * s);
-        out.push({ geo: scale, m: m.clone(), tone: 0.95 + 0.05 * ((j + r) % 3) });
+        const s = 1 - 0.1 * r;
+        setTRS(m, P, X, Y, Z, 0.1 * s, 0.018, 0.11 * s);
+        out.push({ geo: scale, m: m.clone(), tone: 0.95 + 0.04 * ((j + r) % 3) });
       });
     });
-    for (const [th, ph] of [[1.48, -0.42], [1.48, 0.42], [1.9, -0.72], [1.9, 0.02], [1.9, 0.74]]) {
-      onEllipsoid(new Vector3(), TORSO, th, ph, 1.005, P, N);
+    for (const [th, ph] of [[1.5, -0.24], [1.5, 0.24], [1.9, -0.6], [1.9, 0], [1.9, 0.6]]) {
+      onFacets(torsoSoup, O0, TORSO, th, ph, 0.001, P, N);
       H.set(0, -1, 0).addScaledVector(N, -N.y);
-      out.push({ geo: wedge, m: flat(P, H, N, 0.026, 0.04, 0.1), tint: spotTint });
+      out.push({ geo: wedge, m: flat(P, H, N, 0.026, 0.03, 0.03), tint: spotTint });
     }
     return out;
   });
-  // Back: the slate mantle, scapulars over the shoulders and down the spine
-  // (alternating values: a hint of the barring), pale pearl spots.
+  // Back: the slate mantle, scapulars sunk over the shoulders and down the
+  // spine (alternating values: a hint of the barring), pale pearl dots.
   set.back = bakeParts('owl:back', () => {
     const out = [];
-    const mantle = fz(new SphereGeometry(1, 7, 3, 0, Math.PI * 2, 0, Math.PI / 2), 0.14, 203);
-    out.push({ geo: mantle, m: new Matrix4().compose(MANTLE_C, new Quaternion(), MANTLE) });
+    const mantle = fz(new SphereGeometry(1, 7, 3, 0, Math.PI * 2, 0, Math.PI / 2), 0.12, 203);
+    const mantleM = new Matrix4().compose(MANTLE_C, new Quaternion(), MANTLE);
+    out.push({ geo: mantle, m: mantleM });
+    const mantleSoup = mantle.clone().applyMatrix4(mantleM).attributes.position;
     const SC = [
       [0.72, 1.2, 0.11],
       [1.02, 1.72, 0.12],
@@ -348,67 +533,66 @@ function geos() {
     ];
     SC.forEach(([th, ph, w], j) => {
       for (const side of [-1, 1]) {
-        onEllipsoid(MANTLE_C, MANTLE, th, side * ph, 0.98, P, N);
+        onFacets(mantleSoup, MANTLE_C, MANTLE, th, side * ph, -0.006, P, N);
         basis(N, H.set(0, 0, -1), X, Y, Z);
-        tip(X, Y, Z, -0.3);
-        setTRS(m, P, X, Y, Z, w, 0.035, w * 1.15);
-        out.push({ geo: scale, m: m.clone(), tone: j % 2 ? 0.86 : 1.05 });
+        tip(X, Y, Z, -0.12);
+        setTRS(m, P, X, Y, Z, w, 0.024, w * 1.15);
+        out.push({ geo: scale, m: m.clone(), tone: j % 2 ? 0.88 : 1.04 });
       }
     });
-    onEllipsoid(MANTLE_C, MANTLE, 0.5, Math.PI, 0.98, P, N);
+    onFacets(mantleSoup, MANTLE_C, MANTLE, 0.5, Math.PI, -0.006, P, N);
     basis(N, H.set(0, 0, -1), X, Y, Z);
-    tip(X, Y, Z, -0.3);
-    out.push({ geo: scale, m: setTRS(m, P, X, Y, Z, 0.12, 0.035, 0.13).clone(), tone: 0.9 });
+    tip(X, Y, Z, -0.12);
+    out.push({ geo: scale, m: setTRS(m, P, X, Y, Z, 0.12, 0.024, 0.13).clone(), tone: 0.9 });
     for (const [th, ph] of [[0.55, -0.9], [0.55, 0.9], [1.05, -2.05], [1.05, 2.05]]) {
-      onEllipsoid(MANTLE_C, MANTLE, th, ph, 1.01, P, N);
+      onFacets(mantleSoup, MANTLE_C, MANTLE, th, ph, 0.001, P, N);
       H.set(0, 0, -1).addScaledVector(N, -N.z);
-      out.push({ geo: wedge, m: flat(P, H, N, 0.03, 0.035, 0.1), tint: pearlTint });
+      out.push({ geo: wedge, m: flat(P, H, N, 0.03, 0.032, 0.03), tint: pearlTint });
     }
     return out;
   });
-  // Tail: a fan of five feathers raked back and a touch down, two dark bars
-  // across it (it steers on its own pivot).
+  // Tail: a fan of five blunt feathers raked back and a touch down, light and
+  // dark in turn (it steers on its own pivot).
   set.tail = bakeParts('owl:tail', () => {
     const out = [];
-    const up = new Vector3(0, 1, 0);
     for (let i = 0; i < 5; i++) {
-      const x = (i - 2) * 0.032;
+      const x = (i - 2) * 0.03;
       const len = 0.21 - 0.015 * Math.abs(i - 2);
-      out.push({ geo: wedge, m: flat(P.set(x, 0, 0.02), H.set(x * 1.7, -0.14, -1), up, 0.075, len, 0.12), tone: i % 2 ? 0.9 : 1 });
-    }
-    const bar = fz(new BoxGeometry(1, 1, 1), 0.08, 205);
-    for (const [d, w] of [[0.09, 0.15], [0.16, 0.19]]) {
-      out.push({ geo: bar, m: new Matrix4().compose(P.set(0, 0.012 - d * 0.14, 0.02 - d), new Quaternion().setFromAxisAngle(X.set(1, 0, 0), -0.14), H.set(w, 0.012, 0.022)), tint: bandTint });
+      out.push({ geo: feather, m: flat(P.set(x, 0, 0.03), H.set(x * 1.7, -0.14, -1), up, 0.085, len, 0.1), tone: i % 2 ? 0.84 : 1 });
     }
     return out;
   });
-  // Skull: the slate head, a crown of small feathers raked back, the layered
+  // Skull: the slate head, a crown of small feathers sunk in it, the layered
   // ear tufts (two blades each, the tall one darker).
   set.skull = bakeParts('owl:skull', () => {
     const out = [];
-    out.push({ geo: fz(new SphereGeometry(SKULL_R, 7, 5), 0.13, 207), m: new Matrix4().makeScale(1, 0.95, 0.95) });
+    const skull = fz(new SphereGeometry(SKULL_R, 7, 5), 0.12, 207);
+    const skullM = new Matrix4().makeScale(1, 0.95, 0.95);
+    out.push({ geo: skull, m: skullM });
+    const skullSoup = skull.clone().applyMatrix4(skullM).attributes.position;
     const SK = new Vector3(SKULL_R, SKULL_R * 0.95, SKULL_R * 0.95);
     for (const [th, ph] of [[0.42, Math.PI - 0.55], [0.42, Math.PI + 0.55], [0.75, Math.PI]]) {
-      onEllipsoid(new Vector3(), SK, th, ph, 0.97, P, N);
+      onFacets(skullSoup, O0, SK, th, ph, -0.005, P, N);
       basis(N, H.set(0, 0, -1), X, Y, Z);
-      tip(X, Y, Z, -0.3);
-      out.push({ geo: scale, m: setTRS(m, P, X, Y, Z, 0.075, 0.028, 0.085).clone(), tone: 0.92 });
+      tip(X, Y, Z, -0.12);
+      out.push({ geo: scale, m: setTRS(m, P, X, Y, Z, 0.08, 0.02, 0.09).clone(), tone: 0.92 });
     }
     for (const side of [-1, 1]) {
-      out.push({ geo: wedge, m: at(P.set(side * 0.085, 0.115, -0.01), H.set(side * 0.5, 1, -0.3), new Vector3(0, 0, 1), 0.065, 0.14, 0.22), tone: 0.84 });
-      out.push({ geo: wedge, m: at(P.set(side * 0.07, 0.11, -0.05), H.set(side * 0.45, 0.8, -0.6), new Vector3(0, 0, 1), 0.06, 0.1, 0.2), tone: 1.0 });
+      out.push({ geo: wedge, m: at(P.set(side * 0.085, 0.115, -0.01), H.set(side * 0.5, 1, -0.3), new Vector3(0, 0, 1), 0.065, 0.125, 0.22), tone: 0.84 });
+      out.push({ geo: wedge, m: at(P.set(side * 0.07, 0.11, -0.05), H.set(side * 0.45, 0.8, -0.6), new Vector3(0, 0, 1), 0.06, 0.09, 0.2), tone: 1.0 });
     }
     return out;
   });
-  // Facial disc: two faceted lobes in a heart, a slate ruff round its rim, a
-  // keel down its middle to the beak.
+  // Facial disc (no ink, as on the classic): two faceted lobes in a clean
+  // cream heart, framed by a slate ruff of blunt feathers tucked behind its
+  // rim, a soft keel down its middle to the beak.
   set.disc = bakeParts('owl:disc', () => {
     const out = [];
-    const lobe = fz(new SphereGeometry(0.09, 7, 4), 0.1, 209);
+    const lobe = fz(new SphereGeometry(0.09, 7, 4), 0.08, 209);
     for (const side of [-1, 1]) {
       out.push({ geo: lobe, m: new Matrix4().compose(P.set(side * 0.06, 0, 0), new Quaternion().setFromAxisAngle(Z.set(0, 0, 1), side * -0.25), H.set(1, 1.15, 0.32)) });
     }
-    const ruffTint = tintOf(OWL_C.back, OWL_C.face, 0.9);
+    const ruffTint = tintOf(OWL_C.back, OWL_C.face, 0.85);
     const nz = new Vector3(0, 0, 1);
     const RUFF = 10;
     for (let i = 0; i < RUFF; i++) {
@@ -417,9 +601,9 @@ function geos() {
       const dy = Math.cos(a);
       // a heart: notched at the top, pointed at the chin
       const r = Math.hypot(0.15 * dx, 0.115 * dy) * (1 - 0.18 * Math.max(0, dy) ** 4) * (1 + 0.1 * Math.max(0, -dy) ** 2);
-      out.push({ geo: wedge, m: flat(P.set(dx * r * 0.9, dy * r * 0.9, -0.012), H.set(dx, dy, 0), nz, 0.07, 0.05, 0.12), tint: ruffTint, tone: i % 2 ? 0.92 : 1 });
+      out.push({ geo: feather, m: flat(P.set(dx * r * 0.82, dy * r * 0.82, -0.02), H.set(dx, dy, 0), nz, 0.075, 0.06, 0.1), tint: ruffTint, tone: i % 2 ? 0.92 : 1 });
     }
-    out.push({ geo: wedge, m: flat(P.set(0, 0.06, 0.026), H.set(0, -1, 0.15), nz, 0.032, 0.08, 0.14), tone: 0.88 });
+    out.push({ geo: wedge, m: flat(P.set(0, 0.055, 0.024), H.set(0, -1, 0.15), nz, 0.03, 0.075, 0.08), tone: 0.92 });
     return out;
   });
   // Eye sockets: angular charcoal (never round, never warm), slanted.
@@ -450,54 +634,44 @@ function geos() {
     }
     return out;
   });
-  // The wing's arm (shoulder to wrist): a faceted panel, lesser coverts along
-  // its leading half, secondaries along its trailing edge, a dark bar across.
+  // The wing's arm (shoulder to wrist): the lofted panel, three greater
+  // coverts laid flat into its rear slope (only a low ridge breaks the
+  // surface), four blunt secondaries scalloping the trailing edge.
   set.armR = bakeParts('owl:armR', () => {
-    const out = [];
-    const up = new Vector3(0, 1, 0);
-    out.push({ geo: fz(new SphereGeometry(0.5, 6, 3), 0.12, 221), m: new Matrix4().compose(P.set(0.19, 0, -0.02), new Quaternion(), H.set(0.5, 0.045, 0.34)) });
+    const out = loftParts(ARM_ST, 231, bandTint);
     for (let i = 0; i < 3; i++) {
-      const x = 0.07 + i * 0.11;
-      basis(up, H.set(0.15, 0, -1), X, Y, Z);
-      tip(X, Y, Z, -0.18);
-      setTRS(m, P.set(x, 0.012, 0.04), X, Y, Z, 0.11, 0.028, 0.13);
-      out.push({ geo: scale, m: m.clone(), tone: i % 2 ? 0.9 : 1.04 });
+      const s = sectionAt(ARM_ST, 0.06 + i * 0.11);
+      const zr = s.zl - 0.35 * (s.zl - s.zt);
+      // the rear slope, from the ridge down to the trailing edge
+      H.set(0, -s.t, s.zt - zr);
+      N.set(0, zr - s.zt, -s.t).normalize();
+      out.push({ geo: feather, m: flat(P.set(s.x, s.t - 0.004, zr - 0.006), H, N, 0.12, Math.hypot(s.t, zr - s.zt) * 0.85, 0.04), tone: i % 2 ? 0.88 : 1.05 });
     }
     for (let i = 0; i < 4; i++) {
       const x = 0.05 + i * 0.095;
-      out.push({ geo: wedge, m: flat(P.set(x, 0, -0.1), H.set(0.12 + 0.06 * i, 0, -1), up, 0.1, 0.12, 0.14), tone: i % 2 ? 0.88 : 1 });
+      const s = sectionAt(ARM_ST, x);
+      out.push({ geo: feather, m: flat(P.set(x, 0, s.zt + 0.035), H.set(0.1 + 0.05 * i, 0, -1), up, 0.11, 0.11, 0.1), tone: i % 2 ? 0.86 : 1 });
     }
-    const bar = fz(new BoxGeometry(1, 1, 1), 0.08, 223);
-    out.push({ geo: bar, m: new Matrix4().compose(P.set(0.22, 0.008, -0.155), new Quaternion().setFromAxisAngle(up, -0.08), H.set(0.38, 0.012, 0.026)), tint: bandTint });
     return out;
   });
-  // The hand (wrist to tip): a tapering panel, a fan of five fingered
-  // primaries, and the classic's three dark bands across it.
+  // The hand (wrist to tip): the lofted panel with the three bands as strips
+  // of its own surface, a fan of five fingered primaries at its edge.
   set.handR = bakeParts('owl:handR', () => {
-    const out = [];
-    const up = new Vector3(0, 1, 0);
-    const panel = new SphereGeometry(0.5, 6, 3);
-    const pos = panel.attributes.position;
-    for (let i = 0; i < pos.count; i++) {
-      const x = pos.getX(i) + 0.5; // 0 at the wrist .. 1 at the tip
-      pos.setZ(i, pos.getZ(i) * (1 - 0.45 * x));
-    }
-    out.push({ geo: fz(panel, 0.12, 225), m: new Matrix4().compose(P.set(0.16, 0, -0.02), new Quaternion(), H.set(0.46, 0.036, 0.26)) });
+    const out = loftParts(HAND_ST, 241, bandTint);
     const PR = [
-      [0.31, 0.12, 0.2],
-      [0.26, 0.42, 0.2],
-      [0.2, 0.72, 0.18],
-      [0.14, 1.02, 0.16],
-      [0.08, 1.32, 0.14],
+      [0.38, 0.22, 0.14, 0.075],
+      [0.32, 0.52, 0.14, 0.08],
+      [0.25, 0.82, 0.13, 0.085],
+      [0.18, 1.1, 0.12, 0.085],
+      [0.11, 1.34, 0.11, 0.085],
     ];
-    PR.forEach(([x, a, len], i) => {
-      out.push({ geo: wedge, m: flat(P.set(x, 0, -0.03), H.set(Math.cos(a), 0, -Math.sin(a)), up, 0.07, len, 0.12), tone: i % 2 ? 0.88 : 1.02 });
+    PR.forEach(([x, a, len, w], i) => {
+      const s = handSt(x);
+      // set in from the edge it leaves, so only its blunt end shows
+      const bx = x - Math.cos(a) * 0.03;
+      const bz = s.zt + 0.03 + (s.zl - s.zt) * 0.15 * Math.max(0, 1 - a);
+      out.push({ geo: feather, m: flat(P.set(bx, 0, bz), H.set(Math.cos(a), 0, -Math.sin(a)), up, w, len, 0.1), tone: i % 2 ? 0.86 : 1.02 });
     });
-    const bar = fz(new BoxGeometry(1, 1, 1), 0.08, 227);
-    for (const x of [0.1, 0.2, 0.3]) {
-      const chord = 0.26 * (1 - 0.45 * ((x - 0.16) / 0.46 + 0.5));
-      out.push({ geo: bar, m: new Matrix4().compose(P.set(x, 0.01, -0.025), new Quaternion(), H.set(0.032, 0.012, chord * 1.02)), tint: bandTint });
-    }
     return out;
   });
   set.armL = sharedGeo('facet:bake:owl:armL', () => mirrorX(set.armR));
@@ -507,8 +681,19 @@ function geos() {
   SET = set;
   return set;
 }
+// A lofted panel's section at x (linear between its stations).
+function sectionAt(stations, x) {
+  let i = 0;
+  while (i < stations.length - 2 && x > stations[i + 1].x) i++;
+  const a = stations[i];
+  const b = stations[i + 1];
+  const k = clamp((x - a.x) / (b.x - a.x), 0, 1);
+  return { x, zl: a.zl + (b.zl - a.zl) * k, zt: a.zt + (b.zt - a.zt) * k, t: a.t + (b.t - a.t) * k };
+}
 
-const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
+function clamp(v, lo, hi) {
+  return v < lo ? lo : v > hi ? hi : v;
+}
 const smooth01 = (x) => {
   const c = clamp(x, 0, 1);
   return c * c * (3 - 2 * c);
@@ -531,7 +716,7 @@ export function buildOwlFacet() {
   // The body: torso, breast rows, mantle (the frame's body group carries the
   // hover, the bank and the squash; its origin is the owl's middle).
   body.add(foePart(G.torso, bodyMat, 'full', 'owl-torso'));
-  body.add(foePart(G.breast, bodyMat, 'part', 'owl-breast'));
+  body.add(foePart(G.breast, bodyMat, false, 'owl-breast'));
   body.add(foePart(G.back, backMat, 'part', 'owl-back'));
   const tail = new Group();
   tail.name = 'owl-tail';
@@ -549,7 +734,7 @@ export function buildOwlFacet() {
   disc.name = 'owl-disc';
   disc.position.copy(DISC_AT);
   head.add(disc);
-  disc.add(foePart(G.disc, faceMat, 'part', 'owl-face'));
+  disc.add(foePart(G.disc, faceMat, false, 'owl-face'));
   disc.add(foePart(G.sockets, inkMat, false, 'owl-sockets'));
   const pupils = [-1, 1].map((side) => {
     const p = new Mesh(G.pupil, tellMat);
@@ -563,12 +748,19 @@ export function buildOwlFacet() {
   eyeGlow.material.color.copy(TELL_INDIGO_GLOW);
   eyeGlow.position.set(0, 0.02, 0.08);
   disc.add(eyeGlow);
-  const beak = instancedPart(G.beak, beakMat, 2, { name: 'owl-beak', moving: true, inkPx: PART_INK_PX });
-  disc.add(beak);
+  // The beak: the upper hook and the lower mandible, no ink (as the classic),
+  // posed by matrix every frame.
+  const beaks = ['owl-beak', 'owl-beak-low'].map((name) => {
+    const b = foePart(G.beak, beakMat, false, name);
+    b.matrixAutoUpdate = false;
+    disc.add(b);
+    return b;
+  });
   // The wings: arm and hand each side, posed by matrix every frame (the -x
-  // side is the mirror geometry, so its detail stays on top).
+  // side is the mirror geometry, so its detail stays on top), each with the
+  // full silhouette ink.
   const wingMesh = (geo, name) => {
-    const w = foePart(geo, backMat, 2.0, name);
+    const w = foePart(geo, backMat, 'full', name);
     w.matrixAutoUpdate = false;
     body.add(w);
     return w;
@@ -585,7 +777,7 @@ export function buildOwlFacet() {
   F.group.add(shadow);
 
   // Named points (B8): the beak tip (the weapon: the shriek leaves it), the
-  // talons (the hand), the gape (the mouth).
+  // talons (the hand), the gape (the mouth); each follows its part.
   const tipPt = namedPoint(disc, 'owl-tip', 0, -0.085, 0.105);
   const mouth = namedPoint(disc, 'owl-mouth', 0, -0.055, 0.085);
   const talonPt = namedPoint(body, 'owl-talons', 0.07, -0.37, 0.07);
@@ -608,6 +800,7 @@ export function buildOwlFacet() {
   const beakX = new Vector3(1, 0, 0);
   const beakY = new Vector3();
   const beakZ = new Vector3();
+  const lowTip = new Vector3();
   let age = -1;
   let id = 0;
   let wingPhase = 0;
@@ -639,7 +832,7 @@ export function buildOwlFacet() {
     override: null, // { id: 'shriek', t } | null
     lastStrike: null, // { id, tick }: the sim tick the latest live strike's contact lands on
     pose: () => ({ ...cur }),
-    parts: { body, head, disc, tail, wings: [armR, handR, armL, handL], legs, beak },
+    parts: { body, head, disc, tail, wings: [armR, handR, armL, handL], legs, beak: beaks },
   };
 
   function recordStrike(contactTick) {
@@ -647,6 +840,15 @@ export function buildOwlFacet() {
     const s = strikes[0] === prevStrike ? strikes[1] : strikes[0];
     s.tick = contactTick;
     lab.lastStrike = s;
+  }
+  // No shriek: the strike (if it began) is taken back and the gather settles
+  // back to the glide.
+  function abort(now) {
+    if (struck) lab.lastStrike = prevStrike;
+    struck = false;
+    Object.assign(abortFrom, cur);
+    mode = 'abort';
+    abortT0 = now;
   }
 
   // The lab's wingbeat phase at ability time t: the integral of the beat's
@@ -689,30 +891,36 @@ export function buildOwlFacet() {
       mode = 'idle';
       watch.reset();
     } else {
+      // the telegraph the watch holds, before this frame's beat clears it
+      const watchedR = watch.telegraph ? watch.telegraph.resolveTick : null;
       const beat = watch.update(P);
       const tel = e && e.telegraph;
       if (beat && beat.type === 'wind') {
+        // a telegraph replaced by a new one with no release between never
+        // shrieked: take its strike back
+        if (struck) lab.lastStrike = prevStrike;
         Object.assign(windFrom, cur);
         struck = false;
       }
       if (beat && beat.type === 'release') {
-        // the contact holds from here (the strike already ran in the
-        // telegraph's last frames; a frame that skipped them strikes now)
-        if (!struck) recordStrike(tick);
-        mode = 'post';
-        postT0 = now;
-        struck = false;
-        if (e && e.shriekTick != null) lastShriekTick = e.shriekTick;
-      } else if (beat && beat.type === 'cancel') {
-        // stunned: no shriek; the gather settles back to the glide
-        if (struck) lab.lastStrike = prevStrike;
-        struck = false;
-        Object.assign(abortFrom, cur);
-        mode = 'abort';
-        abortT0 = now;
-      }
+        // the sim confirms a shriek with its tick; a telegraph that ended
+        // without one (a stun on the tick before the resolve, seen late) is
+        // no shriek
+        const R = watchedR ?? tick;
+        const sim = e && typeof e.shriekTick === 'number' ? e.shriekTick : null;
+        if (sim !== null && sim < R - 1) abort(now);
+        else {
+          // the contact holds from here (the strike already ran in the
+          // telegraph's last frames; a frame that skipped them strikes now)
+          if (!struck) recordStrike(R);
+          mode = 'post';
+          postT0 = now;
+          struck = false;
+          if (sim !== null) lastShriekTick = sim;
+        }
+      } else if (beat && beat.type === 'cancel') abort(now);
       // a shriek seen only by its tick (no telegraph reached this rig)
-      if (e && e.shriekTick != null && e.shriekTick >= 0 && lastShriekTick !== null && e.shriekTick !== lastShriekTick && !tel) {
+      if (e && typeof e.shriekTick === 'number' && e.shriekTick >= 0 && lastShriekTick !== null && e.shriekTick !== lastShriekTick && !tel) {
         lastShriekTick = e.shriekTick;
         if (mode !== 'post' || now - postT0 > 2 * FRAME) {
           recordStrike(e.shriekTick);
@@ -720,17 +928,22 @@ export function buildOwlFacet() {
           postT0 = now;
         }
       }
-      if (lastShriekTick === null) lastShriekTick = e && e.shriekTick != null ? e.shriekTick : -1;
+      if (lastShriekTick === null) lastShriekTick = e && typeof e.shriekTick === 'number' ? e.shriekTick : -1;
 
       if (tel && watch.telegraph) {
         const span = Math.max(1, (tel.resolveTick ?? tick) - (tel.startTick ?? tick));
-        const tt = clamp(tick - (tel.startTick ?? tick), 0, span);
+        // the SHOWN tick: the layer interpolates tick - 1 + alpha, but the
+        // telegraph is the state's own, so the strike's last tick shows too;
+        // held half a tick short of the contact while the telegraph lives, so
+        // the contact itself only ever shows on the release (whichever way a
+        // caller counts its ticks)
+        const tt = clamp(tick + 1 - (tel.startTick ?? tick), 0, span - 0.5);
         const ph = owlGatherPose(tt, span, cur, windFrom);
         mode = 'gather';
         if (ph === 'strike' && !struck) {
           // the strike starts: its contact lands on the resolve tick
           struck = true;
-          recordStrike(tick + (span - tt));
+          recordStrike(tel.resolveTick ?? tick + 1);
         }
       } else if (mode === 'gather') {
         mode = 'idle';
@@ -842,9 +1055,14 @@ export function buildOwlFacet() {
       beakX.crossVectors(beakY, beakZ).normalize();
       beakPos.set(0, b === 0 ? -0.022 : -0.04, b === 0 ? 0.05 : 0.044);
       const L = b === 0 ? 0.085 : 0.055;
-      beak.setMatrixAt(b, setTRS(m, beakPos, beakX, beakY, beakZ, L, L, L));
+      const bm = beaks[b];
+      setTRS(bm.matrix, beakPos, beakX, beakY, beakZ, L, L, L);
+      bm.matrixWorldNeedsUpdate = true;
     }
-    beak.instanceMatrix.needsUpdate = true;
+    // B8: the tip at the hook's point, the mouth in the gape between the two
+    tipPt.position.copy(BEAK_TIP).applyMatrix4(beaks[0].matrix);
+    lowTip.copy(BEAK_TIP).applyMatrix4(beaks[1].matrix);
+    mouth.position.copy(tipPt.position).add(lowTip).multiplyScalar(0.5);
     // the tail steers against the bank, brakes down in the hang, and fans and
     // lifts in a backpedal's airflow
     tail.rotation.set(cur.tailP - 0.25 * Math.min(0, fwd), -0.5 * roll + 0.12 * Math.sin(now * 1.3 + id), 0.3 * roll);
