@@ -103,6 +103,7 @@ const SNAP_SEC = 2.5 * FRAME; // the snap back
 const SETTLE_SEC = 6 * FRAME; // into the next coil, or idle, one overshoot
 const FOLLOW_SEC = CONTACT_SEC + REEL_SEC + SNAP_SEC + SETTLE_SEC;
 const ABORT_SEC = 0.35; // a cancelled coil falls back to idle
+const ABORT_SNAP_SEC = 3 * FRAME; // ...and a cut-short throw's reach snaps back
 // The lab plays the three lashes back to back (the sim's cooldown between
 // lashes is 220 ticks; the lab skips the creep between them).
 const LAB_PERIOD = COIL_SEC + FOLLOW_SEC;
@@ -135,10 +136,10 @@ const D2 = K({ push: -0.03, twist: 0.46, roll: -0.06, pitch: -0.06, sx: 1.06, sy
 const S2 = K({ push: 0.1, pitch: 0.38, twist: -0.24, roll: 0.05, sx: 1.19, sy: 0.91, step: 1, jaw: -0.06, tell: 0.6, vy: -0.4, vp: 0.02, vl: 1.6, reach: 1 });
 // Lash 3, OVERHEAD SLAM (the biggest): the vine rears straight up over the
 // pod, the highest wind-up of the three, its tip rolled into a tight
-// fiddlehead well above the crown; the pod rises tall on its roots and leans
-// back, then slams the vine down the lane with the deepest squash and a drop.
-const C3 = K({ pitch: -0.16, sx: 0.96, sy: 1.07, hop: 0.03, step: 1, jaw: 0.5, tell: 0.6, vy: 0, vp: 1.3, cp: 0.03, ct: 0.5, vl: 1.5 });
-const D3 = K({ push: -0.03, pitch: -0.28, sx: 0.92, sy: 1.14, hop: 0.06, step: 1, jaw: 0.88, tell: 1, vy: 0, vp: 1.36, cp: 0.04, ct: 0.62, vl: 1.5 });
+// fiddlehead well above the crown; the pod crouches low on its roots (the
+// classic's sink: no daylight under it) and leans back, then slams the vine down the lane with the deepest squash and a drop.
+const C3 = K({ pitch: -0.12, sx: 0.99, sy: 1.02, hop: -0.02, step: 1, jaw: 0.5, tell: 0.6, vy: 0, vp: 1.3, cp: 0.03, ct: 0.5, vl: 1.5 });
+const D3 = K({ push: -0.03, pitch: -0.2, sx: 0.98, sy: 1.04, hop: -0.05, step: 1, jaw: 0.88, tell: 1, vy: 0, vp: 1.36, cp: 0.04, ct: 0.62, vl: 1.5 });
 const S3 = K({ push: 0.12, pitch: 0.44, sx: 1.25, sy: 0.85, hop: -0.03, step: 1, jaw: -0.08, tell: 0.7, vy: 0, vp: -0.4, vl: 1.6, reach: 1 });
 // The reel's end, taut (a hero caught: the pod hauls back, its front roots
 // stepping back under it, and gapes to take it), and the snap back's
@@ -417,14 +418,14 @@ const ROOT_A = Array.from({ length: ROOT_N }, (_, i) => Math.PI / 6 + (i * Math.
 // classic's footprint. Each knee bends down and in, under the pod (never out
 // and up, so the roots never arch into spider legs), and never below
 // KNEE_MIN.
-const HIPS = ROOT_A.map((a) => new Vector3(Math.sin(a) * 0.19, 0.235, Math.cos(a) * 0.19));
+const HIPS = ROOT_A.map((a) => new Vector3(Math.sin(a) * 0.15, 0.21, Math.cos(a) * 0.15));
 const HOMES = ROOT_A.map((a) => new Vector3(Math.sin(a) * 0.32, 0, Math.cos(a) * 0.32));
-const RL1 = 0.165;
-const RL2 = 0.19;
+const RL1 = 0.09; // short: the upper bone stays tucked under the pod
+const RL2 = 0.27;
 const FRONT_ROOTS = [0, 5]; // the two either side of the vine
 const BRACE = 0.04; // u the front roots step out to brace a lash (the coil)
 const BRACE_STEP = 0.15; // s: that quick step
-const ROOT_R = [0.066, 0.05];
+const ROOT_R = [0.055, 0.035];
 const KNEE_MIN = 0.06; // u: a knee lies on the floor, never in it
 const TIP_SINK = 0.015; // a planted root tip sits a hair into the floor
 // The vine: eleven links from its root in the pod's face.
@@ -821,7 +822,12 @@ export function buildLasherFacet() {
       abort(now);
     }
     if (state === 'coil' || state === 'strike') {
-      if (!live || live.startTick !== tel.start) {
+      if (live && live.startTick === tel.start && heldBy(e, tel.resolve)) {
+        // a stun or blind the rig can already see (status lands after the
+        // enemy phase, the telegraph still up): the lash will not resolve, so
+        // stop the whip now rather than throw on into it
+        abort(now);
+      } else if (!live || live.startTick !== tel.start) {
         // the telegraph is gone: the lash, on the sim's word, or nothing.
         // Contact on the release frame (the part of a tick already past the
         // resolve counts); the follow-through runs on the sim's clock.
@@ -860,6 +866,10 @@ export function buildLasherFacet() {
       if (k >= 1) state = 'idle';
       else {
         lerpFields(cur, abortFrom, REST, 1 - settle(k), FIELDS);
+        // a throw cut short snaps its reach back in 3 frames (a whip that
+        // stopped, never a lash that eases home)
+        const kr = Math.min(1, (now - abortNow) / ABORT_SNAP_SEC);
+        cur.reach = abortFrom.reach * (1 - kr) * (1 - kr);
         return true;
       }
     }
