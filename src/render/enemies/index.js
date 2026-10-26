@@ -194,8 +194,10 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       const dl = lh ? Math.hypot(lh.dx, lh.dz) : 0;
       const dir = dl > 1e-4 ? { x: lh.dx / dl, z: lh.dz / dl } : null;
       const g = r.build.group;
+      // A body killed mid-hop comes down through the pop, not in one frame.
+      const lift0 = r.node?.userData.lift ?? 0;
       resetNode(r.node);
-      dying.push({ group: g, mats: r.build.mats, age: 0, mode: 'kill', node: r.node, dir, x: g.position.x, z: g.position.z, throwU: (r.e?.radius ?? 0.4) * 2 * KILL_THROW_BW, base: g.scale.x || 1, pivot: r.body?.pivot ?? 0 });
+      dying.push({ group: g, mats: r.build.mats, age: 0, mode: 'kill', node: r.node, dir, x: g.position.x, z: g.position.z, throwU: (r.e?.radius ?? 0.4) * 2 * KILL_THROW_BW, base: g.scale.x || 1, pivot: r.body?.pivot ?? 0, lift0 });
       removeDecal(ev.id);
       releaseShape(ev.id);
       return;
@@ -348,12 +350,13 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
           lastHit: null,
           node: null,
           body: null,
-          react: createReaction(e.kind, { champion: e.champion === true }),
+          // A champion's body carries its id (sim/enemies/champions.js).
+          react: createReaction(e.kind, { champion: !!e.champion }),
         };
         // The hit reaction's node sits between the group and the body, so
-        // the shadow, the crown and the floor ring stay on the floor.
+        // the shadow, the crown and the floor ring stay on the floor. The
+        // body is measured after its first pose (some rigs lay out there).
         r.node = hitNode(r.build);
-        r.body = measureBody(e.kind, r.node);
         // §23.5 Elite: x1.2 body + indigo crown glyph + outer indigo ring.
         if (e.elite) {
           const sc = e.scale ?? 1.2;
@@ -402,6 +405,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       });
       if (r.elite) r.elite.update(tSec);
       // R2-R5: the hit reaction on the node over the body (render/react.js).
+      if (!r.body) r.body = measureBody(e.kind, r.node);
       settleReaction(r.react, e, tick);
       writeReaction(r.node, r.react, evalReaction(r.react, envNow, _react), r.body, r.build.group.scale.x);
 
@@ -671,7 +675,6 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     const m = d.node.matrix;
     const py = d.pivot;
     m.makeTranslation(0, -py, 0);
-    m.premultiply(_kS.makeScale(w, h, w));
     if (d.dir && k > 0) {
       // Tips over easing in (K4), from the floor (or the body's middle).
       _kaxis.set(d.dir.z, 0, -d.dir.x);
@@ -679,7 +682,12 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       const fly = d.throwU * (1 - (1 - Math.min(1, k)) * (1 - Math.min(1, k)));
       d.group.position.set(d.x + d.dir.x * fly, 0, d.z + d.dir.z * fly);
     }
-    m.premultiply(_kT.makeTranslation(0, py, 0));
+    // The swell and the flat pop in the world's axes, after the tip, so a
+    // tipped body still pops flat on the floor.
+    m.premultiply(_kS.makeScale(w, h, w));
+    // A body killed mid-hop sinks back to the floor through the hold and pop.
+    const fall = d.lift0 ? d.lift0 * Math.max(0, 1 - a / KILL_TOTAL_SEC) : 0;
+    m.premultiply(_kT.makeTranslation(0, py + fall, 0));
     d.node.matrixWorldNeedsUpdate = true;
   }
 
@@ -700,7 +708,8 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       envTick: env.now,
       kills: dying.filter((d) => d.mode === 'kill').map((d) => {
         const m = d.node ? d.node.matrix.elements : null;
-        return { age: Math.round(d.age * 1000) / 1000, dir: d.dir, x: d.group.position.x, z: d.group.position.z, sx: m ? Math.hypot(m[0], m[1], m[2]) : 1, sy: m ? Math.hypot(m[4], m[5], m[6]) : 1 };
+        // sx, sy: the body's world width and height scale (matrix rows).
+        return { age: Math.round(d.age * 1000) / 1000, dir: d.dir, x: d.group.position.x, z: d.group.position.z, sx: m ? Math.hypot(m[0], m[4], m[8]) : 1, sy: m ? Math.hypot(m[1], m[5], m[9]) : 1, ty: m ? m[13] : 0 };
       }),
       shapes: shapes.stats(),
       ...extras.debugState(),

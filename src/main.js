@@ -51,7 +51,7 @@ import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 import { createRunUi } from './ui/run/index.js';
 import { updateNumberPools, flushNumberPools, prewarmNumberPools, numeralTally, numeralsLive } from './render/numbers.js';
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
-import { wireRenderHold, frameRenderHold, renderHold } from './render/hold.js';
+import { wireRenderHold, markRenderHold, frameRenderHold, renderHold } from './render/hold.js';
 import { parseBootParams, wipeEchoesStorage } from './app/params.js';
 import { HARNESS, pageQuery } from './app/harness.js';
 import { createApp } from './app/app.js';
@@ -865,12 +865,16 @@ function frame(now) {
   input.setPadSuppressed(!!(socketScreen?.isOpen() || runUi?.isOpen()));
 
   let alpha = lastAlpha;
+  // The render hold counts the frozen ticks this step consumes (render/hold.js).
+  const holdBefore = clock.hitstopRemaining;
+  markRenderHold();
   if (!simFrozen && !app.simPaused()) {
     alpha = clock.advance(frameMs, (tick) => simStep(tick));
     lastAlpha = alpha;
   }
-  // The render hold pays last frame's hitstop grant before any layer poses.
-  frameRenderHold(now / 1000, Math.min(0.1, Math.max(0, frameMs / 1000)));
+  // The render hold pays the freeze before any layer poses; a co-op guest
+  // (a replica bus: its clock never freezes) pays the replayed hitstops.
+  frameRenderHold(now / 1000, Math.min(0.1, Math.max(0, frameMs / 1000)), bus.replica ? null : holdBefore, bus.replica ? null : clock.hitstopRemaining);
 
   // Render side: read-only over sim state, interpolated by alpha.
   activeScene.update?.(now / 1000, alpha);

@@ -67,12 +67,12 @@ globalThis.window = globalThis;
 globalThis.innerWidth = 1600;
 globalThis.innerHeight = 900;
 
-const { Scene, PerspectiveCamera, Vector3, Color, Sprite } = await import('three');
+const { Scene, PerspectiveCamera, Vector3, Group } = await import('three');
 const { createEventBus } = await import('../src/core/events.js');
 const { createCosmeticRng } = await import('../src/core/rng.js');
 const { HITSTOP, TICK_HZ } = await import('../src/core/constants.js');
 const { PALETTE } = await import('../src/data/palette.js');
-const { wireRenderHold, frameRenderHold, renderHold, resetRenderHold, HOLD_CAP } = await import('../src/render/hold.js');
+const { wireRenderHold, markRenderHold, frameRenderHold, renderHold, resetRenderHold, HOLD_CAP } = await import('../src/render/hold.js');
 const { REACT, squashCurve, hopCurves, hitProfile, createEnvClock, hitNode, measureBody, createReaction, armReaction, settleReaction, evalReaction, writeReaction, resetNode } = await import('../src/render/react.js');
 const { createEnemyLayer } = await import('../src/render/enemies/index.js');
 const { createBossLayer } = await import('../src/render/boss/index.js');
@@ -136,6 +136,30 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   bus.emit(300, 'state_restored', {});
   frame();
   check('a restored save drops a pending hold', frame().paid === 0);
+  // Solo and host: the hold pays the frozen ticks the clock really consumed,
+  // at any frame rate. At 20 fps a kill's 3 ticks: 2 frozen inside the hit
+  // frame, 1 in the next (with 2 live ticks).
+  resetRenderHold();
+  const step = (dt, before, after, grant = 0) => {
+    markRenderHold();
+    if (grant) bus.emit(400, 'hitstop', { ticks: grant, cause: 'kill' });
+    t += dt;
+    frameRenderHold(t, dt, before, after);
+    return { paid: renderHold.paid, rig: renderHold.rigDt(dt) };
+  };
+  const s0 = step(0.05, 0, 1, 3);
+  const s1 = step(0.05, 1, 0);
+  const s2 = step(0.05, 0, 0);
+  check('solo and host: the hold matches the frozen ticks the clock consumed at 20 fps', Math.abs(s0.paid - 2 / 60) < 1e-9 && Math.abs(s0.rig - 1 / 60) < 1e-9 && Math.abs(s1.paid - 1 / 60) < 1e-9 && s2.paid === 0, { s0, s1, s2 });
+  const g0 = step(DT, 0, 2, 2); // the hit frame at 60 fps: granted, nothing frozen yet
+  const g1 = step(DT, 2, 1);
+  const g2 = step(DT, 1, 0);
+  check('solo and host at 60 fps: the hit frame plays, the next two hold', g0.paid === 0 && g1.rig === 0 && g2.rig === 0);
+  markRenderHold();
+  bus.emit(500, 'state_restored', {});
+  t += DT;
+  frameRenderHold(t, DT, 0, 0);
+  check('solo and host: a restore never pays a bogus hold', renderHold.paid === 0);
   resetRenderHold();
 }
 
@@ -191,7 +215,7 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   // Foes and champions through the layer's own builders (one layer, one
   // rig per kind spawned at once).
   const foeBus = createEventBus();
-  const ents = foeKinds.map((kind, i) => ({ id: 1000 + i, kind, x: i * 3, z: 0, px: i * 3, pz: 0, hp: 10, maxHp: 10, radius: 0.35, faceX: 0, faceZ: 1, champion: CHAMPION_IDS.includes(kind) }));
+  const ents = foeKinds.map((kind, i) => ({ id: 1000 + i, kind, x: i * 3, z: 0, px: i * 3, pz: 0, hp: 10, maxHp: 10, radius: 0.35, faceX: 0, faceZ: 1, champion: CHAMPION_IDS.includes(kind) ? kind : undefined }));
   const foeWorld = { tick: 5, entities: () => ents, pendingSpawns: () => [], roomState: {} };
   const foeLayer = createEnemyLayer({ stage: layerStage, world: foeWorld, bus: foeBus, cosmetic: cos });
   foeLayer.update(1, 0.5);
@@ -208,6 +232,10 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   const dbg = foeLayer.debugState().react ?? {};
   const flat = ents.filter((e) => !(dbg[e.id] && dbg[e.id].q > 0 && (dbg[e.id].sy < 1 || dbg[e.id].sx > 1))).map((e) => e.kind);
   check(`every foe and champion rig reacts to a hit through the layer (${foeKinds.length} kinds)`, Object.keys(dbg).length === foeKinds.length && flat.length === 0, flat);
+  // R5 on the body as the sim makes it (a champion carries its id).
+  const champAmps = ents.filter((e) => e.champion).map((e) => dbg[e.id]?.amp);
+  const plainAmp = dbg[ents.find((e) => e.kind === 'boar').id]?.amp;
+  check(`R5: all ${CHAMPION_IDS.length} champions squash at half through the layer`, champAmps.length === CHAMPION_IDS.length && champAmps.every((a) => Math.abs(a - plainAmp * REACT.bigMul) < 1e-9), { champAmps, plainAmp });
   for (const [i, kind] of foeKinds.entries()) {
     const group = [...rigsByKind.keys()].find((g) => g.position.x === i * 3);
     if (!group) {
@@ -237,6 +265,12 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
       continue;
     }
     bossesWrapped += 1;
+    if (kind === 'wyrm') {
+      // The layer measures a boss after its first pose: the faceted Wyrm's
+      // coil lies on the floor, so it squashes from the floor.
+      const lb = measureBody('boss:wyrm', node);
+      check('the Barrow Wyrm (faceted) is measured posed: its coil squashes from the floor', lb.floats === false && lb.pivot === 0, { minY: r3(lb.minY), floats: lb.floats });
+    }
     checkRig(kind, node, measureBody(`probe:${kind}`, node), createReaction(kind, { boss: true }), `boss:${kind}`);
     resetNode(node);
   }
@@ -257,6 +291,25 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   for (let k = 11; k < 30; k++) lifts.push(evalReaction(footSt, k, {}).lift);
   check('R4: a pushed foe hops and lands', Math.max(...lifts) > 0.5 && lifts[lifts.length - 1] === 0);
   check('R5: a champion\'s small push still hops, smaller', champSt.hop && champSt.hop.dist < REACT.pushRef * 0.3 && champSt.hop.dist >= REACT.minPush);
+  // A burn tick under a skill's blow never cuts the blow's squash.
+  const blow = createReaction('boar');
+  armReaction(blow, { tick: 10, delivery: 'skill', shape: 'aoe', dirX: 1, dirZ: 0, kb: 0 }, {});
+  const qBlow = evalReaction(blow, 12, {}).q;
+  armReaction(blow, { tick: 12, delivery: 'skill', shape: 'burn', dirX: 1, dirZ: 0, kb: 0 }, {});
+  const qAfter = evalReaction(blow, 12, {}).q;
+  check('a burn or aura tick never cuts a stronger squash', Math.abs(qAfter - qBlow) < 1e-9 && qBlow > 0.15, { qBlow: r3(qBlow), qAfter: r3(qAfter) });
+  // A shot's hop is a fraction of the body's height in the world: an elite
+  // (x1.2) hops 1.2 x as high as a plain one.
+  const shotLift = (b) => {
+    const st = createReaction('boar');
+    armReaction(st, { tick: 10, delivery: 'basic', shape: 'projectile', dirX: 1, dirZ: 0, kb: 0.34 }, { radius: 0.4 });
+    settleReaction(st, { kbScale: 1 }, 11);
+    const node = new Group();
+    node.matrixAutoUpdate = false;
+    writeReaction(node, st, evalReaction(st, 13, {}), { pivot: 0, height: 0.8 }, b);
+    return node.matrix.elements[13] * b; // back to world units
+  };
+  check('R4: a shot\'s hop scales with the body (elites and splitlings)', Math.abs(shotLift(1.2) / shotLift(1) - 1.2) < 1e-6 && shotLift(1) > 0, { plain: r3(shotLift(1)), elite: r3(shotLift(1.2)) });
   const gar = createReaction('gargoyle');
   armReaction(gar, { tick: 10, delivery: 'basic', shape: 'melee', dirX: 1, dirZ: 0, kb: 0.5 }, {});
   settleReaction(gar, { kbScale: 0 }, 11);
@@ -331,9 +384,30 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   const ages = kills.map((k) => (k ? k.age : null));
   const swell = kills.filter(Boolean).map((k) => k.sx);
   check('K2: the kill holds on its frame through the freeze (3 ticks)', ages[1] === ages[0] && ages[2] === ages[1] && ages[3] === ages[2] && ages[4] > ages[3], ages.slice(0, 6).map(r3));
-  check('K2: then a round swell before the flat pop', Math.max(...swell) > 1.2 && kills.filter(Boolean).some((k) => k.sy < 0.5), swell.map(r3).slice(0, 10));
+  check('K2: then a round swell before the flat pop, flat on the floor even tipped', Math.max(...swell) > 1.2 && kills.filter(Boolean).some((k) => k.sy < 0.1), { swell: swell.map(r3).slice(0, 10), sy: kills.filter(Boolean).map((k) => r3(k.sy)) });
   const lastKill = kills.filter(Boolean).pop();
   check('K4: the body flies along the killing hit', lastKill && lastKill.z > 0.1 && Math.abs(lastKill.x - foe.x) < 0.05, lastKill);
+  // A body killed mid-hop comes down through the pop, not in one frame.
+  for (let i = 0; i < 20; i++) frame();
+  const foe2 = { id: 8, kind: 'boar', x: 4, z: 0, px: 4, pz: 0, hp: 10, maxHp: 10, radius: 0.4, faceX: 0, faceZ: 1, kbScale: 1 };
+  ents = [foe2, healer];
+  world.tick = 120;
+  frame();
+  bus.emit(120, 'hit', { target: 8, kind: 'boar', attacker: 1, amount: 3, delivery: 'basic', shape: 'melee', kb: 0.5, dirX: 1, dirZ: 0, x: 4, z: 0 });
+  for (let k = 121; k <= 125; k++) {
+    world.tick = k;
+    foe2.px = foe2.x;
+    foe2.x += 0.08;
+    frame();
+  }
+  const liftBefore = layer.debugState().react[8].lift;
+  bus.emit(125, 'hit', { target: 8, kind: 'boar', attacker: 1, amount: 9, delivery: 'basic', shape: 'melee', kb: 0.5, dirX: 1, dirZ: 0, x: foe2.x, z: 0 });
+  bus.emit(125, 'death', { id: 8, kind: 'boar', delivery: 'basic', x: foe2.x, z: 0 });
+  ents = [healer];
+  const tys = [];
+  for (let i = 0; i < 16; i++) tys.push(frame().kills.find((k) => k.ty !== undefined)?.ty ?? null);
+  const live = tys.filter((v) => v !== null);
+  check('a body killed mid-hop sinks through the pop instead of snapping down', liftBefore > 0.3 && live[0] > 0.2 && live.every((v, i) => i === 0 || v <= live[i - 1] + 1e-9) && live[live.length - 1] < 0.05, { liftBefore: r3(liftBefore), tys: live.map(r3) });
   resetRenderHold();
 }
 
@@ -439,7 +513,7 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   updateNumberPools(DT);
   updateNumberPools(DT);
   const nHeld = live()[0];
-  check('N1: the freeze holds the pop', nHeld.hold < 2 / 60 && nHeld.phase === 'pop' && nHeld.age < 0.03, nHeld);
+  check('N1: the freeze holds the pop (size, white) while the arc runs on', nHeld.hold < 2 / 60 && nHeld.phase === 'pop' && nHeld.popAge < 0.03 && nHeld.age >= 0.05, nHeld);
   for (let i = 0; i < 8; i++) updateNumberPools(DT);
   const nSet = live()[0];
   check('N1: settled to Hearth Amber within 0.1 s of held time', nSet.phase === 'settled' && nSet.color.toUpperCase() === PALETTE.hearthAmber.toUpperCase(), nSet);

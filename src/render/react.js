@@ -151,6 +151,7 @@ export function hitNode(build) {
 
 export function resetNode(node) {
   if (!node) return;
+  node.userData.lift = 0;
   node.matrix.identity();
   node.matrixWorldNeedsUpdate = true;
 }
@@ -222,14 +223,19 @@ export function createReaction(kind, { boss = false, champion = false } = {}) {
 export function armReaction(st, ev, e) {
   const { p, amp, shot } = hitProfile(ev, { big: st.big });
   const dl = Math.hypot(ev.dirX || 0, ev.dirZ || 0);
-  st.hitTick = ev.tick;
-  st.p = p;
-  st.amp = amp;
   st.hits += 1;
-  if (dl > 1e-4) {
-    st.dirX = ev.dirX / dl;
-    st.dirZ = ev.dirZ / dl;
-  } else st.dirX = st.dirZ = 0;
+  // A weaker hit (a burn or aura tick under a skill's blow) never cuts a
+  // stronger squash still in play; it restarts only one it would beat.
+  const left = st.hitTick === null ? 0 : st.amp * Math.abs(squashCurve(ev.tick - (st.hitTick - 1), st.p));
+  if (amp >= left) {
+    st.hitTick = ev.tick;
+    st.p = p;
+    st.amp = amp;
+    if (dl > 1e-4) {
+      st.dirX = ev.dirX / dl;
+      st.dirZ = ev.dirZ / dl;
+    } else st.dirX = st.dirZ = 0;
+  }
   if (e && Number.isFinite(e.radius)) st.radius = e.radius;
   // R4: a push. A boss, a Lamprey rising or lunging and a zero-knockback
   // skill carry kb 0: no hop. The body's own kbScale is read once the push
@@ -306,6 +312,7 @@ export function writeReaction(node, st, o, body, base = 1) {
     if (!node.userData.rest) {
       resetNode(node);
       node.userData.rest = true;
+      node.userData.lift = 0;
     }
     return;
   }
@@ -339,8 +346,10 @@ export function writeReaction(node, st, o, body, base = 1) {
   } else _R.identity();
   // Lift (u, world) and the flinch's near-edge anchor (half a body width
   // times the along-hit gain), both back in the group's own units.
-  const liftU = st.rope ? 0 : Math.min(REACT.maxLiftU, o.hopShot ? o.lift * REACT.shotHop * body.height : o.lift * REACT.hopU);
+  // World units (body.height is in the group's own, so times its scale).
+  const liftU = st.rope ? 0 : Math.min(REACT.maxLiftU, o.hopShot ? o.lift * REACT.shotHop * body.height * b : o.lift * REACT.hopU);
   const shift = (st.coil || Math.hypot(o.dirX, o.dirZ) < 1e-4 ? 0 : st.radius * REACT.flinch * qPos) / b;
+  node.userData.lift = liftU / b; // the kill reads it to bring a mid-hop body down
   const m = node.matrix;
   m.makeTranslation(0, -py, 0);
   m.premultiply(_S);

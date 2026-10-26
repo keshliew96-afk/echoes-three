@@ -386,7 +386,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
           flashStartTick: -999,
           e: ent,
           react: createReaction(ent.kind, { boss: true }),
-          body: measureBody(`boss:${ent.kind}`, rig.hitNode),
+          body: null, // measured after the first pose (the faceted Wyrm lays its coil out there)
         };
         darkenRoom();
       }
@@ -430,6 +430,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
           : 0;
       rec.rig.setFlash(lit);
       // R2, R3, R5: the half squash and flinch (render/react.js).
+      if (!rec.body) rec.body = measureBody(`boss:${ent.kind}`, rec.rig.hitNode);
       writeReaction(rec.rig.hitNode, rec.react, evalReaction(rec.react, envNow, _react), rec.body, 1);
 
       // Lane / cone telegraphs (kit bosses): the pooled Ember shapes.

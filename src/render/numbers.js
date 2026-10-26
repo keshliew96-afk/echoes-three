@@ -413,6 +413,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       side: side || 1,
       tick,
       hold: 0,
+      popAge: -delay, // the pop's own clock: held through the hitstop (N1)
       steps: w && w.flash ? OWN_STEPS : null,
       step: -1,
       tagged: !!el.dataset.tag,
@@ -437,14 +438,16 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     for (let i = active.length - 1; i >= 0; i--) {
       const rec = active[i];
       // The hitstop's hold pays from the numeral's second frame: it shows,
-      // then holds its pop through the freeze.
+      // then holds its pop (size, white, tag) through the freeze while its
+      // arc and fade run on.
       let d = dt;
-      if (rec.hold > 0 && rec.age > 0) {
+      if (rec.hold > 0 && rec.popAge > 0) {
         const h = Math.min(rec.hold, d);
         rec.hold -= h;
         d -= h;
       }
-      rec.age += d;
+      rec.age += dt;
+      rec.popAge += d;
       if (rec.age < 0) continue; // staggered: not on screen yet (see FAN_*)
       if (rec.el.style.visibility !== 'visible') rec.el.style.visibility = 'visible';
       const t = rec.age / DAMAGE_NUMBERS.lifeSec;
@@ -487,7 +490,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       let popLeft;
       let rot = '';
       if (rec.arc) {
-        const look = numeralLook(rec.age, { tagged: rec.tagged });
+        const look = numeralLook(rec.popAge, { tagged: rec.tagged });
         popLeft = look.popLeft;
         if (rec.steps && look.step !== rec.step) {
           rec.step = look.step;
@@ -525,7 +528,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
   };
   // (capacity — CAMPAIGN GC.6: numeral elements ever allocated, live + parked.)
   // Probe surface (harness: __echoes.numeralsLive()): the live numerals' state.
-  const live = () => active.map((r) => ({ who: r.who, crit: r.crit, age: Math.round(r.age * 1000) / 1000, hold: Math.round(r.hold * 1000) / 1000, side: r.arc ? r.side : 0, phase: r.phase, tag: r.tagged ? r.el.dataset.tag : null, color: r.el.style.color, text: r.el.textContent }));
+  const live = () => active.map((r) => ({ who: r.who, crit: r.crit, age: Math.round(r.age * 1000) / 1000, popAge: Math.round(r.popAge * 1000) / 1000, hold: Math.round(r.hold * 1000) / 1000, side: r.arc ? r.side : 0, phase: r.phase, tag: r.tagged ? r.el.dataset.tag : null, color: r.el.style.color, text: r.el.textContent }));
   api.live = live;
   POOLS.add({ tick: update, releaseAll, count: () => active.length, capacity: () => active.length + pool.length, prewarm, live });
   return api;

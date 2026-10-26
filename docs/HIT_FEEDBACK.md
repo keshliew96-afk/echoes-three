@@ -126,7 +126,8 @@ body, so the shadow, the elite crown and every floor piece stay on the floor
 | Bosses and champions (R5) | half the squash and flinch; champions keep a small hop at their small push; bosses never hop | 0.5 x |
 
 - Everything counts in sim ticks, so it holds through the hitstop like the
-  hit flash.
+  hit flash. A weaker hit (a burn or aura tick) never cuts a stronger squash
+  still in play.
 - A standing body squashes with its base on the floor; a floating one (moths,
   wasps, wisps, censers, owls, kites, chimes, the Hollow Choir) about its
   middle.
@@ -137,15 +138,20 @@ body, so the shadow, the elite crown and every floor piece stay on the floor
 **b. The render hold (F1, I3).** A `hitstop` event (2 ticks on a melee
 connect, 3 on a kill) now holds the render for the same time: the rig clips
 (foes, champions, bosses, heroes, dummies), the kill pop, the slash ribbons'
-sweep and the flares pause from the frame after the hit, so the frame of the
-hit stays on screen. Particles, numbers' drift, telegraphs, the camera and the
-audio keep running. No window holds more than 4 ticks (`src/render/hold.js`).
+sweep and the flares pause for exactly the frozen ticks the game clock
+consumes, so the frame of the hit stays on screen at any frame rate (at
+60 fps: the hit frame plays, the next 2 or 3 frames hold). A co-op guest,
+whose clock never freezes, holds from the frame after each replayed
+`hitstop`. Particles, numbers' drift, telegraphs, the camera and the audio
+keep running; a number's pop holds. No window holds more than 4 ticks
+(`src/render/hold.js`).
 
 **c. The kill (K1, K2, K4, P1, A6).**
 - The body holds 2 frames, swells round (1.38 x wide, 1.3 x tall), then pops
   flat (`KILL_*` in `src/render/enemies/index.js`).
 - The body is thrown half a body width along the killing hit and tips up to
-  1.2 rad as it goes.
+  1.2 rad as it goes, still popping flat on the floor. A body killed mid-hop
+  sinks to the floor through the pop.
 - The bone-white flare holds bright 117 ms (5 frames with the freeze) over a
   white bloom twice a hit's area (2.3 u across).
 - The ground ring of the body's matter lives 0.22 s and draws under the floor
