@@ -109,6 +109,27 @@ const QUICK_STRIKE = 2 * FRAME;
 // back in over this after its settle.
 const LIFE_OUT = 0.35;
 const LIFE_IN = 0.6;
+// THE HEAD SNAP (Kesh's pick): the head never scans smoothly. It holds, then
+// snaps to a new look in SNAP_SEC with a small overshoot (a mantis's
+// saccade), one look every SACCADE_SEC; it snaps onto the target in HEAD_LOCK
+// as a spit winds up, and snaps back into its looks after the release
+// settles.
+const SACCADE_SEC = 0.9;
+const SNAP_SEC = 4 / TICK_HZ;
+const HEAD_LOCK = 4 / TICK_HZ;
+const LOOK = 0.2;
+// a look for saccade n, in -LOOK..LOOK (a fixed hash: no randomness)
+function lookAt(n) {
+  const h = Math.sin(n * 91.345 + 7.13) * 43758.5453;
+  return (2 * (h - Math.floor(h)) - 1) * LOOK;
+}
+// the head's look at clock time t: held, then a snap with one overshoot
+function saccade(t) {
+  const n = Math.floor(t / SACCADE_SEC);
+  const k = Math.min(1, (t - n * SACCADE_SEC) / SNAP_SEC);
+  const a = lookAt(n - 1);
+  return a + (lookAt(n) - a) * ease.back(k);
+}
 
 // --- Key poses. push: the body's shove along +z (u); lift (u); pitch: nose
 // down (+) or rearing back (-), rad, about the hips; roll; sx / sy: the body's
@@ -152,8 +173,30 @@ const SPIT_TL = createTimeline(
 
 // Pure: the spit's pose at ts seconds into it (the lab's default span; live
 // play maps its telegraph onto this time).
+// THE 3-VARIANT SPIT (Kesh's three-hit template across repeat spits): A,
+// the left blade leads and the right trails it by TRAIL_SEC; B, the right
+// leads; C, both blades crash together with a bigger squash and shove. The
+// leading blade (or both) lands its contact on the resolve tick in every
+// variant; the body rolls and the head cocks toward the leading blade.
+// `lead`: +1 the rig's left foreleg (s = +1), -1 its right, 0 both.
+export const SPIT_VARIANTS = Object.freeze([
+  Object.freeze({ id: 'spit', label: 'Spit: left blade leads', lead: 1 }),
+  Object.freeze({ id: 'spitRight', label: 'Spit: right blade leads', lead: -1 }),
+  Object.freeze({ id: 'spitBoth', label: 'Spit: both blades crash', lead: 0 }),
+]);
+// the trailing blade lands this long after the leading one
+export const TRAIL_SEC = 2 / TICK_HZ;
+// how much of the strike's lean is on (0 before the strike, 1 through the
+// contact, easing out through the recoil and the settle)
+function strikeEnv(s) {
+  if (s.id === 'strike') return ease.in(s.k);
+  if (s.id === 'contact') return 1;
+  if (s.id === 'recoil') return 1 - 0.5 * ease.out(s.k);
+  if (s.id === 'settle') return 0.5 * (1 - ease.inOut(s.k));
+  return 0;
+}
 const SAMPLE = { t: 0, index: 0, id: '', label: '', k: 0 };
-export function mantisSpitPose(ts, out = { ...REST }) {
+export function mantisSpitPose(ts, out = { ...REST }, variant = 0) {
   const s = SPIT_TL.sample(ts, SAMPLE);
   const k = s.k;
   if (s.id === 'rear') {
@@ -167,12 +210,25 @@ export function mantisSpitPose(ts, out = { ...REST }) {
   else if (s.id === 'contact') lerpFields(out, STRIKE, STRIKE, 0, FIELDS);
   else if (s.id === 'recoil') lerpFields(out, STRIKE, OVER, ease.out(k), FIELDS);
   else lerpFields(out, OVER, REST, 1 - settle(k), FIELDS);
-  // B3: the shot squashes the shooter and shoves it back
+  const v = SPIT_VARIANTS[variant] || SPIT_VARIANTS[0];
+  const env = strikeEnv(s);
+  // the lean toward the leading blade (A, B), or the deeper bow of the
+  // double crash (C)
+  if (v.lead) {
+    out.roll -= v.lead * 0.08 * env;
+    out.hy += v.lead * 0.1 * env;
+  } else {
+    out.pitch += 0.06 * env;
+    out.push += 0.015 * env;
+  }
+  // B3: the shot squashes the shooter and shoves it back (half again as
+  // hard on the double crash)
   if (ts >= SPIT_CONTACT) {
     const q = shotSquash(ts - SPIT_CONTACT);
-    out.sx *= q.sx;
-    out.sy *= q.sy;
-    out.push += q.shove;
+    const big = v.lead ? 1 : 1.5;
+    out.sx *= 1 + big * (q.sx - 1);
+    out.sy *= 1 + big * (q.sy - 1);
+    out.push += big * q.shove;
   }
   return out;
 }
@@ -189,22 +245,27 @@ function classicAt(t) {
 
 // The model lab's spit at the default 42-tick telegraph (pure in t, so it
 // rewinds); in game the same poses ride the live telegraph.
-export const MANTIS_SPIT = Object.freeze({
-  id: 'spit',
-  label: 'Spit',
-  duration: SPIT_TL.duration,
-  at(t) {
-    const s = SPIT_TL.sample(t);
-    return { phase: s.id, label: `${SPIT_TL.label}: ${s.label}`, t: s.t, k: s.k };
-  },
-  sample: (t) => SPIT_TL.sample(t),
-  readout: (t) => SPIT_TL.readout(t),
-  // seconds into the spit where the contact lands (the lab's cue: 'spit')
-  strikes: [SPIT_CONTACT],
-  cues: SPIT_TL.cues,
-  classicAt,
-});
-export const MANTIS_ABILITIES = Object.freeze({ spit: MANTIS_SPIT });
+function spitAbility(variant) {
+  const v = SPIT_VARIANTS[variant];
+  return Object.freeze({
+    id: v.id,
+    label: v.label,
+    variant,
+    duration: SPIT_TL.duration,
+    at(t) {
+      const s = SPIT_TL.sample(t);
+      return { phase: s.id, label: `${SPIT_TL.label}: ${s.label}`, t: s.t, k: s.k };
+    },
+    sample: (t) => SPIT_TL.sample(t),
+    readout: (t) => SPIT_TL.readout(t),
+    // seconds into the spit where the contact lands (the lab's cue: 'spit')
+    strikes: [SPIT_CONTACT],
+    cues: SPIT_TL.cues,
+    classicAt,
+  });
+}
+export const MANTIS_SPIT = spitAbility(0);
+export const MANTIS_ABILITIES = Object.freeze({ spit: MANTIS_SPIT, spitRight: spitAbility(1), spitBoth: spitAbility(2) });
 
 // --- Geometry (built once for the session, shared by every mantis) ----------
 const fz = (g, jitter, seed) => facetize(g, { jitter, seed });
@@ -611,6 +672,13 @@ export function buildMantisFacet() {
   const cur = { ...REST };
   const from = { ...REST }; // the pose a fold or a quick spit starts from
   const wind = { ...REST };
+  // the trailing blade's pose (the 3-variant spit), and its fold start
+  const trail = { ...REST };
+  const trailFrom = { ...REST };
+  let variant = 0; // SPIT_VARIANTS index of the spit in play
+  let spitN = 0; // spits started: the variant cycles A, B, C
+  let poseTs = null; // seconds into the spit this frame (null: no sample)
+  let trailSet = false; // the trailing blade's pose was set this frame
   const fr = { x: 0, z: 0, yaw: 0, s: 1 };
   const lv = { x: 0, z: 0 };
   const hipW = new Vector3();
@@ -638,6 +706,7 @@ export function buildMantisFacet() {
   let age = -1;
   let yawNow = 0;
   let lifeT = 1; // the idle life's ramp (0 while a spit plays)
+  let headT = 1; // the head's looks: 0 locked on the target (a spit)
   const lifted = [0, 0, 0, 0];
   const pulled = [0, 0, 0, 0];
   const drawnFeet = HOMES.map((h) => h.clone()); // where each foot is drawn (rig space)
@@ -692,6 +761,8 @@ export function buildMantisFacet() {
 
   // The live spit: the telegraph's beats and the fire pulse.
   function liveSpit(P, e, tick, now) {
+    poseTs = null;
+    trailSet = false;
     const fireK = P.fireK ?? 0;
     const fireEdge = fireK > 0 && lastFireK <= 0;
     lastFireK = fireK;
@@ -701,6 +772,7 @@ export function buildMantisFacet() {
       mode = 'wind';
       telR = watch.telegraph.resolveTick;
       struck = false;
+      variant = spitN++ % SPIT_VARIANTS.length;
     } else if (beat && (beat.type === 'release' || beat.type === 'cancel')) {
       if (now - lastFireAt <= 0.1) {
         // the shot leaves: only the fire pulse (enemy_fire) says so. On the
@@ -717,6 +789,7 @@ export function buildMantisFacet() {
         // ticks, hold for the pulse a moment (a guest's snapshot can run a
         // tick ahead of the fire event), unless the sim is known to hold it.
         Object.assign(from, cur);
+        Object.assign(trailFrom, trail);
         if ((beat.type === 'release' || tick >= telR - LATE_TICKS) && !heldBy(e, telR)) {
           mode = 'grace';
           graceAt = now;
@@ -735,6 +808,7 @@ export function buildMantisFacet() {
     if (fireEdge && !watch.telegraph && !(mode === 'post' && now - postAt < 0.2)) {
       Object.assign(from, cur);
       lerpFields(wind, from, COIL, 0.5, FIELDS);
+      variant = spitN++ % SPIT_VARIANTS.length;
       mode = 'quick';
       quickAt = now;
       // the contact's sim tick: the shown tick (P.tick + 1) plus the quick
@@ -758,11 +832,14 @@ export function buildMantisFacet() {
       if (left <= COIL_TICKS + STRIKE_TICKS) ts = SPIT_CONTACT - left / TICK_HZ;
       else ts = Math.min(1, (span * u) / Math.max(1, span - COIL_TICKS - STRIKE_TICKS)) * REAR_SEC;
       if (!struck && left <= STRIKE_TICKS) markStrike(tel.resolveTick);
-      mantisSpitPose(Math.min(SPIT_CONTACT, ts), cur);
+      poseTs = Math.min(SPIT_CONTACT, ts);
+      mantisSpitPose(poseTs, cur, variant);
       return true;
     }
     if (mode === 'grace') {
       Object.assign(cur, from);
+      Object.assign(trail, trailFrom);
+      trailSet = true;
       return true;
     }
     if (mode === 'quick') {
@@ -784,7 +861,8 @@ export function buildMantisFacet() {
         mode = 'idle';
         return false;
       }
-      mantisSpitPose(ts, cur);
+      poseTs = ts;
+      mantisSpitPose(ts, cur, variant);
       return true;
     }
     if (mode === 'fold') {
@@ -796,10 +874,13 @@ export function buildMantisFacet() {
       // the wind-up folds back into the guard (one overshoot), the head
       // ducking and the forelegs tucking as it flinches off the attack
       lerpFields(cur, from, REST, 1 - settle(k), FIELDS);
+      lerpFields(trail, trailFrom, REST, 1 - settle(k), FIELDS);
+      trailSet = true;
       const f = Math.sin(Math.PI * Math.min(1, k * 1.6));
       cur.hp += 0.14 * f;
       cur.at -= 0.4 * f;
       cur.push -= 0.02 * f;
+      trail.at -= 0.4 * f;
       return true;
     }
     return false;
@@ -816,17 +897,21 @@ export function buildMantisFacet() {
   // One foreleg on its hinge plane: the plane turned out by asp and leaned
   // out by aln; each bone at its angle from straight down toward forward.
   function placeArm(i, s) {
-    qa.setFromAxisAngle(YA, s * cur.asp);
-    qb.setFromAxisAngle(ZA, -s * cur.aln);
+    // the leading blade (or both, on the double crash) rides the spit; the
+    // other trails it
+    const lead = SPIT_VARIANTS[variant].lead;
+    const a = lead === 0 || lead === s ? cur : trail;
+    qa.setFromAxisAngle(YA, s * a.asp);
+    qb.setFromAxisAngle(ZA, -s * a.aln);
     tq.multiplyQuaternions(qa, qb);
     PX.copy(XA).applyQuaternion(tq);
     PY.copy(YA).applyQuaternion(tq);
     PZ.copy(ZA).applyQuaternion(tq);
     J0.copy(SHOULDER[i]);
-    armBone(coxae, i, cur.ac, LC, J0, J1);
-    armBone(femurs, i, cur.af, LF, J1, J2);
+    armBone(coxae, i, a.ac, LC, J0, J1);
+    armBone(femurs, i, a.af, LF, J1, J2);
     if (s < 0) hand.position.copy(J2);
-    armBone(tibiae, i, cur.at, LT, J2, J0);
+    armBone(tibiae, i, a.at, LT, J2, J0);
     // the claw tip: the tibia's end and its hook
     (s < 0 ? tipR : tipL).position.copy(J0).addScaledVector(BY, CLAW * 0.8).addScaledVector(BZ, CLAW * 0.35);
   }
@@ -877,12 +962,21 @@ export function buildMantisFacet() {
     // --- the spit: the lab's pure override, or the live telegraph
     let acting;
     if (lab.override) {
-      mantisSpitPose(lab.override.t, cur);
+      const ab = MANTIS_ABILITIES[lab.override.id];
+      variant = ab ? ab.variant : 0;
+      poseTs = lab.override.t;
+      trailSet = false;
+      mantisSpitPose(poseTs, cur, variant);
       acting = true;
     } else {
       acting = liveSpit(P, e, tick, now);
       if (!acting) Object.assign(cur, REST);
     }
+    // the trailing blade: the same spit TRAIL_SEC behind (a fold or a hold
+    // set it above; anything else moves both blades together)
+    if (!acting) Object.assign(trail, cur);
+    else if (poseTs !== null) mantisSpitPose(poseTs - TRAIL_SEC, trail, variant);
+    else if (!trailSet) Object.assign(trail, cur);
 
     // --- feet: locked to the floor, stepping on their own
     fr.x = F.group.position.x;
@@ -908,7 +1002,9 @@ export function buildMantisFacet() {
     const still = live * lifeK * (1 - Math.min(1, gait.speed / 0.6));
     const breath = live * Math.sin(now * 1.7);
     const rock = still * Math.sin(now * 3.4);
-    const scan = still * (0.16 * Math.sin(now * 0.7) + 0.06 * Math.sin(now * 1.9 + 1));
+    // the head: snapped onto the target while it spits, saccades otherwise
+    headT = acting ? Math.max(0, headT - dt / HEAD_LOCK) : Math.min(1, headT + dt / HEAD_LOCK);
+    const scan = live * headT * headT * (3 - 2 * headT) * (1 - Math.min(1, gait.speed / 0.6)) * saccade(now);
 
     // --- the body: the attack's pose, the gait's bob and roll, the lean along
     // the travel (an advance leans in, a backpedal leans back), the rock
