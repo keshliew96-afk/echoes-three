@@ -378,6 +378,8 @@ export function buildBoarFacet() {
   let prevStrike = null; // the strike before it (an aborted one is taken back)
   let yawNow = 0;
   const lifted = [0, 0, 0, 0];
+  const gaitOpts = { locked: true, shift: null };
+  let leanW = 1; // the travel lean, faded out while a hit plays (the gore's own pitch leads)
 
   // The model lab drives the gore instead of the live events (pure in t).
   const lab = {
@@ -407,6 +409,7 @@ export function buildBoarFacet() {
     gait.release(1, dur);
   }
 
+  gaitOpts.shift = (i, o) => frontShift(i, o);
   function pose(P) {
     const dt = clock.step(P);
     const now = clock.now;
@@ -483,7 +486,8 @@ export function buildBoarFacet() {
     fr.s = F.group.scale.x || 1;
     // a lab scrub (no time passing) stands the feet on their homes: a still
     // frame has no step history to show
-    gait.update(dt, fr, { locked: !turntable && age >= SPAWN_SEC && !(dt <= 0 && lab.override), shift: frontShift });
+    gaitOpts.locked = !turntable && age >= SPAWN_SEC && !(dt <= 0 && lab.override);
+    gait.update(dt, fr, gaitOpts);
     const bob = gait.bob;
     gait.localVelocity(fr, lv);
     const fwd = Math.max(-1, Math.min(1, lv.z / RUN_SPEED));
@@ -492,7 +496,8 @@ export function buildBoarFacet() {
     // --- the body: the attack's pose, the gait's bob and roll, the lean along
     // the travel (a trot leans in, a shove back leans back), a slow breath
     const breath = Math.sin(now * 2.1);
-    body.rotation.set(cur.pitch + 0.07 * fwd, cur.twist, cur.roll - 0.06 * side + 0.03 * bob * (lv.x >= 0 ? 1 : -1));
+    leanW += ((active ? 0 : 1) - leanW) * Math.min(1, dt * 12);
+    body.rotation.set(cur.pitch + 0.07 * fwd * leanW, cur.twist, cur.roll - 0.06 * side + 0.03 * bob * (lv.x >= 0 ? 1 : -1));
     body.scale.set(cur.sx, cur.sy * (1 + 0.012 * breath), 1 + (cur.sx - 1) * 0.3);
     placeBody(body, PIVOT, cur.push, cur.hop + 0.022 * bob + 0.004 * breath);
     head.rotation.set(cur.hp + (active ? 0 : 0.05 * Math.sin(now * 1.3) - 0.04 * bob), cur.hy, 0);

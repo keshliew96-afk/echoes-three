@@ -533,6 +533,9 @@ export function createChain({ hits, tls, rest, window, ease }) {
         lastHit = predicted;
         t = now - t0;
       }
+      // a chained hit starts at its strike: never a float's hair before it
+      // (that would flick one frame back to the wind-up key pose)
+      if (!fresh && t < STRIKE_IN) t = STRIKE_IN;
       if (predicted !== null && now - predicted > 3 * FRAME) predicted = null; // the event never came: it was a whiff
       if (t >= tls[n].duration) {
         n = -1;
