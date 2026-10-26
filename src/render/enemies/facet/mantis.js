@@ -453,22 +453,22 @@ function geos() {
     }
     set.head = fz(g, 0.12, 213);
   }
-  // Head detail: the crest, the face shield, the mouth plate and the swept
-  // antennae (no dark plates on the face: nothing that could read as a
+  // Head detail: the crest, the face shield and the mouth plate (no dark plates on the face: nothing that could read as a
   // second pair of eyes beside the one tell).
   set.headDetail = bakeParts('mantis:head', () => {
     const out = [];
     const dark = HIDE.mantisDark;
     out.push({ geo: fz(new ConeGeometry(0.07, 0.16, 4), 0.12, 215), m: new Matrix4().compose(new Vector3(0, 0.08, -0.03), new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -0.35), new Vector3(1, 1, 1)), tint: dark });
-    // the antennae: short threads raked forward and out over the face (as
-    // on the classic), their tips arching out and down
-    const ant = hornGeometry({ len: 0.22, r: 0.011, bend: 0.5, seg: 3, sides: 3, seed: 217 });
-    for (const s of [-1, 1]) {
-      out.push({ geo: ant, m: at(P.set(s * 0.04, 0.07, 0.105), new Vector3(s * 0.35, 0.55, 0.75), new Vector3(s, -0.5, 0.2), 1, 1, 1), tint: dark });
-    }
     out.push({ geo: scale, m: at(P.set(0, -0.012, 0.146), new Vector3(0, 0.15, 1), new Vector3(0, -1, 0), 0.1, 0.028, 0.085), tint: HIDE.mantisPale, tone: 0.84 });
     out.push({ geo: wedge, m: at(P.set(0, -0.065, 0.13), new Vector3(0, -1, 0.3), new Vector3(0, 0, 1), 0.05, 0.045, 0.03), tint: dark });
     return out;
+  });
+  // The antennae: short mid-tone threads rooted on the crown behind the face
+  // (as on the classic), up and forward, tips arching out; no ink, so from
+  // the front they never read as dark brows or a second pair of eyes.
+  set.antennae = bakeParts('mantis:antennae', () => {
+    const ant = hornGeometry({ len: 0.22, r: 0.011, bend: 0.5, seg: 3, sides: 3, seed: 217 });
+    return [-1, 1].map((s) => ({ geo: ant, m: at(P.set(s * 0.05, 0.1, 0), new Vector3(s * 0.3, 0.8, 0.5), new Vector3(s, -0.3, -0.2), 1, 1, 1), tint: HIDE.mantisBody }));
   });
   // The mandibles: a curved bone hook (two per head, an instanced row).
   set.jaw = hornGeometry({ len: 0.1, r: 0.024, bend: 1.0, seg: 2, sides: 4, seed: 219 });
@@ -567,6 +567,7 @@ export function buildMantisFacet() {
   body.add(head);
   head.add(foePart(G.head, paleMat, 'full', 'mantis-head-mass'));
   head.add(foePart(G.headDetail, tintMat, 'part', 'mantis-head-detail'));
+  head.add(foePart(G.antennae, tintMat, false, 'mantis-antennae'));
   head.add(foePart(G.eyes, eyeMat, false, 'mantis-eyes'));
   const jaws = instancedPart(G.jaw, boneMat, 2, { name: 'mantis-jaws', moving: true, inkPx: PART_INK_PX });
   head.add(jaws);
