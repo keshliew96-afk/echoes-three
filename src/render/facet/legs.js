@@ -70,6 +70,16 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
   let free = false; // the last update stood the feet on their homes (unlocked)
   const wantStep = new Array(n).fill(0); // release(i): step at the next update (its duration, or -1)
   const errOf = (f) => Math.hypot(f.planted.x - f.home.x, f.planted.z - f.home.z);
+  // the error with the part ahead of home along the travel dropped
+  const trailOf = (f) => {
+    const dx = f.planted.x - f.home.x;
+    const dz = f.planted.z - f.home.z;
+    const ux = vel.x / speed;
+    const uz = vel.z / speed;
+    const along = dx * ux + dz * uz;
+    const perp = -dx * uz + dz * ux;
+    return Math.hypot(Math.min(0, along), perp);
+  };
 
   function homeLocal(i, shift, o) {
     o.x = homes[i].x;
@@ -207,7 +217,9 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
         for (let gi = 0; gi < groups.length; gi++) {
           let e = 0;
           const g = groups[gi];
-          for (let j = 0; j < g.length; j++) e = Math.max(e, errOf(feet[g[j]]));
+          // walking, a foot ahead of its home (just landed, led by the
+          // travel) has nothing to catch up: only how far it trails counts
+          for (let j = 0; j < g.length; j++) e = Math.max(e, speed > 0.3 ? trailOf(feet[g[j]]) : errOf(feet[g[j]]));
           // while walking, the group that did not step last goes first on a tie
           const bias = speed > 0.3 && gi !== lastGroup ? 1.15 : 1;
           if (e * bias > bestErr) {
