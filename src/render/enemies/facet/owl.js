@@ -870,7 +870,8 @@ export function buildOwlFacet() {
     const dt = clock.step(P);
     const now = clock.now;
     const e = P.e || null;
-    const tick = P.tick ?? 0;
+    // the sim tick, held through a hitstop (never the raw saw-tooth)
+    const tick = Number.isFinite(P.tick) && !P.turntable ? clock.tick : (P.tick ?? 0);
     const turntable = !!P.turntable;
     if (e && e.id != null) id = e.id;
     // B7: grow from the floor (not on the Journal's turntable, nor in the lab)

@@ -764,7 +764,8 @@ export function buildQuillbackFacet() {
     const dt = clock.step(P);
     const now = clock.now;
     const e = P.e || null;
-    const tick = P.tick ?? 0;
+    // the sim tick, held through a hitstop (never the raw saw-tooth)
+    const tick = Number.isFinite(P.tick) && !P.turntable ? clock.tick : (P.tick ?? 0);
     const turntable = !!P.turntable;
     if (age < 0) age = turntable || P.grown || lab.override ? SPAWN_SEC : 0;
     else age += dt;

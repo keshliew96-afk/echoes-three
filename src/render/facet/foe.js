@@ -205,6 +205,12 @@ export function createFoeClock() {
     get now() {
       return now;
     },
+    // The interpolated sim tick, held through a hitstop (it never runs back
+    // inside one; a real rewind restarts it). Sample telegraph wind-ups and
+    // strikes on `clock.tick + 1` (the shown tick), never on the raw P.tick.
+    get tick() {
+      return simT === null ? 0 : simT * TICK_HZ;
+    },
   };
 }
 
