@@ -172,7 +172,9 @@ const smooth = (k) => k * k * (3 - 2 * k);
 const nearestUp = (p, up = 0) => up + TAU * Math.round((p - up) / TAU);
 // The stop's plan from the captured pitch: carry-on, then the unroll.
 function stopPlan(p0, v0) {
-  const carry = 0.3 * clamp01(v0 / ROLL_RATE); // a ball stunned dead carries nothing on
+  // the carry-on is the lurch's own travel (0.03 u = 0.09 rad): it stops
+  // turning forward once the sim has stopped it (a ball stunned dead: none)
+  const carry = 0.09 * clamp01(v0 / ROLL_RATE);
   const fwdUp = TAU * Math.ceil(p0 / TAU) - p0; // forward to the next upright
   const c = Math.min(carry, fwdUp); // it lands upright on the carry-on: done
   const rem = c < carry ? 0 : nearestUp(p0 + c) - (p0 + c);
@@ -193,6 +195,16 @@ const stopSec = (cap, v0) => LURCH_SEC + stopPlan(cap.pitch, v0).dur;
 // (never forward into the wall), then it unrolls to its dazed upright in
 // place; the recovery finishes whatever is left.
 const BOUNCE = 0.38;
+// The bounce's plan: the recoil's roll back, then the unroll, ALWAYS the
+// same way, back off the wall (never forward into it), up to one slow turn.
+function thudPlan(p0) {
+  const backUp = p0 - (DAZE.pitch + TAU * Math.floor((p0 - DAZE.pitch) / TAU)); // 0..2pi back to the upright
+  const c = Math.min(BOUNCE, backUp);
+  const rem = -(backUp - c);
+  return { c, rem, dur: Math.min(1.2, Math.max(LAND_SEC, -rem / UNROLL_RATE)) };
+}
+// when the dazed ball is upright again (s after the wall)
+const thudUpright = (p0) => THUD_SEC + 0.6 * RECOIL_SEC + thudPlan(p0).dur;
 function thudPose(ts, cap, out) {
   if (ts < THUD_SEC) {
     lerpFields(out, cap, THUD, ease.out(ts / THUD_SEC), FIELDS);
@@ -201,10 +213,7 @@ function thudPose(ts, cap, out) {
   }
   if (ts < THUD_SEC + RECOIL_SEC) lerpFields(out, THUD, RECOIL, ease.out((ts - THUD_SEC) / RECOIL_SEC), FIELDS);
   else lerpFields(out, RECOIL, DAZE, 1 - settle(clamp01((ts - THUD_SEC - RECOIL_SEC) / LAND_SEC)), FIELDS);
-  const backUp = cap.pitch - (DAZE.pitch + TAU * Math.floor((cap.pitch - DAZE.pitch) / TAU)); // back to the upright
-  const c = Math.min(BOUNCE, backUp);
-  const rem = c < BOUNCE ? 0 : nearestUp(cap.pitch - c, DAZE.pitch) - (cap.pitch - c);
-  const dur = Math.min(0.6, Math.max(LAND_SEC, Math.abs(rem) / UNROLL_RATE));
+  const { c, rem, dur } = thudPlan(cap.pitch);
   const t1 = ts - THUD_SEC;
   out.pitch = cap.pitch - c * ease.out(clamp01(t1 / RECOIL_SEC)) + rem * smooth(clamp01((t1 - 0.6 * RECOIL_SEC) / dur));
   return out;
@@ -225,6 +234,9 @@ const tlCharge = createTimeline('charge', 'Charge roll', [
   { id: 'uncurl', label: 'roll on upright, uncurl (one overshoot)', dur: UNCURL_SEC },
 ], { cues: [{ at: TEL_SEC, id: 'strike' }] });
 const CRASH_ROLL = 0.5;
+// the lab's wall: the daze holds until the unroll is upright (or the
+// stagger's 30 ticks, whichever is later)
+const CRASH_HOLD = Math.max(STAGGER_SEC, thudUpright(wrapPi(rollPose(CRASH_ROLL, ROLL_RATE * CRASH_ROLL, { ...REST }).pitch)));
 const tlCrash = createTimeline('crash', 'Charge into a wall', [
   { id: 'coil', label: 'coil (the lane telegraph): curl, quills up, rock back', dur: COIL_SEC },
   { id: 'strike', label: 'launch on the resolve tick', dur: STRIKE_SEC },
@@ -232,7 +244,7 @@ const tlCrash = createTimeline('crash', 'Charge into a wall', [
   { id: 'roll', label: 'roll at 6 u/s', dur: CRASH_ROLL - HOLD },
   { id: 'thud', label: 'wall: thud squash', dur: THUD_SEC },
   { id: 'recoil', label: 'bounce back, rolling back off the wall upright', dur: RECOIL_SEC },
-  { id: 'daze', label: 'stagger: dazed, quills droop (the punish window)', dur: STAGGER_SEC - THUD_SEC - RECOIL_SEC },
+  { id: 'daze', label: 'stagger: dazed, quills droop (the punish window)', dur: CRASH_HOLD - THUD_SEC - RECOIL_SEC },
   { id: 'recover', label: 'uncurl (one overshoot)', dur: RECOVER_SEC },
 ], { cues: [{ at: TEL_SEC, id: 'strike' }, { at: TEL_SEC + CRASH_ROLL, id: 'thud' }] });
 
@@ -259,9 +271,9 @@ function crashAt(t, out) {
   if (t < wall) return rollPose(t - TEL_SEC, ROLL_RATE * (t - TEL_SEC), out);
   rollPose(CRASH_ROLL, ROLL_RATE * CRASH_ROLL, capA);
   capA.pitch = wrapPi(capA.pitch);
-  const free = wall + STAGGER_SEC;
+  const free = wall + CRASH_HOLD;
   if (t < free) return thudPose(t - wall, capA, out);
-  thudPose(STAGGER_SEC, capA, capB);
+  thudPose(CRASH_HOLD, capA, capB);
   capB.pitch = wrapPi(capB.pitch);
   return returnPose(t - free, capB, RECOVER_SEC, out);
 }
@@ -365,13 +377,13 @@ export function quillbackCoatLayout() {
 // The spine crest (the instanced, moving quills): angle from the top toward
 // the snout (+) or the rump (-), a hair off the midline, length, root radius.
 const CREST = [
-  [0.62, 0.025, 0.2, 0.044],
-  [0.36, -0.03, 0.245, 0.048],
-  [0.1, 0.03, 0.28, 0.05],
-  [-0.16, -0.03, 0.3, 0.05],
-  [-0.43, 0.03, 0.28, 0.048],
-  [-0.72, -0.025, 0.245, 0.046],
-  [-1.02, 0.02, 0.2, 0.044],
+  [0.62, 0.025, 0.15, 0.044],
+  [0.36, -0.03, 0.16, 0.048],
+  [0.1, 0.03, 0.165, 0.05],
+  [-0.16, -0.03, 0.165, 0.05],
+  [-0.43, 0.03, 0.165, 0.048],
+  [-0.72, -0.025, 0.17, 0.046],
+  [-1.02, 0.02, 0.15, 0.044],
 ].map(([a, x, len, r]) => {
   const dir = new Vector3(x, Math.cos(a), Math.sin(a)).normalize();
   const P = new Vector3();
@@ -401,13 +413,16 @@ function geos() {
   // root closed (the open top is under the tip); a closed spearhead tip (the
   // indigo tell); a closed short spike (the hide's fur).
   {
+    // the root band is EXACTLY the hide's palette colour (quillBody) under
+    // the quill material (quillSpine): a per-channel ratio, no new colour
+    const BAND = { r: HIDE.quillBody.r / HIDE.quillSpine.r, g: HIDE.quillBody.g / HIDE.quillSpine.g, b: HIDE.quillBody.b / HIDE.quillSpine.b };
     const g = fz(new CylinderGeometry(0.42, 1, 1, 4, 2, false).translate(0, 0.5, 0), 0.14, 201);
     const pos = g.attributes.position;
     const col = g.attributes.color;
     for (let i = 0; i + 2 < pos.count; i += 3) {
       const cy = (pos.getY(i) + pos.getY(i + 1) + pos.getY(i + 2)) / 3;
       if (cy >= 0.5) continue;
-      for (let j = i; j < i + 3; j++) col.setXYZ(j, col.getX(j) * 0.36, col.getY(j) * 0.43, col.getZ(j) * 0.56);
+      for (let j = i; j < i + 3; j++) col.setXYZ(j, col.getX(j) * BAND.r, col.getY(j) * BAND.g, col.getZ(j) * BAND.b);
     }
     set.shaft = dropTopCap(g);
   }
@@ -431,7 +446,7 @@ function geos() {
       col.setXYZ(i, col.getX(i) * v, col.getY(i) * v, col.getZ(i) * v);
     }
     const out = [{ geo: g }];
-    fib(30, 0.7).forEach((dir, i) => {
+    fib(22, 0.7).forEach((dir, i) => {
       if (dir.y < -0.45 || dir.angleTo(FACE) < 0.6) return;
       domeAt(dir, P, N);
       rakeDir(N, 0.7 + 0.1 * hash01(i, 3), D);
@@ -456,12 +471,29 @@ function geos() {
       // keep the spine line for the crest
       if (Math.abs(dir.x) < 0.16 && dir.y > 0.55) return;
       rakeDir(N, 0.1 + 0.06 * hash01(i, 11), D);
-      const len = 0.17 + 0.07 * Math.max(0, N.y) + 0.03 * hash01(i, 13);
+      // the classic's height (0.88): shorter over the top, longer round the
+      // sides (the radial burst's width)
+      const len = 0.2 + 0.03 * hash01(i, 13) - 0.07 * Math.max(0, N.y);
       const run = SINK_N / Math.max(0.3, D.dot(N));
       const root = P.clone().addScaledVector(N, -SINK_N);
       out.push({ geo: set.shaft, m: place(root, D, 0.045, len + run), tone: 0.95 + 0.1 * hash01(i, 17) });
       LAYOUT.push({ kind: 'main', root, dir: D.clone(), r: 0.045, len: len + run, geo: 'shaft' });
       coatTips.push({ root: root.clone().addScaledVector(D, (len + run) * 0.97), dir: D.clone(), r: TIP_R, bright: N.y > -0.05 && i % 2 === 0 });
+    });
+    // a low ring of short quills round the flanks and the rump (the classic's
+    // burst goes all round), clear of the face and over the legs
+    let low = 0;
+    fib(48, 0.9).forEach((dir, i) => {
+      if (low >= 6 || dir.y > -0.22 || dir.y < -0.62 || dir.angleTo(FACE) < 1.0) return;
+      low++;
+      domeAt(dir, P, N);
+      rakeDir(N, 0.12, D);
+      const len = 0.12 + 0.02 * hash01(i, 19);
+      const run = SINK_N / Math.max(0.3, D.dot(N));
+      const root = P.clone().addScaledVector(N, -SINK_N);
+      out.push({ geo: set.shaft, m: place(root, D, 0.04, len + run), tone: 0.9 + 0.1 * hash01(i, 23) });
+      LAYOUT.push({ kind: 'main', root, dir: D.clone(), r: 0.04, len: len + run, geo: 'shaft' });
+      coatTips.push({ root: root.clone().addScaledVector(D, (len + run) * 0.97), dir: D.clone(), r: TIP_R * 0.9, bright: false });
     });
     return out;
   });
@@ -484,7 +516,7 @@ function geos() {
     const rel = (x, y, z) => P.set(x - HEAD0.x, y - HEAD0.y, z - HEAD0.z);
     set.head = bakeParts('quillback:head', () => {
       const out = [];
-      out.push({ geo: fz(new SphereGeometry(1, 8, 6), 0.12, 211), m: new Matrix4().compose(rel(0, -0.03, 0.2).clone(), new Quaternion(), new Vector3(0.15, 0.12, 0.14)) });
+      out.push({ geo: fz(new SphereGeometry(1, 6, 5), 0.12, 211), m: new Matrix4().compose(rel(0, -0.03, 0.2).clone(), new Quaternion(), new Vector3(0.15, 0.12, 0.14)) });
       const snoutDir = new Vector3(0, -0.25, 0.97).normalize();
       out.push({ geo: fz(new ConeGeometry(0.07, 0.18, 6).translate(0, 0.09, 0), 0.12, 213), m: at(rel(0, -0.06, 0.25).clone(), snoutDir, new Vector3(0, 1, 0), 1, 1, 1), tone: 0.88 });
       for (const side of [-1, 1]) {
@@ -750,7 +782,8 @@ export function buildQuillbackFacet() {
     } else if (phase === 'thud') {
       thudPose(now - t0, cap, cur);
       const held = now - t0;
-      if (held > THUD_SEC + RECOIL_SEC && (e ? e.mode !== 'stagger' : held >= STAGGER_SEC)) {
+      // free once the sim lets it go AND the slow unroll has it upright
+      if (held > Math.max(THUD_SEC + RECOIL_SEC, thudUpright(cap.pitch)) && (e ? e.mode !== 'stagger' : held >= STAGGER_SEC)) {
         setPhase('recover', now);
         cap.pitch = wrapPi(cap.pitch); // the tumble's turns are whole: the ball looks the same
       }
