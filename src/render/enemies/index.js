@@ -22,7 +22,7 @@
 //     pooled), toad globs in flight + their slicks, the Grave Mole's dirt wake,
 //     and the Barrow Ram's "BLOCKED" beat (Bone label + tink sparks + horn
 //     flare) on every `hit_blocked`. Boar / mantis paths are untouched.
-import { Group } from 'three';
+import { Group, Matrix4, Quaternion, Vector3 } from 'three';
 import { HITFLASH, TICK_HZ } from '../../core/constants.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
@@ -33,7 +33,7 @@ import { buildMantis } from './mantis.js';
 import { buildWaystone } from './waystone.js';
 import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
 import { SHOT_CORE, HIDE } from './style.js';
-import { vfxFoeShotColor } from '../../data/vfx.js';
+import { vfxFoeShotColor, vfxSpellHit, spellFlashLevel } from '../../data/vfx.js';
 import { ARCH_BUILDERS, CROWN_Y, makeEliteMark } from './archetypes.js';
 import { createTelegraphShapes } from './shapes.js';
 import { createContentExtras } from './extras.js';
@@ -49,11 +49,23 @@ import { registerContentProbe } from '../../data/content.js';
 import { impactFx } from '../vfx/hub.js';
 import { releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
+import { renderHold } from '../hold.js';
+import { hitNode, resetNode, measureBody, createReaction, armReaction, settleReaction, evalReaction, writeReaction, createEnvClock } from '../react.js';
 
 const SHOT_Y = 0.5; // enemy shot flight height (render)
 const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
-const POP_STRETCH_SEC = 0.09; // kill pop: anticipation stretch...
-const POP_TOTAL_SEC = 0.26; // ...then collapse (same feel as dummy kills)
+// The kill (VFX_HIT_RULES K2, K4; docs/HIT_FEEDBACK.md "The hit and the
+// kill"): the white body holds upright (on top of the render hold that pays
+// the kill freeze), swells round while it is thrown and tips along the last
+// hit, then pops flat. Seconds of held render time (renderHold.rigDt).
+const KILL_HOLD_SEC = 0.033; // upright and white, after the freeze
+const KILL_SWELL_SEC = 0.067; // swell round to 1.38 x 1.3 (2 frames)
+const KILL_POP_SEC = 0.13; // then flatten and spread, the white burning out
+const KILL_TOTAL_SEC = KILL_HOLD_SEC + KILL_SWELL_SEC + KILL_POP_SEC;
+const KILL_THROW_BW = 0.5; // body widths thrown along the last hit (the render sees no walls)
+const KILL_TIP = 1.2; // rad tipped along the last hit by the end of the pop (~70 deg)
+const KILL_SWELL = Object.freeze({ w: 1.38, h: 1.3 });
+const KILL_FLAT = Object.freeze({ w: 1.75, h: 0.04 });
 const RETREAT_OUT_SEC = 0.22; // shrink-out on retreat despawn
 const EMBER_HZ = 34; // ember motes/s over a live telegraph (r2: the column has to survive a body parked on the decal)
 const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
@@ -68,6 +80,21 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   stage.scene.add(root);
 
   const rigs = new Map(); // enemy id -> rig record
+  // The hit reaction envelope's clock (render/react.js): ticks, monotonic.
+  const env = createEnvClock();
+  const _react = {};
+  // The attacker of a hit, by id (rebuilt once per tick).
+  let byIdTick = -1;
+  const byIdMap = new Map();
+  function byId(id) {
+    if (id == null) return null;
+    if (world.tick !== byIdTick || !byIdMap.has(id)) {
+      byIdTick = world.tick;
+      byIdMap.clear();
+      for (const q of world.entities()) byIdMap.set(q.id, q);
+    }
+    return byIdMap.get(id) ?? null;
+  }
   const shots = new Map(); // eshot id -> group
   const shotHue = new Map(); // eshot id -> its shooter's hue (enemy_fire)
   const decals = new Map(); // enemy id -> attack telegraph
@@ -101,8 +128,23 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   // combat-juice block already installed on the same events).
   bus.on('hit', (ev) => {
     const r = rigs.get(ev.target);
-    if (r) r.flashUntilTick = ev.tick + HITFLASH.ticks;
-    else if (waystoneRec && ev.target === waystoneRec.id)
+    if (r) {
+      r.flashUntilTick = ev.tick + HITFLASH.ticks;
+      const atk = byId(ev.attacker);
+      // R1: a spell's flash holds, then fades (data/vfx.js SPELL_FLASH).
+      if (vfxSpellHit(ev, atk)) r.spellFlashTick = ev.tick;
+      // R2-R5: the squash, the flinch and the knockback's hop.
+      armReaction(r.react, ev, r.e);
+      // K4: the direction this body was last hit, for its throw if this hit
+      // kills it (the death event carries none). Else from the attacker.
+      let dx = ev.dirX || 0;
+      let dz = ev.dirZ || 0;
+      if (Math.hypot(dx, dz) < 1e-4 && atk && ev.x != null) {
+        dx = ev.x - atk.x;
+        dz = ev.z - atk.z;
+      }
+      r.lastHit = { tick: ev.tick, dx, dz };
+    } else if (waystoneRec && ev.target === waystoneRec.id)
       waystoneRec.flashUntilTick = ev.tick + HITFLASH.ticks;
   });
   bus.on('enemy_bite', (ev) => {
@@ -147,7 +189,15 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     if (r) {
       rigs.delete(ev.id);
       for (const m of r.build.mats) m.emissiveIntensity = HITFLASH.intensity; // white-hot pop
-      dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'kill' });
+      // K4: thrown along the killing hit (same tick), upright when none.
+      const lh = r.lastHit && r.lastHit.tick === ev.tick ? r.lastHit : null;
+      const dl = lh ? Math.hypot(lh.dx, lh.dz) : 0;
+      const dir = dl > 1e-4 ? { x: lh.dx / dl, z: lh.dz / dl } : null;
+      const g = r.build.group;
+      // A body killed mid-hop comes down through the pop, not in one frame.
+      const lift0 = r.node?.userData.lift ?? 0;
+      resetNode(r.node);
+      dying.push({ group: g, mats: r.build.mats, age: 0, mode: 'kill', node: r.node, dir, x: g.position.x, z: g.position.z, throwU: (r.e?.radius ?? 0.4) * 2 * KILL_THROW_BW, base: g.scale.x || 1, pivot: r.body?.pivot ?? 0, lift0 });
       removeDecal(ev.id);
       releaseShape(ev.id);
       return;
@@ -163,6 +213,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       rigs.delete(ev.id);
       removeDecal(ev.id);
       releaseShape(ev.id);
+      resetNode(r.node);
       if (ev.cause === 'retreat') {
         dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'retreat' });
       } else {
@@ -262,6 +313,11 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastElapsed));
     lastElapsed = tSec;
     const tick = world.tick;
+    // Render hold on hitstop (render/hold.js): the rig clips and the kill pop
+    // pause for the freeze; telegraphs, shots and the crown run on.
+    const rdt = renderHold.rigDt(dt);
+    const tPose = renderHold.time(tSec);
+    const envNow = env.step(tick, alpha);
     // A dozen frames in: the boot burst is over, nothing is being fought yet.
     if (!warmed && ++warmFrames > 12) prewarm();
 
@@ -282,6 +338,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
           build: BUILDERS[e.kind](cosmetic),
           kind: e.kind,
           flashUntilTick: 0,
+          spellFlashTick: null,
           lungeLeft: 0,
           fireLeft: 0,
           telegraphK: 0,
@@ -289,7 +346,17 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
           walkPhase: cosmetic.range(0, Math.PI * 2),
           moveK: 0,
           elite: null,
+          e,
+          lastHit: null,
+          node: null,
+          body: null,
+          // A champion's body carries its id (sim/enemies/champions.js).
+          react: createReaction(e.kind, { champion: !!e.champion }),
         };
+        // The hit reaction's node sits between the group and the body, so
+        // the shadow, the crown and the floor ring stay on the floor. The
+        // body is measured after its first pose (some rigs lay out there).
+        r.node = hitNode(r.build);
         // §23.5 Elite: x1.2 body + indigo crown glyph + outer indigo ring.
         if (e.elite) {
           const sc = e.scale ?? 1.2;
@@ -312,22 +379,23 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       let dy = targetYaw - r.yaw;
       while (dy > Math.PI) dy -= Math.PI * 2;
       while (dy < -Math.PI) dy += Math.PI * 2;
-      r.yaw += dy * (1 - Math.exp(-YAW_RATE * dt));
+      r.yaw += dy * (1 - Math.exp(-YAW_RATE * rdt));
       r.build.setYaw(r.yaw);
 
-      // Clip drivers.
+      // Clip drivers (held through the hitstop: the walk does not run on).
       const simSpeed = Math.hypot(e.x - e.px, e.z - e.pz) * TICK_HZ; // u/s
       const moveTarget = Math.min(1, simSpeed / 1.6);
-      r.moveK += (moveTarget - r.moveK) * (1 - Math.exp(-10 * dt));
-      r.walkPhase += simSpeed * dt * Math.PI * WALK_HZ;
-      r.lungeLeft = Math.max(0, r.lungeLeft - dt);
-      r.fireLeft = Math.max(0, r.fireLeft - dt);
+      r.moveK += (moveTarget - r.moveK) * (1 - Math.exp(-10 * rdt));
+      r.walkPhase += simSpeed * rdt * Math.PI * WALK_HZ;
+      r.lungeLeft = Math.max(0, r.lungeLeft - rdt);
+      r.fireLeft = Math.max(0, r.fireLeft - rdt);
       const telTarget = e.telegraph ? 1 : 0;
-      r.telegraphK += (telTarget - r.telegraphK) * (1 - Math.exp(-14 * dt));
+      r.telegraphK += (telTarget - r.telegraphK) * (1 - Math.exp(-14 * rdt));
 
+      r.e = e;
       r.build.pose({
-        t: tSec,
-        tick: tick - 1 + alpha, // interpolated sim tick (Act IV: the husks' shared heartbeat)
+        t: tPose,
+        tick: envNow, // interpolated sim tick, held through hitstop (Act IV: the husks' shared heartbeat)
         walkPhase: r.walkPhase,
         moveK: r.moveK,
         lungeK: r.lungeLeft > 0 ? Math.sin((r.lungeLeft / 0.18) * Math.PI) : 0,
@@ -336,12 +404,23 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
         e,
       });
       if (r.elite) r.elite.update(tSec);
+      // R2-R5: the hit reaction on the node over the body (render/react.js).
+      if (!r.body) r.body = measureBody(e.kind, r.node);
+      settleReaction(r.react, e, tick);
+      writeReaction(r.node, r.react, evalReaction(r.react, envNow, _react), r.body, r.build.group.scale.x);
 
       // §9 #1 hit flash: emissive modulation, tick-denominated (holds frozen
       // through kill hitstop exactly like the dummies).
       // A build may scale its flash down (flashScale): a big pale model lit
       // white floods the bloom pass and veils the room (the Gale Herald).
-      const lit = tick < r.flashUntilTick ? HITFLASH.intensity * (r.build.flashScale ?? 1) : 0;
+      // R1: a spell hit holds the flash, then fades it (data/vfx.js).
+      let flashK = tick < r.flashUntilTick ? 1 : 0;
+      if (r.spellFlashTick !== null) {
+        const k = spellFlashLevel(tick - r.spellFlashTick);
+        if (k > flashK) flashK = k;
+        if (k === 0 && tick - r.spellFlashTick > 0) r.spellFlashTick = null;
+      }
+      const lit = flashK > 0 ? HITFLASH.intensity * (r.build.flashScale ?? 1) * flashK : 0;
       for (const m of r.build.mats) m.emissiveIntensity = lit;
 
       // --- Archetype telegraphs (M4b): lane / ring / cone Ember shapes.
@@ -525,24 +604,17 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     // --- Death pops / retreat shrink-outs / Waystone crumble.
     for (let i = dying.length - 1; i >= 0; i--) {
       const d = dying[i];
-      d.age += dt;
+      // The kill pop holds through the kill freeze (render/hold.js).
+      d.age += rdt;
       const g = d.group;
       if (d.mode === 'kill') {
-        if (d.age >= POP_TOTAL_SEC) {
+        if (d.age >= KILL_TOTAL_SEC) {
           root.remove(g);
           releaseTree(g); // the rig's parts are shared geometry; its materials are its own
           dying.splice(i, 1);
           continue;
         }
-        const s = g.scale;
-        if (d.age < POP_STRETCH_SEC) {
-          const t = d.age / POP_STRETCH_SEC;
-          s.set(1 - 0.3 * t, 1 + 0.45 * t, 1 - 0.3 * t); // anticipation stretch
-        } else {
-          const t = (d.age - POP_STRETCH_SEC) / (POP_TOTAL_SEC - POP_STRETCH_SEC);
-          s.set(0.7 + 0.9 * t, Math.max(0.04, 1.45 * (1 - t) * (1 - t)), 0.7 + 0.9 * t);
-          for (const m of d.mats) m.emissiveIntensity = HITFLASH.intensity * (1 - t);
-        }
+        killPose(d);
       } else if (d.mode === 'retreat') {
         if (d.age >= RETREAT_OUT_SEC) {
           root.remove(g);
@@ -569,6 +641,56 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     }
   }
 
+  // K2 + K4 on the dying rig: hold, then swell round while thrown and tipped
+  // along the last hit, then pop flat. The swell, the tip and the pop ride the
+  // hit node (the shadow stays flat, the elite's base scale stays on the
+  // group); the throw moves the group along the floor.
+  const _kq = new Quaternion();
+  const _kaxis = new Vector3();
+  const _kS = new Matrix4();
+  const _kT = new Matrix4();
+  function killPose(d) {
+    const a = d.age;
+    let w = 1;
+    let h = 1;
+    let k = 0; // 0..1 of the throw
+    if (a >= KILL_HOLD_SEC) {
+      const s = Math.min(1, (a - KILL_HOLD_SEC) / KILL_SWELL_SEC);
+      const e = 1 - (1 - s) * (1 - s);
+      w = 1 + (KILL_SWELL.w - 1) * e;
+      h = 1 + (KILL_SWELL.h - 1) * e;
+      k = (a - KILL_HOLD_SEC) / (KILL_SWELL_SEC + KILL_POP_SEC);
+      if (a >= KILL_HOLD_SEC + KILL_SWELL_SEC) {
+        const t = Math.min(1, (a - KILL_HOLD_SEC - KILL_SWELL_SEC) / KILL_POP_SEC);
+        w = KILL_SWELL.w + (KILL_FLAT.w - KILL_SWELL.w) * t;
+        h = Math.max(KILL_FLAT.h, KILL_SWELL.h * (1 - t) * (1 - t));
+        for (const m of d.mats) m.emissiveIntensity = HITFLASH.intensity * (1 - t);
+      }
+    }
+    if (!d.node) {
+      // A rig with no hit node (never on this layer today): the old way.
+      d.group.scale.set(d.base * w, d.base * h, d.base * w);
+      return;
+    }
+    const m = d.node.matrix;
+    const py = d.pivot;
+    m.makeTranslation(0, -py, 0);
+    if (d.dir && k > 0) {
+      // Tips over easing in (K4), from the floor (or the body's middle).
+      _kaxis.set(d.dir.z, 0, -d.dir.x);
+      m.premultiply(_kT.makeRotationFromQuaternion(_kq.setFromAxisAngle(_kaxis, KILL_TIP * k * k)));
+      const fly = d.throwU * (1 - (1 - Math.min(1, k)) * (1 - Math.min(1, k)));
+      d.group.position.set(d.x + d.dir.x * fly, 0, d.z + d.dir.z * fly);
+    }
+    // The swell and the flat pop in the world's axes, after the tip, so a
+    // tipped body still pops flat on the floor.
+    m.premultiply(_kS.makeScale(w, h, w));
+    // A body killed mid-hop sinks back to the floor through the hold and pop.
+    const fall = d.lift0 ? d.lift0 * Math.max(0, 1 - a / KILL_TOTAL_SEC) : 0;
+    m.premultiply(_kT.makeTranslation(0, py + fall, 0));
+    d.node.matrixWorldNeedsUpdate = true;
+  }
+
   function debugState() {
     return {
       enemyRigs: rigs.size,
@@ -581,6 +703,14 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       elites: [...rigs.values()].filter((r) => r.elite).length,
       // Live hit-flash level per rig id (Small fixes 4: the herald's flashScale).
       flash: Object.fromEntries([...rigs].map(([id, r]) => [id, r.build.mats.reduce((a, m) => Math.max(a, m.emissiveIntensity ?? 0), 0)])),
+      // The hit reaction per rig id (render/react.js), and the kill pops.
+      react: Object.fromEntries([...rigs].filter(([, r]) => r.react.hitTick !== null).map(([id, r]) => [id, reactDebug(r)])),
+      envTick: env.now,
+      kills: dying.filter((d) => d.mode === 'kill').map((d) => {
+        const m = d.node ? d.node.matrix.elements : null;
+        // sx, sy: the body's world width and height scale (matrix rows).
+        return { age: Math.round(d.age * 1000) / 1000, dir: d.dir, x: d.group.position.x, z: d.group.position.z, sx: m ? Math.hypot(m[0], m[4], m[8]) : 1, sy: m ? Math.hypot(m[1], m[5], m[9]) : 1, ty: m ? m[13] : 0 };
+      }),
       shapes: shapes.stats(),
       ...extras.debugState(),
       ...affixes.debugState(),
@@ -588,6 +718,12 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       escortHold: ehfx.debugState(),
       champions: champfx.debug(),
     };
+  }
+
+  function reactDebug(r) {
+    const o = evalReaction(r.react, env.now, {});
+    const e = r.node.matrix.elements;
+    return { hitTick: r.react.hitTick, amp: r.react.amp, q: o.q, lift: o.lift, tilt: o.tilt, air: o.air, land: o.qLand, hop: r.react.hop ? r.react.hop.dist : null, sx: Math.hypot(e[0], e[1], e[2]), sy: Math.hypot(e[4], e[5], e[6]), ty: e[13], spell: r.spellFlashTick === null ? 0 : spellFlashLevel(world.tick - r.spellFlashTick) };
   }
 
   // __echoes.content.enemyfx() — the layer's live counters (M4b probe).

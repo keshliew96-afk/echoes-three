@@ -5595,6 +5595,11 @@
    "src/ui/socket/index.js"
   ]
  },
+ "CRIT!": {
+  "files": [
+   "src/render/numbers.js"
+  ]
+ },
  "crits deal ×2.2.": {
   "files": [
    "src/ui/run/cards.js"

@@ -3418,5 +3418,6 @@
  "It cannot be brought back.": "元に戻すことはできません。",
  "The kept file was removed": "退避したファイルを削除しました",
  "This page is out of date: reload it. Until then runs are practice.": "このページは古くなっています。再読み込みしてください。それまでは練習扱いです。",
- "Not posted: reload the page to update": "未投稿：ページを再読み込みして更新"
+ "Not posted: reload the page to update": "未投稿：ページを再読み込みして更新",
+ "CRIT!": "クリティカル！"
 }

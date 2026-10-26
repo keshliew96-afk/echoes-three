@@ -54,6 +54,7 @@ import { exactColor, exactHex, makeSwingSmear } from '../critters/common.js';
 import { ALLY_CLASSES, ALLY_KITS, REVIVE } from '../../sim/allies.js';
 import { vfxClassStyle } from '../../data/vfx.js';
 import { impactFx } from '../vfx/hub.js';
+import { renderHold } from '../hold.js';
 import { cap, onHintsChange } from '../../app/controls.js';
 import { pageQuery } from '../../app/harness.js';
 
@@ -791,6 +792,9 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   function update(tSec, alpha = 1) {
     const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastElapsed));
     lastElapsed = tSec;
+    // Render hold on hitstop (render/hold.js): the heroes' clips pause with
+    // the freeze (the swing holds its contact pose).
+    const rdt = renderHold.rigDt(dt);
     // A dozen frames in: the boot burst is over, nothing is being fought yet.
     if (!warmed && ++warmFrames > 12) prewarm();
     if (inkWarmFrames > 0) inkWarmFrames--;
@@ -812,19 +816,21 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
         let dy = Math.atan2(a.faceX, a.faceZ) - st.yaw;
         while (dy > Math.PI) dy -= Math.PI * 2;
         while (dy < -Math.PI) dy += Math.PI * 2;
-        st.yaw += dy * (1 - Math.exp(-YAW_RATE * dt));
+        st.yaw += dy * (1 - Math.exp(-YAW_RATE * rdt));
         c.setYaw(st.yaw);
       }
 
-      st.castLeft = Math.max(0, st.castLeft - dt);
-      st.hurtLeft = Math.max(0, st.hurtLeft - dt);
+      // The re-trigger window reads the same held dt as the countdown, or a
+      // held frame would snap the cast back to its release every frame.
+      st.castLeft = Math.max(0, st.castLeft - rdt);
+      st.hurtLeft = Math.max(0, st.hurtLeft - rdt);
       const simSpeed = Math.hypot(a.x - a.px, a.z - a.pz) * TICK_HZ;
       if (a.hp <= 0) c.setAnim('downed');
       else if (st.hurtLeft > 0) c.setAnim('hurt');
-      else if (st.castLeft > 0) c.setAnim('cast', st.castLeft > CAST_HOLD - dt * 2 ? CAST_PHASE : undefined);
+      else if (st.castLeft > 0) c.setAnim('cast', st.castLeft > CAST_HOLD - Math.max(rdt, 1e-6) * 2 ? CAST_PHASE : undefined);
       else c.setAnim(simSpeed > MOVE_EPS ? 'walk' : 'idle');
 
-      if (!adopted) c.update(dt);
+      if (!adopted) c.update(rdt);
     }
     if (seen.size) for (const [cls, c] of critters) if (!seen.has(cls) && c.group.visible) c.group.visible = false;
 

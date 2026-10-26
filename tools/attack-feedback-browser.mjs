@@ -99,7 +99,7 @@ const visible = () =>
       .filter((el) => el.style.visibility === 'visible' && Number(el.style.opacity) > 0.3)
       .map((el) => {
         const cs = getComputedStyle(el);
-        return { who: el.dataset.who || '', text: el.textContent, color: cs.color, weight: cs.fontWeight, size: parseFloat(cs.fontSize), opacity: Number(el.style.opacity), z: cs.zIndex };
+        return { who: el.dataset.who || '', phase: el.dataset.phase || '', text: el.textContent, color: cs.color, weight: cs.fontWeight, size: parseFloat(cs.fontSize), opacity: Number(el.style.opacity), z: cs.zIndex };
       }),
   );
 
@@ -137,7 +137,9 @@ for (const cls of CLASSES) {
   let shot = null;
   const both = await waitFor(async () => {
     const v = await visible();
-    const o = v.filter((n) => n.who === 'own');
+    // Your own pop white for 0.1 s, then settle to Hearth Amber (N1): read
+    // them settled.
+    const o = v.filter((n) => n.who === 'own' && n.phase === 'settled');
     const x = v.filter((n) => n.who === 'other');
     if (o.length && x.length) {
       if (!shot) {

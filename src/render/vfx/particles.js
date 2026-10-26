@@ -288,7 +288,9 @@ export function createParticlePool(parent, cosmetic) {
   // §9 #6 kill burst: hot sparks + dark debris + a smoke puff. The debris and
   // smoke are what make a kill read as matter breaking rather than a flashbulb.
   // VFX redesign: `debris` tints the chunks with what the body was made of.
-  function kill(x, z, { color = PALETTE.bone, debris = DEBRIS_DARK } = {}) {
+  // THE HIT AND THE KILL (VFX_HIT_RULES P1): `dir` + `dirBias` lean the
+  // sparks and chunks slightly along the killing hit; the smoke stays round.
+  function kill(x, z, { color = PALETTE.bone, debris = DEBRIS_DARK, dir = null, dirBias = 0 } = {}) {
     for (let i = 0; i < 10; i++)
       emit('spark', x, START_Y, z, {
         color,
@@ -297,6 +299,8 @@ export function createParticlePool(parent, cosmetic) {
         size: rnd(0.09, 0.2),
         life: rnd(0.32, 0.55),
         opacity: 0.9,
+        dir,
+        dirBias,
       });
     for (let i = 0; i < 8; i++)
       emit('chunk', x, START_Y * 0.8, z, {
@@ -306,6 +310,8 @@ export function createParticlePool(parent, cosmetic) {
         size: rnd(0.07, 0.15),
         life: rnd(0.45, 0.8),
         opacity: 0.95,
+        dir,
+        dirBias,
       });
     for (let i = 0; i < 4; i++)
       emit('smoke', x, START_Y, z, {

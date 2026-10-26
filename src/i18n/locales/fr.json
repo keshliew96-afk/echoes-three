@@ -3532,5 +3532,6 @@
  "It cannot be brought back.": "Il ne pourra pas être récupéré.",
  "The kept file was removed": "Le fichier mis de côté a été supprimé",
  "This page is out of date: reload it. Until then runs are practice.": "Page périmée : rechargez-la. D’ici là, les parties sont des entraînements.",
- "Not posted: reload the page to update": "Non publié : rechargez la page"
+ "Not posted: reload the page to update": "Non publié : rechargez la page",
+ "CRIT!": "CRITIQUE !"
 }

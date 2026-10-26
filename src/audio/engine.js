@@ -102,6 +102,11 @@ export const FRAME_BUDGET = Object.freeze({
   maxDeferMs: 100,
   mustPlayPriority: 4,
   maxQueued: 256,
+  // THE HIT AND THE KILL (VFX_HIT_RULES I1, A1): the first of these cues
+  // heard on a sim tick always starts the frame it is heard, like a
+  // telegraph, so the thump lands with the contact's flash. The rest of the
+  // tick's hits queue as before.
+  firstPerTick: Object.freeze(['impact']),
 });
 const COST_RING = 900;
 const CENTROID_EVERY_SEC = 0.066; // one probe FFT per ~66 ms (was every 4th frame)
@@ -285,7 +290,9 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
   let liveCount = 0; // non-stopped voices (O(1) instead of scanning `active`)
   const cueLive = new Map(); // cueId -> live voices of that cue
   let inUpdate = false; // trigger() inside update() is timed by update itself
-  const qStats = { queued: 0, maxPending: 0, deferredFrames: 0, budgetDrops: 0, overflow: 0, bakedStarts: 0, samplerStarts: 0, liveStarts: 0 };
+  const qStats = { queued: 0, maxPending: 0, deferredFrames: 0, budgetDrops: 0, overflow: 0, bakedStarts: 0, samplerStarts: 0, liveStarts: 0, firstImpacts: 0 };
+  // cue -> the last sim tick whose first request was marked `first`.
+  const firstTick = new Map();
 
   // Focus-loss mute (audio.muteOnBlur): page hidden OR window blurred.
   let windowBlurred = false;
@@ -894,7 +901,13 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       for (const r of Array.isArray(reqs) ? reqs : [reqs]) {
         if (!r || !r.cue) continue;
         const def = cues.get(r.cue);
-        cueQueue.push({ cue: r.cue, opts: { ...r, tick: ev.tick, event: ev.type }, prio: def ? def.priority || 1 : 1, at: t0 });
+        let first = false;
+        if (FRAME_BUDGET.firstPerTick.includes(r.cue) && Number.isFinite(ev.tick) && firstTick.get(r.cue) !== ev.tick) {
+          firstTick.set(r.cue, ev.tick);
+          first = true;
+          qStats.firstImpacts += 1;
+        }
+        cueQueue.push({ cue: r.cue, opts: { ...r, tick: ev.tick, event: ev.type }, prio: def ? def.priority || 1 : 1, at: t0, first });
         qStats.queued += 1;
       }
       if (cueQueue.length > qStats.maxPending) qStats.maxPending = cueQueue.length;
@@ -916,6 +929,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       trigger(q.cue, { ...q.opts, drop: 'budget' }, 'sim');
     }
     if (ev.type === 'run_start' || ev.type === 'layout_enter') {
+      if (ev.type === 'run_start') firstTick.clear();
       if (Number.isFinite(ev.act)) runAct = ev.act;
     }
     if (ev.type === 'run_end') onRunEnd(ev);
@@ -935,7 +949,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       const def = cues.get(q.cue);
       const last = lastPlayed.get(q.cue);
       const cooling = def && last !== undefined && performance.now() - last < (def.cooldownMs ?? 30);
-      const must = q.prio >= FRAME_BUDGET.mustPlayPriority || starts < FRAME_BUDGET.minStartsPerFrame;
+      const must = q.first || q.prio >= FRAME_BUDGET.mustPlayPriority || starts < FRAME_BUDGET.minStartsPerFrame;
       if (!cooling && !must && (starts >= FRAME_BUDGET.maxStartsPerFrame || performance.now() >= deadline)) {
         if (now - q.at > maxDefer) {
           qStats.budgetDrops += 1;
