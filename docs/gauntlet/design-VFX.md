@@ -527,7 +527,7 @@ list is `docs/HIT_FEEDBACK.md` "The hit and the kill"; for a VFX build:
   side (`MAGIC_EXIT` in `templates.js`). A spell hit holds the body's white
   flash 5 ticks, then fades it (`SPELL_FLASH` in `src/data/vfx.js`).
 - **A kill holds, swells, then pops.** The bone flare holds 117 ms over a
-  bloom twice a hit's, the matter ring is gone by 0.22 s and draws under the
+  bloom twice a hit's area, the matter ring is gone by 0.22 s and draws under the
   Ember floor warnings (`KILL_FX` in `signature.js`), and the debris waits
   0.1 s of held time and leans along the killing hit.
 - Gameplay signals stay as they were: Ember telegraphs, Bright Heal heals,

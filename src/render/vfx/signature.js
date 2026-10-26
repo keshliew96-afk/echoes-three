@@ -76,12 +76,12 @@ const ENEMY_SHOT_TRAIL = Object.freeze({
 // P1). The contact: a near-white bloom about 2 body widths across (P3) and the
 // class flare and flash held at full strength 100 ms (L5), the bloom dimmed in
 // a crowd and under Effects: Reduced. The kill: the bone flare held 117 ms
-// (5 frames with the kill freeze the render hold adds), a white bloom about
-// twice a hit's area (K1), the ground ring gone within 0.22 s and drawn under
+// (5 frames with the kill freeze the render hold adds), a white bloom twice
+// a hit's area (K1: 1.41 x its width), the ground ring gone within 0.22 s and drawn under
 // any Ember ring, and the debris burst waiting for the body's swell (K2),
 // leaning slightly along the killing hit (P1).
-const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.6, bloomSkill: 2.0, bloomCrit: 1.25, bloomOpacity: 0.7, bloomGrow: 0.1 });
-const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.8, bloomOpacity: 0.75, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
+const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.6, bloomSkill: 2.0, bloomCrit: 1.25, bloomOpacity: 0.55, bloomGrow: 0.1, crowd: 0.12 });
+const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.3, bloomOpacity: 0.6, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
   const kit = createVfxKit({ stage, cosmetic });
@@ -195,7 +195,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // A near-white bloom held at full strength (THE HIT AND THE KILL), fainter
   // where many glows already stack and under Effects: Reduced.
   function bloom(x, z, size, { hold, life, opacity, grow = CONTACT_FX.bloomGrow, y = 0.5 }) {
-    const crowd = Math.max(0.4, 1 / (1 + 0.09 * kit.liveNear(x, z, 2)));
+    const crowd = Math.max(0.35, 1 / (1 + CONTACT_FX.crowd * kit.liveNear(x, z, 2)));
     kit.flash({ x, y, z, color: PARCH, size, life, hold, grow, opacity: opacity * crowd * (intensity.light ?? 1) });
   }
   function embersUp(x, z, color, n, { radius = 0.5, life = [1.0, 1.7], y = 0.3 } = {}) {

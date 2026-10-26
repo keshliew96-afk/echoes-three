@@ -147,7 +147,7 @@ audio keep running. No window holds more than 4 ticks (`src/render/hold.js`).
 - The body is thrown half a body width along the killing hit and tips up to
   1.2 rad as it goes.
 - The bone-white flare holds bright 117 ms (5 frames with the freeze) over a
-  white bloom about twice a hit's.
+  white bloom twice a hit's area (2.3 u across).
 - The ground ring of the body's matter lives 0.22 s and draws under the floor
   warnings, so it never reads as a telegraph.
 - The debris bursts 0.1 s in (held time), as the body pops, and leans along

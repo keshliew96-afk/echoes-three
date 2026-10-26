@@ -393,8 +393,9 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   bus.emit(20, 'death', { id: 9, kind: 'boar', delivery: 'basic', x: 0, z: 0 });
   bus.emit(20, 'hitstop', { ticks: 3, cause: 'kill' });
   frame();
-  const kb = sprites().filter((s) => s.scale.x >= 2.6);
-  check('K1: the kill\'s white bloom is about twice a hit\'s', kb.length > 0, kb.map((s) => r3(s.scale.x)));
+  // Twice the area: about 1.41 x the hit bloom's 1.6 u width.
+  const kb = sprites().filter((s) => s.scale.x >= 2.2 && s.scale.x <= 2.6);
+  check('K1: the kill\'s white bloom is twice a hit\'s area', kb.length > 0, kb.map((s) => r3(s.scale.x)));
   const ringOrders = [];
   stage.scene.traverse((o) => {
     if (o.visible && o.material?.uniforms?.uRadius) ringOrders.push(o.renderOrder);
