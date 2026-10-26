@@ -15,8 +15,9 @@
 //   * two ability timelines (render/facet/timeline.js): Ash Breath (draw,
 //     strike, contact held, pour, settle) and Burrow Strike (dive, tunnel,
 //     rise, burst, contact held, exposed, settle). The sim's telegraph drives
-//     the anticipation, the strike starts when the telegraph resolves; the
-//     model lab plays and rewinds the same timelines;
+//     the anticipation, which ends one strike before the telegraph resolves,
+//     so the strike lands on the breath's tick; each ability grows out of
+//     the pose before it; the model lab plays and rewinds the same timelines;
 //   * the [M] beats (render/facet/beats.js, re-measured in the Level I slice):
 //     each strike leaves on the press frame and lands in 2.5 frames, holds its
 //     contact 3 frames, the breath kicks the head back (recoil), each settle
@@ -123,9 +124,21 @@ function restChannels(C) {
 }
 const lerp = (a, b, k) => a + (b - a) * k;
 
+const KEYS = ['rear', 'reach', 'pitch', 'jaw', 'throat', 'coil', 'sweep', 'sink', 'rise', 'slump'];
+
 // Pure: the channels of an ability at a phase sample (s = timeline.sample(t)).
-export function abilityChannels(id, s, C = restChannels({})) {
+// `from` (in a fight) is the pose the ability starts out of: the draw and
+// the dive grow out of it (B1/B5, never a snap from rest). The lab passes none.
+export function abilityChannels(id, s, C = restChannels({}), from = null) {
   restChannels(C);
+  openingChannels(id, s, C);
+  if (from && (s.id === 'draw' || s.id === 'dive')) {
+    const w = 1 - ease.out(Math.min(1, s.k * 2));
+    for (const key of KEYS) C[key] += from[key] * w;
+  }
+  return C;
+}
+function openingChannels(id, s, C) {
   const k = s.k;
   if (id === 'breath') {
     if (s.id === 'draw') {
@@ -451,16 +464,18 @@ export function buildWyrmFacet() {
     crown: [head, 0, 0.32, -0.3],
   });
   // the shared hit envelope (§6.1 item 9): a height-only squash, no flinch
-  // and no knockback, so the planted tail never slides under a hit
-  const react = { squash: 1, flinch: 0, knock: 0, midY: 0.45 };
+  // and no knockback, so the planted tail never slides under a hit (asked by
+  // the hit envelope's slice; item 9 as written is half squash and flinch)
+  const react = { squash: 1, flinch: 0, knock: 0, axis: 'y', midY: 0.45 };
   const spawn = createSpawnClock();
 
   // --- Ground: contact shadows under the coil, the burrow mound and rubble.
   const SHADOWS = 5;
   const shadows = [];
   for (let i = 0; i < SHADOWS; i++) {
+    // a floor piece: a child of the root, never inside the hit envelope's node
     const s = groundShadow(0.62, 0.3);
-    yaw.add(s);
+    group.add(s);
     shadows.push(s);
   }
   const moundGeo = sharedGeo('facet:wyrm-mound', () => facetize(new SphereGeometry(0.9, 9, 4, 0, Math.PI * 2, 0, Math.PI / 2), { jitter: 0.14, seed: 41 }));
@@ -503,6 +518,13 @@ export function buildWyrmFacet() {
   let lastMode = 'stalk';
   let breathSeen = false;
   let teleSpan = 0.9;
+  let telAge = 0;
+  let from = null;
+  // a new ability starts out of this frame's pose
+  const begin = (id, t = 0) => {
+    from = { ...C };
+    ab = { id, t };
+  };
 
   // Lay the spine's control points (in yaw space) for this frame.
   const ctrl = spine.pts;
@@ -555,11 +577,15 @@ export function buildWyrmFacet() {
     tube.update();
     spikes.update();
     cracks.update();
-    // shadows under the coil (yaw space, on the floor)
+    // shadows under the coil: the spine's yaw-space points turned and grown
+    // into the root's space (they grow in with the spawn, never squash)
+    const g = yaw.scale.x;
+    const cy = Math.cos(yaw.rotation.y);
+    const sy = Math.sin(yaw.rotation.y);
     for (let i = 0; i < SHADOWS; i++) {
       spine.point(0.1 + (0.8 * i) / (SHADOWS - 1), loc);
-      shadows[i].position.set(loc.x, 0.008, loc.z);
-      const s = radius(0.1 + (0.8 * i) / (SHADOWS - 1)) / 0.46;
+      shadows[i].position.set(g * (loc.x * cy + loc.z * sy), 0.008, g * (-loc.x * sy + loc.z * cy));
+      const s = (g * radius(0.1 + (0.8 * i) / (SHADOWS - 1))) / 0.46;
       shadows[i].scale.set(s, s, 1);
     }
     // the head rides the first control point
@@ -595,18 +621,21 @@ export function buildWyrmFacet() {
     if (tel && tel.attack === 'breath') {
       if (!breathSeen) {
         breathSeen = true;
-        teleSpan = tel.resolveTick > tel.startTick ? (tel.resolveTick - tel.startTick) / 60 : 0.9;
-        ab = { id: 'breath', t: 0 };
+        telAge = 0;
+        // the draw ends one strike early, so the strike lands on the resolve
+        teleSpan = Math.max(0.05, (tel.resolveTick > tel.startTick ? (tel.resolveTick - tel.startTick) / 60 : 0.9) - STRIKE_SEC);
+        begin('breath');
       }
     } else if (breathSeen) {
       breathSeen = false;
-      // the telegraph resolved: the strike lands now
+      // the telegraph resolved early (or a frame was skipped): strike now
       if (ab && ab.id === 'breath') ab.t = Math.max(ab.t, WYRM_ABILITIES.breath.startOf('strike'));
     }
     const B2 = WYRM_ABILITIES.burrow;
     if (mode !== lastMode) {
-      if (mode === 'burrowed' && lastMode !== 'emerging') ab = { id: 'burrow', t: 0 };
-      else if (mode === 'emerging') ab = { id: 'burrow', t: B2.startOf('rise') };
+      if (mode === 'burrowed' && lastMode !== 'emerging') begin('burrow');
+      // an emerge that comes before the dive is done lets the dive finish
+      else if (mode === 'emerging') ab = { id: 'burrow', t: ab && ab.id === 'burrow' && ab.t < B2.startOf('tunnel') ? ab.t : B2.startOf('rise') };
       else if (mode === 'exposed') ab = { id: 'burrow', t: B2.startOf('burst') };
       else if (mode === 'stalk' && ab && ab.id === 'burrow') ab.t = Math.max(ab.t, B2.startOf('settle'));
       lastMode = mode;
@@ -617,9 +646,10 @@ export function buildWyrmFacet() {
     let rate = 1;
     if (ab.id === 'breath') {
       const drawEnd = tl.startOf('strike');
-      if (breathSeen) rate = ab.t < drawEnd ? 0.9 / teleSpan : 0;
-      if (breathSeen && ab.t + dt * rate >= drawEnd) ab.t = drawEnd - 1e-4;
-      else ab.t += dt * rate;
+      if (breathSeen && ab.t < drawEnd) {
+        telAge += dt;
+        ab.t = telAge < teleSpan ? Math.min(drawEnd - 1e-4, (telAge * 0.9) / teleSpan) : drawEnd;
+      } else ab.t += dt * rate;
     } else {
       const hold = (phase, live) => {
         const end = tl.startOf(phase) + tl.phases[tl.phases.findIndex((p) => p.id === phase)].dur;
@@ -630,9 +660,11 @@ export function buildWyrmFacet() {
         return false;
       };
       if (!(hold('tunnel', mode === 'burrowed') || hold('rise', mode === 'emerging') || hold('exposed', mode === 'exposed'))) ab.t += dt;
+      // emerging already: the dive runs straight into the held rise
+      if (mode === 'emerging' && ab.t >= B2.startOf('tunnel') && ab.t < B2.startOf('rise')) ab.t = B2.startOf('rise');
     }
     const s = tl.sample(ab.t);
-    abilityChannels(ab.id, s, C);
+    abilityChannels(ab.id, s, C, from);
     if (ab.t >= tl.duration) ab = null;
     return C;
   }
@@ -641,12 +673,14 @@ export function buildWyrmFacet() {
     lastT = null;
     sinkK = 0;
     ab = null;
+    from = null;
     lastMode = 'stalk';
     breathSeen = false;
     trail.reset(group.position.x - Math.sin(yaw.rotation.y) * NECK, group.position.z - Math.cos(yaw.rotation.y) * NECK, Math.sin(yaw.rotation.y), Math.cos(yaw.rotation.y), SEG_GAP * SPINE_PTS + 1);
   }
   let lastX = 0;
   let lastZ = 0;
+  let lastId = null;
   let live = false; // posed by a live entity at least once
   C.burstRise = 0;
 
@@ -666,13 +700,17 @@ export function buildWyrmFacet() {
     // coil rigidly behind the head; a pose with no entity after live play (the
     // death collapse) freezes the coil where it lay.
     pose({ t, moveK = 0, hpFrac = 1, e = null, turntable = false }) {
-      // a pooled rig coming back, or a jump (a new room): lay the coil afresh,
-      // and a live Wyrm grows up out of the floor (B7)
-      if (lastT === null || t < lastT || Math.hypot(group.position.x - lastX, group.position.z - lastZ) > 2.5) {
+      // a pooled rig posed for a new Wyrm (a new id, a rewound clock): lay
+      // the coil afresh and grow up out of the floor (B7); a jump in place (a
+      // new room, a hitch) only lays the coil afresh
+      const id = e ? e.id : lastId;
+      const born = lastT === null || t < lastT || (e && id !== lastId);
+      if (born || Math.hypot(group.position.x - lastX, group.position.z - lastZ) > 2.5) {
         reset();
-        if (e && !turntable) spawn.restart(t);
-        else spawn.clear();
+        if (born && e && !turntable) spawn.restart(t);
+        else if (born) spawn.clear();
       }
+      lastId = id;
       yaw.scale.setScalar(turntable ? 1 : spawn.scale(t));
       const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
       lastT = t;

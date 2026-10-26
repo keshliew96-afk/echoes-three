@@ -11,14 +11,24 @@
 //     whole gait group at once (the diagonal pairs of a trot, or one foot of
 //     a biped), landing ahead along the body's real velocity, never both
 //     groups at a walk; at a run (`flight` speed) the groups may overlap,
-//     the flight phase of a gallop;
+//     the flight phase of a gallop. Moving, the drift is signed: a foot that
+//     landed ahead of its home still carries until it is as far behind;
+//   * a turn counts as speed (the turn rate times the feet's radius), so a
+//     boss spinning to a new target steps quickly instead of dragging;
 //   * a planted foot that the leg can no longer reach lifts at once (a
-//     lunge, a charge): it never slides to keep up;
+//     lunge, a charge): it never slides to keep up. If the other group is
+//     still in the air it is brought down first, so the body never loses its
+//     last support while the leg can still hold;
+//   * a pose that moves a foot's home (a lunge, a brace, a sit) by more than
+//     `stanceTrigger` steps that foot onto it quickly, one foot at a time;
+//   * `hold` (a held contact) lands every live step within two frames and
+//     starts no drift steps, so the blow is taken on planted feet;
+//   * a swinging foot is never drawn past its leg's reach;
 //   * `raise[i]` lifts a foot off the floor for a pose (a stag rearing, a
 //     hoof pawing the ground), from where it stood toward a held point, and
 //     sets it down again at its home (plus any lunge offset in the stance);
-//   * `air` (a leap) carries every foot with the body; landing plants them
-//     where they touch down;
+//   * `air` (a leap) carries every foot with the body; the first frame back
+//     on the ground plants every foot on its home (stance included);
 //   * unlocked (a turntable, a spawn-in, a death) the feet stand on their
 //     homes and the lock starts afresh.
 //
@@ -45,6 +55,9 @@ export function createGait(feet, opts = {}) {
     flight: 3.2, // u/s past which both groups may be in the air at once
     reachK: 0.97, // a planted foot lifts once its leg is stretched this far
     jump: 1.5, // u: a move larger than this in one frame is a teleport
+    stanceTrigger: 0.08, // u a pose may move a planted foot's home before it steps there
+    stanceDur: 0.1, // s, that step
+    holdSpeed: 1.5, // u/s: a held contact holds the feet only below this travel
     ...opts,
   };
   const F = feet.map((f, i) => ({
@@ -63,6 +76,7 @@ export function createGait(feet, opts = {}) {
     dur: 0.2,
     raiseFrom: new Vector3(), // world, where a raise lifted off
     raisePeak: 0,
+    stanceAt: new Vector3(), // space, the stance offset the foot was planted on
     up: 0, // 0..1 how far off the floor (for the rig: hoof tilt, dust)
     steps: 0, // landings so far (probes)
   }));
@@ -74,6 +88,12 @@ export function createGait(feet, opts = {}) {
   let init = false;
   let bob = 0; // 0..1, the highest step arc this frame (the body rises over a passing foot)
   let lastSwingGroup = 1;
+  let wasAir = false;
+  let lastYaw = null;
+  let omega = 0; // rad/s, the space's filtered turn rate
+  const homeR = Math.max(0.1, ...F.map((f) => Math.hypot(f.homeLocal.x, f.homeLocal.z)));
+  const cur = new Vector3();
+  const fwd = new Vector3();
 
   const homeWorld = (space, f, stance, out) => {
     out.copy(f.homeLocal);
@@ -81,15 +101,44 @@ export function createGait(feet, opts = {}) {
     out.y = 0;
     return space.localToWorld(out);
   };
+  // The pose's stance offset of foot i this frame (space units, on the floor).
+  const stanceOff = (f, stance, out) => {
+    out.copy(f.homeLocal);
+    if (stance) stance(f.i, out);
+    out.sub(f.homeLocal);
+    out.y = 0;
+    return out;
+  };
+  function plantHome(space, f, stance) {
+    homeWorld(space, f, stance, f.planted);
+    stanceOff(f, stance, f.stanceAt);
+    f.swing = -1;
+    f.up = 0;
+  }
   function reset(space, stance) {
     for (const f of F) {
-      homeWorld(space, f, stance, f.planted);
-      f.swing = -1;
-      f.up = 0;
+      plantHome(space, f, stance);
       space.worldToLocal(f.out.copy(f.planted));
     }
     init = true;
     bob = 0;
+    lastYaw = null;
+    omega = 0;
+    wasAir = false;
+  }
+  // Keep the swing's landing inside the leg's reach (pulled toward the hip).
+  function clampReach(space, f, world) {
+    if (!f.hip || !Number.isFinite(f.reach)) return world;
+    f.hip(hipTmp);
+    space.worldToLocal(tmp2.copy(world));
+    const d = tmp2.distanceTo(hipTmp);
+    const lim = f.reach * o.reachK;
+    if (d > lim) {
+      tmp2.sub(hipTmp).multiplyScalar(lim / d).add(hipTmp);
+      if (tmp2.y < 0) tmp2.y = 0;
+      space.localToWorld(world.copy(tmp2));
+    }
+    return world;
   }
   // How stretched the leg is if this foot stays where it is (1 = full reach).
   function stretch(space, f, world) {
@@ -98,14 +147,16 @@ export function createGait(feet, opts = {}) {
     space.worldToLocal(tmp2.copy(world));
     return tmp2.distanceTo(hipTmp) / f.reach;
   }
-  function startStep(space, f, stance, speed) {
+  const stepDur = (speed) => Math.max(o.minDur, Math.min(o.maxDur, o.maxDur - speed * o.durPerSpeed));
+  function startStep(space, f, stance, speed, dur = stepDur(speed), lead = o.lead) {
     f.swing = 0;
-    f.dur = Math.max(o.minDur, Math.min(o.maxDur, o.maxDur - speed * o.durPerSpeed));
+    f.dur = dur;
+    f.lead = lead;
     f.from.copy(f.planted);
     f.aim.copy(f.homeLocal);
     if (stance) stance(f.i, f.aim);
     f.aim.y = 0;
-    space.localToWorld(f.to.copy(f.aim)).addScaledVector(vel, f.dur * o.lead);
+    space.localToWorld(f.to.copy(f.aim)).addScaledVector(vel, f.dur * lead);
   }
 
   return {
@@ -123,7 +174,8 @@ export function createGait(feet, opts = {}) {
     // their homes; air: 0..1 the body is off the ground (a leap); raise(i):
     // 0..1 a held lift of foot i; raiseTo(i, out): where a raised foot is
     // held (space units, y up).
-    update(dt, { space, stance = null, locked = true, air = 0, raise = null, raiseTo = null } = {}) {
+    // hold: a held contact (no new drift steps, live steps land at once).
+    update(dt, { space, stance = null, locked = true, air = 0, raise = null, raiseTo = null, hold = false } = {}) {
       space.updateWorldMatrix(true, false);
       const gp = space.getWorldPosition(tmp);
       bob = 0;
@@ -134,8 +186,9 @@ export function createGait(feet, opts = {}) {
           reset(space, stance);
           return;
         }
-        // airborne: the feet ride with the body on their homes; landing
-        // plants them wherever they come down
+        // airborne: the feet ride with the body on their homes; the first
+        // frame back on the ground plants them on their homes
+        wasAir = true;
         for (const f of F) {
           f.out.copy(f.homeLocal);
           if (stance) stance(f.i, f.out);
@@ -147,6 +200,7 @@ export function createGait(feet, opts = {}) {
         }
         return;
       }
+      let rawSpeed = 0;
       if (dt > 0) {
         if (gp.distanceTo(lastPos) > o.jump) {
           reset(space, stance);
@@ -154,13 +208,40 @@ export function createGait(feet, opts = {}) {
           vel.set(0, 0, 0);
         } else {
           const k = Math.min(1, dt * 12);
+          rawSpeed = Math.hypot(gp.x - lastPos.x, gp.z - lastPos.z) / dt;
           vel.x += ((gp.x - lastPos.x) / dt - vel.x) * k;
           vel.z += ((gp.z - lastPos.z) / dt - vel.z) * k;
           lastPos.copy(gp);
         }
       }
-      const speed = Math.hypot(vel.x, vel.z);
+      // the turn rate: a spin moves the feet as surely as a walk does
+      if (dt > 0) {
+        fwd.set(0, 0, 1).applyQuaternion(space.getWorldQuaternion(_q));
+        const yw = Math.atan2(fwd.x, fwd.z);
+        if (lastYaw !== null) {
+          let dy = yw - lastYaw;
+          while (dy > Math.PI) dy -= 2 * Math.PI;
+          while (dy < -Math.PI) dy += 2 * Math.PI;
+          omega += (dy / dt - omega) * Math.min(1, dt * 12);
+        }
+        lastYaw = yw;
+      }
+      const linSpeed = Math.hypot(vel.x, vel.z);
+      const speed = Math.max(linSpeed, Math.abs(omega) * homeR);
       for (const f of F) homeWorld(space, f, stance, f.homeW);
+      if (wasAir) {
+        // touchdown: every foot takes its home
+        wasAir = false;
+        for (const f of F) {
+          plantHome(space, f, stance);
+          f.steps++;
+        }
+        vel.set(0, 0, 0);
+      }
+      const frame = 2 * Math.max(dt, 1 / 60);
+      // a contact is held only where the body has stopped: a lunge that still
+      // travels keeps stepping under it
+      hold = hold && rawSpeed < o.holdSpeed;
 
       // Raised feet: held off the floor by the pose, set down on their home.
       for (const f of F) {
@@ -185,42 +266,91 @@ export function createGait(feet, opts = {}) {
         } else if (f.swing === -2) {
           // touched down: planted on its home
           f.planted.copy(f.homeW);
+          stanceOff(f, stance, f.stanceAt);
           f.swing = -1;
           f.up = 0;
           f.steps++;
         }
       }
-      // Advance live steps, re-aiming the landing ahead along the travel.
+      // Advance live steps, re-aiming the landing ahead along the travel (it
+      // keeps its lead to the touchdown, so the stance runs from ahead of the
+      // hip to behind it).
       const swingingGroups = new Set();
       for (const f of F) {
         if (f.swing < 0) continue;
+        if (hold && (1 - f.swing) * f.dur > frame) f.dur = frame / (1 - f.swing);
         f.swing += dt / f.dur;
-        space.localToWorld(f.to.copy(f.aim)).addScaledVector(vel, f.dur * o.lead * Math.max(0, 1 - f.swing));
+        // the home it lands on follows the pose while it swings
+        f.aim.copy(f.homeLocal);
+        if (stance) stance(f.i, f.aim);
+        f.aim.y = 0;
+        space.localToWorld(f.to.copy(f.aim)).addScaledVector(vel, f.dur * f.lead);
+        clampReach(space, f, f.to);
+        f.to.y = 0;
         if (f.swing >= 1) {
           f.swing = -1;
           f.planted.copy(f.to);
           f.planted.y = 0;
+          f.stanceAt.subVectors(f.aim, f.homeLocal).setY(0);
           f.steps++;
         } else swingingGroups.add(f.group);
       }
-      // Forced lifts: a planted foot its leg can no longer reach.
+      // Forced lifts: a planted foot its leg can no longer reach. While the
+      // leg still holds (stretch < 1) and the other group is in the air, that
+      // group is brought down within two frames first.
       for (const f of F) {
         if (f.swing !== -1) continue;
-        if (stretch(space, f, f.planted) > o.reachK) {
-          startStep(space, f, stance, speed);
+        const st = stretch(space, f, f.planted);
+        if (st <= o.reachK) continue;
+        if (st < 1) {
+          let otherUp = false;
+          for (const g of F) {
+            if (g.group === f.group || g.swing < 0) continue;
+            otherUp = true;
+            if ((1 - g.swing) * g.dur > frame) g.dur = frame / (1 - g.swing);
+          }
+          if (otherUp) continue;
+        }
+        startStep(space, f, stance, speed);
+        swingingGroups.add(f.group);
+      }
+      // Pose steps: a planted foot whose stance offset moved steps onto it,
+      // one foot at a time (a brace, a sit); in a held contact every such
+      // foot steps at once, so the blow lands on them (a lunge's forehooves).
+      if (stance) {
+        for (const f of F) {
+          if (f.swing !== -1) continue;
+          if (stanceOff(f, stance, cur).distanceTo(f.stanceAt) <= o.stanceTrigger) continue;
+          if (!hold && F.some((g) => g.swing >= 0) && linSpeed < o.flight) break;
+          startStep(space, f, stance, speed, hold ? frame : Math.min(o.minDur, o.stanceDur), 0);
           swingingGroups.add(f.group);
+          if (!hold) break;
         }
       }
       // Start the group that has drifted furthest, if no other group is in
-      // the air (or the body runs fast enough for a flight phase).
+      // the air (or the body runs fast enough for a flight phase). Moving,
+      // the drift is signed along the travel: a foot that landed ahead of
+      // its home carries until it is as far behind.
       const trig = o.trigger * (speed > 0.3 ? o.runTrigger : 1);
+      const lead = linSpeed * stepDur(speed) * o.lead;
+      const ux = linSpeed > 0.3 ? vel.x / linSpeed : 0;
+      const uz = linSpeed > 0.3 ? vel.z / linSpeed : 0;
+      const drift = (f) => {
+        const dx = f.planted.x - f.homeW.x;
+        const dz = f.planted.z - f.homeW.z;
+        if (linSpeed <= 0.3) return Math.hypot(dx, dz);
+        const along = dx * ux + dz * uz;
+        const lat = Math.hypot(dx - along * ux, dz - along * uz);
+        return Math.max(lat, -along - Math.max(0, lead - trig));
+      };
       let best = -1;
       let bestErr = trig;
       for (const g of [0, 1]) {
+        if (hold) break;
         if (swingingGroups.has(g)) continue;
-        if (swingingGroups.size && speed < o.flight) continue;
+        if (swingingGroups.size && linSpeed < o.flight) continue;
         let err = 0;
-        for (const f of F) if (f.group === g && f.swing === -1) err = Math.max(err, Math.hypot(f.planted.x - f.homeW.x, f.planted.z - f.homeW.z));
+        for (const f of F) if (f.group === g && f.swing === -1) err = Math.max(err, drift(f));
         // a tie goes to the group that did not step last (the gait alternates)
         if (err > bestErr + (g === lastSwingGroup ? 1e-3 : 0)) {
           bestErr = err;
@@ -230,7 +360,7 @@ export function createGait(feet, opts = {}) {
       if (best >= 0) {
         for (const f of F) {
           if (f.group !== best || f.swing !== -1) continue;
-          if (Math.hypot(f.planted.x - f.homeW.x, f.planted.z - f.homeW.z) < trig * 0.2) continue;
+          if (linSpeed <= 0.3 && Math.hypot(f.planted.x - f.homeW.x, f.planted.z - f.homeW.z) < trig * 0.2) continue;
           startStep(space, f, stance, speed);
         }
         lastSwingGroup = best;
@@ -241,7 +371,9 @@ export function createGait(feet, opts = {}) {
         if (f.swing >= 0) {
           const k = ease.inOut(f.swing);
           tmp.lerpVectors(f.from, f.to, k);
-          tmp.y = o.lift * liftK * Math.sin(Math.PI * f.swing);
+          tmp.y = 0;
+          clampReach(space, f, tmp);
+          tmp.y = Math.max(tmp.y, o.lift * liftK * Math.sin(Math.PI * f.swing));
           f.up = Math.sin(Math.PI * f.swing);
           bob = Math.max(bob, f.up);
         } else {

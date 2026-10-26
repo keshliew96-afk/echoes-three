@@ -13,17 +13,21 @@
 //     PAWS (render/facet/legs.js) with bone claws, the elbows folding back
 //     and the stifles forward the way a wolf's do;
 //   * three ability timelines driven by the sim (sim/bosses/gloamwolf.js):
-//       Pounce     crouch (the ring telegraph, stretched: belly low, hackles
-//                  up, the hind paws gathered), leap (the sim's 16-tick bound:
-//                  a real arc, paws tucked), land (2.5 frames: the forepaws
-//                  take it, the body squashes), held, settle with one
-//                  overshoot;
-//       Rend       wind (the 36-tick cone telegraph: pulled back, the right
-//                  forepaw raised high and wide), strike (2.5 frames: the
-//                  lunge and the rake across, the jaw snaps), held, back;
-//       Moon Howl  rise (the 60-tick ring telegraph: it sits back on its
-//                  haunches, the head goes up, the throat lights), cry (2.5
-//                  frames: the head thrown back, the jaw wide), held, settle;
+//       Pounce     crouch (the ring telegraph, stretched, square to the
+//                  landing spot: belly low, hackles up, the hind paws
+//                  gathered), leap (the sim's 16-tick bound: a real arc, paws
+//                  tucked), land (2.5 frames: every paw down, the forepaws a
+//                  step ahead, the body squashes), held with a recoil,
+//                  settle with one overshoot;
+//       Rend       wind (the 36-tick cone telegraph less one strike: pulled
+//                  back, the right forepaw raised high and wide), strike (2.5
+//                  frames, landing on the hit: the lunge, the rake across
+//                  and down onto the floor, the jaw snaps), held with a
+//                  recoil, back;
+//       Moon Howl  rise (the 60-tick ring telegraph less one strike: it sits
+//                  back on its haunches, the head goes up, the throat
+//                  lights), cry (2.5 frames, on the hit: the head thrown
+//                  back, the jaw wide), held, settle;
 //     and the rage (`enraged`): hackles stay up, the eyes and the mane burn;
 //   * the [M] beats: a spawn-in grow, named points (mouth, throat, the mane's
 //     crown as `tip`, chest, each paw), the shared hit envelope (`react`).
@@ -42,7 +46,7 @@ import { PART_INK_PX, createPlateTube, createSpine, instancedPart, placeRow, wed
 import { createTimeline, ease } from '../facet/timeline.js';
 import { lay, limbBox, taperBox } from '../facet/shapes.js';
 import { createLegs } from '../facet/legs.js';
-import { HOLD_SEC, SPAWN_TIMELINE, STRIKE_SEC, createSpawnClock, kick, lunge, makePoints, settle, spawnGrow } from '../facet/beats.js';
+import { HOLD_SEC, SPAWN_TIMELINE, STRIKE_SEC, createSpawnClock, kick, lunge, makePoints, recoil, settle, spawnGrow } from '../facet/beats.js';
 
 // --- Colour: the classic wolf's (third.js), no new hues.
 const FUR = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.45).multiplyScalar(0.95);
@@ -117,7 +121,8 @@ export const WOLF_ABILITIES = Object.freeze({
 //   rake   0..1 right forepaw raised  sweep  -1..1 its swing (+ out, - across)
 //   hackle 0..1 the mane rises        squash 0..1 contact squash
 //   tail   tail lift (+ up)           rage   0..1 enraged
-const KEYS = ['crouch', 'sit', 'pitch', 'reach', 'neck', 'head', 'jaw', 'throat', 'air', 'tuck', 'rake', 'sweep', 'hackle', 'squash', 'tail', 'rage'];
+//   shove  0..1 the recoil off a hit (B3)
+const KEYS = ['crouch', 'sit', 'pitch', 'reach', 'neck', 'head', 'jaw', 'throat', 'air', 'tuck', 'rake', 'sweep', 'hackle', 'squash', 'tail', 'rage', 'shove'];
 const restChannels = (C) => {
   for (const k of KEYS) C[k] = 0;
   return C;
@@ -127,7 +132,8 @@ const pose = (o) => ({ ...ZERO, ...o });
 const CROUCHED = pose({ crouch: 1, pitch: 0.1, reach: -0.14, neck: 0.4, head: 0.18, jaw: 0.15, hackle: 0.7, tail: -0.35 });
 const LANDED = pose({ crouch: 0.6, pitch: 0.14, reach: 0.2, neck: 0.3, head: 0.22, jaw: 0.75, hackle: 0.7, squash: 1, tail: 0.2 });
 const WOUND = pose({ crouch: 0.25, pitch: -0.04, neck: 0.05, head: -0.12, jaw: 0.3, hackle: 0.6, rake: 1, sweep: 1 });
-const RAKED = pose({ crouch: 0.35, pitch: 0.12, neck: 0.42, head: 0.28, jaw: 0.95, hackle: 0.6, rake: 0.55, sweep: -1 });
+// the raking paw comes down on its stance home at the contact and takes weight
+const RAKED = pose({ crouch: 0.35, pitch: 0.12, neck: 0.42, head: 0.28, jaw: 0.95, hackle: 0.6, rake: 0, sweep: -1 });
 const SITTING = pose({ sit: 1, pitch: -0.26, neck: -0.62, head: -0.2, jaw: 0.35, throat: 0.5, hackle: 1, tail: -0.25 });
 const CRYING = pose({ sit: 1, pitch: -0.32, neck: -0.86, head: -0.32, jaw: 1, throat: 1, hackle: 1, tail: -0.2 });
 const mix = (C, A, B, k) => {
@@ -155,8 +161,13 @@ export function abilityChannels(id, s, C = restChannels({}), from = ZERO) {
       C.neck = 0.1 - 0.2 * air;
       C.tail = 0.35 * air;
     } else if (s.id === 'land') mix(C, pose({ ...LANDED, squash: 0, crouch: 0.2 }), LANDED, kick(k));
-    else if (s.id === 'hold') mix(C, LANDED, LANDED, 0);
-    else mix(C, ZERO, LANDED, settle(k));
+    else if (s.id === 'hold') {
+      mix(C, LANDED, LANDED, 0);
+      C.shove = recoil(k * HOLD_SEC); // B3: the landing shoves it back
+    } else {
+      mix(C, ZERO, LANDED, settle(k));
+      C.shove = recoil(HOLD_SEC + k * 0.45);
+    }
   } else if (id === 'rend') {
     // B9: pulled back through the wind, driven past rest on the rake, home
     const L = s.id === 'wind' ? lunge('pull', k) : s.id === 'strike' ? lunge('drive', k) : s.id === 'hold' ? lunge('hold', k) : lunge('back', k);
@@ -165,9 +176,12 @@ export function abilityChannels(id, s, C = restChannels({}), from = ZERO) {
     else if (s.id === 'hold') mix(C, RAKED, RAKED, 0);
     else mix(C, ZERO, RAKED, settle(k, 0.06));
     C.reach = L.reach * 0.6; // body widths to u
-    C.pitch += L.lean * 0.5;
-    if (s.id === 'hold') C.squash = 1;
-    else if (s.id === 'strike') C.squash = kick(k);
+    // B9 at full size: the lean (about 22 degrees at contact) and the squash
+    // (+19% wide, -9% tall, the lunge's own numbers)
+    C.pitch += L.lean * 0.7;
+    C.squash = (L.sx - 1) / 0.19;
+    if (s.id === 'hold') C.shove = recoil(k * HOLD_SEC); // B3
+    else if (s.id === 'back') C.shove = recoil(HOLD_SEC + k * 0.4);
   } else if (id === 'howl') {
     if (s.id === 'rise') {
       mix(C, from, SITTING, ease.inOut(Math.min(1, k * 1.5)));
@@ -475,9 +489,17 @@ export function buildGloamWolfFacet() {
   let ab = null;
   let from = { ...ZERO };
   let tel = null;
+  // a warning is known by its attack and start tick, never by object: a
+  // co-op guest's snapshots hand it a fresh copy every few ticks
+  let telKey = null;
   let telAge = 0;
   let lastMode = 'stalk';
   let rage = 0;
+  let replantPending = false;
+  // the facing: the sim's (setYaw), or at the pounce's landing spot
+  let simYaw = 0;
+  let shownYaw = null;
+  let pounceAt = null;
   const lv = new Vector3();
   let leanF = 0;
 
@@ -485,26 +507,34 @@ export function buildGloamWolfFacet() {
     lastT = null;
     ab = null;
     tel = null;
+    telKey = null;
     lastMode = 'stalk';
     rage = 0;
+    pounceAt = null;
+    shownYaw = null;
     spawn.clear();
   }
   const begin = (id, t = 0) => {
-    from = { ...C, air: 0, tuck: 0, squash: 0, rake: 0 };
+    from = { ...C, air: 0, tuck: 0, squash: 0, rake: 0, shove: 0 };
     ab = { id, t };
   };
 
   // In game: each warning is its wind-up, stretched to the sim's ticks; the
-  // bound follows the sim's leap mode; a resolve jumps to the strike.
+  // bound follows the sim's leap mode. The Rend's and the Howl's wind-ups end
+  // one strike before the sim resolves, so the strike lands on the hit.
   function drive(dt, e) {
     const T = e && e.telegraph ? e.telegraph : null;
     const mode = e ? e.mode || 'stalk' : 'stalk';
-    if (T && T !== tel) {
-      tel = T;
+    const key = T ? `${T.attack}:${T.startTick}` : null;
+    if (key && key !== telKey) {
       telAge = 0;
       const id = T.attack === 'pounce' ? 'pounce' : T.attack === 'rend' ? 'rend' : T.attack === 'howl' ? 'howl' : null;
       if (id) begin(id);
-    } else if (!T) tel = null;
+    }
+    telKey = key;
+    tel = T;
+    if (T && T.attack === 'pounce' && Number.isFinite(T.x) && Number.isFinite(T.z)) pounceAt = { x: T.x, z: T.z };
+    else if (mode !== 'leap' && lastMode !== 'leap') pounceAt = null;
     if (tel) telAge += dt;
     if (ab) {
       const tl = WOLF_ABILITIES[ab.id];
@@ -518,9 +548,9 @@ export function buildGloamWolfFacet() {
         else ab.t = Math.max(ab.t, lastMode === 'leap' ? landAt : ab.t) + dt;
       } else {
         const windEnd = tl.phases[1] ? tl.startOf(tl.phases[1].id) : tl.duration;
-        if (tel) {
-          const span = Math.max(0.05, (tel.resolveTick - tel.startTick) / 60);
-          ab.t = Math.min(windEnd - 1e-4, (windEnd * telAge) / span);
+        if (tel && ab.t < windEnd) {
+          const span = Math.max(0.05, (tel.resolveTick - tel.startTick) / 60 - STRIKE_SEC);
+          ab.t = telAge < span ? Math.min(windEnd - 1e-4, (windEnd * telAge) / span) : windEnd;
         } else ab.t = Math.max(ab.t, windEnd) + dt;
       }
       if (ab.t >= tl.duration) ab = null;
@@ -533,16 +563,17 @@ export function buildGloamWolfFacet() {
     return C;
   }
 
-  function apply(dt, { locked, hpFrac }) {
+  function apply(dt, { locked, hpFrac, airborne = false, hold = false }) {
     gait.localVelocity(yaw, lv);
     const sp = Math.min(3, Math.hypot(lv.x, lv.z) / WOLF_WALK);
     const k = 1 - Math.exp(-8 * dt);
     leanF += ((sp > 0.05 && C.air < 0.02 ? Math.min(0.1, (lv.z / WOLF_WALK) * 0.04) : 0) - leanF) * k;
     const breathe = 0.012 * Math.sin(idle * (2 + 1.5 * C.rage));
     const bobY = 0.04 * gait.bob * Math.min(1, sp);
-    pivot.position.set(0, HIP_Y + breathe + bobY - 0.34 * C.crouch - 0.5 * C.sit + LEAP_H * C.air, PIVOT_Z + C.reach);
+    pivot.position.set(0, HIP_Y + breathe + bobY - 0.34 * C.crouch - 0.5 * C.sit + LEAP_H * C.air, PIVOT_Z + C.reach - 0.1 * C.shove);
     pivot.rotation.set(C.pitch + leanF, 0, 0);
-    squashG.scale.set(1 + 0.08 * C.squash, 1 - 0.06 * C.squash, 1 + 0.04 * C.squash);
+    // B9's contact squash at full size: +19% wide, -9% tall
+    squashG.scale.set(1 + 0.19 * C.squash, 1 - 0.09 * C.squash, 1 + 0.04 * C.squash);
     neck.rotation.x = C.neck + 0.04 * Math.sin(idle * 1.9);
     head.rotation.x = C.head;
     jaw.rotation.x = 0.55 * C.jaw + 0.05 * Math.sin(idle * 2.3);
@@ -577,7 +608,9 @@ export function buildGloamWolfFacet() {
     shadow.scale.set(1 - 0.35 * C.air, 1.6 * (1 - 0.35 * C.air), 1);
     pivot.updateMatrix();
 
-    legRig.update(dt, { space: yaw, stance, locked, air: C.air, raise, raiseTo, tuck: C.tuck > 0 ? tuck : null });
+    // every sim leap tick is airborne (its last one too, where the arc is ~0),
+    // so the paws touch down together on the landing's stance
+    legRig.update(dt, { space: yaw, stance, locked, air: Math.max(C.air, airborne ? 0.05 : 0), raise, raiseTo, tuck: C.tuck > 0 ? tuck : null, hold });
     for (const L of legs) {
       const S = legRig.state[L.i];
       // a lifting paw tips its toes down; a planted one lies flat
@@ -599,7 +632,8 @@ export function buildGloamWolfFacet() {
     points,
     react,
     setYaw: (r) => {
-      yaw.rotation.y = r;
+      simYaw = r;
+      yaw.rotation.y = shownYaw === null ? r : shownYaw;
     },
     setFlash(k) {
       const v = k < 0 ? 0 : k > 1 ? 1 : k;
@@ -610,10 +644,12 @@ export function buildGloamWolfFacet() {
       // a fresh pose: a pooled rig posed for a new wolf (or the clock went
       // back); the bound's own travel is never a jump (it is under 9 u)
       const moved = Math.hypot(group.position.x - lastX, group.position.z - lastZ);
-      const fresh = lastT === null || t < lastT || (moved > 2.5 && !(e && (e.mode === 'leap' || lastMode === 'leap'))) || (e && id !== lastId);
+      const born = lastT === null || t < lastT || (e && id !== lastId);
+      const fresh = born || (moved > 2.5 && !(e && (e.mode === 'leap' || lastMode === 'leap')));
       if (fresh) {
         reset();
-        if (e && !turntable) spawn.restart(t);
+        // only a new wolf spawns in; a jump in place re-plants the paws
+        if (born && e && !turntable) spawn.restart(t);
       }
       const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
       lastT = t;
@@ -621,21 +657,38 @@ export function buildGloamWolfFacet() {
       lastZ = group.position.z;
       lastId = id;
       idle += dt;
-      drive(dt, e);
+      // a dying wolf (e null) collapses in the pose it died in
+      if (e || turntable) drive(dt, e);
+      // it crouches and bounds square to where it will land, then eases back
+      // to the sim's facing (never a snap)
+      const aim = pounceAt ? Math.atan2(pounceAt.x - group.position.x, pounceAt.z - group.position.z) : simYaw;
+      const near = pounceAt && Math.hypot(pounceAt.x - group.position.x, pounceAt.z - group.position.z) < 0.3;
+      if (shownYaw === null || turntable) shownYaw = simYaw;
+      else if (!near) {
+        let d = aim - shownYaw;
+        while (d > Math.PI) d -= 2 * Math.PI;
+        while (d < -Math.PI) d += 2 * Math.PI;
+        shownYaw += d * (1 - Math.exp(-14 * dt));
+      }
+      yaw.rotation.y = shownYaw;
       const g = turntable ? 1 : spawn.scale(t);
       grow.scale.setScalar(g);
-      apply(dt, { locked: !turntable && g === 1 && !!e, hpFrac });
+      const ph = ab ? WOLF_ABILITIES[ab.id].sample(ab.t).id : null;
+      const hold = ph === 'land' || ph === 'strike' || ph === 'hold' || ph === 'cry';
+      apply(dt, { locked: !turntable && g === 1 && !!e, hpFrac, airborne: !!e && e.mode === 'leap', hold });
     },
     lab: {
       abilities: WOLF_ABILITIES,
+      // the feet re-plant on the next pose's stance, once its channels are set
       reset() {
         reset();
-        gait.reset(yaw, stance);
+        replantPending = true;
       },
       feet: () => gait.report(yaw),
       grow: () => grow.scale.x,
       channels: () => ({ ...C }),
       gait,
+      legs: legRig, // probes: where each leg's IK reached
       pose({ dt, ability = null, abT = 0, hpFrac = 1, rigid = false }) {
         if (lastT === null) lastT = 0;
         idle += dt;
@@ -643,6 +696,10 @@ export function buildGloamWolfFacet() {
         else restChannels(C);
         const g = ability === 'spawn' ? spawnGrow(abT) : 1;
         grow.scale.setScalar(g);
+        if (replantPending) {
+          replantPending = false;
+          gait.reset(yaw, stance);
+        }
         apply(dt, { locked: !rigid && g === 1, hpFrac });
       },
     },

@@ -3,7 +3,7 @@
 // on its own clock (pose's t, so a held clock holds them):
 //
 //   B1 anticipation   the sim's telegraph is the wind-up; with no telegraph
-//                     (an untelegraphed lunge, a volley) at most 2 frames
+//                     (an untelegraphed lunge, a volley) at most 1.5 frames
 //   B2 strike         2 to 3 frames, then the contact pose held (HOLD)
 //   B3 recoil         a rig-only shove off the hit: 2 frames out, ~8 back
 //   B4 kick           the strike starts on the press frame, no ramp

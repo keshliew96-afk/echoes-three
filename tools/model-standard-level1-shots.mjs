@@ -142,7 +142,7 @@ const LEADER = { seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'a
 const GAME_SHOTS = {
   stag: [
     ['quake-rear', 'b.tel && b.telK > 0.85', 2],
-    ['quake-slam', 'p && p.tel && !b.tel', 1],
+    ['quake-slam', 'p && p.tel && !b.tel', 0],
     ['trample', 'b.lunge > 0 && b.lunge < 10', 1],
   ],
   gloamwolf: [
@@ -196,22 +196,36 @@ async function gameShots(kind, facet) {
           return { x: e.x, z: e.z, hp: e.hp, mode: e.mode ?? null, tel: !!t, attack: t ? t.attack ?? null : null, telK: t ? (E.tick - t.startTick) / span : 0, lunge: e.lungeTicksLeft ?? 0, flight: e.flight ?? 0, nv: e.nextVolleyTick ?? null };
         };
         const pred = new Function('b', 'p', `return (${src});`);
+        // a move is live: the boss layer must see each tick of it rendered,
+        // or its rig starts the wind-up late (and the shot shows another moment)
+        const live = (b) => b.tel || (b.mode && b.mode !== 'root' && b.mode !== 'stalk') || b.lunge > 0 || (b.nv !== null && E.tick >= b.nv - 6);
         E.sim.freeze();
         let prev = view();
-        for (let i = 0; i < max; i++) {
-          E.sim.stepN(1);
-          const b = view();
-          if (!b) return null;
-          if (pred(b, prev)) return b;
-          prev = b;
-        }
-        return null;
+        let n = 0;
+        return new Promise((res) => {
+          const frame = () => {
+            // quiet ticks run in a batch; a live move steps one tick a frame
+            for (let k = 0; k < 30; k++) {
+              E.sim.stepN(1);
+              n++;
+              const b = view();
+              if (!b) return res(null);
+              if (pred(b, prev)) return res(b);
+              prev = b;
+              if (n >= max) return res(null);
+              if (live(b)) break;
+            }
+            requestAnimationFrame(frame);
+          };
+          requestAnimationFrame(frame);
+        });
       },
       src,
       max,
       kind
     );
-  const tag = facet ? '' : '-classic';
+  // game shots carry their own prefix: lab stills share some of the names
+  const tag = facet ? '-game' : '-game-classic';
   const v0 = await run();
   if (v0.active) await cmd('abandonRun', 'quit');
   await cmd('startRun', { act: 1, boss: kind });

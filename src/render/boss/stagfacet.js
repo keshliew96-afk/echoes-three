@@ -16,17 +16,18 @@
 //     the crown (Kesh's magic template: runes and an arcane circle);
 //   * FOUR LOCKED HOOVES (render/facet/gait.js): every hoof is pinned to the
 //     floor while it carries weight and the legs reach it by two-bone IK; it
-//     trots in diagonal pairs that step along the real travel, gallops in the
-//     Trample, and a hoof the leg can no longer reach lifts, never slides;
+//     trots in diagonal pairs that step along the real travel, and a hoof
+//     the leg can no longer reach lifts, never slides;
 //   * two ability timelines driven by the sim:
-//       Antler Quake  rear (the 0.7 s telegraph: the forelegs fold up, the
-//                     haunches load, the head lifts), slam (2.5 frames: the
-//                     forehooves land a step ahead, the rack comes down),
-//                     contact held, recoil, settle with one overshoot;
-//       Trample       gather (1.5 frames: the sim gives no warning), charge
-//                     (the sim's 12-tick lunge: head down, rack levelled at
-//                     the target, a galloping stride), gore (2.5 frames: the
-//                     rack hooks up), contact held, settle;
+//       Antler Quake  rear (the telegraph less one strike: the forelegs fold
+//                     up, the haunches load, the head lifts), slam (2.5
+//                     frames, landing on the quake's tick: the forehooves
+//                     land a step ahead, the rack comes down), contact held,
+//                     recoil, settle with one overshoot;
+//       Trample       gather (1.5 frames: the sim gives no warning; head
+//                     down, haunches set), gore (2.5 frames from the lunge's
+//                     contact: the rack hooks up, the forehooves land a step
+//                     ahead), contact held with a recoil, settle;
 //   * the [M] beats (render/facet/beats.js): a spawn-in grow from the floor,
 //     named points (mouth, the crown as `tip`, chest, each hoof), and the hit
 //     reaction is the shared envelope's (`react`), never its own.
@@ -123,11 +124,10 @@ export const STAG_ABILITIES = Object.freeze({
   ], { cues: [{ at: 0.7 + STRIKE_SEC, id: 'quake' }] }),
   trample: createTimeline('trample', 'Trample', [
     { id: 'gather', label: 'gather', dur: GATHER_SEC },
-    { id: 'charge', label: 'charge', dur: 0.2 },
     { id: 'gore', label: 'gore', dur: STRIKE_SEC },
     { id: 'held', label: 'gore held', dur: HOLD_SEC },
     { id: 'settle', label: 'settle', dur: 0.45 },
-  ], { cues: [{ at: GATHER_SEC + 0.2 + STRIKE_SEC, id: 'gore' }] }),
+  ], { cues: [{ at: GATHER_SEC + STRIKE_SEC, id: 'gore' }] }),
   spawn: SPAWN_TIMELINE,
 });
 
@@ -156,13 +156,17 @@ function mixPose(C, A, B, k) {
   for (const key of KEYS) C[key] = lerp(A[key], B[key], k);
   return C;
 }
+// the gather's end: the head lowered, the haunches set (60% of the run pose)
+const GATHERED = mixPose({}, ZERO, LOWERED, 0.6);
 
-// Pure: the channels of an ability at a timeline sample.
-export function abilityChannels(id, s, C = restChannels({})) {
+// Pure: the channels of an ability at a timeline sample. `from` is the pose
+// the ability starts out of (B1/B5: a wind-up grows out of the last move's
+// tail, never a snap from rest); the lab passes none.
+export function abilityChannels(id, s, C = restChannels({}), from = ZERO) {
   restChannels(C);
   const k = s.k;
   if (id === 'quake') {
-    if (s.id === 'rear') mixPose(C, ZERO, REARED, ease.inOut(Math.min(1, k * 1.15)));
+    if (s.id === 'rear') mixPose(C, from, REARED, ease.inOut(Math.min(1, k * 1.15)));
     else if (s.id === 'slam') mixPose(C, REARED, SLAMMED, kick(k)); // B4: off on the press frame
     else if (s.id === 'hold') mixPose(C, SLAMMED, SLAMMED, 0);
     else if (s.id === 'recoil') {
@@ -176,11 +180,15 @@ export function abilityChannels(id, s, C = restChannels({})) {
       C.shove = recoil(0.2 + k * 0.5);
     }
   } else if (id === 'trample') {
-    if (s.id === 'gather') mixPose(C, ZERO, LOWERED, ease.out(k) * 0.6);
-    else if (s.id === 'charge') mixPose(C, ZERO, LOWERED, 0.6 + 0.4 * kick(Math.min(1, k * 2)));
-    else if (s.id === 'gore') mixPose(C, LOWERED, GORED, kick(k));
-    else if (s.id === 'held') mixPose(C, GORED, GORED, 0);
-    else mixPose(C, ZERO, GORED, settle(k));
+    if (s.id === 'gather') mixPose(C, from, GATHERED, ease.out(k));
+    else if (s.id === 'gore') mixPose(C, GATHERED, GORED, kick(k));
+    else if (s.id === 'held') {
+      mixPose(C, GORED, GORED, 0);
+      C.shove = recoil(k * HOLD_SEC); // B3: the gore shoves the Stag back
+    } else {
+      mixPose(C, ZERO, GORED, settle(k));
+      C.shove = recoil(HOLD_SEC + k * 0.45);
+    }
   }
   return C;
 }
@@ -618,6 +626,9 @@ export function buildStagFacet() {
   let quakeSeen = false;
   let lungeSeen = false;
   let teleSpan = 0.7;
+  let telAge = 0;
+  let from = { ...ZERO };
+  let replantPending = false;
   const lv = new Vector3();
   let leanF = 0;
   let leanS = 0;
@@ -627,40 +638,59 @@ export function buildStagFacet() {
     ab = null;
     quakeSeen = false;
     lungeSeen = false;
+    from = { ...ZERO };
     spawn.clear();
+  }
+  // a new ability starts out of this frame's pose (its contact beats spent)
+  function begin(id) {
+    from = { ...C, squash: 0, shove: 0 };
+    ab = { id, t: 0 };
   }
 
   // In game: the sim's telegraph and lunge drive the timelines. The quake's
   // rear is stretched over the telegraph (B1: the telegraph IS the wind-up)
-  // and held at its peak until the sim resolves it; the slam lands then.
+  // and ends one strike before the sim resolves it, so the slam lands on
+  // the quake's tick. The Trample has no warning: the sim's lunge starts the
+  // gather, and the gore lands on the lunge's contact (lungeHit), or at the
+  // gather's end on a miss.
   function drive(dt, e) {
     const tel = e && e.telegraph ? e.telegraph : null;
+    const QK = STAG_ABILITIES.quake;
+    const slamAt = QK.startOf('slam');
     if (tel) {
       if (!quakeSeen) {
         quakeSeen = true;
-        teleSpan = tel.resolveTick > tel.startTick ? (tel.resolveTick - tel.startTick) / 60 : 0.7;
-        ab = { id: 'quake', t: 0 };
+        telAge = 0;
+        teleSpan = Math.max(0.05, (tel.resolveTick > tel.startTick ? (tel.resolveTick - tel.startTick) / 60 : 0.7) - STRIKE_SEC);
+        begin('quake');
       }
     } else if (quakeSeen) {
       quakeSeen = false;
-      if (ab && ab.id === 'quake') ab.t = Math.max(ab.t, STAG_ABILITIES.quake.startOf('slam'));
+      if (ab && ab.id === 'quake') ab.t = Math.max(ab.t, slamAt);
     }
     const lunging = !!(e && e.lungeTicksLeft > 0);
-    if (lunging && !lungeSeen) ab = { id: 'trample', t: 0 };
+    if (lunging && !lungeSeen) begin('trample');
     lungeSeen = lunging;
     if (!ab) return restChannels(C);
     const tl = STAG_ABILITIES[ab.id];
-    if (ab.id === 'quake' && quakeSeen) {
-      const slamAt = tl.startOf('slam');
-      ab.t = Math.min(slamAt - 1e-4, ab.t + (dt * 0.7) / teleSpan);
+    if (ab.id === 'quake' && quakeSeen && ab.t < slamAt) {
+      telAge += dt;
+      ab.t = telAge < teleSpan ? Math.min(slamAt - 1e-4, (telAge * 0.7) / teleSpan) : slamAt;
     } else ab.t += dt;
-    abilityChannels(ab.id, tl.sample(ab.t), C);
+    if (ab.id === 'trample' && e && e.lungeHit && ab.t < tl.startOf('gore')) ab.t = tl.startOf('gore');
+    abilityChannels(ab.id, tl.sample(ab.t), C, from);
     if (ab.t >= tl.duration) ab = null;
     return C;
   }
+  // a held contact: the slam and the gore are taken on planted hooves
+  function holding() {
+    if (!ab) return false;
+    const ph = STAG_ABILITIES[ab.id].sample(ab.t).id;
+    return ph === 'slam' || ph === 'hold' || ph === 'gore' || ph === 'held';
+  }
 
   // Lay the body, the legs and the glow for this frame.
-  function apply(dt, { locked, hpFrac, sealK = 0 }) {
+  function apply(dt, { locked, hpFrac, sealK = 0, hold = false }) {
     // the walk: the body rises over a passing hoof and leans into the travel
     gait.localVelocity(yaw, lv);
     const sp = Math.min(1.6, Math.hypot(lv.x, lv.z) / STAG_WALK);
@@ -671,8 +701,8 @@ export function buildStagFacet() {
     const breathe = 0.012 * Math.sin(idle * 1.6);
     pivot.position.set(0, HIP_Y + breathe + bobY - 0.12 * C.dip - 0.1 * C.load, PIVOT_Z + C.reach - 0.1 * C.shove);
     pivot.rotation.set(-0.62 * C.rear + C.pitch + leanF, 0, leanS);
-    // B9's contact squash, kept to a boss's size (+11% wide, -5% tall)
-    squashG.scale.set(1 + 0.11 * C.squash, 1 - 0.05 * C.squash, 1 + 0.04 * C.squash);
+    // B9's contact squash at full size: +19% wide, -9% tall
+    squashG.scale.set(1 + 0.19 * C.squash, 1 - 0.09 * C.squash, 1 + 0.04 * C.squash);
     head.rotation.set(C.head - 0.05 * Math.sin(idle * 0.9) * (1 - C.fever) + 0.04 * C.stride * Math.sin(idle * 18), 0.05 * Math.sin(idle * 0.55), 0);
     antlers.rotation.x = C.rack;
     runes.rotation.z = idle * 0.6;
@@ -681,7 +711,7 @@ export function buildStagFacet() {
     pivot.updateMatrix();
 
     // the hooves
-    legRig.update(dt, { space: yaw, stance, locked, raise, raiseTo });
+    legRig.update(dt, { space: yaw, stance, locked, raise, raiseTo, hold });
     let n = 0;
     for (const L of legs) {
       const S = legRig.state[L.i];
@@ -732,13 +762,17 @@ export function buildStagFacet() {
       for (const m of mats) m.emissive.copy(m.userData.baseEmissive).lerp(FLASH_WHITE, v);
     },
     // pose: { t, hpFrac, sealK, e (the sim entity, read only), turntable }.
-    // A dying rig is posed with e = null: its hooves unlock.
+    // A dying rig is posed with e = null: its hooves unlock and it collapses
+    // in the pose it died in (no wind-up runs on into a strike).
     pose({ t, hpFrac = 1, sealK = 0, e = null, turntable = false }) {
       const id = e ? e.id : lastId;
-      const fresh = lastT === null || t < lastT || Math.hypot(group.position.x - lastX, group.position.z - lastZ) > 2.5 || (e && id !== lastId);
+      // a new boss (or a rewound clock) spawns in; a jump in place (a hitch
+      // mid-charge) only re-plants the hooves
+      const born = lastT === null || t < lastT || (e && id !== lastId);
+      const fresh = born || Math.hypot(group.position.x - lastX, group.position.z - lastZ) > 2.5;
       if (fresh) {
         reset();
-        if (e && !turntable) spawn.restart(t);
+        if (born && e && !turntable) spawn.restart(t);
       }
       const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
       lastT = t;
@@ -746,23 +780,25 @@ export function buildStagFacet() {
       lastZ = group.position.z;
       lastId = id;
       idle += dt;
-      drive(dt, e);
+      if (e || turntable) drive(dt, e);
       const g = turntable ? 1 : spawn.scale(t);
       grow.scale.setScalar(g);
-      apply(dt, { locked: !turntable && g === 1 && !!e, hpFrac, sealK });
+      apply(dt, { locked: !turntable && g === 1 && !!e, hpFrac, sealK, hold: holding() });
     },
     // The model lab: pose an ability at any time (play, scrub, rewind) while
     // the lab walks the rig along its path. The channels are pure in abT.
     lab: {
       abilities: STAG_ABILITIES,
+      // the feet re-plant on the next pose's stance, once its channels are set
       reset() {
         reset();
-        gait.reset(yaw, stance);
+        replantPending = true;
       },
       feet: () => gait.report(yaw),
       grow: () => grow.scale.x,
       channels: () => ({ ...C }),
       gait,
+      legs: legRig, // probes: where each leg's IK reached
       parts: { pivot, head, antlers, legs },
       pose({ dt, ability = null, abT = 0, hpFrac = 1, rigid = false }) {
         if (lastT === null) lastT = 0;
@@ -771,6 +807,11 @@ export function buildStagFacet() {
         else restChannels(C);
         const g = ability === 'spawn' ? spawnGrow(abT) : 1;
         grow.scale.setScalar(g);
+        if (replantPending) {
+          replantPending = false;
+          pivot.updateMatrix();
+          gait.reset(yaw, stance);
+        }
         apply(dt, { locked: !rigid && g === 1, hpFrac });
       },
     },

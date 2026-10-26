@@ -188,7 +188,9 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     movePhase: 0,
     fixedDt: 0,
   };
-  state.ability = params.get('ability') || ABILITIES[state.model][0][0];
+  // an ability the model does not have falls back to its first one
+  const validAbility = (m, a) => (ABILITIES[m].some(([id]) => id === a) ? a : ABILITIES[m][0][0]);
+  state.ability = validAbility(state.model, params.get('ability'));
 
   function timelineFor(model, ability) {
     if (entryOf(model)) return entryModel(model).timeline(ability);
@@ -218,6 +220,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     }
     const wasMode = state.mode;
     for (const k of ['mode', 'ability', 'view', 'turntable', 'classic', 'rate', 'azimuth', 'movePhase', 'fixedDt']) if (k in patch) state[k] = patch[k];
+    state.ability = validAbility(state.model, state.ability);
     if ('t' in patch) state.t = Math.max(0, patch.t);
     if (patch.ability) state.t = patch.t ?? 0;
     if (patch.mode === 'move' && !('movePhase' in patch)) state.movePhase = 0;

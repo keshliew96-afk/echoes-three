@@ -55,6 +55,9 @@ export function warmPark(root, obj, onDrop = null) {
   obj.position.set(0, PARK_Y, 0);
   obj.scale.setScalar(PARK_SCALE);
   obj.traverse((o) => {
+    // remember each part's own flag: a moving instanced part opts out of
+    // culling for good (its bounds change every frame)
+    o.userData.parkCull = o.frustumCulled;
     o.frustumCulled = false;
   });
   root.add(obj);
@@ -76,7 +79,9 @@ export function warmupUpdate() {
     p.obj.scale.setScalar(1);
     p.obj.position.set(0, 0, 0);
     p.obj.traverse((o) => {
-      o.frustumCulled = true; // back to the default for anything that gets reused
+      // back to its own flag (the default, true, for anything else reused)
+      o.frustumCulled = o.userData.parkCull ?? true;
+      delete o.userData.parkCull;
     });
     if (p.onDrop) p.onDrop(p.obj);
     else retained.push(p.obj); // anchor: never disposed, never drawn again

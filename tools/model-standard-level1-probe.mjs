@@ -18,13 +18,21 @@
 //      a settle that overshoots rest once (B5), the spawn-in grow (B7), the
 //      named points (B8), the rend's lunge (B9);
 //   5. locked feet: walking the sim's speeds with turns, a planted foot never
-//      slides, the feet step along the travel in alternating pairs, no leg is
-//      stretched past its reach, and every foot is planted again at rest;
+//      slides, the feet step along the travel in alternating pairs (the two
+//      feet of a pair together), every drawn foot reaches its gait point (no
+//      leg past its reach), a spin in place keeps a foot down, and every
+//      foot is planted again at rest;
 //   6. the sim drives each ability (telegraphs, modes, the volley's cooldown,
-//      the leap), and the feet hold through all of it;
+//      the leap), and the feet hold through all of it; the strikes land on
+//      the sim's hit; a recoil (B3) on each hit; a volley fired the tick a
+//      skid ends still heaves; a co-op guest's telegraph copies (a fresh
+//      object every snapshot) never restart a wind-up; a boss killed in a
+//      wind-up never plays the strike;
 //   7. the Barrow Wyrm's re-measure: its strike and held contact, the settle
-//      overshoot, the spawn-in, its points, and a height-only hit squash;
-//   8. a pooled rig posed for a new boss spawns in again;
+//      overshoot, the spawn-in, its points, its floor pieces outside the
+//      envelope's node, and a height-only hit squash;
+//   8. a pooled rig posed for a new boss spawns in again (the Wyrm too); a
+//      jump in place (a hitch mid-charge) does not;
 //   9. the lab: an entry per boss, each ability plays without a throw.
 //
 //   node tools/model-standard-level1-probe.mjs
@@ -129,7 +137,7 @@ for (const B of BOSSES) {
   }
   check(`${B.name}: named points for the mouth, chest, tip and each foot (B8)`, pts.length === 0 && rooted, pts);
   const R = r.react;
-  check(`${B.name}: a hit envelope tuning (half squash and flinch, no knockback)`, R && R.squash > 0 && R.knock === 0 && R.midY > 0.3, R);
+  check(`${B.name}: a hit envelope tuning (the envelope's boss amounts, no knockback, a pivot height)`, R && R.squash === 1 && R.flinch === 1 && R.knock === 0 && R.midY > 0.3, R);
 }
 
 // --- 3. colour -----------------------------------------------------------------------
@@ -212,7 +220,8 @@ for (const B of BOSSES) beats(B.name, B.kind, B.abilities, B.channels);
 // --- 5. locked feet ---------------------------------------------------------------------
 // Pose a rig through a run of frames; `move(f)` moves the root (and may set
 // the entity's fields). Reports the worst slide of a planted foot, the steps,
-// how the steps alternate and the most stretched leg.
+// how the steps alternate, the widest gap between a drawn foot and its gait
+// point (a leg past its reach) and the frames with every foot up.
 function drive(r, e, frames, move, out) {
   const world = out.world;
   for (let f = 0; f < frames; f++) {
@@ -220,7 +229,10 @@ function drive(r, e, frames, move, out) {
     if (move) move(f);
     world.updateMatrixWorld(true);
     r.pose({ t: out.t, hpFrac: 1, e });
+    // the drawn foot against the gait's point: a leg past its reach leaves a gap
+    if (r.lab.legs) for (const S of r.lab.legs.state) out.gap = Math.max(out.gap, S.end.distanceTo(S.foot));
     const feet = r.lab.feet();
+    if (feet.every((ft) => !ft.planted) && !(r.lab.channels().air > 0.02)) out.allAir++;
     feet.forEach((ft, i) => {
       const p = out.prev[i];
       if (p && p.planted && ft.planted && p.steps === ft.steps) out.slide = Math.max(out.slide, Math.hypot(ft.drawnX - p.x, ft.drawnZ - p.z));
@@ -233,7 +245,7 @@ function drive(r, e, frames, move, out) {
 const runner = (r) => {
   const world = new Group();
   world.add(r.group);
-  return { world, t: 0, slide: 0, prev: [], order: [] };
+  return { world, t: 0, slide: 0, prev: [], order: [], gap: 0, allAir: 0 };
 };
 for (const B of BOSSES) {
   const r = B.build();
@@ -253,11 +265,26 @@ for (const B of BOSSES) {
   const steps = r.lab.feet().map((f, i) => f.steps - steps0[i]);
   let alt = 0;
   for (let i = 1; i < st.order.length; i++) if (st.order[i] !== st.order[i - 1]) alt++;
+  const groups = r.lab.feet().map((f) => f.group);
+  const pairGap = Math.max(...[0, 1].map((g) => {
+    const n = steps.filter((_, i) => groups[i] === g);
+    return Math.max(...n) - Math.min(...n);
+  }));
   check(`${B.name}: walking with a turn, a planted foot never slides`, st.slide < 1e-4, r3(st.slide));
   check(`${B.name}: every foot steps along the travel`, steps.every((n) => n >= 4), steps);
-  check(`${B.name}: the steps alternate between the two diagonal pairs`, st.order.length > 8 && alt / (st.order.length - 1) > 0.3, { landings: st.order.length, switches: alt });
+  check(`${B.name}: the steps alternate between the two diagonal pairs, each pair together`, st.order.length > 8 && alt / (st.order.length - 1) > 0.3 && pairGap <= 1, { landings: st.order.length, switches: alt, pairGap });
+  check(`${B.name}: walking, every drawn foot reaches its gait point and a foot is always down`, st.gap < 1e-3 && st.allAir === 0, { gap: r3(st.gap), allAir: st.allAir });
   drive(r, e, 45, null, st);
   check(`${B.name}: at rest every foot is planted again`, r.lab.feet().every((f) => f.planted), r.lab.feet().map((f) => f.planted));
+  // a spin in place to a target behind it (the boss layer's yaw ease)
+  st.gap = 0;
+  st.allAir = 0;
+  let y = yaw;
+  drive(r, e, 90, () => {
+    y += (yaw + Math.PI * 0.999 - y) * (1 - Math.exp(-7 * DT));
+    r.setYaw(y);
+  }, st);
+  check(`${B.name}: a spin in place steps round with no leg past its reach (all four feet up for at most 3 frames)`, st.gap < 1e-3 && st.allAir <= 3, { gap: r3(st.gap), allAir: st.allAir });
 }
 
 // --- 6. the sim drives each ability ------------------------------------------------------
@@ -387,13 +414,137 @@ const watch = (r) => {
   check('Gloam Wolf: the paws hold through every ability (the bound aside)', st.slide < 1e-4 && r.lab.feet().every((f) => f.planted), r3(st.slide));
 }
 
+// the strikes land on the sim's hit: the wind-up ends one strike early
+{
+  const r = stagM.buildStagFacet();
+  const st = runner(r);
+  const e = { id: 21, telegraph: { startTick: 0, resolveTick: 42 }, lungeTicksLeft: 0 };
+  drive(r, e, 42, null, st);
+  const atQuake = r.lab.channels().squash;
+  e.telegraph = null;
+  drive(r, e, 60, null, st);
+  e.lungeTicksLeft = 12;
+  e.lungeHit = false;
+  let atGore = 0;
+  drive(r, e, 14, (f) => {
+    if (f === 1) e.lungeHit = true; // the Stag tramples from its standoff: the hit lands on the lunge's first ticks
+    if (e.lungeTicksLeft > 0) e.lungeTicksLeft--;
+    if (f === 1 + Math.ceil(STRIKE_SEC / DT)) atGore = r.lab.channels().squash;
+  }, st);
+  const w = wolfM.buildGloamWolfFacet();
+  const sw = runner(w);
+  const we = { id: 22, telegraph: { attack: 'rend', startTick: 0, resolveTick: 36 }, mode: 'rend' };
+  drive(w, we, 36, null, sw);
+  const atRend = w.lab.channels().squash;
+  we.telegraph = { attack: 'howl', startTick: 100, resolveTick: 160 };
+  drive(w, we, 60, null, sw);
+  const atHowl = w.lab.channels().jaw;
+  check('the strikes land on the sim\'s hit: the quake\'s slam, the trample\'s gore, the rend\'s rake, the howl\'s cry', atQuake > 0.95 && atGore > 0.95 && atRend > 0.95 && atHowl > 0.95, { quake: r3(atQuake), gore: r3(atGore), rend: r3(atRend), howl: r3(atHowl) });
+}
+// B3: every hit shoves the body back 0.08 to 0.12 u (the shove channel x 0.1 u)
+{
+  const hits = [
+    ['Hollow Stag', stagM.STAG_ABILITIES, stagM.abilityChannels, ['quake', 'trample']],
+    ['Thornmother', thornM.THORN_ABILITIES, thornM.abilityChannels, ['volley']],
+    ['Gloam Wolf', wolfM.WOLF_ABILITIES, wolfM.abilityChannels, ['pounce', 'rend']],
+  ];
+  const peaks = {};
+  for (const [name, TL, ch, ids] of hits) {
+    for (const id of ids) {
+      let m = 0;
+      for (let t = 0; t <= TL[id].duration; t += 1 / 240) m = Math.max(m, ch(id, TL[id].sample(t)).shove);
+      peaks[`${name} ${id}`] = r3(m);
+    }
+  }
+  check('every hit plays its recoil (B3): a shove of 0.08 to 0.12 u', Object.values(peaks).every((v) => v >= 0.8 && v <= 1.2), peaks);
+}
+// a volley fired the tick a skid ends (the sim fires it with the switch to 'root')
+{
+  const r = thornM.buildThornmotherFacet();
+  const st = runner(r);
+  const e = { id: 23, telegraph: null, mode: 'root', nextVolleyTick: 300 };
+  drive(r, e, 20, null, st);
+  e.telegraph = { attack: 'charge', startTick: 0, resolveTick: 60, dirX: 0, dirZ: 1 };
+  drive(r, e, 60, null, st);
+  e.telegraph = null;
+  e.mode = 'charge';
+  e.chargeVx = 0;
+  e.chargeVz = 10 / 60;
+  drive(r, e, 30, () => (r.group.position.z += 10 * DT), st);
+  e.mode = 'skid';
+  drive(r, e, 40, null, st);
+  e.mode = 'root';
+  e.nextVolleyTick = 900;
+  peak.max = {};
+  drive(r, e, 20, () => watch(r), st);
+  check('Thornmother: a volley fired the tick a skid ends still heaves and pops the pods', peak.max.pop > 0.9 && peak.max.hump > 0.9, { pop: r3(peak.max.pop), hump: r3(peak.max.hump) });
+}
+// a co-op guest: every snapshot hands the rig a fresh copy of the telegraph
+{
+  const w = wolfM.buildGloamWolfFacet();
+  const st = runner(w);
+  const e = { id: 24, telegraph: null, mode: 'stalk' };
+  drive(w, e, 20, null, st);
+  const T = { attack: 'rend', startTick: 0, resolveTick: 36, kind: 'cone' };
+  peak.max = {};
+  drive(w, e, 36, (f) => {
+    if (f % 3 === 0) e.telegraph = { ...T };
+    watch(w);
+  }, st);
+  const rake = peak.max.rake;
+  const H = { attack: 'howl', startTick: 200, resolveTick: 260, kind: 'ring' };
+  e.telegraph = null;
+  drive(w, e, 30, null, st);
+  peak.max = {};
+  drive(w, e, 60, (f) => {
+    if (f % 3 === 0) e.telegraph = { ...H };
+    watch(w);
+  }, st);
+  check('Gloam Wolf: a co-op guest\'s fresh telegraph copies never restart the wind-up (the rend raises the paw, the howl sits)', rake > 0.9 && peak.max.sit > 0.9, { rake: r3(rake), sit: r3(peak.max.sit) });
+}
+// killed in a wind-up: the death collapse never plays the strike
+{
+  const out = {};
+  const w = wolfM.buildGloamWolfFacet();
+  const sw = runner(w);
+  const we = { id: 25, telegraph: { attack: 'pounce', startTick: 0, resolveTick: 54 }, mode: 'crouch' };
+  drive(w, we, 20, null, sw);
+  peak.max = {};
+  drive(w, null, 66, () => watch(w), sw);
+  out.wolfAir = r3(peak.max.air);
+  const th = thornM.buildThornmotherFacet();
+  const stt = runner(th);
+  const te = { id: 26, telegraph: { attack: 'charge', startTick: 0, resolveTick: 60 }, mode: 'root' };
+  drive(th, te, 30, null, stt);
+  peak.max = {};
+  drive(th, null, 66, () => watch(th), stt);
+  out.thornStride = r3(peak.max.stride);
+  const sg = stagM.buildStagFacet();
+  const sts = runner(sg);
+  const se = { id: 27, telegraph: { startTick: 0, resolveTick: 42 }, lungeTicksLeft: 0 };
+  drive(sg, se, 20, null, sts);
+  peak.max = {};
+  drive(sg, null, 66, () => watch(sg), sts);
+  out.stagSquash = r3(peak.max.squash);
+  check('a boss killed in its wind-up collapses in it (no bound, no gallop, no slam)', out.wolfAir < 0.02 && out.thornStride < 0.02 && out.stagSquash < 0.02, out);
+}
+// a hitch mid-charge (a long frame at 10 u/s) is not a new boss
+{
+  const r = thornM.buildThornmotherFacet();
+  const st = runner(r);
+  const e = { id: 28, telegraph: null, mode: 'charge', chargeVx: 0, chargeVz: 10 / 60 };
+  drive(r, e, 20, null, st);
+  drive(r, e, 1, () => (r.group.position.z += 3), st);
+  check('Thornmother: a 3 u jump in one frame (a hitch mid-charge) re-plants the hooves but never replays the spawn-in', r.lab.grow() === 1, r3(r.lab.grow()));
+}
+
 // --- 7. the Barrow Wyrm's re-measure ---------------------------------------------------------
 {
   beats('Barrow Wyrm', 'wyrm', wyrmM.WYRM_ABILITIES, wyrmM.abilityChannels);
   const r = wyrmM.buildWyrmFacet();
   const pts = ['mouth', 'throat', 'crown'].filter((n) => !(r.points && r.points[n] && r.points[n].isObject3D));
   check('Barrow Wyrm: named points for the mouth, the throat and the crown (B8)', pts.length === 0, pts);
-  check('Barrow Wyrm: a height-only hit squash (the planted tail never slides)', r.react && !r.react.axis && r.react.flinch === 0 && r.react.knock === 0, r.react);
+  check('Barrow Wyrm: a height-only hit squash (the planted tail never slides)', r.react && (r.react.axis ?? 'y') === 'y' && r.react.flinch === 0 && r.react.knock === 0, r.react);
   const world = new Group();
   world.add(r.group);
   const e = { id: 3, telegraph: null };
@@ -404,6 +555,19 @@ const watch = (r) => {
     grows.push(r.group.children[0].scale.x);
   }
   check('Barrow Wyrm: it grows from the floor when it spawns, past full size once (B7)', grows[0] < 0.3 && Math.max(...grows) > 1.04 && Math.abs(grows[grows.length - 1] - 1) < 1e-6, grows.slice(0, 12).map(r3));
+  const g2 = [];
+  for (let f = 20; f < 23; f++) {
+    world.updateMatrixWorld(true);
+    r.pose({ t: f * DT, hpFrac: 1, e: { id: 4, telegraph: null } });
+    g2.push(r.group.children[0].scale.x);
+  }
+  check('Barrow Wyrm: a pooled rig posed for a new Wyrm in the same spot spawns in again', g2[0] < 0.5, g2.map(r3));
+  const floor = [];
+  r.group.children[0].traverse((o) => {
+    if (o !== r.group.children[0] && /shadow|mound|seam|rubble/i.test(o.name || '')) floor.push(o.name);
+  });
+  const others = r.group.children.slice(1);
+  check("Barrow Wyrm: its floor pieces (coil shadows, mound) sit beside the envelope's node, never in it", floor.length === 0 && others.length >= 5 && others.every(floorPiece), { inside: floor, beside: others.length });
 }
 
 // --- 8. spawn-in, and a pooled rig posed for a new boss -----------------------------------------

@@ -22,7 +22,7 @@ His ruling for the pilot: the detail goes **on top of** the chibi ink-outline st
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
 | `flags.js` | `MODEL_STANDARD = {wyrm, tank, stag, thornmother, gloamwolf}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
-| `gait.js` | Locked feet for any number of legs: each foot pinned to the floor in world space while it carries weight; a diagonal pair steps when its homes drift `trigger` away (less once moving), landing ahead along the travel; both pairs may fly at a gallop (`flight`); a foot the leg can no longer reach lifts at once (never slides); `raise(i)`/`raiseTo(i)` hold a foot up for a pose (a reared foreleg, a pawing hoof, a raking paw); `air` lets the body leave the floor (a bound). `solveTwoBone`, `aimSegment`. |
+| `gait.js` | Locked feet for any number of legs: each foot pinned to the floor in world space while it carries weight; a diagonal pair steps when its homes drift `trigger` away (less once moving), landing ahead along the travel by `lead` of the step (moving, the drift is signed: a foot that landed ahead still carries until it is as far behind, so the stance runs from ahead of the hip to behind it); a turn counts as speed (turn rate times the feet's radius), so a boss spinning to a new target steps round instead of dragging; both pairs may fly at a gallop (`flight`); a foot the leg can no longer reach lifts at once (never slides), the other pair first brought down if it is up; a swinging foot is never drawn past its reach; a pose that moves a foot's home more than `stanceTrigger` (0.08 u) steps it there; `hold` (a held contact on a stopped body) lands live steps within two frames, steps every posed foot at once and starts no drift steps; `raise(i)`/`raiseTo(i)` hold a foot up for a pose (a reared foreleg, a pawing hoof, a raking paw); `air` lets the body leave the floor (a bound), and the first frame back down plants every foot on its home. `solveTwoBone`, `aimSegment`. |
 | `legs.js` | `createLegs`: two-bone legs laid onto a gait by IK, each knee bending toward its pole; `tuck(i)` draws the paws up while the body is in the air. |
 | `shapes.js` | `taperBox` (the boxy skulls, snouts and jaws), `limbBox` (leg segments), `lay` (a part along a direction). |
 
@@ -46,7 +46,8 @@ hull, drawn per instance from the part's own `instanceMatrix` buffer.
 - **Abilities** (`WYRM_ABILITIES`), driven by the sim in game:
   - *Ash Breath*: draw back 0.9 s, strike 2.5 frames, contact held 3 frames, pour 0.5 s
     (the head kicks back off the blast), settle 0.6 s (one overshoot). The draw is
-    stretched to the sim's telegraph span; the strike lands when the telegraph resolves.
+    stretched to the sim's telegraph span less one strike, so the strike lands on the
+    breath's tick.
   - *Burrow Strike*: dive 0.5 s, tunnel 1.2 s, rise 0.9 s, burst 2.5 frames, contact held
     3 frames, exposed 1.5 s, settle 0.6 s (one overshoot). Tunnel, rise and exposed hold
     for as long as the sim's mode does.
@@ -92,25 +93,32 @@ hull, drawn per instance from the part's own `instanceMatrix` buffer.
 
 ## The [M] beats (VFX_HIT_RULES §6.1)
 
-Every model of the standard plays these on its own clock (pose's `t`), so a held clock holds
-them (`src/render/facet/beats.js`):
+Every Level I boss and the Wyrm plays these on its own clock (pose's `t`), so a held clock
+holds them (`src/render/facet/beats.js`). The Tank pilot predates the checklist: it has its
+combo's strikes and settles but no spawn-in, points or `react` yet (the heroes' slice
+re-measures it).
 
 | Beat | Rule | How |
 |---|---|---|
-| B1 anticipation | The sim's telegraph is the wind-up; an untelegraphed move winds at most 1.5 frames. | Wind-up phases stretch to the telegraph span; `GATHER_SEC` otherwise. |
-| B2 strike | 2 to 3 frames, then the contact pose held 3 frames. | A `STRIKE_SEC` phase, then a `HOLD_SEC` (or longer) phase. |
-| B3 recoil | A rig-only shove off the hit: 2 frames out, ~8 back. | `recoil(age)`. |
+| B1 anticipation | The sim's telegraph is the wind-up; an untelegraphed move winds at most 1.5 frames. | Wind-up phases stretch to the telegraph span less one strike, so the strike lands on the sim's hit; `GATHER_SEC` otherwise. A move the sim starts with no warning and an instant hit (the Seed Volley, the Trample's contact) plays its strike from the hit. Every ability grows out of the pose before it (`from`), never a snap from rest. |
+| B2 strike | 2 to 3 frames, then the contact pose held 3 frames. | A `STRIKE_SEC` phase, then a `HOLD_SEC` (or longer) phase, taken on planted feet (`hold`). |
+| B3 recoil | A rig-only shove off the hit: 2 frames out, ~8 back. | `recoil(age)` on a `shove` channel, 0.1 u back along the facing: the quake, the Trample's gore, the Seed Volley, the Pounce's landing, the Rend; the Wyrm's breath kicks the head back. The Moon Howl's cry and the Briar Charge's stop are not contacts and play none. |
 | B4 kick | The strike leaves on its first frame, no ease-in. | `kick(k)`: past 55 % of the way one frame in. |
 | B5 settle | Into idle with one small overshoot, never a plain blend. | `settle(k)`: dips ~8 % past rest once. |
 | B7 spawn-in | The body grows from the floor in ~7 frames, ~10 % over. | `createSpawnClock`: restarts when a pooled rig is posed for a new boss; the Journal's turntable skips it. |
 | B8 points | Named Object3Ds for effects. | `rig.points`: `mouth`, `chest`, `tip`, each foot (`hoofFL`...`pawHR`); the Wyrm's `mouth`, `throat`, `crown`. |
-| B9 lunge | Pull back, lunge past rest, lean in, squash on contact. | `lunge(phase, k)`: the Gloam Wolf's Rend. |
+| B9 lunge | Pull back, lunge past rest, lean in, squash on contact, at full size. | `lunge(phase, k)`: the Gloam Wolf's Rend (lean ~22° at contact, +19 % wide, −9 % tall). Every contact squash of the three bosses uses the same full-size numbers. |
 
 The hit reaction (squash, flinch, white flash) is the shared hit envelope's, never the
-rig's: each rig only tunes it with `rig.react` ({ squash, flinch, knock, axis, midY }). The
+rig's. `rig.react` is an optional per-body tuning on top of the envelope's own boss amounts
+(the envelope already halves a boss's squash and flinch): `squash` and `flinch` are
+multipliers (1 keeps the envelope's boss amount, 0 turns it off), `knock` the knockback
+multiplier (0 for bosses), `axis` the squash axis (`'y'`, the default, or `'spine'`), `midY`
+the pivot height in u. Until the envelope reads `rig.react` (the hit feedback slice's PR does
+not yet), its own tables in `src/render/react.js` decide, so these values are advisory. The
 envelope wraps the root's first child (the yaw node), so every rig keeps its floor pieces
-(shadows, the Stag's warm pool, the Wyrm's mound and seam) as the root's other children,
-and never writes the root group's own transform.
+(shadows, the Stag's warm pool, the Wyrm's coil shadows, mound and seam) as the root's other
+children, and never writes the root group's own transform.
 
 ### The Barrow Wyrm measured (v0.5.336)
 
@@ -123,7 +131,10 @@ and never writes the root group's own transform.
 | B5 settle | plain blends | `settle`: one overshoot after the pour and after the exposed sprawl |
 | B7 spawn-in | none | the coil grows from the floor (the lab's Spawn in tab) |
 | B8 points | none | `mouth`, `throat`, `crown` on the head |
-| Hit envelope | no tuning | `react`: a height-only squash with no flinch, so the planted tail never slides |
+| Hit envelope | no tuning | `react`: a height-only squash with no flinch, so the planted tail never slides (asked by the hit feedback slice; item 9 as written is half the squash and flinch, offered as an open choice) |
+| Floor pieces | coil shadows inside the yaw node | the five coil shadows are root children, turned and grown into the root's space each frame |
+| Pooled rig | spawned in only on a jump in time or place | spawns in for a new entity id or a rewound clock; a jump in place only lays the coil afresh |
+| Contact timing | the strike started at the resolve | the draw ends one strike early, so the strike lands on the breath's tick; an emerge that comes mid-dive lets the dive finish |
 | Colour | slate, pewter, violet | unchanged |
 
 ## The Level I bosses (v0.5.336)
@@ -134,7 +145,7 @@ All three walk on **locked feet** (`gait.js` + `legs.js`): a planted hoof or paw
 slides, the feet step in alternating diagonal pairs along the travel, and every foot is
 planted again at rest.
 
-| Boss | File | Draw calls (classic) | Instanced parts |
+| Boss | File | Draw calls (classic) | Instances |
 |---|---|---|---|
 | Hollow Stag | `render/boss/stagfacet.js` | 98 (97) | 222 |
 | Thornmother | `render/boss/thornmotherfacet.js` | 58 (32) | 112 |
@@ -144,32 +155,44 @@ planted again at rest.
   pale hump), bone ribs over the violet hollow, a violet ridge and tail fan, a boxed skull
   and muzzle under a wide rack: two beams with seven tines a side, violet vein cores, a
   rotating rune ring and a crown star; the warm boss-light pool on the floor as the
-  classic. *Antler Quake*: rear (the 42-tick telegraph: the forelegs fold up, the haunches
-  load), slam (2.5 frames, the forehooves land a step ahead), held, recoil, settle.
-  *Trample*: gather (1.5 frames: the sim gives no warning), charge (the sim's 12-tick lunge:
-  head down, a galloping stride), gore (2.5 frames: the rack hooks up), held, settle.
+  classic. The vein cores are the classic's white veins. *Antler Quake*: rear (the 42-tick
+  telegraph less one strike: the forelegs fold up, the haunches load), slam (2.5 frames,
+  landing on the quake's tick: the forehooves land a step ahead), held, recoil, settle.
+  *Trample*: gather (1.5 frames: the sim gives no warning; head down, haunches set), gore
+  (2.5 frames from the lunge's contact, `lungeHit`, or the gather's end on a miss: the rack
+  hooks up), held with a recoil, settle. The Stag tramples from its standoff, so the hit
+  lands on the lunge's first ticks and the gore plays while the 12-tick lunge still carries
+  it: the hooves keep stepping under it until it stops.
 - **Thornmother.** The broad slate sow with a saddle of bristled plates over the back (the
   flanks stay smooth), briar blades in three lanes on the hump, barbs on the flanks,
   faceted violet seed pods (unlit, stepped per facet), a boxed head with a bristle crest,
-  a snout disc, two tusks a side, flop ears; short legs folding back on split hooves.
-  *Seed Volley*: gather (1.5 frames: no warning in the sim, read off its volley cooldown),
-  heave (2.5 frames: the hump bucks up, the pods go), held, settle while the pods grow back.
-  *Briar Charge*: paw (the 60-tick lane warning: head down, a hind hoof scrapes the floor
-  twice), burst (2.5 frames), charge (held while the sim charges at 10 u/s: a galloping
-  bounce), stop (2.5 frames: the forehooves brace a step ahead), held, skid (the sim's
-  40-tick stand, one overshoot).
+  a snout disc, two tusks a side, flop ears; short legs folding back on hooves.
+  *Seed Volley* (read off its volley cooldown; the sim fires only standing, the tick a skid
+  ends included): gather (1.5 frames, the lab only: in a fight the sim gives no warning, so
+  the heave starts on the fire tick out of the pose before it), heave (2.5 frames: the hump
+  bucks up, the pods go), held with a recoil, settle while the pods grow back. *Briar
+  Charge*: paw (the 60-tick lane warning: head down, a hind hoof scrapes the floor twice;
+  she turns square to the lane, which the sim locks at the warning's start), burst (2.5
+  frames), charge (held while the sim charges at 10 u/s along the lane: a galloping
+  bounce), stop (2.5 frames: both forehooves step a step ahead in the held contact), held,
+  skid (the sim's 40-tick stand, one overshoot).
 - **Gloam Wolf.** The grey night wolf: a coat of shaggy fur plates whose top plates step
   dark for the saddle and whose flank plates step pale for the moon streak, a ruff round
   the neck and cheeks, a boxed skull and long snout, upper and lower fangs, tall ears with
   pale inner blades, violet slit eyes and throat; a bramble mane with violet buds that
   rises as hackles; a jointed bushy tail with a pale tip; legs with the elbows folding back
   and the stifles forward, bone claws. *Pounce*: crouch (the ring warning less the bound,
-  stretched), leap (the sim's 16-tick bound: a 1.1 u arc, the paws tucked, the forepaws
-  reaching), land (2.5 frames: the forepaws take it, the body squashes), held, settle.
-  *Rend*: wind (the 36-tick cone warning: pulled back, the right forepaw raised high and
-  wide), strike (2.5 frames: the B9 lunge and the rake across, the jaw snaps), held, back.
-  *Moon Howl*: rise (the 60-tick ring warning: it sits back on its haunches, the head goes
-  up, the throat fills), cry (2.5 frames), held, settle. *Enraged* (under 40 % HP): the
+  stretched, turned square to the landing spot, which in the Hunt is not the faced target),
+  leap (the sim's 16-tick bound, every tick of it airborne: a 1.1 u arc, the paws tucked,
+  the forepaws reaching), land (2.5 frames: every paw down at once, the forepaws a step
+  ahead, the body squashes), held with a recoil, settle. *Rend*: wind (the 36-tick cone
+  warning less one strike: pulled back, the right forepaw raised high and wide), strike (2.5
+  frames, on the hit: the B9 lunge, the rake across and down onto the floor, the jaw
+  snaps), held with a recoil, back. *Moon Howl*: rise (the 60-tick ring warning less one
+  strike: it sits back on its haunches, the head goes up, the throat fills), cry (2.5
+  frames, on the hit), held, settle. A warning is known by its attack and start tick, never
+  by object identity: a co-op guest's snapshots hand the rig a fresh copy every few ticks.
+  *Enraged* (under 40 % HP): the
   hackles stay up, the eyes and the mane burn, the breathing quickens. A back-to-back
   pounce of the Hunt starts its crouch from the landing, not from rest.
 
@@ -179,7 +202,12 @@ planted again at rest.
   `buildStagFacet`, `buildThornmotherFacet` and `buildGloamWolfFacet` when their flag is on;
   each keeps the classic rig's interface (`group`, `mats`, `setYaw`, `setFlash`, `pose`)
   and adds `lab`, `points` and `react`. The boss rigs are pooled: a rig posed for a new
-  boss (a new entity id, a jump in time or place) resets its timelines and spawns in.
+  boss (a new entity id, or a clock that went back) resets its timelines and spawns in; a
+  jump in place (a new room, a hitch mid-charge) only re-plants the feet. A dying rig (posed
+  with no entity) collapses in the pose it died in: no wind-up runs on into its strike.
+- The boss prewarm (`render/warmup.js`) parks each rig unculled for a few frames, then gives
+  every part its own culling flag back, so the moving instanced parts stay unculled.
+- The Journal viewer frames a model by its instanced parts' real instances (`ui/story/viewer.js`).
 - `critters/index.js` builds `buildTankFacet` when `facetOn('tank')`. The rig's `apply`
   receives the driver's clip name; the critter API gains `cue(kind, ev)` (forwarded from
   `render/allies/index.js` on `ally_basic` / `ally_cast`, and from the camp's seat casts),
@@ -203,7 +231,8 @@ Thornmother: Seed Volley, Briar Charge; the Gloam Wolf: Pounce, Rend, Moon Howl,
 every model, the Wyrm too, a Spawn in tab). The Trample, the Briar Charge and the Pounce
 travel as they do in the game, so the gallop and the bound can be judged on locked feet.
 Still from a playing ability freezes that moment with the feet where the motion left them;
-a scrub re-plants them on the pose's stance. `fixedDt` (s) makes every drawn frame advance
+a scrub re-plants them on the scrubbed pose's stance. An ability id the model does not have
+falls back to its first ability. `fixedDt` (s) makes every drawn frame advance
 the lab by that step, so a probe on a slow software-GL machine sees 60 Hz motion
 (`tools/model-standard-level1-shots.mjs` uses 1/60).
 
@@ -239,5 +268,9 @@ part, faceted geometry under every vertex-coloured material; no reserved or ambe
 the [M] beats on every ability (B2 strike and hold, B4 kick, B5 overshoot, B7 spawn-in,
 B8 points, B9 lunge); locked feet on a turning walk (no slide, steps along the travel in
 alternating pairs, planted at rest); the sim's telegraphs, modes, volley cooldown and leap
-driving each ability with the feet held; the Wyrm's re-measure; a pooled rig spawning in
-again; every lab entry playing every ability.
+driving each ability with the feet held; the diagonal pairs stepping together, every drawn
+foot on its gait point (no leg past its reach), a spin in place; the strikes landing on the
+sim's hit; a recoil on every hit; a volley fired the tick a skid ends; a co-op guest's
+telegraph copies; a death in a wind-up; a hitch mid-charge; the Wyrm's re-measure (its
+floor pieces, a pooled Wyrm spawning in); a pooled rig spawning in again; every lab entry
+playing every ability.

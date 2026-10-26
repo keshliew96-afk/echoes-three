@@ -7,18 +7,21 @@
 //   * a hide of bristled plates in a brick pattern over the barrel, a
 //     thicket of briar blades in three lanes along the spine with small barbs
 //     on the flanks, faceted seed pods that swell and launch, a boxed skull
-//     with a bristle crest, a snout disc, two tusks a side, flop ears, split
+//     with a bristle crest, a snout disc, two tusks a side, flop ears,
 //     hooves; short legs on four LOCKED HOOVES (render/facet/legs.js);
 //   * two ability timelines driven by the sim (sim/bosses/thornmother.js):
-//       Seed Volley   gather (1.5 frames: the sim gives no warning), heave
-//                     (2.5 frames: the thicket bucks up, the pods launch),
-//                     contact held, settle with one overshoot;
+//       Seed Volley   gather (1.5 frames, the lab only: in a fight the sim
+//                     fires with no warning, so the rig starts at the heave),
+//                     heave (2.5 frames from the fire tick: the thicket bucks
+//                     up, the pods launch), held with a recoil, settle with
+//                     one overshoot;
 //       Briar Charge  paw (the 1 s lane telegraph: head down, haunches
-//                     loaded, a hind hoof scrapes the floor twice), burst
-//                     (2.5 frames), run (held while the sim charges at 10 u/s,
-//                     a galloping stride), stop (2.5 frames: the forehooves
-//                     brace a step ahead, the body pitches over them), held,
-//                     skid (the sim's 40-tick stand: home with one overshoot);
+//                     loaded, a hind hoof scrapes the floor twice; she turns
+//                     square to the lane), burst (2.5 frames), run (held
+//                     while the sim charges at 10 u/s, a galloping stride),
+//                     stop (2.5 frames: both forehooves brace a step ahead,
+//                     the body pitches over them), held, skid (the sim's
+//                     40-tick stand: home with one overshoot);
 //   * the [M] beats: a spawn-in grow, named points (mouth, the hump as `tip`
 //     where the pods leave, each hoof), the shared hit envelope (`react`).
 //
@@ -36,7 +39,7 @@ import { PART_INK_PX, createPlateTube, createSpine, instancedPart, placeRow, wed
 import { createTimeline, ease } from '../facet/timeline.js';
 import { lay, limbBox, taperBox } from '../facet/shapes.js';
 import { createLegs } from '../facet/legs.js';
-import { GATHER_SEC, HOLD_SEC, SPAWN_TIMELINE, STRIKE_SEC, createSpawnClock, kick, makePoints, settle, spawnGrow } from '../facet/beats.js';
+import { GATHER_SEC, HOLD_SEC, SPAWN_TIMELINE, STRIKE_SEC, createSpawnClock, kick, makePoints, recoil, settle, spawnGrow } from '../facet/beats.js';
 
 // --- Colour: the classic sow's (slice2.js), no new hues.
 const SOW = HIDE.boarBody.clone().lerp(new Color(PALETTE.warmGrey), 0.15).multiplyScalar(0.8);
@@ -91,7 +94,8 @@ export const THORN_ABILITIES = Object.freeze({
 //   hump   0..1 the thicket heaves   pop    0..1 the pods are away
 //   squash 0..1 contact squash       stride 0..1 a galloping bounce
 //   brace  0..1 the forehooves land a step ahead
-const KEYS = ['head', 'dip', 'pitch', 'reach', 'load', 'paw', 'hump', 'pop', 'squash', 'stride', 'brace'];
+//   shove  0..1 the recoil off the volley (B3)
+const KEYS = ['head', 'dip', 'pitch', 'reach', 'load', 'paw', 'hump', 'pop', 'squash', 'stride', 'brace', 'shove'];
 const restChannels = (C) => {
   for (const k of KEYS) C[k] = 0;
   return C;
@@ -102,25 +106,32 @@ const PAWING = pose({ head: 0.4, dip: 0.22, pitch: 0.05, reach: -0.08, load: 0.6
 const RUNNING = pose({ head: 0.38, dip: 0.45, pitch: 0.12, reach: 0.12, stride: 1 });
 const BRACED = pose({ head: 0.12, dip: 0.2, pitch: 0.12, reach: 0.22, squash: 1, brace: 1 });
 const HEAVED = pose({ head: -0.2, dip: -0.15, pitch: -0.03, hump: 1, pop: 1, squash: 0.6 });
+const GATHERED = pose({ dip: 0.25, hump: -0.3, squash: 0.5 });
 const mix = (C, A, B, k) => {
   for (const key of KEYS) C[key] = A[key] + (B[key] - A[key]) * k;
   return C;
 };
 
-export function abilityChannels(id, s, C = restChannels({})) {
+// `from` (in a fight) is the pose the ability starts out of: the paw grows
+// out of it, and the volley, which the sim fires with no warning, heaves
+// straight out of it (B1/B5: never a snap from rest). The lab passes none.
+export function abilityChannels(id, s, C = restChannels({}), from = null) {
   restChannels(C);
   const k = s.k;
   if (id === 'volley') {
-    if (s.id === 'gather') mix(C, ZERO, pose({ dip: 0.25, hump: -0.3, squash: 0.5 }), ease.out(k));
-    else if (s.id === 'heave') mix(C, pose({ dip: 0.25, hump: -0.3, squash: 0.5 }), HEAVED, kick(k));
-    else if (s.id === 'hold') mix(C, HEAVED, HEAVED, 0);
-    else {
+    if (s.id === 'gather') mix(C, ZERO, GATHERED, ease.out(k));
+    else if (s.id === 'heave') mix(C, from || GATHERED, HEAVED, kick(k));
+    else if (s.id === 'hold') {
+      mix(C, HEAVED, HEAVED, 0);
+      C.shove = recoil(k * HOLD_SEC); // B3: the launch shoves her back
+    } else {
       mix(C, ZERO, HEAVED, settle(k));
       C.pop = 1 - ease.inOut(k); // the pods grow back
+      C.shove = recoil(HOLD_SEC + k * 0.5);
     }
   } else if (id === 'charge') {
     if (s.id === 'paw') {
-      mix(C, ZERO, PAWING, ease.inOut(Math.min(1, k * 2.2)));
+      mix(C, from || ZERO, PAWING, ease.inOut(Math.min(1, k * 2.2)));
       // two scrapes once the head is down: 0..1 is one lift, forward to back
       const q = Math.max(0, Math.min(1, (k - 0.2) / 0.75)) * 2;
       C.paw = q >= 2 ? 0 : q % 1;
@@ -354,6 +365,12 @@ export function buildThornmotherFacet() {
   let teleSpan = PAW_SEC;
   let lastMode = 'root';
   let lastVolley = null;
+  let from = null;
+  let replantPending = false;
+  // the facing: the sim's (setYaw), or square to the charge's lane
+  let simYaw = 0;
+  let shownYaw = null;
+  let laneYaw = null;
   const lv = new Vector3();
   let leanF = 0;
 
@@ -363,11 +380,21 @@ export function buildThornmotherFacet() {
     telSeen = false;
     lastMode = 'root';
     lastVolley = null;
+    from = null;
+    laneYaw = null;
+    shownYaw = null;
     spawn.clear();
+  }
+  // a new ability starts out of this frame's pose (its contact beats spent)
+  function begin(id, t = 0) {
+    from = { ...C, squash: 0, shove: 0 };
+    ab = { id, t };
   }
 
   // In game: the lane telegraph is the paw, the sim's charge and skid modes
   // the run and the stop; a volley is read off its cooldown tick jumping.
+  // The sim fires a volley only standing (mode 'root', no telegraph), the
+  // tick a skid ends included.
   function drive(dt, e) {
     const tel = e && e.telegraph && e.telegraph.attack === 'charge' ? e.telegraph : null;
     const mode = e ? e.mode || 'root' : 'root';
@@ -375,15 +402,18 @@ export function buildThornmotherFacet() {
     if (tel && !telSeen) {
       telSeen = true;
       teleSpan = tel.resolveTick > tel.startTick ? (tel.resolveTick - tel.startTick) / 60 : PAW_SEC;
-      ab = { id: 'charge', t: 0 };
+      begin('charge');
     } else if (!tel) telSeen = false;
+    if (tel && typeof tel.dirX === 'number') laneYaw = Math.atan2(tel.dirX, tel.dirZ);
+    else if (mode === 'charge' && e && (e.chargeVx || e.chargeVz)) laneYaw = Math.atan2(e.chargeVx, e.chargeVz);
+    else if (mode !== 'skid') laneYaw = null;
     if (mode !== lastMode) {
       if (mode === 'charge') ab = { id: 'charge', t: Math.max(ab && ab.id === 'charge' ? ab.t : 0, CH.startOf('burst')) };
       else if (mode === 'skid') ab = { id: 'charge', t: Math.max(ab && ab.id === 'charge' ? ab.t : 0, CH.startOf('stop')) };
       lastMode = mode;
     }
     const nv = e && typeof e.nextVolleyTick === 'number' ? e.nextVolleyTick : null;
-    if (nv !== null && lastVolley !== null && nv > lastVolley && !(ab && ab.id === 'charge')) ab = { id: 'volley', t: 0 };
+    if (nv !== null && lastVolley !== null && nv > lastVolley && mode === 'root' && !tel) begin('volley', THORN_ABILITIES.volley.startOf('heave'));
     lastVolley = nv;
     if (!ab) return restChannels(C);
     const tl = THORN_ABILITIES[ab.id];
@@ -394,9 +424,15 @@ export function buildThornmotherFacet() {
       else if (mode === 'charge') ab.t = Math.min(runEnd, ab.t + dt);
       else ab.t += dt;
     } else ab.t += dt;
-    abilityChannels(ab.id, tl.sample(ab.t), C);
+    abilityChannels(ab.id, tl.sample(ab.t), C, from);
     if (ab.t >= tl.duration) ab = null;
     return C;
+  }
+  // a held contact: the heave and the braced stop are taken on planted hooves
+  function holding() {
+    if (!ab) return false;
+    const ph = THORN_ABILITIES[ab.id].sample(ab.t).id;
+    return ph === 'heave' || ph === 'stop' || ph === 'hold';
   }
 
   const podScale = (i) => {
@@ -404,16 +440,17 @@ export function buildThornmotherFacet() {
     return 1.3 * swell * (1 - 0.85 * C.pop) + 0.2 * C.hump;
   };
 
-  function apply(dt, { locked, hpFrac }) {
+  function apply(dt, { locked, hpFrac, hold = false }) {
     gait.localVelocity(yaw, lv);
     const sp = Math.min(3, Math.hypot(lv.x, lv.z) / THORN_WALK);
     const k = 1 - Math.exp(-8 * dt);
     leanF += ((sp > 0.05 ? Math.min(0.12, (lv.z / THORN_WALK) * 0.03) : 0) - leanF) * k;
     const bounce = 0.06 * C.stride * Math.abs(Math.sin(idle * 16));
     const bobY = 0.03 * gait.bob * Math.min(1, sp);
-    pivot.position.set(0, HIP_Y + 0.01 * Math.sin(idle * 2) + bobY + bounce - 0.12 * C.dip - 0.06 * C.load, PIVOT_Z + C.reach);
+    pivot.position.set(0, HIP_Y + 0.01 * Math.sin(idle * 2) + bobY + bounce - 0.12 * C.dip - 0.06 * C.load, PIVOT_Z + C.reach - 0.1 * C.shove);
     pivot.rotation.set(C.pitch + leanF, 0, 0);
-    squashG.scale.set(1 + 0.1 * C.squash, 1 - 0.05 * C.squash, 1 + 0.03 * C.squash);
+    // B9's contact squash at full size: +19% wide, -9% tall
+    squashG.scale.set(1 + 0.19 * C.squash, 1 - 0.09 * C.squash, 1 + 0.04 * C.squash);
     head.rotation.set(C.head + 0.04 * Math.sin(idle * 1.7), 0, 0);
     hump.position.y = 1.5 + 0.12 * C.hump;
     hump.rotation.x = -0.2 * C.hump;
@@ -428,7 +465,7 @@ export function buildThornmotherFacet() {
     pods.instanceMatrix.needsUpdate = true;
     pivot.updateMatrix();
 
-    legRig.update(dt, { space: yaw, stance, locked, raise, raiseTo });
+    legRig.update(dt, { space: yaw, stance, locked, raise, raiseTo, hold });
     for (const L of legs) {
       const S = legRig.state[L.i];
       L.foot.rotation.set((L.front ? 0.7 : -0.5) * S.up, 0, 0);
@@ -452,18 +489,24 @@ export function buildThornmotherFacet() {
     points,
     react,
     setYaw: (r) => {
-      yaw.rotation.y = r;
+      simYaw = r;
+      yaw.rotation.y = shownYaw === null ? r : shownYaw;
     },
     setFlash(k) {
       const v = k < 0 ? 0 : k > 1 ? 1 : k;
       for (const m of mats) m.emissiveIntensity = v;
     },
+    // A dying rig is posed with e = null: it collapses in the pose it died
+    // in (no wind-up runs on into a strike).
     pose({ t, hpFrac = 1, e = null, turntable = false }) {
       const id = e ? e.id : lastId;
-      const fresh = lastT === null || t < lastT || Math.hypot(group.position.x - lastX, group.position.z - lastZ) > 2.5 || (e && id !== lastId);
+      // a new boss (or a rewound clock) spawns in; a jump in place (a hitch
+      // mid-charge) only re-plants the hooves
+      const born = lastT === null || t < lastT || (e && id !== lastId);
+      const fresh = born || Math.hypot(group.position.x - lastX, group.position.z - lastZ) > 2.5;
       if (fresh) {
         reset();
-        if (e && !turntable) spawn.restart(t);
+        if (born && e && !turntable) spawn.restart(t);
       }
       const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
       lastT = t;
@@ -471,21 +514,34 @@ export function buildThornmotherFacet() {
       lastZ = group.position.z;
       lastId = id;
       idle += dt;
-      drive(dt, e);
+      if (e || turntable) drive(dt, e);
+      // the facing eases to the lane while she paws and charges along it,
+      // and back to the sim's facing after (never a snap)
+      const aim = laneYaw === null ? simYaw : laneYaw;
+      if (shownYaw === null || turntable) shownYaw = aim;
+      else {
+        let d = aim - shownYaw;
+        while (d > Math.PI) d -= 2 * Math.PI;
+        while (d < -Math.PI) d += 2 * Math.PI;
+        shownYaw += d * (1 - Math.exp(-14 * dt));
+      }
+      yaw.rotation.y = shownYaw;
       const g = turntable ? 1 : spawn.scale(t);
       grow.scale.setScalar(g);
-      apply(dt, { locked: !turntable && g === 1 && !!e, hpFrac });
+      apply(dt, { locked: !turntable && g === 1 && !!e, hpFrac, hold: holding() });
     },
     lab: {
       abilities: THORN_ABILITIES,
+      // the feet re-plant on the next pose's stance, once its channels are set
       reset() {
         reset();
-        gait.reset(yaw, stance);
+        replantPending = true;
       },
       feet: () => gait.report(yaw),
       grow: () => grow.scale.x,
       channels: () => ({ ...C }),
       gait,
+      legs: legRig, // probes: where each leg's IK reached
       pose({ dt, ability = null, abT = 0, hpFrac = 1, rigid = false }) {
         if (lastT === null) lastT = 0;
         idle += dt;
@@ -493,6 +549,10 @@ export function buildThornmotherFacet() {
         else restChannels(C);
         const g = ability === 'spawn' ? spawnGrow(abT) : 1;
         grow.scale.setScalar(g);
+        if (replantPending) {
+          replantPending = false;
+          gait.reset(yaw, stance);
+        }
         apply(dt, { locked: !rigid && g === 1, hpFrac });
       },
     },
