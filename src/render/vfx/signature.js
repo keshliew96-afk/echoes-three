@@ -906,7 +906,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // Nightfall and the blind over each enemy live in duskfx.js.
   const duskFx = createDuskFx({ kit, bus, byId, spray, flare, shock, after, camfx, N, rnd, mark, world });
   // TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot's beats.
-  const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark });
+  const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world });
   // HAZARDS AND SHRINES (docs/SHRINES.md): crystal spurs, shrines, blessings.
   const shrineFx = createShrineFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world });
   // SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and the chamber.

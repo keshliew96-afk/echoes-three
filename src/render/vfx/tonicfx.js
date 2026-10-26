@@ -27,7 +27,7 @@ export const TONIC_FX = TONIC_COLORS;
 const INK = PALETTE.voidCharcoal;
 const TAU = Math.PI * 2;
 
-export function createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark }) {
+export function createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world = null }) {
   const fx = (id) => TONIC_FX[id] ?? TONIC_FX.mend_tonic;
 
   // ------------------------------------------------------------ floor --
@@ -232,7 +232,11 @@ export function createTonicFx({ kit, bus, byId, spray, flare, shock, after, anti
       if (e.kind !== 'tonic_bomb' && e.kind !== 'tonic_fire') continue;
       const c = fx(e.item);
       const t = (clocks.get(e.id) ?? 0) + dt;
-      const every = e.kind === 'tonic_bomb' ? 0.03 : 0.07;
+      // D1 (VFX_HIT_RULES §6.2 m): a burning patch dies down over its last
+      // second instead of stopping at full rate.
+      const left = e.kind === 'tonic_fire' && world && Number.isFinite(e.untilTick) ? (e.untilTick - world.tick) / 60 : Infinity;
+      const fade = Math.max(0, Math.min(1, left / 1.0));
+      const every = e.kind === 'tonic_bomb' ? 0.03 : 0.07 / Math.max(0.3, fade);
       if (t < every) {
         clocks.set(e.id, t);
         continue;
@@ -247,8 +251,8 @@ export function createTonicFx({ kit, bus, byId, spray, flare, shock, after, anti
         const d = Math.sqrt(rnd(0, 1)) * r * 0.9;
         const fx0 = e.x + Math.cos(a) * d;
         const fz0 = e.z + Math.sin(a) * d;
-        spray('spark', fx0, 0.1, fz0, 3, { color: c.glow, speed: [0.05, 0.2], up: [1.0, 2.0], size: [0.06, 0.11], life: [0.35, 0.6], gravity: -0.6, drag: 1.4, opacity: 0.95 });
-        kit.flash({ x: fx0, y: 0.35, z: fz0, color: c.glow, size: 0.7, life: 0.22, opacity: 0.7 });
+        spray('spark', fx0, 0.1, fz0, fade < 0.6 ? 2 : 3, { color: c.glow, speed: [0.05, 0.2], up: [1.0, 2.0], size: [0.06, 0.11], life: [0.35, 0.6], gravity: -0.6, drag: 1.4, opacity: 0.95 });
+        kit.flash({ x: fx0, y: 0.35, z: fz0, color: c.glow, size: 0.7 * (0.55 + 0.45 * fade), life: 0.22, opacity: 0.7 });
         if (Math.random() < 0.3) spray('smoke', fx0, 0.6, fz0, 1, { color: INK, speed: [0.05, 0.2], up: [0.5, 0.9], size: [0.4, 0.6], grow: 1.5, life: [0.8, 1.2], opacity: 0.22, gravity: -0.2, drag: 1.8 });
         if (Math.random() < 0.2) kit.light({ x: e.x, z: e.z, radius: r * 1.4, color: c.glow, opacity: 0.35, life: 0.3 });
       }

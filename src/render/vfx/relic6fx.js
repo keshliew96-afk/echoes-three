@@ -58,6 +58,7 @@ const NIGHT = '#6A4FD0';
 const PUMICE = '#B9B2A6';
 const TAU = Math.PI * 2;
 const HZ = 60;
+const BURN_TAPER = 1.0; // s: D1, a burn dies down over its last second
 
 // The Dimmed Lantern's dark: a camera-facing quad just past the near plane,
 // its alpha the darkest of up to four holes of light (one per hero).
@@ -151,6 +152,7 @@ export function createRelic6Fx({ kit, bus, byId, spray, flare, shock, after, ant
       kit.light({ x, z, radius: 1.6, color: KGOLD, opacity: 0.45, life: 0.5 });
       const left = Math.max(0.3, ((ev.resolveTick ?? 0) - (ev.tick ?? tickNow())) / HZ || 4);
       if (ev.target != null) burning.set(ev.target, { until: left, t: 0 });
+      // (D1: the burn dies down over its last BURN_TAPER seconds.)
     } else {
       // A burn tick: a small hot flare where it lands.
       flare(x, 0.9, z, KHEAT, 0.45, { kind: 'star', life: 0.16 });
@@ -167,8 +169,11 @@ export function createRelic6Fx({ kit, bus, byId, spray, flare, shock, after, ant
       }
       b.t -= dt;
       if (b.t > 0) continue;
-      b.t = 0.07;
-      const s = e.radius ? Math.max(0.8, Math.min(2.2, e.radius / 0.35)) : 1;
+      // D1 (VFX_HIT_RULES §6.2 m): the flames die down over the burn's last
+      // second instead of stopping at full rate.
+      const fade = Math.min(1, b.until / BURN_TAPER);
+      b.t = 0.07 / Math.max(0.3, fade);
+      const s = (e.radius ? Math.max(0.8, Math.min(2.2, e.radius / 0.35)) : 1) * (0.55 + 0.45 * fade);
       // Flame licks: short rising streaks, gold with a white-hot root.
       const a = rnd(0, TAU);
       const r = 0.18 * s * rnd(0.3, 1);

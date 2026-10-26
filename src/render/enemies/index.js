@@ -24,7 +24,7 @@
 //     flare) on every `hit_blocked`. Boar / mantis paths are untouched.
 import { Group, Matrix4, Quaternion, Vector3 } from 'three';
 import { HITFLASH, TICK_HZ } from '../../core/constants.js';
-import { PALETTE } from '../../data/palette.js';
+import { PALETTE, VFX_TEMPLATE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { groundShadow, cachedSphere, exactColor } from '../critters/common.js';
 import { Mesh, MeshBasicMaterial } from 'three';
@@ -33,7 +33,10 @@ import { buildMantis } from './mantis.js';
 import { buildWaystone } from './waystone.js';
 import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
 import { SHOT_CORE, HIDE } from './style.js';
-import { vfxFoeShotColor, vfxSpellHit, spellFlashLevel } from '../../data/vfx.js';
+import { vfxFoeShotColor, vfxSpellHit, spellFlashLevel, vfxTemplateFor } from '../../data/vfx.js';
+import { addRim, rimLevel, setRim } from '../rim.js';
+
+const RIM_GOLD = VFX_TEMPLATE.blade.wave; // D1: the blade template's gold
 import { ARCH_BUILDERS, CROWN_Y, makeEliteMark } from './archetypes.js';
 import { createTelegraphShapes } from './shapes.js';
 import { createContentExtras } from './extras.js';
@@ -132,6 +135,13 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       const atk = byId(ev.attacker);
       // R1: a spell's flash holds, then fades (data/vfx.js SPELL_FLASH).
       const spell = vfxSpellHit(ev, atk);
+      // D1 (§6.2 m): a blade-template hit lights a gold rim that dies down
+      // in 0.8 s; each new hit re-lights it.
+      if (atk && atk.faction !== 'hostile' && ev.attacker != null) {
+        const cls = atk.classId || (atk.kind === 'player' ? 'healer' : null);
+        const skill = ev.source && !/_basic$/.test(ev.source) ? ev.source : `${cls}_basic`;
+        if (cls && vfxTemplateFor(cls, skill) === 'blade') r.rimTick = ev.tick;
+      }
       // n: a shot's flash holds 3 ticks more, with its squash and numeral.
       r.flashUntilTick = ev.tick + HITFLASH.ticks + (ev.shape === 'projectile' ? REACT.rangedHold : 0);
       if (spell) r.spellFlashTick = ev.tick;
@@ -192,6 +202,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
     if (r) {
       rigs.delete(ev.id);
       for (const m of r.build.mats) m.emissiveIntensity = HITFLASH.intensity; // white-hot pop
+      setRim(r.rim, RIM_GOLD, 0);
       // K4: thrown along the killing hit (same tick), upright when none.
       const lh = r.lastHit && r.lastHit.tick === ev.tick ? r.lastHit : null;
       const dl = lh ? Math.hypot(lh.dx, lh.dz) : 0;
@@ -217,6 +228,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       removeDecal(ev.id);
       releaseShape(ev.id);
       resetNode(r.node);
+      setRim(r.rim, RIM_GOLD, 0);
       if (ev.cause === 'retreat') {
         dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'retreat' });
       } else {
@@ -355,7 +367,13 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
           body: null,
           // A champion's body carries its id (sim/enemies/champions.js).
           react: createReaction(e.kind, { champion: !!e.champion }),
+          // D1: a gold rim on blade-template hits (render/rim.js).
+          rim: null,
+          rimTick: null,
         };
+        // Patched at spawn, so its one shader variant compiles with the room,
+        // never on the first blade hit.
+        r.rim = r.build.mats.map(addRim).filter(Boolean);
         // The hit reaction's node sits between the group and the body, so
         // the shadow, the crown and the floor ring stay on the floor. The
         // body is measured after its first pose (some rigs lay out there).
@@ -425,6 +443,11 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       }
       const lit = flashK > 0 ? HITFLASH.intensity * (r.build.flashScale ?? 1) * flashK : 0;
       for (const m of r.build.mats) m.emissiveIntensity = lit;
+      if (r.rimTick !== null) {
+        const k = rimLevel((tick - r.rimTick) / TICK_HZ);
+        setRim(r.rim, RIM_GOLD, k);
+        if (k === 0 && tick - r.rimTick > 1) r.rimTick = null;
+      }
 
       // --- Archetype telegraphs (M4b): lane / ring / cone Ember shapes.
       if (ARCH_BUILDERS[e.kind]) {
