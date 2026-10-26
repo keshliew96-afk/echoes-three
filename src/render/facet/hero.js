@@ -111,6 +111,8 @@ export function posePack(weapon = {}) {
 // instant, BUILD_BRIEF §6, so a skill enters just ahead of its release);
 // recoil: whether a connect recoils the body off the target (B3, melee).
 // extra(out, sample): a per-move flourish on top of the keyed blend.
+// A cast entered mid-phase cross-fades in from the pose it took over.
+export const ENTRY_BLEND = 3 * FRAME;
 export function createMove(pack, id, label, keys, { contact = null, entry = null, lead = 0.08, cues = [], recoil = false, extra = null } = {}) {
   const timeline = createTimeline(id, label, keys.map(({ id: pid, label: pl, dur }) => ({ id: pid, label: pl, dur })), { cues });
   const ends = [];
@@ -135,34 +137,37 @@ export function createMove(pack, id, label, keys, { contact = null, entry = null
     // the phase index that starts from `from` instead of the key before it
     // (0 for a fresh move; a chained hit's strike, so it strikes straight
     // from wherever the last hit held it). `t0`: the time the move was
-    // entered at, when that is not a phase start (a game cast enters just
-    // ahead of its release): the move holds `from` until t0, and the phase
-    // t0 falls in eases from `from` over what is left of it, so an entry
-    // mid-phase never pops.
-    pose(t, from, out, startAt = 0, t0 = null) {
-      let s;
-      let start;
-      let k;
-      if (t0 !== null && t0 > 0) {
-        s = timeline.sample(t < t0 ? t0 : t);
+    // entered at. The move holds `from` until t0. Entered at a phase start
+    // (a chained hit), that phase eases from `from`; entered mid-phase (a
+    // game cast enters just ahead of its release), the move plays on its own
+    // keys and cross-fades in from `from` over ENTRY_BLEND, so neither the
+    // entry nor the blow's timing pops.
+    // `fade`: always cross-fade in (a game cast, whatever it interrupts).
+    pose(t, from, out, startAt = 0, t0 = null, fade = false) {
+      let blend = 1;
+      if (t0 !== null && (t0 > 0 || fade)) {
         const i0 = timeline.sample(t0).index;
-        if (s.index === i0) {
-          const end = timeline.startOf(keys[i0].id) + keys[i0].dur;
-          k = end > t0 ? Math.min(1, Math.max(0, (s.t - t0) / (end - t0))) : 1;
-          start = from;
-        } else {
-          k = s.k;
-          start = ends[s.index - 1];
+        if (!fade && Math.abs(timeline.startOf(keys[i0].id) - t0) < 1e-6) startAt = i0;
+        else {
+          blend = ease.inOut(Math.min(1, Math.max(0, (t - t0) / ENTRY_BLEND)));
+          startAt = -1;
         }
-      } else {
-        s = timeline.sample(t);
-        k = s.k;
-        start = s.index <= startAt ? from : ends[s.index - 1];
+        if (t < t0) t = t0;
       }
+      const s = timeline.sample(t);
       const i = s.index;
-      pack.lerp(out, start, ends[i], EASE[keys[i].ease || 'inOut'](k));
+      pack.lerp(out, i <= startAt ? from : i === 0 ? pack.REST : ends[i - 1], ends[i], EASE[keys[i].ease || 'inOut'](s.k));
       if (extra) extra(out, s);
+      if (blend < 1) pack.lerp(out, from, out, blend);
       return out;
+    },
+    // How far a mid-phase entry has cross-faded in (1 once it has, or for
+    // any other entry).
+    entered(t, t0, fade = false) {
+      if (t0 === null || (t0 <= 0 && !fade)) return 1;
+      const i0 = timeline.sample(t0).index;
+      if (!fade && Math.abs(timeline.startOf(keys[i0].id) - t0) < 1e-6) return 1;
+      return ease.inOut(Math.min(1, Math.max(0, (t - t0) / ENTRY_BLEND)));
     },
   };
   return move;
@@ -278,7 +283,12 @@ export const SPAWN_TIMELINE = createTimeline('spawn', 'Spawn', [
 //   cue('reset')        forget every move and envelope (a rig that was not
 //                       updated while cues arrived: a scene coming back)
 // A hit taken (the hurt clip, or going down) lets go of the attack over a
-// few frames (RELEASE_SEC) instead of dropping it, so nothing pops.
+// few frames (RELEASE_SEC) instead of dropping it, and every move that ends
+// hands back the same way: into the body the rig would draw without it (the
+// walk's lean, the hurt flinch: the base each rig sets every frame with
+// setBase), so nothing pops either way. A move takes over from that base too.
+// The contact holds where the weapon lands (LAG after the move's contact:
+// the weapon is drawn a frame behind the hips).
 export const RELEASE_SEC = 4 * FRAME;
 // A connect heard after the contact (a guest's own hero, one round trip
 // late) still recoils, if it comes this soon after the contact.
@@ -291,7 +301,17 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
   let lastClip = 'idle';
   let lastBasicEv = null;
   let lastHit = 0;
-  const from = pack.make();
+  // where the move took over from, per channel: the hips (led, ahead), the
+  // body (live) and the weapon (lagged, behind), so no channel jumps
+  const fromLive = pack.make();
+  const fromLed = pack.make();
+  const fromLag = pack.make();
+  const tmpLive = pack.make();
+  const tmpLed = pack.make();
+  const tmpLag = pack.make();
+  const fromOf = (shift) => (shift < 0 ? fromLag : shift > 0 ? fromLed : fromLive);
+  // the body the rig would draw with no move playing (setBase)
+  const base = pack.make();
   const RELEASE = createMove(pack, 'release', 'Interrupted', [{ id: 'release', label: 'let go of the attack', dur: RELEASE_SEC, to: pack.REST, ease: 'out' }]);
   // holds: the world froze (holdLeft, the whole rig) or this rig's blow
   // landed (poseHold, the attack pose only: the world has moved on)
@@ -315,19 +335,31 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
   let override = null;
 
   const move = () => (cur ? cur.mv : null);
+  // where a move's contact holds: the weapon (drawn `lag` behind) on its blow
+  const holdAt = (mv) => Math.min(mv.duration, mv.contact + lag);
   function poseNow(out, shift = 0) {
-    if (!cur) return pack.copy(out, pack.REST);
-    return cur.mv.pose(cur.t + shift, from, out, 0, cur.t0);
+    if (!cur) return pack.copy(out, override ? pack.REST : base);
+    const from = fromOf(shift);
+    if (cur.kind === 'release') {
+      const k = ease.out(Math.min(1, Math.max(0, cur.t + shift) / RELEASE_SEC));
+      return pack.lerp(out, from, override ? pack.REST : base, k);
+    }
+    return cur.mv.pose(cur.t + shift, from, out, 0, cur.t0, !!cur.fade);
   }
-  // Take over from wherever the rig is now.
+  // Take over from wherever the rig is now, channel by channel.
   function start(kind, mv, t0, extra) {
-    poseNow(from);
+    poseNow(tmpLive, 0);
+    poseNow(tmpLed, lead);
+    poseNow(tmpLag, -lag);
+    pack.copy(fromLive, tmpLive);
+    pack.copy(fromLed, tmpLed);
+    pack.copy(fromLag, tmpLag);
     cur = { kind, mv, t: t0, t0, n: 0, id: null, ...extra };
     poseHold = 0;
     contactOwed = 0;
     recoilArmed = false;
   }
-  const blowAhead = () => cur && cur.kind !== 'release' && cur.t < cur.mv.contact;
+  const blowAhead = () => cur && cur.kind !== 'release' && cur.t < holdAt(cur.mv);
 
   function cue(kind, ev) {
     if (kind === 'basic') {
@@ -352,7 +384,7 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       const id = skillAbility(ev);
       const mv = abilities[id];
       if (!mv) return 0;
-      start('ability', mv, mv.entry, { id }); // a skill breaks the combo: the next basic is hit 1
+      start('ability', mv, mv.entry, { id, fade: true }); // a skill breaks the combo: the next basic is hit 1
       return 0;
     }
     if (kind === 'connect') {
@@ -360,8 +392,8 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       if (tick !== null) connectTick = tick;
       const mv = move();
       if (mv && mv.recoil && cur.kind !== 'release') {
-        if (cur.t < mv.contact) recoilArmed = true;
-        else if (cur.t < mv.contact + LATE_CONNECT) recoilSince = 0;
+        if (cur.t < holdAt(mv)) recoilArmed = true;
+        else if (cur.t < holdAt(mv) + LATE_CONNECT) recoilSince = 0;
       }
       // An earlier blow on this tick already froze the world: this rig's
       // share of the stop waits for its own contact instead (B2).
@@ -446,16 +478,17 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       }
       const before = cur.t;
       let t = before + step;
-      if (before < mv.contact && t >= mv.contact) {
+      const at = holdAt(mv);
+      if (cur.kind !== 'release' && before < at && t >= at) {
         // the blow: the contact pose holds through the owed hitstop (the
         // pose only: the world has moved on), then the recoil
         if (contactOwed > 0) {
-          const over = t - mv.contact;
+          const over = t - at;
           poseHold = contactOwed;
           contactOwed = 0;
           const used = Math.min(poseHold, over);
           poseHold -= used;
-          t = mv.contact + over - used;
+          t = at + over - used;
         }
         if (recoilArmed && poseHold <= 0) {
           recoilSince = 0;
@@ -463,7 +496,11 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
         }
       }
       cur.t = t;
-      if (t >= mv.duration) cur = null;
+      if (t >= mv.duration) {
+        // hand the body back to the base over the release
+        if (cur.kind === 'release') cur = null;
+        else start('release', RELEASE, t - mv.duration, {});
+      }
     }
     if (shotSince >= 0) shotSince = shotSince > 1.2 ? -1 : shotSince + dt;
     if (spawnSince >= 0) spawnSince = spawnSince > SPAWN_SEC + FRAME ? -1 : spawnSince + dt;
@@ -480,11 +517,11 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
     shotSince = -1;
     spawnSince = -1;
     if (o.kind === 'ability') {
-      pack.copy(from, o.from || pack.REST);
+      for (const f of [fromLive, fromLed, fromLag]) pack.copy(f, o.from || pack.REST);
       cur = { kind: 'ability', id: o.id, n: 0, mv: abilities[o.id], t: o.t, t0: 0 };
     } else if (o.kind === 'hit') {
       const fresh = !!o.fresh;
-      pack.copy(from, o.from || (fresh ? pack.REST : hits[o.n].from));
+      for (const f of [fromLive, fromLed, fromLag]) pack.copy(f, o.from || (fresh ? pack.REST : hits[o.n].from));
       cur = { kind: 'hit', id: null, n: o.n + 1, mv: hits[o.n].move, t: o.t, t0: fresh ? 0 : hits[o.n].timeline.startOf('strike') };
     } else if (o.kind === 'spawn') spawnSince = o.t;
     if (o.recoil !== undefined) recoilSince = o.recoil;
@@ -531,21 +568,32 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       if (ev && ev === lastBasicEv) return lastHit;
       return cue('basic', ev);
     },
-    // the live pose, the hips half a frame ahead and the weapon a frame behind
+    // The body the rig draws with no move (the driver's clip, the walk's
+    // lean): a move takes over from it and hands back to it. Body fields
+    // only; the lab's override keeps the stance.
+    setBase(fields) {
+      for (const f in fields) if (f in base) base[f] = fields[f];
+    },
+    // the live pose, the hips half a frame ahead and the weapon a frame
+    // behind (the weapon's lag grows in over the first frames of a move, so
+    // it moves on the press frame: B4)
     pose: (out, shift = 0) => poseNow(out, shift),
     sample(live, led, lagged) {
       poseNow(live, 0);
       poseNow(led, lead);
-      poseNow(lagged, -lag);
+      const since = cur ? cur.t - (cur.t0 || 0) : lag * 2;
+      poseNow(lagged, -Math.min(lag, Math.max(0, since) / 2));
     },
+    // how far a cast entered mid-phase has cross-faded in (0..1), at a shift
+    entered: (shift = 0) => (cur && cur.kind !== 'release' ? cur.mv.entered(cur.t + shift, cur.t0, !!cur.fade) : 1),
     // Where the current move releases: run `fn` with the move at its
     // contact (the rig posed there by the caller), then put it back. A
     // shooter's bolt leaves from here, not from the wind-up the press
     // caught the rig in.
     atContact(fn) {
-      if (!cur || cur.kind === 'release' || cur.t >= cur.mv.contact) return fn(false);
+      if (!cur || cur.kind === 'release' || cur.t >= holdAt(cur.mv)) return fn(false);
       const t = cur.t;
-      cur.t = cur.mv.contact;
+      cur.t = holdAt(cur.mv);
       try {
         return fn(true);
       } finally {
@@ -580,13 +628,13 @@ export function createComboLab(hits, { swingSec, hold = 2 / 60, finisherHold = 3
       const local = T - starts[n];
       const t0 = n === 0 ? 0 : mv.timeline.startOf('strike');
       const H = n === hits.length - 1 ? finisherHold : hold;
-      const toContact = mv.contact - t0;
+      const toContact = Math.min(mv.duration, mv.contact + (ranged ? 0 : LAG)) - t0; // the weapon's contact (drawn LAG behind)
       let t;
       let since = -1;
       let held = false;
       if (ranged || local < toContact) t = t0 + local;
       else if (local < toContact + H) {
-        t = mv.contact;
+        t = t0 + toContact;
         held = true;
         since = 0;
       } else {
@@ -608,7 +656,7 @@ export function createComboLab(hits, { swingSec, hold = 2 / 60, finisherHold = 3
       };
     },
     // seconds into the lab combo where each blow lands (the cues)
-    strikes: hits.map((h, n) => starts[n] + (h.move.contact - (n === 0 ? 0 : h.move.timeline.startOf('strike')))),
+    strikes: hits.map((h, n) => starts[n] + Math.min(h.move.duration, h.move.contact + (ranged ? 0 : LAG)) - (n === 0 ? 0 : h.move.timeline.startOf('strike'))),
   });
 }
 
@@ -631,6 +679,9 @@ export function createComboLab(hits, { swingSec, hold = 2 / 60, finisherHold = 3
 //   place(): set the feet again after the rig moved (a walk bob applied
 //   after step), so planted feet stay on the floor.
 // ---------------------------------------------------------------------------
+// A lunge's step: quick, aimed at the full lunge from its first frame.
+const FULL_LUNGE = Object.freeze({ step: 1 });
+const LUNGE_STEP = 3 * FRAME;
 export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, lunge = null, airSpeed = 4.2, tuck = 0.05, liftOff = 3 * FRAME }) {
   const yawGroup = () => rig.parent && rig.parent.parent;
   const foot = feet.map((f, i) => ({
@@ -644,7 +695,10 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
     home: new Vector3(),
     aim: new Vector3(), // the home it steps for (yaw space), fixed at lift-off
     airFrom: new Vector3(), // rig space, where it stood when the feet lifted
+    landFrom: new Vector3(), // rig space, where it was drawn as it came down
   }));
+  let landT = liftOff; // since the feet came down (eases them onto the floor)
+  let lastStep = 0; // the stance's lunge last frame
   const vel = new Vector3();
   const lastPos = new Vector3();
   const w = new Vector3();
@@ -710,6 +764,9 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
       }
       rig.worldToLocal(w);
       feet[i].position.set(w.x, w.y + home[i].y, w.z);
+      // just landed: ease down from the height it was drawn at in the air
+      // (it stands where it came down)
+      if (landT < liftOff) feet[i].position.y += (f.landFrom.y - feet[i].position.y) * (1 - ease.out(landT / liftOff));
     }
   }
 
@@ -784,8 +841,10 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
         feet[i].getWorldPosition(foot[i].planted);
         foot[i].planted.y = 0;
         foot[i].swing = -1;
+        foot[i].landFrom.copy(feet[i].position);
       }
-    }
+      landT = 0;
+    } else landT += dt;
     for (let i = 0; i < foot.length; i++) homeWorld(i, stance, foot[i].home);
     // advance a swing
     let swinging = -1;
@@ -802,9 +861,14 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
         f.planted.copy(f.to);
       } else swinging = i;
     }
+    // a lunge coming in: the lead foot steps at once for the full lunge, in
+    // a quick step, so it plants with the blow (the weight shifts onto it)
+    const rising = !!lunge && stance.step > lastStep + 1e-4;
+    lastStep = stance.step;
     // start a step: the foot furthest from home, if it is too far
     if (swinging < 0) {
       let best = -1;
+      let full = false;
       let bestErr = trigger * (speed > 0.3 ? 0.6 : 1);
       for (let i = 0; i < foot.length; i++) {
         const err = Math.hypot(foot[i].planted.x - foot[i].home.x, foot[i].planted.z - foot[i].home.z);
@@ -813,13 +877,21 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
           best = i;
         }
       }
+      if (rising) {
+        const L = lunge.lead;
+        yg.localToWorld(homeLocalOf(L, FULL_LUNGE, c));
+        if (Math.hypot(foot[L].planted.x - c.x, foot[L].planted.z - c.z) > trigger * 0.5) {
+          best = L;
+          full = true;
+        }
+      }
       if (best >= 0) {
         const f = foot[best];
         f.swing = 0;
-        f.dur = Math.max(0.12, Math.min(0.2, 0.2 - speed * 0.03));
+        f.dur = full ? LUNGE_STEP : Math.max(0.12, Math.min(0.2, 0.2 - speed * 0.03));
         f.from.copy(f.planted);
-        homeLocalOf(best, stance, f.aim);
-        f.to.copy(f.home).addScaledVector(vel, f.dur * 0.55);
+        homeLocalOf(best, full ? FULL_LUNGE : stance, f.aim);
+        yg.localToWorld(f.to.copy(f.aim)).addScaledVector(vel, f.dur * 0.55);
         // a step that would pass through the body (a turn on the spot, the
         // feet changing sides) swings round it instead
         const d = wrapPi(Math.atan2(f.to.z - gp.z, f.to.x - gp.x) - Math.atan2(f.from.z - gp.z, f.from.x - gp.x));

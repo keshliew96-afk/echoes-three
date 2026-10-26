@@ -143,8 +143,10 @@ for (const H of FACET_HEROES) {
     }
     check('every hit, chain and ability is continuous (no pop at a phase change)', worst < 0.01, { worst: r3(worst), where });
     const L = H.comboLab;
-    const contact = L.strikes.map((s) => `${L.at(s - 0.002).phase}>${L.at(s + 0.002).phase}`);
-    check("the lab combo's three cues sit on each contact", contact.every((p) => p === 'strike>overshoot'), contact);
+    // a melee cue sits where the weapon lands (the hold starts there); a
+    // shot's on its release
+    const contact = L.strikes.map((s) => (H.ranged ? `${L.at(s - 0.002).phase}>${L.at(s + 0.002).phase}` : `${L.at(s - 0.002).held ? 'held' : 'moving'}>${L.at(s + 0.002).held ? 'held' : 'moving'}`));
+    check("the lab combo's three cues sit on each contact", contact.every((p) => p === (H.ranged ? 'strike>overshoot' : 'moving>held')), contact);
     // comboHitOf: 1-2-3, order-safe, idempotent per event, a skill or the
     // window lapsing starts over.
     const R = rigOf(H.id);
@@ -249,12 +251,19 @@ for (const H of FACET_HEROES) {
     R.c.cue('hitstop', { tick: 100, ticks: 2, cause: 'melee_arc', total: 2 });
     let atContact = 0;
     let reached = false;
-    const contact = clock.moveContact;
+    // the hold sits where the weapon lands: it is drawn LAG behind the move
+    const contact = H.ranged ? clock.moveContact : Math.min(clock.move.duration, clock.moveContact + LAG);
+    const swings = [];
     run(R, 30, () => {
-      if (Math.abs(clock.moveTime - contact) < 1e-9) atContact++;
+      if (Math.abs(clock.moveTime - contact) < 1e-9) {
+        atContact++;
+        swings.push(R.c.lab.swing());
+      }
       if (clock.moveTime >= contact) reached = true;
     });
-    if (!H.ranged) check('the contact pose holds through the hitstop the rig struck (B2)', reached && atContact >= 2 && atContact <= 3, { framesAtContact: atContact });
+    const key = hits[0].strike[H.weaponField];
+    const off = swings.length ? Math.max(...swings.map((v) => Math.abs(v - key))) : Infinity;
+    if (!H.ranged) check('the contact pose holds through the hitstop the rig struck, the weapon on its blow (B2)', reached && atContact >= 2 && atContact <= 3 && off < 0.05, { framesAtContact: atContact, weaponOffKey: r3(off) });
     else check('a shot plays on through a hitstop on its own tick (no melee contact hold)', reached && atContact <= 1, { framesAtContact: atContact });
   }
   {
@@ -457,6 +466,83 @@ for (const H of FACET_HEROES) {
     const back = rows[4];
     check('the walk leans into the travel: forward ahead, a backpedal back', fwd.pitch - back.pitch > 0.07, { forward: fwd.pitch, backpedal: back.pitch });
     check('a sidestep leans aside, each way', Math.sign(rows[2].roll) === -Math.sign(rows[6].roll) && Math.abs(rows[2].roll) > 0.03, { right: rows[2].roll, left: rows[6].roll });
+  }
+  {
+    // a move takes over from the body the rig draws and hands back to it,
+    // never a cut: a hit taken mid-swing (the hurt flinch), a swing that
+    // ends on the walk. A cut is a one-frame spike: a frame that moves the
+    // body (torso turn, lean, roll, squash) much further than the frames on
+    // either side of it.
+    const body = (R) => {
+      const { torso } = R.c.lab.parts;
+      return [torso.rotation.x, torso.rotation.y, torso.rotation.z, R.rig.scale.x, R.rig.scale.y];
+    };
+    const spikeOf = (R, frames, each) => {
+      const d = [];
+      let prev = body(R);
+      for (let f = 0; f < frames; f++) {
+        each(f);
+        run(R, 1);
+        const now = body(R);
+        d.push(now.map((v, i) => Math.abs(v - prev[i])));
+        prev = now;
+      }
+      let w = 0;
+      for (let f = 1; f < d.length - 1; f++) for (let i = 0; i < 5; i++) w = Math.max(w, d[f][i] - Math.max(d[f - 1][i], d[f + 1][i]));
+      return w;
+    };
+    const A = rigOf(H.id);
+    run(A, 20);
+    const hurt = spikeOf(A, 60, (f) => {
+      if (f === 0) A.c.cue('basic', { hurtTest: 1 });
+      if (f === 4) A.c.setAnim('hurt');
+      if (f === 30) A.c.setAnim('idle');
+    });
+    const B = rigOf(H.id);
+    B.c.setYaw(0);
+    B.c.setAnim('walk');
+    run(B, 30, () => (B.c.group.position.z += H.walkSpeed * DT));
+    const walkEnd = spikeOf(B, 120, (f) => {
+      if (f === 0) B.c.cue('basic', { walkTest: 1 });
+      B.c.group.position.z += H.walkSpeed * DT;
+    });
+    check('a hit taken mid-swing hands the body to the flinch, no cut', hurt < 0.08, r3(hurt));
+    check('a swing on the walk takes over from the walk and hands back to it, no cut', walkEnd < 0.08, r3(walkEnd));
+    // a skill entered mid-swing eases the weapon in: the tip's speed on the
+    // entry frames grows from the swing's own speed, never jumps
+    const tipJump = (sk) => {
+      const D = rigOf(H.id);
+      run(D, 20);
+      D.c.cue('basic', { entryTest: 1 });
+      run(D, 7);
+      const was = D.c.pointWorld('tip', new Vector3());
+      const at = new Vector3();
+      run(D, 1);
+      D.c.pointWorld('tip', at);
+      let speed = at.distanceTo(was);
+      was.copy(at);
+      D.c.cue('skill', { skill: sk, shape: SKILLS[sk].shape, entryTest: 1 });
+      let w = 0;
+      for (let f = 0; f < 3; f++) {
+        run(D, 1);
+        D.c.pointWorld('tip', at);
+        const s = at.distanceTo(was);
+        w = Math.max(w, s - speed);
+        speed = s;
+        was.copy(at);
+      }
+      return w;
+    };
+    let entryWorst = -1;
+    let entryWhere = '';
+    for (const sk of skillsOf(H.id)) {
+      const jump = tipJump(sk);
+      if (jump > entryWorst) {
+        entryWorst = jump;
+        entryWhere = sk;
+      }
+    }
+    check('a skill entered mid-swing eases the weapon in (no whip on the entry frames)', entryWorst < 0.08, { jump: r3(entryWorst), skill: entryWhere });
   }
   {
     // a hitstop (a held frame: no time passes) leaves planted feet where

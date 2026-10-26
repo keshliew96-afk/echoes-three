@@ -82,6 +82,7 @@ import {
   namedPoint,
   posePack,
   RECOIL,
+  RELEASE_SEC,
   walkBody,
 } from '../facet/hero.js';
 
@@ -923,7 +924,10 @@ export function buildSwordsmanFacet(rig, trackAccent) {
   const lock = createFootLock({ rig, feet, home: HOME, lunge: { lead: 1, reach: 0.16, brace: 0.03 } });
   const atk = createAttackClock({ pack: PACK, hits: HITS, abilities: MOVES, skillAbility, window: COMBO_WINDOW });
   let lastT = null;
-  let spinHeld = 0; // the turn a hit taken let go of
+  let spinHeld = 0; // the Blade Storm turn as drawn
+  let spinFrom = 0; // a turn cut short, letting go
+  let spinT = 0;
+  let spinTrail = 0;
   const live = PACK.make();
   const lagged = PACK.make();
   const led = PACK.make();
@@ -1001,6 +1005,16 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     ears[0].rotation.x = -0.12 + 0.4 * Math.min(0, P.ear * 1.6);
     ears[1].rotation.x = ears[0].rotation.x;
 
+    // The body an attack takes over from and hands back to: the driver's
+    // clip as the factory set it, or the walk's lean (last frame's steps).
+    const walking = P.collapse < 0.04 && clip === 'walk';
+    atk.setBase({
+      pitch: walking ? Math.min(WALK_PITCH_MAX, LEAN + walk.pitch) * upright : torso.rotation.x,
+      yaw: walking ? walk.twist * upright : torso.rotation.y,
+      roll: walking ? walk.roll * upright : torso.rotation.z,
+      sw: rig.scale.x,
+      sh: rig.scale.y,
+    });
     atk.advance(dt, clip);
     const attacking = atk.active && clip !== 'downed';
     // The hips lead, the blade trails (sampled a frame apart on one timeline).
@@ -1009,11 +1023,26 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     const mt = atk.moveTime;
     // Blade Storm's turn: the whole rig, feet included.
     let spin = attacking ? spinAt(ability, mt) : 0;
-    // A hit taken mid-turn lets the turn go over the release (no pop).
+    // A turn cut short (a hit taken, another move, the end) lets go the
+    // short way round over a few frames, never a pop.
     if (attacking && ability === 'whirl') spinHeld = spin;
-    else if (attacking && atk.move && atk.move.id === 'release' && spinHeld !== 0) spin = spinHeld * (1 - ease.out(Math.min(1, mt / atk.move.duration)));
-    else spinHeld = 0;
+    else {
+      if (spinHeld !== 0) {
+        spinFrom = wrapPi(spinHeld);
+        spinT = 0;
+        spinHeld = 0;
+      }
+      if (spinFrom !== 0) {
+        spinT += dt;
+        const k = Math.min(1, spinT / RELEASE_SEC);
+        spin += spinFrom * (1 - ease.out(k));
+        if (k >= 1) spinFrom = 0;
+      }
+    }
     rig.rotation.y = spin * upright;
+    // the turn as the blade feels it, about LAG behind (an eased trail, so
+    // it never jumps when the turn is cut short)
+    if (dt > 0) spinTrail += wrapPi(spin - spinTrail) * (1 - Math.exp(-dt / LAG));
 
     // Torso and root: an attack owns them; otherwise the driver's clip does
     // (with the rest lean, basePitch).
@@ -1049,8 +1078,8 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     // The grow-in: the feet ride the body. The lab's Still stands them on
     // the pose's homes. After the bob the feet are set again (on the floor).
     lock.step(dt, attacking ? live : REST, locked && sp === 1, !!atk.override && dt <= 0);
+    if (locked && clip === 'walk') walkBody(lock, { walkSpeed: WALK_SPEED }, walk);
     if (locked && clip === 'walk' && !attacking) {
-      walkBody(lock, { walkSpeed: WALK_SPEED }, walk);
       rig.position.y += walk.dy - P.bob * upright * 0.6;
       torso.rotation.x = Math.min(WALK_PITCH_MAX, LEAN + walk.pitch) * upright;
       torso.rotation.y = walk.twist * upright;
@@ -1084,7 +1113,7 @@ export function buildSwordsmanFacet(rig, trackAccent) {
       S.hz += 0.18 * thrust - 0.1 * wind;
     }
     // the blade trails the turn of a spin by the same frame it trails the hips
-    drawnBa = S.ba + (attacking ? wrapPi(spinAt(ability, mt - LAG) - spin) : 0);
+    drawnBa = S.ba + wrapPi(spinTrail - spin);
     sword.position.set(S.hx, S.hy, S.hz);
     bodyToCam();
     orientBlade(drawnBa, S.be);

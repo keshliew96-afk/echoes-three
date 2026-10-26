@@ -118,7 +118,7 @@ const O2 = K({ yaw: 0.5, pitch: 0.18, sx: 0.48, sy: 0.84, sz: 0.04, srx: -0.92, 
 // Hit 3, CRUSHING SLAM (the finisher, the biggest: B6): overhead on the toes,
 // stretched tall, then down into the ground ahead with a lunge step, the
 // deepest lean and squash; both paws on the slab.
-const A3 = K({ yaw: 0.14, pitch: -0.2, sx: 0.37, sy: 1.0, sz: -0.2, srx: -1.0, sry: 0.3, srz: -0.3, ry: 0.045, rz: -0.06, sw: 0.94, sh: 1.08, paw: 1 });
+const A3 = K({ yaw: 0.14, pitch: -0.2, sx: 0.37, sy: 1.0, sz: -0.2, srx: -1.0, sry: 0.3, srz: -0.3, ry: 0.045, rz: -0.06, sw: 0.94, sh: 1.08, paw: 0 });
 const S3 = K({ yaw: -0.05, pitch: 0.42, sx: 0.05, sy: 0.3, sz: 0.47, srx: 0.92, sry: 0, srz: 0, ry: -0.07, rz: 0.14, sw: 1.19, sh: 0.88, paw: 1, step: 1 });
 const O3 = K({ yaw: -0.07, pitch: 0.3, sx: 0.05, sy: 0.25, sz: 0.5, srx: 1.0, sry: 0, srz: 0, ry: -0.08, rz: 0.14, sw: 1.06, sh: 0.96, paw: 1, step: 1 });
 // The slab goes up and comes down round the head, never through it: on the
@@ -147,7 +147,7 @@ export const TANK_HITS = HITS;
 // strike (its gather plays after the press, compressed into it), so the
 // blow lands with the sim's hit while the wind-up still shows; the lab plays
 // the whole wind-up. Both settle into the stance with one small overshoot.
-const G_SLAM = K({ yaw: 0.2, pitch: -0.2, sx: 0.35, sy: 1.04, sz: -0.22, srx: -1.1, sry: 0.32, srz: -0.3, ry: 0.05, rz: -0.06, sw: 0.92, sh: 1.1, paw: 1 });
+const G_SLAM = K({ yaw: 0.2, pitch: -0.2, sx: 0.35, sy: 1.04, sz: -0.22, srx: -1.1, sry: 0.32, srz: -0.3, ry: 0.05, rz: -0.06, sw: 0.92, sh: 1.1, paw: 0 });
 const S_SLAM = K({ yaw: -0.04, pitch: 0.42, sx: 0.04, sy: 0.26, sz: 0.5, srx: 1.05, ry: -0.09, rz: 0.14, sw: 1.19, sh: 0.86, paw: 1, step: 1 });
 const G_BRACE = K({ yaw: 0.3, pitch: 0.1, sx: 0.2, sy: 0.42, sz: 0.06, srx: 0.2, sry: 0.4, srz: -0.3, ry: 0.04, sw: 0.95, sh: 1.06 });
 const S_BRACE = K({ yaw: 0, pitch: 0.12, roll: 0, sx: 0.04, sy: 0.4, sz: 0.4, srx: 0.08, sry: 0, srz: 0, ry: -0.05, rz: 0.06, sw: 1.1, sh: 0.92, paw: 1, step: 0.6 });
@@ -498,6 +498,16 @@ export function buildTankFacet(rig, trackAccent) {
     ears[1].rotation.z = 0.18 + 0.5 * P.ear + P.collapse * 0.4;
     tailPivot.rotation.y = P.tail * 0.5;
 
+    // The body an attack takes over from and hands back to: the driver's
+    // clip as the factory set it, or the walk's lean (last frame's steps).
+    const walking = P.collapse < 0.04 && clip === 'walk';
+    atk.setBase({
+      pitch: walking ? walk.pitch * upright : torso.rotation.x,
+      yaw: walking ? walk.twist * upright : torso.rotation.y,
+      roll: walking ? walk.roll * upright : torso.rotation.z,
+      sw: rig.scale.x,
+      sh: rig.scale.y,
+    });
     atk.advance(dt, clip);
     const attacking = atk.active && clip !== 'downed';
     // The hips lead, the slab trails (sampled a frame apart on one timeline).
@@ -556,8 +566,8 @@ export function buildTankFacet(rig, trackAccent) {
     lock.step(dt, attacking ? live : REST, locked && sp === 1, !!atk.override && dt <= 0);
     // The walk's bob, sway, twist and travel lean come from the steps; the
     // feet are set again after the bob, so they stay on the floor.
+    if (locked && clip === 'walk') walkBody(lock, { walkSpeed: WALK_SPEED }, walk);
     if (locked && clip === 'walk' && !attacking) {
-      walkBody(lock, { walkSpeed: WALK_SPEED }, walk);
       rig.position.y += walk.dy - P.bob * upright * 0.6;
       torso.rotation.x = walk.pitch * upright;
       torso.rotation.y = walk.twist * upright;

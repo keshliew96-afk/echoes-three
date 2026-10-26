@@ -690,6 +690,7 @@ export function buildHealerFacet(rig, trackAccent) {
   const pB = PACK.make();
   const dA = new Vector3();
   const dB = new Vector3();
+  const dE = new Vector3();
   const off = new Vector3();
   const gripBody = new Vector3();
 
@@ -780,6 +781,17 @@ export function buildHealerFacet(rig, trackAccent) {
     tailPivot.rotation.y = P.tail * 0.8;
     tailPivot.rotation.z = 0.2 * P.tail;
 
+    // The body an attack takes over from and hands back to: the driver's
+    // clip as the factory set it; walking, the walk's lean rides on top of
+    // the attack (below), so the base is the part it does not carry.
+    const walking = P.collapse < 0.04 && clip === 'walk';
+    atk.setBase({
+      pitch: walking ? 0 : torso.rotation.x,
+      yaw: walking ? walk.twist * 0.4 * upright : torso.rotation.y,
+      roll: walking ? 0 : torso.rotation.z,
+      sw: rig.scale.x,
+      sh: rig.scale.y,
+    });
     atk.advance(dt, clip);
     const attacking = atk.active && clip !== 'downed';
     // The hips lead, the staff trails (sampled a frame apart on one timeline).
@@ -861,9 +873,18 @@ export function buildHealerFacet(rig, trackAccent) {
       atk.pose(pB, t0 + tl.phases[s.index].dur - now);
       if (Math.abs(pA.el) < 0.1 || Math.abs(pB.el) < 0.1) {
         const k = EASE[mv.keys[s.index].ease || 'inOut'](s.k);
+        dE.copy(dir); // the drawn pose's own aim
         dir.copy(staffDir(pA, dA)).lerp(staffDir(pB, dB), k);
         if (dir.lengthSq() < 1e-8) dir.copy(dB);
         dir.normalize();
+        // a cast entered mid-phase cross-fades in from the pose it took
+        // over: so does the aim
+        const e = atk.entered(-LAG);
+        if (e < 1) {
+          dir.lerp(dE, 1 - e);
+          if (dir.lengthSq() < 1e-8) dir.copy(dE);
+          dir.normalize();
+        }
       }
     }
     qAim.setFromUnitVectors(UP, dir);
