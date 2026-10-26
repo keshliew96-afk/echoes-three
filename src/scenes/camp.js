@@ -462,9 +462,11 @@ export function createCampScene(stage, toggles, ctx) {
   let tableTick = 0; // CAMPAIGN: map-table waymark refresh cadence
   let storyRefresh = 0; // STORY: frames until the NPCs re-read the profile
 
-  bus.on('basic_fire', () => {
+  bus.on('basic_fire', (ev) => {
     firedFlag = true;
+    healerRig.cue('basic', ev); // a model-standard rig's combo (docs/MODEL_STANDARD.md)
   });
+  bus.on('skill_cast', (ev) => healerRig.cue('skill', ev));
   // A player-held ally seat (a co-op guest, a host or solo player on a
   // class other than the Healer) casts at camp too: its rig takes the same
   // cast hold the Healer's does.

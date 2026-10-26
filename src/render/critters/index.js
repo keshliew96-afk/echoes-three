@@ -30,7 +30,8 @@ import { groundRing, groundShadow, desatTarget, setInkViewport } from './common.
 import { createPoseDriver, CLIPS } from './driver.js';
 import { buildHealer } from './healer.js';
 import { buildTank } from './tank.js';
-import { buildTankFacet } from './tankfacet.js';
+import { FACET_HERO } from '../facet/heroes.js';
+import { FALL_ANGLE } from '../facet/hero.js';
 import { facetOn } from '../facet/flags.js';
 import { buildSwordsman } from './swordsman.js';
 import { buildArcher } from './archer.js';
@@ -51,7 +52,9 @@ const BUILDERS = {
   duskwing: buildDuskwing,
 };
 
-export const FALL_ANGLE = 1.36; // rad (~78°) — §10 "collapses horizontal"
+// §10 "collapses horizontal" (rad, ~78°). It lives in the hero core so the
+// faceted rigs can read it without importing this factory (which imports them).
+export { FALL_ANGLE };
 const LIE_HEIGHT = 0.19; // height of a lying body's long axis
 // §19.2 "~8° body lean". 0.21 rad = 12.0° is the hard ceiling for any clip on
 // any class (basePitch included); the flinch may rock further BACK, which tips
@@ -67,9 +70,7 @@ const CLAIMED = new WeakSet();
 // The model standard (docs/MODEL_STANDARD.md): the faceted twins of the
 // classic rigs. A twin builds unless `?facet=` (harness only) or
 // MODEL_STANDARD asks for the classic one; `facet` forces either (the lab).
-const FACETED = {
-  tank: buildTankFacet,
-};
+const FACETED = Object.fromEntries(Object.values(FACET_HERO).map((h) => [h.id, h.build]));
 
 export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
   const build = BUILDERS[classId];
@@ -130,6 +131,10 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
   let lastDesat = -1;
 
   function update(dt) {
+    // A model-standard rig holds its whole update through a hitstop (the
+    // sim froze the world; docs/MODEL_STANDARD.md): the clip, the attack
+    // and the feet freeze together. The classic rigs never hold here.
+    if (built.hold) dt = built.hold(dt);
     t += dt;
     const P = driver.update(dt);
     const c = P.collapse;
@@ -241,9 +246,23 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
     // Attack events for a model-standard rig (docs/MODEL_STANDARD.md): the
     // integrator reports each basic swing and skill cast ('basic' | 'skill',
     // with the sim event) so the rig can play its combo and ability
-    // timelines. A no-op on the classic rigs.
+    // timelines, each `hit` it struck ('connect'), each `hitstop` ('hitstop':
+    // the rig holds) and each room entry ('spawn': it grows in). A no-op on
+    // the classic rigs.
     cue: (kind, ev) => {
       if (built.cue) built.cue(kind, ev);
+    },
+    // The combo hit an `ally_basic` / `basic_fire` event plays: 1, 2 or 3
+    // (3 = the finisher), 0 on a classic rig. Safe in any handler order: it
+    // plays the rig's cue itself if the rig has not heard the event yet.
+    comboHitOf: (ev) => (built.comboHitOf ? built.comboHitOf(ev) : 0),
+    // A named rig point in world space (B8: 'hand', 'tip'), or null when the
+    // rig has none. The classic Healer's staff gem is its 'tip'.
+    pointWorld: (name, out = new Vector3()) => {
+      const p = (built.points && built.points[name]) || (name === 'tip' ? built.tip : null);
+      if (!p) return null;
+      p.getWorldPosition(out);
+      return out;
     },
     // The model lab's handle on a model-standard rig (null on the classic).
     lab: built.lab || null,

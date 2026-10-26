@@ -22,16 +22,39 @@
 //     skate, a walk backward or sideways steps backward or sideways, and the
 //     slam's front foot steps into the lunge while the back foot anchors.
 //
+// The heroes slice (v0.5.335) re-measured him against the [M] rules of the
+// VFX/hit rules doc (§6.1) and moved his machinery onto the shared hero core
+// (render/facet/hero.js): each blow pulls back before it and lunges into its
+// contact with a 20-25° lean and a squash held through the hitstop (B2, B9),
+// recoils off a connect (B3), recovers with one small overshoot (B5), grows
+// in from the floor on a room entry (B7) and names its hand and slab tip
+// (B8).
+//
 // Same contract as buildTank (apply, torso, head, basePitch, metrics), plus
-// `cue(kind, ev)` (the attack events) and `lab` (the model lab). Render only:
-// attack timing, damage and the sim are untouched.
-import { BoxGeometry, CapsuleGeometry, CylinderGeometry, Group, LatheGeometry, Mesh, OctahedronGeometry, Quaternion, SphereGeometry, Vector2, Vector3 } from 'three';
+// `cue(kind, ev)`, `hold(dt)`, `comboHitOf(ev)`, `points` and `lab`. Render
+// only: attack timing, damage and the sim are untouched.
+import { BoxGeometry, CylinderGeometry, Group, LatheGeometry, Mesh, OctahedronGeometry, SphereGeometry, Vector2, Vector3 } from 'three';
 import { CLASS_ACCENTS, PALETTE } from '../../data/palette.js';
-import { addInk, exactHex, faceDecal, faceMarkings, INK_PX, mix } from './common.js';
+import { exactHex, faceDecal, faceMarkings, INK_PX, mix } from './common.js';
 import { sharedGeo } from '../geocache.js';
 import { facetize, facetMaterial } from '../facet/material.js';
 import { placeRow, plateGeometry, setTRS, wedgeGeometry } from '../facet/kit.js';
-import { createTimeline, ease } from '../facet/timeline.js';
+import {
+  aimLimb as aimArm,
+  createAttackClock,
+  createCombo,
+  createComboLab,
+  createFootLock,
+  createMove,
+  facetArm,
+  fpart,
+  HIT_TIMING,
+  LUNGE_PITCH_MAX,
+  namedPoint,
+  posePack,
+  RECOIL,
+  walkBody,
+} from '../facet/hero.js';
 
 const HIP = 0.19;
 const HEM = 0.022;
@@ -64,140 +87,106 @@ function coatR(y) {
   return 0;
 }
 
-// Basic attack: a shot inside this window of the last one is the next hit
-// (the Tank swings every 0.65 s; docs/MODEL_STANDARD.md).
 // ALLY_CLASSES.tank.moveSpeed (u/s): full walk lean at full speed
 const WALK_SPEED = 2.1;
+// Basic attack: a shot inside this window of the last one is the next hit
+// (the Tank swings every 0.65 s; docs/MODEL_STANDARD.md).
 export const COMBO_WINDOW = 1.0;
-const LAG = 0.034; // the slab trails the hips by a frame (30 fps)
-const LEAD = 0.017; // the hips lead by half a frame
+export const WIND = HIT_TIMING.wind;
 
-// --- Key poses (body space). yaw/pitch/roll: torso; sx..srz: the shoulder
-// block (slab) position and rotation; rx/ry/rz: root shift (weight); squash;
-// paw: 0..1 the off paw on the slab; step: the lunge foot's stance offset.
-const REST = { yaw: 0, pitch: 0, roll: 0, sx: 0.26, sy: 0.53, sz: 0.01, srx: 0, sry: 0, srz: -0.16, rx: 0, ry: 0, rz: 0, squash: 1, paw: 0, step: 0 };
-const K = (o) => Object.freeze({ ...REST, ...o });
+// --- Key poses (body space). The body fields are the hero core's (yaw,
+// pitch, roll: torso; rx, ry, rz: the root's weight shift; sw, sh: squash;
+// step: the lunge foot); sx..srz: the shoulder block (slab) position and
+// rotation; paw: 0..1 the off paw on the slab.
+const PACK = posePack({ sx: 0.26, sy: 0.53, sz: 0.01, srx: 0, sry: 0, srz: -0.16, paw: 0 });
+const { REST, K } = PACK;
+// Each wind-up pulls the weight back (rz < 0) a few frames before contact;
+// each contact lunges past rest (rz > 0) and leans 20-25° into the target
+// with a squash held through the hitstop (+19% wide, -9% tall; B9); the
+// overshoot snaps the squash back in 2 frames.
 // Hit 1, BACKHAND BASH: horizontal, the slab's side (+X) to the other side.
-const A1 = K({ yaw: 0.55, pitch: 0.04, sx: 0.37, sy: 0.5, sz: -0.12, sry: 0.62, srz: -0.32, rx: 0.035, squash: 1.04 });
-const S1 = K({ yaw: -0.42, pitch: 0.08, sx: -0.02, sy: 0.5, sz: 0.36, sry: -0.72, srz: -0.04, rx: -0.03, rz: 0.04, squash: 0.95 });
-const O1 = K({ yaw: -0.62, pitch: 0.09, sx: -0.17, sy: 0.47, sz: 0.25, sry: -0.98, srz: 0.08, rx: -0.04, rz: 0.04, squash: 0.97 });
-// Hit 2, RISING BASH: low on the far side, up across to high on the slab side.
-const A2 = K({ yaw: -0.55, pitch: 0.12, sx: -0.15, sy: 0.33, sz: 0.2, srx: 0.32, sry: -0.82, srz: 0.32, rx: -0.03, ry: -0.03, squash: 1.06 });
-const S2 = K({ yaw: 0.36, pitch: -0.1, sx: 0.34, sy: 0.76, sz: 0.22, srx: -0.52, sry: 0.4, srz: -0.46, rx: 0.02, ry: 0.02, rz: 0.03, squash: 0.94 });
-const O2 = K({ yaw: 0.5, pitch: -0.14, sx: 0.38, sy: 0.85, sz: 0.06, srx: -0.92, sry: 0.46, srz: -0.4, ry: 0.03, squash: 0.95 });
-// Hit 3, CRUSHING SLAM: overhead on the toes, down into the ground ahead
-// with a lunge step; both paws on the slab.
-const A3 = K({ yaw: 0.14, pitch: -0.2, sx: 0.1, sy: 0.98, sz: -0.04, srx: -1.22, sry: 0.1, srz: 0, ry: 0.045, rz: -0.02, squash: 0.94, paw: 1 });
-const S3 = K({ yaw: -0.05, pitch: 0.21, sx: 0.05, sy: 0.3, sz: 0.47, srx: 0.92, sry: 0, srz: 0, ry: -0.07, rz: 0.1, squash: 1.12, paw: 1, step: 1 });
-const O3 = K({ yaw: -0.07, pitch: 0.21, sx: 0.05, sy: 0.25, sz: 0.5, srx: 1.0, sry: 0, srz: 0, ry: -0.08, rz: 0.12, squash: 1.14, paw: 1, step: 1 });
-const HITS = [
-  { label: 'backhand bash', from: A1, strike: S1, over: O1, next: A2 },
-  { label: 'rising bash', from: A2, strike: S2, over: O2, next: A3 },
-  { label: 'crushing slam', from: A3, strike: S3, over: O3, next: A1 },
-];
-// Hit timing at 30 fps: 1.5 frames of wind (only from rest: a chained hit
-// starts AT its wind-up, which the last hit's settle already holds), 2.5 of
-// strike, 2 of overshoot, 5 to settle into the next wind-up, then held ready
-// until the combo window lapses, then a recover to the stance.
-export const WIND = 0.05;
-const hitTimeline = (n) =>
-  createTimeline(`hit${n + 1}`, `Hit ${n + 1}: ${HITS[n].label}`, [
-    { id: 'wind', label: 'wind-up', dur: WIND },
-    { id: 'strike', label: 'strike', dur: 0.083 },
-    { id: 'overshoot', label: 'overshoot', dur: 0.067 },
-    { id: 'settle', label: `settle into hit ${((n + 1) % 3) + 1}`, dur: 0.167 },
-    { id: 'ready', label: `hit ${((n + 1) % 3) + 1} wind-up held`, dur: COMBO_WINDOW - 0.367 },
-    { id: 'recover', label: 'recover', dur: 0.35 },
-  ]);
-const HIT_TL = [hitTimeline(0), hitTimeline(1), hitTimeline(2)];
-// (for the model standard probe: the chain and its timelines)
-export const TANK_HITS = Object.freeze(HITS.map((h, i) => Object.freeze({ ...h, timeline: HIT_TL[i] })));
+const A1 = K({ yaw: 0.55, pitch: -0.06, sx: 0.37, sy: 0.5, sz: -0.12, sry: 0.62, srz: -0.32, rx: 0.035, rz: -0.05, sw: 1.04, sh: 0.97 });
+const S1 = K({ yaw: -0.42, pitch: 0.38, sx: -0.02, sy: 0.5, sz: 0.36, sry: -0.72, srz: -0.04, rx: -0.03, rz: 0.08, sw: 1.19, sh: 0.91 });
+const O1 = K({ yaw: -0.62, pitch: 0.24, sx: -0.17, sy: 0.47, sz: 0.25, sry: -0.98, srz: 0.08, rx: -0.04, rz: 0.06, sw: 1.02, sh: 0.99 });
+// Hit 2, RISING BASH: low on the far side, up across to high on the slab
+// side; the legs drive the body up and into it.
+const A2 = K({ yaw: -0.55, pitch: -0.04, sx: -0.15, sy: 0.33, sz: 0.2, srx: 0.32, sry: -0.82, srz: 0.32, rx: -0.03, ry: -0.03, rz: -0.05, sw: 1.06, sh: 0.95 });
+const S2 = K({ yaw: 0.36, pitch: 0.37, sx: 0.34, sy: 0.76, sz: 0.22, srx: -0.52, sry: 0.4, srz: -0.46, rx: 0.02, ry: 0.03, rz: 0.08, sw: 1.19, sh: 0.91 });
+const O2 = K({ yaw: 0.5, pitch: 0.18, sx: 0.38, sy: 0.85, sz: 0.06, srx: -0.92, sry: 0.46, srz: -0.4, ry: 0.03, rz: 0.05, sw: 1.0, sh: 1.02 });
+// Hit 3, CRUSHING SLAM (the finisher, the biggest: B6): overhead on the toes,
+// stretched tall, then down into the ground ahead with a lunge step, the
+// deepest lean and squash; both paws on the slab.
+const A3 = K({ yaw: 0.14, pitch: -0.2, sx: 0.1, sy: 0.98, sz: -0.04, srx: -1.22, sry: 0.1, srz: 0, ry: 0.045, rz: -0.06, sw: 0.94, sh: 1.08, paw: 1 });
+const S3 = K({ yaw: -0.05, pitch: 0.42, sx: 0.05, sy: 0.3, sz: 0.47, srx: 0.92, sry: 0, srz: 0, ry: -0.07, rz: 0.14, sw: 1.19, sh: 0.88, paw: 1, step: 1 });
+const O3 = K({ yaw: -0.07, pitch: 0.3, sx: 0.05, sy: 0.25, sz: 0.5, srx: 1.0, sry: 0, srz: 0, ry: -0.08, rz: 0.14, sw: 1.06, sh: 0.96, paw: 1, step: 1 });
+const HITS = createCombo(
+  PACK,
+  [
+    { label: 'backhand bash', from: A1, strike: S1, over: O1 },
+    { label: 'rising bash', from: A2, strike: S2, over: O2 },
+    { label: 'crushing slam', from: A3, strike: S3, over: O3 },
+  ],
+  { window: COMBO_WINDOW }
+);
+// (for the probes: the chain and its timelines)
+export const TANK_HITS = HITS;
 
 // Heavy Slam (every melee arc and ground skill) and Brace (every nova, guard
 // and aura skill). In game a skill enters its timeline 0.08 s before the
-// strike, so the blow lands with the sim's hit while the wind-up still shows;
-// the lab plays the whole wind-up.
-const G_SLAM = K({ yaw: 0.2, pitch: -0.2, sx: 0.08, sy: 1.02, sz: -0.08, srx: -1.35, sry: 0.12, ry: 0.05, rz: -0.03, squash: 0.92, paw: 1 });
-const S_SLAM = K({ yaw: -0.04, pitch: 0.21, sx: 0.04, sy: 0.26, sz: 0.5, srx: 1.05, ry: -0.09, rz: 0.12, squash: 1.16, paw: 1, step: 1 });
-const G_BRACE = K({ yaw: 0.3, pitch: 0.1, sx: 0.2, sy: 0.42, sz: 0.06, srx: 0.2, sry: 0.4, srz: -0.3, ry: -0.04, squash: 1.08 });
-const S_BRACE = K({ yaw: 0, pitch: -0.18, roll: 0, sx: 0.04, sy: 0.4, sz: 0.4, srx: 0.08, sry: 0, srz: 0, ry: 0.01, rz: 0.06, squash: 0.92, paw: 1, step: 0.6 });
-export const TANK_ABILITIES = Object.freeze({
-  slam: createTimeline('slam', 'Heavy Slam', [
-    { id: 'gather', label: 'gather', dur: 0.32 },
-    { id: 'strike', label: 'strike', dur: 0.09 },
-    { id: 'impact', label: 'impact', dur: 0.28 },
-    { id: 'settle', label: 'settle', dur: 0.42 },
-  ], { cues: [{ at: 0.41, id: 'impact' }] }),
-  brace: createTimeline('brace', 'Brace', [
-    { id: 'gather', label: 'gather', dur: 0.26 },
-    { id: 'plant', label: 'plant', dur: 0.1 },
-    { id: 'hold', label: 'hold', dur: 0.42 },
-    { id: 'settle', label: 'settle', dur: 0.4 },
-  ], { cues: [{ at: 0.36, id: 'plant' }] }),
+// strike (its gather plays after the press, compressed into it), so the
+// blow lands with the sim's hit while the wind-up still shows; the lab plays
+// the whole wind-up. Both settle into the stance with one small overshoot.
+const G_SLAM = K({ yaw: 0.2, pitch: -0.2, sx: 0.08, sy: 1.02, sz: -0.08, srx: -1.35, sry: 0.12, ry: 0.05, rz: -0.06, sw: 0.92, sh: 1.1, paw: 1 });
+const S_SLAM = K({ yaw: -0.04, pitch: 0.42, sx: 0.04, sy: 0.26, sz: 0.5, srx: 1.05, ry: -0.09, rz: 0.14, sw: 1.19, sh: 0.86, paw: 1, step: 1 });
+const G_BRACE = K({ yaw: 0.3, pitch: 0.1, sx: 0.2, sy: 0.42, sz: 0.06, srx: 0.2, sry: 0.4, srz: -0.3, ry: 0.04, sw: 0.95, sh: 1.06 });
+const S_BRACE = K({ yaw: 0, pitch: 0.12, roll: 0, sx: 0.04, sy: 0.4, sz: 0.4, srx: 0.08, sry: 0, srz: 0, ry: -0.05, rz: 0.06, sw: 1.1, sh: 0.92, paw: 1, step: 0.6 });
+// the impact skid and the held brace breathe a little
+const breathe = (out, s) => {
+  if (s.id === 'impact' || s.id === 'hold') out.ry += -0.01 * Math.sin(s.k * Math.PI);
+};
+export const TANK_MOVES = Object.freeze({
+  slam: createMove(
+    PACK,
+    'slam',
+    'Heavy Slam',
+    [
+      { id: 'gather', label: 'gather', dur: 0.32, to: G_SLAM, ease: 'out' },
+      { id: 'strike', label: 'strike', dur: 0.09, to: S_SLAM, ease: 'in' },
+      { id: 'impact', label: 'impact', dur: 0.28, to: null, ease: 'hold' },
+      { id: 'settle', label: 'settle', dur: 0.42, to: REST, ease: 'settle' },
+    ],
+    { contact: 'impact', entry: 'strike', cues: [{ at: 0.41, id: 'impact' }], recoil: true, extra: breathe }
+  ),
+  brace: createMove(
+    PACK,
+    'brace',
+    'Brace',
+    [
+      { id: 'gather', label: 'gather', dur: 0.26, to: G_BRACE, ease: 'out' },
+      { id: 'plant', label: 'plant', dur: 0.1, to: S_BRACE, ease: 'in' },
+      { id: 'hold', label: 'hold', dur: 0.42, to: null, ease: 'hold' },
+      { id: 'settle', label: 'settle', dur: 0.4, to: REST, ease: 'settle' },
+    ],
+    { contact: 'hold', entry: 'plant', cues: [{ at: 0.36, id: 'plant' }], extra: breathe }
+  ),
 });
+export const TANK_ABILITIES = Object.freeze({ slam: TANK_MOVES.slam.timeline, brace: TANK_MOVES.brace.timeline });
 // Which ability a Tank skill plays, by its shape (all eleven skills).
 export const TANK_SKILL_ABILITY = Object.freeze({ melee_arc: 'slam', ground_aoe: 'slam', nova: 'brace', direct: 'brace', aura: 'brace' });
-
-const FIELDS = Object.keys(REST);
-function lerpPose(out, a, b, k) {
-  for (const f of FIELDS) out[f] = a[f] + (b[f] - a[f]) * k;
-  return out;
-}
+const skillAbility = (ev) => TANK_SKILL_ABILITY[ev && ev.shape] || 'brace';
 
 // Pure: the pose of hit n at time t into it. `capture` is the pose the hit
 // started from: a fresh hit (from rest) winds from it into its wind-up; a
 // chained hit strikes straight from it (the held wind-up, or wherever a fast
 // swing caught the last one).
-export function hitPose(n, t, capture, fresh, out = { ...REST }) {
-  const H = HITS[n];
-  const s = HIT_TL[n].sample(t);
-  if (s.id === 'wind') return lerpPose(out, capture, H.from, ease.out(s.k));
-  if (s.id === 'strike') return lerpPose(out, fresh ? H.from : capture, H.strike, ease.in(s.k));
-  if (s.id === 'overshoot') return lerpPose(out, H.strike, H.over, ease.out(s.k));
-  if (s.id === 'settle') return lerpPose(out, H.over, H.next, ease.inOut(s.k));
-  if (s.id === 'ready') return lerpPose(out, H.next, H.next, 0);
-  return lerpPose(out, H.next, REST, ease.inOut(s.k));
+export function hitPose(n, t, capture, fresh, out = PACK.make()) {
+  return HITS[n].move.pose(t, capture, out, fresh ? 0 : 1);
 }
-// Pure: the pose of an ability at time t.
-export function abilityPose(id, t, out = { ...REST }) {
-  const tl = TANK_ABILITIES[id];
-  const s = tl.sample(t);
-  const G = id === 'slam' ? G_SLAM : G_BRACE;
-  const S = id === 'slam' ? S_SLAM : S_BRACE;
-  if (s.id === 'gather') return lerpPose(out, REST, G, ease.out(s.k));
-  if (s.id === 'strike' || s.id === 'plant') return lerpPose(out, G, S, ease.in(s.k));
-  if (s.id === 'impact' || s.id === 'hold') {
-    lerpPose(out, S, S, 0);
-    // the impact skid and the held brace breathe a little
-    out.ry += -0.01 * Math.sin(s.k * Math.PI);
-    return out;
-  }
-  return lerpPose(out, S, REST, ease.inOut(s.k));
+// Pure: the pose of an ability at time t (from the stance).
+export function abilityPose(id, t, out = PACK.make()) {
+  return TANK_MOVES[id].pose(t, REST, out, 0);
 }
-
-// A faceted, inked part with its own (flashable, greyable) material.
-function fpart(geo, mat, ink = true) {
-  const m = new Mesh(geo, mat);
-  if (ink) addInk(m);
-  return m;
-}
-function facetArm(mat, radius, baseLen) {
-  const pivot = new Group();
-  const geo = sharedGeo(`facet:arm:${radius}:${baseLen}`, () => facetize(new CapsuleGeometry(radius, baseLen - radius * 2, 2, 6), { jitter: 0.08, seed: 51 }));
-  const m = fpart(geo, mat);
-  m.position.y = baseLen / 2;
-  pivot.add(m);
-  pivot.userData.baseLen = baseLen;
-  return pivot;
-}
-const UPV = new Vector3(0, 1, 0);
-const armTmp = new Vector3();
-function aimArm(pivot, target) {
-  armTmp.copy(target).sub(pivot.position);
-  const len = Math.max(0.02, armTmp.length());
-  pivot.quaternion.setFromUnitVectors(UPV, armTmp.normalize());
-  pivot.scale.set(1, len / pivot.userData.baseLen, 1);
-}
+export const TANK_REST = REST;
 
 export function buildTankFacet(rig, trackAccent) {
   const accent = CLASS_ACCENTS.tank;
@@ -405,6 +394,9 @@ export function buildTankFacet(rig, trackAccent) {
     setTRS(m, P.set(0.175, -0.19 + y, z), X.set(1, 0, 0), Y.set(0, 1, 0), Z.set(0, 0, 1), 0.013, 0.017, 0.017);
   }, { name: 'tank-studs', ink: false });
   shield.add(studs);
+  // The named points (B8): the grip paw and the slab's striking edge.
+  const hand = namedPoint(shield, 'hand', -0.02, -0.11, 0.16);
+  const tip = namedPoint(shield, 'tip', 0.175, -0.3, 0);
 
   // --- Arms, the off paw, the feet, the tail (all faceted).
   const armR = facetArm(coatMat, 0.06, 0.22);
@@ -441,265 +433,85 @@ export function buildTankFacet(rig, trackAccent) {
   tailPivot.add(tail);
   body.add(tailPivot);
 
-  // ------------------------------------------------------------------------
-  // Locked feet. Each foot is pinned to the floor (world space) while it
-  // carries weight; it steps when it falls too far from where the stance
-  // wants it, one foot at a time, landing ahead along the body's real
-  // velocity. Disabled while the body falls or lies downed.
-  // ------------------------------------------------------------------------
-  const yawGroup = () => rig.parent && rig.parent.parent;
-  const STEP_TRIGGER = 0.085; // u off home before a planted foot steps
-  const STEP_LIFT = 0.07;
-  const foot = feet.map((f, i) => ({
-    planted: new Vector3(), // world
-    from: new Vector3(),
-    to: new Vector3(),
-    swing: -1, // 0..1 while stepping, -1 planted
-    dur: 0.2,
-    side: i === 0 ? -1 : 1,
-    home: new Vector3(),
-    aim: new Vector3(), // the home it steps for (yaw space), fixed at lift-off
-  }));
-  const vel = new Vector3();
-  const lastPos = new Vector3();
-  let feetInit = false;
-  const w = new Vector3();
-  function homeLocalOf(i, stance, out) {
-    // the stance's home for this foot, at floor height, in yaw space
-    out.copy(HOME[i]);
-    if (stance.step > 0 && i === 0) out.z += 0.16 * stance.step; // the lunge foot (far side) steps in
-    if (stance.step > 0 && i === 1) out.z -= 0.03 * stance.step; // the anchor braces back
-    out.y = 0;
-    return out;
-  }
-  function homeWorld(i, stance, out) {
-    return yawGroup().localToWorld(homeLocalOf(i, stance, out));
-  }
-  function resetFeet(stance) {
-    for (let i = 0; i < 2; i++) {
-      homeWorld(i, stance, foot[i].planted);
-      foot[i].swing = -1;
-    }
-    feetInit = true;
-  }
-  let bobLift = 0;
-  let plantSide = 0;
-  let swingSide = 0;
-  // the travel in the Tank's own frame (+z ahead, +x to its left side's
-  // opposite): yaw follows the aim, so a backpedal or a sidestep is common
-  const yawQ = new Quaternion();
-  function localVelocity(out) {
-    const yg = yawGroup();
-    out.copy(vel);
-    if (yg) out.applyQuaternion(yg.getWorldQuaternion(yawQ).invert());
-    return out;
-  }
-  function stepFeet(dt, stance, locked) {
-    const yg = yawGroup();
-    if (!yg) return;
-    yg.updateWorldMatrix(true, false);
-    const gp = yg.getWorldPosition(w);
-    if (!feetInit || !locked) {
-      if (dt > 0) lastPos.copy(gp);
-      resetFeet(stance);
-      bobLift = 0;
-      if (!locked) {
-        for (let i = 0; i < 2; i++) feet[i].position.copy(HOME[i]);
-      }
-      return;
-    }
-    if (dt > 0) {
-      const jump = gp.distanceTo(lastPos);
-      if (jump > 1.5) {
-        resetFeet(stance); // a teleport or a new room: stand afresh
-        lastPos.copy(gp);
-      } else {
-        const k = Math.min(1, dt * 12);
-        vel.x += ((gp.x - lastPos.x) / dt - vel.x) * k;
-        vel.z += ((gp.z - lastPos.z) / dt - vel.z) * k;
-        lastPos.copy(gp);
-      }
-    }
-    const speed = Math.hypot(vel.x, vel.z);
-    for (let i = 0; i < 2; i++) homeWorld(i, stance, foot[i].home);
-    // advance a swing
-    let swinging = -1;
-    for (let i = 0; i < 2; i++) {
-      const f = foot[i];
-      if (f.swing < 0) continue;
-      f.swing += dt / f.dur;
-      // keep re-aiming the landing while it flies (the body keeps moving),
-      // at the home it lifted off for: a lunge lands even if the stance
-      // has already begun to settle back
-      yg.localToWorld(f.to.copy(f.aim)).addScaledVector(vel, f.dur * 0.55);
-      if (f.swing >= 1) {
-        f.swing = -1;
-        f.planted.copy(f.to);
-      } else swinging = i;
-    }
-    // start a step: the foot furthest from home, if it is too far
-    if (swinging < 0) {
-      let best = -1;
-      let bestErr = STEP_TRIGGER * (speed > 0.3 ? 0.6 : 1);
-      for (let i = 0; i < 2; i++) {
-        const err = Math.hypot(foot[i].planted.x - foot[i].home.x, foot[i].planted.z - foot[i].home.z);
-        if (err > bestErr) {
-          bestErr = err;
-          best = i;
-        }
-      }
-      if (best >= 0) {
-        const f = foot[best];
-        f.swing = 0;
-        f.dur = Math.max(0.12, Math.min(0.2, 0.2 - speed * 0.03));
-        f.from.copy(f.planted);
-        homeLocalOf(best, stance, f.aim);
-        f.to.copy(f.home).addScaledVector(vel, f.dur * 0.55);
-        swinging = best;
-      }
-    }
-    // place the feet (world -> rig space)
-    rig.updateWorldMatrix(true, false);
-    bobLift = 0;
-    for (let i = 0; i < 2; i++) {
-      const f = foot[i];
-      if (f.swing >= 0) {
-        const k = ease.inOut(f.swing);
-        w.lerpVectors(f.from, f.to, k);
-        w.y = STEP_LIFT * Math.sin(Math.PI * f.swing) * Math.min(1, 0.4 + speed * 0.5);
-        bobLift = Math.sin(Math.PI * f.swing);
-        plantSide = -f.side;
-        swingSide = f.side;
-      } else {
-        w.copy(f.planted);
-        w.y = 0;
-      }
-      rig.worldToLocal(w);
-      feet[i].position.set(w.x, w.y + HOME[i].y, w.z);
-    }
-  }
 
   // ------------------------------------------------------------------------
-  // Attacks: the combo and the two abilities (render clock).
+  // Locked feet and the attacks (the hero core: render/facet/hero.js).
   // ------------------------------------------------------------------------
-  let clock = 0;
+  const lock = createFootLock({ rig, feet, home: HOME, lunge: { lead: 0, reach: 0.16, brace: 0.03 } });
+  const atk = createAttackClock({
+    pack: PACK,
+    hits: HITS,
+    abilities: TANK_MOVES,
+    skillAbility,
+    window: COMBO_WINDOW,
+  });
   let lastT = null;
-  let combo = 0; // 1..3 = the hit playing
-  let hitT = 0;
-  let fresh = true;
-  let lastBasicAt = -99;
-  let ab = null; // { id, t }
-  let lastClip = 'idle';
-  const lv = new Vector3();
-  const fromPose = { ...REST };
-  const live = { ...REST };
-  const lagged = { ...REST };
-  const led = { ...REST };
-  const scratch = { ...REST };
-  function currentPose(out, dtShift = 0) {
-    if (ab) return abilityPose(ab.id, Math.max(0, ab.t + dtShift), out);
-    if (combo > 0) return hitPose(combo - 1, Math.max(0, hitT + dtShift), fromPose, fresh, out);
-    return lerpPose(out, REST, REST, 0);
-  }
-  function cue(kind, ev) {
-    if (kind === 'basic') {
-      currentPose(fromPose);
-      fresh = clock - lastBasicAt > COMBO_WINDOW || combo === 0 || !!ab;
-      combo = fresh ? 1 : (combo % 3) + 1;
-      hitT = fresh ? 0 : WIND;
-      ab = null;
-      lastBasicAt = clock;
-    } else if (kind === 'skill') {
-      const id = TANK_SKILL_ABILITY[ev && ev.shape] || 'brace';
-      const tl = TANK_ABILITIES[id];
-      ab = { id, t: Math.max(0, tl.startOf(id === 'slam' ? 'strike' : 'plant') - 0.08) };
-      combo = 0; // a skill breaks the combo: the next basic is hit 1
-    }
-  }
+  const live = PACK.make();
+  const lagged = PACK.make();
+  const led = PACK.make();
+  const walk = {};
 
   // The model lab drives these instead of the live clock (pure in time).
   const lab = {
-    abilities: TANK_ABILITIES,
-    hits: HIT_TL,
-    override: null, // { kind: 'hit', n, t, fresh } | { kind: 'ability', id, t } | null
-    cue,
-    // where each foot is (world), whether it carries weight, and where its
-    // mesh actually drew (probes)
-    feet: () =>
-      foot.map((f, i) => {
-        const at = feet[i].getWorldPosition(new Vector3());
-        return { planted: f.swing < 0, x: f.planted.x, z: f.planted.z, drawnX: at.x, drawnZ: at.z, drawnY: at.y };
-      }),
-    parts: { torso, shield, head },
+    abilities: TANK_MOVES,
+    hits: HITS.map((h) => h.timeline),
+    get override() {
+      return atk.override;
+    },
+    // { kind: 'hit', n, t, fresh, recoil? } | { kind: 'ability', id, t } |
+    // { kind: 'spawn', t } | null
+    set override(o) {
+      atk.setOverride(o);
+    },
+    cue: atk.cue,
+    clock: atk,
+    feet: lock.report,
+    // the weapon's swing (weaponField), as drawn: it trails the hips
+    swing: () => shield.rotation.y,
+    parts: { torso, shield, head, weapon: shield },
   };
 
   function apply(P, t, fallSign, clip = 'idle') {
     const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
     lastT = t;
-    clock += dt;
     const upright = 1 - P.collapse;
-    if (clip === 'hurt' && lastClip !== 'hurt') {
-      combo = 0; // a hit taken breaks the combo
-      ab = null;
-    }
-    if (clip === 'downed') {
-      combo = 0;
-      ab = null;
-    }
-    lastClip = clip;
 
     // COMMON-MODE ear sway (as tank.js).
     ears[0].rotation.z = -0.18 + 0.5 * P.ear - P.collapse * 0.4;
     ears[1].rotation.z = 0.18 + 0.5 * P.ear + P.collapse * 0.4;
     tailPivot.rotation.y = P.tail * 0.5;
 
-    // Advance the live attack.
-    if (lab.override) {
-      const o = lab.override;
-      if (o.kind === 'ability') {
-        ab = { id: o.id, t: o.t };
-        combo = 0;
-      } else {
-        ab = null;
-        combo = o.n + 1;
-        hitT = o.t;
-        fresh = !!o.fresh;
-        Object.assign(fromPose, o.from || (fresh ? REST : HITS[o.n].from));
-      }
-    } else {
-      if (ab) {
-        ab.t += dt;
-        if (ab.t >= TANK_ABILITIES[ab.id].duration) ab = null;
-      }
-      if (combo > 0) {
-        hitT += dt;
-        if (hitT >= HIT_TL[combo - 1].duration) combo = 0;
-      }
-    }
-    const attacking = (ab || combo > 0) && clip !== 'downed';
-
+    atk.advance(dt, clip);
+    const attacking = atk.active && clip !== 'downed';
     // The hips lead, the slab trails (sampled a frame apart on one timeline).
-    if (attacking) {
-      currentPose(live, 0);
-      currentPose(led, LEAD);
-      currentPose(lagged, -LAG);
-    }
+    if (attacking) atk.sample(live, led, lagged);
 
     // Torso and root: an attack owns them; otherwise the driver's clip does.
-    const torsoPose = attacking ? led : null;
-    if (torsoPose) {
-      torso.rotation.y = torsoPose.yaw * upright;
-      torso.rotation.x = Math.min(0.21, torsoPose.pitch) * upright;
-      torso.rotation.z = torsoPose.roll * upright;
-      head.rotation.x = -torso.rotation.x * 0.88 - 0.18 * upright;
-      head.rotation.y = -torsoPose.yaw * 0.5 * upright;
+    if (attacking) {
+      torso.rotation.y = led.yaw * upright;
+      torso.rotation.x = Math.min(LUNGE_PITCH_MAX, led.pitch) * upright;
+      torso.rotation.z = led.roll * upright;
       rig.position.x = live.rx * upright;
-      rig.position.y += live.ry * upright;
+      rig.position.y += (live.ry + live.hop) * upright;
       rig.position.z += live.rz * upright;
-      rig.scale.set(live.squash, 2 - live.squash, live.squash);
+      rig.scale.set(live.sw, live.sh, live.sw);
     } else {
       rig.position.x = 0;
     }
+    // The recoil off a connect (B3): a rig-only shove and lean back, after
+    // the held contact; the body never moves.
+    const rc = atk.recoil();
+    if (rc > 0) {
+      rig.position.z -= RECOIL.shove * rc * upright;
+      torso.rotation.x -= RECOIL.lean * rc * upright;
+    }
+    if (attacking || rc > 0) {
+      head.rotation.x = -torso.rotation.x * 0.88 - 0.18 * upright;
+      head.rotation.y = -torso.rotation.y * 0.5 * upright;
+    }
+    // The grow-in on a room entry (B7).
+    const sp = atk.spawn();
+    if (sp !== 1) rig.scale.multiplyScalar(sp);
 
     // The slab: an attack places it (a frame behind the hips); otherwise
     // the idle flourish and the generic cast lift it as tank.js does.
@@ -720,32 +532,27 @@ export function buildTankFacet(rig, trackAccent) {
     pawL.position.lerpVectors(PAW_REST, offGrip, paw);
     aimArm(armL, pawL.position);
 
-    // Feet: locked to the floor, stepping on their own (see above).
-    const stance = attacking ? live : REST;
+    // Feet: locked to the floor, stepping on their own.
     const locked = P.collapse < 0.04;
-    stepFeet(dt, stance, locked);
-    // The walk's bob, sway and twist come from the steps themselves: the body
-    // rises as a foot passes, rolls over the foot that carries it and turns
-    // the stepping hip forward. The lean follows the TRAVEL, not the aim
-    // (the driver's walk lean assumes forward): a backpedal leans back, a
-    // sidestep leans aside, so the root motion matches the legs.
+    lock.step(dt, attacking ? live : REST, locked);
+    // The walk's bob, sway, twist and travel lean come from the steps.
     if (locked && clip === 'walk' && !attacking) {
-      rig.position.y += 0.035 * bobLift - P.bob * upright * 0.6;
-      localVelocity(lv);
-      const fwd = Math.max(-1, Math.min(1, lv.z / WALK_SPEED));
-      const side = Math.max(-1, Math.min(1, lv.x / WALK_SPEED));
-      const twist = -swingSide * 0.1 * bobLift;
-      torso.rotation.x = Math.max(-0.08, Math.min(0.12, 0.1 * fwd)) * upright;
-      torso.rotation.y = twist * upright;
-      torso.rotation.z = (0.06 * plantSide * bobLift - 0.07 * side) * upright;
+      walkBody(lock, { walkSpeed: WALK_SPEED }, walk);
+      rig.position.y += walk.dy - P.bob * upright * 0.6;
+      torso.rotation.x = walk.pitch * upright;
+      torso.rotation.y = walk.twist * upright;
+      torso.rotation.z = walk.roll * upright;
       head.rotation.x = -torso.rotation.x * 0.88 - 0.18 * upright;
-      head.rotation.y = -twist * 0.55 * upright;
+      head.rotation.y = -walk.twist * 0.55 * upright;
     }
   }
 
   return {
     apply,
-    cue,
+    cue: atk.cue,
+    hold: atk.hold,
+    comboHitOf: atk.comboHitOf,
+    points: { hand, tip },
     lab,
     torso,
     head,
@@ -764,19 +571,38 @@ export function buildTankFacet(rig, trackAccent) {
 
 // The model lab's basic combo: three swings at the Tank's real cadence
 // (ALLY_CLASSES.tank.attackIntervalTicks in sim/allies.js: 39 ticks = 0.65 s;
-// the model standard probe checks the two agree). Pure in t, so it rewinds.
+// the model standard probe checks the two agree), each contact held as the
+// hitstop holds it. Pure in t, so it rewinds.
 export const SWING_SEC = 0.65;
-export const COMBO_LAB = Object.freeze({
-  id: 'combo',
-  label: 'Basic combo',
-  duration: 2 * SWING_SEC + HIT_TL[2].duration - WIND,
-  // which hit plays at t, how far into it, and the readout
-  at(t) {
-    const n = t < SWING_SEC ? 0 : t < 2 * SWING_SEC ? 1 : 2;
-    const tt = n === 0 ? t : t - n * SWING_SEC + WIND;
-    const s = HIT_TL[n].sample(tt);
-    return { n, t: tt, fresh: n === 0, phase: s.id, label: `${HIT_TL[n].label}: ${s.label}` };
+export const COMBO_LAB = createComboLab(HITS, { swingSec: SWING_SEC });
+
+// The Tank in the model-standard registry (render/facet/heroes.js): the lab
+// tab, the probe and the critter factory read him from here.
+export const TANK_SPEC = Object.freeze({
+  id: 'tank',
+  label: 'Tank',
+  build: buildTankFacet,
+  hits: HITS,
+  moves: TANK_MOVES,
+  skillAbility,
+  swingSec: SWING_SEC,
+  comboLab: COMBO_LAB,
+  ranged: false,
+  walkSpeed: WALK_SPEED,
+  weaponField: 'sry',
+  lab: {
+    abilities: [
+      ['combo', 'Basic combo'],
+      ['slam', 'Heavy Slam'],
+      ['brace', 'Brace'],
+      ['spawn', 'Spawn'],
+    ],
+    frame: { y: 0.5, z: 0, dist: 3.6, speed: 2.1, loop: 2.2, side: 1.5 },
+    cues: {
+      strike: { sound: 'swing', pitch: 0.8, fx: 'flash' },
+      finisher: { sound: 'impact', pitch: 0.7, fx: 'crack' },
+      impact: { sound: 'impact', pitch: 0.7, fx: 'crack' },
+      plant: { sound: 'tank_shield', pitch: 1, fx: 'ring' },
+    },
   },
-  // seconds into the combo where each hit's strike lands (lab cues)
-  strikes: [WIND + 0.083, SWING_SEC + 0.083, 2 * SWING_SEC + 0.083],
 });

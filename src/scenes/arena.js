@@ -631,11 +631,22 @@ export function createArenaScene(stage, toggles, ctx) {
   let firedFlag = false;
   let hurtFlag = false;
   let healerYaw = 0;
-  bus.on('basic_fire', () => {
+  bus.on('basic_fire', (ev) => {
     firedFlag = true;
+    healerRig.cue('basic', ev); // a model-standard rig's combo (docs/MODEL_STANDARD.md)
   });
+  // The Healer's skills (a model-standard rig plays the skill's ability).
+  bus.on('skill_cast', (ev) => healerRig.cue('skill', ev));
   bus.on('hit', (ev) => {
     if (ev.target === world.player.id) hurtFlag = true;
+    if (ev.attacker === world.player.id) healerRig.cue('connect', ev);
+  });
+  // The world froze (the ally layer tells the party's own rigs).
+  bus.on('hitstop', (ev) => {
+    if (healerRig.modelStandard) healerRig.cue('hitstop', ev);
+  });
+  bus.on('room_enter', () => {
+    if (healerRig.modelStandard) healerRig.cue('spawn');
   });
 
   // --- Entity contact shadows: same treatment for every sim body in the arena
