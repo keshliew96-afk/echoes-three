@@ -532,9 +532,10 @@ export function buildTankFacet(rig, trackAccent) {
     pawL.position.lerpVectors(PAW_REST, offGrip, paw);
     aimArm(armL, pawL.position);
 
-    // Feet: locked to the floor, stepping on their own.
+    // Feet: locked to the floor, stepping on their own; through the grow-in
+    // they ride the body (a foot planted at full size would stand apart).
     const locked = P.collapse < 0.04;
-    lock.step(dt, attacking ? live : REST, locked);
+    lock.step(dt, attacking ? live : REST, locked && sp === 1);
     // The walk's bob, sway, twist and travel lean come from the steps.
     if (locked && clip === 'walk' && !attacking) {
       walkBody(lock, { walkSpeed: WALK_SPEED }, walk);

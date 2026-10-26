@@ -1041,7 +1041,7 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     // Feet: locked to the floor, stepping on their own; the walk's bob,
     // sway, twist and travel lean come from the steps, over the rest lean.
     const locked = P.collapse < 0.04;
-    lock.step(dt, attacking ? live : REST, locked);
+    lock.step(dt, attacking ? live : REST, locked && sp === 1); // the grow-in: the feet ride the body
     if (locked && clip === 'walk' && !attacking) {
       walkBody(lock, { walkSpeed: WALK_SPEED }, walk);
       rig.position.y += walk.dy - P.bob * upright * 0.6;

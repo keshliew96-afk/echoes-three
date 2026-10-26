@@ -329,6 +329,14 @@ for (const H of FACET_HEROES) {
     R2.c.cue('spawn');
     run(R2, 2);
     check('the rig itself scales with the spawn', R2.rig.scale.y < 0.7, r3(R2.rig.scale.y));
+    // the feet grow in with the body, never left standing at full size
+    R2.world.updateMatrixWorld(true);
+    const reach = Math.max(...R2.c.lab.feet().map((ft) => Math.hypot(ft.drawnX - R2.c.group.position.x, ft.drawnZ - R2.c.group.position.z)));
+    const R3 = rigOf(H.id);
+    run(R3, 12);
+    R3.world.updateMatrixWorld(true);
+    const full = Math.max(...R3.c.lab.feet().map((ft) => Math.hypot(ft.drawnX, ft.drawnZ)));
+    check('the feet grow in with the body', reach < full * 0.75, { growing: r3(reach), full: r3(full) });
   }
   {
     // B8: named hand and tip, and the tip travels through the combo
