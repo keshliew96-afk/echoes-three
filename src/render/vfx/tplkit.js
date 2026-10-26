@@ -356,12 +356,18 @@ uniform float uTime;
 uniform float uSeed;
 uniform float uMode;
 uniform float uGain;
+uniform float uSwipe;
 varying vec2 vUv;
 ${NOISE}
 void main() {
   float u = vUv.x;
   float v = vUv.y;
   float lead = 1.0 - smoothstep( uHead - 0.04, uHead, u );
+  // T4: a sword swipe's start fades in on a concave ease-out ramp, opaque
+  // by about 42% of the arc; T5: 7 streak lines along the arc boil in place
+  // under the travelling window.
+  float ramp = mix( 1.0, 1.0 - pow( 1.0 - clamp( u / 0.42, 0.0, 1.0 ), 1.6 ), uSwipe );
+  float streak = mix( 1.0, 0.55 + 0.45 * smoothstep( -0.2, 0.8, sin( v * 43.98 + tplN( vec2( u * 3.0 + uSeed, uTime * 4.0 ) ) * 3.0 ) ), uSwipe );
   float trail = smoothstep( uHead - uTail, uHead - uTail * 0.2, u );
   float along = lead * trail;
   float behind = clamp( ( uHead - u ) / max( uTail, 0.001 ), 0.0, 1.0 );
@@ -375,7 +381,7 @@ void main() {
     float heat = smoothstep( 0.25, 0.95, v ) * ( 1.0 - behind * 0.6 ) + ( n - 0.5 ) * 0.35 + 0.1;
     vec3 c = mix( uB, uA, smoothstep( 0.05, 0.5, heat ) );
     c = mix( c, uCore * uGain, smoothstep( 0.55, 0.95, heat ) );
-    float a = along * body * flame * uOpacity;
+    float a = along * body * flame * ramp * streak * uOpacity;
     gl_FragColor = vec4( c, clamp( a, 0.0, 1.0 ) );
   } else {
     // WAVE: a clean bright leading rim over a soft inner glow, shimmering.
@@ -819,6 +825,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       uSeed: { value: 0 },
       uMode: { value: 0 },
       uGain: { value: 1.2 },
+      uSwipe: { value: 0 },
     };
     const mat = new ShaderMaterial({ uniforms: u, vertexShader: BLAZE_VERT, fragmentShader: BLAZE_FRAG, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
     const mesh = new Mesh(arcGeo, mat);
@@ -856,6 +863,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uA.value.copy(col(o.a ?? '#FFB43C'));
     u.uB.value.copy(col(o.b ?? '#F5952E'));
     u.uMode.value = o.mode === 'wave' ? 1 : 0;
+    u.uSwipe.value = o.swipe && !o.ring ? 1 : 0;
     u.uGain.value = o.gain ?? 1.25;
     u.uSeed.value = rnd(0, 60);
     u.uRadius.value = s.r0;
