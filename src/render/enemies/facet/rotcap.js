@@ -691,7 +691,7 @@ export function buildRotcapFacet() {
   }
 
   function pose(P) {
-    const dt = clock.step(P.t ?? 0);
+    const dt = clock.step(P);
     const now = clock.now;
     const e = P.e || null;
     const tick = P.tick ?? 0;

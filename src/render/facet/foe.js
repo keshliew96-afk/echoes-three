@@ -171,13 +171,32 @@ export function namedPoint(parent, name, x, y, z) {
 // ---------------------------------------------------------------------------
 // The clock and the sim's telegraph.
 // ---------------------------------------------------------------------------
-// A clock on pose's `t`: dt is clamped so a dropped frame or a tab switch
-// never fast-forwards a clip; `now` only ever runs forward.
+// A clock on the sim's time. step(P) takes the pose input: while the sim's
+// interpolated tick is known (the game, the lab) the clock runs on it, so a
+// hitstop (the tick frozen while frames go on) pauses every clip and a
+// contact holds through it (§6.1 B2), and a clip stays on the tick the sim
+// resolves the attack; without one (the Journal's turntable) it runs on `t`.
+// dt is clamped so a dropped frame or a tab switch never fast-forwards a
+// clip; `now` only ever runs forward. A tick that jumps back more than two
+// ticks (a lab rewind, a new run) restarts the clock without a step.
 export function createFoeClock() {
   let last = null;
   let now = 0;
+  let simT = null;
   return {
-    step(t) {
+    step(P) {
+      let t;
+      if (typeof P === 'number') t = P;
+      else if (P && Number.isFinite(P.tick) && !P.turntable) {
+        const st = P.tick / TICK_HZ;
+        // inside a hitstop the interpolated tick saw-tooths below the last
+        // one: hold; a real jump back restarts
+        if (simT === null || st < simT - 2 / TICK_HZ) {
+          simT = st;
+          last = null;
+        } else if (st > simT) simT = st;
+        t = simT;
+      } else t = (P && P.t) ?? 0;
       const dt = last === null ? 0 : Math.min(0.1, Math.max(0, t - last));
       last = t;
       now += dt;
@@ -187,6 +206,18 @@ export function createFoeClock() {
       return now;
     },
   };
+}
+
+// Whether the sim holds the entity from attacking on this tick: a stun or a
+// blind (sim/enemies.js resolveEnemies skips it and cancels its wind-up), or
+// it is no longer active (dying, gone with the room).
+export function heldBy(e, tick) {
+  if (!e) return false;
+  if (e.state && e.state !== 'active') return true;
+  if (!(e.hp > 0) && e.hp !== undefined) return true;
+  const st = e.status;
+  if (!st) return false;
+  return !!((st.stun && st.stun.untilTick > tick) || (st.blind && st.blind.untilTick > tick));
 }
 
 // The live telegraph's progress, 0..1 from its start to its resolve, on the
@@ -206,7 +237,10 @@ export function telegraphProgress(e, tick) {
 //                                  telegraph's own `kind`/`attack` field)
 //   { type: 'release', kind }      the telegraph ended on (or past) its
 //                                  resolve tick: the strike
-//   { type: 'cancel', kind }       it ended early (a stun, a blind, a death)
+//   { type: 'cancel', kind }       it ended early, or on its resolve tick
+//                                  while the sim held the entity (a stun or a
+//                                  blind landing on that tick, a death, a room
+//                                  clear): the sim cancelled it, no attack
 //   { type: 'bite' }               the layer's lunge pulse began (enemy_bite)
 //   { type: 'fire' }               the layer's fire pulse began (enemy_fire)
 // `key(tel)` names a telegraph (default: its kind, attack or shape).
@@ -225,7 +259,7 @@ export function createAttackWatch({ key = (tel) => tel.attack || tel.kind || 'at
         tel = { kind: key(live), startTick: live.startTick ?? tick, resolveTick: live.resolveTick ?? tick };
         beat = { type: 'wind', kind: tel.kind, span: (tel.resolveTick - tel.startTick) / TICK_HZ };
       } else if (!live && tel) {
-        const ended = tick >= tel.resolveTick - 1.01 ? 'release' : 'cancel';
+        const ended = tick >= tel.resolveTick - 1.01 && !heldBy(e, tel.resolveTick) ? 'release' : 'cancel';
         beat = { type: ended, kind: tel.kind };
         tel = null;
       }
@@ -365,18 +399,30 @@ export function hitTimelines(hits, window, createTimeline) {
 }
 
 export function lerpFields(out, a, b, k, fields) {
-  for (const f of fields) out[f] = a[f] + (b[f] - a[f]) * k;
+  for (let i = 0; i < fields.length; i++) {
+    const f = fields[i];
+    out[f] = a[f] + (b[f] - a[f]) * k;
+  }
   return out;
 }
+
+// A pose object's field names, listed once per object (no array per frame).
+const FIELDS = new WeakMap();
+function fieldsOf(rest) {
+  let f = FIELDS.get(rest);
+  if (!f) FIELDS.set(rest, (f = Object.keys(rest)));
+  return f;
+}
+const hitS = {};
 
 // Pure: hit n's pose at t seconds into it. `capture` is the pose it started
 // from (a chained hit strikes from it; a fresh one winds from it); `pull`
 // (0..1) deepens the held wind-up into the next hit's pull-back when the next
 // strike is due (§6.1 B9).
 export function hitPose(hits, tls, rest, n, t, capture, fresh, pull, out, ease) {
-  const fields = Object.keys(rest);
+  const fields = fieldsOf(rest);
   const H = hits[n];
-  const s = tls[n].sample(t); // a chained hit enters at its strike (t >= FRAME)
+  const s = tls[n].sample(t, hitS); // a chained hit enters at its strike (t >= FRAME)
   const k = s.k;
   if (s.id === 'wind') return lerpFields(out, capture, H.from, ease.out(k), fields);
   if (s.id === 'strike') return lerpFields(out, fresh ? H.from : capture, H.strike, ease.in(k), fields);
@@ -419,9 +465,11 @@ export function createChain({ hits, tls, rest, window, ease }) {
   let lastHit = -99;
   let fresh = true;
   let pullK = 0;
+  let lastNow = 0;
   let predicted = null; // when the early-started hit's contact is due
   const capture = { ...rest };
   const scratch = { ...rest };
+  const smp = {};
   function start(now, chained, contactAt, out) {
     // the pose the new hit starts from: wherever the chain is right now
     if (n >= 0) hitPose(hits, tls, rest, n, now - t0, capture, fresh, pullK, out, ease);
@@ -461,9 +509,11 @@ export function createChain({ hits, tls, rest, window, ease }) {
     },
     // Writes the pose into out; false when the chain is at rest.
     pose(now, out, due = null) {
+      const dt = Math.max(0, now - lastNow);
+      lastNow = now;
       if (n < 0) return false;
       let t = now - t0;
-      if (predicted === null && due !== null && due <= CONTACT_IN - STRIKE_IN && t < tls[n].duration && tls[n].sample(t).id === 'ready') {
+      if (predicted === null && due !== null && due <= CONTACT_IN - STRIKE_IN && t < tls[n].duration && tls[n].sample(t, smp).id === 'ready') {
         start(now, true, now + due, scratch);
         predicted = now + due;
         lastHit = predicted;
@@ -474,10 +524,29 @@ export function createChain({ hits, tls, rest, window, ease }) {
         n = -1;
         return false;
       }
-      const s = tls[n].sample(t);
-      pullK = s.id === 'ready' ? pullBack(due) : pullK;
+      const s = tls[n].sample(t, smp);
+      // the pull-back follows the prediction at its own pace: it never jumps
+      // in when the wind-up is reached late, and a prediction that drops (the
+      // target left, a stun) eases it out over about 5 frames
+      if (s.id === 'ready') {
+        const want = due !== null ? pullBack(due) : 0;
+        if (want > pullK) pullK = Math.min(want, pullK + dt / (4 * FRAME));
+        else {
+          pullK = Math.max(want, pullK * Math.exp(-dt / (1.5 * FRAME)));
+          if (pullK - want < 0.01) pullK = want;
+        }
+      }
       hitPose(hits, tls, rest, n, t, capture, fresh, pullK, out, ease);
       return true;
+    },
+    // The foe gave up the chain (it chases off): a held wind-up goes straight
+    // to its recover, from the pose it holds.
+    recover(now) {
+      if (n < 0) return;
+      const t = now - t0;
+      if (t >= tls[n].duration || tls[n].sample(t, smp).id !== 'ready') return;
+      t0 = now - tls[n].startOf('recover');
+      predicted = null;
     },
     reset() {
       n = -1;

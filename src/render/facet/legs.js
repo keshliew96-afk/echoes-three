@@ -15,6 +15,7 @@
 //
 //   createLegs({ homes, groups, ... })  the planner
 //   solveKnee(hip, foot, l1, l2, bend)  analytic two-bone leg IK
+//   liftToReach, clampReach             keep a drawn foot inside its leg's reach
 //   segmentMatrix(m, a, b, r)           a unit segment (y 0..1) from a to b
 import { Quaternion, Vector3 } from 'three';
 import { ease } from './timeline.js';
@@ -67,6 +68,8 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
   let bob = 0;
   let speed = 0;
   let free = false; // the last update stood the feet on their homes (unlocked)
+  const wantStep = new Array(n).fill(0); // release(i): step at the next update (its duration, or -1)
+  const errOf = (f) => Math.hypot(f.planted.x - f.home.x, f.planted.z - f.home.z);
 
   function homeLocal(i, shift, o) {
     o.x = homes[i].x;
@@ -132,7 +135,9 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
       // moved with no time passing (a scrub, a still, a placement): stand afresh
       if (dt <= 0 && jump > 1e-4) reset(fr, shift);
       if (dt > 0) {
-        if (jump > 1.5) reset(fr, shift); // a teleport or a new room: stand afresh
+        // a teleport (a Blinking elite's short blink), a new room: no foe walks
+        // two reaches in one frame faster than 10 u/s, so stand afresh
+        if (jump > 1.5 || (jump > 2 * reach * fr.s && jump > 10 * dt)) reset(fr, shift);
         else {
           const k = Math.min(1, dt * 12);
           vel.x += ((fr.x - last.x) / dt - vel.x) * k;
@@ -162,16 +167,34 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
           f.planted.z = f.to.z;
         } else flying = groupOf[i];
       }
+      // a foot the rig found out of its leg's reach steps now, whatever flies
+      for (let i = 0; i < n; i++) {
+        if (!wantStep[i]) continue;
+        const d = wantStep[i];
+        wantStep[i] = 0;
+        if (feet[i].swing < 0) {
+          startStep(i, fr, shift);
+          if (d > 0) {
+            // a quick step of its own length (a lunge step that must land by
+            // the contact): re-aim its lead for that duration
+            const f = feet[i];
+            f.to.x -= vel.x * (f.dur - d) * lead;
+            f.to.z -= vel.z * (f.dur - d) * lead;
+            f.dur = d;
+          }
+          if (flying < 0) flying = groupOf[i];
+        }
+      }
       // start a group's step: the group furthest from home, if too far (a
       // moving body alternates groups)
-      const err = (i) => Math.hypot(feet[i].planted.x - feet[i].home.x, feet[i].planted.z - feet[i].home.z);
       if (flying < 0) {
         const limit = trigger * (speed > 0.3 ? 0.6 : 1);
         let best = -1;
         let bestErr = limit;
         for (let gi = 0; gi < groups.length; gi++) {
           let e = 0;
-          for (const i of groups[gi]) e = Math.max(e, err(i));
+          const g = groups[gi];
+          for (let j = 0; j < g.length; j++) e = Math.max(e, errOf(feet[g[j]]));
           // while walking, the group that did not step last goes first on a tie
           const bias = speed > 0.3 && gi !== lastGroup ? 1.15 : 1;
           if (e * bias > bestErr) {
@@ -182,7 +205,7 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
         if (best >= 0) stepGroup(best, fr, shift);
       } else {
         // a planted foot left at full reach steps anyway
-        for (let i = 0; i < n; i++) if (feet[i].swing < 0 && groupOf[i] !== flying && err(i) > reach) startStep(i, fr, shift);
+        for (let i = 0; i < n; i++) if (feet[i].swing < 0 && groupOf[i] !== flying && errOf(feet[i]) > reach) startStep(i, fr, shift);
       }
       // place the feet (world -> yaw space)
       bob = 0;
@@ -201,6 +224,13 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
         }
       }
       return api;
+    },
+    // Foot i steps at the next update, whatever else is in the air: the rig
+    // drew it out of its leg's reach (clampReach pulled it in, so it carries
+    // no weight now), or a lunge steps it in (`dur`: a quick step, seconds,
+    // timed to land by the contact).
+    release(i, dur = 0) {
+      wantStep[i] = dur > 0 ? dur : -1;
     },
     // The travel in the rig's own frame (+z ahead, +x to its left), u/s.
     localVelocity(fr, o) {
@@ -271,4 +301,32 @@ export function liftToReach(hip, foot, l1, l2) {
   const lift = Math.max(0, want - foot.y);
   foot.y += lift;
   return lift;
+}
+
+// The last guard against a stretched bone: a foot still past the leg's full
+// reach (a fast turn or a strafe left it there for a frame or two) is pulled
+// in along the floor, keeping its height, until the leg reaches it. Returns
+// how far it moved: when it moved, the foot no longer carries weight, so the
+// rig calls the planner's release(i) and the foot steps.
+export function clampReach(hip, foot, l1, l2) {
+  const reach = (l1 + l2) * 0.995;
+  const dx = foot.x - hip.x;
+  const dy = foot.y - hip.y;
+  const dz = foot.z - hip.z;
+  const d2 = dx * dx + dy * dy + dz * dz;
+  if (d2 <= reach * reach) return 0;
+  const h2 = dx * dx + dz * dz;
+  const want = reach * reach - dy * dy;
+  if (want <= 0 || h2 < 1e-12) {
+    // the hip is above reach of the floor spot: straighten toward it
+    const d = Math.sqrt(d2);
+    const k = reach / d;
+    foot.set(hip.x + dx * k, hip.y + dy * k, hip.z + dz * k);
+    return d - reach;
+  }
+  const h = Math.sqrt(h2);
+  const k = Math.sqrt(want) / h;
+  foot.x = hip.x + dx * k;
+  foot.z = hip.z + dz * k;
+  return h * (1 - k);
 }

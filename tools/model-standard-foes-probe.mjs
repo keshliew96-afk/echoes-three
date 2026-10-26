@@ -5,7 +5,11 @@
 // only. This probe checks:
 //   1. the foe kit: the spawn-in curve (B7), the settle's one overshoot (B5),
 //      the 3-hit chain (a chained hit never pops, a predicted bite's contact
-//      lands on its tick, the real bite confirms it);
+//      lands on its tick, the real bite confirms it, a dropped prediction
+//      eases out), the clock on the sim's tick (a hitstop pauses a clip), a
+//      telegraph the sim cancels on its resolve tick (a stun) never reads as
+//      a strike, a short blink re-stands the feet, a foot is never drawn past
+//      its leg's reach;
 //   2. the roster: every kind of Level I's roster and campaign roster has a
 //      faceted rig, a flag, abilities and a model lab tab, and `?facet=0`
 //      hands every one back to its classic rig;
@@ -35,7 +39,8 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 
 const { Color, Vector3 } = await import('three');
 const { createTimeline, ease } = await import('../src/render/facet/timeline.js');
-const { FRAME, SPAWN_SEC, spawnScale, settle, hitTimelines, createChain } = await import('../src/render/facet/foe.js');
+const { FRAME, SPAWN_SEC, spawnScale, settle, hitTimelines, createChain, createFoeClock, createAttackWatch } = await import('../src/render/facet/foe.js');
+const { createLegs, clampReach } = await import('../src/render/facet/legs.js');
 const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FACET_FOES, FOE_ABILITIES, facetFoeBuilders } = await import('../src/render/enemies/facet/index.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-foes.js');
@@ -109,6 +114,80 @@ const CLASSIC = { boar: buildBoar, mantis: buildMantis, ...ARCH_BUILDERS };
   check('a predicted bite: the chained strike starts early so its contact lands on the bite', Math.abs(contacts[1] - bites[1]) < 1e-6 && Math.abs(contacts[2] - bites[2]) < 1e-6, contacts.map(r3));
   check('the real bite confirms the early strike instead of starting another', confirmed === 2, confirmed);
   check('a chained hit starts from wherever the last one is (no pop on the frame it begins)', startJump < 0.5, r3(startJump));
+}
+{
+  // a dropped prediction (the target stepped away) eases the pull-back out
+  const REST = { a: 0 };
+  const K = (a) => ({ a });
+  const hits = [
+    { label: 'one', from: K(-1), pull: K(-3), strike: K(2), over: K(2.4), next: K(-2) },
+    { label: 'two', from: K(-2), pull: K(-4), strike: K(3), over: K(3.4), next: K(-3) },
+    { label: 'three', from: K(-3), pull: K(-1.5), strike: K(5), over: K(5.6), next: K(-1) },
+  ];
+  const tls = hitTimelines(hits, 1.2, createTimeline);
+  const chain = createChain({ hits, tls, rest: REST, window: 1.2, ease });
+  const out = { a: 0 };
+  let last = null;
+  let worst = 0;
+  chain.hit(0);
+  for (let f = 0; f < 60; f++) {
+    const now = f * DT;
+    // the next bite looks due at 0.6 s until frame 30, then the target leaves
+    const due = f < 30 ? 0.6 - now : null;
+    chain.pose(now, out, due > 0 ? due : null);
+    // from the end of the settle on: the held wind-up begins (pulling), the
+    // drop lands at frame 30
+    if (last !== null && now > 12.5 * FRAME) worst = Math.max(worst, Math.abs(out.a - last));
+    last = out.a;
+  }
+  check('the pull-back never jumps in, and a dropped prediction eases it out (no pop)', worst < 0.3, r3(worst));
+  chain.recover(1.0);
+  check('a chain the foe gives up goes from its held wind-up to recover', tls[chain.current].sample(1.0 - (chain.contactAt - 3.5 * FRAME)).id === 'recover');
+
+  // the clock runs on the sim's tick: a hitstop (the tick frozen, the frames
+  // going on, the interpolated tick saw-toothing inside it) pauses a clip
+  const clock = createFoeClock();
+  let ran = 0;
+  for (let f = 0; f <= 20; f++) clock.step({ t: f / 60, tick: f });
+  const before = clock.now;
+  for (let f = 1; f <= 6; f++) ran += clock.step({ t: (20 + f) / 60, tick: 20 + (f % 2) * 0.5 });
+  check('the foe clock holds through a hitstop (the tick frozen while frames go on)', ran < 0.01 && clock.now - before < 0.01, r3(ran));
+  const tt = createFoeClock();
+  tt.step({ t: 0, turntable: true });
+  check("the foe clock runs on t where there is no tick (the Journal's turntable)", Math.abs(tt.step({ t: 0.05, turntable: true }) - 0.05) < 1e-9);
+  const rw = createFoeClock();
+  rw.step({ t: 2, tick: 120 });
+  check('a rewind restarts the foe clock without a step', rw.step({ t: 0, tick: 0 }) === 0 && rw.step({ t: 1 / 60, tick: 1 }) > 0);
+
+  // a telegraph the sim cancels on its resolve tick (a stun landing on it,
+  // a room clear) is a cancel, never a strike
+  const watch = createAttackWatch();
+  const e = { telegraph: { startTick: 10, resolveTick: 52 }, state: 'active', hp: 5 };
+  watch.update({ e, tick: 10 });
+  e.telegraph = null;
+  e.status = { stun: { untilTick: 112 } };
+  const stunBeat = watch.update({ e, tick: 51.4 });
+  const w2 = createAttackWatch();
+  const e2 = { telegraph: { startTick: 10, resolveTick: 52 }, state: 'active', hp: 5 };
+  w2.update({ e: e2, tick: 10 });
+  e2.telegraph = null;
+  const relBeat = w2.update({ e: e2, tick: 51.4 });
+  check('a telegraph stunned on its resolve tick is a cancel, an untouched one a release', stunBeat && stunBeat.type === 'cancel' && relBeat && relBeat.type === 'release', [stunBeat && stunBeat.type, relBeat && relBeat.type]);
+
+  // a short blink (a Blinking elite lands 1 to 1.4 u off) re-stands the feet
+  const legs = createLegs({ homes: [new Vector3(0.1, 0, 0.1), new Vector3(-0.1, 0, 0.1), new Vector3(0.1, 0, -0.1), new Vector3(-0.1, 0, -0.1)], groups: [[0, 3], [1, 2]], reach: 0.2 });
+  const fr = { x: 0, z: 0, yaw: 0, s: 1 };
+  for (let f = 0; f < 10; f++) legs.update(DT, fr);
+  fr.x = 1.1;
+  legs.update(DT, fr);
+  const far = Math.max(...legs.out.map((o) => Math.hypot(o.x, o.z)));
+  check('a short blink re-stands the feet under the body', far < 0.2, r3(far));
+
+  // a foot past the leg's reach is pulled in along the floor, never stretched
+  const hip = new Vector3(0, 0.3, 0);
+  const foot = new Vector3(0.6, 0, 0);
+  const moved = clampReach(hip, foot, 0.2, 0.2);
+  check("a foot past its leg's reach is drawn at the reach, on the floor", moved > 0 && Math.abs(foot.distanceTo(hip) - 0.4 * 0.995) < 1e-6 && foot.y === 0, { moved: r3(moved), len: r3(foot.distanceTo(hip)) });
 }
 
 // --- 2. the roster ----------------------------------------------------------

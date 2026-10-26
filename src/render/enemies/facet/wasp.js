@@ -573,7 +573,7 @@ export function buildWaspFacet() {
   }
 
   function pose(P) {
-    const dt = clock.step(P.t ?? 0);
+    const dt = clock.step(P);
     const now = clock.now;
     const tt = P.t ?? 0;
     const e = P.e || null;
