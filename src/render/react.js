@@ -207,6 +207,10 @@ export function createReaction(kind, { boss = false, champion = false } = {}) {
     boss,
     rope: ROPE_KINDS.has(kind),
     coil: COIL_KINDS.has(kind),
+    // A coiled rig that asks for the flinch (its `react.flinch`, the faceted
+    // Wyrm by Kesh's pick of §6.1 item 9) keeps the near-edge shift away from
+    // the hit while its widths stay put.
+    coilFlinch: false,
     hitTick: null, // last contact
     p: REACT.light,
     amp: 0,
@@ -348,7 +352,7 @@ export function writeReaction(node, st, o, body, base = 1) {
   // times the along-hit gain), both back in the group's own units.
   // World units (body.height is in the group's own, so times its scale).
   const liftU = st.rope ? 0 : Math.min(REACT.maxLiftU, o.hopShot ? o.lift * REACT.shotHop * body.height * b : o.lift * REACT.hopU);
-  const shift = (st.coil || Math.hypot(o.dirX, o.dirZ) < 1e-4 ? 0 : st.radius * REACT.flinch * qPos) / b;
+  const shift = ((st.coil && !st.coilFlinch) || Math.hypot(o.dirX, o.dirZ) < 1e-4 ? 0 : st.radius * REACT.flinch * qPos) / b;
   node.userData.lift = liftU / b; // the kill reads it to bring a mid-hop body down
   const m = node.matrix;
   m.makeTranslation(0, -py, 0);

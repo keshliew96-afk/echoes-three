@@ -84,8 +84,15 @@ function bodyBox(root) {
     if (!o.isMesh || o.isSprite || !o.visible || !o.geometry) return;
     const m = Array.isArray(o.material) ? o.material[0] : o.material;
     if (m && (m.transparent || m.side === 1 /* BackSide: ink hulls */)) return;
-    if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
-    tmp.copy(o.geometry.boundingBox).applyMatrix4(o.matrixWorld);
+    // an instanced part's box covers its instances (re-measured: they move)
+    if (o.isInstancedMesh) {
+      o.computeBoundingBox();
+      tmp.copy(o.boundingBox);
+    } else {
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      tmp.copy(o.geometry.boundingBox);
+    }
+    tmp.applyMatrix4(o.matrixWorld);
     if (![tmp.min.x, tmp.min.y, tmp.min.z, tmp.max.x, tmp.max.y, tmp.max.z].every(Number.isFinite)) return; // an empty or unbuilt geometry
     box.union(tmp);
   });
