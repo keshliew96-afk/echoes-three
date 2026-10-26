@@ -38,17 +38,21 @@
 //     high where every facing sees it, the wings spread and beating hard, a
 //     buzz tremor building. The strike whips the abdomen under in the last
 //     2.5 frames of the telegraph, sampled on the shown sim tick, so its
-//     contact pose (nose down 24 degrees, dropped, stretched long, the stinger
-//     thrust forward under the body: the stab, wings swept back) lands on the
+//     contact pose (nose down 46 to 52 degrees, dropped, stretched long, the
+//     abdomen swung under to point at the floor and the stinger thrust out
+//     half again its length below the body: the stab, seen in every facing,
+//     wings swept back) lands on the
 //     release frame, the frame the dart's event arrives and the tick before
 //     the body leaves. The contact holds while the sim's mode is 'dart'; when
 //     the dart ends it pulls up (brakes nose-up, the abdomen whips back past
 //     rest) and settles with one overshoot. A stun, blind or room clear that
 //     cancels the telegraph aborts it, even inside the strike frames. Not a
 //     repeating melee attack, so no 3-hit chain; its directional variety is
-//     per dart instead: hook from its right, hook from its left, then the big
-//     plunge, offset by the swarm index so a swarm's opening string of three
-//     staggered darts reads as three different stings;
+//     per dart instead: hook from its right, a corkscrew (half barrel roll)
+//     from its left, then the big plunge, offset by the swarm index so a
+//     swarm's opening string of three staggered darts reads as three
+//     different stings, and each live dart's throw and swing scaled 0.88 to
+//     1.12 by a seed of the wasp's id and dart count (no two alike);
 //   * the spawn-in grow (B7), named points (B8: the stinger tip, its base, the
 //     mandibles), and the hit and death tuning the shared envelope reads.
 //
@@ -95,32 +99,73 @@ const SPAN_H = 0.17;
 // spread over its joints); hook: its swing aside (+ toward its left); sting:
 // the stinger's own bend; wUp / wAmp / wSweep: the wings' raise, beat size and
 // sweep back; buzz: the coil's tremor (0..1); hold: the hover steadied while
-// it aims and darts (0..1 of the bob damped).
-const REST = Object.freeze({ lift: 0, push: 0, pitch: 0, roll: 0, twist: 0, sx: 1, sy: 1, sz: 1, curl: 0, hook: 0, sting: 0, wUp: 0, wAmp: 1, wSweep: 0, buzz: 0, hold: 0 });
+// it aims and darts (0..1 of the bob damped); ext: the stinger drawn out
+// (its length grows by this share: the coil's tell and the stab's thrust).
+const REST = Object.freeze({ lift: 0, push: 0, pitch: 0, roll: 0, twist: 0, sx: 1, sy: 1, sz: 1, curl: 0, hook: 0, sting: 0, wUp: 0, wAmp: 1, wSweep: 0, buzz: 0, hold: 0, ext: 0 });
 const FIELDS = Object.keys(REST);
 const K = (o) => Object.freeze({ ...REST, ...o });
-const mirror = (p) => K({ ...p, roll: -p.roll, twist: -p.twist, hook: -p.hook });
+// THE STAB (every dart): the body tips steeply nose-down into the dive, the
+// abdomen swings under to point at the floor and the stinger thrusts out a
+// share longer (ext), so the indigo point hangs below the body, square to the
+// camera's view, in every facing (a curl forward under the thorax hid it from
+// the front and behind).
 // Dart 1, HOOK FROM ITS RIGHT: the classic's coil, nose down along the lane
 // with the abdomen cocked up behind and aside to its right (the stinger, the
 // tell, held high where every facing sees it), the wings spread and beating
 // hard; it whips the abdomen under and across to its left as it drops into
-// the dive (the stab).
-const C1 = K({ lift: 0.02, push: -0.06, pitch: 0.4, roll: 0.14, twist: -0.14, sx: 0.97, sy: 1.04, sz: 0.93, curl: 0.15, hook: -0.5, sting: -0.5, wUp: -0.08, wAmp: 1.35, wSweep: -0.3, buzz: 1, hold: 1 });
-const S1 = K({ lift: -0.2, push: 0.1, pitch: 0.42, roll: -0.2, twist: 0.12, sx: 0.9, sy: 0.92, sz: 1.16, curl: 1.9, hook: 0.22, sting: 0.3, wUp: -0.12, wAmp: 0.5, wSweep: 0.85, hold: 1 });
+// the stab.
+const C1 = K({ lift: 0.02, push: -0.06, pitch: 0.4, roll: 0.14, twist: -0.14, sx: 0.97, sy: 1.04, sz: 0.93, curl: 0.15, hook: -0.5, sting: -0.5, wUp: -0.08, wAmp: 1.35, wSweep: -0.3, buzz: 1, hold: 1, ext: 0.5 });
+const S1 = K({ lift: -0.2, push: 0.1, pitch: 0.8, roll: -0.25, twist: 0.12, sx: 0.9, sy: 0.92, sz: 1.16, curl: 0.9, hook: 0.3, sting: 0, wUp: -0.12, wAmp: 0.5, wSweep: 0.85, hold: 1, ext: 0.7 });
 const O1 = K({ lift: 0.03, push: 0.03, pitch: -0.3, roll: 0.1, twist: -0.06, sx: 1.04, sy: 1.05, sz: 0.95, curl: -0.15, hook: -0.12, sting: -0.05, wUp: -0.2, wAmp: 1.15, wSweep: -0.08, hold: 0.5 });
 // Dart 3, PLUNGE (the biggest, §6.1 B6): coiled highest and square, it drops
 // hardest, stretched longest, and pulls up with the biggest flare.
-const C3 = K({ lift: 0.04, push: -0.08, pitch: 0.4, sx: 0.96, sy: 1.06, sz: 0.9, curl: 0.2, sting: -0.5, wUp: -0.12, wAmp: 1.45, wSweep: -0.36, buzz: 1, hold: 1 });
-const S3 = K({ lift: -0.3, push: 0.12, pitch: 0.55, sx: 0.88, sy: 0.9, sz: 1.22, curl: 2.2, sting: 0.35, wUp: -0.15, wAmp: 0.4, wSweep: 1.0, hold: 1 });
+const C3 = K({ lift: 0.04, push: -0.08, pitch: 0.4, sx: 0.96, sy: 1.06, sz: 0.9, curl: 0.2, sting: -0.5, wUp: -0.12, wAmp: 1.45, wSweep: -0.36, buzz: 1, hold: 1, ext: 0.5 });
+const S3 = K({ lift: -0.3, push: 0.2, pitch: 0.9, sx: 0.88, sy: 0.9, sz: 1.22, curl: 0.9, sting: -0.1, wUp: -0.15, wAmp: 0.4, wSweep: 1.0, hold: 1, ext: 0.8 });
 const O3 = K({ lift: 0.05, push: 0.04, pitch: -0.4, sx: 1.06, sy: 1.06, sz: 0.94, curl: -0.2, sting: -0.06, wUp: -0.24, wAmp: 1.2, wSweep: -0.12, hold: 0.5 });
-// Dart 2 is dart 1 mirrored: HOOK FROM ITS LEFT.
+// Dart 2, CORKSCREW FROM ITS LEFT: a low, flat coil banked onto its right
+// side with the abdomen cocked out to its left; it rolls through onto its
+// left as it drops (a half barrel roll, the abdomen hooking back under to its
+// right) and comes out of the roll as it pulls up.
+const C2 = K({ lift: -0.03, push: -0.04, pitch: 0.3, roll: -0.3, twist: 0.2, sx: 1.02, sy: 0.98, sz: 0.95, curl: 0.25, hook: 0.6, sting: -0.5, wUp: -0.04, wAmp: 1.25, wSweep: -0.2, buzz: 1, hold: 1, ext: 0.5 });
+const S2 = K({ lift: -0.22, push: 0.1, pitch: 0.8, roll: 0.6, twist: -0.25, sx: 0.9, sy: 0.92, sz: 1.16, curl: 0.9, hook: -0.3, sting: 0, wUp: -0.1, wAmp: 0.55, wSweep: 0.9, hold: 1, ext: 0.7 });
+const O2 = K({ lift: 0.03, push: 0.03, pitch: -0.25, roll: -0.15, twist: 0.1, sx: 1.04, sy: 1.05, sz: 0.95, curl: -0.1, hook: 0.1, sting: -0.05, wUp: -0.18, wAmp: 1.1, wSweep: -0.06, hold: 0.5 });
 const DARTS = [
   { label: 'hook from its right', coil: C1, strike: S1, over: O1 },
-  { label: 'hook from its left', coil: mirror(C1), strike: mirror(S1), over: mirror(O1) },
+  { label: 'corkscrew from its left', coil: C2, strike: S2, over: O2 },
   { label: 'plunge', coil: C3, strike: S3, over: O3 },
 ].map((d) => Object.freeze(d));
 export const WASP_REST = REST;
 export const WASP_DARTS = Object.freeze(DARTS);
+
+// Live variety: each live dart's coil and stab are its authored ones with the body's
+// throw (lift, push, pitch, roll, twist) and the abdomen's swing (curl, hook)
+// each scaled by 0.88..1.12, seeded from the wasp's id and its dart count, so
+// a swarm's sisters and one wasp's darts never repeat exactly. Pure: no
+// random stream, no clock. The lab's timelines keep the authored poses.
+const VARY_BODY = ['lift', 'push', 'pitch', 'roll', 'twist'];
+const VARY_TAIL = ['curl', 'hook'];
+function hash01(n) {
+  let h = Math.imul((n | 0) ^ 0x9e3779b9, 0x85ebca6b);
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+function varyPose(src, fb, ft, out) {
+  Object.assign(out, src);
+  for (const k of VARY_BODY) out[k] = REST[k] + (src[k] - REST[k]) * fb;
+  for (const k of VARY_TAIL) out[k] = REST[k] + (src[k] - REST[k]) * ft;
+  return out;
+}
+export function waspVaryDart(v, id, n, out) {
+  const D = DARTS[v] || DARTS[0];
+  const seed = (id | 0) * 7919 + (n | 0) * 104729;
+  const fb = 0.88 + 0.24 * hash01(seed);
+  const ft = 0.88 + 0.24 * hash01(seed + 1);
+  varyPose(D.coil, fb, ft, out.coil);
+  varyPose(D.strike, fb, ft, out.strike);
+  Object.assign(out.over, D.over); // the pull-up as authored (its wings sit near the crown)
+  out.label = D.label;
+  return out;
+}
 
 // One dart on its timeline (the lab's; in game the coil and the strike are
 // stretched to the live telegraph and the dive holds while the sim darts).
@@ -155,7 +200,7 @@ function divePose(D, held, out) {
   out.sting += KICK * settle(Math.min(1, held / (3 * FRAME)));
   return out;
 }
-// Pure: dart v (0 hook right, 1 hook left, 2 plunge) at t seconds into it.
+// Pure: dart v (0 hook right, 1 corkscrew left, 2 plunge) at t seconds into it.
 export function waspDartPose(v, t, out = { ...REST }) {
   const D = DARTS[v] || DARTS[0];
   const s = DART_TL.sample(t);
@@ -412,7 +457,6 @@ const REST_A0 = 0.0;
 const REST_BEND = 0.02;
 const CURL_W = [0.3, 0.25, 0.25, 0.2];
 const STING_LEN = 0.15;
-const STING_COIL = 0.5; // the stinger grows by this share in the coil (buzz 1) only
 // Wing roots (the right side; the left mirrors), their spans and chords.
 const WINGS = [
   { s: -1, fore: true },
@@ -479,6 +523,8 @@ export function buildWaspFacet() {
   let state = 'rest';
   let variant = 0;
   let darts = 0;
+  // this dart's poses (the authored ones, varied per wasp and per dart)
+  const Dv = { label: '', coil: { ...REST }, strike: { ...REST }, over: { ...REST } };
   let telStart = 0;
   let telResolve = 0;
   let released = false;
@@ -534,6 +580,7 @@ export function buildWaspFacet() {
       Object.assign(capture, cur);
       variant = ((e && e.swarmIndex) || 0) + darts;
       variant %= 3;
+      waspVaryDart(variant, e && Number.isFinite(e.id) ? e.id : 0, darts, Dv);
       darts += 1;
       const tel = watch.telegraph;
       telStart = tel.startTick;
@@ -553,13 +600,13 @@ export function buildWaspFacet() {
     if (darting && !wasDarting && state !== 'coil' && state !== 'strike' && state !== 'dive') {
       Object.assign(capture, cur);
       variant = (((e && e.swarmIndex) || 0) + darts) % 3;
+      waspVaryDart(variant, e && Number.isFinite(e.id) ? e.id : 0, darts, Dv);
       darts += 1;
       state = 'snapin';
       t0 = now;
       noteStrike(`dart:${variant + 1}`, tick + 1 + FRAME * TICK_HZ); // the shown tick + one frame
     }
     wasDarting = darting;
-    const Dv = DARTS[variant];
     if (state === 'coil' || state === 'strike') {
       // sampled on the SHOWN tick: the layer passes P.tick = state tick - 1 +
       // alpha while the entity's fields are the state's own, so the release
@@ -724,7 +771,7 @@ export function buildWaspFacet() {
     U.set(0, -Math.cos(sp), Math.sin(sp)).applyQuaternion(q); // its belly: the horn bends this way
     C.copy(J).addScaledVector(D, -0.012).add(GASTER_ROOT);
     X.crossVectors(D, U);
-    const sl = STING_LEN * (1 + STING_COIL * cur.buzz); // the coil draws the tell out
+    const sl = STING_LEN * (1 + cur.ext); // the coil draws the tell out, the stab thrusts it
     setTRS(sting.matrix, C, X, D, U, sl, sl, sl);
     sting.matrixWorldNeedsUpdate = true;
 
