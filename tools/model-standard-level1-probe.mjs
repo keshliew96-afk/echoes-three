@@ -545,6 +545,20 @@ const watch = (r) => {
   const pts = ['mouth', 'throat', 'crown'].filter((n) => !(r.points && r.points[n] && r.points[n].isObject3D));
   check('Barrow Wyrm: named points for the mouth, the throat and the crown (B8)', pts.length === 0, pts);
   check("Barrow Wyrm: item 9's hit tuning, the envelope's half squash and flinch on the height axis", r.react && (r.react.axis ?? 'y') === 'y' && r.react.squash === 1 && r.react.flinch === 1 && r.react.knock === 0, r.react);
+  {
+    // The shared overlay (render/react.js) honours it: a hit on the coil
+    // squashes it on Y only, at a boss's half, and shifts it away from the
+    // hit (the flinch) while its widths stay put.
+    const RX = await import('../src/render/react.js');
+    const st = RX.createReaction('wyrm', { boss: true });
+    if (r.react.flinch > 0) st.coilFlinch = true;
+    const node = new Group();
+    node.matrixAutoUpdate = false;
+    RX.armReaction(st, { tick: 10, delivery: 'basic', shape: 'melee', dirX: 1, dirZ: 0, kb: 0 }, { radius: 1.2 });
+    RX.writeReaction(node, st, RX.evalReaction(st, 10, {}), { pivot: 0, height: 1, floats: false }, 1);
+    const m = node.matrix.elements;
+    check('Barrow Wyrm: the shared hit overlay squashes the coil on Y only and flinches it away from the hit', st.coil && Math.abs(m[0] - 1) < 1e-6 && Math.abs(m[10] - 1) < 1e-6 && m[5] < 1 && m[12] > 0.005, { sx: m[0], sy: m[5], sz: m[10], tx: m[12] });
+  }
   const world = new Group();
   world.add(r.group);
   const e = { id: 3, telegraph: null };

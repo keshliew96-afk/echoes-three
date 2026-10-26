@@ -50,9 +50,17 @@ import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 import { PALETTE } from '../../data/palette.js';
+import { HOLD_CAP } from '../hold.js';
 
-export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 28, streak: 64, cracks: 12, pillar: 8, star: 48, mark: 24, glow: 32 });
+// flash 28 -> 64 and star 48 -> 64 with the held contact bloom (THE HIT AND
+// THE KILL): every hit now keeps two flashes (the bloom and the class flash)
+// and two stars about 0.22 s, and a kill one more flash 0.3 s. At 64 the
+// flash pool keeps base's margin, so a busy fight never steals a live enemy
+// tell flash it would not have stolen before.
+export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 64, streak: 64, cracks: 12, pillar: 8, star: 64, mark: 24, glow: 32 });
 const FLASH_HOLD = 0.066; // s — 4 frames at 60 fps at full strength
+const STAR_HOLD = 0.05; // s — a star's default full-strength beat after its pop
+const STAR_POP = 0.035; // s — a star's pop-in
 
 // Resolved colours are cached per hex: exactColor runs an inverse of the post
 // chain, so the hue that lands on screen is the authored one.
@@ -413,6 +421,7 @@ export function createVfxKit({ stage, cosmetic }) {
           const s = slots[(cursor + i) % cap];
           if (!s.live) {
             cursor = (cursor + i + 1) % cap;
+            s.owe = 0;
             return s;
           }
         }
@@ -421,6 +430,7 @@ export function createVfxKit({ stage, cosmetic }) {
         for (const s of slots) if (!s.hold && (!oldest || s.age - s.delay > oldest.age - oldest.delay)) oldest = s;
         oldest ??= slots[cursor];
         oldest.owner = null;
+        oldest.owe = 0;
         return oldest;
       },
       live: () => slots.reduce((n, s) => n + (s.live ? 1 : 0), 0),
@@ -471,6 +481,7 @@ export function createVfxKit({ stage, cosmetic }) {
     const s = arcs.take();
     const u = s.u;
     const span = o.span ?? Math.PI * 0.6;
+    s.obj.renderOrder = 7;
     s.live = true;
     s.age = 0;
     s.delay = o.delay ?? 0;
@@ -509,9 +520,12 @@ export function createVfxKit({ stage, cosmetic }) {
   }
 
   // A full-circle shockwave: r0 -> r1 over life, thinning as it goes.
+  // order: draw order (default 7, over the floor); a kill ring passes a low
+  // one so any Ember telegraph ring (1-3) draws over it (VFX_HIT_RULES K1).
   function ring(o) {
     const s = arcs.take();
     const u = s.u;
+    s.obj.renderOrder = o.order ?? 7;
     s.live = true;
     s.age = 0;
     s.delay = o.delay ?? 0;
@@ -839,14 +853,17 @@ export function createVfxKit({ stage, cosmetic }) {
     return { obj: sp, mat };
   });
   // opts: x, y, z, color, size, life, kind ('star' | 'burst'), spin (rad/s),
-  // opacity, delay. Pops in over ~2 frames, holds ~3, then shrinks while the
-  // rays stretch out.
+  // opacity, delay, hold (s at full strength after the pop; default 0.05).
+  // Pops in over ~2 frames, holds ~3, then shrinks while the rays stretch out.
   function star(o) {
     const s = stars.take();
     s.live = true;
     s.age = 0;
     s.delay = o.delay ?? 0;
     s.life = o.life ?? 0.2;
+    // A longer hold (the contact bloom, the kill flare: VFX_HIT_RULES L5, K1)
+    // keeps a fade of at least 40% of the life after it.
+    s.holdT = o.hold != null ? Math.max(STAR_HOLD, Math.min(o.hold, s.life * 0.6)) : STAR_HOLD;
     s.size = o.size ?? 0.8;
     s.op = (o.opacity ?? 1) * 0.9;
     s.spin = o.spin ?? 0;
@@ -860,8 +877,8 @@ export function createVfxKit({ stage, cosmetic }) {
     return s;
   }
   function stepStar(s, t, dt) {
-    const pop = Math.min(1, t / 0.035);
-    const hold = 0.05;
+    const pop = Math.min(1, t / STAR_POP);
+    const hold = s.holdT ?? STAR_HOLD;
     const k = t < hold ? 0 : (t - hold) / Math.max(0.01, s.life - hold);
     s.mat.opacity = s.op * pop * Math.pow(1 - Math.min(1, k), 1.4);
     const sc = s.size * (0.55 + 0.45 * pop) * (1 + 0.35 * k);
@@ -984,11 +1001,40 @@ export function createVfxKit({ stage, cosmetic }) {
     [marks, stepMark],
     [glows, stepGlow],
   ];
-  function update(dt) {
+  // Render hold on hitstop (render/hold.js, VFX_HIT_RULES F1): a slash's
+  // sweep, a flash and a star pause for the hold's seconds; rings, lights,
+  // streaks, cracks, pillars, marks and glows run on. A star finishes its
+  // pop first, so a flare born on the hit frame holds at full size, not half.
+  // Returns the floor (s of its own time) from which a slot may pause, or -1.
+  const holdFloor = (pool, s) => (pool === arcs ? (s.kind === 'slash' ? 0 : -1) : pool === flashes ? 0 : pool === stars ? STAR_POP : -1);
+  let heldSlots = 0;
+  // hold: the render hold (render/hold.js renderHold), or null for none —
+  // the model lab and the harness scenes drive their own kit without one.
+  function update(dt, hold = null) {
+    const due = hold ? hold.due : 0;
+    const dueBorn = hold ? hold.dueBorn || 0 : 0;
+    heldSlots = 0;
     for (const [pool, step] of POOLS) {
       for (const s of pool.slots) {
         if (!s.live) continue;
-        s.age += dt;
+        let d = dt;
+        if (hold && !s.hold) {
+          const floor = holdFloor(pool, s);
+          if (floor >= 0) {
+            // Born before this frame, it was on screen for the whole freeze;
+            // born this frame, only for what froze after this frame's hits.
+            const add = s.age > 0 ? due : dueBorn;
+            if (add > 0) s.owe = Math.min(HOLD_CAP, (s.owe || 0) + add);
+            const t0 = s.age - s.delay;
+            if (s.owe > 0 && (t0 < 0 || t0 >= floor)) {
+              const h = Math.min(s.owe, d);
+              s.owe -= h;
+              d -= h;
+              heldSlots += 1;
+            }
+          }
+        }
+        s.age += d;
         if (s.hold) {
           step(s, 0, dt);
           continue;
@@ -1001,7 +1047,7 @@ export function createVfxKit({ stage, cosmetic }) {
           s.obj.visible = false;
           continue;
         }
-        step(s, t, dt);
+        step(s, t, d);
       }
     }
   }
@@ -1013,6 +1059,7 @@ export function createVfxKit({ stage, cosmetic }) {
         if (s.live) n += 1;
         s.live = false;
         s.hold = false;
+        s.owe = 0;
         s.obj.visible = false;
       }
     return n;
@@ -1045,6 +1092,7 @@ export function createVfxKit({ stage, cosmetic }) {
       stars: stars.live(),
       marks: marks.live(),
       glows: glows.live(),
+      held: heldSlots,
     };
   }
 

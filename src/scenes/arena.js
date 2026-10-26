@@ -82,6 +82,7 @@ import { createAfterimages } from '../render/critters/afterimage.js';
 import { installBandGuard, bandGuardInfo, guardSubtree } from '../env/bandguard.js';
 import { compileAsyncSafe } from '../render/precompile.js';
 import { pageQuery } from '../app/harness.js';
+import { renderHold } from '../render/hold.js';
 
 // Yielded by a dressing build that is waiting on the paint worker: the
 // background pump stops for the frame instead of spinning on it.
@@ -1678,15 +1679,18 @@ export function createArenaScene(stage, toggles, ctx) {
       hurtLeft = HURT_HOLD;
       healerRig.setAnim('hurt', 0); // hurt beats a cast raised the same frame
     }
-    castLeft = Math.max(0, castLeft - dt);
-    hurtLeft = Math.max(0, hurtLeft - dt);
+    // Render hold on hitstop (render/hold.js): the heroes' clips pause with
+    // the freeze; the aim yaw above stays live (it is the player's input).
+    const rdt = renderHold.rigDt(dt);
+    castLeft = Math.max(0, castLeft - rdt);
+    hurtLeft = Math.max(0, hurtLeft - rdt);
     if (p.hp <= 0) healerRig.setAnim('downed');
     else if (hurtLeft > 0) healerRig.setAnim('hurt');
     else if (castLeft > 0) healerRig.setAnim('cast');
     else healerRig.setAnim(moving ? 'walk' : 'idle');
 
-    healerRig.update(dt);
-    for (const a of allies) a.update(dt);
+    healerRig.update(rdt);
+    for (const a of allies) a.update(rdt);
 
     // Dash afterimages: one ghost per SMEAR_TICK_OFFSETS entry of dash travel
     // (staggered silhouettes, not a per-frame slab); hard-clear at dash

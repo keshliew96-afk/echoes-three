@@ -3500,5 +3500,6 @@
  "It cannot be brought back.": "Sie lässt sich nicht zurückholen.",
  "The kept file was removed": "Die beiseitegelegte Datei wurde entfernt",
  "This page is out of date: reload it. Until then runs are practice.": "Diese Seite ist veraltet: neu laden. Bis dahin sind Läufe nur Übung.",
- "Not posted: reload the page to update": "Nicht eingetragen: Seite neu laden"
+ "Not posted: reload the page to update": "Nicht eingetragen: Seite neu laden",
+ "CRIT!": "KRIT!"
 }

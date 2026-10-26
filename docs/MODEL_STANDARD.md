@@ -131,7 +131,7 @@ children, and never writes the root group's own transform.
 | B5 settle | plain blends | `settle`: one overshoot after the pour and after the exposed sprawl |
 | B7 spawn-in | none | the coil grows from the floor (the lab's Spawn in tab) |
 | B8 points | none | `mouth`, `throat`, `crown` on the head |
-| Hit envelope | no tuning | `react`: item 9 as written (Kesh's pick): the envelope's boss amounts, half the squash and half the flinch, no knockback, the squash on the height axis so the planted tail never slides |
+| Hit envelope | no tuning | `react`: item 9 as written (Kesh's pick): the envelope's boss amounts, half the squash and half the flinch, no knockback, the squash on the height axis so the planted tail never slides. The shared overlay (`render/react.js`, v0.5.333) reads `react.flinch`: the coil keeps its widths and shifts away from the hit (`coilFlinch`) |
 | Floor pieces | coil shadows inside the yaw node | the five coil shadows are root children, turned and grown into the root's space each frame |
 | Pooled rig | spawned in only on a jump in time or place | spawns in for a new entity id or a rewound clock; a jump in place only lays the coil afresh |
 | Contact timing | the strike started at the resolve | the draw ends one strike early, so the strike lands on the breath's tick; an emerge that comes mid-dive lets the dive finish |
@@ -214,6 +214,13 @@ planted again at rest.
   `lab` and `modelStandard`. The classic rigs ignore all three.
 - The classic rigs (`boss/wyrm.js`, `boss/stag.js`, `boss/slice2.js`, `boss/third.js`,
   `critters/tank.js`) are untouched and stay beside them.
+- The classic rigs (`boss/wyrm.js`, `critters/tank.js`) are untouched and stay beside them.
+- The hit reaction and the render hold (v0.5.333, `docs/HIT_FEEDBACK.md` "The hit and the
+  kill") need nothing from a rig: the foe and boss layers wrap its `body` (else
+  `group.children[0]`) in a `hit-react` node and squash that, and every layer poses a rig
+  with the held clock (`renderHold.time(t)`, `renderHold.rigDt(dt)`), so a rig's own clip
+  freezes on the hit frame. A rig whose body must not bend gets a rope or coil entry in
+  `src/render/react.js`.
 
 ## The model lab (`?modellab=1`, harness only)
 

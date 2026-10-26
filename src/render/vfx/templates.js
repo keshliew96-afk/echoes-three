@@ -24,13 +24,17 @@
 // Render-only: reads sim entities and events, never writes either; all
 // randomness from the COSMETIC stream.
 import { PALETTE } from '../../data/palette.js';
-import { vfxTemplate, vfxTemplateFor, vfxSkillClass } from '../../data/vfx.js';
+import { vfxTemplate, vfxTemplateFor, vfxSkillClass, VFX_HEAL_SKILLS } from '../../data/vfx.js';
 
 const TAU = Math.PI * 2;
 const HEAL = PALETTE.brightHeal;
 const INK = PALETTE.voidCharcoal;
 // Hero skills that restore (their magic plays green and gold).
-const HEALS = new Set(['mending_bolt', 'swift_mend', 'nova_bloom', 'sanctuary', 'guardian_bond', 'restorative_wave', 'dewfall', 'kindred_shield', 'mending_tide', 'hearthsong', 'lantern_ward']);
+const HEALS = VFX_HEAL_SKILLS;
+// A magic hit's exit (VFX_HIT_RULES P1, v3), in u (1 bw ≈ 0.65 u): streaks
+// from the far edge (0.5 bw past the centre), 0.45 to 0.65 bw long (speed ×
+// len), living about 5 frames, within ±25° of the hit.
+const MAGIC_EXIT = Object.freeze({ edge: 0.33, y: 0.55, out: 6, back: 3, speed: [4.5, 6.5], up: [-0.2, 0.4], life: [0.07, 0.1], len: 0.065, width: [0.03, 0.05], spread: 0.44 });
 
 export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area }) {
   const tpl = (classId, skill) => vfxTemplate(vfxTemplateFor(classId, skill));
@@ -107,11 +111,23 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     tk.dust(mx, 0.6, mz, big ? 10 : 5, { color: tp.b, color2: tp.a, radius: 0.12, speed: [0.6, 1.8], up: [-0.1, 0.4], size: [0.04, 0.08], life: [0.4, 0.8], gravity: 0, drag: 2.2, dir: { x: ux, z: uz }, dirBias: 0.7 });
   }
   // A magic hit lands: a celestial star, a puff of stardust; a crit adds a
-  // flash of runes under the target and a short beam.
-  function magicImpact(tp, x, z, { crit = false, big = false } = {}) {
+  // flash of runes under the target and a short beam. (dx, dz) is the hit's
+  // direction; with one, the spell leaves through the far side (P1, v3):
+  // about 6 gold streaks out past the target's far edge within ±25°, 3 back
+  // toward the caster, then the stardust leans along the hit.
+  function magicImpact(tp, x, z, dx, dz, { crit = false, big = false } = {}) {
     fire('magic_hit');
+    const l = Math.hypot(dx, dz);
+    const dir = l > 1e-4 ? { x: dx / l, z: dz / l } : null;
     tk.blast({ x, y: 0.55, z, size: (big ? 1.15 : 0.85) * (crit ? 1.55 : 1), mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: crit ? 0.34 : 0.24 });
-    tk.dust(x, 0.55, z, tp.dust.hit + (crit ? 6 : 0), { color: tp.b, color2: tp.a, radius: 0.15, speed: [0.4, 1.3], up: [0.3, 1.1], size: [0.04, 0.08], life: [0.5, 0.9], gravity: 0.2, drag: 1.8 });
+    if (dir) {
+      const F = MAGIC_EXIT;
+      const fx = x + dir.x * F.edge;
+      const fz = z + dir.z * F.edge;
+      tk.sparks(fx, F.y, fz, F.out + (crit ? 2 : 0), { color: tp.core, color2: tp.b, speed: F.speed, up: F.up, life: F.life, len: F.len, width: F.width, gravity: 1, drag: 2, dir, dirBias: 1, spread: F.spread, radius: 0.06 });
+      tk.sparks(x - dir.x * F.edge * 0.6, F.y, z - dir.z * F.edge * 0.6, F.back, { color: tp.core, color2: tp.b, speed: F.speed, up: F.up, life: F.life, len: F.len, width: F.width, gravity: 1, drag: 2, dir: { x: -dir.x, z: -dir.z }, dirBias: 1, spread: F.spread, radius: 0.06 });
+    }
+    tk.dust(dir ? x + dir.x * MAGIC_EXIT.edge : x, 0.55, dir ? z + dir.z * MAGIC_EXIT.edge : z, tp.dust.hit + (crit ? 6 : 0), { color: tp.b, color2: tp.a, radius: 0.15, speed: [0.4, 1.3], up: [0.3, 1.1], size: [0.04, 0.08], life: [0.5, 0.9], gravity: 0.2, drag: 1.8, dir, dirBias: dir ? 0.6 : 0 });
     if (crit) {
       tk.circle({ x, z, radius: 0.7, face: 'arcane', outer: tp.a, inner: tp.b, life: 0.5, spin: 3, opacity: 0.8 });
       tk.beam({ x, z, height: 2.2, width: 0.35, core: tp.core, glow: tp.a, life: 0.32 });
@@ -374,7 +390,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   function playImpact(tp, x, z, dx, dz, opts) {
     if (tp.id === 'blade') bladeImpact(tp, x, z, dx, dz, opts);
     else if (tp.id === 'scifi') scifiImpact(tp, x, z);
-    else magicImpact(tp, x, z, opts);
+    else magicImpact(tp, x, z, dx, dz, opts);
   }
   function playDash(tp, x0, z0, x1, z1) {
     if (tp.id === 'blade') bladeDash(tp, x0, z0, x1, z1);
@@ -548,7 +564,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
       steps.push(() => magicZone(tp, x, z, 1.4));
       steps.push(() => magicWave(tp, x, z + 1.4, -Math.PI / 2, 2.2, Math.PI / 4));
       steps.push(() => magicGuard(tp, p ? [p.id] : []));
-      steps.push(() => magicImpact(tp, x, z, { crit: true, big: true }));
+      steps.push(() => magicImpact(tp, x, z, 0, -1, { crit: true, big: true }));
     }
     steps.forEach((fn, i) => after(i * 0.9, fn));
     return steps.length;
