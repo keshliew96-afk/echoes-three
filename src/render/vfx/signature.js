@@ -44,6 +44,9 @@ import { createTonicFx } from './tonicfx.js';
 import { createShrineFx } from './shrinefx.js';
 import { createSecretFx } from './secretfx.js';
 import { createRelic6Fx } from './relic6fx.js';
+import { createAnimeFx } from './animefx.js';
+import { SKILLS } from '../../sim/skills.js';
+import { isOwnBody } from './hitfeedback.js';
 
 const EMBER = PALETTE.emberDanger;
 const PARCH = PALETTE.parchment;
@@ -104,6 +107,13 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     return (typeof s === 'number' ? s : 1) * intensity.camera;
   };
   const camfx = createCameraFx({ camera: stage.camera, gain: shakeGain });
+  // §6.2 k and o (VFX_HIT_RULES): the local anime frame and the camera punch.
+  const animeFx = createAnimeFx({ root: kit.root, cosmetic });
+  const animeTick = new Map(); // attacker id -> the tick its finisher last played
+  // Every combo finisher in the data (a skill with a combo bonus).
+  const FINISHERS = new Set(Object.values(SKILLS).filter((d) => d.combo).map((d) => d.id));
+  const CAM_PUNCH = Object.freeze({ bigKill: 0.06, chest: 0.02, sec: 0.12, shotKick: 0.015 });
+  const NO_SHOT_KICK = new Set(['archer', 'healer']);
   const N = (k) => (k > 0 ? Math.max(1, Math.round(k * intensity.particles)) : 0);
   // Recipe counters for probes (__echoes.content.vfx().recipes): how many
   // times each creature-specific recipe has played this session.
@@ -1057,10 +1067,22 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
     const cls = classOf(atk) ?? vfxSkillClass(ev.source) ?? 'healer';
     lastClassHit.set(ev.target, cls);
+    // k: a combo finisher's contact plays the local anime frame (one a cast).
+    if (FINISHERS.has(ev.source) && animeTick.get(ev.attacker) !== ev.tick && intensity.camera > 0) {
+      animeTick.set(ev.attacker, ev.tick);
+      animeFx.play(ev.x, ev.z);
+    }
     classImpact(vfxClassStyle(cls), ev.x, ev.z, ev.dirX || 0, ev.dirZ || 0, { crit: !!ev.crit, big: ev.delivery !== 'basic' });
   });
   bus.on('death', (ev) => {
     if (ev.kind === 'player' || ev.kind === 'ally') return;
+    // k and o: an elite, champion or boss kill plays the local anime frame
+    // and punches the camera in up to 6% (C2), sprung back in 4 frames.
+    const dead = byId(ev.id);
+    if (dead && (dead.elite || dead.champion || ev.kind === 'stag' || isVfxBoss(ev.kind)) && intensity.camera > 0) {
+      animeFx.play(ev.x, ev.z);
+      camfx.punch(CAM_PUNCH.bigKill, CAM_PUNCH.sec);
+    }
     const killer = lastClassHit.get(ev.id) ?? null;
     lastClassHit.delete(ev.id);
     const lh = lastHitDir.get(ev.id);
@@ -6683,7 +6705,22 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // hitstop (render/hold.js); timers, trails and particles run on.
     kit.update(dt, renderHold);
     tk.update(dt, renderHold);
+    animeFx.update(dt);
   }
+
+  // C1: a small kick against the fire direction on your own seat's shots
+  // (the Archer's and the Healer's wait for Kesh, §6.3 item 7).
+  const ownShotKick = (shooter, dx, dz) => {
+    if (!shooter || !isOwnBody(shooter) || NO_SHOT_KICK.has(classOf(shooter) ?? 'healer')) return;
+    camfx.kick(-(dx || 0), -(dz || 0), CAM_PUNCH.shotKick, 0.08);
+  };
+  bus.on('ally_basic', (ev) => {
+    if (ev.shape !== 'melee_arc') ownShotKick(byId(ev.id), ev.dx, ev.dz);
+  });
+  bus.on('skill_bolt_spawn', (ev) => {
+    const b = byId(ev.id);
+    if (b && !ev.heal) ownShotKick(byId(b.sourceId), ev.dx, ev.dz);
+  });
 
   // After every layer placed the camera this frame.
   function applyCamera(tSec) {
@@ -7602,6 +7639,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     lastClassHit.clear();
     swingSide.clear();
     camfx.clear();
+    animeFx.clear();
+    animeTick.clear();
     relic6Fx.teardown();
     tplFx.teardown();
     foeFx.teardown();
