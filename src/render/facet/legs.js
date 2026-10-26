@@ -132,8 +132,10 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
         return api;
       }
       const jump = Math.hypot(fr.x - last.x, fr.z - last.z);
-      // moved with no time passing (a scrub, a still, a placement): stand afresh
-      if (dt <= 0 && jump > 1e-4) reset(fr, shift);
+      // moved with no time passing: a placement or a lab scrub further than a
+      // reach stands afresh; a smaller drift (the layer's interpolation inside
+      // a hitstop, where the sim clock holds) leaves the planted feet alone
+      if (dt <= 0 && jump > reach * fr.s) reset(fr, shift);
       if (dt > 0) {
         // a teleport (a Blinking elite's short blink), a new room: no foe walks
         // two reaches in one frame faster than 10 u/s, so stand afresh
