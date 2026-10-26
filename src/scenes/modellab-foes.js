@@ -35,7 +35,7 @@ const FOES = {
   wasp: { label: 'Briar Wasp', y: 0.8, dist: 3.4, side: 1.3, speed: 2.7, loop: 1.8, sound: { strike: 'm4b_swoop' } },
   // the game plays no sound for the thornling's root or plant
   thornling: { label: 'Thornling', y: 0.45, dist: 3.2, side: 1.2, speed: 1.3, loop: 1.6, sound: {} },
-  owl: { label: 'Shriek Owl', y: 1.2, dist: 4.4, side: 1.5, speed: 2.4, loop: 1.6, sound: { strike: 'wm_shriek' } },
+  owl: { label: 'Shriek Owl', y: 1.65, dist: 4.4, side: 1.5, speed: 2.4, loop: 1.6, sound: { strike: 'wm_shriek' } },
   // its lash reaches 5.4 u down the lane: the camera looks ahead of it
   lasher: { label: 'Vine Lasher', y: 0.5, z: 1.6, dist: 6.2, side: 1.4, speed: 0.8, loop: 1.0, sound: { strike: 'wm_lash', yank: 'wm_yank' } },
 };
@@ -68,6 +68,17 @@ function classicInputs(ab, t) {
   return { telegraphK: wind ? 1 : 0, lungeK: pulse, fireK: pulse, e: null };
 }
 
+// The classic rigs key a one-shot clip on a new sim tick field (biteTick,
+// shriekTick, lashTick: enemies/woodmill.js clip()), and a pure ability hands
+// the same field values every lap. Each replay (a loop or a rewind) shifts
+// them to fresh ticks, so 'Classic beside' plays its clip every lap.
+function freshTicks(e, lap) {
+  if (!e || !lap) return e;
+  const out = { ...e };
+  for (const k in out) if (/Tick$/.test(k) && out[k] >= 0) out[k] += lap * 100000;
+  return out;
+}
+
 function standIn(kind, patch) {
   return { id: 1, kind, x: 0, z: 0, px: 0, pz: 0, hp: 10, maxHp: 10, state: 'active', mode: 'idle', telegraph: null, elite: false, faceX: 0, faceZ: 1, cdByTarget: {}, targetId: null, ...patch };
 }
@@ -86,6 +97,8 @@ export const LAB_ENTRIES = Object.keys(FACET_FOES).map((kind) => {
       let clock = 0;
       let walk = 0;
       let lastPos = null;
+      let lap = 0; // replays of the ability (the classic's fresh clip ticks)
+      let lastAb = null;
       function place(r, x, z, yaw) {
         r.group.position.set(x, 0, z);
         r.setYaw(yaw);
@@ -123,7 +136,9 @@ export const LAB_ENTRIES = Object.keys(FACET_FOES).map((kind) => {
           // the classic twin: the same moment, fed stand-in inputs
           place(twin, x - side, z, yaw);
           const ci = acting && ab ? classicInputs(ab, abT) : { telegraphK: 0, lungeK: 0, fireK: 0, e: null };
-          twin.pose({ t: clock, tick: clock * 60, walkPhase: walk, moveK, lungeK: ci.lungeK, telegraphK: ci.telegraphK, fireK: ci.fireK, e: standIn(kind, ci.e || {}) });
+          if (acting && ab && (!lastAb || lastAb.id !== state.ability || abT < lastAb.t - 1e-6)) lap++;
+          lastAb = acting && ab ? { id: state.ability, t: abT } : null;
+          twin.pose({ t: clock, tick: clock * 60, walkPhase: walk, moveK, lungeK: ci.lungeK, telegraphK: ci.telegraphK, fireK: ci.fireK, e: standIn(kind, freshTicks(ci.e, lap) || {}) });
         },
         timeline(ability) {
           return asTimeline(abilities[ability]);

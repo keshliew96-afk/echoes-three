@@ -107,16 +107,26 @@ The foe kit (`render/facet/foe.js`, `render/facet/legs.js`):
 | `bakeParts(key, build)` | A shared, faceted, merged geometry per kind (cached in `geocache`, never disposed). |
 | `foePart`, `foeMaterial` | A mesh with its ink (`'full'` silhouette, `'part'` detail rows); a flashable faceted material. |
 | `createFoeFrame` | group (the enemy layer's: position, elite scale, kill pop, hit envelope) > yaw > spawn (the B7 grow) > body (the rig's motion). A rig never writes the group. |
-| `createAttackWatch`, `telegraphProgress` | The beats a pose can see: a telegraph's wind, release or cancel, the lunge pulse (`enemy_bite`), the fire pulse (`enemy_fire`). |
+| `createFoeClock` | The rig's clock, on the sim's interpolated tick (`P.tick`): it holds through a hitstop (the tick freezes while frames go on), so a clip pauses and a contact holds (B2). A jump back of more than 2 ticks (a lab rewind) restarts it. Without a tick (the Journal's turntable) it runs on `P.t`. |
+| `heldBy(e, tick)` | True while the sim holds the foe from attacking: a live stun or blind, a state other than `'active'` (a room clear's retreat), hp at 0. No predicted strike starts while it holds. |
+| `createAttackWatch`, `telegraphProgress` | The beats a pose can see: a telegraph's wind, release or cancel, the lunge pulse (`enemy_bite`), the fire pulse (`enemy_fire`). A telegraph that ends while `heldBy` (a stun or blind landing on its resolve tick, a room clear) is a cancel, never a release. |
 | `hitTimelines`, `createChain` | Kesh's 3-hit template on a repeating attack: each hit's overshoot settles into the next hit's wind-up, held for the chain window, pulled back 4 frames before a predicted strike; the third hit is the biggest (B6). `contactAt` says when the playing hit lands. |
 | `spawnScale`, `settle`, `lungePose`, `shotSquash` | §6.1 B7, B5, B9 and B3 as pure curves. |
-| `createLegs`, `solveKnee`, `liftToReach` | World-locked feet for any leg count: each foot pinned to the floor while it carries weight, stepping in gait groups along the real travel (a backpedal steps back, a sidestep sideways); two-bone IK; a foot the body rears out of reach of lifts straight up, never slides. |
+| `createLegs`, `solveKnee`, `liftToReach` | World-locked feet for any leg count: each foot pinned to the floor while it carries weight, stepping in gait groups along the real travel (a backpedal steps back, a sidestep sideways); two-bone IK; a foot the body rears out of reach of lifts straight up, never slides. A blink or knockback over two reaches in a frame re-stands the feet. |
+| `gait.release(i, dur)`, `clampReach` | A foot steps at once, whatever else is in the air, optionally as a quick step timed to land by a contact (a lunge step; a foot already mid-step is re-aimed smoothly). `clampReach` draws a foot a fast turn left past the leg's reach at the reach, and the rig releases it, so no bone ever stretches. |
 | `hornGeometry`, `scaleGeometry` | A curved tapering horn (tusks, claws, stingers, thorns); a low six-sided scale to sink into a hide. |
 
 Each rig returns the classic interface (`group`, `mats`, `setYaw`, `pose`) plus
 `modelStandard`, `points` (B8: the weapon tip, the hand, the mouth), `react` and `death`
 (the shared hit and death envelopes' tuning, §6.1 items 9 and 10, built by the VFX slice)
 and `lab` (`abilities`, `override`, `feet()`, `lastStrike`).
+
+**The shown tick.** The enemy layer poses each foe at `P.tick = stateTick - 1 + alpha`
+(`render/enemies/index.js`), while `e.telegraph` and the other fields are the state's own.
+A release is therefore seen when `P.tick` is about R-1. Telegraph-driven wind-ups and
+strikes sample on `P.tick + 1` (clamped to the span), so a 2 to 3 frame strike shows every
+frame and its contact lands on the release frame, never collapsing into a 1 frame pop.
+`lab.lastStrike.tick` stays the sim's resolve tick.
 
 FOE_ROWS_PLACEHOLDER
 
@@ -129,7 +139,14 @@ FOE_ROWS_PLACEHOLDER
   receives the driver's clip name; the critter API gains `cue(kind, ev)` (forwarded from
   `render/allies/index.js` on `ally_basic` / `ally_cast`, and from the camp's seat casts),
   `lab` and `modelStandard`. The classic rigs ignore all three.
-- The classic rigs (`boss/wyrm.js`, `critters/tank.js`) are untouched and stay beside them.
+- The Level I foes: `render/enemies/index.js` and `ui/story/viewerrigs.js` (the Journal)
+  lay `facetFoeBuilders()` (`render/enemies/facet/index.js`) over their classic builders, one
+  kind per `MODEL_STANDARD` flag; the layer feeds each rig what it feeds a classic one. A
+  baked crowd geometry is marked shared, so `releaseTree` keeps it, and an instanced row now
+  disposes its own instance buffers there (`render/geocache.js`). `addPartInk` in
+  `critters/common.js` gives a baked detail row the thinner part ink.
+- The classic rigs (`boss/wyrm.js`, `critters/tank.js`, `enemies/boar.js`, `enemies/mantis.js`,
+  `enemies/archetypes.js`, `enemies/woodmill.js`) are untouched and stay beside them.
 
 ## The model lab (`?modellab=1`, harness only)
 
@@ -140,6 +157,14 @@ zoom (the game camera's 45° field at 12 u and 52°), Turntable, Classic beside,
 that holds Still, and the live readout. Each cue beat plays its game sound and a VFX burst.
 URL: `?modellab=1&model=tank&mode=ability&ability=combo&view=play&classic=1`. Probes drive
 it with `__echoes.cmd('lab', {model, mode, ability, t, rate, view, turntable, classic})`.
+
+The Level I foes bring their own tabs (`scenes/modellab-foes.js`, entries the lab sets
+before the Effect kit): each foe's framing, its game speed on the Move loop (forward for
+half a lap, then a sidestep and a backpedal facing the middle), its abilities on their
+timelines with the game's own sound per cue, and Classic beside with the classic rig fed
+stand-in inputs at the same moment. Each replay hands the classic's one-shot clip fields
+(`biteTick`, `shriekTick`, `lashTick`) fresh ticks, so the classic plays its clip every lap.
+URL: `?modellab=1&model=boar&mode=ability&ability=gore&view=play&classic=1`.
 
 ## Adding a model to the standard
 
@@ -160,3 +185,13 @@ flat facets; every instanced part inked; the Wyrm's no-slip coil, planted base, 
 burrow driving, turntable and death freeze; the Tank's chain continuity, cadence, skill
 coverage, hips before slab, locked feet in eight directions, steps along the travel, the
 lean, the lunge; the flag; no reserved or amber colours; Bone brightest on the Tank.
+
+`node tools/model-standard-foes-probe.mjs` (in `npm test`): the kit (the clock holds through
+a hitstop and restarts on a rewind, the pull-back never pops, a held resolve is a cancel, a
+blink re-stands the feet, the reach clamp); then per foe: flagged, a lab tab per ability, the
+classic kept, `?facet=<kind>` alone, no more draw calls than its classic, one shared buffer
+per baked kind, every lit instanced row inked, flat facets, no broken matrix through a move
+loop and live attacks, the group never written, planted feet never slide, the lean follows
+the travel, each ability pure in t and moving the rig, live contacts on the sim's tick (a
+telegraph's resolve, a predicted bite's tick, an unwarned bite inside the B1 budget), the B7
+grow, the Journal turntable, the B8 points, the hit and death envelopes, no reserved colours.

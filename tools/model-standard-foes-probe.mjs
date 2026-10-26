@@ -24,7 +24,9 @@
 //      same pose), and it moves the rig;
 //   6. each foe's live strike: its contact lands on the tick the sim resolves
 //      the attack (a telegraph's resolve, a predicted bite), or within the B1
-//      budget after an unwarned event;
+//      budget after an unwarned event; a cancelled wind-up, a stun or blind
+//      landing on the resolve tick (on whole ticks and on the layer's shown
+//      ticks), and a stunned biter's predicted bite never strike;
 //   7. the spawn-in on a fresh rig, the Journal's turntable with no entity,
 //      the hit and death tuning and the named points the VFX layer reads;
 //   8. colour: no Ember, Bright Heal or Violet anywhere in a rig.
@@ -280,6 +282,7 @@ function reservedColours(g) {
 function bites(every) {
   return {
     type: 'bite',
+    every,
     step(k, e, events) {
       if (k < 30 || (k - 30) % every !== 0 || k >= 30 + 3 * every) return null;
       events.push(k);
@@ -292,6 +295,9 @@ function bites(every) {
 function telegraphs({ span, tel, every = 192, wind = null, hit = null, end = null, endAfter = 20, fire = false }) {
   return {
     type: 'telegraph',
+    span,
+    tel,
+    wind,
     step(k, e, events) {
       const i = Math.floor((k - 30) / every);
       if (k < 30 || i >= 3) return null;
@@ -548,6 +554,68 @@ for (const kind of ROSTER) {
         rc.pose({ t: k / 60, tick: k, walkPhase: 0, moveK: 0, lungeK: 0, telegraphK: ec.telegraph ? 1 : 0, fireK: 0, e: ec });
       }
       check(`${kind}: a cancelled wind-up never strikes`, rc.lab.lastStrike === null || rc.lab.lastStrike === undefined, rc.lab.lastStrike);
+    }
+    // a stun or blind landing on the resolve tick (or the tick before): the
+    // sim cancels the telegraph and nothing resolves (sim/enemies.js
+    // cancelTelegraph), so no strike plays, on the probe's whole ticks and on
+    // the layer's shown ticks (stateTick - 1 + alpha)
+    if (live.type === 'telegraph') {
+      const bad = [];
+      for (const status of ['stun', 'blind']) {
+        for (const lead of [0, 1]) {
+          for (const sub of [0, 0.5]) {
+            const rs = build();
+            const es = { ...e, telegraph: null, mode: 'idle', cdByTarget: {}, status: null };
+            const R = 30 + live.span;
+            for (let k = 1; k <= R + 60; k++) {
+              if (k === 30) {
+                es.telegraph = { ...live.tel, startTick: 30, resolveTick: R, x: 0, z: 3, dirX: 0, dirZ: 1, playerTargeted: true, targetId: 1 };
+                if (live.wind) live.wind(es, 30);
+              }
+              if (k === R - lead) {
+                es.telegraph = null;
+                es.status = { [status]: { untilTick: R + 40 } };
+              }
+              rs.setYaw(0);
+              // the layer's frames on the state at k: stateTick - 1 + alpha
+              const frames = sub ? [k - 1, k - 1 + sub] : [k];
+              for (const tk of frames) rs.pose({ t: tk / 60, tick: tk, walkPhase: 0, moveK: 0, lungeK: 0, telegraphK: es.telegraph ? 1 : 0, fireK: 0, e: es });
+            }
+            if (rs.lab.lastStrike) bad.push({ status, lead, sub, strike: rs.lab.lastStrike.tick });
+          }
+        }
+      }
+      check(`${kind}: a stun or blind on the resolve tick never strikes`, bad.length === 0, bad);
+    }
+    // a bite foe stunned or blinded against its target: the sim starts no
+    // bite while it holds, so the predicted next bite never plays
+    if (live.type === 'bite') {
+      const bad = [];
+      for (const status of ['stun', 'blind']) {
+        const rs = build();
+        const es = { ...e, telegraph: null, mode: 'chase', cdByTarget: {}, targetId: 1, status: null };
+        const strikes = [];
+        let seenS = null;
+        let pulse = 0;
+        for (let k = 1; k <= 30 + 3 * live.every; k++) {
+          if (k === 30) {
+            es.cdByTarget[1] = k + live.every;
+            es.biteTick = k;
+            pulse = 0.18;
+          }
+          if (k === 30 + Math.round(live.every / 2)) es.status = { [status]: { untilTick: 9999 } };
+          rs.setYaw(0);
+          rs.pose({ t: k / 60, tick: k, walkPhase: 0, moveK: 0, lungeK: pulse > 0 ? Math.sin((pulse / 0.18) * Math.PI) : 0, telegraphK: 0, fireK: 0, e: es });
+          pulse = Math.max(0, pulse - DT);
+          const ls = rs.lab.lastStrike;
+          if (ls && ls.tick !== seenS) {
+            seenS = ls.tick;
+            strikes.push(Math.round(ls.tick));
+          }
+        }
+        if (strikes.length !== 1) bad.push({ status, strikes });
+      }
+      check(`${kind}: a stunned or blinded biter never plays its predicted bite`, bad.length === 0, bad);
     }
   } else check(`${kind}: a live-strike scenario in this probe`, false);
 
