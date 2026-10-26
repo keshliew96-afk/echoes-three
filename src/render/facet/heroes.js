@@ -4,6 +4,7 @@
 // heroes probe runs every check on each. A hero joins by exporting its SPEC
 // and being listed below (and in MODEL_STANDARD, render/facet/flags.js).
 import { TANK_SPEC } from '../critters/tankfacet.js';
+import { SWORDSMAN_SPEC } from '../critters/swordsmanfacet.js';
 
-export const FACET_HEROES = Object.freeze([TANK_SPEC]);
+export const FACET_HEROES = Object.freeze([TANK_SPEC, SWORDSMAN_SPEC]);
 export const FACET_HERO = Object.freeze(Object.fromEntries(FACET_HEROES.map((h) => [h.id, h])));
