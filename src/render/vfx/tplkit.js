@@ -1311,6 +1311,7 @@ export function createTemplateKit({ stage, cosmetic }) {
   function update(dt, hold = null) {
     time += dt;
     const due = hold ? hold.due : 0;
+    const dueBorn = hold ? hold.dueBorn || 0 : 0;
     liveCount.held = 0;
     for (const [pool, step] of POOLS) {
       for (const s of pool.slots) {
@@ -1319,7 +1320,8 @@ export function createTemplateKit({ stage, cosmetic }) {
         if (hold) {
           const floor = holdFloor(pool, s);
           if (floor >= 0) {
-            if (due > 0 && s.age > 0) s.owe = Math.min(HOLD_CAP, (s.owe || 0) + due);
+            const add = s.age > 0 ? due : dueBorn; // as in vfx/kit.js
+            if (add > 0) s.owe = Math.min(HOLD_CAP, (s.owe || 0) + add);
             const t0 = s.age - s.delay;
             if (s.owe > 0 && (t0 < 0 || t0 >= floor)) {
               const h = Math.min(s.owe, d);

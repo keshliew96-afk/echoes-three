@@ -142,9 +142,14 @@ sweep and the flares pause for exactly the frozen ticks the game clock
 consumes, so the frame of the hit stays on screen at any frame rate (at
 60 fps: the hit frame plays, the next 2 or 3 frames hold). A co-op guest,
 whose clock never freezes, holds from the frame after each replayed
-`hitstop`. Particles, numbers' drift, telegraphs, the camera and the audio
-keep running; a number's pop holds. No window holds more than 4 ticks
-(`src/render/hold.js`).
+`hitstop`. Below 60 fps the clock can freeze inside the hit's own frame;
+the flares and blooms that hit made that frame owe exactly that part
+(`renderHold.dueBorn`), so they hold as long as the rigs at any frame rate.
+Particles, numbers' drift, telegraphs, the camera and the audio keep
+running; a number's pop holds with the rigs and stops holding when the
+freeze ends (a staggered numeral on a cleave shows after it and never
+holds). No window holds more than 4 ticks (`src/render/hold.js`). The kit's
+flash pool is 64 (was 28), since each hit now keeps two flashes.
 
 **c. The kill (K1, K2, K4, P1, A6).**
 - The body holds 2 frames, swells round (1.38 x wide, 1.3 x tall), then pops
@@ -173,7 +178,10 @@ drifts about 0.3 u to alternating sides (two fanned numerals never cross).
 
 The tag is drawn from the numeral's `data-tag` (the text stays the bare
 number). It is new text in all ten languages: KRIT!, ¡CRÍTICO!, CRITIQUE !,
-クリティカル！, 치명타!, CRÍTICO!, КРИТ!, 暴击！, 暴擊！.
+クリティカル！, 치명타!, CRÍTICO!, КРИТ!, 暴击！, 暴擊！. Two fanned crits are spaced on
+the tag's real width (full-width CJK characters count 1 em), and a tagged
+numeral pinned at the top edge keeps room above it, so the tag stays on
+screen.
 
 **e. The contact (P3, L5, P1, R1, I1, A1).**
 - A near-white bloom about 2 body widths across (1.6 u; 2.0 u for a skill;

@@ -77,6 +77,7 @@ const { REACT, squashCurve, hopCurves, hitProfile, createEnvClock, hitNode, meas
 const { createEnemyLayer } = await import('../src/render/enemies/index.js');
 const { createBossLayer } = await import('../src/render/boss/index.js');
 const { createSignatureFx } = await import('../src/render/vfx/signature.js');
+const { createVfxKit, KIT_CAPS } = await import('../src/render/vfx/kit.js');
 const { setImpactFx } = await import('../src/render/vfx/hub.js');
 const { createNumberPool, updateNumberPools, NUMERAL_WHO, NUMERAL_FEEL, numeralArc, numeralLook } = await import('../src/render/numbers.js');
 const { SPELL_FLASH, spellFlashLevel, vfxSpellHit, vfxTemplateFor, VFX_HEAL_SKILLS, CLASS_TEMPLATE } = await import('../src/data/vfx.js');
@@ -160,6 +161,42 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   t += DT;
   frameRenderHold(t, DT, 0, 0);
   check('solo and host: a restore never pays a bogus hold', renderHold.paid === 0);
+  resetRenderHold();
+  // The flare a hit makes holds as long as the rigs at any frame rate and
+  // wherever the hit falls in its frame (a kill: 3 ticks).
+  const kit = createVfxKit({ stage: { scene: new Scene(), camera: new PerspectiveCamera() }, cosmetic: createCosmeticRng() });
+  const runs = [];
+  for (const fps of [60, 30, 20, 15]) {
+    const n = 60 / fps;
+    for (let j = 0; j < n; j++) {
+      resetRenderHold();
+      kit.clear?.();
+      let pending = 0;
+      let slot = null;
+      let rig = 0;
+      let wall = 0;
+      for (let f = 0; f < 6; f++) {
+        const before = pending;
+        markRenderHold();
+        for (let k = 0; k < n; k++) {
+          if (pending > 0) pending -= 1;
+          else if (f === 1 && k === j) {
+            pending += 3;
+            holdBus.emit(700, 'hitstop', { ticks: 3, cause: 'kill' });
+            slot = kit.flash({ x: 0, z: 0, life: 1 });
+          }
+        }
+        t += 1 / fps;
+        frameRenderHold(t, 1 / fps, before, pending);
+        kit.update(1 / fps, renderHold);
+        if (f >= 1) rig += renderHold.paid;
+        if (slot) wall += 1 / fps;
+      }
+      runs.push({ fps, j, rig: r3(rig), flare: r3(wall - slot.age) });
+    }
+  }
+  check('a hit\'s flare holds with the rigs at 60, 30, 20 and 15 fps', runs.every((r) => Math.abs(r.rig - 3 / 60) < 2e-3 && Math.abs(r.flare - r.rig) < 2e-3), runs.filter((r) => Math.abs(r.flare - r.rig) >= 2e-3));
+  check('the flash pool keeps room for two flashes a hit', KIT_CAPS.flash >= 64, KIT_CAPS.flash);
   resetRenderHold();
 }
 
@@ -503,20 +540,53 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   cam.lookAt(0, 0, 0);
   const pool = createNumberPool({ camera: cam, cosmetic: createCosmeticRng(), container: document.body });
   const live = () => pool.live();
+  // A frame as main.js runs it at 60 fps: the clock's pending freeze before
+  // and after its step, then the numbers.
+  resetRenderHold();
+  let nt = 50;
+  const nframe = (before = 0, after = 0, grant = 0, dt = DT) => {
+    markRenderHold();
+    if (grant) holdBus.emit(800, 'hitstop', { ticks: grant, cause: 'melee' });
+    nt += dt;
+    frameRenderHold(nt, dt, before, after);
+    updateNumberPools(dt);
+  };
   pool.spawn({ x: 0, z: 0, amount: 12, kind: 'damage', crit: false, who: 'own', tick: 5 });
   pool.hold(5, 2);
-  updateNumberPools(0);
+  nframe(0, 2, 2);
   const n0 = live()[0];
   check('N1: your own numeral pops white', n0.color === PALETTE.parchment && n0.phase === 'pop', n0);
   // Held through the freeze: still white two frames on.
-  updateNumberPools(DT);
-  updateNumberPools(DT);
-  updateNumberPools(DT);
+  nframe(2, 1);
+  nframe(1, 0);
   const nHeld = live()[0];
   check('N1: the freeze holds the pop (size, white) while the arc runs on', nHeld.hold < 2 / 60 && nHeld.phase === 'pop' && nHeld.popAge < 0.03 && nHeld.age >= 0.05, nHeld);
-  for (let i = 0; i < 8; i++) updateNumberPools(DT);
+  for (let i = 0; i < 8; i++) nframe();
   const nSet = live()[0];
   check('N1: settled to Hearth Amber within 0.1 s of held time', nSet.phase === 'settled' && nSet.color.toUpperCase() === PALETTE.hearthAmber.toUpperCase(), nSet);
+  // At 20 fps a kill freezes 2 ticks inside its own frame: the numeral pays
+  // them there, so its first drawn frame is still white.
+  pool.releaseAll();
+  pool.spawn({ x: 0, z: 0, amount: 12, kind: 'damage', crit: false, who: 'own', tick: 8 });
+  pool.hold(8, 3);
+  nframe(0, 1, 3, 0.05);
+  const slow0 = live()[0];
+  nframe(1, 0, 0, 0.05);
+  const slow1 = live()[0];
+  check('N1: at 20 fps the first frame is white and the hold ends with the freeze', slow0.color === PALETTE.parchment && Math.abs(slow0.popAge - 1 / 60) < 2e-3 && slow1.hold === 0 && Math.abs(slow1.age - slow1.popAge - 3 / 60) < 2e-3, { slow0, slow1 });
+  // A cleave: the staggered numerals show after the freeze and never hold
+  // while the world moves.
+  pool.releaseAll();
+  for (let i = 0; i < 3; i++) pool.spawn({ x: 0, z: 0, amount: 12, kind: 'damage', crit: false, who: 'own', tick: 9 });
+  pool.hold(9, 2);
+  nframe(0, 2, 2);
+  nframe(2, 1);
+  nframe(1, 0);
+  for (let i = 0; i < 10; i++) nframe();
+  const fan = live().map((r) => r3(r.age - r.popAge));
+  check('N1: staggered numerals never hold after the freeze', fan.length === 3 && fan.filter((v) => v > 0).length === 1 && Math.abs(Math.max(...fan) - 2 / 60) < 2e-3, fan);
+  pool.releaseAll();
+  resetRenderHold();
   const steps = [];
   for (let a = 0; a <= 0.11; a += DT / 2) steps.push(numeralLook(a).step);
   check('N1: white to amber in three steps', new Set(steps).size === 4 && steps[0] === 0 && steps[steps.length - 1] === 3, steps);

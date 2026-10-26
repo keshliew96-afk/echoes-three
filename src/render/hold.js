@@ -23,7 +23,10 @@
 //   renderHold.rigDt(dt)           a layer's frame dt minus this frame's hold
 //   renderHold.due                 seconds that started holding this frame
 //                                  (vfx/kit.js and vfx/tplkit.js owe it to
-//                                  each live held slot)
+//                                  each live held slot born before it)
+//   renderHold.dueBorn             the part of `due` frozen after this
+//                                  frame's own hits (owed to the slots
+//                                  those hits made this frame)
 //
 // Solo and host: the hold pays the frozen ticks the clock really consumed
 // this frame (its pending count before the step, plus this frame's grants,
@@ -45,6 +48,7 @@ let queued = 0; // granted last frame, starts paying this frame
 let owed = 0; // still to pay
 let paid = 0; // paid this frame
 let due = 0; // started holding this frame
+let dueBorn = 0; // the part of due frozen after this frame's own grants
 let total = 0; // every second held since boot (the held clock's offset)
 let events = 0; // hitstop events seen (probe)
 let granted = 0; // ticks granted since markRenderHold (uncapped)
@@ -78,10 +82,15 @@ export function frameRenderHold(nowSec, frameDt, before = null, after = null) {
   if (Number.isFinite(before) && Number.isFinite(after)) {
     const frozen = restored ? 0 : Math.max(0, before + granted - after);
     due = frozen / TICK_HZ;
+    // A step that grants has already used up the `before` ticks (the sim
+    // never hits while frozen), so granted - after froze after the hit: the
+    // flare and bloom that hit made this frame were on screen for it.
+    dueBorn = Math.min(due, restored ? 0 : Math.max(0, granted - after) / TICK_HZ);
     owed = Math.min(HOLD_CAP, owed + due);
     fresh = queued = 0;
   } else {
     due = queued;
+    dueBorn = 0; // a guest pays from the frame after the hit
     owed = Math.min(HOLD_CAP, owed + queued);
     queued = fresh;
     fresh = 0;
@@ -106,14 +115,17 @@ export const renderHold = {
   get due() {
     return due;
   },
+  get dueBorn() {
+    return dueBorn;
+  },
   get holding() {
     return paid > 0;
   },
-  debug: () => ({ fresh, queued, owed, paid, due, total, events, granted, cap: HOLD_CAP }),
+  debug: () => ({ fresh, queued, owed, paid, due, dueBorn, total, events, granted, cap: HOLD_CAP }),
 };
 
 // Tests only: back to boot state.
 export function resetRenderHold() {
-  fresh = queued = owed = paid = due = total = events = granted = 0;
+  fresh = queued = owed = paid = due = dueBorn = total = events = granted = 0;
   restored = false;
 }

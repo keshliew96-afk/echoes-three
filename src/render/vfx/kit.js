@@ -52,9 +52,12 @@ import { warmPark } from '../warmup.js';
 import { PALETTE } from '../../data/palette.js';
 import { HOLD_CAP } from '../hold.js';
 
-// flash 28 -> 40 and star 48 -> 64 with the held contact bloom (THE HIT AND
-// THE KILL): every hit now keeps a flash and two stars about 0.22 s.
-export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 40, streak: 64, cracks: 12, pillar: 8, star: 64, mark: 24, glow: 32 });
+// flash 28 -> 64 and star 48 -> 64 with the held contact bloom (THE HIT AND
+// THE KILL): every hit now keeps two flashes (the bloom and the class flash)
+// and two stars about 0.22 s, and a kill one more flash 0.3 s. At 64 the
+// flash pool keeps base's margin, so a busy fight never steals a live enemy
+// tell flash it would not have stolen before.
+export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 64, streak: 64, cracks: 12, pillar: 8, star: 64, mark: 24, glow: 32 });
 const FLASH_HOLD = 0.066; // s — 4 frames at 60 fps at full strength
 const STAR_HOLD = 0.05; // s — a star's default full-strength beat after its pop
 const STAR_POP = 0.035; // s — a star's pop-in
@@ -1009,6 +1012,7 @@ export function createVfxKit({ stage, cosmetic }) {
   // the model lab and the harness scenes drive their own kit without one.
   function update(dt, hold = null) {
     const due = hold ? hold.due : 0;
+    const dueBorn = hold ? hold.dueBorn || 0 : 0;
     heldSlots = 0;
     for (const [pool, step] of POOLS) {
       for (const s of pool.slots) {
@@ -1017,8 +1021,10 @@ export function createVfxKit({ stage, cosmetic }) {
         if (hold && !s.hold) {
           const floor = holdFloor(pool, s);
           if (floor >= 0) {
-            // Born before this frame: it was on screen for the hit.
-            if (due > 0 && s.age > 0) s.owe = Math.min(HOLD_CAP, (s.owe || 0) + due);
+            // Born before this frame, it was on screen for the whole freeze;
+            // born this frame, only for what froze after this frame's hits.
+            const add = s.age > 0 ? due : dueBorn;
+            if (add > 0) s.owe = Math.min(HOLD_CAP, (s.owe || 0) + add);
             const t0 = s.age - s.delay;
             if (s.owe > 0 && (t0 < 0 || t0 >= floor)) {
               const h = Math.min(s.owe, d);

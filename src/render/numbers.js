@@ -24,6 +24,7 @@ import { Color, Vector3 } from 'three';
 import { DAMAGE_NUMBERS, TICK_HZ, HITSTOP } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
 import { t } from '../i18n/index.js';
+import { renderHold } from './hold.js';
 
 const OUTLINE_W = 2; // px (§17: 2 px contrast outline)
 
@@ -375,7 +376,12 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       if (r.age < FAN_WINDOW) sameTick++;
     }
     // An own crit's tag can be wider than its digits (¡CRÍTICO!): fan on it.
-    const wFan = el.dataset.tag ? Math.max(wpx, Math.round(px * 0.45 * 0.62 * el.dataset.tag.length)) : wpx;
+    // The ::after is max(20px, 0.45em); kana, Hangul, CJK and full-width
+    // marks run about 1 em, the rest about 0.62 em.
+    const tag = el.dataset.tag;
+    const tagPx = Math.max(20, px * 0.45);
+    const tagEm = tag ? [...tag].reduce((n, ch) => n + (ch >= '\u2E80' ? 1 : 0.62), 0) : 0;
+    const wFan = tag ? Math.max(wpx, Math.round(tagPx * tagEm)) : wpx;
     unit = Math.max(unit, (wFan + widest) * 0.5 + FAN_GAP);
     let slot = 0;
     while (used.has(slot) && slot < FAN_SLOT.length - 1) slot++;
@@ -417,6 +423,9 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       steps: w && w.flash ? OWN_STEPS : null,
       step: -1,
       tagged: !!el.dataset.tag,
+      // Digits plus the CRIT! tag above the bottom anchor: the top clamp
+      // keeps that much headroom so the tag stays in the layer.
+      head: tag ? Math.round(px + tagPx) : 0,
       phase: w ? 'pop' : '',
     });
   }
@@ -437,13 +446,17 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     const h = window.innerHeight;
     for (let i = active.length - 1; i >= 0; i--) {
       const rec = active[i];
-      // The hitstop's hold pays from the numeral's second frame: it shows,
-      // then holds its pop (size, white, tag) through the freeze while its
-      // arc and fade run on.
+      // The hitstop holds the numeral's pop (size, white, tag) while its arc
+      // and fade run on, paid with the rigs (render/hold.js): on its spawn
+      // frame only what froze after this frame's hits, then the frozen time
+      // each frame pays. Once it is on screen and the freeze is over, what
+      // is left is dropped, so a staggered numeral never holds while the
+      // world moves.
       let d = dt;
-      if (rec.hold > 0 && rec.popAge > 0) {
-        const h = Math.min(rec.hold, d);
-        rec.hold -= h;
+      if (rec.hold > 0 && rec.age >= 0) {
+        const pay = rec.age > 0 ? renderHold.paid : renderHold.dueBorn;
+        const h = Math.min(rec.hold, pay, d);
+        rec.hold = rec.age > 0 && renderHold.paid <= 0 ? 0 : rec.hold - h;
         d -= h;
       }
       rec.age += dt;
@@ -481,8 +494,9 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       // there" rather than as a hit at that spot — and lands beside that
       // enemy's pointer (ui/hud/threat.js, which ticks in the same moment).
       const sx = Math.min(w - EDGE_PAD, Math.max(EDGE_PAD, rawX));
-      const sy = Math.min(h - h * BOTTOM_PAD_FRAC, Math.max(EDGE_PAD, rawY));
-      const offFrame = sx !== rawX || sy !== rawY;
+      const yMax = h - h * BOTTOM_PAD_FRAC;
+      const sy = Math.min(yMax, Math.max(EDGE_PAD + rec.head, rawY));
+      const offFrame = sx !== rawX || rawY < EDGE_PAD || rawY > yMax;
       // 120 ms pop-in overshoot settling to 1, stronger on crits.
       // (ATTACK FEEDBACK: the viewer's own numerals pop harder, others' softer.)
       // An outgoing numeral settles in 3 frames instead, held through the
