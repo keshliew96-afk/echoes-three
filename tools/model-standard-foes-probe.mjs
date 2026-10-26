@@ -42,7 +42,7 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 const { Color, Vector3 } = await import('three');
 const { createTimeline, ease } = await import('../src/render/facet/timeline.js');
 const { FRAME, SPAWN_SEC, spawnScale, settle, hitTimelines, createChain, createFoeClock, createAttackWatch } = await import('../src/render/facet/foe.js');
-const { createLegs, clampReach } = await import('../src/render/facet/legs.js');
+const { createLegs, clampReach } = await import('../src/render/facet/foelegs.js');
 const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FACET_FOES, FOE_ABILITIES, facetFoeBuilders } = await import('../src/render/enemies/facet/index.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-foes.js');

@@ -67,7 +67,7 @@ import { facetize } from '../../facet/material.js';
 import { instancedPart, plateGeometry, setTRS, wedgeGeometry } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, SPAWN_SEC, bakeParts, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, hornGeometry, lerpFields, namedPoint, placeBody, scaleGeometry, settle, spawnScale } from '../../facet/foe.js';
-import { segmentMatrix } from '../../facet/legs.js';
+import { segmentMatrix } from '../../facet/foelegs.js';
 
 // The sim's wasp (sim/enemies/wasp.js S): buzzes at 2.7 u/s; a lane
 // telegraph of 42 ticks (Short Fuse: 36), then a dart at 9 u/s, 3.6 u at most

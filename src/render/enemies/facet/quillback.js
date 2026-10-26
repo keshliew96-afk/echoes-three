@@ -20,7 +20,7 @@
 //     quills on one instanced row that RAISE in the coil, kick upright on the
 //     launch, and droop in the stagger;
 //   * a head that TUCKS into the coat (the curl the Journal names), a muzzle
-//     mask, brows, ears; WORLD-LOCKED FEET (render/facet/legs.js) on four
+//     mask, brows, ears; WORLD-LOCKED FEET (render/facet/foelegs.js) on four
 //     stub legs that fold into the ball for the roll;
 //   * the CHARGE on its sim timing (sim/enemies/quillback.js): the lane
 //     telegraph (48 ticks) is the coil (the curl, the quills rising, the press
@@ -56,7 +56,7 @@ import { facetize, hash01 } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, SPAWN_SEC, bakeParts, scaleGeometry, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, lerpFields, namedPoint, placeBody, settle, spawnScale } from '../../facet/foe.js';
-import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/foelegs.js';
 
 // --- The sim's quillback (sim/enemies/quillback.js) -------------------------
 const TICK_HZ = 60;

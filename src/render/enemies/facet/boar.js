@@ -11,7 +11,7 @@
 //     a bristle mane in two rows flanking the thorns, thick hide plates over
 //     the shoulders and haunches, a brow ridge, curved two-piece tusks with
 //     lower canines, split hooves, a tail tuft;
-//   * WORLD-LOCKED FEET (render/facet/legs.js): a trot in diagonal pairs, each
+//   * WORLD-LOCKED FEET (render/facet/foelegs.js): a trot in diagonal pairs, each
 //     hoof pinned to the floor while it carries weight, two-bone legs (front
 //     knees forward, hocks back), the bob and roll from the steps, the lean
 //     following the travel in the boar's own frame;
@@ -44,7 +44,7 @@ import { facetize } from '../../facet/material.js';
 import { instancedPart, plateGeometry, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, SPAWN_SEC, freshWarp, bakeParts, heldBy, hornGeometry, pullBack, scaleGeometry, createAttackWatch, createChain, createFoeClock, createFoeFrame, foeMaterial, foePart, hitPose, hitTimelines, namedPoint, placeBody, spawnScale } from '../../facet/foe.js';
-import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/foelegs.js';
 
 // The sim's boar (sim/enemies.js ENEMY_STATS.boar): a bite every 48 ticks per
 // target while in contact; 2.0 u/s.

@@ -12,7 +12,7 @@
 //     lashers shares one buffer per material: six dark rind ridges at the
 //     classic's angles, seven root knots, a band of low husk scales, angry brow plates,
 //     ten bone bramble thorns on the ridges, indigo seed spikes in the maw;
-//   * WORLD-LOCKED ROOTS (render/facet/legs.js): the pod drags itself along on
+//   * WORLD-LOCKED ROOTS (render/facet/foelegs.js): the pod drags itself along on
 //     the classic's seven two-bone roots stepping in two sets, a low dark skirt (each drops
 //     out of the pod's underside and runs out along the floor to a tip just
 //     past the rim), each root tip pinned to the floor while it carries
@@ -82,7 +82,7 @@ import { facetize } from '../../facet/material.js';
 import { instancedPart, plateGeometry, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, SPAWN_SEC, bakeParts, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, heldBy, hornGeometry, lerpFields, namedPoint, placeBody, scaleGeometry, settle, spawnScale } from '../../facet/foe.js';
-import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/foelegs.js';
 
 // --- The sim's numbers (sim/enemies/lasher.js S), read only for timing.
 const TEL_TICKS = 48; // the lane telegraph

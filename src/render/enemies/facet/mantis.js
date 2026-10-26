@@ -19,7 +19,7 @@
 //     mandibles that flare on the spit, the raptorial forelegs as a coxa /
 //     spined femur / toothed tibia chain on a hinge plane (the strike unfolds
 //     and snaps them), four walking legs and their tarsal claws;
-//   * WORLD-LOCKED FEET (render/facet/legs.js): the four walking legs step in
+//   * WORLD-LOCKED FEET (render/facet/foelegs.js): the four walking legs step in
 //     diagonal pairs, two-bone legs with high outward knees (the bracket
 //     read), each foot pinned to the floor while it carries weight; the
 //     forelegs are carried, never walked on (as on the classic);
@@ -70,7 +70,7 @@ import { facetize } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, SPAWN_SEC, bakeParts, heldBy, hornGeometry, scaleGeometry, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, lerpFields, namedPoint, placeBody, settle, shotSquash, spawnScale, telegraphProgress } from '../../facet/foe.js';
-import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/foelegs.js';
 
 // The sim's mantis (sim/enemies.js ENEMY_STATS.mantis): a 42-tick telegraph
 // (the lab's default span; live play reads the telegraph's own span), one shot

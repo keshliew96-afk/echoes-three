@@ -16,7 +16,7 @@
 //     plates nesting the crown and two over the back; two bramble strands
 //     winding round the flanks; a brow over each eye. Draw calls drop to half
 //     the classic's (each classic spike was its own mesh and material);
-//   * ROOT LEGS ON WORLD-LOCKED FEET (render/facet/legs.js): two bow-legged
+//   * ROOT LEGS ON WORLD-LOCKED FEET (render/facet/foelegs.js): two bow-legged
 //     two-bone roots on one instanced row with their rootlet toes, each foot
 //     pinned to the floor while it carries weight, toes and all (a planted
 //     foot keeps its world heading while the body turns over it), stepping
@@ -49,7 +49,7 @@ import { facetize, hash01 } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, SPAWN_SEC, bakeParts, createFoeClock, createFoeFrame, foeMaterial, foePart, hornGeometry, namedPoint, placeBody, scaleGeometry, settle, spawnScale, telegraphProgress } from '../../facet/foe.js';
-import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/foelegs.js';
 
 // The sim's thornling (sim/enemies/thornling.js): it skulks at 1.3 u/s and
 // every 240 ticks roots for 30 ticks, planting its thorn patch on the tick

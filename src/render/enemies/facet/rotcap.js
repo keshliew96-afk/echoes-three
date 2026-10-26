@@ -18,7 +18,7 @@
 //     the rim, a ragged veil ring (annulus) under the cap, a torn volva cup
 //     hugging the bulb, the indigo spots as raised warty domes (bright and
 //     dim in one unlit call), angry brow notches over the slit eyes;
-//   * WORLD-LOCKED FEET (render/facet/legs.js): a slow, rolling shamble
+//   * WORLD-LOCKED FEET (render/facet/foelegs.js): a slow, rolling shamble
 //     (1.5 rolls a second at the sim's 1.1 u/s, 1.8 at the retreat's 1.54;
 //     the classic's 1.43), lurching up once a roll on two root feet tucked under the bulb (one instanced row: a root
 //     leg out of the bulb, a flat nub and three root toes each), each pinned
@@ -65,7 +65,7 @@ import { facetize, hash01 } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, PULL_IN, SPAWN_SEC, bakeParts, heldBy, scaleGeometry, createAttackWatch, createChain, createFoeClock, createFoeFrame, foeMaterial, foePart, hitPose, hitTimelines, namedPoint, placeBody, pullBack, spawnScale } from '../../facet/foe.js';
-import { clampReach, createLegs, segmentMatrix } from '../../facet/legs.js';
+import { clampReach, createLegs, segmentMatrix } from '../../facet/foelegs.js';
 
 // The sim's Rotcap (sim/enemies/rotcap.js): a contact bite every 60 ticks per
 // target, no telegraph; 1.1 u/s; on death a burst ring that lands 48 ticks on.
