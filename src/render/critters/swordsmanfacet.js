@@ -251,7 +251,7 @@ const cuts = (out, s) => {
 // stretching up into the follow-through.
 const G_CRES = K({ yaw: 0.6, pitch: 0.06, rz: -0.06, ry: -0.05, sw: 1.07, sh: 0.92, hx: 0.3, hy: 0.22, hz: -0.05, ba: 2.2, be: -0.45, ox: -0.18, oy: 0.36, oz: 0.27 });
 const S_CRES = K({ yaw: -0.45, pitch: 0.4, rz: 0.12, ry: 0.02, sw: 1.19, sh: 0.9, step: 0.7, hx: 0.17, hy: 0.35, hz: 0.33, ba: 0.25, be: 0.45, ox: -0.3, oy: 0.28, oz: -0.04 });
-const O_CRES = K({ yaw: -0.7, pitch: 0.24, rz: 0.1, ry: 0.05, sw: 0.97, sh: 1.06, step: 0.7, hx: 0.0, hy: 0.55, hz: 0.18, ba: -1.0, be: 1.05, ox: -0.3, oy: 0.26, oz: -0.06 });
+const O_CRES = K({ yaw: -0.7, pitch: 0.24, rz: 0.1, ry: 0.05, sw: 0.97, sh: 1.06, step: 0.7, hx: -0.1, hy: 0.58, hz: 0.36, ba: -1.0, be: 1.05, ox: -0.3, oy: 0.26, oz: -0.06 });
 // Blade Storm (Blade Storm, Blade Dance): the blade held out level on the
 // sword side, a hop, one full turn in the air (the whole rig turns, feet
 // and all: spinAt), and a landing cut.
@@ -923,6 +923,7 @@ export function buildSwordsmanFacet(rig, trackAccent) {
   const lock = createFootLock({ rig, feet, home: HOME, lunge: { lead: 1, reach: 0.16, brace: 0.03 } });
   const atk = createAttackClock({ pack: PACK, hits: HITS, abilities: MOVES, skillAbility, window: COMBO_WINDOW });
   let lastT = null;
+  let spinHeld = 0; // the turn a hit taken let go of
   const live = PACK.make();
   const lagged = PACK.make();
   const led = PACK.make();
@@ -1007,7 +1008,11 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     const ability = atk.ability;
     const mt = atk.moveTime;
     // Blade Storm's turn: the whole rig, feet included.
-    const spin = attacking ? spinAt(ability, mt) : 0;
+    let spin = attacking ? spinAt(ability, mt) : 0;
+    // A hit taken mid-turn lets the turn go over the release (no pop).
+    if (attacking && ability === 'whirl') spinHeld = spin;
+    else if (attacking && atk.move && atk.move.id === 'release' && spinHeld !== 0) spin = spinHeld * (1 - ease.out(Math.min(1, mt / atk.move.duration)));
+    else spinHeld = 0;
     rig.rotation.y = spin * upright;
 
     // Torso and root: an attack owns them; otherwise the driver's clip does
@@ -1041,7 +1046,9 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     // Feet: locked to the floor, stepping on their own; the walk's bob,
     // sway, twist and travel lean come from the steps, over the rest lean.
     const locked = P.collapse < 0.04;
-    lock.step(dt, attacking ? live : REST, locked && sp === 1); // the grow-in: the feet ride the body
+    // The grow-in: the feet ride the body. The lab's Still stands them on
+    // the pose's homes. After the bob the feet are set again (on the floor).
+    lock.step(dt, attacking ? live : REST, locked && sp === 1, !!atk.override && dt <= 0);
     if (locked && clip === 'walk' && !attacking) {
       walkBody(lock, { walkSpeed: WALK_SPEED }, walk);
       rig.position.y += walk.dy - P.bob * upright * 0.6;
@@ -1050,6 +1057,7 @@ export function buildSwordsmanFacet(rig, trackAccent) {
       torso.rotation.z = walk.roll * upright;
       head.rotation.x = -torso.rotation.x * 0.88 - 0.18 * upright;
       head.rotation.y = -walk.twist * 0.55 * upright;
+      if (sp === 1) lock.place();
     }
 
     // The brush counters the hips and lifts with the lean; the scarf tails
@@ -1107,7 +1115,7 @@ export function buildSwordsmanFacet(rig, trackAccent) {
       const rule = SMEAR[id];
       if (rule) {
         size = rule.size;
-        const mv = ability ? MOVES[ability] : HITS[atk.comboHit - 1].move;
+        const mv = atk.move;
         const s = mv.timeline.sample(Math.max(0, mt - LAG));
         const gate = rule.on.includes(s.id) ? 1 : s.id === rule.fade ? 1 - s.k : 0;
         if (gate > 0) {
@@ -1141,6 +1149,7 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     cue: atk.cue,
     hold: atk.hold,
     comboHitOf: atk.comboHitOf,
+    atContact: atk.atContact,
     points: { hand, tip },
     lab,
     torso,

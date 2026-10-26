@@ -155,7 +155,69 @@ its build returns the critter contract plus `cue`, `hold`, `comboHitOf`, `points
 
 Heavy Slam and Brace now lean into their blow too (the brace sinks forward over the shield).
 
-<!-- HEROES -->
+## The Healer (`src/render/critters/healerfacet.js`)
+
+The player's hero. The classic contract stays: the wide closed bell in Sage (12-sided, 2%
+wider so its flats keep the classic's width), the round ears with their blush, the short
+snout, the head proportions and painted face, the staff held out to the side and forward,
+and the classic gem with its exact colour, glow and flare (Bright Heal on the gem only; it
+stays `tip`, so the player's bolts still leave the gem).
+
+- **Detail.** A capelet of 21 folded leaves in two brick-laid rows round the shoulders,
+  open over the bone bib; a scalloped hem of 18 leaves; a sash of 12 folded plates (the
+  classic's sash sat hidden inside the bell); 7 criss-cross bindings on the shaft; 6 pewter
+  beads; a pewter claw setting of 8 blades round the gem. The leaves are Sage lightened at
+  its own hue; the wood is the classic's weathered toward Warm Grey (the classic's own wood
+  sits in the amber family); no gold. Two small faceted feet peek out under the front hem.
+- **3-hit combo, as shots** (`ranged`: her basic is a bolt every 0.5 s, and the bolt leaves
+  on the press): wind 1 frame, strike 1.5 frames, overshoot 2, settle 5, recover 0.35 s;
+  the staff gripped low.
+  1. *Diagonal forehand*: the hips unwind and the staff chops down across the front, the
+     gem levelled ahead.
+  2. *Rising backhand*: the hips snap back and the staff rises out past the staff side, the
+     gem high.
+  3. *Overhead cast*: up on her toes, leaning back with the staff over the top, then a hop
+     (0.13 u) and a stretch as it arcs forward and down, landing squashed. Both feet leave
+     the floor.
+
+  The free paw counterbalances every throw; each shot squashes her 20%, 29%, then 38%
+  wider. She casts on the move: the feet keep stepping and the walk's bob, roll and twist
+  stay under the attack.
+- **Abilities** (by the skill's shape): *Lantern Point* (projectile and direct: the staff
+  levelled at the hip, then thrust out like a lance), *Bloom* (nova and aura: up on her toes
+  with the staff upright at her side, then a squash as the gem flares), *Staff Plant*
+  (ground skills: the butt driven into the floor beside her with a lunge step), *Wide Sweep*
+  (melee arcs: the staff wound far back and swept round the front).
+- A small local solver keeps the staff's shaft out of the bell and the head through every
+  pose.
+
+## The Swordsman (`src/render/critters/swordsmanfacet.js`)
+
+The classic contract stays: the narrow forward-leaning wedge (the rest lean), the long
+snout, big pointed ears (now dark-tipped), the white-tipped brush sweeping back and up, the
+sword as a clean diagonal line, the plum-wine tunic authored toward plum, the face and
+cheek markings, and the classic metrics.
+
+- **Detail.** Two rows of lamellar trim (24 plates), a baldric of 6 leather plates with 4
+  pewter buckles, a 3-plate pauldron on the sword shoulder, a dark plum scarf of 4 notched
+  wedges at the nape, a cream cheek ruff (6), 9 tufts layered along the brush, pewter
+  quillons on a blade of hexagonal section with two fullers.
+- **3-hit combo** at the sim's 0.35 s cadence (the fastest hero), combo window 0.7 s: wind
+  1.5 frames, strike 2 (the finisher 3), overshoot 2, settle 4.
+  1. *Forehand slash*: the torso turned away, blade cocked back, then across to the far side.
+  2. *Rising backhand*: low across, cut up to high; the overshoot carries the blade high.
+  3. *Leaping cut*: the blade over the top, a 0.15 u hop and stretch through the strike,
+     landing squashed at a 25° lean with the lead foot lunging in and both paws on the grip.
+
+  The swing smear follows the blade's real sweep, in Parchment (never Ember), laid over
+  the body instead of added onto it so it cannot white out the face.
+- **Abilities** (by skill, with a fallback by shape): *Lunge Strike* (Lunge Strike, Fox
+  Step, Moonfang: a 2-frame thrust), *Flurry* (six fast cuts and a finishing stroke),
+  *Crescent Cut* (Crescent Finisher, Riposte: a guard and a wide cut), *Blade Storm* (Blade
+  Storm, Blade Dance: a small leap and a full spin), *Caltrops* (a reach and a flick), *Edge
+  Draw* (Razor Wake, Crimson Edge: the blade presented, the off paw along the edge, a salute).
+- The drawn blade arrives on the contact frame (a per-hit whip makes up the core's
+  one-frame weapon lag on a 2-frame strike); the blade's flat turns toward the camera.
 
 ## Integration
 

@@ -852,7 +852,7 @@ export function buildHealerFacet(rig, trackAccent) {
     // along its own plane instead: an upright staff has no azimuth, and
     // swinging round to the stance's would carry the butt through the bell.
     if (attacking) {
-      const mv = atk.ability ? HEALER_MOVES[atk.ability] : HITS[atk.comboHit - 1].move;
+      const mv = atk.move;
       const tl = mv.timeline;
       const now = atk.moveTime;
       const s = tl.sample(Math.max(0, now - LAG));
@@ -915,7 +915,8 @@ export function buildHealerFacet(rig, trackAccent) {
     // their own (the lunge and the hop read from the live pose). Through the
     // spawn's grow-in they ride the growing body (the lock plants at full
     // size, which would leave them standing apart from it), then plant.
-    lock.step(dt, attacking ? live : REST, locked && sp === 1);
+    // The lab's Still stands them on the pose's homes.
+    lock.step(dt, attacking ? live : REST, locked && sp === 1, !!atk.override && dt <= 0);
   }
 
   return {
@@ -923,6 +924,7 @@ export function buildHealerFacet(rig, trackAccent) {
     cue: atk.cue,
     hold: atk.hold,
     comboHitOf: atk.comboHitOf,
+    atContact: atk.atContact,
     points: { hand, tip: gem },
     lab,
     torso,

@@ -572,10 +572,12 @@ export function createArenaScene(stage, toggles, ctx) {
   root.add(healerRig.group);
 
   // Bolts leave the staff-gem tip (§19.2: the gem brightens on cast) — hand
-  // the graybox bolt renderer the live gem world position as its muzzle.
+  // the graybox bolt renderer the gem's world position as its muzzle: where
+  // the gem will be at the shot's release (the faceted Healer swings it out
+  // over a few frames after the press; the classic rig's gem as drawn).
   const muzzleV = new Vector3();
   if (inner.setBoltOrigin && healerRig.tipWorld) {
-    inner.setBoltOrigin(() => healerRig.tipWorld(muzzleV));
+    inner.setBoltOrigin(() => healerRig.releaseWorld(muzzleV));
   }
 
   // Dash smear (baseline-v030 F6): staggered silhouette afterimages of the

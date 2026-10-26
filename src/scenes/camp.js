@@ -520,7 +520,11 @@ export function createCampScene(stage, toggles, ctx) {
     npcs.setVisible(inCamp);
     if (inCamp) storyRefresh = 0;
     for (const r of arenaRoots) r.visible = !inCamp;
-    if (inCamp) applyCampLighting();
+    // A model-standard rig hears every attack cue on the bus, its own mode's
+    // or not; the rigs of the mode coming in forget whatever they heard while
+    // they were hidden and still (docs/MODEL_STANDARD.md). The run's rigs
+    // reset before its first room_enter, so their spawn still plays.
+    if (!inCamp) for (const c of [arena.healer, ...arena.allies]) c.cue('reset');
     else applyRunLighting();
     if (inCamp) applyCampSim();
     else applyRunSim();
@@ -533,8 +537,10 @@ export function createCampScene(stage, toggles, ctx) {
     healerRig.setYaw(healerYaw);
     healerRig.group.position.set(CAMP_SPOTS.healer.x, 0, CAMP_SPOTS.healer.z);
     healerRig.setAnim('idle');
+    healerRig.cue('reset');
     for (const a of allyRigs) {
       const spot = CAMP_SPOTS[a.classId];
+      a.rig.cue('reset');
       if (a.partyIndex !== null) world.cmd('placeAlly', a.partyIndex, spot.x, spot.z);
       a.rig.group.position.set(spot.x, 0, spot.z);
       a.rig.setYaw(spot.yaw);

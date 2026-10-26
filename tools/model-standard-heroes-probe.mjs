@@ -19,8 +19,9 @@
 //   4. the rig (B7, B8, the self-check): any hitstop holds the whole rig;
 //      the spawn grows in from the floor with about 10% overshoot in about
 //      7 frames; hand and tip are named points and the tip travels; the hips
-//      lead the weapon; planted feet never slide, step one at a time along
-//      the travel in eight directions; the walk leans into the travel; a
+//      lead the weapon; the weapon never cuts into the head; planted feet
+//      never slide, hold through a hitstop, step one at a time along the
+//      travel in eight directions; the walk leans into the travel; a
 //      dash lifts both feet and they plant where they land; a lunge or a
 //      hop moves the feet with the body; downed and revived run;
 //   5. the look: every instanced part inked, no Ember, Violet or amber, the
@@ -34,7 +35,7 @@ const grad = { addColorStop() {} };
 const ctx = new Proxy({}, { get: (_, k) => (k === 'canvas' ? {} : () => grad), set: () => true });
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) };
 
-const { Color, Group, Vector3 } = await import('three');
+const { Box3, Color, Group, Matrix4, Vector3 } = await import('three');
 const { FACET_HEROES } = await import('../src/render/facet/heroes.js');
 const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FRAME, LUNGE_PITCH_MAX, RECOIL, SHOT, SPAWN, SPAWN_SEC, LEAD, LAG } = await import('../src/render/facet/hero.js');
@@ -293,20 +294,32 @@ for (const H of FACET_HEROES) {
   } else {
     const R = rigOf(H.id);
     run(R, 12);
+    // four shots of steady fire: the third is the finisher, a spell throw
+    // that keeps its stretch (B3); the squash deepens on the shots around it
     const peaks = [];
-    for (let i = 0; i < 3; i++) {
+    const drawn = [];
+    let finisherSh = 0;
+    const pz = {};
+    for (let i = 0; i < 4; i++) {
       R.c.cue('basic', { i });
       let p = 0;
       let short = 0;
+      let ratio = 0;
       run(R, Math.round(H.swingSec / DT), () => {
         const s = R.c.lab.clock.shot();
         p = Math.max(p, s.sw);
         short = Math.max(short, 1 - s.sh);
+        R.c.lab.clock.pose(pz);
+        ratio = Math.max(ratio, R.rig.scale.x / pz.sw);
+        if (i === 2 && Math.abs(R.c.lab.clock.moveTime - R.c.lab.clock.moveContact) < DT) finisherSh = Math.max(finisherSh, R.rig.scale.y);
       });
       peaks.push([r3(p), r3(short)]);
+      drawn.push(r3(ratio));
     }
-    const want = SHOT.wide.map((w, i) => [1 + w, SHOT.short[i]]);
-    check('each shot squashes the shooter 20%, 29%, then 38% wider and 10% shorter (B3)', peaks.every(([w, s], i) => Math.abs(w - want[i][0]) < 0.01 && Math.abs(s - want[i][1]) < 0.01), peaks);
+    const want = [[1 + SHOT.wide[0], SHOT.short[0]], [1 + SHOT.wide[1], SHOT.short[1]], [1, 0], [1 + SHOT.wide[2], SHOT.short[2]]];
+    check('steady fire squashes the shooter 20%, 29%, then 38% wider and 10% shorter, the finisher excepted (B3)', peaks.every(([w, s], i) => Math.abs(w - want[i][0]) < 0.01 && Math.abs(s - want[i][1]) < 0.01), peaks);
+    check('the drawn body takes the squash', drawn.every((r, i) => Math.abs(r - want[i][0]) < 0.02), drawn);
+    check('the finisher keeps its stretch at the release (B6)', finisherSh >= 1.08, r3(finisherSh));
     const s = R.c.lab.clock.shot();
     check('the shot squash is back to shape between shots', Math.abs(s.sw - 1) < 0.01 && Math.abs(s.sh - 1) < 0.01, [r3(s.sw), r3(s.sh)]);
   }
@@ -383,6 +396,8 @@ for (const H of FACET_HEROES) {
     const rows = [];
     let worstLock = 0;
     let both = 0;
+    let lowY = Infinity;
+    let highY = -Infinity;
     const ws = H.walkSpeed;
     for (let d = 0; d < 8; d++) {
       const a = (d * Math.PI) / 4;
@@ -407,6 +422,10 @@ for (const H of FACET_HEROES) {
         if (feet.every((ft) => !ft.planted)) both++;
         feet.forEach((ft, i) => {
           if (ft.planted) worstLock = Math.max(worstLock, Math.hypot(ft.drawnX - ft.x, ft.drawnZ - ft.z));
+          if (ft.planted && f > 20) {
+            lowY = Math.min(lowY, ft.drawnY);
+            highY = Math.max(highY, ft.drawnY);
+          }
           if (ft.planted && prev[i].planted) worstLock = Math.max(worstLock, Math.hypot(ft.x - prev[i].x, ft.z - prev[i].z));
           if (ft.planted && !prev[i].planted) steps++;
         });
@@ -420,12 +439,30 @@ for (const H of FACET_HEROES) {
       rows.push({ dir: d * 45, steps, pitch: r3(pitch / n), roll: r3(roll / n) });
     }
     check('planted feet never slide (drawn on their planted spot)', worstLock < 1e-3, r3(worstLock));
+    check('planted feet stay on the floor through the walk\'s bob', highY - lowY < 0.01, { low: r3(lowY), high: r3(highY) });
     check('the feet step one at a time', both === 0, both);
     check('every direction of travel steps the feet', rows.every((r) => r.steps >= 6), rows.map((r) => `${r.dir}:${r.steps}`));
     const fwd = rows[0];
     const back = rows[4];
     check('the walk leans into the travel: forward ahead, a backpedal back', fwd.pitch - back.pitch > 0.07, { forward: fwd.pitch, backpedal: back.pitch });
     check('a sidestep leans aside, each way', Math.sign(rows[2].roll) === -Math.sign(rows[6].roll) && Math.abs(rows[2].roll) > 0.03, { right: rows[2].roll, left: rows[6].roll });
+  }
+  {
+    // a hitstop (a held frame: no time passes) leaves planted feet where
+    // they stand, even when the body moved on that frame
+    const R = rigOf(H.id);
+    run(R, 30);
+    const before = R.c.lab.feet();
+    R.c.cue('hitstop', { tick: 50, ticks: 4, cause: 'melee_arc', total: 4 });
+    let moved = 0;
+    for (let f = 0; f < 3; f++) {
+      R.c.group.position.x += 0.03;
+      run(R, 1);
+      R.c.lab.feet().forEach((ft, i) => {
+        moved = Math.max(moved, Math.hypot(ft.x - before[i].x, ft.z - before[i].z), Math.hypot(ft.drawnX - before[i].x, ft.drawnZ - before[i].z));
+      });
+    }
+    check('a hitstop leaves planted feet where they stand', moved < 1e-3, r3(moved));
   }
   {
     // steps land ahead along the travel
@@ -506,6 +543,76 @@ for (const H of FACET_HEROES) {
       ok = String(err);
     }
     check('downed and revived poses run', ok === true, ok === true ? '' : ok);
+  }
+
+  {
+    // The weapon never cuts into the head, in any hit (fresh or chained) or
+    // ability, at any frame: above the brow (the dome) it stays outside the
+    // skull; below it, where a chibi shoulder already tucks under the jaw at
+    // rest, it never goes more than half way in. Measured on the weapon's
+    // own vertices against the skull's ellipsoid (the head's biggest mesh).
+    const R = rigOf(H.id);
+    run(R, 5);
+    const { head, weapon } = R.c.lab.parts;
+    R.world.updateMatrixWorld(true);
+    const toHead = new Matrix4().copy(head.matrixWorld).invert();
+    const v = new Vector3();
+    let skull = null;
+    let vol = 0;
+    for (const o of head.children) {
+      if (!o.isMesh || o.isInstancedMesh || /-ink$/.test(o.name)) continue;
+      const b = new Box3();
+      const pos = o.geometry.attributes.position;
+      for (let i = 0; i < pos.count; i++) b.expandByPoint(v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld).applyMatrix4(toHead));
+      const sz = b.getSize(new Vector3());
+      if (sz.x * sz.y * sz.z > vol) {
+        vol = sz.x * sz.y * sz.z;
+        skull = b;
+      }
+    }
+    const cen = skull.getCenter(new Vector3());
+    const rad = skull.getSize(new Vector3()).multiplyScalar(0.5);
+    const meshes = [];
+    weapon.traverse((o) => {
+      if (o.isMesh && !o.isSprite && !/-ink$/.test(o.name) && o.geometry && o.geometry.attributes.position) meshes.push(o);
+    });
+    const im = new Matrix4();
+    const wm = new Matrix4();
+    const worst = { dome: [Infinity, ''], any: [Infinity, ''] };
+    const measure = (label) => {
+      R.world.updateMatrixWorld(true);
+      toHead.copy(head.matrixWorld).invert();
+      for (const o of meshes) {
+        const pos = o.geometry.attributes.position;
+        for (let k = 0; k < (o.isInstancedMesh ? o.count : 1); k++) {
+          if (o.isInstancedMesh) wm.multiplyMatrices(o.matrixWorld, o.getMatrixAt(k, im));
+          else wm.copy(o.matrixWorld);
+          for (let i = 0; i < pos.count; i++) {
+            v.fromBufferAttribute(pos, i).applyMatrix4(wm).applyMatrix4(toHead).sub(cen);
+            const d = Math.hypot(v.x / rad.x, v.y / rad.y, v.z / rad.z);
+            if (d < worst.any[0]) worst.any = [d, label];
+            if (v.y > 0.3 * rad.y && d < worst.dome[0]) worst.dome = [d, label];
+          }
+        }
+      }
+    };
+    const sweep = (label, mk, dur) => {
+      for (let t = 0; t <= dur + 1e-6; t += DT) {
+        R.c.lab.override = mk(t);
+        R.c.update(DT);
+        measure(`${label} ${r3(t)}s`);
+      }
+    };
+    hits.forEach((h, n) => {
+      sweep(`hit ${n + 1}`, (t) => ({ kind: 'hit', n, t, fresh: true }), h.move.duration);
+      sweep(`hit ${n + 1} chained`, (t) => ({ kind: 'hit', n, t, fresh: false }), h.move.duration);
+    });
+    for (const [id, mv] of Object.entries(H.moves)) sweep(id, (t) => ({ kind: 'ability', id, t }), mv.duration);
+    R.c.lab.override = null;
+    check('the weapon never cuts into the head (outside the dome; under half way in below the brow)', worst.dome[0] >= 1 && worst.any[0] >= 0.5, {
+      dome: [r3(worst.dome[0]), worst.dome[1]],
+      any: [r3(worst.any[0]), worst.any[1]],
+    });
   }
 
   // --- 5. the look -------------------------------------------------------------

@@ -134,12 +134,33 @@ export function createMove(pack, id, label, keys, { contact = null, entry = null
     // The pose at t. `from`: the pose the move took over from; `startAt`:
     // the phase index that starts from `from` instead of the key before it
     // (0 for a fresh move; a chained hit's strike, so it strikes straight
-    // from wherever the last hit held it).
-    pose(t, from, out, startAt = 0) {
-      const s = timeline.sample(t);
+    // from wherever the last hit held it). `t0`: the time the move was
+    // entered at, when that is not a phase start (a game cast enters just
+    // ahead of its release): the move holds `from` until t0, and the phase
+    // t0 falls in eases from `from` over what is left of it, so an entry
+    // mid-phase never pops.
+    pose(t, from, out, startAt = 0, t0 = null) {
+      let s;
+      let start;
+      let k;
+      if (t0 !== null && t0 > 0) {
+        s = timeline.sample(t < t0 ? t0 : t);
+        const i0 = timeline.sample(t0).index;
+        if (s.index === i0) {
+          const end = timeline.startOf(keys[i0].id) + keys[i0].dur;
+          k = end > t0 ? Math.min(1, Math.max(0, (s.t - t0) / (end - t0))) : 1;
+          start = from;
+        } else {
+          k = s.k;
+          start = ends[s.index - 1];
+        }
+      } else {
+        s = timeline.sample(t);
+        k = s.k;
+        start = s.index <= startAt ? from : ends[s.index - 1];
+      }
       const i = s.index;
-      const start = i <= startAt ? from : ends[i - 1];
-      pack.lerp(out, start, ends[i], EASE[keys[i].ease || 'inOut'](s.k));
+      pack.lerp(out, start, ends[i], EASE[keys[i].ease || 'inOut'](k));
       if (extra) extra(out, s);
       return out;
     },
@@ -251,25 +272,35 @@ export const SPAWN_TIMELINE = createTimeline('spawn', 'Spawn', [
 //   cue('connect', ev)  a sim `hit` this rig struck (B3 recoil; and the
 //                       hitstop on the same tick becomes its contact hold)
 //   cue('hitstop', ev)  the world froze for ev.ticks: the whole rig holds;
-//                       the attacker plays its strike to contact and holds
-//                       there instead (B2)
+//                       the attacker plays its strike on to contact and holds
+//                       the pose there instead (B2)
 //   cue('spawn')        the grow-in (B7)
+//   cue('reset')        forget every move and envelope (a rig that was not
+//                       updated while cues arrived: a scene coming back)
+// A hit taken (the hurt clip, or going down) lets go of the attack over a
+// few frames (RELEASE_SEC) instead of dropping it, so nothing pops.
+export const RELEASE_SEC = 4 * FRAME;
+// A connect heard after the contact (a guest's own hero, one round trip
+// late) still recoils, if it comes this soon after the contact.
+const LATE_CONNECT = 0.25;
 export function createAttackClock({ pack, hits, abilities, skillAbility, window = 1.0, ranged = false, lead = LEAD, lag = LAG }) {
   let clock = 0;
-  let combo = 0; // 1..3 = the hit playing
-  let hitT = 0;
-  let fresh = true;
+  // The move playing: { kind: 'hit' | 'ability' | 'release', mv, t, t0, n, id }.
+  let cur = null;
   let lastBasicAt = -99;
-  let ab = null; // { id, t }
   let lastClip = 'idle';
   let lastBasicEv = null;
   let lastHit = 0;
   const from = pack.make();
-  // holds
+  const RELEASE = createMove(pack, 'release', 'Interrupted', [{ id: 'release', label: 'let go of the attack', dur: RELEASE_SEC, to: pack.REST, ease: 'out' }]);
+  // holds: the world froze (holdLeft, the whole rig) or this rig's blow
+  // landed (poseHold, the attack pose only: the world has moved on)
   let holdLeft = 0;
+  let poseHold = 0;
   let contactOwed = 0;
   let stopTick = null;
   let stopBucket = null;
+  let stopNow = 0; // the whole-rig hold this tick added so far
   // recoil (melee)
   let connectTick = null;
   let recoilArmed = false;
@@ -283,59 +314,64 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
   // the model lab's pure override
   let override = null;
 
-  const move = () => (ab ? abilities[ab.id] : combo > 0 ? hits[combo - 1].move : null);
-  const moveT = () => (ab ? ab.t : hitT);
-  function setMoveT(t) {
-    if (ab) ab.t = t;
-    else hitT = t;
-  }
+  const move = () => (cur ? cur.mv : null);
   function poseNow(out, shift = 0) {
-    if (ab) return abilities[ab.id].pose(Math.max(0, ab.t + shift), from, out, 0);
-    if (combo > 0) return hits[combo - 1].move.pose(Math.max(0, hitT + shift), from, out, fresh ? 0 : 1);
-    return pack.copy(out, pack.REST);
+    if (!cur) return pack.copy(out, pack.REST);
+    return cur.mv.pose(cur.t + shift, from, out, 0, cur.t0);
   }
-  function breakChain() {
-    combo = 0;
-    ab = null;
+  // Take over from wherever the rig is now.
+  function start(kind, mv, t0, extra) {
+    poseNow(from);
+    cur = { kind, mv, t: t0, t0, n: 0, id: null, ...extra };
+    poseHold = 0;
     contactOwed = 0;
     recoilArmed = false;
   }
+  const blowAhead = () => cur && cur.kind !== 'release' && cur.t < cur.mv.contact;
 
   function cue(kind, ev) {
     if (kind === 'basic') {
       if (ev && ev === lastBasicEv) return lastHit;
       lastBasicEv = ev || null;
-      poseNow(from);
-      fresh = clock - lastBasicAt > window || combo === 0 || !!ab;
-      combo = fresh ? 1 : (combo % hits.length) + 1;
-      hitT = fresh ? 0 : hits[combo - 1].timeline.startOf('strike');
-      ab = null;
+      const prev = cur && cur.kind === 'hit' ? cur.n : 0;
+      const fresh = clock - lastBasicAt > window || prev === 0;
+      const n = fresh ? 1 : (prev % hits.length) + 1;
+      start('hit', hits[n - 1].move, fresh ? 0 : hits[n - 1].timeline.startOf('strike'), { n });
       lastBasicAt = clock;
-      contactOwed = 0;
-      recoilArmed = false;
       if (ranged) {
         shotLevel = clock - lastShotAt <= window ? Math.min(3, shotLevel + 1) : 1;
-        shotSince = 0;
         lastShotAt = clock;
+        // the finisher is a spell throw: it keeps its stretch, not the
+        // shooter's squash (B3); steady fire squashes on the shots after it
+        shotSince = n === hits.length ? -1 : 0;
       }
-      lastHit = combo;
-      return combo;
+      lastHit = n;
+      return n;
     }
     if (kind === 'skill') {
       const id = skillAbility(ev);
       const mv = abilities[id];
       if (!mv) return 0;
-      poseNow(from);
-      ab = { id, t: mv.entry };
-      combo = 0; // a skill breaks the combo: the next basic is hit 1
-      contactOwed = 0;
-      recoilArmed = false;
+      start('ability', mv, mv.entry, { id }); // a skill breaks the combo: the next basic is hit 1
       return 0;
     }
     if (kind === 'connect') {
-      connectTick = ev && ev.tick !== undefined ? ev.tick : connectTick;
+      const tick = ev && ev.tick !== undefined ? ev.tick : null;
+      if (tick !== null) connectTick = tick;
       const mv = move();
-      if (mv && mv.recoil && moveT() < mv.contact) recoilArmed = true;
+      if (mv && mv.recoil && cur.kind !== 'release') {
+        if (cur.t < mv.contact) recoilArmed = true;
+        else if (cur.t < mv.contact + LATE_CONNECT) recoilSince = 0;
+      }
+      // An earlier blow on this tick already froze the world: this rig's
+      // share of the stop waits for its own contact instead (B2).
+      if (!ranged && tick !== null && tick === stopTick && stopBucket === 'now' && blowAhead()) {
+        const moved = Math.min(holdLeft, stopNow);
+        holdLeft -= moved;
+        contactOwed += moved;
+        stopNow = 0;
+        stopBucket = 'contact';
+      }
       return 0;
     }
     if (kind === 'hitstop') {
@@ -343,19 +379,33 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       const tick = ev && ev.tick !== undefined ? ev.tick : null;
       if (tick === null || tick !== stopTick) {
         stopTick = tick;
-        const mv = move();
-        // the attacker: its strike has not reached contact yet, so the hold
-        // waits for the contact pose (B2); every other rig holds now. A shot
-        // has no contact to wait for (its release is the press; the bolt
-        // lands later), so a shooter always holds now.
-        stopBucket = !ranged && tick !== null && tick === connectTick && mv && moveT() < mv.contact ? 'contact' : 'now';
+        stopNow = 0;
+        // the attacker: its strike has not reached contact yet (the sim hits
+        // on the press), so its hold waits for the contact pose (B2); every
+        // other rig holds now. A shot has no contact to wait for (its
+        // release is the press; the bolt lands later), so a shooter always
+        // holds now.
+        stopBucket = !ranged && tick !== null && tick === connectTick && blowAhead() ? 'contact' : 'now';
       }
       if (stopBucket === 'contact') contactOwed += sec;
-      else holdLeft += sec;
+      else {
+        holdLeft += sec;
+        stopNow += sec;
+      }
       return 0;
     }
     if (kind === 'spawn') {
       spawnSince = 0;
+      return 0;
+    }
+    if (kind === 'reset') {
+      cur = null;
+      holdLeft = poseHold = contactOwed = stopNow = 0;
+      stopTick = stopBucket = connectTick = null;
+      recoilArmed = false;
+      recoilSince = shotSince = spawnSince = -1;
+      shotLevel = 0;
+      lastBasicAt = lastShotAt = -99;
       return 0;
     }
     return 0;
@@ -376,30 +426,45 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       return;
     }
     clock += dt;
-    if ((clip === 'hurt' && lastClip !== 'hurt') || clip === 'downed') breakChain(); // a hit taken breaks the combo
+    // a hit taken breaks the combo: let go of the attack, never a pop
+    const hurt = (clip === 'hurt' && lastClip !== 'hurt') || clip === 'downed';
     lastClip = clip;
-    const mv = move();
-    if (mv) {
-      const before = moveT();
-      let t = before + dt;
-      if (before < mv.contact && t >= mv.contact) {
-        // the blow: the contact pose holds through the owed hitstop, and the
-        // recoil starts on the first moving frame after it
-        if (contactOwed > 0) {
-          t = mv.contact;
-          holdLeft += contactOwed;
-          contactOwed = 0;
+    if (hurt && cur && cur.kind !== 'release') start('release', RELEASE, 0, {});
+    if (recoilSince >= 0) recoilSince = recoilSince > 1 ? -1 : recoilSince + dt;
+    if (cur) {
+      const mv = cur.mv;
+      let step = dt;
+      if (poseHold > 0) {
+        const used = Math.min(poseHold, step);
+        poseHold -= used;
+        step -= used;
+        if (poseHold <= 0 && recoilArmed) {
+          // the recoil plays off the held contact (B3)
+          recoilSince = step;
+          recoilArmed = false;
         }
-        if (recoilArmed) {
+      }
+      const before = cur.t;
+      let t = before + step;
+      if (before < mv.contact && t >= mv.contact) {
+        // the blow: the contact pose holds through the owed hitstop (the
+        // pose only: the world has moved on), then the recoil
+        if (contactOwed > 0) {
+          const over = t - mv.contact;
+          poseHold = contactOwed;
+          contactOwed = 0;
+          const used = Math.min(poseHold, over);
+          poseHold -= used;
+          t = mv.contact + over - used;
+        }
+        if (recoilArmed && poseHold <= 0) {
           recoilSince = 0;
           recoilArmed = false;
         }
       }
-      setMoveT(t);
-      if (ab && ab.t >= mv.duration) ab = null;
-      else if (!ab && combo > 0 && hitT >= mv.duration) combo = 0;
+      cur.t = t;
+      if (t >= mv.duration) cur = null;
     }
-    if (recoilSince >= 0) recoilSince = recoilSince > 1 ? -1 : recoilSince + dt;
     if (shotSince >= 0) shotSince = shotSince > 1.2 ? -1 : shotSince + dt;
     if (spawnSince >= 0) spawnSince = spawnSince > SPAWN_SEC + FRAME ? -1 : spawnSince + dt;
   }
@@ -409,19 +474,18 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
   function setOverride(o) {
     override = o || null;
     if (!o) return;
-    ab = null;
-    combo = 0;
+    cur = null;
+    poseHold = 0;
     recoilSince = -1;
     shotSince = -1;
     spawnSince = -1;
     if (o.kind === 'ability') {
-      ab = { id: o.id, t: o.t };
       pack.copy(from, o.from || pack.REST);
+      cur = { kind: 'ability', id: o.id, n: 0, mv: abilities[o.id], t: o.t, t0: 0 };
     } else if (o.kind === 'hit') {
-      combo = o.n + 1;
-      hitT = o.t;
-      fresh = !!o.fresh;
+      const fresh = !!o.fresh;
       pack.copy(from, o.from || (fresh ? pack.REST : hits[o.n].from));
+      cur = { kind: 'hit', id: null, n: o.n + 1, mv: hits[o.n].move, t: o.t, t0: fresh ? 0 : hits[o.n].timeline.startOf('strike') };
     } else if (o.kind === 'spawn') spawnSince = o.t;
     if (o.recoil !== undefined) recoilSince = o.recoil;
     if (o.shot) {
@@ -440,24 +504,28 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       return override;
     },
     get active() {
-      return !!(ab || combo > 0);
+      return !!cur;
+    },
+    // the move playing (a hit's, an ability's, or the let-go after a hit
+    // taken), or null
+    get move() {
+      return cur ? cur.mv : null;
     },
     get ability() {
-      return ab ? ab.id : null;
+      return cur && cur.kind === 'ability' ? cur.id : null;
     },
     get comboHit() {
-      return combo;
+      return cur && cur.kind === 'hit' ? cur.n : 0;
     },
     get held() {
-      return holdLeft > 0;
+      return holdLeft > 0 || poseHold > 0;
     },
     // what the probes read: the time into the move and its contact
     get moveTime() {
-      return moveT();
+      return cur ? cur.t : 0;
     },
     get moveContact() {
-      const mv = move();
-      return mv ? mv.contact : null;
+      return cur ? cur.mv.contact : null;
     },
     comboHitOf(ev) {
       if (ev && ev === lastBasicEv) return lastHit;
@@ -469,6 +537,20 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       poseNow(live, 0);
       poseNow(led, lead);
       poseNow(lagged, -lag);
+    },
+    // Where the current move releases: run `fn` with the move at its
+    // contact (the rig posed there by the caller), then put it back. A
+    // shooter's bolt leaves from here, not from the wind-up the press
+    // caught the rig in.
+    atContact(fn) {
+      if (!cur || cur.kind === 'release' || cur.t >= cur.mv.contact) return fn(false);
+      const t = cur.t;
+      cur.t = cur.mv.contact;
+      try {
+        return fn(true);
+      } finally {
+        if (cur) cur.t = t;
+      }
     },
     recoil: () => recoilAt(recoilSince),
     shot: () => shotAt(shotLevel, shotSince, shotOut),
@@ -519,7 +601,8 @@ export function createComboLab(hits, { swingSec, hold = 2 / 60, finisherHold = 3
         fresh: n === 0,
         held,
         recoil: ranged ? -1 : since,
-        shot: ranged ? { level: n + 1, since: local } : null,
+        // the finisher is a spell throw: its stretch, not the squash (B3)
+        shot: ranged && n < hits.length - 1 ? { level: n + 1, since: local } : null,
         phase: s.id,
         label: `${mv.timeline.label}: ${held ? 'contact held (hitstop)' : s.label}`,
       };
@@ -533,16 +616,22 @@ export function createComboLab(hits, { swingSec, hold = 2 / 60, finisherHold = 3
 // Locked feet (Kesh's self-check). Each foot is pinned to the floor in world
 // space while it carries weight; it steps when it falls too far from where
 // the stance wants it, one foot at a time, landing ahead along the body's
-// real velocity at the home it lifted off for (so a lunge lands). On a hop, a
-// dash or any travel too fast to walk, both feet leave the floor and ride the
-// body at their stance home, and plant where they land. Disabled while the
-// body falls or lies downed.
+// real velocity at the home it lifted off for (so a lunge lands). A step
+// that would cut through the body (a turn on the spot) swings round it. On a
+// hop, a dash or any travel too fast to walk, both feet lift off from where
+// they stand, ride the body at their stance home, and plant where they come
+// down. A held frame (a hitstop) leaves planted feet where they are.
+// Disabled while the body falls or lies downed.
 //   feet: the foot meshes (children of rig); home: their rest positions in
 //   rig space (y = the foot's rest height); lunge: { lead, reach, brace }:
 //   the lead foot's home moves `reach` ahead at step 1, the other `brace`
 //   back.
+//   step(dt, stance, locked, still): `still` (the lab's Still) stands the
+//   feet on the stance's homes, so a scrubbed lunge shows its step.
+//   place(): set the feet again after the rig moved (a walk bob applied
+//   after step), so planted feet stay on the floor.
 // ---------------------------------------------------------------------------
-export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, lunge = null, airSpeed = 4.2, tuck = 0.05 }) {
+export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, lunge = null, airSpeed = 4.2, tuck = 0.05, liftOff = 3 * FRAME }) {
   const yawGroup = () => rig.parent && rig.parent.parent;
   const foot = feet.map((f, i) => ({
     planted: new Vector3(), // world
@@ -550,16 +639,21 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
     to: new Vector3(),
     swing: -1, // 0..1 while stepping, -1 planted
     dur: 0.2,
+    arc: 0, // a step round the body: the turn's sign; 0 = straight
     side: home[i].x < 0 ? -1 : 1,
     home: new Vector3(),
     aim: new Vector3(), // the home it steps for (yaw space), fixed at lift-off
+    airFrom: new Vector3(), // rig space, where it stood when the feet lifted
   }));
   const vel = new Vector3();
   const lastPos = new Vector3();
   const w = new Vector3();
+  const c = new Vector3();
   const yawQ = new Quaternion();
   let init = false;
   let air = false;
+  let airT = 0;
+  let liftH = lift;
   const state = { bobLift: 0, plantSide: 0, swingSide: 0, speed: 0, airborne: false };
 
   function homeLocalOf(i, stance, out) {
@@ -577,6 +671,7 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
       foot[i].swing = -1;
     }
     init = true;
+    air = false;
   }
   function localVelocity(out) {
     const yg = yawGroup();
@@ -584,50 +679,112 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
     if (yg) out.applyQuaternion(yg.getWorldQuaternion(yawQ).invert());
     return out;
   }
+  const wrapPi = (a) => a - Math.PI * 2 * Math.round(a / (Math.PI * 2));
 
-  function step(dt, stance, locked) {
+  // Draw each foot on the floor: planted where it stands, a stepping foot on
+  // its way (straight, or round the body when the step would cut through it).
+  function place() {
+    const yg = yawGroup();
+    if (!yg || !init || air) return;
+    yg.getWorldPosition(c);
+    rig.updateWorldMatrix(true, false);
+    for (let i = 0; i < foot.length; i++) {
+      const f = foot[i];
+      if (f.swing >= 0) {
+        const k = ease.inOut(f.swing);
+        if (f.arc !== 0) {
+          const ax = f.from.x - c.x;
+          const az = f.from.z - c.z;
+          const bx = f.to.x - c.x;
+          const bz = f.to.z - c.z;
+          const a0 = Math.atan2(az, ax);
+          let d = wrapPi(Math.atan2(bz, bx) - a0);
+          if (Math.sign(d) !== f.arc && d !== 0) d += f.arc * Math.PI * 2;
+          const r = Math.hypot(ax, az) + (Math.hypot(bx, bz) - Math.hypot(ax, az)) * k;
+          w.set(c.x + r * Math.cos(a0 + d * k), 0, c.z + r * Math.sin(a0 + d * k));
+        } else w.lerpVectors(f.from, f.to, k);
+        w.y = liftH * Math.sin(Math.PI * f.swing);
+      } else {
+        w.copy(f.planted);
+        w.y = 0;
+      }
+      rig.worldToLocal(w);
+      feet[i].position.set(w.x, w.y + home[i].y, w.z);
+    }
+  }
+
+  function step(dt, stance, locked, still = false) {
     const yg = yawGroup();
     if (!yg) return state;
     yg.updateWorldMatrix(true, false);
     const gp = yg.getWorldPosition(w);
     state.bobLift = 0;
-    if (!init || !locked) {
-      if (dt > 0) lastPos.copy(gp);
-      plantAll(stance);
-      if (!locked) for (let i = 0; i < feet.length; i++) feet[i].position.copy(home[i]);
-      state.airborne = false;
-      return state;
-    }
-    // A teleport, a new room, or the body moved while no time passed (a
-    // held frame, the lab's Still): stand afresh where it is now.
-    const jump = gp.distanceTo(lastPos);
-    if (jump > 1.0 || (dt <= 0 && jump > 0.01)) {
-      plantAll(stance);
+    if (!init || !locked || still) {
       lastPos.copy(gp);
       vel.set(0, 0, 0);
+      plantAll(stance);
+      state.airborne = false;
+      if (!locked) for (let i = 0; i < feet.length; i++) feet[i].position.copy(home[i]);
+      else place();
+      return state;
+    }
+    // A teleport or a new room: stand afresh where the body is now. A held
+    // frame (no time passed) leaves planted feet where they stand, whatever
+    // the body did.
+    const jump = gp.distanceTo(lastPos);
+    let inst = 0;
+    if (jump > 1.0) {
+      plantAll(stance);
+      vel.set(0, 0, 0);
     } else if (dt > 0) {
+      inst = jump / dt;
       const k = Math.min(1, dt * 12);
       vel.x += ((gp.x - lastPos.x) / dt - vel.x) * k;
       vel.z += ((gp.z - lastPos.z) / dt - vel.z) * k;
-      lastPos.copy(gp);
     }
+    lastPos.copy(gp);
     const speed = Math.hypot(vel.x, vel.z);
     state.speed = speed;
-    // Airborne: a hop, a dash, or travel faster than any walk can step.
-    const airborne = stance.air > 0.5 || stance.hop > 0.015 || speed > airSpeed;
+    // Airborne: a hop, a dash, or travel faster than any walk can step (the
+    // frame's own speed too, so a dash lifts the feet on its first frame).
+    const airborne = stance.air > 0.5 || stance.hop > 0.015 || Math.max(speed, inst) > airSpeed;
     state.airborne = airborne;
     if (airborne) {
-      air = true;
+      if (!air) {
+        // lift-off: each foot leaves from where it stands now
+        rig.updateWorldMatrix(true, false);
+        for (let i = 0; i < foot.length; i++) {
+          const f = foot[i];
+          if (f.swing < 0) {
+            w.copy(f.planted);
+            w.y = 0;
+            rig.worldToLocal(w);
+            f.airFrom.set(w.x, w.y + home[i].y, w.z);
+          } else f.airFrom.copy(feet[i].position);
+          f.swing = -1;
+        }
+        air = true;
+        airT = 0;
+      }
+      airT += dt;
+      const k = ease.out(Math.min(1, airT / liftOff));
       for (let i = 0; i < feet.length; i++) {
         homeLocalOf(i, stance, w);
-        feet[i].position.set(w.x, home[i].y + (stance.hop > 0.015 ? 0 : tuck), w.z);
-        foot[i].swing = -1;
+        w.y = home[i].y + (stance.hop > 0.015 ? 0 : tuck);
+        feet[i].position.lerpVectors(foot[i].airFrom, w, k);
       }
       return state;
     }
     if (air) {
+      // landed: each foot plants where it came down (never a pop by the
+      // root's attack shift)
       air = false;
-      plantAll(stance); // landed: plant where the stance put the feet
+      rig.updateWorldMatrix(true, false);
+      for (let i = 0; i < foot.length; i++) {
+        feet[i].getWorldPosition(foot[i].planted);
+        foot[i].planted.y = 0;
+        foot[i].swing = -1;
+      }
     }
     for (let i = 0; i < foot.length; i++) homeWorld(i, stance, foot[i].home);
     // advance a swing
@@ -663,32 +820,28 @@ export function createFootLock({ rig, feet, home, trigger = 0.085, lift = 0.07, 
         f.from.copy(f.planted);
         homeLocalOf(best, stance, f.aim);
         f.to.copy(f.home).addScaledVector(vel, f.dur * 0.55);
+        // a step that would pass through the body (a turn on the spot, the
+        // feet changing sides) swings round it instead
+        const d = wrapPi(Math.atan2(f.to.z - gp.z, f.to.x - gp.x) - Math.atan2(f.from.z - gp.z, f.from.x - gp.x));
+        f.arc = Math.abs(d) > Math.PI / 2 ? Math.sign(d) || 1 : 0;
         swinging = best;
       }
     }
-    // place the feet (world -> rig space)
-    rig.updateWorldMatrix(true, false);
+    liftH = lift * Math.min(1, 0.4 + speed * 0.5);
     for (let i = 0; i < foot.length; i++) {
       const f = foot[i];
-      if (f.swing >= 0) {
-        const k = ease.inOut(f.swing);
-        w.lerpVectors(f.from, f.to, k);
-        w.y = lift * Math.sin(Math.PI * f.swing) * Math.min(1, 0.4 + speed * 0.5);
-        state.bobLift = Math.sin(Math.PI * f.swing);
-        state.plantSide = -f.side;
-        state.swingSide = f.side;
-      } else {
-        w.copy(f.planted);
-        w.y = 0;
-      }
-      rig.worldToLocal(w);
-      feet[i].position.set(w.x, w.y + home[i].y, w.z);
+      if (f.swing < 0) continue;
+      state.bobLift = Math.sin(Math.PI * f.swing);
+      state.plantSide = -f.side;
+      state.swingSide = f.side;
     }
+    place();
     return state;
   }
 
   return {
     step,
+    place,
     state,
     localVelocity,
     // where each foot is (world), whether it carries weight, and where its

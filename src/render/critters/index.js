@@ -243,6 +243,24 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
           return out;
         }
       : null,
+    // Where the emitter tip will be at the release of the move playing: a
+    // model-standard rig poses its contact for the sample, then puts the
+    // drawn pose back (a bolt is born on the press, a few frames before the
+    // staff gets there). The tip as drawn otherwise. Null without a tip.
+    releaseWorld: built.tip
+      ? (out = new Vector3()) => {
+          let ahead = false;
+          const sample = (a) => {
+            ahead = a;
+            if (a) update(0);
+            built.tip.getWorldPosition(out);
+          };
+          if (built.atContact) built.atContact(sample);
+          else sample(false);
+          if (ahead) update(0);
+          return out;
+        }
+      : null,
     // Attack events for a model-standard rig (docs/MODEL_STANDARD.md): the
     // integrator reports each basic swing and skill cast ('basic' | 'skill',
     // with the sim event) so the rig can play its combo and ability

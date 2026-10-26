@@ -53,8 +53,10 @@ import {
   namedPoint,
   posePack,
   RECOIL,
+  settleEase,
   walkBody,
 } from '../facet/hero.js';
+import { ease } from '../facet/timeline.js';
 
 const HIP = 0.19;
 const HEM = 0.022;
@@ -111,20 +113,29 @@ const O1 = K({ yaw: -0.62, pitch: 0.24, sx: -0.17, sy: 0.47, sz: 0.25, sry: -0.9
 // Hit 2, RISING BASH: low on the far side, up across to high on the slab
 // side; the legs drive the body up and into it.
 const A2 = K({ yaw: -0.55, pitch: -0.04, sx: -0.15, sy: 0.33, sz: 0.2, srx: 0.32, sry: -0.82, srz: 0.32, rx: -0.03, ry: -0.03, rz: -0.05, sw: 1.06, sh: 0.95 });
-const S2 = K({ yaw: 0.36, pitch: 0.37, sx: 0.34, sy: 0.76, sz: 0.22, srx: -0.52, sry: 0.4, srz: -0.46, rx: 0.02, ry: 0.03, rz: 0.08, sw: 1.19, sh: 0.91 });
-const O2 = K({ yaw: 0.5, pitch: 0.18, sx: 0.38, sy: 0.85, sz: 0.06, srx: -0.92, sry: 0.46, srz: -0.4, ry: 0.03, rz: 0.05, sw: 1.0, sh: 1.02 });
+const S2 = K({ yaw: 0.36, pitch: 0.37, sx: 0.34, sy: 0.76, sz: 0.3, srx: -0.52, sry: 0.4, srz: -0.46, rx: 0.02, ry: 0.03, rz: 0.08, sw: 1.19, sh: 0.91 });
+const O2 = K({ yaw: 0.5, pitch: 0.18, sx: 0.48, sy: 0.84, sz: 0.04, srx: -0.92, sry: 0.46, srz: -0.62, ry: 0.03, rz: 0.05, sw: 1.0, sh: 1.02 });
 // Hit 3, CRUSHING SLAM (the finisher, the biggest: B6): overhead on the toes,
 // stretched tall, then down into the ground ahead with a lunge step, the
 // deepest lean and squash; both paws on the slab.
-const A3 = K({ yaw: 0.14, pitch: -0.2, sx: 0.1, sy: 0.98, sz: -0.04, srx: -1.22, sry: 0.1, srz: 0, ry: 0.045, rz: -0.06, sw: 0.94, sh: 1.08, paw: 1 });
+const A3 = K({ yaw: 0.14, pitch: -0.2, sx: 0.37, sy: 1.0, sz: -0.2, srx: -1.0, sry: 0.3, srz: -0.3, ry: 0.045, rz: -0.06, sw: 0.94, sh: 1.08, paw: 1 });
 const S3 = K({ yaw: -0.05, pitch: 0.42, sx: 0.05, sy: 0.3, sz: 0.47, srx: 0.92, sry: 0, srz: 0, ry: -0.07, rz: 0.14, sw: 1.19, sh: 0.88, paw: 1, step: 1 });
 const O3 = K({ yaw: -0.07, pitch: 0.3, sx: 0.05, sy: 0.25, sz: 0.5, srx: 1.0, sry: 0, srz: 0, ry: -0.08, rz: 0.14, sw: 1.06, sh: 0.96, paw: 1, step: 1 });
+// The slab goes up and comes down round the head, never through it: on the
+// way between the stance and the overhead (the wind-up, the strike, the
+// recover) it swings out to its own side (k: the phase's eased progress).
+const ROUND_HEAD = 0.2;
+const roundHead = (out, k) => {
+  const arc = Math.sin(Math.PI * k);
+  out.sx += ROUND_HEAD * arc;
+  out.sz += 0.06 * arc;
+};
 const HITS = createCombo(
   PACK,
   [
     { label: 'backhand bash', from: A1, strike: S1, over: O1 },
-    { label: 'rising bash', from: A2, strike: S2, over: O2 },
-    { label: 'crushing slam', from: A3, strike: S3, over: O3 },
+    { label: 'rising bash', from: A2, strike: S2, over: O2, extra: (out, s) => (s.id === 'settle' ? roundHead(out, ease.inOut(s.k)) : s.id === 'recover' && roundHead(out, Math.min(1, settleEase(s.k)))) },
+    { label: 'crushing slam', from: A3, strike: S3, over: O3, extra: (out, s) => (s.id === 'strike' ? roundHead(out, s.k) : s.id === 'wind' && roundHead(out, ease.out(s.k))) },
   ],
   { window: COMBO_WINDOW }
 );
@@ -136,13 +147,19 @@ export const TANK_HITS = HITS;
 // strike (its gather plays after the press, compressed into it), so the
 // blow lands with the sim's hit while the wind-up still shows; the lab plays
 // the whole wind-up. Both settle into the stance with one small overshoot.
-const G_SLAM = K({ yaw: 0.2, pitch: -0.2, sx: 0.08, sy: 1.02, sz: -0.08, srx: -1.35, sry: 0.12, ry: 0.05, rz: -0.06, sw: 0.92, sh: 1.1, paw: 1 });
+const G_SLAM = K({ yaw: 0.2, pitch: -0.2, sx: 0.35, sy: 1.04, sz: -0.22, srx: -1.1, sry: 0.32, srz: -0.3, ry: 0.05, rz: -0.06, sw: 0.92, sh: 1.1, paw: 1 });
 const S_SLAM = K({ yaw: -0.04, pitch: 0.42, sx: 0.04, sy: 0.26, sz: 0.5, srx: 1.05, ry: -0.09, rz: 0.14, sw: 1.19, sh: 0.86, paw: 1, step: 1 });
 const G_BRACE = K({ yaw: 0.3, pitch: 0.1, sx: 0.2, sy: 0.42, sz: 0.06, srx: 0.2, sry: 0.4, srz: -0.3, ry: 0.04, sw: 0.95, sh: 1.06 });
 const S_BRACE = K({ yaw: 0, pitch: 0.12, roll: 0, sx: 0.04, sy: 0.4, sz: 0.4, srx: 0.08, sry: 0, srz: 0, ry: -0.05, rz: 0.06, sw: 1.1, sh: 0.92, paw: 1, step: 0.6 });
 // the impact skid and the held brace breathe a little
 const breathe = (out, s) => {
   if (s.id === 'impact' || s.id === 'hold') out.ry += -0.01 * Math.sin(s.k * Math.PI);
+};
+// the slam's slab goes up and comes down round the head
+const slamArc = (out, s) => {
+  breathe(out, s);
+  if (s.id === 'gather') roundHead(out, ease.out(s.k));
+  else if (s.id === 'strike') roundHead(out, s.k * s.k);
 };
 export const TANK_MOVES = Object.freeze({
   slam: createMove(
@@ -155,7 +172,7 @@ export const TANK_MOVES = Object.freeze({
       { id: 'impact', label: 'impact', dur: 0.28, to: null, ease: 'hold' },
       { id: 'settle', label: 'settle', dur: 0.42, to: REST, ease: 'settle' },
     ],
-    { contact: 'impact', entry: 'strike', cues: [{ at: 0.41, id: 'impact' }], recoil: true, extra: breathe }
+    { contact: 'impact', entry: 'strike', cues: [{ at: 0.41, id: 'impact' }], recoil: true, extra: slamArc }
   ),
   brace: createMove(
     PACK,
@@ -535,8 +552,10 @@ export function buildTankFacet(rig, trackAccent) {
     // Feet: locked to the floor, stepping on their own; through the grow-in
     // they ride the body (a foot planted at full size would stand apart).
     const locked = P.collapse < 0.04;
-    lock.step(dt, attacking ? live : REST, locked && sp === 1);
-    // The walk's bob, sway, twist and travel lean come from the steps.
+    // (The lab's Still stands them on the pose's homes.)
+    lock.step(dt, attacking ? live : REST, locked && sp === 1, !!atk.override && dt <= 0);
+    // The walk's bob, sway, twist and travel lean come from the steps; the
+    // feet are set again after the bob, so they stay on the floor.
     if (locked && clip === 'walk' && !attacking) {
       walkBody(lock, { walkSpeed: WALK_SPEED }, walk);
       rig.position.y += walk.dy - P.bob * upright * 0.6;
@@ -545,6 +564,7 @@ export function buildTankFacet(rig, trackAccent) {
       torso.rotation.z = walk.roll * upright;
       head.rotation.x = -torso.rotation.x * 0.88 - 0.18 * upright;
       head.rotation.y = -walk.twist * 0.55 * upright;
+      if (sp === 1) lock.place();
     }
   }
 
@@ -553,6 +573,7 @@ export function buildTankFacet(rig, trackAccent) {
     cue: atk.cue,
     hold: atk.hold,
     comboHitOf: atk.comboHitOf,
+    atContact: atk.atContact,
     points: { hand, tip },
     lab,
     torso,
