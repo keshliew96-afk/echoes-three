@@ -22,7 +22,7 @@
 //     skate, a walk backward or sideways steps backward or sideways, and the
 //     slam's front foot steps into the lunge while the back foot anchors.
 //
-// The heroes slice (v0.5.335) re-measured him against the [M] rules of the
+// The heroes slice (v0.5.337) re-measured him against the [M] rules of the
 // VFX/hit rules doc (§6.1) and moved his machinery onto the shared hero core
 // (render/facet/hero.js): each blow pulls back before it and lunges into its
 // contact with a 20-25° lean and a squash held through the hitstop (B2, B9),

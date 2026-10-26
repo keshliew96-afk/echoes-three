@@ -13,13 +13,22 @@
 //     (the serpent's version of Kesh's root-motion rule), and a Wyrm standing
 //     still keeps its coil planted while the head and neck drive the attack;
 //   * two ability timelines (render/facet/timeline.js): Ash Breath (draw,
-//     strike, pour, settle) and Burrow Strike (dive, tunnel, rise, burst,
-//     exposed, settle). The sim's telegraph drives the anticipation, the
-//     strike starts when the telegraph resolves; the model lab plays and
-//     rewinds the same timelines.
+//     strike, contact held, pour, settle) and Burrow Strike (dive, tunnel,
+//     rise, burst, contact held, exposed, settle). The sim's telegraph drives
+//     the anticipation, which ends one strike before the telegraph resolves,
+//     so the strike lands on the breath's tick; each ability grows out of
+//     the pose before it; the model lab plays and rewinds the same timelines;
+//   * the [M] beats (render/facet/beats.js, re-measured in the Level I slice):
+//     each strike leaves on the press frame and lands in 2.5 frames, holds its
+//     contact 3 frames, the breath kicks the head back (recoil), each settle
+//     overshoots rest once, the coil grows from the floor when it spawns, and
+//     the mouth, throat and crown are named points for effects.
 //
 // Same interface as render/boss/wyrm.js (group, mats, setYaw, setFlash,
-// pose), plus `lab` for the model lab. Faces +Z. Render only.
+// pose), plus `lab`, `points` and `react` (the shared hit envelope squashes
+// it with the boss amounts on the height axis: the coil plants its tail
+// through the root's position and yaw, so a sideways scale would slide it).
+// Faces +Z. Render only.
 import { Color, Group, IcosahedronGeometry, CylinderGeometry, Matrix4, Mesh, MeshBasicMaterial, SphereGeometry, Vector3 } from 'three';
 import { addInk, groundShadow, INK_PX, mix } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
@@ -29,6 +38,7 @@ import { sharedGeo } from '../geocache.js';
 import { facetize, facetMaterial } from '../facet/material.js';
 import { PART_INK_PX, createPlateTube, createSpine, createSpineRow, instancedPart, placeRow, setTRS, wedgeGeometry } from '../facet/kit.js';
 import { createTimeline, ease } from '../facet/timeline.js';
+import { HOLD_SEC, STRIKE_SEC, createSpawnClock, kick, makePoints, recoil, settle, spawnGrow } from '../facet/beats.js';
 
 // --- Palette (derived from the classic Wyrm's ash and the enemy hides,
 // pulled cool so the warm key light never turns a foe warm: style.js):
@@ -75,7 +85,8 @@ const radius = (u) => {
 export const WYRM_ABILITIES = Object.freeze({
   breath: createTimeline('breath', 'Ash Breath', [
     { id: 'draw', label: 'draw back', dur: 0.9 },
-    { id: 'strike', label: 'strike', dur: 0.18 },
+    { id: 'strike', label: 'strike', dur: STRIKE_SEC },
+    { id: 'hold', label: 'contact held', dur: HOLD_SEC },
     { id: 'pour', label: 'pour', dur: 0.5 },
     { id: 'settle', label: 'settle', dur: 0.6 },
   ], { cues: [{ at: 0.9, id: 'breath' }] }),
@@ -83,7 +94,8 @@ export const WYRM_ABILITIES = Object.freeze({
     { id: 'dive', label: 'dive', dur: 0.5 },
     { id: 'tunnel', label: 'tunnel', dur: 1.2 },
     { id: 'rise', label: 'rise', dur: 0.9 },
-    { id: 'burst', label: 'burst', dur: 0.25 },
+    { id: 'burst', label: 'burst', dur: STRIKE_SEC },
+    { id: 'held', label: 'contact held', dur: HOLD_SEC },
     { id: 'exposed', label: 'exposed', dur: 1.5 },
     { id: 'settle', label: 'settle', dur: 0.6 },
   ], { cues: [{ at: 0.5, id: 'burrow' }, { at: 2.6, id: 'emerge' }] }),
@@ -113,9 +125,21 @@ function restChannels(C) {
 }
 const lerp = (a, b, k) => a + (b - a) * k;
 
+const KEYS = ['rear', 'reach', 'pitch', 'jaw', 'throat', 'coil', 'sweep', 'sink', 'rise', 'slump'];
+
 // Pure: the channels of an ability at a phase sample (s = timeline.sample(t)).
-export function abilityChannels(id, s, C = restChannels({})) {
+// `from` (in a fight) is the pose the ability starts out of: the draw and
+// the dive grow out of it (B1/B5, never a snap from rest). The lab passes none.
+export function abilityChannels(id, s, C = restChannels({}), from = null) {
   restChannels(C);
+  openingChannels(id, s, C);
+  if (from && (s.id === 'draw' || s.id === 'dive')) {
+    const w = 1 - ease.out(Math.min(1, s.k * 2));
+    for (const key of KEYS) C[key] += from[key] * w;
+  }
+  return C;
+}
+function openingChannels(id, s, C) {
   const k = s.k;
   if (id === 'breath') {
     if (s.id === 'draw') {
@@ -127,28 +151,38 @@ export function abilityChannels(id, s, C = restChannels({})) {
       C.throat = ease.in(k);
       C.coil = a;
     } else if (s.id === 'strike') {
-      const a = ease.out(k);
+      // B2/B4: off on the press frame, at full reach in 2.5 frames
+      const a = kick(k);
       C.rear = lerp(0.85, 0.55, a);
-      C.reach = lerp(-1, 1, ease.back(k));
+      C.reach = lerp(-1, 1, a);
       C.pitch = lerp(-0.5, 0.14, a);
       C.jaw = lerp(0.18, 1, a);
       C.throat = 1;
       C.coil = 1 - a;
+    } else if (s.id === 'hold') {
+      // B2: the contact pose held
+      C.rear = 0.55;
+      C.reach = 1;
+      C.pitch = 0.14;
+      C.jaw = 1;
+      C.throat = 1;
     } else if (s.id === 'pour') {
       C.rear = 0.55;
-      C.reach = lerp(1, 0.8, k);
+      // B3: the breath's force kicks the head back, out in 2 frames, home in 8
+      C.reach = lerp(1, 0.8, k) - 0.35 * recoil(k * 0.5);
       C.pitch = 0.14;
       C.jaw = 1;
       C.throat = lerp(1, 0.55, k);
       C.sweep = Math.sin(k * Math.PI * 2) * 0.22;
     } else {
-      const a = ease.inOut(k);
-      C.rear = 0.55 * (1 - a);
-      C.reach = 0.8 * (1 - a);
-      C.pitch = 0.14 * (1 - a);
+      // B5: home with one overshoot past rest
+      const v = settle(k);
+      C.rear = 0.55 * Math.max(0, v);
+      C.reach = 0.8 * v;
+      C.pitch = 0.14 * v;
       // the jaw snaps shut with a small bounce
       C.jaw = Math.max(0, 1 - ease.out(Math.min(1, k * 1.6))) + 0.08 * Math.sin(Math.min(1, k * 1.6) * Math.PI) * (1 - k);
-      C.throat = 0.55 * (1 - a);
+      C.throat = 0.55 * Math.max(0, v);
     }
   } else if (id === 'burrow') {
     if (s.id === 'dive') {
@@ -162,13 +196,19 @@ export function abilityChannels(id, s, C = restChannels({})) {
       C.sink = 1;
       C.rise = ease.in(k);
     } else if (s.id === 'burst') {
-      const a = ease.out(k);
+      // B2/B4: out of the ground on the press frame, in 2.5 frames
+      const a = kick(k);
       C.sink = 1 - a;
       C.rise = 1 - a;
       C.rear = a;
       C.pitch = -0.65 * a;
       C.jaw = a;
       C.throat = 0.6 * a;
+    } else if (s.id === 'held') {
+      C.rear = 1;
+      C.pitch = -0.65;
+      C.jaw = 1;
+      C.throat = 0.6;
     } else if (s.id === 'exposed') {
       const a = ease.inOut(Math.min(1, k * 3));
       C.rear = 1 - a;
@@ -176,10 +216,11 @@ export function abilityChannels(id, s, C = restChannels({})) {
       C.jaw = lerp(1, 0.32, a);
       C.slump = a;
     } else {
-      const a = ease.inOut(k);
-      C.pitch = 0.35 * (1 - a);
-      C.jaw = 0.32 * (1 - a);
-      C.slump = 1 - a;
+      // B5: up off the sprawl with one overshoot past rest
+      const v = settle(k);
+      C.pitch = 0.35 * v;
+      C.jaw = 0.32 * Math.max(0, v);
+      C.slump = Math.max(0, v);
     }
   }
   return C;
@@ -417,13 +458,25 @@ export function buildWyrmFacet() {
   head.add(throat);
   const spineGlow = glow(2.4, 0.2);
   rig.add(spineGlow);
+  // B8: named points for effects (the breath leaves the mouth)
+  const points = makePoints({
+    mouth: [head, 0, -0.08, 0.86],
+    throat: [head, 0, -0.12, 0.3],
+    crown: [head, 0, 0.32, -0.3],
+  });
+  // the shared hit envelope (§6.1 item 9 as written, Kesh's pick): the
+  // envelope's boss amounts, half the squash and half the flinch, no
+  // knockback; the squash stays on the height axis
+  const react = { squash: 1, flinch: 1, knock: 0, axis: 'y', midY: 0.45 };
+  const spawn = createSpawnClock();
 
   // --- Ground: contact shadows under the coil, the burrow mound and rubble.
   const SHADOWS = 5;
   const shadows = [];
   for (let i = 0; i < SHADOWS; i++) {
+    // a floor piece: a child of the root, never inside the hit envelope's node
     const s = groundShadow(0.62, 0.3);
-    yaw.add(s);
+    group.add(s);
     shadows.push(s);
   }
   const moundGeo = sharedGeo('facet:wyrm-mound', () => facetize(new SphereGeometry(0.9, 9, 4, 0, Math.PI * 2, 0, Math.PI / 2), { jitter: 0.14, seed: 41 }));
@@ -466,6 +519,13 @@ export function buildWyrmFacet() {
   let lastMode = 'stalk';
   let breathSeen = false;
   let teleSpan = 0.9;
+  let telAge = 0;
+  let from = null;
+  // a new ability starts out of this frame's pose
+  const begin = (id, t = 0) => {
+    from = { ...C };
+    ab = { id, t };
+  };
 
   // Lay the spine's control points (in yaw space) for this frame.
   const ctrl = spine.pts;
@@ -518,11 +578,15 @@ export function buildWyrmFacet() {
     tube.update();
     spikes.update();
     cracks.update();
-    // shadows under the coil (yaw space, on the floor)
+    // shadows under the coil: the spine's yaw-space points turned and grown
+    // into the root's space (they grow in with the spawn, never squash)
+    const g = yaw.scale.x;
+    const cy = Math.cos(yaw.rotation.y);
+    const sy = Math.sin(yaw.rotation.y);
     for (let i = 0; i < SHADOWS; i++) {
       spine.point(0.1 + (0.8 * i) / (SHADOWS - 1), loc);
-      shadows[i].position.set(loc.x, 0.008, loc.z);
-      const s = radius(0.1 + (0.8 * i) / (SHADOWS - 1)) / 0.46;
+      shadows[i].position.set(g * (loc.x * cy + loc.z * sy), 0.008, g * (-loc.x * sy + loc.z * cy));
+      const s = (g * radius(0.1 + (0.8 * i) / (SHADOWS - 1))) / 0.46;
       shadows[i].scale.set(s, s, 1);
     }
     // the head rides the first control point
@@ -558,18 +622,21 @@ export function buildWyrmFacet() {
     if (tel && tel.attack === 'breath') {
       if (!breathSeen) {
         breathSeen = true;
-        teleSpan = tel.resolveTick > tel.startTick ? (tel.resolveTick - tel.startTick) / 60 : 0.9;
-        ab = { id: 'breath', t: 0 };
+        telAge = 0;
+        // the draw ends one strike early, so the strike lands on the resolve
+        teleSpan = Math.max(0.05, (tel.resolveTick > tel.startTick ? (tel.resolveTick - tel.startTick) / 60 : 0.9) - STRIKE_SEC);
+        begin('breath');
       }
     } else if (breathSeen) {
       breathSeen = false;
-      // the telegraph resolved: the strike lands now
+      // the telegraph resolved early (or a frame was skipped): strike now
       if (ab && ab.id === 'breath') ab.t = Math.max(ab.t, WYRM_ABILITIES.breath.startOf('strike'));
     }
     const B2 = WYRM_ABILITIES.burrow;
     if (mode !== lastMode) {
-      if (mode === 'burrowed' && lastMode !== 'emerging') ab = { id: 'burrow', t: 0 };
-      else if (mode === 'emerging') ab = { id: 'burrow', t: B2.startOf('rise') };
+      if (mode === 'burrowed' && lastMode !== 'emerging') begin('burrow');
+      // an emerge that comes before the dive is done lets the dive finish
+      else if (mode === 'emerging') ab = { id: 'burrow', t: ab && ab.id === 'burrow' && ab.t < B2.startOf('tunnel') ? ab.t : B2.startOf('rise') };
       else if (mode === 'exposed') ab = { id: 'burrow', t: B2.startOf('burst') };
       else if (mode === 'stalk' && ab && ab.id === 'burrow') ab.t = Math.max(ab.t, B2.startOf('settle'));
       lastMode = mode;
@@ -580,9 +647,10 @@ export function buildWyrmFacet() {
     let rate = 1;
     if (ab.id === 'breath') {
       const drawEnd = tl.startOf('strike');
-      if (breathSeen) rate = ab.t < drawEnd ? 0.9 / teleSpan : 0;
-      if (breathSeen && ab.t + dt * rate >= drawEnd) ab.t = drawEnd - 1e-4;
-      else ab.t += dt * rate;
+      if (breathSeen && ab.t < drawEnd) {
+        telAge += dt;
+        ab.t = telAge < teleSpan ? Math.min(drawEnd - 1e-4, (telAge * 0.9) / teleSpan) : drawEnd;
+      } else ab.t += dt * rate;
     } else {
       const hold = (phase, live) => {
         const end = tl.startOf(phase) + tl.phases[tl.phases.findIndex((p) => p.id === phase)].dur;
@@ -593,9 +661,11 @@ export function buildWyrmFacet() {
         return false;
       };
       if (!(hold('tunnel', mode === 'burrowed') || hold('rise', mode === 'emerging') || hold('exposed', mode === 'exposed'))) ab.t += dt;
+      // emerging already: the dive runs straight into the held rise
+      if (mode === 'emerging' && ab.t >= B2.startOf('tunnel') && ab.t < B2.startOf('rise')) ab.t = B2.startOf('rise');
     }
     const s = tl.sample(ab.t);
-    abilityChannels(ab.id, s, C);
+    abilityChannels(ab.id, s, C, from);
     if (ab.t >= tl.duration) ab = null;
     return C;
   }
@@ -604,18 +674,22 @@ export function buildWyrmFacet() {
     lastT = null;
     sinkK = 0;
     ab = null;
+    from = null;
     lastMode = 'stalk';
     breathSeen = false;
     trail.reset(group.position.x - Math.sin(yaw.rotation.y) * NECK, group.position.z - Math.cos(yaw.rotation.y) * NECK, Math.sin(yaw.rotation.y), Math.cos(yaw.rotation.y), SEG_GAP * SPINE_PTS + 1);
   }
   let lastX = 0;
   let lastZ = 0;
+  let lastId = null;
   let live = false; // posed by a live entity at least once
   C.burstRise = 0;
 
   return {
     group,
     mats,
+    points,
+    react,
     setYaw: (r) => {
       yaw.rotation.y = r;
     },
@@ -627,8 +701,18 @@ export function buildWyrmFacet() {
     // coil rigidly behind the head; a pose with no entity after live play (the
     // death collapse) freezes the coil where it lay.
     pose({ t, moveK = 0, hpFrac = 1, e = null, turntable = false }) {
-      // a pooled rig coming back, or a jump (a new room): lay the coil afresh
-      if (lastT === null || t < lastT || Math.hypot(group.position.x - lastX, group.position.z - lastZ) > 2.5) reset();
+      // a pooled rig posed for a new Wyrm (a new id, a rewound clock): lay
+      // the coil afresh and grow up out of the floor (B7); a jump in place (a
+      // new room, a hitch) only lays the coil afresh
+      const id = e ? e.id : lastId;
+      const born = lastT === null || t < lastT || (e && id !== lastId);
+      if (born || Math.hypot(group.position.x - lastX, group.position.z - lastZ) > 2.5) {
+        reset();
+        if (born && e && !turntable) spawn.restart(t);
+        else if (born) spawn.clear();
+      }
+      lastId = id;
+      yaw.scale.setScalar(turntable ? 1 : spawn.scale(t));
       const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
       lastT = t;
       lastX = group.position.x;
@@ -657,8 +741,9 @@ export function buildWyrmFacet() {
         if (lastT === null) reset();
         lastT = 0;
         idle += dt;
-        if (ability) abilityChannels(ability, WYRM_ABILITIES[ability].sample(abT), C);
+        if (ability && ability !== 'spawn') abilityChannels(ability, WYRM_ABILITIES[ability].sample(abT), C);
         else restChannels(C);
+        yaw.scale.setScalar(ability === 'spawn' ? spawnGrow(abT) : 1);
         C.burstRise = 0;
         applyGround(moveK, C.sink, C.rise);
         layCoil(true, rigid, moveK);

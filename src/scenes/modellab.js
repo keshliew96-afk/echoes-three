@@ -24,6 +24,9 @@
 // sound for it and a small VFX kit beat at the weapon's named tip.
 //
 // Probe surface: debugState() and cmd('lab', {patch}) through the debug API.
+// A probe on a slow software-GL machine can pass `fixedDt` (s): every drawn
+// frame then advances the lab by that step, not by the wall clock, so the
+// locked feet see 60 Hz motion however slowly the frames come.
 import { Color, Group, Mesh, MeshBasicMaterial, PlaneGeometry, RingGeometry, Vector3 } from 'three';
 import { CAMERA } from '../core/constants.js';
 import { PALETTE, VFX_SIGNATURE } from '../data/palette.js';
@@ -32,17 +35,24 @@ import { createCritter, setInkViewport } from '../render/critters/index.js';
 import { buildWyrm } from '../render/boss/wyrm.js';
 import { buildWyrmFacet, WYRM_ABILITIES } from '../render/boss/wyrmfacet.js';
 import { FACET_HEROES } from '../render/facet/heroes.js';
-import { SPAWN_TIMELINE } from '../render/facet/hero.js';
+import { SPAWN_TIMELINE as HERO_SPAWN_TIMELINE } from '../render/facet/hero.js';
 import { createVfxKit } from '../render/vfx/kit.js';
 import { createSpine, createPlateTube, createSpineRow, placeRow, plateGeometry, setTRS, wedgeGeometry } from '../render/facet/kit.js';
 import { facetize, facetMaterial } from '../render/facet/material.js';
 import { createPlayhead } from '../render/facet/timeline.js';
+import { SPAWN_TIMELINE } from '../render/facet/beats.js';
 import { service } from '../app/registry.js';
 import { pageQuery } from '../app/harness.js';
 import { mountModelLab } from '../ui/modellab.js';
 import { IcosahedronGeometry } from 'three';
+import { LAB_ENTRIES as BOSS_ENTRIES } from './modellab-bosses.js';
 
-const MODELS = [['wyrm', 'Barrow Wyrm'], ...FACET_HEROES.map((h) => [h.id, h.label]), ['kit', 'Effect kit']];
+// Model tabs from entry files (scenes/modellab-bosses.js documents the shape):
+// each builds its model and classic twin on first view and drives both.
+const ENTRIES = [...BOSS_ENTRIES];
+const entryOf = (id) => ENTRIES.find((e) => e.id === id) || null;
+
+const MODELS = [['wyrm', 'Barrow Wyrm'], ...FACET_HEROES.map((h) => [h.id, h.label]), ...ENTRIES.map((e) => [e.id, e.label]), ['kit', 'Effect kit']];
 const MODES = [
   ['idle', 'Idle'],
   ['move', 'Move'],
@@ -53,9 +63,11 @@ const ABILITIES = {
   wyrm: [
     ['breath', 'Ash Breath'],
     ['burrow', 'Burrow Strike'],
+    ['spawn', 'Spawn in'],
   ],
   ...Object.fromEntries(FACET_HEROES.map((h) => [h.id, h.lab.abilities])),
   kit: [['wave', 'Wave']],
+  ...Object.fromEntries(ENTRIES.map((e) => [e.id, e.abilities])),
 };
 const REST_GAP = 0.7; // s of rest between ability loops
 // Each model's showcase framing: look-at height, distance, and its game speed.
@@ -63,6 +75,7 @@ const FRAME = {
   wyrm: { y: 0.55, z: -1.2, dist: 8.6, speed: 1.5, loop: 3.4, side: 3.6 },
   ...Object.fromEntries(FACET_HEROES.map((h) => [h.id, h.lab.frame])),
   kit: { y: 0.6, z: 0, dist: 7.5, speed: 0, loop: 0, side: 0 },
+  ...Object.fromEntries(ENTRIES.map((e) => [e.id, e.frame])),
 };
 const SHOW_FOV = 30;
 const SHOW_ELEV = (24 * Math.PI) / 180;
@@ -116,6 +129,18 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     if (a && a.play) a.play(cue, o);
   };
   const tipAt = new Vector3();
+  // Entry models, built on first view.
+  const built = {};
+  function entryModel(id) {
+    if (built[id]) return built[id];
+    const ent = entryOf(id);
+    if (!ent) return null;
+    const b = ent.build({ cosmetic, vfx, play });
+    root.add(b.group);
+    if (b.classic) root.add(b.classic);
+    built[id] = b;
+    return b;
+  }
   function onCue(model, id, at) {
     const x = at.x;
     const z = at.z;
@@ -168,20 +193,25 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     readout: '',
     azimuth: 0.6,
     movePhase: 0,
+    fixedDt: 0,
   };
-  state.ability = params.get('ability') || ABILITIES[state.model][0][0];
+  // an ability the model does not have falls back to its first one
+  const validAbility = (m, a) => (ABILITIES[m].some(([id]) => id === a) ? a : ABILITIES[m][0][0]);
+  state.ability = validAbility(state.model, params.get('ability'));
 
   function timelineFor(model, ability) {
-    if (model === 'wyrm') return WYRM_ABILITIES[ability] || WYRM_ABILITIES.breath;
+    if (entryOf(model)) return entryModel(model).timeline(ability);
+    if (model === 'wyrm') return ability === 'spawn' ? SPAWN_TIMELINE : WYRM_ABILITIES[ability] || WYRM_ABILITIES.breath;
     const H = heroes[model];
     if (H) {
       if (ability === 'combo') return H.spec.comboLab;
-      if (ability === 'spawn') return SPAWN_TIMELINE;
+      if (ability === 'spawn') return HERO_SPAWN_TIMELINE;
       return (H.spec.moves[ability] || Object.values(H.spec.moves)[0]).timeline;
     }
     return { label: 'Wave', duration: 4, sample: () => ({ label: 'wave' }) };
   }
   function cuesFor(model, ability) {
+    if (entryOf(model)) return entryModel(model).cues(ability);
     const H = heroes[model];
     if (H && ability === 'combo') {
       const s = H.spec.comboLab.strikes;
@@ -201,11 +231,15 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       wyrm.lab.reset();
       resetModels();
     }
-    for (const k of ['mode', 'ability', 'view', 'turntable', 'classic', 'rate']) if (k in patch) state[k] = patch[k];
+    const wasMode = state.mode;
+    for (const k of ['mode', 'ability', 'view', 'turntable', 'classic', 'rate', 'azimuth', 'movePhase', 'fixedDt']) if (k in patch) state[k] = patch[k];
+    state.ability = validAbility(state.model, state.ability);
     if ('t' in patch) state.t = Math.max(0, patch.t);
     if (patch.ability) state.t = patch.t ?? 0;
-    if (patch.mode === 'move') state.movePhase = 0;
-    if (patch.mode && patch.mode !== 'move') resetModels();
+    if (patch.mode === 'move' && !('movePhase' in patch)) state.movePhase = 0;
+    // Still from a playing ability freezes that moment (the locked feet
+    // where the motion left them); any other mode change starts clean
+    if (patch.mode && patch.mode !== 'move' && !(patch.mode === 'still' && wasMode === 'ability')) resetModels();
     ui?.refresh();
   }
   function resetModels() {
@@ -217,6 +251,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       h.classic.setYaw(0);
     }
     wyrm.lab.reset();
+    for (const b of Object.values(built)) b.reset?.();
   }
 
   const ui = typeof document !== 'undefined' ? mountModelLab({ models: MODELS, modes: MODES, abilities: (m) => ABILITIES[m], get: () => state, set }) : null;
@@ -228,7 +263,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   let classicTel = 0;
 
   function update(elapsedSec) {
-    const rawDt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, elapsedSec - lastElapsed));
+    const rawDt = state.fixedDt > 0 ? state.fixedDt : lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, elapsedSec - lastElapsed));
     lastElapsed = elapsedSec;
     setInkViewport(window.innerWidth, window.innerHeight);
     const still = state.mode === 'still';
@@ -266,6 +301,15 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     }
     kit.group.visible = state.model === 'kit';
     const sideX = state.classic ? F.side : 0;
+    const entry = entryOf(state.model) ? entryModel(state.model) : null;
+    for (const [id, b] of Object.entries(built)) {
+      b.group.visible = id === state.model;
+      if (b.classic) b.classic.visible = id === state.model && state.classic;
+    }
+    if (entry) {
+      root.updateMatrixWorld(true);
+      entry.update(state, dt, abT);
+    }
 
     if (showW) {
       let x = 0;
@@ -348,8 +392,13 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     ui?.refresh();
   }
 
-  const groupOf = (model) => (model === 'wyrm' ? wyrm.group : heroes[model] ? heroes[model].rig.group : kit.group);
+  const groupOf = (model) => (entryOf(model) ? entryModel(model).group : model === 'wyrm' ? wyrm.group : heroes[model] ? heroes[model].rig.group : kit.group);
   function cueAt(id) {
+    const entry = entryOf(state.model) ? entryModel(state.model) : null;
+    if (entry) {
+      entry.onCue(id, { x: entry.group.position.x, z: entry.group.position.z, yaw: entry.yaw ?? 0 });
+      return;
+    }
     const g = groupOf(state.model);
     onCue(state.model, id, { x: g.position.x, z: g.position.z });
   }
@@ -382,6 +431,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
 
   // --- Probe surface.
   function debugState() {
+    const entry = entryOf(state.model) ? entryModel(state.model) : null;
     const g = groupOf(state.model);
     g.getWorldPosition(tmp);
     return {
@@ -395,8 +445,10 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       classic: state.classic,
       readout: state.readout,
       duration: state.duration,
+      phases: (timelineFor(state.model, state.ability).phases || []).map((ph) => [ph.id, ph.dur]),
       pos: [Math.round(tmp.x * 100) / 100, Math.round(tmp.z * 100) / 100],
       feet: heroes[state.model] ? heroes[state.model].rig.lab.feet() : null,
+      ...(entry && entry.debug ? { [state.model]: entry.debug() } : {}),
     };
   }
   function cmd(name, args) {
