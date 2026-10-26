@@ -8,6 +8,8 @@ import { buildStag } from '../../render/boss/stag.js';
 import { buildHeron } from '../../render/boss/heron.js';
 import { buildWyrm } from '../../render/boss/wyrm.js';
 import { buildWyrmFacet } from '../../render/boss/wyrmfacet.js';
+import { buildStagFacet } from '../../render/boss/stagfacet.js';
+import { buildThornmotherFacet } from '../../render/boss/thornmotherfacet.js';
 import { facetOn } from '../../render/facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from '../../render/boss/slice2.js';
 import { buildCantor, buildColossus } from '../../render/boss/heart.js';
@@ -19,10 +21,10 @@ export const BUILDERS = {
   boar: buildBoar,
   mantis: buildMantis,
   ...ARCH_BUILDERS,
-  stag: buildStag,
+  stag: facetOn('stag') ? buildStagFacet : buildStag, // model standard (docs/MODEL_STANDARD.md)
   heron: buildHeron,
   wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, // the model standard pilot (docs/MODEL_STANDARD.md)
-  thornmother: buildThornmother,
+  thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother,
   millwheel: buildMillwheel,
   lichram: buildLichram,
   cantor: buildCantor,

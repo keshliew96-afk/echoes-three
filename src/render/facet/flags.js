@@ -1,13 +1,13 @@
-// MODEL STANDARD PILOT (docs/MODEL_STANDARD.md): which models play the
-// faceted model standard. The pilot rebuilds two: the Barrow Wyrm and the
-// Tank; the classic rigs stay in the code beside them.
+// MODEL STANDARD (docs/MODEL_STANDARD.md): which models play the faceted
+// model standard. The pilot rebuilt the Barrow Wyrm and the Tank; the Level I
+// slice adds the Hollow Stag, the Thornmother and the Gloam Wolf. The classic rigs stay in the code beside them.
 //
 // A harness build reads `?facet=` to compare (a player build never sees it):
 //   ?facet=0       every model classic
 //   ?facet=wyrm    only the listed models faceted (comma list: wyrm,tank)
 import { pageQuery } from '../../app/harness.js';
 
-export const MODEL_STANDARD = Object.freeze({ wyrm: true, tank: true });
+export const MODEL_STANDARD = Object.freeze({ wyrm: true, tank: true, stag: true, thornmother: true });
 
 export function facetOn(kind, query = pageQuery()) {
   const q = query.get('facet');

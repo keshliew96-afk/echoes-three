@@ -33,6 +33,8 @@ import { buildStag } from './stag.js';
 import { buildHeron } from './heron.js';
 import { buildWyrm } from './wyrm.js';
 import { buildWyrmFacet } from './wyrmfacet.js';
+import { buildStagFacet } from './stagfacet.js';
+import { buildThornmotherFacet } from './thornmotherfacet.js';
 import { facetOn } from '../facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
 import { buildCantor, buildColossus } from './heart.js';
@@ -48,9 +50,10 @@ import { impactFx } from '../vfx/hub.js';
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
-// The Barrow Wyrm plays the model standard pilot (docs/MODEL_STANDARD.md)
-// unless `?facet=` (harness only) or MODEL_STANDARD asks for the classic rig.
-const BUILDERS = { stag: buildStag, heron: buildHeron, wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, thornmother: buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
+// The Barrow Wyrm and the Level I bosses play the model standard
+// (docs/MODEL_STANDARD.md) unless `?facet=` (harness only) or MODEL_STANDARD
+// asks for the classic rig.
+const BUILDERS = { stag: facetOn('stag') ? buildStagFacet : buildStag, heron: buildHeron, wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother, millwheel: buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: buildGloamWolf, mireking: buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
@@ -131,7 +134,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
   function prewarm() {
     if (warmed) return;
     warmed = true;
-    const rig = buildStag(cosmetic);
+    const rig = BUILDERS.stag(cosmetic);
     const r = makeQuakeRing(STAG.quake.radius);
     const b = makeQuakeBurst(STAG.quake.radius);
     // PARKED, not removed on the spot (certification fix D-r1): `compile()`
@@ -161,7 +164,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     if (spareByKind[kind]) {
       rig = spareByKind[kind].pop() || BUILDERS[kind](cosmetic);
       rig.kind = kind;
-    } else rig = spareRigs.pop() || buildStag(cosmetic);
+    } else rig = spareRigs.pop() || BUILDERS.stag(cosmetic);
     rig.group.position.set(0, 0, 0);
     rig.group.scale.set(1, 1, 1);
     rig.group.visible = true;
