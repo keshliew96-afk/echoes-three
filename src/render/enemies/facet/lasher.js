@@ -9,11 +9,11 @@
 //   * faceted masses: the pod is cut into flat planes with a strong value step
 //     and a darker underside; the jaws are faceted solid lids;
 //   * detail by repetition, BAKED per kind (render/facet/foe.js) so a room of
-//     lashers shares one buffer per material: six dark rind ridges running
-//     down into six root knots, a band of low husk scales, angry brow plates,
-//     twelve bone bramble thorns on the ridges, indigo seed spikes in the maw;
+//     lashers shares one buffer per material: six dark rind ridges at the
+//     classic's angles, seven root knots, a band of low husk scales, angry brow plates,
+//     ten bone bramble thorns on the ridges, indigo seed spikes in the maw;
 //   * WORLD-LOCKED ROOTS (render/facet/legs.js): the pod drags itself along on
-//     six two-bone roots stepping in two tripods, a low dark skirt (each drops
+//     the classic's seven two-bone roots stepping in two sets, a low dark skirt (each drops
 //     out of the pod's underside and runs out along the floor to a tip just
 //     past the rim), each root tip pinned to the floor while it carries
 //     weight, the lean following the real travel (a backpedal off a hero
@@ -63,7 +63,8 @@
 // render clock (it pauses in a hitstop): the contact held 2 frames while the
 // reel starts with the sim's drag (0.15 u a tick from the contact to the
 // last tick of the 12-tick yank: taut and hauling when `e.yank` says a hero
-// was caught, slack when it whiffed), the snap back in 2.5 frames and the
+// was caught, the hook first whipping back from the lane's end onto the catch
+// in 3 ticks; slack from the lane's end when it whiffed), the snap back in 2.5 frames and the
 // settle with one overshoot (B5).
 // `lab.lastStrike = { id: 'lash:N', tick }`: the resolve tick, the one the
 // contact lands on.
@@ -241,6 +242,12 @@ function coilPhase(tau, coilSec, o) {
   }
   return o;
 }
+// How far the hook has whipped back onto a catch, `tf` seconds after contact:
+// none in the contact's hold, all of it CATCH_SEC into the reel.
+function catchAt(tf) {
+  const k = Math.min(1, Math.max(0, (tf - CONTACT_SEC) / CATCH_SEC));
+  return k * k * (3 - 2 * k);
+}
 // The follow-through's phases, `tf` seconds after contact.
 function followPhase(tf, o) {
   if (tf < CONTACT_SEC) {
@@ -409,10 +416,15 @@ function leafGeometry() {
   return g;
 }
 
-// Root angles (from the front toward its left): none straight ahead, where
-// the vine is; the six rind ridges run down into them.
-const ROOT_N = 6;
-const ROOT_A = Array.from({ length: ROOT_N }, (_, i) => Math.PI / 6 + (i * Math.PI) / 3);
+// Root angles (from the front toward its left): the classic's seven, set
+// symmetric about the vine: one straight back, none straight ahead, a pair
+// either side of the vine (roots 0 and 6, the brace).
+const ROOT_N = 7;
+const ROOT_A = Array.from({ length: ROOT_N }, (_, i) => Math.PI / ROOT_N + (i * 2 * Math.PI) / ROOT_N);
+// The rind ridges at the classic's angles: six, one straight down the face
+// (it stops above the vine's root), the rest every 60 degrees.
+const RIDGE_N = 6;
+const RIDGE_A = Array.from({ length: RIDGE_N }, (_, i) => (i * Math.PI) / 3);
 // Hips on the pod's underside (body space), root tips on the floor (yaw
 // space) just past the pod's rim: a low skirt of roots under the pod, the
 // classic's footprint. Each knee bends down and in, under the pod (never out
@@ -422,7 +434,7 @@ const HIPS = ROOT_A.map((a) => new Vector3(Math.sin(a) * 0.15, 0.21, Math.cos(a)
 const HOMES = ROOT_A.map((a) => new Vector3(Math.sin(a) * 0.32, 0, Math.cos(a) * 0.32));
 const RL1 = 0.09; // short: the upper bone stays tucked under the pod
 const RL2 = 0.27;
-const FRONT_ROOTS = [0, 5]; // the two either side of the vine
+const FRONT_ROOTS = [0, ROOT_N - 1]; // the two either side of the vine
 const BRACE = 0.04; // u the front roots step out to brace a lash (the coil)
 const BRACE_STEP = 0.15; // s: that quick step
 const ROOT_R = [0.055, 0.035];
@@ -435,10 +447,16 @@ const VINE_R = 0.042;
 const VINE_REF = 1.25; // u: the vine's length at its nominal thickness (it thins as it stretches)
 const VINE_OVER = 0.012;
 const AIM_Y = 0.1; // contact: the hook lands on the floor at the lane's end
+// A catch: after the contact's hold at the lane's end the hook whips back
+// onto the caught hero and drags from there. The rig cannot see the hero, so
+// it takes `P.catchDist` (u from the pod) when the layer gives one, else the
+// middle of the band the lasher keeps from its target (2.2 to 4.6 u).
+const CATCH_D = 3.4;
+const CATCH_SEC = 3 * (1 / 60); // the whip back onto the catch, in the reel's first ticks
 const FLOOR_Y = 0.035;
 // The jaws' hinges (body space) and the pod's turn pivot.
 const JAW_Y = 0.62;
-const JAW_HINGE = 0.25; // the lids' outer-rim hinges, either side of the seam
+const JAW_SEAM = 0.012; // the lids' hinges, either side of the seam (the classic's)
 const PIVOT = new Vector3(0, 0.25, 0);
 
 let SET = null;
@@ -471,16 +489,18 @@ function geos() {
     }
     set.pod = g;
   }
-  // Dark rind: six ridges down the pod into six root knots, a band of low
+  // Dark rind: six ridges down the pod, seven root knots, a band of low
   // husk scales between the ridges, and the brow plates (one draw call).
   set.dark = bakeParts('lasher:dark', () => {
     const out = [];
-    for (let i = 0; i < ROOT_N; i++) {
-      const a = ROOT_A[i];
+    for (let i = 0; i < RIDGE_N; i++) {
+      const a = RIDGE_A[i];
       const pts = [];
       const nrms = [];
+      // the face's ridge runs from the lid down to the brows only
+      const span = i === 0 ? 0.1 : 0.6;
       for (let j = 0; j < 6; j++) {
-        const th = Math.PI * (0.27 + (0.6 * j) / 5);
+        const th = Math.PI * (0.27 + (span * j) / 5);
         const nrm = new Vector3();
         pts.push(podPoint(th, a, new Vector3(), nrm, 0.995));
         nrms.push(nrm);
@@ -489,16 +509,18 @@ function geos() {
       // (crest 0.055 u), 0.07 u across and a value step darker than the rind
       const ridge = ridgeGeometry(pts, nrms, (u) => 0.006 + 0.032 * Math.sin(Math.PI * Math.min(1, u * 1.08)), (u) => 0.006 + 0.052 * Math.sin(Math.PI * Math.min(1, u * 1.08)));
       out.push({ geo: fz(ridge, 0.1, 303 + i), m: null, tone: i % 2 ? 0.66 : 0.72 });
-      // the knot where the ridge meets its root (it closes the root's joint)
-      podPoint(Math.PI * 0.86, a, P, N, 0.97);
+    }
+    // a knot where each root leaves the pod (it closes the root's joint)
+    for (let i = 0; i < ROOT_N; i++) {
+      podPoint(Math.PI * 0.86, ROOT_A[i], P, N, 0.97);
       basis(N, H.set(0, -1, 0), X, Y, Z);
       setTRS(m, P, X, Y, Z, 0.12, 0.075, 0.13);
       out.push({ geo: scaleGeometry({ seed: 311 }), m: m.clone(), tone: 1.05 });
     }
     // husk scales: two rows in each gap, tipped down like a cone's scales
     const husk = scaleGeometry({ sides: 5, seed: 313 });
-    for (let i = 0; i < ROOT_N; i++) {
-      const a = ROOT_A[i] + Math.PI / 6;
+    for (let i = 0; i < RIDGE_N; i++) {
+      const a = RIDGE_A[i] + Math.PI / 6;
       for (const [th, s, tone] of [
         [0.62, 0.11, 1.32],
         [0.76, 0.1, 1.2],
@@ -525,13 +547,14 @@ function geos() {
   // Bone bramble thorns on the ridges, raked up toward the lid.
   set.thorns = bakeParts('lasher:thorns', () => {
     const out = [];
-    for (let i = 0; i < ROOT_N; i++) {
+    // (none on the face's short ridge: the vine grows out there)
+    for (let i = 1; i < RIDGE_N; i++) {
       for (const [th, h] of [
         [0.45, 0.075],
         [0.64, 0.06],
       ]) {
-        podPoint(Math.PI * th, ROOT_A[i], P, N, 1.06);
-        basis(H.copy(N).addScaledVector(new Vector3(0, 1, 0), 0.7), new Vector3(Math.cos(ROOT_A[i]), 0, -Math.sin(ROOT_A[i])), X, Y, Z);
+        podPoint(Math.PI * th, RIDGE_A[i], P, N, 1.06);
+        basis(H.copy(N).addScaledVector(new Vector3(0, 1, 0), 0.7), new Vector3(Math.cos(RIDGE_A[i]), 0, -Math.sin(RIDGE_A[i])), X, Y, Z);
         setTRS(m, P, Z, Y, X, h * 0.42, h, h * 0.5);
         out.push({ geo: wedge, m: m.clone(), tone: 0.92 + 0.08 * ((i + (th > 0.5 ? 1 : 0)) % 2) });
       }
@@ -544,7 +567,7 @@ function geos() {
     const out = [];
     const bright = new Color(TELL_INDIGO);
     const dim = new Color(TELL_INDIGO_DIM);
-    out.push({ geo: fz(new SphereGeometry(0.17, 8, 4), 0.1, 321), m: new Matrix4().compose(new Vector3(0, JAW_Y, 0), new Quaternion(), new Vector3(1, 0.4, 1)), tint: bright });
+    out.push({ geo: fz(new SphereGeometry(0.17, 8, 4), 0.1, 321), m: new Matrix4().compose(new Vector3(0, JAW_Y, 0), new Quaternion(), new Vector3(1.22, 0.4, 1.22)), tint: bright });
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * Math.PI * 2 + 0.3;
       out.push({ geo: wedge, m: at(P.set(Math.sin(a) * 0.075, JAW_Y + 0.03, Math.cos(a) * 0.075), new Vector3(Math.sin(a) * 0.45, 1, Math.cos(a) * 0.45), new Vector3(Math.cos(a), 0, -Math.sin(a)), 0.035, 0.075, 0.04), tint: i % 2 ? dim : bright });
@@ -560,10 +583,10 @@ function geos() {
   });
   // A jaw: a faceted solid lid over its half of the pod's crown (the +x
   // half; the other jaw is the same lid turned half round, the lid being
-  // symmetric front to back). It hinges on its OUTER rim (the local origin;
-  // the lid spans x -0.24..0), so a gape lifts the two seam edges apart like
-  // a flytrap's lobes and bares the maw between them; the teeth stand along
-  // the seam's arch, interleaving with the other jaw's when shut.
+  // symmetric front to back). It hinges at the SEAM, the classic's way (the
+  // lid spans x -0.24..0 locally, the seam at x -0.24), so a gape lifts the
+  // outer rims and bares the indigo maw all round under them; the teeth hang
+  // from the outer rim, sunk in the crown when shut.
   {
     const pts = [];
     for (let ti = 0; ti <= 3; ti++) {
@@ -583,9 +606,9 @@ function geos() {
       const out = [];
       for (let i = 0; i < 4; i++) {
         // off centre front to back, so the turned jaw's teeth fall between
-        const z = -0.17 + i * 0.1;
-        const y = 0.135 * Math.sqrt(Math.max(0, 1 - (z / 0.24) ** 2));
-        out.push({ geo: wedge, m: at(P.set(-0.235, y - 0.012, z), new Vector3(-0.4, 1, 0), new Vector3(1, 0, 0), 0.028, 0.06 + 0.014 * (i % 2), 0.032), tone: 0.95 + 0.06 * (i % 2) });
+        const z = -0.15 + i * 0.1;
+        const x = -0.24 + Math.sqrt(Math.max(0, 0.225 * 0.225 - z * z)) - 0.012;
+        out.push({ geo: wedge, m: at(P.set(x, -0.02, z), new Vector3(-0.35, -1, 0), new Vector3(0, 0, 1), 0.028, 0.06 + 0.014 * (i % 2), 0.032), tone: 0.95 + 0.06 * (i % 2) });
       }
       return out;
     });
@@ -665,7 +688,7 @@ export function buildLasherFacet() {
   const teeth = instancedPart(G.teeth, thornMat, 2, { name: 'lasher-teeth', moving: true, inkPx: PART_INK_PX });
   body.add(jaws);
   body.add(teeth);
-  // The roots: twelve bones on one instanced row placed by the root IK.
+  // The roots: fourteen bones on one instanced row placed by the root IK.
   const roots = instancedPart(G.root, rootMat, ROOT_N * 2, { name: 'lasher-roots', moving: true, inkPx: 2.0 });
   spawn.add(roots);
   // The vine: eleven links on one instanced row, laid by the chain each frame.
@@ -684,7 +707,7 @@ export function buildLasherFacet() {
   const hand = namedPoint(body, 'lasher-hand', VINE_ROOT.x, VINE_ROOT.y, VINE_ROOT.z);
   const mouth = namedPoint(body, 'lasher-mouth', 0, JAW_Y + 0.02, 0);
 
-  const gait = createLegs({ homes: HOMES, groups: [[0, 2, 4], [1, 3, 5]], trigger: 0.07, reach: 0.18, lift: 0.07, durMin: 0.1, durMax: 0.22 });
+  const gait = createLegs({ homes: HOMES, groups: [[0, 2, 5], [1, 3, 4, 6]], trigger: 0.07, reach: 0.18, lift: 0.07, durMin: 0.1, durMax: 0.22 });
   const clock = createFoeClock();
   const watch = createAttackWatch();
   const cur = { ...REST };
@@ -697,6 +720,17 @@ export function buildLasherFacet() {
   let state = 'idle'; // idle | coil | strike | follow | abort
   let lashN = -1; // the lash playing (0..2)
   let lashCount = 0;
+  let catchK = 0; // 0..1: the hook moved from the lane's end onto the catch
+  let idStart = -1; // the cycle's start (from the entity's id), latched
+  function idPhase(e) {
+    if (idStart < 0) {
+      const id = e && e.id !== undefined && e.id !== null ? String(e.id) : '';
+      let h = 0;
+      for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
+      idStart = h % 3;
+    }
+    return idStart;
+  }
   let hauled = false;
   let contactNow = 0;
   let abortNow = 0;
@@ -804,9 +838,11 @@ export function buildLasherFacet() {
     const beat = watch.update(P);
     const live = e && e.telegraph;
     if (beat && beat.type === 'wind' && live) {
-      // a new lash: the next of the three, from wherever the rig is now
+      // a new lash: the next of the three, from wherever the rig is now.
+      // The cycle is the rig's own, started at a place set by the entity's
+      // id, so a room of lashers never sweeps in step
       Object.assign(capture, cur);
-      lashN = lashCount % 3;
+      lashN = (idPhase(e) + lashCount) % 3;
       lashCount++;
       tel.start = live.startTick ?? tick;
       tel.resolve = live.resolveTick ?? tick + TEL_TICKS;
@@ -855,6 +891,7 @@ export function buildLasherFacet() {
     if (state === 'follow') {
       if (e && e.yank) hauled = true; // the sim caught a hero: the haul
       followPhase(now - contactNow, ph);
+      catchK = hauled ? catchAt(now - contactNow) : 0;
       if (ph.phase === 'rest') state = 'idle';
       else {
         lashPose(lashN, ph.phase, ph.k, 0, capture, REST, hauled, cur);
@@ -895,14 +932,17 @@ export function buildLasherFacet() {
     let laneYaw = 0;
     let laneLen = LANE_LEN / s;
     let swayT = now;
+    catchK = 0;
     if (lab.override) {
       const h = LASHER_LASH.at(lab.override.t);
+      catchK = h.phase === 'reel' || h.phase === 'snap' || h.phase === 'settle' ? catchAt(CONTACT_SEC + (h.phase === 'reel' ? h.k * REEL_SEC : REEL_SEC)) : 0;
       lashPose(h.n, h.phase, h.k, h.tau, fromPose(h.n), toPose(h.n), true, cur);
       swayT = lab.override.t;
       state = 'idle';
       watch.reset();
     } else {
       liveLash(P, now, tick, e);
+      if (state !== 'follow') catchK = 0;
       if (state !== 'idle') {
         laneYaw = wrapPi(Math.atan2(tel.dirX, tel.dirZ) - yawNow);
         laneLen = tel.length / s;
@@ -934,14 +974,18 @@ export function buildLasherFacet() {
     tellGlow.material.opacity = 0.18 + 0.4 * cur.tell + 0.03 * Math.sin(swayT * 2.6);
     body.updateMatrix();
 
-    // --- the jaws: two lids hinged on their outer rims, the seam lifting
-    // apart on a gape (the maw bared between them), clapped shut past zero
+    // --- the jaws: two lids hinged at the seam, the outer rims lifting on
+    // a gape (the maw bared round them), clapped shut past zero
     const gape = cur.jaw + 0.03 * idle * Math.sin(swayT * 1.6 + ph0);
     for (let i = 0; i < 2; i++) {
       const sd = i === 0 ? 1 : -1;
-      qz.setFromAxisAngle(ZAXIS, -sd * gape);
+      qz.setFromAxisAngle(ZAXIS, sd * gape);
       if (sd < 0) qz.multiply(PI_Y);
-      m.compose(pos.set(sd * JAW_HINGE, JAW_Y, 0), qz, ONE);
+      // turn the lid about its seam edge (local x -0.24): place its origin
+      // so that edge stays at x = sd * JAW_SEAM
+      pos.set(-0.24, 0, 0).applyQuaternion(qz);
+      pos.set(sd * JAW_SEAM - pos.x, JAW_Y - pos.y, -pos.z);
+      m.compose(pos, qz, ONE);
       jaws.setMatrixAt(i, m);
       teeth.setMatrixAt(i, m);
     }
@@ -984,7 +1028,9 @@ export function buildLasherFacet() {
     const free = 1 - cur.reach;
     const yaw0 = cur.vy + cur.twist + laneYaw * cur.lw - 0.4 * side * idle;
     const pitch0 = cur.vp - 0.8 * cur.pitch + 0.08 * Math.abs(fwd) * idle;
-    const aimD = Math.max(0.9 / s, laneLen - (YANK_DIST / s) * cur.pull) - 0.06;
+    const catchLen = Math.min(laneLen, (P.catchDist > 0 ? P.catchDist : CATCH_D) / s);
+    const hookLen = laneLen + (catchLen - laneLen) * catchK;
+    const aimD = Math.max(0.9 / s, hookLen - (YANK_DIST / s) * cur.pull) - 0.06;
     const ax = Math.sin(laneYaw) * aimD - root.x;
     const ay = AIM_Y - root.y;
     const az = Math.cos(laneYaw) * aimD - root.z;

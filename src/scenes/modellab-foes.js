@@ -37,7 +37,7 @@ const FOES = {
   thornling: { label: 'Thornling', y: 0.45, dist: 3.2, side: 1.2, speed: 1.3, loop: 1.6, sound: {} },
   owl: { label: 'Shriek Owl', y: 1.65, dist: 4.4, side: 1.5, speed: 2.4, loop: 1.6, sound: { strike: 'wm_shriek' } },
   // its lash reaches 5.4 u down the lane: the camera looks ahead of it
-  lasher: { label: 'Vine Lasher', y: 0.5, z: 1.6, dist: 6.2, side: 1.4, speed: 0.8, loop: 1.0, sound: { strike: 'wm_lash', yank: 'wm_yank' } },
+  lasher: { label: 'Vine Lasher', y: 0.5, z: 2.6, dist: 9.5, side: 1.4, speed: 0.8, loop: 1.0, sound: { strike: 'wm_lash', yank: 'wm_yank' } },
 };
 
 // A combo (an object with `at(t)`) or a plain timeline, read the same way.
