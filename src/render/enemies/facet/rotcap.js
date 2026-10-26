@@ -629,6 +629,7 @@ export function buildRotcapFacet() {
   const lv = { x: 0, z: 0 };
   const hw = { x: 0, z: 0 };
   const strike = { id: '', tick: 0 };
+  let prevStrike = null; // the strike before it (an aborted one is taken back)
   const footP = new Vector3();
   const hipW = new Vector3();
   const ankle = new Vector3();
@@ -815,6 +816,9 @@ export function buildRotcapFacet() {
       }
       // it walks off: a held wind-up recovers instead of riding along
       if (moving && (P.moveK ?? 0) > 0.5) chain.recover(now);
+      // held mid-strike before its contact (a stun, a blind, a room clear):
+      // the predicted bite never comes, so the strike eases back to rest
+      if (e && heldBy(e, tick) && chain.abort(now)) lab.lastStrike = prevStrike;
       active = chain.pose(now, cur, due);
       if (!active) Object.assign(cur, REST);
       // the lunge step: on a fresh strike at once, on a predicted one as its
@@ -828,6 +832,7 @@ export function buildRotcapFacet() {
       // the tick its contact lands, for the probe (a recover moves the
       // chain's clock back: its contactAt is then in the past, no strike)
       if (c !== null && c !== seenContact && c >= now - 1e-6) {
+        prevStrike = lab.lastStrike ? { ...lab.lastStrike } : null;
         seenContact = c;
         strike.id = `chomp:${chain.current + 1}`;
         strike.tick = tick + (c - now) * 60;

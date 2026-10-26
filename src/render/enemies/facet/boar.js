@@ -375,6 +375,7 @@ export function buildBoarFacet() {
   let armedFor = null; // the contact the lunge step was timed for
   let seenContact = null;
   const strike = { id: '', tick: 0 };
+  let prevStrike = null; // the strike before it (an aborted one is taken back)
   let yawNow = 0;
   const lifted = [0, 0, 0, 0];
 
@@ -444,6 +445,9 @@ export function buildBoarFacet() {
       }
       // it chases off: a held wind-up recovers instead of riding along
       if (moving && (P.moveK ?? 0) > 0.5) chain.recover(now);
+      // held mid-strike before its contact (a stun, a blind, a room clear):
+      // the predicted bite never comes, so the strike eases back to rest
+      if (e && heldBy(e, tick) && chain.abort(now)) lab.lastStrike = prevStrike;
       active = chain.pose(now, cur, due);
       if (!active) Object.assign(cur, REST);
       // the lunge step: as the strike begins (the hips have pulled back),
@@ -464,6 +468,7 @@ export function buildBoarFacet() {
       // (a recover moves contactAt into the past: no new strike)
       const c = chain.contactAt;
       if (c !== null && c !== seenContact && c >= now - 1e-6) {
+        prevStrike = lab.lastStrike ? { ...lab.lastStrike } : null;
         seenContact = c;
         strike.id = `gore:${chain.current + 1}`;
         strike.tick = tick + (c - now) * 60;

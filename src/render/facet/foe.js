@@ -473,6 +473,9 @@ export function createChain({ hits, tls, rest, window, ease }) {
   let pullK = 0;
   let lastNow = 0;
   let predicted = null; // when the early-started hit's contact is due
+  let abortAt = null; // an aborted predicted strike eases back to rest from here
+  const abortPose = { ...rest };
+  const restFields = fieldsOf(rest);
   const capture = { ...rest };
   const scratch = { ...rest };
   const smp = {};
@@ -517,6 +520,11 @@ export function createChain({ hits, tls, rest, window, ease }) {
     pose(now, out, due = null) {
       const dt = Math.max(0, now - lastNow);
       lastNow = now;
+      if (abortAt !== null) {
+        const k = (now - abortAt) / (4 * FRAME);
+        if (k < 1) return lerpFields(out, abortPose, rest, ease.out(Math.max(0, k)), restFields), true;
+        abortAt = null;
+      }
       if (n < 0) return false;
       let t = now - t0;
       if (predicted === null && due !== null && due <= CONTACT_IN - STRIKE_IN && t < tls[n].duration && tls[n].sample(t, smp).id === 'ready') {
@@ -554,7 +562,21 @@ export function createChain({ hits, tls, rest, window, ease }) {
       t0 = now - tls[n].startOf('recover');
       predicted = null;
     },
+    // The sim holds the foe (a stun, a blind, a room clear) while a predicted
+    // strike is in flight before its contact: no bite comes, so the strike
+    // stops where it is and eases back to rest over 4 frames. True when it
+    // aborted one (the rig takes back its lastStrike).
+    abort(now) {
+      if (predicted === null || n < 0 || now >= t0 + CONTACT_IN) return false;
+      hitPose(hits, tls, rest, n, now - t0, capture, fresh, pullK, abortPose, ease);
+      abortAt = now;
+      n = -1;
+      predicted = null;
+      pullK = 0;
+      return true;
+    },
     reset() {
+      abortAt = null;
       n = -1;
       pullK = 0;
       predicted = null;
