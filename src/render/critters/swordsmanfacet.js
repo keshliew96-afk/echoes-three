@@ -1025,7 +1025,11 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     let spin = attacking ? spinAt(ability, mt) : 0;
     // A turn cut short (a hit taken, another move, the end) lets go the
     // short way round over a few frames, never a pop.
-    if (attacking && ability === 'whirl') spinHeld = spin;
+    if (atk.override && dt <= 0) {
+      // the lab's Still is pure in t: no let-go carried over from another pose
+      spinHeld = spinFrom = 0;
+      spinTrail = spin;
+    } else if (attacking && ability === 'whirl') spinHeld = spin;
     else {
       if (spinHeld !== 0) {
         spinFrom = wrapPi(spinHeld);
