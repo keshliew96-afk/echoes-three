@@ -120,7 +120,15 @@ const PLANT_TL = createTimeline(
 // Pure: the plant's pose at t seconds into it (side: +1 coils to its left,
 // -1 to its right). The probe and the lab call it.
 const smp = {};
-export function thornlingPlantPose(t, out = { ...REST }, side = 1) {
+// The stamp's three-hit chain (visual only: the same timeline and contact
+// tick every time): hit 0 coils right and stabs the right root, hit 1 the
+// mirror, hit 2 the finisher, both roots straight down, a deeper squash and
+// a wider crown flare.
+export const STAMP_HITS = 3;
+const STAMP_SIDE = [1, -1, 0];
+const FINISH = 1.3; // the finisher's stamp over the side stamps'
+export function thornlingPlantPose(t, out = { ...REST }, side = 1, hit = -1) {
+  if (hit >= 0) side = STAMP_SIDE[hit % STAMP_HITS];
   const s = PLANT_TL.sample(t, smp);
   const k = s.k;
   if (s.id === 'root') {
@@ -143,6 +151,14 @@ export function thornlingPlantPose(t, out = { ...REST }, side = 1) {
   else lerpPose(out, OVER_P, REST, 1 - settle(k)); // B5: one small overshoot
   out.twist *= side;
   out.roll *= side;
+  if (hit % STAMP_HITS === 2 && (s.id === 'strike' || s.id === 'contact' || s.id === 'snap')) {
+    // the finisher: the same stamp, driven harder through the hips
+    out.sink *= FINISH;
+    out.pitch *= FINISH;
+    out.sx = 1 + (out.sx - 1) * FINISH;
+    out.sy = 1 + (out.sy - 1) * FINISH;
+    out.bloom += 0.14 * out.dig;
+  }
   return out;
 }
 
@@ -483,7 +499,7 @@ export function buildThornlingFacet() {
 
   // The live plant, read from the sim's fields (the thornling sets no
   // e.telegraph: its root is the telegraph).
-  const plant = { R: null, start: 0, due: 0, gk: 0, sk: 0, contact: null, side: 1, struck: false };
+  const plant = { R: null, start: 0, due: 0, gk: 0, sk: 0, contact: null, side: 1, hit: -1, struck: false };
   const rootTel = { telegraph: { startTick: 0, resolveTick: 0 } };
   const strike = { id: 'plant', tick: 0 };
   let seenPlant = null; // the last e.plantTick this rig has accounted for
@@ -521,8 +537,10 @@ export function buildThornlingFacet() {
     plant.sk = 0;
     plant.contact = null;
     plant.struck = false;
-    // the stamp coils to alternate sides plant to plant (deterministic)
-    plant.side = Math.floor(R / PLANT_EVERY) % 2 ? -1 : 1;
+    // the next hit of the stamp's chain, counted per rig (a stun that shifts
+    // the plant tick never repeats a side)
+    plant.hit = (plant.hit + 1) % STAMP_HITS;
+    plant.side = STAMP_SIDE[plant.hit];
     recover.t0 = -1;
     back.t0 = -1;
   }
@@ -616,12 +634,15 @@ export function buildThornlingFacet() {
     return t;
   }
 
-  function placeRoots(dig, spread) {
+  function placeRoots(dig0, spread, lead = 0) {
     body.updateMatrix();
     let mx = 0;
     let mz = 0;
     for (let i = 0; i < 2; i++) {
       const o = gait.out[i];
+      // a side stamp drives in the root it rolls onto (side +1 rolls onto
+      // foot 1, the +x one); the other grips at half; the finisher stabs both
+      const dig = lead === 0 || (i === 1) === (lead > 0) ? dig0 : dig0 * 0.5;
       hipW.copy(HIPS[i]).applyMatrix4(body.matrix);
       foot.copy(o);
       foot.y += ANKLE;
@@ -666,7 +687,7 @@ export function buildThornlingFacet() {
     for (let i = 0; i < 3; i++) {
       const a = (i / 3) * Math.PI * 2 + 0.35;
       // the classic's bloom: each bud rises with it, the later ones higher
-      pos.set(Math.cos(a) * 0.07, 0.04 * bo * (1 + i * 0.3) + 0.004 * Math.sin(now * 2.4 + i * 2.1), Math.sin(a) * 0.07);
+      pos.set(Math.cos(a) * 0.07, 0.016 * bo * (1 + i * 0.3) + 0.004 * Math.sin(now * 2.4 + i * 2.1), Math.sin(a) * 0.07);
       // and opens: the bud tips out and its sepals splay
       tilt.set(Math.sin(a), 0, -Math.cos(a));
       q.setFromAxisAngle(tilt, 0.12 + 0.3 * bo);
@@ -690,14 +711,17 @@ export function buildThornlingFacet() {
     spawn.scale.setScalar(spawnScale(age));
 
     // --- the plant: the lab's pure override, or the live root
-    let poseSide = 1;
-    if (lab.override) thornlingPlantPose(Math.min(PLANT_TL.duration, Math.max(0, lab.override.t)), cur, 1);
+    let poseSide = plant.side; // a cut-short plant eases home on its own side
+    if (lab.override) {
+      poseSide = STAMP_SIDE[(lab.override.hit ?? 0) % STAMP_HITS];
+      thornlingPlantPose(Math.min(PLANT_TL.duration, Math.max(0, lab.override.t)), cur, 1, lab.override.hit ?? -1);
+    }
     else {
       const t = livePlant(e, tick + 1, now);
       lastNow = now;
       if (t >= 0) {
         poseSide = plant.side;
-        thornlingPlantPose(t, cur, poseSide);
+        thornlingPlantPose(t, cur, poseSide, plant.hit);
         if (back.t0 >= 0) {
           const x = (now - back.t0) / BACK_SEC;
           if (x >= 1 || plant.contact !== null) back.t0 = -1;
@@ -758,7 +782,7 @@ export function buildThornlingFacet() {
 
     // --- roots: the hips ride the body, the feet stand where the gait put
     // them (a foot the body rears out of reach of lifts straight up)
-    placeRoots(cur.dig, cur.spread);
+    placeRoots(cur.dig, cur.spread, poseSide);
   }
 
   return {
