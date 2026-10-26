@@ -240,8 +240,11 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
     // drew it out of its leg's reach (clampReach pulled it in, so it carries
     // no weight now), or a lunge steps it in (`dur`: a quick step, seconds,
     // timed to land by the contact).
+    // A plain release of a foot already in the air is a no-op: it is stepping
+    // to its home now (queued, it would re-step the moment it lands).
     release(i, dur = 0) {
-      wantStep[i] = dur > 0 ? dur : -1;
+      if (dur > 0) wantStep[i] = dur;
+      else if (feet[i].swing < 0) wantStep[i] = -1;
     },
     // The travel in the rig's own frame (+z ahead, +x to its left), u/s.
     localVelocity(fr, o) {

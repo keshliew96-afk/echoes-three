@@ -460,8 +460,9 @@ export function buildBoarFacet() {
       }
       // a new strike (on the bite, or started early on the predicted bite):
       // the tick its contact lands, for the probe
+      // (a recover moves contactAt into the past: no new strike)
       const c = chain.contactAt;
-      if (c !== null && c !== seenContact) {
+      if (c !== null && c !== seenContact && c >= now - 1e-6) {
         seenContact = c;
         strike.id = `gore:${chain.current + 1}`;
         strike.tick = tick + (c - now) * 60;
