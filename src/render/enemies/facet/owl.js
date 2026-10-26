@@ -1043,11 +1043,14 @@ export function buildOwlFacet() {
     body.position.set(0, HOVER + cur.lift + bob, cur.push);
     body.rotation.set(cur.pitch + lean, 0, roll);
     body.scale.set(cur.sx, cur.sy * (1 + 0.012 * breath), cur.sz);
-    // the head: a slow look round in the glide, locked on the target once it
-    // hangs (the tell reads straight at you)
+    // the head: a slow look round in the glide that leads every turn and
+    // glances along a sideways drift (a hunter scanning), locked on the
+    // target once it hangs (the tell reads straight at you)
     const look = 1 - Math.min(1, tread * 1.5);
+    const turnLook = clamp(0.16 * yawRate, -0.32, 0.32) + 0.14 * side;
+    const headYaw = clamp(0.22 * Math.sin(now * 0.53 + id) + turnLook, -0.45, 0.45) * look;
     head.position.set(HEAD_AT.x, HEAD_AT.y + cur.hy, HEAD_AT.z + cur.hz);
-    head.rotation.set(cur.hp + 0.04 * Math.sin(now * 1.1 + id) * look, 0.28 * Math.sin(now * 0.53 + id) * look, 0.06 * Math.sin(now * 0.37 + id * 2) * look);
+    head.rotation.set(cur.hp + 0.04 * Math.sin(now * 1.1 + id) * look, headYaw, 0.06 * Math.sin(now * 0.37 + id * 2) * look - 0.35 * headYaw * look);
     disc.scale.setScalar(cur.disc);
     for (const p of pupils) p.scale.setScalar(cur.pupil);
     eyeGlow.material.opacity = clamp(0.16 + cur.glow + 0.03 * Math.sin((P.t ?? 0) * 2.6), 0, 1);
@@ -1082,8 +1085,11 @@ export function buildOwlFacet() {
     legs.instanceMatrix.needsUpdate = true;
     legPos.set(0, -0.18, 0.03).applyQuaternion(legQ).add(HIPS[1]);
     talonPt.position.copy(legPos);
-    // the shadow tightens a touch as the owl rises into the hang
-    shadow.scale.set(1 - 0.5 * cur.lift, 1 - 0.5 * cur.lift, 1);
+    // the shadow follows the body's height through the whole flight: it
+    // tightens as the owl rises (the hang, the gather, each wingbeat's lift)
+    // and spreads a touch as it sinks
+    const sh = clamp(1 - 0.5 * (cur.lift + bob), 0.86, 1.04);
+    shadow.scale.set(sh, sh, 1);
   }
 
   return {
