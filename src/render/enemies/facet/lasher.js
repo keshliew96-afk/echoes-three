@@ -13,18 +13,25 @@
 //     down into six root knots, a band of low husk scales, angry brow plates,
 //     twelve bone bramble thorns on the ridges, indigo seed spikes in the maw;
 //   * WORLD-LOCKED ROOTS (render/facet/legs.js): the pod drags itself along on
-//     six arched two-bone roots stepping in two tripods, each root tip pinned
-//     to the floor while it carries weight, the lean following the real
-//     travel (a backpedal off a hero leans back and steps backward);
+//     six two-bone roots stepping in two tripods, a low dark skirt (each drops
+//     out of the pod's underside and runs out along the floor to a tip just
+//     past the rim), each root tip pinned to the floor while it carries
+//     weight, the lean following the real travel (a backpedal off a hero
+//     leans back and steps backward);
 //   * THE VINE as one instanced chain of eleven tapered segments laid every
 //     frame by a forward chain (segmentMatrix with overlap, one draw call plus
 //     its ink), a leaf and a thorn baked into each segment and rolled a
 //     quarter turn per segment so they spiral, the hooked bone tip on its own;
 //   * a 3-LASH CHAIN on its repeating lash (Kesh's combo template): a sweep
 //     from its right, a low backhand from its left, then an overhead slam,
-//     the biggest, with a rear, a stretch and the deepest squash (§6.1 B6).
-//     Each lash's snap back settles INTO the next lash's coil (the lab plays
-//     them back to back; the game cycles them lash to lash);
+//     the biggest, with the highest rear, a stretch and the deepest squash
+//     (§6.1 B6). Every coil braces: the two front roots step out while it
+//     gathers, so all six are planted under the throw, and step home after
+//     the reel. In the throw the hips lead (the pod's twist, shove and lean
+//     on an ease-out), the vine's root a tick behind, the curl and the reach
+//     last (Kesh's rule 3). Each lash's snap back settles INTO the next
+//     lash's coil (the lab plays them back to back; the game cycles them
+//     lash to lash);
 //   * the spawn-in grow (B7), named points (B8: the hook tip, the vine's
 //     root as the hand, the maw), the hit and death tuning (§6.1 items 9, 10).
 //
@@ -40,20 +47,26 @@
 // at 0.8 u/s, keeping 2.2 to 4.6 u from its target (it backs off a hero that
 // comes close).
 //
-// SYNC. The coil IS the telegraph: sampled by the interpolated tick against
-// the telegraph's own start and resolve (B1). The fast strike runs in the
-// telegraph's last 5 ticks (2.5 frames, B2) and its CONTACT lands on the
-// resolve tick exactly: the strike keeps sampling the cached telegraph past
-// the 'release' beat until the tick reaches resolveTick, so it is never early
-// and never late; a 'cancel' (a stun) aborts it without a strike. Contact puts
-// the vine dead straight along the live lane with its hook at the lane's end
-// (the lane is read from the telegraph, in the rig's yaw frame, so a yaw still
+// SYNC. The coil IS the telegraph: sampled on the SHOWN tick (P.tick + 1, the
+// tick the entity's fields belong to: the layer passes stateTick - 1 +
+// alpha) against the telegraph's own start and resolve (B1). The fast strike
+// runs in the telegraph's last 5 ticks (2.5 frames at 30 fps, B2), so the
+// whole throw plays and its CONTACT lands on the release frame, the first
+// whose state has the telegraph gone (the resolve tick's). It lands only on
+// the sim's word: `e.lashTick` at the resolve tick (a stand-in with no
+// lashTick: not held by a stun or blind). A stun, blind or retreat that ends
+// the telegraph early, or on the resolve tick itself, aborts the throw from
+// wherever it got to and takes back lab.lastStrike. Contact puts the vine
+// dead straight along the live lane with its hook at the lane's end (the
+// lane is read from the telegraph, in the rig's yaw frame, so a yaw still
 // turning cannot throw it off the lane). The follow-through then runs on the
-// render clock (it pauses in a hitstop): the contact held 2 frames, the reel
-// (ending on the last tick of the sim's 12-tick yank: taut and hauling when
-// `e.yank` says a hero was caught, slack when it whiffed), the snap back in
-// 2.5 frames and the settle with one overshoot (B5).
-// `lab.lastStrike = { id: 'lash:N', tick }`: the tick the contact lands on.
+// render clock (it pauses in a hitstop): the contact held 2 frames while the
+// reel starts with the sim's drag (0.15 u a tick from the contact to the
+// last tick of the 12-tick yank: taut and hauling when `e.yank` says a hero
+// was caught, slack when it whiffed), the snap back in 2.5 frames and the
+// settle with one overshoot (B5).
+// `lab.lastStrike = { id: 'lash:N', tick }`: the resolve tick, the one the
+// contact lands on.
 //
 // Faces +Z. Same contract as buildLasher (group, mats, setYaw, pose) plus lab,
 // react, death, points. Render only: the sim, its timing and damage untouched.
@@ -67,8 +80,8 @@ import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from '../style.j
 import { facetize } from '../../facet/material.js';
 import { instancedPart, plateGeometry, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
-import { FRAME, SPAWN_SEC, bakeParts, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, hornGeometry, lerpFields, namedPoint, placeBody, scaleGeometry, settle, spawnScale } from '../../facet/foe.js';
-import { createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { FRAME, SPAWN_SEC, bakeParts, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, heldBy, hornGeometry, lerpFields, namedPoint, placeBody, scaleGeometry, settle, spawnScale } from '../../facet/foe.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
 
 // --- The sim's numbers (sim/enemies/lasher.js S), read only for timing.
 const TEL_TICKS = 48; // the lane telegraph
@@ -84,7 +97,8 @@ const STRIKE_SEC = STRIKE_TICKS / 60;
 const COIL_SEC = TEL_TICKS / 60;
 const GATHER_SEC = 0.25; // the coil gathers, then tightens to the throw
 const CONTACT_SEC = 2 * FRAME; // held contact (pauses in a hitstop)
-const REEL_SEC = YANK_TICKS / 60 - CONTACT_SEC; // the reel ends on the sim's yank's last tick
+const YANK_SEC = YANK_TICKS / 60;
+const REEL_SEC = YANK_SEC - CONTACT_SEC; // the reel ends on the sim's yank's last tick
 const SNAP_SEC = 2.5 * FRAME; // the snap back
 const SETTLE_SEC = 6 * FRAME; // into the next coil, or idle, one overshoot
 const FOLLOW_SEC = CONTACT_SEC + REEL_SEC + SNAP_SEC + SETTLE_SEC;
@@ -96,41 +110,45 @@ const LAB_REST = 0.3;
 
 // --- Key poses. Body: push (u along +z), pitch (+ leans in, rad), twist (+
 // turns toward its left, +x), roll, sx / sy (squash wide / tall), hop (u),
-// step (the front roots' lunge step, 0..1 of 0.12 u), jaw (the lid's gape,
+// step (the front roots' brace, 0..1 of BRACE), jaw (the lid's gape,
 // rad), tell (the maw's glow, 0..1). Vine: vy / vp (the vine root's yaw and
 // pitch, + up), cy / cp (yaw and pitch curl per joint, heavier toward the
 // tip; cp + curls up and back), ct (the tip's own curl), vl (length, u),
 // reach (0..1: the vine laid dead straight to the lane's end), pull (0..1 of
 // the 1.8 u reel), lw (0..1: the vine's frame follows the lane), sw (0..1
-// the idle sway).
-const REST = Object.freeze({ push: 0, pitch: 0, twist: 0, roll: 0, sx: 1, sy: 1, hop: 0, step: 0, jaw: 0.1, tell: 0, vy: 0, vp: 0.32, cy: 0, cp: -0.17, ct: 0.42, vl: 1.55, reach: 0, pull: 0, lw: 0, sw: 1 });
+// the idle sway). At rest the vine arcs down off the pod's face and its hook
+// rests on the floor about 1 u ahead (the classic's short whip).
+const REST = Object.freeze({ push: 0, pitch: 0, twist: 0, roll: 0, sx: 1, sy: 1, hop: 0, step: 0, jaw: 0.1, tell: 0, vy: 0, vp: 0, cy: 0, cp: -0.2, ct: 0.5, vl: 0.93, reach: 0, pull: 0, lw: 0, sw: 1 });
 const FIELDS = Object.keys(REST);
 const K = (o) => Object.freeze({ ...REST, sw: 0, lw: 1, ...o });
+// Every coil braces: the two front roots step out (step 1) while the coil
+// gathers, so all six are planted under the throw.
 // Lash 1, SWEEP: the vine drawn round to its right and wrapped back past the
-// pod, raised; the pod twists right on its planted roots and rocks back.
-const C1 = K({ twist: -0.3, roll: 0.04, pitch: -0.05, jaw: 0.42, tell: 0.5, vy: -0.95, vp: 0.5, cy: -0.17, cp: 0.02, ct: 0.15, vl: 1.4 });
-const D1 = K({ push: -0.07, twist: -0.46, roll: 0.06, pitch: -0.09, sx: 1.05, sy: 0.93, step: 0.4, jaw: 0.78, tell: 1, vy: -1.08, vp: 0.56, cy: -0.24, cp: 0.03, ct: 0.25, vl: 1.32 });
+// pod, raised a little; the pod twists right on its planted roots, rocks back.
+const C1 = K({ twist: -0.3, roll: 0.04, pitch: -0.05, step: 1, jaw: 0.42, tell: 0.5, vy: -0.95, vp: 0.3, cy: -0.17, cp: 0.01, ct: 0.08, vl: 1.4 });
+const D1 = K({ push: -0.03, twist: -0.46, roll: 0.06, pitch: -0.09, sx: 1.05, sy: 0.93, step: 1, jaw: 0.78, tell: 1, vy: -1.08, vp: 0.34, cy: -0.24, cp: 0.01, ct: 0.12, vl: 1.32 });
 // contact: the hips (the pod's twist) carried the swing through to its left
 const S1 = K({ push: 0.1, pitch: 0.38, twist: 0.24, roll: -0.05, sx: 1.19, sy: 0.91, step: 1, jaw: -0.06, tell: 0.6, vy: 0.4, vp: 0.05, vl: 1.6, reach: 1 });
 // Lash 2, BACKHAND: from its left, low over the floor, back across to its right.
-const C2 = K({ twist: 0.3, roll: -0.04, pitch: -0.03, jaw: 0.42, tell: 0.5, vy: 0.95, vp: 0.2, cy: 0.17, cp: 0.0, ct: 0.18, vl: 1.4 });
-const D2 = K({ push: -0.07, twist: 0.46, roll: -0.06, pitch: -0.06, sx: 1.06, sy: 0.92, step: 0.4, jaw: 0.78, tell: 1, vy: 1.08, vp: 0.14, cy: 0.24, cp: 0.01, ct: 0.25, vl: 1.32 });
+const C2 = K({ twist: 0.3, roll: -0.04, pitch: -0.03, step: 1, jaw: 0.42, tell: 0.5, vy: 0.95, vp: 0.2, cy: 0.17, cp: 0.0, ct: 0.18, vl: 1.4 });
+const D2 = K({ push: -0.03, twist: 0.46, roll: -0.06, pitch: -0.06, sx: 1.06, sy: 0.92, step: 1, jaw: 0.78, tell: 1, vy: 1.08, vp: 0.14, cy: 0.24, cp: 0.01, ct: 0.25, vl: 1.32 });
 const S2 = K({ push: 0.1, pitch: 0.38, twist: -0.24, roll: 0.05, sx: 1.19, sy: 0.91, step: 1, jaw: -0.06, tell: 0.6, vy: -0.4, vp: 0.02, vl: 1.6, reach: 1 });
-// Lash 3, OVERHEAD SLAM (the biggest): the vine rears up over the pod into a
-// fiddlehead, the pod rises tall on its roots and leans back, then slams the
-// vine down the lane with the deepest squash and a drop into the roots.
-const C3 = K({ pitch: -0.16, sx: 0.96, sy: 1.07, hop: 0.03, jaw: 0.5, tell: 0.6, vy: 0, vp: 1.4, cp: 0.3, ct: 0.25, vl: 1.45 });
-const D3 = K({ push: -0.07, pitch: -0.28, sx: 0.92, sy: 1.14, hop: 0.06, step: 0.4, jaw: 0.88, tell: 1, vy: 0, vp: 1.66, cp: 0.4, ct: 0.3, vl: 1.4 });
+// Lash 3, OVERHEAD SLAM (the biggest): the vine rears straight up over the
+// pod, the highest wind-up of the three, its tip rolled into a tight
+// fiddlehead well above the crown; the pod rises tall on its roots and leans
+// back, then slams the vine down the lane with the deepest squash and a drop.
+const C3 = K({ pitch: -0.16, sx: 0.96, sy: 1.07, hop: 0.03, step: 1, jaw: 0.5, tell: 0.6, vy: 0, vp: 1.3, cp: 0.03, ct: 0.5, vl: 1.5 });
+const D3 = K({ push: -0.03, pitch: -0.28, sx: 0.92, sy: 1.14, hop: 0.06, step: 1, jaw: 0.88, tell: 1, vy: 0, vp: 1.36, cp: 0.04, ct: 0.62, vl: 1.5 });
 const S3 = K({ push: 0.12, pitch: 0.44, sx: 1.25, sy: 0.85, hop: -0.03, step: 1, jaw: -0.08, tell: 0.7, vy: 0, vp: -0.4, vl: 1.6, reach: 1 });
-// The reel's end, taut (a hero caught: the pod hauls back on braced roots and
-// gapes to take it), and the snap back's overshoot (the vine whips up and
-// off to the side the swing carried it to).
-const H1 = K({ push: -0.05, pitch: -0.2, twist: 0.12, sx: 0.96, sy: 1.05, step: 0.3, jaw: 0.5, tell: 0.5, vy: 0.2, vp: 0.1, cp: -0.08, vl: 1.5, reach: 1, pull: 1 });
+// The reel's end, taut (a hero caught: the pod hauls back, its front roots
+// stepping back under it, and gapes to take it), and the snap back's
+// overshoot (the vine whips up and off to the side the swing carried it to).
+const H1 = K({ push: -0.05, pitch: -0.2, twist: 0.12, sx: 0.96, sy: 1.05, step: 0, jaw: 0.5, tell: 0.5, vy: 0.2, vp: 0.1, cp: -0.08, vl: 1.5, reach: 1, pull: 1 });
 const H2 = K({ ...H1, twist: -0.12, vy: -0.2 });
 const H3 = K({ ...H1, pitch: -0.24, sy: 1.07, hop: 0.02, twist: 0 , vy: 0 });
-const O1 = K({ push: -0.02, pitch: -0.05, twist: 0.3, sx: 0.97, sy: 1.04, step: 0.2, jaw: 0.25, tell: 0.3, vy: 0.75, vp: 0.55, cy: 0.12, cp: 0.08, ct: 0.25, vl: 1.3 });
-const O2 = K({ push: -0.02, pitch: -0.04, twist: -0.3, sx: 0.97, sy: 1.04, step: 0.2, jaw: 0.25, tell: 0.3, vy: -0.75, vp: 0.6, cy: -0.12, cp: 0.08, ct: 0.25, vl: 1.3 });
-const O3 = K({ push: -0.03, pitch: -0.1, sx: 0.95, sy: 1.07, hop: 0.02, step: 0.2, jaw: 0.3, tell: 0.35, vy: 0, vp: 0.85, cp: 0.12, ct: 0.3, vl: 1.3 });
+const O1 = K({ push: -0.02, pitch: -0.05, twist: 0.3, sx: 0.97, sy: 1.04, step: 0, jaw: 0.25, tell: 0.3, vy: 0.75, vp: 0.55, cy: 0.12, cp: 0.08, ct: 0.25, vl: 1.3 });
+const O2 = K({ push: -0.02, pitch: -0.04, twist: -0.3, sx: 0.97, sy: 1.04, step: 0, jaw: 0.25, tell: 0.3, vy: -0.75, vp: 0.6, cy: -0.12, cp: 0.08, ct: 0.25, vl: 1.3 });
+const O3 = K({ push: -0.03, pitch: -0.1, sx: 0.95, sy: 1.07, hop: 0.02, step: 0, jaw: 0.3, tell: 0.35, vy: 0, vp: 0.85, cp: 0.12, ct: 0.3, vl: 1.3 });
 // A whiff's reel: no haul, the vine goes slack and drags back in.
 const slack = (h) => K({ ...h, push: 0.05, pitch: 0.12, sx: 1.04, sy: 0.97, jaw: 0.05, tell: 0.3, reach: 0.5, pull: 0.55, cp: -0.12 });
 const HITS = [
@@ -141,19 +159,28 @@ const HITS = [
 export const LASHER_REST = REST;
 export const LASHER_HITS = HITS;
 
-// The strike's fields ease apart, the way a whip throws: the pod and the
-// vine's root kick first (B4: the weapon kicks on the press frame), the curl
-// unrolls late, and the reach to the lane's end lands last.
+// The strike's fields ease apart, the way a whip throws (Kesh's rule 3: the
+// hips drive the swing): the pod's twist, shove, lean and lift kick first on
+// an ease-out; the vine's root follows about a tick behind (B4: the weapon
+// kicks on the press frame); the curl unrolls late and the reach to the
+// lane's end lands last; the squash and the jaws' clap land on the contact.
+const LEAD = ['twist', 'push', 'pitch', 'roll', 'hop', 'step'];
+const ROOTV = ['vy', 'vp'];
 const LATE = ['cy', 'cp', 'ct', 'vl', 'reach'];
-const FAST = ['vy', 'vp'];
-const BODYF = FIELDS.filter((f) => !LATE.includes(f) && !FAST.includes(f));
+const SQUASH = ['sx', 'sy', 'jaw', 'tell'];
+const REST_F = FIELDS.filter((f) => !LEAD.includes(f) && !ROOTV.includes(f) && !LATE.includes(f) && !SQUASH.includes(f));
+const VINE_LAG = 0.2; // of the 5-tick throw: the vine's root a tick behind the hips
 function strikeLerp(out, a, b, k) {
-  const ki = k * k;
   const ko = 1 - (1 - k) * (1 - k);
+  const kv = Math.max(0, (k - VINE_LAG) / (1 - VINE_LAG));
+  const kvo = 1 - (1 - kv) * (1 - kv);
+  const ki = k * k;
   const kl = k * k * k;
-  for (const f of BODYF) out[f] = a[f] + (b[f] - a[f]) * ki;
-  for (const f of FAST) out[f] = a[f] + (b[f] - a[f]) * ko;
+  for (const f of LEAD) out[f] = a[f] + (b[f] - a[f]) * ko;
+  for (const f of ROOTV) out[f] = a[f] + (b[f] - a[f]) * kvo;
   for (const f of LATE) out[f] = a[f] + (b[f] - a[f]) * kl;
+  for (const f of SQUASH) out[f] = a[f] + (b[f] - a[f]) * ki;
+  for (const f of REST_F) out[f] = a[f] + (b[f] - a[f]) * k;
   return out;
 }
 
@@ -165,7 +192,7 @@ export function lashPose(n, phase, k, tau, from, to, hauled, out) {
   const reelTo = hauled ? H.haul : H.slack;
   switch (phase) {
     case 'gather':
-      return lerpFields(out, from, H.gather, ease.out(k), FIELDS);
+      return lerpFields(out, from, H.gather, ease.inOut(k), FIELDS);
     case 'coil': {
       lerpFields(out, H.gather, H.coil, ease.inOut(k), FIELDS);
       // the coil tightens and trembles with the strain as the throw nears
@@ -178,10 +205,14 @@ export function lashPose(n, phase, k, tau, from, to, hauled, out) {
     case 'strike':
       return strikeLerp(out, H.coil, H.strike, k);
     case 'contact':
-      return lerpFields(out, H.strike, H.strike, 0, FIELDS);
+      // held, but the reel starts with the sim's drag on the contact tick:
+      // 1.8 u over its 12 ticks, a steady 0.15 u a tick
+      lerpFields(out, H.strike, H.strike, 0, FIELDS);
+      out.pull = (reelTo.pull * k * CONTACT_SEC) / YANK_SEC;
+      return out;
     case 'reel': {
       lerpFields(out, H.strike, reelTo, ease.out(k), FIELDS);
-      out.pull = reelTo.pull * k; // the sim drags at a steady 0.15 u a tick
+      out.pull = (reelTo.pull * (CONTACT_SEC + k * REEL_SEC)) / YANK_SEC;
       return out;
     }
     case 'snap':
@@ -381,17 +412,26 @@ function leafGeometry() {
 // the vine is; the six rind ridges run down into them.
 const ROOT_N = 6;
 const ROOT_A = Array.from({ length: ROOT_N }, (_, i) => Math.PI / 6 + (i * Math.PI) / 3);
-// Hips on the pod's underside (body space), root tips on the floor (yaw space).
+// Hips on the pod's underside (body space), root tips on the floor (yaw
+// space) just past the pod's rim: a low skirt of roots under the pod, the
+// classic's footprint. Each knee bends down and in, under the pod (never out
+// and up, so the roots never arch into spider legs), and never below
+// KNEE_MIN.
 const HIPS = ROOT_A.map((a) => new Vector3(Math.sin(a) * 0.19, 0.235, Math.cos(a) * 0.19));
-const HOMES = ROOT_A.map((a) => new Vector3(Math.sin(a) * 0.44, 0, Math.cos(a) * 0.44));
-const RL1 = 0.18;
-const RL2 = 0.21;
+const HOMES = ROOT_A.map((a) => new Vector3(Math.sin(a) * 0.32, 0, Math.cos(a) * 0.32));
+const RL1 = 0.165;
+const RL2 = 0.19;
+const FRONT_ROOTS = [0, 5]; // the two either side of the vine
+const BRACE = 0.04; // u the front roots step out to brace a lash (the coil)
+const BRACE_STEP = 0.15; // s: that quick step
 const ROOT_R = [0.066, 0.05];
+const KNEE_MIN = 0.06; // u: a knee lies on the floor, never in it
 const TIP_SINK = 0.015; // a planted root tip sits a hair into the floor
 // The vine: eleven links from its root in the pod's face.
 const VINE_N = 11;
 const VINE_ROOT = new Vector3(0, 0.47, 0.25);
 const VINE_R = 0.042;
+const VINE_REF = 1.25; // u: the vine's length at its nominal thickness (it thins as it stretches)
 const VINE_OVER = 0.012;
 const AIM_Y = 0.1; // contact: the hook lands on the floor at the lane's end
 const FLOOR_Y = 0.035;
@@ -439,13 +479,15 @@ function geos() {
       const pts = [];
       const nrms = [];
       for (let j = 0; j < 6; j++) {
-        const th = Math.PI * (0.3 + (0.56 * j) / 5);
+        const th = Math.PI * (0.27 + (0.6 * j) / 5);
         const nrm = new Vector3();
-        pts.push(podPoint(th, a, new Vector3(), nrm, 0.985));
+        pts.push(podPoint(th, a, new Vector3(), nrm, 0.995));
         nrms.push(nrm);
       }
-      const ridge = ridgeGeometry(pts, nrms, (u) => 0.004 + 0.026 * Math.sin(Math.PI * Math.min(1, u * 1.15)), (u) => 0.004 + 0.034 * Math.sin(Math.PI * Math.min(1, u * 1.1)));
-      out.push({ geo: fz(ridge, 0.1, 303 + i), m: null, tone: i % 2 ? 0.92 : 1.0 });
+      // the classic's six dark stripes, read at play zoom: proud of the rind
+      // (crest 0.055 u), 0.07 u across and a value step darker than the rind
+      const ridge = ridgeGeometry(pts, nrms, (u) => 0.006 + 0.032 * Math.sin(Math.PI * Math.min(1, u * 1.08)), (u) => 0.006 + 0.052 * Math.sin(Math.PI * Math.min(1, u * 1.08)));
+      out.push({ geo: fz(ridge, 0.1, 303 + i), m: null, tone: i % 2 ? 0.66 : 0.72 });
       // the knot where the ridge meets its root (it closes the root's joint)
       podPoint(Math.PI * 0.86, a, P, N, 0.97);
       basis(N, H.set(0, -1, 0), X, Y, Z);
@@ -600,7 +642,9 @@ export function buildLasherFacet() {
   const podMat = track(foeMaterial(COL.pod));
   const darkMat = track(foeMaterial(COL.podDark));
   const vineMat = track(foeMaterial(COL.vine));
-  const rootMat = track(foeMaterial(COL.root));
+  // the roots in the pod's underside value (the classic's root hue, darker),
+  // so they read as a shadowed skirt, never the brightest mass
+  const rootMat = track(foeMaterial(COL.root.clone().multiplyScalar(0.55)));
   const thornMat = track(foeMaterial(COL.thorn));
   const eyeMat = new MeshBasicMaterial({ color: exactColor(PALETTE.voidCharcoal), toneMapped: false });
   const mawMat = new MeshBasicMaterial({ color: 0xffffff, vertexColors: true, toneMapped: false });
@@ -662,6 +706,10 @@ export function buildLasherFacet() {
   let age = -1;
   let yawNow = 0;
   const lifted = new Array(ROOT_N).fill(0);
+  const clamped = new Array(ROOT_N).fill(false); // drawn in to its reach this frame: no weight
+  let braced = false; // the front roots stand stepped out for a lash
+  // the planner's options, one object for the rig's life
+  const gaitOpts = { locked: true, shift: null };
   // scratch
   const hipW = new Vector3();
   const foot = new Vector3();
@@ -674,7 +722,6 @@ export function buildLasherFacet() {
   const hx = new Vector3();
   const hy = new Vector3();
   const hz = new Vector3();
-  const q = new Quaternion();
   const qz = new Quaternion();
   const ONE = new Vector3(1, 1, 1);
   const pos = new Vector3();
@@ -685,7 +732,7 @@ export function buildLasherFacet() {
     abilities: LASHER_ABILITIES,
     override: null, // { id: 'lash', t } | null
     lastStrike: null, // { id, tick }: the sim tick the latest live strike's contact lands on
-    feet: () => gait.feet().map((f, i) => ({ ...f, drawnX: gait.out[i].x, drawnZ: gait.out[i].z, drawnY: gait.out[i].y + lifted[i] })),
+    feet: () => gait.feet().map((f, i) => ({ ...f, planted: f.planted && !clamped[i], drawnX: gait.out[i].x, drawnZ: gait.out[i].z, drawnY: gait.out[i].y + lifted[i] })),
     pose: () => ({ ...cur }),
     get hit() {
       return state === 'idle' ? -1 : lashN;
@@ -696,11 +743,24 @@ export function buildLasherFacet() {
     parts: { body, jaws, roots, vine, hook },
   };
 
-  // The lunge: the front roots step in under the throw, the hind pair braces.
+  // The brace: the two front roots stand stepped out while a lash coils and
+  // throws (step 1), and back home for the haul and the creep (step 0).
   function rootShift(i, o) {
-    const hz0 = HOMES[i].z;
-    o.z += (hz0 > 0.3 ? 0.12 : hz0 < -0.3 ? -0.03 : 0.04) * cur.step;
+    if (i === FRONT_ROOTS[0] || i === FRONT_ROOTS[1]) o.z += BRACE * cur.step;
     return o;
+  }
+  gaitOpts.shift = rootShift;
+  // The front roots step when the brace changes, as a quick step of their own:
+  // out once the coil has gathered (they land long before the throw, so all
+  // six are planted under it), home once the haul has let go of it.
+  function braceSteps() {
+    if (!braced && cur.step > 0.95) {
+      braced = true;
+      for (const i of FRONT_ROOTS) gait.release(i, BRACE_STEP);
+    } else if (braced && cur.step < 0.05) {
+      braced = false;
+      for (const i of FRONT_ROOTS) gait.release(i, BRACE_STEP);
+    }
   }
 
   function setStrike(id, tick) {
@@ -721,47 +781,65 @@ export function buildLasherFacet() {
     struck = false;
   }
 
+  // The sim confirms a lash on its resolve tick (`e.lashTick`). A stun, a
+  // blind or a room clear landing on that very tick ends the telegraph with no
+  // lash (sim/enemies.js resolveEnemies cancels before the lasher resolves),
+  // so the rig strikes only on the confirmation; a stand-in with no lashTick
+  // (the generic probes) strikes unless the sim holds it.
+  function confirmed(e) {
+    if (!e) return false;
+    if (e.lashTick !== undefined && e.lashTick !== null) return e.lashTick >= tel.resolve;
+    return !heldBy(e, tel.resolve);
+  }
+  function abort(now) {
+    revertStrike();
+    Object.assign(abortFrom, cur);
+    abortNow = now;
+    state = 'abort';
+  }
+
   // The live lash from the telegraph and the clock; writes cur.
   function liveLash(P, now, tick, e) {
     const beat = watch.update(P);
-    if (beat && beat.type === 'wind' && e && e.telegraph) {
+    const live = e && e.telegraph;
+    if (beat && beat.type === 'wind' && live) {
       // a new lash: the next of the three, from wherever the rig is now
       Object.assign(capture, cur);
       lashN = lashCount % 3;
       lashCount++;
-      const t = e.telegraph;
-      tel.start = t.startTick ?? tick;
-      tel.resolve = t.resolveTick ?? tick + TEL_TICKS;
-      const dl = Math.hypot(t.dirX ?? 0, t.dirZ ?? 0);
-      tel.dirX = dl > 1e-6 ? t.dirX / dl : Math.sin(yawNow);
-      tel.dirZ = dl > 1e-6 ? t.dirZ / dl : Math.cos(yawNow);
-      tel.length = t.length ?? LANE_LEN;
+      tel.start = live.startTick ?? tick;
+      tel.resolve = live.resolveTick ?? tick + TEL_TICKS;
+      const dl = Math.hypot(live.dirX ?? 0, live.dirZ ?? 0);
+      tel.dirX = dl > 1e-6 ? live.dirX / dl : Math.sin(yawNow);
+      tel.dirZ = dl > 1e-6 ? live.dirZ / dl : Math.cos(yawNow);
+      tel.length = live.length ?? LANE_LEN;
       hauled = false;
       struck = false;
       state = 'coil';
     } else if (beat && beat.type === 'cancel' && (state === 'coil' || state === 'strike')) {
       // stunned out of the coil: no strike, fall back to idle
-      revertStrike();
-      Object.assign(abortFrom, cur);
-      abortNow = now;
-      state = 'abort';
+      abort(now);
     }
     if (state === 'coil' || state === 'strike') {
-      // the strike starts STRIKE_TICKS before the resolve tick, so its
-      // contact lands on it (sampled past the release on the cached telegraph)
-      const span = Math.max(STRIKE_TICKS + 1, tel.resolve - tel.start);
-      const tau = Math.max(0, tick - tel.start) / 60;
-      if (tick >= tel.resolve) {
-        // contact: the follow-through runs on the clock from here (the part
-        // of a frame already past the resolve tick counts)
-        contactNow = now - Math.min(FRAME, (tick - tel.resolve) / 60);
-        state = 'follow';
-        if (!struck) setStrike(`lash:${lashN + 1}`, tel.resolve);
+      if (!live || live.startTick !== tel.start) {
+        // the telegraph is gone: the lash, on the sim's word, or nothing.
+        // Contact on the release frame (the part of a tick already past the
+        // resolve counts); the follow-through runs on the sim's clock.
+        if (confirmed(e)) {
+          if (!struck) setStrike(`lash:${lashN + 1}`, tel.resolve);
+          contactNow = now - Math.min(FRAME, Math.max(0, tick + 1 - tel.resolve) / 60);
+          state = 'follow';
+        } else abort(now);
       } else {
+        // sampled on the SHOWN tick: the entity is the state one tick past
+        // the interpolated tick the layer passes, so the whole 5-tick throw
+        // plays and its contact lands on the release frame (on resolveTick)
+        const span = Math.max(STRIKE_TICKS + 1, tel.resolve - tel.start);
+        const tau = Math.min(span, Math.max(0, tick + 1 - tel.start)) / 60;
         coilPhase(tau, span / 60, ph);
         if (ph.phase === 'strike' && !struck) {
-          // the contact's tick: now plus the seconds left to it
-          setStrike(`lash:${lashN + 1}`, tick + ((tel.resolve - tick) / 60) * 60);
+          // the contact's tick: the resolve tick (the throw lands on it)
+          setStrike(`lash:${lashN + 1}`, tel.resolve);
           state = 'strike';
         }
         lashPose(lashN, ph.phase, ph.k, tau, capture, REST, false, cur);
@@ -826,7 +904,9 @@ export function buildLasherFacet() {
     fr.yaw = yawNow;
     fr.s = s;
     // a lab scrub (no time passing) stands the roots on their homes
-    gait.update(dt, fr, { locked: !turntable && age >= SPAWN_SEC && !(dt <= 0 && lab.override), shift: rootShift });
+    gaitOpts.locked = !turntable && age >= SPAWN_SEC && !(dt <= 0 && lab.override);
+    braceSteps();
+    gait.update(dt, fr, gaitOpts);
     const bob = gait.bob;
     gait.localVelocity(fr, lv);
     const fwd = Math.max(-1, Math.min(1, lv.z / CREEP_SPEED));
@@ -858,19 +938,26 @@ export function buildLasherFacet() {
     teeth.instanceMatrix.needsUpdate = true;
 
     // --- roots: the hips ride the pod, the tips stand where the gait put
-    // them (a tip the pod rears out of reach of lifts straight up)
+    // them (a tip the pod rears out of reach of lifts straight up; one still
+    // past its reach is drawn in along the floor and steps at once)
     for (let i = 0; i < ROOT_N; i++) {
       hipW.copy(HIPS[i]).applyMatrix4(body.matrix);
       foot.copy(gait.out[i]);
       foot.y -= TIP_SINK;
       lifted[i] = liftToReach(hipW, foot, RL1, RL2);
-      // the knee arches up and out, away from the pod (a root's arch)
+      clamped[i] = clampReach(hipW, foot, RL1, RL2) > 1e-4;
+      if (clamped[i]) gait.release(i);
+      // the knee bends down and in, under the pod: each root drops out of
+      // the pod's underside and runs out along the floor to its tip (the
+      // classic's root fan, a low skirt, never an arched leg)
       bend.set(foot.x - hipW.x, 0, foot.z - hipW.z);
       const bl = bend.length();
       if (bl > 1e-5) bend.multiplyScalar(1 / bl);
       else bend.set(Math.sin(ROOT_A[i]), 0, Math.cos(ROOT_A[i]));
-      bend.y = 0.6;
+      bend.multiplyScalar(-0.35);
+      bend.y = -1;
       solveKnee(hipW, foot, RL1, RL2, bend, knee);
+      if (knee.y < KNEE_MIN) knee.y = KNEE_MIN;
       roots.setMatrixAt(i * 2, segmentMatrix(m, hipW, knee, ROOT_R[0], ROOT_R[0], 0.02));
       // the lower bone is laid from the floor up: it flares where it grips
       // the ground (the classic's flared root ends) and pinches at the arch
@@ -898,7 +985,7 @@ export function buildLasherFacet() {
     let pt = pitch0 + (aimPitch - pitch0) * cur.reach;
     const len = cur.vl + (aimLen - cur.vl) * cur.reach;
     const seg = len / VINE_N;
-    const thin = Math.max(0.55, Math.min(1.12, Math.pow(REST.vl / Math.max(0.05, len), 0.3)));
+    const thin = Math.max(0.55, Math.min(1.1, Math.pow(VINE_REF / Math.max(0.05, len), 0.3)));
     a0.copy(root);
     for (let i = 0; i < VINE_N; i++) {
       if (i > 0) {
