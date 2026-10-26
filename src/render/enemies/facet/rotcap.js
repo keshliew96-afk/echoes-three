@@ -19,8 +19,8 @@
 //     hugging the bulb, the indigo spots as raised warty domes (bright and
 //     dim in one unlit call), angry brow notches over the slit eyes;
 //   * WORLD-LOCKED FEET (render/facet/legs.js): a slow, rolling shamble
-//     (about 1.6 to 1.9 rocks a second at the sim's speeds, the classic's
-//     1.4) on two root feet tucked under the bulb (one instanced row: a root
+//     (1.5 rolls a second at the sim's 1.1 u/s, 1.8 at the retreat's 1.54;
+//     the classic's 1.43), lurching up once a roll on two root feet tucked under the bulb (one instanced row: a root
 //     leg out of the bulb, a flat nub and three root toes each), each pinned
 //     to the floor, heading and all, while it carries weight; the body rolls
 //     onto the planted foot and leans along its real travel (a backpedal
@@ -33,8 +33,8 @@
 //     the held rear-up (stalk tall, cap thrown back, gills bared) snapping
 //     into a cap SLAM that drives the front rim nearly to the floor with the
 //     deepest squash. Each strike's lead foot steps in, timed to plant by
-//     the contact, and back out as the snap settles into the next hit's
-//     wind-up (§6.1 B9: pull back, the lunge, the lean and the contact
+//     the contact, and holds in through the wind-up until the next hit's
+//     lead steps in or the chain ends (§6.1 B9: pull back, the lunge, the lean and the contact
 //     squash). A bite the per-target cooldown predicts starts its strike
 //     early so the contact lands ON the bite tick, but never while the sim
 //     holds it (a stun, a blind) or while it walks off (then a held wind-up
@@ -44,15 +44,19 @@
 //     'retreat': a startled shiver, then a hurried waddle with the cap tucked
 //     down), the death burst (the `death` tuning: a big swell, no throw, so
 //     the pop stays over the burst ring; the lab's 'burst' timeline plays it
-//     to the ring's 48-tick landing). The spores are the VFX slice's: this
-//     rig draws no motes and no puff;
+//     to the ring's 48-tick landing), the elite's rooted crouch (lower,
+//     wider, roots stepped out wide, cap pitched in), and the spores as idle
+//     life: a few pale olive motes drifting round the cap, rig-local (the
+//     VFX slice owns any burst or puff);
+//   * a toothed mouth: a charcoal gash under the slit eyes, pale jagged
+//     teeth along it;
 //   * the spawn-in grow (B7, a toadstool sprouting), named points (B8), and
 //     the hit and death tuning the shared envelope reads (§6.1 items 9, 10).
 //
 // Faces +Z. Same contract as buildRotcap (group, mats, setYaw, pose) plus lab,
 // react, death, points. Render only: the sim, its timing and damage untouched.
-import { BoxGeometry, BufferGeometry, Color, CylinderGeometry, Euler, Float32BufferAttribute, Group, IcosahedronGeometry, LatheGeometry, Matrix4, MeshBasicMaterial, Quaternion, Vector2, Vector3 } from 'three';
-import { PALETTE } from '../../../data/palette.js';
+import { BoxGeometry, BufferGeometry, Color, CylinderGeometry, Euler, Float32BufferAttribute, Group, IcosahedronGeometry, LatheGeometry, Matrix4, MeshBasicMaterial, OctahedronGeometry, Quaternion, Vector2, Vector3 } from 'three';
+import { PALETTE, VFX_MATTER } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { makeGlowSprite } from '../../glow.js';
 import { markShared } from '../../geocache.js';
@@ -240,9 +244,10 @@ function burstPose(t, out) {
 // R, height H, a point at
 // angle a from the crown (0) toward the rim (pi/2) and phi round from the
 // front (+z), as LatheGeometry lays it out.
-const CAP_R = 0.35;
-const CAP_H = 0.235;
-const CAP_Y = 0.4;
+const CAP_R = 0.34;
+const CAP_H = 0.225;
+const CAP_Y = 0.39;
+const CR = CAP_R / 0.35; // the rim lip and gills were laid out for a 0.35 cap
 function capPt(phi, a, lift, out, nrm) {
   const r = CAP_R * Math.sin(a);
   const y = CAP_H * Math.cos(a);
@@ -280,6 +285,7 @@ function stalkR(y) {
   return 0;
 }
 // The lowest rings of the body (y, r): the floor check keeps them clear.
+const MOUTH_Y = 0.175; // the toothed gash under the eyes
 const BASE_RINGS = [
   [0.018, 0.13],
   [0.034, 0.185],
@@ -408,6 +414,17 @@ function geos() {
       const up = new Vector3().copy(o).multiplyScalar(0.22 + 0.06 * hash01(i, 9, 4)).add(new Vector3(0, 1, 0));
       out.push({ geo: wedge, m: at(P, up, o, 0.1, 0.06 + 0.016 * hash01(i, 11, 5), 0.05), tone: 0.9 + 0.06 * (i % 2) });
     }
+    // the toothed mouth: pale jagged teeth along the gash, five down from its
+    // top lip, four up from its bottom lip, a bright step over the stalk
+    for (let i = 0; i < 9; i++) {
+      const top = i < 5;
+      const x = top ? (i - 2) * 0.026 : (i - 6.5) * 0.026;
+      const y = MOUTH_Y - Math.abs(x) * 0.12 + (top ? 0.012 : -0.012);
+      const z = Math.sqrt(Math.max(0, stalkR(y) ** 2 - x * x)) + 0.014;
+      P.set(x, y, z);
+      const o = new Vector3(x, 0, z).normalize();
+      out.push({ geo: wedge, m: at(P, new Vector3(0, top ? -1 : 1, 0), o, 0.03, top ? 0.022 : 0.018, 0.02), tone: 1.35 });
+    }
     return out;
   });
   // Cap: the lathed dome with a short rim lip turning under, its underside
@@ -418,16 +435,17 @@ function geos() {
     const a = (u * Math.PI) / 2;
     capProfile.push([CAP_R * Math.sin(a), CAP_H * Math.cos(a)]);
   }
-  capProfile.push([0.353, 0.004], [0.343, -0.009], [0.29, -0.013], [0.2, -0.005], [0.12, 0.02], [0, 0.04]);
+  capProfile.push([0.353 * CR, 0.004], [0.343 * CR, -0.009], [0.29 * CR, -0.013], [0.2 * CR, -0.005], [0.12, 0.02], [0, 0.04]);
   capProfile.reverse(); // a lathe faces outward when its profile climbs
   set.cap = tintFaces(
     lathe(capProfile, 14, {
-      jitter: 0.12,
+      // a calm mottle (the classic's cap is smooth): small value steps
+      jitter: 0.07,
       seed: 123,
       warp(v) {
         const r = Math.hypot(v.x, v.z);
-        if (r < 0.29 || v.y > 0.09) return;
-        const w = Math.min(1, (r - 0.29) / 0.05);
+        if (r < 0.29 * CR || v.y > 0.09) return;
+        const w = Math.min(1, (r - 0.29 * CR) / 0.05);
         const f = Math.cos(6 * Math.atan2(v.x, v.z));
         const k = 1 + 0.018 * w * f;
         v.x *= k;
@@ -518,7 +536,7 @@ function geos() {
       tip(X, Y, Z, -0.05);
       const w = 0.085 + 0.02 * hash01(i, 13, 6);
       setTRS(m, P, X, Y, Z, w, 0.016, w * 0.9);
-      out.push({ geo: scale, m: m.clone(), tone: placed % 2 ? 1.05 : 1.1 });
+      out.push({ geo: scale, m: m.clone(), tone: placed % 2 ? 1.03 : 1.06 });
       placed++;
     }
     let warts = 0;
@@ -528,7 +546,7 @@ function geos() {
       onDome(phi, a, -0.007, P, N);
       if (!clear(P, 0.065)) continue;
       const s = 0.026 + 0.012 * hash01(i, 15, 7);
-      out.push({ geo: wart, m: at(P, N, new Vector3(0, 0, 1), s, s * 0.32, s), tone: 1.15 });
+      out.push({ geo: wart, m: at(P, N, new Vector3(0, 0, 1), s, s * 0.32, s), tone: 1.08 });
       warts++;
     }
     const GILLS = 22;
@@ -537,7 +555,7 @@ function geos() {
       const long = i % 2 === 0;
       // each blade is deepest at the rim (where the camera sees it) and runs
       // in under the cap, tapering toward the stalk
-      const r0 = 0.31;
+      const r0 = 0.31 * CR;
       const y0 = -0.034;
       const r1 = long ? 0.13 : 0.21;
       const y1 = (long ? 0.006 : -0.014) - 0.002;
@@ -566,12 +584,21 @@ function geos() {
       const zb = Math.sqrt(Math.max(0, stalkR(0.28) ** 2 - 0.06 * 0.06)) + 0.006;
       out.push({ geo: brow, m: new Matrix4().compose(new Vector3(side * 0.06, 0.28, zb), new Quaternion().setFromEuler(new Euler(0, side * -0.3, side * 0.45)), new Vector3(1, 1, 1)) });
     }
+    // the mouth: a wide, flat charcoal gash under the eyes, bent round the
+    // stalk in three pieces (its teeth are the stalk detail's)
+    const gash = fz(new BoxGeometry(0.05, 0.026, 0.02), 0, 1);
+    for (const x of [-0.045, 0, 0.045]) {
+      const z = Math.sqrt(Math.max(0, stalkR(MOUTH_Y) ** 2 - x * x)) + 0.002;
+      out.push({ geo: gash, m: new Matrix4().compose(new Vector3(x, MOUTH_Y - Math.abs(x) * 0.12, z), new Quaternion().setFromEuler(new Euler(0, Math.atan2(x, z), -Math.sign(x) * 0.12)), new Vector3(1, 1, 1)) });
+    }
     return out;
   });
   // A root piece: a faceted four-sided tapered unit segment (y 0..1, radius 1
   // at its base, 0.75 at its end). The feet are built of it every frame: a
   // root leg out of the bulb, a flat nub on the floor, three root toes.
   set.root = fz(new CylinderGeometry(0.75, 1, 1, 4).translate(0, 0.5, 0), 0.12, 127);
+  // A spore mote (unlit, tiny, rig-local: no VFX system).
+  set.mote = new OctahedronGeometry(1, 0);
   for (const g of Object.values(set)) markShared(g);
   SET = set;
   return set;
@@ -582,11 +609,11 @@ function geos() {
 const HOMES = [new Vector3(-0.08, 0, 0.04), new Vector3(0.08, 0, 0.04)];
 const HIPS = [new Vector3(-0.06, 0.075, 0.02), new Vector3(0.06, 0.075, 0.02)];
 const ROOT_PARTS = 5; // per foot: the leg, the nub, three toes
-const ROOT_L = 0.17; // a root leg reaches 2 x this (clampReach's two halves)
+const ROOT_L = 0.19; // a root leg reaches 2 x this (clampReach's two halves)
 const LIFT = 0.04;
 // The shamble. Walking, a waddle phase drives the steps (gait.release): one
-// step a side per roll, the roll at waddleHz (1.65 Hz at the sim's 1.1 u/s,
-// 1.9 at the retreat's 1.54; the classic sways at 1.43), each foot SWING of
+// step a side per roll, the roll at waddleHz (1.5 Hz at the sim's 1.1 u/s,
+// 1.8 at the retreat's 1.54; the classic sways at 1.43), each foot SWING of
 // the cycle in the air, landing `lead` swing-lengths ahead along the travel
 // (0.7: a planted foot rolls from as far ahead of its home to as far
 // behind). Standing, a foot REST_STEP off its home (a turn, the lunge's step
@@ -600,12 +627,20 @@ const WALK_ON = 0.2; // u/s
 const WALK_OFF = 0.12;
 const CATCH_UP = 0.27; // a planted foot this far off its home while walking steps at once
 const ROCK = 0.075; // rad: the roll onto the planted foot at the sim's walk
-const BOB = 0.022; // u
-const waddleHz = (v) => Math.min(2.8, 1 + (0.65 * v) / RUN_SPEED);
+const BOB = 0.008; // u: the small lift of each step
+const LURCH = 0.02; // u: the once-a-roll lurch (up as it rolls onto its left root, down onto its right)
+const waddleHz = (v) => Math.min(2.8, 1 + (0.5 * v) / RUN_SPEED);
+// The elite's rooted crouch: lower and wider, roots splayed, cap pitched in.
+const CROUCH = Object.freeze({ sy: 0.08, sx: 0.06, cp: 0.1, spread: 0.035 });
+// The spore motes: a few pale olive specks drifting round the cap (rig-local
+// idle life, the classic's spore glow given grain; the VFX slice owns any
+// burst or puff).
+const MOTES = 6;
 // The lunge step: from its arming (the fresh strike, or a predicted one's
-// pull-back) to its settle, the lead foot stands 0.16 u in (a touch out to
-// its side), the other 0.03 (the push-off).
-const LUNGE_HOLD = 9.5 * FRAME;
+// pull-back) the lead foot stands 0.16 u in (a touch out to its side), the
+// other 0.03 (the push-off, planted to the settle).
+const SETTLE = 9.5 * FRAME; // a contact to its settle
+const LAB_LET_GO = 0.35; // the lab combo's last recover: the lead foot steps back
 const PIVOT = new Vector3(0, 0.12, 0);
 const YAXIS = new Vector3(0, 1, 0);
 const wrapAngle = (a) => a - 2 * Math.PI * Math.round(a / (2 * Math.PI));
@@ -646,12 +681,20 @@ export function buildRotcapFacet() {
   spawn.add(feet);
   // The contact shadow belongs to the floor (the group, not the yaw).
   F.group.add(groundShadow(0.42, 0.8));
+  // Spore motes: drifting in yaw space round the cap (a lunge moves through
+  // them, the grow-in and the burst scale them with the rig).
+  const moteMat = new MeshBasicMaterial({ color: exactColor(VFX_MATTER.spore).multiplyScalar(0.9), toneMapped: false });
+  const motes = instancedPart(G.mote, moteMat, MOTES, { name: 'rotcap-motes', moving: true, ink: false });
+  spawn.add(motes);
+  const mp = new Vector3();
+  const ONE_Q = new Quaternion();
+  const MS = new Vector3();
 
   // Named points (B8): the cap's front rim (the weapon), the stalk face under
   // the brim (the mouth), the crown, the gills, the burst's centre.
-  const tipPt = namedPoint(cap, 'rotcap-tip', 0, 0.0, 0.36);
-  const mouth = namedPoint(body, 'rotcap-mouth', 0, 0.21, 0.16);
-  const crown = namedPoint(cap, 'rotcap-crown', 0, 0.25, 0);
+  const tipPt = namedPoint(cap, 'rotcap-tip', 0, 0.0, CAP_R + 0.01);
+  const mouth = namedPoint(body, 'rotcap-mouth', 0, MOUTH_Y, 0.17);
+  const crown = namedPoint(cap, 'rotcap-crown', 0, CAP_H, 0);
   const gillsPt = namedPoint(cap, 'rotcap-gills', 0, -0.03, 0);
   const burstPt = namedPoint(cap, 'rotcap-burst', 0, 0.12, 0);
 
@@ -689,6 +732,11 @@ export function buildRotcapFacet() {
   const sentLast = [false, false];
   let age = -1;
   let lastBiteAt = -99;
+  let lastBiteTick = null; // the sim's e.biteTick last acted on
+  let pulseAt = -99; // a strike the lunge pulse started before its biteTick showed
+  let crouchK = 0;
+  let crouchTo = 0; // the crouch the elite flag asks for
+  const footCrouch = [0, 0]; // the crouch each foot last stepped to
   let seenContact = null;
   let walking = false;
   let wph = 0; // the waddle's phase (0..1): foot 0 lifts at 0, foot 1 at 0.5
@@ -712,12 +760,14 @@ export function buildRotcapFacet() {
     get hit() {
       return chain.current;
     },
-    parts: { body, cap, feet },
+    parts: { body, cap, feet, motes },
   };
 
   // The lunge step (the planner's home shift): the armed strike's lead foot
   // 0.16 u in, the other 0.03.
   function stepShift(i, o) {
+    // the elite's crouch splays its roots
+    o.x += (i === 0 ? -1 : 1) * CROUCH.spread * crouchK;
     if (!armLead) return o;
     const side = i === 0 ? -1 : 1;
     const w = armLead === side ? 1 : 0;
@@ -726,28 +776,36 @@ export function buildRotcapFacet() {
     return o;
   }
   // Time hit n's lead foot to plant by its contact (whatever the shamble has
-  // in the air), and stand it in until the strike settles.
+  // in the air). It then holds in through the wind-up, until the next hit's
+  // lead steps in or the chain ends (a hit led by the foot already in steps
+  // nothing: it lunges over it).
   function armLunge(contactAt, now, n) {
     if (armedFor !== null && Math.abs(armedFor - contactAt) < FRAME) return;
     armedFor = contactAt;
-    armLead = HITS[n].strike.lead;
-    standUntil = contactAt + LUNGE_HOLD;
-    step(armLead > 0 ? 1 : 0, Math.max(2.5 * FRAME, Math.min(0.16, contactAt - now - FRAME)));
+    const lead = HITS[n].strike.lead;
+    const same = lead === armLead && now < standUntil;
+    armLead = lead;
+    standUntil = Infinity;
+    if (!same) step(armLead > 0 ? 1 : 0, Math.max(2.5 * FRAME, Math.min(0.16, contactAt - now - FRAME)));
   }
   function step(i, dur) {
+    footCrouch[i] = crouchTo;
     sent[i] = true;
     gait.release(i, dur);
   }
   // The lab's combo arms the same steps, pure in its t (a still frame stands
   // the feet on the shifted homes; a playing one steps them).
   function labLunge(t, now, dt) {
-    armLead = 0;
-    for (let k = 0; k < 3; k++) {
-      const c = CONTACTS[k];
-      if (t < (k === 0 ? 0 : c - PULL_IN) || t >= c + LUNGE_HOLD) continue;
-      if (dt > 0) armLunge(now + c - t, now, k);
-      armLead = HITS[k].strike.lead;
+    let k = -1;
+    for (let j = 0; j < 3; j++) if (t >= (j === 0 ? 0 : CONTACTS[j] - PULL_IN)) k = j;
+    if (k < 0 || t >= ROTCAP_CHOMP.duration - LAB_LET_GO) {
+      armLead = 0;
+      standUntil = -99;
+      return;
     }
+    if (dt > 0) armLunge(now + CONTACTS[k] - t, now, k);
+    armLead = HITS[k].strike.lead;
+    standUntil = Infinity;
   }
   // The shamble's steps (before the planner's update): walking, the waddle
   // phase releases each foot in turn; standing, a foot off its home steps.
@@ -796,7 +854,15 @@ export function buildRotcapFacet() {
         wph = 0.5 * far;
       }
       wph -= Math.floor(wph);
-    } else if (!flying && !sent[0] && !sent[1] && err[far] > REST_STEP) step(far, REST_DUR);
+    } else if (!flying && !sent[0] && !sent[1] && !(armedFor !== null && clock.now < armedFor + SETTLE)) {
+      // off its home, or the elite settling into (or out of) its crouch:
+      // the roots step out wide, one at a time
+      const wide = footCrouch[0] !== crouchTo ? 0 : footCrouch[1] !== crouchTo ? 1 : -1;
+      if (err[far] > REST_STEP) step(far, REST_DUR);
+      else if (wide >= 0 && (crouchTo > 0.5 ? crouchK > 0.85 : crouchK < 0.15)) step(wide, REST_DUR);
+    }
+    // (from a strike's arming to its settle the other foot stays planted:
+    // the push-off; the old lead steps back after)
   }
 
   function pose(P) {
@@ -833,10 +899,26 @@ export function buildRotcapFacet() {
       active = true;
       labLunge(ov.t, now, dt);
     } else {
+      // a bite: the layer's lunge pulse (its rising edge) or a new e.biteTick,
+      // whichever comes first, the other confirming it. Two bites (two
+      // targets) inside one 0.18 s pulse merge into one rising edge; the
+      // second's new biteTick still strikes, as the classic's clip replays.
       const beat = watch.update(P);
-      if (beat && beat.type === 'bite') {
+      const bt = e && Number.isFinite(e.biteTick) && e.biteTick >= 0 ? e.biteTick : null;
+      // (a biteTick from long before this rig saw the foe is history)
+      const fresh = bt !== null && bt !== lastBiteTick && tick - bt <= 15;
+      if (bt !== null && bt !== lastBiteTick && !fresh) lastBiteTick = bt;
+      if (fresh) {
+        lastBiteTick = bt;
+        if (now - pulseAt < 0.15) pulseAt = -99; // it confirms the pulse's strike
+        else {
+          chain.hit(now);
+          lastBiteAt = now;
+        }
+      } else if (beat && beat.type === 'bite' && now - lastBiteAt >= 0.15) {
         chain.hit(now);
         lastBiteAt = now;
+        pulseAt = now;
       }
       // the next bite is due when this target's cooldown lapses (the sim's
       // per-target clock), while the Rotcap stays pressed against it: not
@@ -862,7 +944,10 @@ export function buildRotcapFacet() {
       if (active && c !== null && c > now) armLunge(c, now, chain.current);
       else if (active && due !== null && due <= PULL_IN) armLunge(now + due, now, (chain.current + 1) % 3);
       if (!active) armedFor = null;
-      if (!active || now >= standUntil) armLead = 0;
+      if (!active) {
+        armLead = 0;
+        standUntil = -99;
+      }
       // a new strike (on the bite, or started early on the predicted bite):
       // the tick its contact lands, for the probe (a recover moves the
       // chain's clock back: its contactAt is then in the past, no strike)
@@ -897,7 +982,10 @@ export function buildRotcapFacet() {
     lastOv = ovKey;
     const locked = !turntable && age >= SPAWN_SEC && !burstHidden && !(dt <= 0 && ov) && !cut;
     if (locked && dt > 0) shamble(dt);
-    if (!locked) walking = false;
+    if (!locked) {
+      walking = false;
+      footCrouch[0] = footCrouch[1] = crouchTo; // the feet stand on their homes
+    }
     gait.update(dt, fr, { locked, shift: stepShift });
     gait.localVelocity(fr, lv);
     const v = gait.speed / fr.s;
@@ -913,7 +1001,14 @@ export function buildRotcapFacet() {
     const restK = Math.max(0, 1 - rockAmp / (0.5 * ROCK));
     const rock = rockAmp * Math.sin(2 * Math.PI * (wph + 0.25 - SWING / 2)) + restK * 0.05 * (hR - hL);
     const bob = gait.bob;
-    const bobU = BOB * bob * (0.35 + 0.65 * Math.min(1.2, rockAmp / ROCK));
+    // the bob: a small lift on each step, and the shamble's lurch once a
+    // roll (up as it rolls onto its left root, down onto its right)
+    const rollK = Math.min(1.25, rockAmp / ROCK);
+    const bobU = BOB * bob + LURCH * rollK * (0.5 + 0.5 * Math.sin(2 * Math.PI * (wph + 0.25 - SWING / 2)));
+    // the elite's rooted crouch
+    const elite = !!(e && e.elite);
+    crouchTo = elite ? 1 : 0;
+    crouchK = dt > 0 && age > 0 ? crouchK + ((elite ? 1 : 0) - crouchK) * (1 - Math.exp(-6 * dt)) : elite ? 1 : 0;
 
     // --- the body: the attack's pose, the shamble's roll and bob, the lean
     // along the travel (a walk leans in, a backpedal leans back), a breath
@@ -921,7 +1016,7 @@ export function buildRotcapFacet() {
     const idle = active ? 0 : 1;
     const bank = cur.bank + rock + 0.06 * side + idle * 0.02 * Math.sin(tt * 1.3);
     body.rotation.set(cur.pitch + 0.08 * fwd + 0.1 * retreatK, cur.twist, -bank);
-    body.scale.set(cur.sx, cur.sy * (1 + 0.01 * breath), 1 + (cur.sx - 1) * 0.3);
+    body.scale.set(cur.sx * (1 + CROUCH.sx * crouchK), cur.sy * (1 + 0.01 * breath) * (1 - CROUCH.sy * crouchK), (1 + (cur.sx - 1) * 0.3) * (1 + CROUCH.sx * crouchK));
     placeBody(body, PIVOT, cur.push, cur.hop + bobU);
     // the bulb never sinks into the floor: a lean that would dip its rim
     // rocks the body up on that edge instead
@@ -937,9 +1032,23 @@ export function buildRotcapFacet() {
 
     // the cap: the attack's nod, tilt and spin, the retreat's tuck, a lag on
     // the steps, the classic's breath (+-5% at 2.6 rad/s) on top of the swell
-    cap.rotation.set(cur.cp + 0.24 * retreatK + idle * 0.03 * Math.sin(tt * 1.7) - 0.03 * bob, cur.cy, -(cur.ctilt + 0.06 * startle - 0.4 * rock));
+    cap.rotation.set(cur.cp + CROUCH.cp * crouchK + 0.24 * retreatK + idle * 0.03 * Math.sin(tt * 1.7) - 0.03 * bob, cur.cy, -(cur.ctilt + 0.06 * startle - 0.4 * rock));
     cap.scale.setScalar(cur.cs * (1 + 0.05 * breath));
     tellGlow.material.opacity = 0.14 + 0.06 * breath;
+
+    // --- the spore motes: drifting round the cap, rising and sinking slowly
+    // (pure in t: the lab rewinds them)
+    for (let i = 0; i < MOTES; i++) {
+      const h1 = hash01(i, 3, 41);
+      const h2 = hash01(i, 5, 43);
+      const h3 = hash01(i, 7, 47);
+      const ang = h3 * Math.PI * 2 + tt * (0.22 + 0.14 * h2) * (i % 2 ? 1 : -1);
+      const r = 0.24 + 0.14 * h1;
+      mp.set(r * Math.sin(ang), CAP_Y * (1 - CROUCH.sy * crouchK) + 0.1 + 0.16 * h2 + 0.035 * Math.sin(tt * (0.7 + 0.5 * h1) + i * 1.3), r * Math.cos(ang) + 0.5 * cur.push);
+      MS.setScalar((0.011 + 0.006 * h2) * (0.8 + 0.2 * Math.sin(tt * 2.1 + i * 1.7)));
+      motes.setMatrixAt(i, m.compose(mp, ONE_Q, MS));
+    }
+    motes.instanceMatrix.needsUpdate = true;
 
     // --- feet: each nub where the gait put it, toes turned out, the toe
     // tipping up while it swings; its root leg reaches out of the bulb to it.
