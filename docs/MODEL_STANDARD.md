@@ -196,7 +196,7 @@ planted again at rest.
   hackles stay up, the eyes and the mane burn, the breathing quickens. A back-to-back
   pounce of the Hunt starts its crouch from the landing, not from rest.
 
-## The Level I foes (`src/render/enemies/facet/`, v0.5.337)
+## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
 Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
 thornling, its campaign roster's owl and lasher) plays the standard. Same rules as the pilot:

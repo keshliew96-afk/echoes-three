@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// MODEL STANDARD, THE LEVEL I FOES probe (v0.5.337) — headless Node, builds
+// MODEL STANDARD, THE LEVEL I FOES probe (v0.5.338) — headless Node, builds
 // the rigs; no browser. Every creature Level I rolls is rebuilt on the model
 // standard (docs/MODEL_STANDARD.md "Foes", render/enemies/facet/). Visual
 // only. This probe checks:
