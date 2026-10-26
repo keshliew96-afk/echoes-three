@@ -105,12 +105,12 @@ const mirror = (p) => K({ ...p, roll: -p.roll, twist: -p.twist, hook: -p.hook })
 // tell, held high where every facing sees it), the wings spread and beating
 // hard; it whips the abdomen under and across to its left as it drops into
 // the dive (the stab).
-const C1 = K({ lift: 0.02, push: -0.06, pitch: 0.4, roll: 0.14, twist: -0.14, sx: 0.97, sy: 1.04, sz: 0.93, curl: 0.15, hook: -0.5, sting: -0.28, wUp: -0.08, wAmp: 1.35, wSweep: -0.3, buzz: 1, hold: 1 });
+const C1 = K({ lift: 0.02, push: -0.06, pitch: 0.4, roll: 0.14, twist: -0.14, sx: 0.97, sy: 1.04, sz: 0.93, curl: 0.15, hook: -0.5, sting: -0.5, wUp: -0.08, wAmp: 1.35, wSweep: -0.3, buzz: 1, hold: 1 });
 const S1 = K({ lift: -0.2, push: 0.1, pitch: 0.42, roll: -0.2, twist: 0.12, sx: 0.9, sy: 0.92, sz: 1.16, curl: 1.9, hook: 0.22, sting: 0.3, wUp: -0.12, wAmp: 0.5, wSweep: 0.85, hold: 1 });
 const O1 = K({ lift: 0.03, push: 0.03, pitch: -0.3, roll: 0.1, twist: -0.06, sx: 1.04, sy: 1.05, sz: 0.95, curl: -0.15, hook: -0.12, sting: -0.05, wUp: -0.2, wAmp: 1.15, wSweep: -0.08, hold: 0.5 });
 // Dart 3, PLUNGE (the biggest, §6.1 B6): coiled highest and square, it drops
 // hardest, stretched longest, and pulls up with the biggest flare.
-const C3 = K({ lift: 0.04, push: -0.08, pitch: 0.4, sx: 0.96, sy: 1.06, sz: 0.9, curl: 0.2, sting: -0.28, wUp: -0.12, wAmp: 1.45, wSweep: -0.36, buzz: 1, hold: 1 });
+const C3 = K({ lift: 0.04, push: -0.08, pitch: 0.4, sx: 0.96, sy: 1.06, sz: 0.9, curl: 0.2, sting: -0.5, wUp: -0.12, wAmp: 1.45, wSweep: -0.36, buzz: 1, hold: 1 });
 const S3 = K({ lift: -0.3, push: 0.12, pitch: 0.55, sx: 0.88, sy: 0.9, sz: 1.22, curl: 2.2, sting: 0.35, wUp: -0.15, wAmp: 0.4, wSweep: 1.0, hold: 1 });
 const O3 = K({ lift: 0.05, push: 0.04, pitch: -0.4, sx: 1.06, sy: 1.06, sz: 0.94, curl: -0.2, sting: -0.06, wUp: -0.24, wAmp: 1.2, wSweep: -0.12, hold: 0.5 });
 // Dart 2 is dart 1 mirrored: HOOK FROM ITS LEFT.
@@ -377,9 +377,9 @@ function geos() {
     const bar = fz(new BoxGeometry(0.056, 0.022, 0.022), 0, 1);
     return [-1, 1].map((s) => ({ geo: bar, m: new Matrix4().compose(onHead(new Vector3(), s * 0.045, 0.024, 0.174, 0.97), new Quaternion().setFromEuler(new Euler(0, s * -0.3, s * 0.5)), new Vector3(1, 1, 1)) }));
   });
-  // One abdomen plate: a faceted ovoid, pale with a slate rear band (its
-  // stripe). Unit radius; each instance scales it to its segment.
-  set.plate = toneFaces(fz(new SphereGeometry(1, 7, 6), 0.12, 211), (x, y, z) => (z < -0.28 ? SLATE : PALE));
+  // One abdomen plate: a faceted ovoid, pale with a slate ring round its middle (its
+  // stripe, on the plate's top in every facing). Unit radius; each instance scales it to its segment.
+  set.plate = toneFaces(fz(new SphereGeometry(1, 7, 6), 0.12, 211), (x, y, z) => (z > -0.35 && z < 0.1 ? SLATE : PALE));
   // The stinger: a curved faceted horn, the base third dim indigo, the point
   // bright (the unlit tell, one draw call as on the classic).
   const tellB = new Color(TELL_INDIGO);
@@ -412,6 +412,7 @@ const REST_A0 = 0.0;
 const REST_BEND = 0.02;
 const CURL_W = [0.3, 0.25, 0.25, 0.2];
 const STING_LEN = 0.15;
+const STING_COIL = 0.5; // the stinger grows by this share in the coil (buzz 1) only
 // Wing roots (the right side; the left mirrors), their spans and chords.
 const WINGS = [
   { s: -1, fore: true },
@@ -723,7 +724,8 @@ export function buildWaspFacet() {
     U.set(0, -Math.cos(sp), Math.sin(sp)).applyQuaternion(q); // its belly: the horn bends this way
     C.copy(J).addScaledVector(D, -0.012).add(GASTER_ROOT);
     X.crossVectors(D, U);
-    setTRS(sting.matrix, C, X, D, U, STING_LEN, STING_LEN, STING_LEN);
+    const sl = STING_LEN * (1 + STING_COIL * cur.buzz); // the coil draws the tell out
+    setTRS(sting.matrix, C, X, D, U, sl, sl, sl);
     sting.matrixWorldNeedsUpdate = true;
 
     // --- the wings: the classic's 60 rad/s flap with a figure-eight sweep,
