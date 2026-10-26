@@ -107,7 +107,7 @@ re-measures it).
 | B5 settle | Into idle with one small overshoot, never a plain blend. | `settle(k)`: dips ~8 % past rest once. |
 | B7 spawn-in | The body grows from the floor in ~7 frames, ~10 % over. | `createSpawnClock`: restarts when a pooled rig is posed for a new boss; the Journal's turntable skips it. |
 | B8 points | Named Object3Ds for effects. | `rig.points`: `mouth`, `chest`, `tip`, each foot (`hoofFL`...`pawHR`); the Wyrm's `mouth`, `throat`, `crown`. |
-| B9 lunge | Pull back, lunge past rest, lean in, squash on contact, at full size. | `lunge(phase, k)`: the Gloam Wolf's Rend (lean ~22° at contact, +19 % wide, −9 % tall). Every contact squash of the three bosses uses the same full-size numbers. |
+| B9 lunge | Pull back, lunge past rest, lean in, squash on contact. | `lunge(phase, k)`: the Gloam Wolf's Rend (lean ~22° at contact, the rule's full size). The contact squash of the three bosses is kept to a boss's size, +11 % wide and −5 % tall (Kesh's pick over the rule's +19 % / −9 %). |
 
 The hit reaction (squash, flinch, white flash) is the shared hit envelope's, never the
 rig's. `rig.react` is an optional per-body tuning on top of the envelope's own boss amounts
@@ -131,7 +131,7 @@ children, and never writes the root group's own transform.
 | B5 settle | plain blends | `settle`: one overshoot after the pour and after the exposed sprawl |
 | B7 spawn-in | none | the coil grows from the floor (the lab's Spawn in tab) |
 | B8 points | none | `mouth`, `throat`, `crown` on the head |
-| Hit envelope | no tuning | `react`: a height-only squash with no flinch, so the planted tail never slides (asked by the hit feedback slice; item 9 as written is half the squash and flinch, offered as an open choice) |
+| Hit envelope | no tuning | `react`: item 9 as written (Kesh's pick): the envelope's boss amounts, half the squash and half the flinch, no knockback, the squash on the height axis so the planted tail never slides |
 | Floor pieces | coil shadows inside the yaw node | the five coil shadows are root children, turned and grown into the root's space each frame |
 | Pooled rig | spawned in only on a jump in time or place | spawns in for a new entity id or a rewound clock; a jump in place only lays the coil afresh |
 | Contact timing | the strike started at the resolve | the draw ends one strike early, so the strike lands on the breath's tick; an emerge that comes mid-dive lets the dive finish |

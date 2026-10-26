@@ -449,8 +449,9 @@ export function buildThornmotherFacet() {
     const bobY = 0.03 * gait.bob * Math.min(1, sp);
     pivot.position.set(0, HIP_Y + 0.01 * Math.sin(idle * 2) + bobY + bounce - 0.12 * C.dip - 0.06 * C.load, PIVOT_Z + C.reach - 0.1 * C.shove);
     pivot.rotation.set(C.pitch + leanF, 0, 0);
-    // B9's contact squash at full size: +19% wide, -9% tall
-    squashG.scale.set(1 + 0.19 * C.squash, 1 - 0.09 * C.squash, 1 + 0.04 * C.squash);
+    // the contact squash kept to a boss's size (Kesh's pick over B9's full
+    // +19% / -9%): +11% wide, -5% tall
+    squashG.scale.set(1 + 0.11 * C.squash, 1 - 0.05 * C.squash, 1 + 0.04 * C.squash);
     head.rotation.set(C.head + 0.04 * Math.sin(idle * 1.7), 0, 0);
     hump.position.y = 1.5 + 0.12 * C.hump;
     hump.rotation.x = -0.2 * C.hump;

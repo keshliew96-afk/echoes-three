@@ -30,7 +30,7 @@
 //      wind-up never plays the strike;
 //   7. the Barrow Wyrm's re-measure: its strike and held contact, the settle
 //      overshoot, the spawn-in, its points, its floor pieces outside the
-//      envelope's node, and a height-only hit squash;
+//      envelope's node, and item 9's hit tuning (half squash and flinch, height axis);
 //   8. a pooled rig posed for a new boss spawns in again (the Wyrm too); a
 //      jump in place (a hitch mid-charge) does not;
 //   9. the lab: an entry per boss, each ability plays without a throw.
@@ -544,7 +544,7 @@ const watch = (r) => {
   const r = wyrmM.buildWyrmFacet();
   const pts = ['mouth', 'throat', 'crown'].filter((n) => !(r.points && r.points[n] && r.points[n].isObject3D));
   check('Barrow Wyrm: named points for the mouth, the throat and the crown (B8)', pts.length === 0, pts);
-  check('Barrow Wyrm: a height-only hit squash (the planted tail never slides)', r.react && (r.react.axis ?? 'y') === 'y' && r.react.flinch === 0 && r.react.knock === 0, r.react);
+  check("Barrow Wyrm: item 9's hit tuning, the envelope's half squash and flinch on the height axis", r.react && (r.react.axis ?? 'y') === 'y' && r.react.squash === 1 && r.react.flinch === 1 && r.react.knock === 0, r.react);
   const world = new Group();
   world.add(r.group);
   const e = { id: 3, telegraph: null };

@@ -26,8 +26,9 @@
 //
 // Same interface as render/boss/wyrm.js (group, mats, setYaw, setFlash,
 // pose), plus `lab`, `points` and `react` (the shared hit envelope squashes
-// its height only: the coil plants its tail through the root's position and
-// yaw, so any sideways scale would slide it). Faces +Z. Render only.
+// it with the boss amounts on the height axis: the coil plants its tail
+// through the root's position and yaw, so a sideways scale would slide it).
+// Faces +Z. Render only.
 import { Color, Group, IcosahedronGeometry, CylinderGeometry, Matrix4, Mesh, MeshBasicMaterial, SphereGeometry, Vector3 } from 'three';
 import { addInk, groundShadow, INK_PX, mix } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
@@ -463,10 +464,10 @@ export function buildWyrmFacet() {
     throat: [head, 0, -0.12, 0.3],
     crown: [head, 0, 0.32, -0.3],
   });
-  // the shared hit envelope (§6.1 item 9): a height-only squash, no flinch
-  // and no knockback, so the planted tail never slides under a hit (asked by
-  // the hit envelope's slice; item 9 as written is half squash and flinch)
-  const react = { squash: 1, flinch: 0, knock: 0, axis: 'y', midY: 0.45 };
+  // the shared hit envelope (§6.1 item 9 as written, Kesh's pick): the
+  // envelope's boss amounts, half the squash and half the flinch, no
+  // knockback; the squash stays on the height axis
+  const react = { squash: 1, flinch: 1, knock: 0, axis: 'y', midY: 0.45 };
   const spawn = createSpawnClock();
 
   // --- Ground: contact shadows under the coil, the burrow mound and rubble.

@@ -176,8 +176,8 @@ export function abilityChannels(id, s, C = restChannels({}), from = ZERO) {
     else if (s.id === 'hold') mix(C, RAKED, RAKED, 0);
     else mix(C, ZERO, RAKED, settle(k, 0.06));
     C.reach = L.reach * 0.6; // body widths to u
-    // B9 at full size: the lean (about 22 degrees at contact) and the squash
-    // (+19% wide, -9% tall, the lunge's own numbers)
+    // B9: the lean at full size (about 22 degrees at contact); the squash
+    // follows the lunge's curve at the bosses' size (apply())
     C.pitch += L.lean * 0.7;
     C.squash = (L.sx - 1) / 0.19;
     if (s.id === 'hold') C.shove = recoil(k * HOLD_SEC); // B3
@@ -572,8 +572,9 @@ export function buildGloamWolfFacet() {
     const bobY = 0.04 * gait.bob * Math.min(1, sp);
     pivot.position.set(0, HIP_Y + breathe + bobY - 0.34 * C.crouch - 0.5 * C.sit + LEAP_H * C.air, PIVOT_Z + C.reach - 0.1 * C.shove);
     pivot.rotation.set(C.pitch + leanF, 0, 0);
-    // B9's contact squash at full size: +19% wide, -9% tall
-    squashG.scale.set(1 + 0.19 * C.squash, 1 - 0.09 * C.squash, 1 + 0.04 * C.squash);
+    // the contact squash kept to a boss's size (Kesh's pick over B9's full
+    // +19% / -9%): +11% wide, -5% tall
+    squashG.scale.set(1 + 0.11 * C.squash, 1 - 0.05 * C.squash, 1 + 0.04 * C.squash);
     neck.rotation.x = C.neck + 0.04 * Math.sin(idle * 1.9);
     head.rotation.x = C.head;
     jaw.rotation.x = 0.55 * C.jaw + 0.05 * Math.sin(idle * 2.3);

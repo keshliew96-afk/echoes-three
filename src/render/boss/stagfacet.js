@@ -701,8 +701,9 @@ export function buildStagFacet() {
     const breathe = 0.012 * Math.sin(idle * 1.6);
     pivot.position.set(0, HIP_Y + breathe + bobY - 0.12 * C.dip - 0.1 * C.load, PIVOT_Z + C.reach - 0.1 * C.shove);
     pivot.rotation.set(-0.62 * C.rear + C.pitch + leanF, 0, leanS);
-    // B9's contact squash at full size: +19% wide, -9% tall
-    squashG.scale.set(1 + 0.19 * C.squash, 1 - 0.09 * C.squash, 1 + 0.04 * C.squash);
+    // the contact squash kept to a boss's size (Kesh's pick over B9's full
+    // +19% / -9%): +11% wide, -5% tall
+    squashG.scale.set(1 + 0.11 * C.squash, 1 - 0.05 * C.squash, 1 + 0.04 * C.squash);
     head.rotation.set(C.head - 0.05 * Math.sin(idle * 0.9) * (1 - C.fever) + 0.04 * C.stride * Math.sin(idle * 18), 0.05 * Math.sin(idle * 0.55), 0);
     antlers.rotation.x = C.rack;
     runes.rotation.z = idle * 0.6;
