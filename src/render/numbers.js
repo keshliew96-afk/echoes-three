@@ -46,6 +46,7 @@ export const NUMERAL_FEEL = Object.freeze({
   tagPop: 0.35, // the tag's own overshoot
   tiltDeg: 7, // an own crit spawns tilted toward its side, then settles
   holdCap: HITSTOP.budgetTicks / TICK_HZ, // the most a hitstop can hold one
+  rangedHold: 3 / TICK_HZ, // n (§6.2): a shot or spell hit holds its pop 3 frames (render only)
 });
 
 // The arc at t = 0..1 of the life: the sideways drift (u) and the rise (0..1
@@ -336,7 +337,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
   // tick: the hit's sim tick (a hitstop on it holds the numeral's pop);
   // absorbed: a shield took part, so the arc leaves the shield's "(n)" side.
   const sideOf = { own: 1, other: 1 }; // slot-0 alternation per look
-  function spawn({ x, z, amount, kind = 'damage', crit = false, who = null, tick = null, absorbed = 0 }) {
+  function spawn({ x, z, amount, kind = 'damage', crit = false, who = null, tick = null, absorbed = 0, ranged = false }) {
     if (active.length >= DAMAGE_NUMBERS.cap) {
       // Oldest fades early (§1). ATTACK FEEDBACK: someone else's numeral goes
       // first, so a crowd of ally hits never pushes the viewer's own off.
@@ -419,6 +420,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
       side: side || 1,
       tick,
       hold: 0,
+      rhold: ranged && w ? NUMERAL_FEEL.rangedHold : 0, // n: paid from its second frame, the world runs on
       popAge: -delay, // the pop's own clock: held through the hitstop (N1)
       steps: w && w.flash ? OWN_STEPS : null,
       step: -1,
@@ -457,6 +459,11 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
         const pay = rec.age > 0 ? renderHold.paid : renderHold.dueBorn;
         const h = Math.min(rec.hold, pay, d);
         rec.hold = rec.age > 0 && renderHold.paid <= 0 ? 0 : rec.hold - h;
+        d -= h;
+      }
+      if (rec.rhold > 0 && rec.age > 0) {
+        const h = Math.min(rec.rhold, d);
+        rec.rhold -= h;
         d -= h;
       }
       rec.age += dt;

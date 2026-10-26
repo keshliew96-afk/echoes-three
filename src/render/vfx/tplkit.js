@@ -471,6 +471,7 @@ uniform vec3 uCenter;
 uniform vec3 uDir;
 uniform float uSize;
 uniform float uLen;
+uniform float uStretch;
 varying vec2 vP;
 void main() {
   vec4 mv = viewMatrix * vec4( uCenter, 1.0 );
@@ -479,10 +480,12 @@ void main() {
   d = dl > 1e-4 ? d / dl : vec2( 1.0, 0.0 );
   vec2 n = vec2( -d.y, d.x );
   float r = uSize * 0.5;
-  float along = mix( -uLen - r, r * 1.6, position.x + 0.5 );
+  // S3: the head stretches along its travel (uStretch 1 is round); vP keeps
+  // the core round in its own stretched space.
+  float along = mix( -uLen - r * uStretch, r * 1.6 * uStretch, position.x + 0.5 );
   float across = position.y * 3.2 * r;
   mv.xy += d * along + n * across;
-  vP = vec2( along, across ) / r;
+  vP = vec2( along / uStretch, across ) / r;
   gl_Position = projectionMatrix * mv;
 }
 `;
@@ -912,6 +915,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       uSize: { value: 0.4 },
       uLen: { value: 0.5 },
       uLenR: { value: 2.5 },
+      uStretch: { value: 1 },
       uCore: { value: new Color() },
       uA: { value: new Color() },
       uB: { value: new Color() },
@@ -946,25 +950,31 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uSeed.value = rnd(0, 40);
     u.uGain.value = o.gain ?? 1.3;
     u.uOpacity.value = 0;
+    u.uStretch.value = o.stretch ?? 1;
     s.op = o.opacity ?? 1;
+    s.drain = 0;
     moveHead(s, o.x, o.y ?? 0.55, o.z, o.dx ?? 1, o.dz ?? 0, o.len ?? 0.5, o.size ?? 0.4);
     return s;
   }
-  function moveHead(s, x, y, z, dx, dz, len, size) {
+  function moveHead(s, x, y, z, dx, dz, len, size, stretch = null) {
     const u = s.u;
+    if (stretch != null) u.uStretch.value = Math.max(1, stretch);
     u.uCenter.value.set(x, y, z);
     const l = Math.hypot(dx, dz);
     if (l > 1e-5) u.uDir.value.set(dx / l, 0, dz / l);
     if (size != null) u.uSize.value = size;
     u.uLen.value = Math.max(0, len);
-    u.uLenR.value = Math.max(0.01, len / (u.uSize.value * 0.5));
+    u.uLenR.value = Math.max(0.01, len / (u.uSize.value * 0.5 * u.uStretch.value));
     s.cx = x;
     s.cz = z;
   }
-  function endHead(s, fade = 0.1) {
+  // drain (S5): the head stays at its contact and its tail flows into it
+  // over the fade, instead of flaring open where it lies.
+  function endHead(s, fade = 0.1, drain = false) {
     if (!s.live || s.ending >= 0) return;
     s.ending = fade;
     s.fade = fade;
+    s.drain = drain ? s.u.uLen.value : 0;
   }
   function stepHead(s, t, dt) {
     const u = s.u;
@@ -976,7 +986,16 @@ export function createTemplateKit({ stage, cosmetic }) {
         u.uOpacity.value = 0;
         return;
       }
-      u.uOpacity.value = s.op * (s.ending / s.fade);
+      const k = s.ending / s.fade;
+      if (s.drain > 0) {
+        // The tail runs into the contact; the head holds bright until the
+        // last of it arrives, then goes.
+        u.uLen.value = s.drain * k;
+        u.uLenR.value = Math.max(0.01, u.uLen.value / (u.uSize.value * 0.5 * u.uStretch.value));
+        u.uOpacity.value = s.op * Math.min(1, k * 2.5);
+        return;
+      }
+      u.uOpacity.value = s.op * k;
       u.uSize.value *= 1 + dt * 3; // it flares open as it goes
       return;
     }

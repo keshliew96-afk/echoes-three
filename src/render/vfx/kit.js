@@ -592,9 +592,27 @@ export function createVfxKit({ stage, cosmetic }) {
   });
   let lightGain = 1;
   // opts: x, z, radius, color, opacity, life, attack (s), y.
+  let lightTokens = 0;
+  // A light the caller moves (S7: the floor under a shot in flight): it
+  // lives until endLight; follow it only while slot.token matches.
+  function moveLight(s, token, x, z) {
+    if (!s || s.token !== token || !s.live) return false;
+    s.obj.position.x = x;
+    s.obj.position.z = z;
+    return true;
+  }
+  function endLight(s, token, fade = 0.08) {
+    if (!s || s.token !== token || !s.live) return;
+    const t = Math.max(0, s.age - s.delay);
+    s.endAt = t;
+    s.endFade = fade;
+    s.life = t + fade;
+  }
   function light(o) {
     if (lightGain <= 0) return null;
     const s = lights.take();
+    s.token = ++lightTokens;
+    s.endAt = -1;
     s.live = true;
     s.age = 0;
     s.delay = o.delay ?? 0;
@@ -610,7 +628,7 @@ export function createVfxKit({ stage, cosmetic }) {
     return s;
   }
   function stepLight(s, t) {
-    const a = t < s.attack ? t / s.attack : Math.pow(1 - (t - s.attack) / Math.max(0.01, s.life - s.attack), 2);
+    const a = s.endAt >= 0 ? (s.endAt < s.attack ? Math.min(1, s.endAt / s.attack) : 1) * Math.pow(Math.max(0, 1 - (t - s.endAt) / s.endFade), 2) : t < s.attack ? t / s.attack : Math.pow(1 - (t - s.attack) / Math.max(0.01, s.life - s.attack), 2);
     s.mat.opacity = s.op * Math.max(0, a);
     const sc = s.r * (0.85 + 0.15 * Math.min(1, t / Math.max(0.01, s.attack * 3)));
     s.obj.scale.set(sc, sc, 1);
@@ -1115,5 +1133,5 @@ export function createVfxKit({ stage, cosmetic }) {
     lightGain = l;
   }
 
-  return { root, slash, ring, light, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, prewarm, setIntensity };
+  return { root, slash, ring, light, moveLight, endLight, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, prewarm, setIntensity };
 }

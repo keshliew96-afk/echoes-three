@@ -50,7 +50,7 @@ import { impactFx } from '../vfx/hub.js';
 import { releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { renderHold } from '../hold.js';
-import { hitNode, resetNode, measureBody, createReaction, armReaction, settleReaction, evalReaction, writeReaction, createEnvClock } from '../react.js';
+import { REACT, hitNode, resetNode, measureBody, createReaction, armReaction, settleReaction, evalReaction, writeReaction, createEnvClock } from '../react.js';
 
 const SHOT_Y = 0.5; // enemy shot flight height (render)
 const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
@@ -129,12 +129,15 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   bus.on('hit', (ev) => {
     const r = rigs.get(ev.target);
     if (r) {
-      r.flashUntilTick = ev.tick + HITFLASH.ticks;
       const atk = byId(ev.attacker);
       // R1: a spell's flash holds, then fades (data/vfx.js SPELL_FLASH).
-      if (vfxSpellHit(ev, atk)) r.spellFlashTick = ev.tick;
-      // R2-R5: the squash, the flinch and the knockback's hop.
-      armReaction(r.react, ev, r.e);
+      const spell = vfxSpellHit(ev, atk);
+      // n: a shot's flash holds 3 ticks more, with its squash and numeral.
+      r.flashUntilTick = ev.tick + HITFLASH.ticks + (ev.shape === 'projectile' ? REACT.rangedHold : 0);
+      if (spell) r.spellFlashTick = ev.tick;
+      // R2-R5: the squash, the flinch and the knockback's hop (a shot or a
+      // spell holds its squash 3 ticks, §6.2 n).
+      armReaction(r.react, ev, r.e, spell);
       // K4: the direction this body was last hit, for its throw if this hit
       // kills it (the death event carries none). Else from the attacker.
       let dx = ev.dirX || 0;

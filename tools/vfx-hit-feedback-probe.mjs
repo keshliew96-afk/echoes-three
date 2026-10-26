@@ -213,7 +213,7 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   const shot = hitProfile({ delivery: 'basic', shape: 'projectile' });
   const heavy = hitProfile({ delivery: 'skill', shape: 'aoe' });
   check('a crit squashes more, a burn barely, a boss at half', crit.amp > plain.amp && Math.abs(burn.amp - REACT.heavy.amp * REACT.softMul) < 1e-9 && Math.abs(big.amp - plain.amp * REACT.bigMul) < 1e-9);
-  check('a shot is wider and less short, a skill heavier', shot.p === REACT.shot && heavy.p === REACT.heavy && heavy.amp > plain.amp);
+  check('a shot is wider and less short, a skill heavier', shot.p.hK === REACT.shot.hK && shot.p.amp === REACT.shot.amp && heavy.p === REACT.heavy && heavy.amp > plain.amp);
   const hc = [];
   for (let i = 1; i < 20; i++) hc.push(hopCurves(i / 20));
   const peakAt = hc.reduce((b, c, i) => (c.lift > hc[b].lift ? i : b), 0) + 1;

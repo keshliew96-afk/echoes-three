@@ -52,6 +52,7 @@ export const REACT = Object.freeze({
   airTall: 0.1, // in the air: 10% taller...
   airThin: 0.12, // ...and 12% narrower, clearest at +5..6 frames
   minPush: 0.03, // u: below this no hop plays
+  rangedHold: 3, // n: a shot or spell hit holds its full squash 3 ticks more (render only, no sim stop)
   maxLiftU: 0.75, // u: the cap on any hop (a relic-stacked skill pushes ~3 u)
 });
 
@@ -93,11 +94,25 @@ export function hopCurves(u) {
   return { lift, tilt, air };
 }
 
-// The hit's squash profile and amplitude.
-export function hitProfile(ev, { big = false } = {}) {
+// n (§6.2): a shot or a spell has no sim hitstop, so its target holds the
+// squash at full 3 ticks longer, as the head holds at the contact.
+const HELD = new Map();
+function heldProfile(p) {
+  let h = HELD.get(p);
+  if (!h) {
+    h = Object.freeze({ ...p, hold: p.hold + REACT.rangedHold });
+    HELD.set(p, h);
+  }
+  return h;
+}
+
+// The hit's squash profile and amplitude. spell: the layer's read of
+// vfxSpellHit (data/vfx.js), so this stays free of data imports.
+export function hitProfile(ev, { big = false, spell = false } = {}) {
   const basic = ev.delivery === 'basic';
   const shot = basic && ev.shape === 'projectile';
-  const p = shot ? REACT.shot : basic ? REACT.light : REACT.heavy;
+  let p = shot ? REACT.shot : basic ? REACT.light : REACT.heavy;
+  if ((ev.shape === 'projectile' || spell) && !SOFT_SHAPES.has(ev.shape)) p = heldProfile(p);
   let amp = p.amp;
   if (ev.crit) amp *= REACT.critMul;
   if (SOFT_SHAPES.has(ev.shape)) amp *= REACT.softMul;
@@ -220,8 +235,8 @@ export function createReaction(kind, { boss = false, champion = false } = {}) {
 
 // Arm on a `hit` that landed on this rig. `e` is the live body (read only)
 // or null.
-export function armReaction(st, ev, e) {
-  const { p, amp, shot } = hitProfile(ev, { big: st.big });
+export function armReaction(st, ev, e, spell = false) {
+  const { p, amp, shot } = hitProfile(ev, { big: st.big, spell });
   const dl = Math.hypot(ev.dirX || 0, ev.dirZ || 0);
   st.hits += 1;
   // A weaker hit (a burn or aura tick under a skill's blow) never cuts a
