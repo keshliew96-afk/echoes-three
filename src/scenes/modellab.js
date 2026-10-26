@@ -46,10 +46,11 @@ import { pageQuery } from '../app/harness.js';
 import { mountModelLab } from '../ui/modellab.js';
 import { IcosahedronGeometry } from 'three';
 import { LAB_ENTRIES as BOSS_ENTRIES } from './modellab-bosses.js';
+import { LAB_ENTRIES as FOE_ENTRIES } from './modellab-foes.js';
 
 // Model tabs from entry files (scenes/modellab-bosses.js documents the shape):
 // each builds its model and classic twin on first view and drives both.
-const ENTRIES = [...BOSS_ENTRIES];
+const ENTRIES = [...BOSS_ENTRIES, ...FOE_ENTRIES];
 const entryOf = (id) => ENTRIES.find((e) => e.id === id) || null;
 
 const MODELS = [['wyrm', 'Barrow Wyrm'], ...FACET_HEROES.map((h) => [h.id, h.label]), ...ENTRIES.map((e) => [e.id, e.label]), ['kit', 'Effect kit']];
@@ -251,7 +252,13 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       h.classic.setYaw(0);
     }
     wyrm.lab.reset();
-    for (const b of Object.values(built)) b.reset?.();
+    for (const b of Object.values(built)) {
+      if (b.reset) b.reset();
+      else {
+        b.group.position.set(0, 0, 0);
+        if (b.classic) b.classic.position.set(0, 0, 0);
+      }
+    }
   }
 
   const ui = typeof document !== 'undefined' ? mountModelLab({ models: MODELS, modes: MODES, abilities: (m) => ABILITIES[m], get: () => state, set }) : null;
@@ -382,6 +389,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     // Readout.
     if (H && state.ability === 'combo') state.readout = `${abT.toFixed(1)}s · ${H.spec.comboLab.at(abT).label}`;
     else if (state.model === 'kit') state.readout = 'parts kit: scales and bands round a moving spine, spikes with tips, a crest fan, teeth, rivets';
+    else if (entry && tl.readout) state.readout = tl.readout(abT);
     else state.readout = `${abT.toFixed(1)}s · ${tl.label}: ${tl.sample(abT).label}`;
     if (state.mode === 'ability' && state.rate < 0) state.readout += ' · rewind';
     if (state.mode !== 'ability' && state.mode !== 'still') state.readout = `${state.mode} · ${state.readout.replace(/^[\d.]+s · /, '')}`;

@@ -58,6 +58,10 @@ function releaseMaterial(m) {
 export function releaseTree(obj) {
   if (!obj) return;
   obj.traverse((o) => {
+    // An instanced row (the model standard's parts kit, docs/MODEL_STANDARD.md)
+    // owns its instance buffers even when its geometry is shared: dispose()
+    // drops them, so a crowd of faceted foes never piles them up.
+    if (o.isInstancedMesh) o.dispose();
     const g = o.geometry;
     if (g && !o.isSprite && !o.isPoints && !g.userData?.shared) g.dispose();
     const m = o.material;
