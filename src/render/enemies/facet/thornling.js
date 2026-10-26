@@ -38,7 +38,8 @@
 // Faces +Z. Same contract as buildThornling (group, mats, setYaw, pose) plus
 // lab, react, death, points. Render only: the sim, its timing and damage
 // untouched.
-import { BoxGeometry, Color, Euler, Group, IcosahedronGeometry, CylinderGeometry, Matrix4, MeshBasicMaterial, Quaternion, Vector3 } from 'three';
+import { BoxGeometry, Color, CylinderGeometry, DoubleSide, Euler, Group, IcosahedronGeometry, Matrix4, Mesh, MeshBasicMaterial, Quaternion, Raycaster, Vector3 } from 'three';
+import THORNLING_SIM from '../../../sim/enemies/thornling.js';
 import { PALETTE } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { makeGlowSprite } from '../../glow.js';
@@ -48,14 +49,16 @@ import { facetize, hash01 } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
 import { FRAME, SPAWN_SEC, bakeParts, createFoeClock, createFoeFrame, foeMaterial, foePart, hornGeometry, namedPoint, placeBody, scaleGeometry, settle, spawnScale, telegraphProgress } from '../../facet/foe.js';
-import { createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
 
 // The sim's thornling (sim/enemies/thornling.js): it skulks at 1.3 u/s and
 // every 240 ticks roots for 30 ticks, planting its thorn patch on the tick
 // the roots let go (e.mode 'root' until e.rootUntil, then e.plantTick).
-const ROOT_TICKS = 30;
+// Read from its stats, so the root's length is the sim's own.
+const ROOT_TICKS = THORNLING_SIM.stats.rootTicks;
+const PLANT_EVERY = THORNLING_SIM.stats.plantEvery;
 export const ROOT_SEC = ROOT_TICKS / 60;
-const MOVE_SPEED = 1.3;
+const MOVE_SPEED = THORNLING_SIM.stats.moveSpeed;
 // The stamp: 2.5 frames from the end of the gather to the contact (§6.1 B2).
 const STRIKE = 2.5 * FRAME;
 const STRIKE_TICKS = STRIKE * 60;
@@ -76,8 +79,9 @@ const ROOT = HIDE.boarDark.clone().multiplyScalar(0.9);
 const REST = Object.freeze({ push: 0, sink: 0, pitch: 0, roll: 0, twist: 0, sx: 1, sy: 1, bloom: 0, spread: 0, dig: 0 });
 const K = (o) => Object.freeze({ ...REST, ...o });
 // Root in (3 frames): the rootlets swell and grip, the knot drops into a crouch,
-// the crown starts to open.
-const ROOT_P = K({ sink: 0.035, pitch: 0.1, twist: -0.08, sx: 1.08, sy: 0.91, bloom: 0.3, spread: 1, dig: 0.35 });
+// the crown springs open (the classic's tell is full from the root's first
+// tick: this one is full by the root's first frame, with a small overshoot).
+const ROOT_P = K({ sink: 0.035, pitch: 0.1, twist: -0.08, sx: 1.08, sy: 0.91, bloom: 1, spread: 1, dig: 0.35 });
 // The gather's apex: pushed up off the gripping roots, reared up and back,
 // coiled to one side, the crown in full bloom.
 const GATHER_P = K({ push: -0.015, sink: -0.022, pitch: -0.3, roll: 0.04, twist: 0.18, sx: 0.92, sy: 1.12, bloom: 1, spread: 0.85, dig: 0.1 });
@@ -85,8 +89,9 @@ const GATHER_P = K({ push: -0.015, sink: -0.022, pitch: -0.3, roll: 0.04, twist:
 // through the middle, squashed (+19% wide, -14% tall), the toes stabbed into
 // the floor, the crown flaring a touch past its bloom.
 const CONTACT_P = K({ push: 0.02, sink: 0.06, pitch: 0.4, roll: -0.03, twist: -0.06, sx: 1.19, sy: 0.86, bloom: 1.06, spread: 0.55, dig: 1 });
-// The snap back's overshoot: a touch tall, the toes pulling out.
-const OVER_P = K({ push: 0.005, sink: -0.012, pitch: -0.06, twist: 0.02, sx: 0.97, sy: 1.05, bloom: 0.85, spread: 0.25, dig: 0.55 });
+// The snap back's overshoot: a touch tall, the toes pulling out, the crown
+// shutting (the classic's shuts at once on the plant).
+const OVER_P = K({ push: 0.005, sink: -0.012, pitch: -0.06, twist: 0.02, sx: 0.97, sy: 1.05, bloom: 0.35, spread: 0.25, dig: 0.55 });
 const FIELDS = Object.keys(REST);
 function lerpPose(out, a, b, k) {
   for (const f of FIELDS) out[f] = a[f] + (b[f] - a[f]) * k;
@@ -114,10 +119,17 @@ const PLANT_TL = createTimeline(
 
 // Pure: the plant's pose at t seconds into it (side: +1 coils to its left,
 // -1 to its right). The probe and the lab call it.
+const smp = {};
 export function thornlingPlantPose(t, out = { ...REST }, side = 1) {
-  const s = PLANT_TL.sample(t);
+  const s = PLANT_TL.sample(t, smp);
   const k = s.k;
-  if (s.id === 'root') lerpPose(out, REST, ROOT_P, ease.out(k));
+  if (s.id === 'root') {
+    lerpPose(out, REST, ROOT_P, ease.out(k));
+    // the tell springs open in one frame and overshoots a touch (the
+    // warning is at full strength from the root's start, as the classic's)
+    const f = 3 * k;
+    out.bloom = f < 1 ? ease.out(f) : 1 + 0.08 * Math.sin((Math.PI * (f - 1)) / 2);
+  }
   else if (s.id === 'gather') {
     lerpPose(out, ROOT_P, GATHER_P, ease.inOut(k));
     // tension: a shiver that builds through the gather and stills just
@@ -177,6 +189,11 @@ function basis(up, fwd, X, Y, Z) {
 }
 const fz = (g, jitter, seed) => facetize(g, { jitter, seed });
 
+// the thorns' girth over the classic horn's: short thorns (tips at the classic's
+// 0.31 u) with the classic's broad cone bases, so they still cut a spiky star
+// at play zoom
+const THORN_W = 1.8;
+
 let SET = null;
 function geos() {
   if (SET) return SET;
@@ -215,91 +232,128 @@ function geos() {
     set.body = body;
   }
 
+  // The knot's real (gnarled) surface, for seating the detail on it: a ray
+  // from the knot's centre in a direction (azimuth, elevation as knot()),
+  // `depth` u back inside it; `nrm` gets the facet's own normal there.
+  const knotMesh = new Mesh(set.body, new MeshBasicMaterial({ side: DoubleSide }));
+  const ray = new Raycaster();
+  const dir = new Vector3();
+  function onKnot(az, el, out, nrm, depth = 0) {
+    knot(az, el, dir, null, 1).sub(BODY_C);
+    const r0 = dir.length();
+    dir.multiplyScalar(1 / r0);
+    ray.set(BODY_C, dir);
+    const hit = ray.intersectObject(knotMesh, false)[0];
+    out.copy(BODY_C).addScaledVector(dir, (hit ? hit.distance : r0) - depth);
+    if (nrm) {
+      if (hit) nrm.copy(hit.face.normal);
+      else knot(az, el, P, nrm, 1);
+      if (nrm.dot(dir) < 0) nrm.negate();
+    }
+    return out;
+  }
+
   // The bramble: nine thorn clusters, a bark rosette round the crown, two
   // strands round the flanks, the brows (one draw call for the crowd, the
   // knot's own material: the thorns a step lighter than the hide, the bark a
-  // step or two darker).
+  // step darker). Every part is seated on the real knot: the thorns and
+  // thornlets rooted in it, the bark half sunk into it, standing proud.
   set.bramble = bakeParts('thornling:bramble', () => {
     const out = [];
     const thorn = hornGeometry({ len: 1, r: 0.2, bend: 0.6, seg: 2, sides: 4, seed: 221 });
     const plate = scaleGeometry({ seed: 223 });
     const strand = scaleGeometry({ sides: 5, seed: 225 });
+    const EN = new Vector3();
     // thorn clusters: [azimuth, elevation, length], where the classic's nine
-    // spikes stood; mostly level, so from the camera they cut a star round
-    // the knot; the face (|az| < 0.5, el 0..0.5) is left clear for the eyes
+    // spikes stood and as far out (their tips about 0.31 u from the middle,
+    // inside the sim's 0.32 radius); mostly level, so from the camera they cut
+    // a star round the knot; the face (|az| < 0.5, el 0..0.5) is left clear
+    // for the eyes, and none rises beside the crown (the tell reads from the
+    // top-down camera)
     const T = [
-      [0.38, -0.62, 0.16],
-      [0.98, 0.1, 0.24],
-      [-0.92, 0.18, 0.23],
-      [1.66, -0.22, 0.22],
-      [-1.7, -0.14, 0.23],
-      [2.32, 0.28, 0.24],
-      [-2.38, 0.34, 0.23],
-      [3.12, -0.05, 0.25],
-      [-1.38, 0.66, 0.19],
+      [0.38, -0.62, 0.09],
+      [0.98, 0.1, 0.13],
+      [-0.92, 0.18, 0.125],
+      [1.66, -0.22, 0.12],
+      [-1.7, -0.14, 0.125],
+      [2.32, 0.28, 0.13],
+      [-2.38, 0.34, 0.125],
+      [3.12, -0.05, 0.135],
+      [-1.38, 0.4, 0.105],
     ];
     T.forEach(([az, el, len], i) => {
-      knot(az, el, P, N, 0.86);
+      onKnot(az, el, P, null, 0.03);
+      knot(az, el, H, EN, 1);
       // out along the hide, raised a little toward the sky and hooked upward
       // (a rose thorn)
-      H.copy(N).addScaledVector(UP, 0.2);
+      H.copy(EN).addScaledVector(UP, 0.2);
       basis(H, UP, X, Y, Z);
-      setTRS(m, P, X, Y, Z, len, len, len);
+      setTRS(m, P, X, Y, Z, len * THORN_W, len, len * THORN_W * 0.8);
       out.push({ geo: thorn, m: m.clone(), tone: 1.1 + 0.06 * (hash01(i, 5, 227) - 0.5) });
       // a thornlet at its foot, leaning its own way (the cluster)
-      knot(az + 0.27, el - 0.14, P, N, 0.95);
-      H.copy(N).addScaledVector(UP, 0.1);
+      onKnot(az + 0.27, el - 0.14, P, null, 0.008);
+      knot(az + 0.27, el - 0.14, H, EN, 1);
+      H.copy(EN).addScaledVector(UP, 0.1);
       basis(H, UP, X, Y, Z);
       const h = len * 0.42;
       setTRS(m, P, X, Y, Z, h * 0.42, h, h * 0.5);
       out.push({ geo: wedge, m: m.clone(), tone: 1.02 });
     });
-    // bark: a rosette of five low six-sided plates half sunk round the
-    // crown (the buds' nest), two over the back, their edges lifting
+    // bark: a rosette of five low six-sided plates round the crown (the
+    // buds' nest) and two over the back, each half sunk into the knot on its
+    // own facet so it stands as raised bark, a step darker than the hide
+    const BH = 0.045;
     for (let j = 0; j < 5; j++) {
-      knot((j / 5) * Math.PI * 2 + 0.3, 1.12, P, N, 0.985);
+      onKnot((j / 5) * Math.PI * 2 + 0.3, 1.12, P, N, BH * 0.5);
       basis(N, UP, X, Y, Z);
-      setTRS(m, P, X, Y, Z, 0.1, 0.028, 0.09);
-      out.push({ geo: plate, m: m.clone(), tone: j % 2 ? 0.74 : 0.8 });
+      setTRS(m, P, X, Y, Z, 0.1, BH, 0.09);
+      out.push({ geo: plate, m: m.clone(), tone: j % 2 ? 0.86 : 0.9 });
     }
     for (const [az, el] of [[Math.PI - 0.5, 0.25], [Math.PI + 0.55, -0.1]]) {
-      knot(az, el, P, N, 0.985);
+      onKnot(az, el, P, N, BH * 0.5);
       basis(N, UP, X, Y, Z);
-      setTRS(m, P, X, Y, Z, 0.1, 0.028, 0.11);
-      out.push({ geo: plate, m: m.clone(), tone: 0.72 });
+      setTRS(m, P, X, Y, Z, 0.1, BH, 0.11);
+      out.push({ geo: plate, m: m.clone(), tone: 0.86 });
     }
     // two bramble strands winding back round the flanks: segments on a
-    // helix, each laid along the strand
-    for (const [a0, e0, dir] of [[0.9, -0.35, 1], [-0.9, -0.3, -1]]) {
-      for (let s = 0; s < 5; s++) {
-        const az = a0 + dir * s * 0.42;
-        const el = e0 + s * 0.09;
-        knot(az, el, P, N, 0.99);
-        knot(az + dir * 0.1, el + 0.022, H, null, 0.99);
-        H.sub(P);
+    // helix, each laid along the strand, half sunk
+    for (const [a0, e0, sgn] of [[0.9, -0.35, 1], [-0.9, -0.3, -1]]) {
+      for (let k = 0; k < 5; k++) {
+        const az = a0 + sgn * k * 0.42;
+        const el = e0 + k * 0.09;
+        onKnot(az, el, P, N, 0.013);
+        knot(az + sgn * 0.1, el + 0.022, H, null, 1);
+        knot(az, el, Y, null, 1);
+        H.sub(Y);
         basis(N, H, X, Y, Z);
         setTRS(m, P, X, Y, Z, 0.045, 0.026, 0.12);
-        out.push({ geo: strand, m: m.clone(), tone: 0.7 + 0.04 * (s % 2) });
+        out.push({ geo: strand, m: m.clone(), tone: 0.8 + 0.04 * (k % 2) });
       }
     }
     // a brow over each eye, slanted down to the middle (the classic's scowl)
     for (const side of [-1, 1]) {
-      knot(side * 0.33, 0.42, P, N, 0.99);
+      onKnot(side * 0.33, 0.42, P, N, 0.012);
       basis(N, new Vector3(-side * 0.55, 1, 0.2), X, Y, Z);
       setTRS(m, P, X, Y, Z, 0.085, 0.03, 0.04);
-      out.push({ geo: plate, m: m.clone(), tone: 0.55 });
+      out.push({ geo: plate, m: m.clone(), tone: 0.6 });
     }
     return out;
   });
 
   // Slit eyes (unlit charcoal: never round, never warm), where the classic
-  // put them.
+  // put them, half sunk into the knot's real surface.
   set.eyes = bakeParts('thornling:eyes', () => {
     const out = [];
     const bar = fz(new BoxGeometry(0.06, 0.022, 0.022), 0, 1);
-    for (const side of [-1, 1]) out.push({ geo: bar, m: new Matrix4().compose(new Vector3(side * 0.07, 0.46, 0.199), new Quaternion().setFromEuler(new Euler(0, side * -0.3, side * 0.45)), new Vector3(1, 1, 1)) });
+    for (const side of [-1, 1]) {
+      ray.set(P.set(side * 0.07, 0.46, 1), dir.set(0, 0, -1));
+      const hit = ray.intersectObject(knotMesh, false)[0];
+      const z = hit ? hit.point.z + 0.003 : 0.199;
+      out.push({ geo: bar, m: new Matrix4().compose(new Vector3(side * 0.07, 0.46, z), new Quaternion().setFromEuler(new Euler(0, side * -0.3, side * 0.45)), new Vector3(1, 1, 1)) });
+    }
     return out;
   });
+  knotMesh.material.dispose();
 
   // THE corruption tell: one indigo bud (a faceted core in bright indigo,
   // four dim sepals round it), three of them on the crown row.
@@ -311,9 +365,11 @@ function geos() {
     for (let i = 0; i < 4; i++) {
       const a = (i / 4) * Math.PI * 2 + 0.4;
       const o = new Vector3(Math.cos(a), 0, Math.sin(a));
-      H.copy(UP).multiplyScalar(Math.cos(0.5)).addScaledVector(o, Math.sin(0.5));
+      // a calyx under the bud: each sepal leaves below the core and ends
+      // under its equator, so it frames the bud and never pierces it
+      H.copy(UP).multiplyScalar(Math.cos(0.62)).addScaledVector(o, Math.sin(0.62));
       basis(H, o, X, Y, Z);
-      setTRS(m, P.set(o.x * 0.022, -0.02, o.z * 0.022), X, Y, Z, 0.042, 0.072, 0.03);
+      setTRS(m, P.set(o.x * 0.03, -0.04, o.z * 0.03), X, Y, Z, 0.036, 0.043, 0.026);
       out.push({ geo: wedge, m: m.clone(), tint: dim });
     }
     return out;
@@ -341,6 +397,8 @@ const R_THIGH = 0.034;
 const R_SHIN = 0.045;
 const R_TOE = 0.021;
 const LIFT = 0.055;
+const LIFT_STEP = 0.02; // a planted foot the body lifts more than this steps
+const GAIT_REACH = 0.11;
 // rootlet toes per foot: their headings (rad from +z toward +x), foot 0 is
 // on its right (-x), foot 1 mirrors it
 const TOES = [-0.2, -1.15, -(Math.PI - 0.45)];
@@ -385,7 +443,10 @@ export function buildThornlingFacet() {
   const crownPt = namedPoint(crown, 'thornling-crown-point', 0, 0.04, 0);
   const mouth = namedPoint(body, 'thornling-mouth', 0, 0.38, 0.22);
 
-  const gait = createLegs({ homes: HOMES, groups: [[0], [1]], trigger: 0.06, reach: 0.18, lift: LIFT, durMin: 0.08, durMax: 0.13 });
+  // (reach: how far a planted foot may trail before it must step, inside
+  // the root leg's own sideways reach of about 0.114 u)
+  const gait = createLegs({ homes: HOMES, groups: [[0], [1]], trigger: 0.06, reach: GAIT_REACH, lift: LIFT, durMin: 0.08, durMax: 0.13 });
+  const gopt = { locked: true };
   const clock = createFoeClock();
   const cur = { ...REST };
   const fr = { x: 0, z: 0, yaw: 0, s: 1 };
@@ -402,6 +463,11 @@ export function buildThornlingFacet() {
   let age = -1;
   let yawNow = 0;
   const lifted = [0, 0];
+  // a foot drawn in from past its leg's reach this frame (clampReach): it
+  // carries no weight and steps at the next update
+  const clamped = [false, false];
+  const drawn = [new Vector3(), new Vector3()];
+  let lastPT = null;
   // each foot's world heading: kept while it is planted, so the rootlets
   // never sweep the floor as the body turns over them
   const footYaw = [0, 0];
@@ -420,7 +486,7 @@ export function buildThornlingFacet() {
     abilities: THORNLING_ABILITIES,
     override: null, // { id: 'plant', t } | null
     lastStrike: null, // { id, tick }: the sim tick the latest live stamp's contact lands on
-    feet: () => gait.feet().map((f, i) => ({ ...f, drawnX: gait.out[i].x, drawnZ: gait.out[i].z, drawnY: gait.out[i].y + lifted[i] })),
+    feet: () => gait.feet().map((f, i) => ({ ...f, planted: f.planted && !clamped[i] && !(lifted[i] > LIFT_STEP), drawnX: drawn[i].x, drawnZ: drawn[i].z, drawnY: drawn[i].y })),
     pose: () => ({ ...cur }),
     get plant() {
       return plant.R === null ? null : { R: plant.R, due: plant.due, contact: plant.contact };
@@ -444,11 +510,14 @@ export function buildThornlingFacet() {
     plant.contact = null;
     plant.struck = false;
     // the stamp coils to alternate sides plant to plant (deterministic)
-    plant.side = Math.floor(R / 240) % 2 ? -1 : 1;
+    plant.side = Math.floor(R / PLANT_EVERY) % 2 ? -1 : 1;
     recover.t0 = -1;
   }
 
   // The live plant: the ability's time (s) this frame, or -1 at rest.
+  // `tick` is the SHOWN tick (P.tick + 1: the layer passes the state's tick
+  // - 1 + alpha, while e's fields are that state's own), so the whole stamp
+  // plays and its contact lands on the frame the plant first shows.
   function livePlant(e, tick, now) {
     if (!e) {
       plant.R = null;
@@ -475,8 +544,9 @@ export function buildThornlingFacet() {
       // from the frame the sim has run that tick, up to a tick before the
       // interpolated clock reaches it
       const resolved = e.mode !== 'root' && plantTick >= plant.R;
-      if (!alive || (e.mode !== 'root' && !resolved)) {
-        // killed (or let go) before the plant: it never stamps
+      if (!alive || (e.state && e.state !== 'active') || (e.mode !== 'root' && !resolved)) {
+        // killed, gone with the room (the sim resolves only an active foe)
+        // or let go before the plant: it never stamps
         cancelPlant(now);
         return -1;
       }
@@ -532,6 +602,13 @@ export function buildThornlingFacet() {
       foot.copy(o);
       foot.y += ANKLE;
       lifted[i] = liftToReach(hipW, foot, L1, L2);
+      // the last guard: a foot still past the root's reach (a knockback, a
+      // fast strafe) is drawn in along the floor and steps at once; one the
+      // body hauled more than a toe's height off the floor carries no weight
+      // either and steps too
+      clamped[i] = clampReach(hipW, foot, L1, L2) > 0;
+      if (clamped[i] || lifted[i] > LIFT_STEP) gait.release(i);
+      drawn[i].set(foot.x, foot.y - ANKLE, foot.z);
       solveKnee(hipW, foot, L1, L2, BEND[i], knee);
       // the thigh from the knee (its knot) up into the body, the shin from
       // the ankle (thick, a root) up to the knee
@@ -539,9 +616,10 @@ export function buildThornlingFacet() {
       roots.setMatrixAt(i * 2 + 1, segmentMatrix(m, foot, knee, R_SHIN, R_SHIN, 0.015));
       // the rootlet toes: from the ankle out to the floor. A planted toe's tip
       // never slides: the grip swells the rootlets and the plant stabs the
-      // tips straight down into the floor; a lifting foot curls them in, by
-      // its height, so they land where they curl out again
-      const curl = Math.min(1, (o.y + lifted[i]) / (LIFT * 0.5));
+      // tips straight down into the floor; a stepping foot curls them in, by
+      // its step's height, so they land where they curl out again (a planted
+      // foot the body lifts keeps its tips on the floor)
+      const curl = Math.min(1, o.y / (LIFT * 0.5));
       const heading = footYaw[i] - yawNow;
       const sgn = i === 0 ? 1 : -1;
       const rt = R_TOE * (1 + 0.35 * spread);
@@ -590,7 +668,7 @@ export function buildThornlingFacet() {
     let poseSide = 1;
     if (lab.override) thornlingPlantPose(Math.min(PLANT_TL.duration, Math.max(0, lab.override.t)), cur, 1);
     else {
-      const t = livePlant(e, tick, now);
+      const t = livePlant(e, tick + 1, now);
       if (t >= 0) {
         poseSide = plant.side;
         thornlingPlantPose(t, cur, poseSide);
@@ -609,11 +687,20 @@ export function buildThornlingFacet() {
     fr.s = F.group.scale.x || 1;
     // a lab scrub (no time passing) stands the feet on their homes: a still
     // frame has no step history to show
-    const locked = !turntable && age >= SPAWN_SEC && !(dt <= 0 && lab.override);
-    const jumped = lastX === null || Math.hypot(gx - lastX, gz - lastZ) > 1.5 || (dt <= 0 && Math.hypot(gx - lastX, gz - lastZ) > 1e-4);
+    // A frame that took longer than a step (a weak machine at a few fps) on a
+    // body that moved further than a foot may trail cannot show a step: the
+    // feet stand afresh under it, a still of the scurry (rule 2 holds: no
+    // planted foot is dragged, no root stretched)
+    const moved = lastX === null ? 0 : Math.hypot(gx - lastX, gz - lastZ);
+    const wall = lastPT === null ? 0 : (P.t ?? 0) - lastPT;
+    lastPT = P.t ?? 0;
+    const slow = wall > 0.12 && moved > GAIT_REACH * fr.s;
+    const locked = !turntable && age >= SPAWN_SEC && !(dt <= 0 && lab.override) && !slow;
+    const jumped = lastX === null || moved > 1.5 || (dt <= 0 && moved > 1e-4);
     lastX = gx;
     lastZ = gz;
-    gait.update(dt, fr, { locked });
+    gopt.locked = locked;
+    gait.update(dt, fr, gopt);
     for (let i = 0; i < 2; i++) if (!locked || jumped || gait.out[i].y > 1e-5) footYaw[i] = yawNow;
     const bob = gait.bob;
     gait.localVelocity(fr, lv);

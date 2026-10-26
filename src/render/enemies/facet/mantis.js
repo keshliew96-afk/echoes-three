@@ -26,8 +26,9 @@
 //   * THE SPIT on the sim's own telegraph. The mantis's one attack (sim/
 //     enemies.js "Mantis.") is a 42-tick telegraph (36 under Short Fuse) that
 //     resolves into one shot (telegraph_resolve, enemy_fire) on its resolve
-//     tick. The wind-up is SAMPLED from telegraphProgress, so it builds in step
-//     with the lane's charge bead (the classic eased in in 0.2 s, then froze):
+//     tick. The wind-up is SAMPLED from telegraphProgress on the shown tick
+//     (P.tick + 1), so it builds in step with the lane's charge bead (the
+//     classic eased in in 0.2 s, then froze):
 //     REAR and load (body back over the hind legs, forelegs up and open, wing
 //     covers fanned, the abdomen pumping three times, the head cocked back,
 //     the glint flaring), a 6-tick COIL, then the 5-tick STRIKE (2.5 frames:
@@ -36,8 +37,10 @@
 //     leaves (the classic's snap peaked 0.1 s late). Then the shot squash (B3)
 //     and its shove back, a recoil past the guard and one overshoot into it;
 //   * a stun, blind or retreat that cancels the telegraph folds the wind-up
-//     back (never a strike); a shot with no telegraph seen (a co-op guest's
-//     late snapshot) spits on the fire pulse with one frame of wind-back;
+//     back (never a strike), on the resolve tick too: only the fire pulse
+//     (enemy_fire) plays the contact; a shot with no telegraph seen (a co-op
+//     guest's late snapshot) spits on the fire pulse with one frame of
+//     wind-back;
 //   * the spawn-in grow (B7), named points (B8: the spit mouth, the foreleg
 //     claw tips, the foreleg knee as the hand), the hit and death tuning the
 //     shared envelope reads (§6.1 items 9, 10).
@@ -48,7 +51,7 @@
 //
 // §6.1 [M]: 1 the wind-up IS the telegraph (never delays the resolve); 2 the
 // strike takes 2.5 frames, the contact holds 2 (and pauses with a hitstop:
-// `t` holds), no lunge (a shooter: the sim body stays put); 3 shotSquash at
+// the clock runs on the sim tick), no lunge (a shooter: the sim body stays put); 3 shotSquash at
 // contact (20% wide, the stretch overshoot, the shove eased over 0.45 s);
 // 4 the jaws and forelegs kick on the contact frame, no ramp; 5 the recoil
 // settles into the guard with one overshoot (`settle`); 6 n/a (no chain);
@@ -66,8 +69,8 @@ import { HIDE, TELL_INDIGO, TELL_INDIGO_GLOW } from '../style.js';
 import { facetize } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
-import { FRAME, SPAWN_SEC, bakeParts, hornGeometry, scaleGeometry, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, lerpFields, namedPoint, placeBody, settle, shotSquash, spawnScale, telegraphProgress } from '../../facet/foe.js';
-import { createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { FRAME, SPAWN_SEC, bakeParts, heldBy, hornGeometry, scaleGeometry, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, lerpFields, namedPoint, placeBody, settle, shotSquash, spawnScale, telegraphProgress } from '../../facet/foe.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
 
 // The sim's mantis (sim/enemies.js ENEMY_STATS.mantis): a 42-tick telegraph
 // (the lab's default span; live play reads the telegraph's own span), one shot
@@ -82,22 +85,30 @@ const COIL_TICKS = 6;
 const STRIKE_TICKS = 5;
 const REAR_SEC = (TEL_TICKS - COIL_TICKS - STRIKE_TICKS) / TICK_HZ;
 const COIL_SEC = COIL_TICKS / TICK_HZ;
-const STRIKE_SEC = STRIKE_TICKS / TICK_HZ;
 // Seconds into the lab's spit where the contact lands (= the resolve tick).
 export const SPIT_CONTACT = TEL_TICKS / TICK_HZ;
+// the strike ends exactly on the contact (STRIKE_TICKS long; summing the
+// three phases' own lengths lands a hair past SPIT_CONTACT in floating point,
+// so the cue frame would read 'strike')
+const STRIKE_SEC = SPIT_CONTACT - REAR_SEC - COIL_SEC;
 const HOLD_SEC = 2 * FRAME;
 const RECOIL_SEC = 5 * FRAME;
 const SETTLE_SEC = 0.4;
 // A telegraph cancelled (stun, blind, retreat): the wind-up folds back.
 const FOLD_SEC = 0.3;
-// A telegraph cleared in its last ticks with no shot yet: a co-op guest's
-// snapshot can clear it a tick before the fire event lands. Hold the pose
-// this long for the pulse before calling it a cancel.
+// A telegraph cleared in its last ticks (or on its resolve) with no fire
+// pulse yet: a co-op guest's snapshot can clear it a tick before the fire
+// event lands. Hold the pose this long for the pulse before calling it a
+// cancel (at once when the entity is known held: heldBy).
 const LATE_TICKS = 4;
 const GRACE_SEC = 0.06;
 // A shot with no telegraph seen: one frame of wind-back, two of strike (B1).
 const QUICK_WIND = FRAME;
 const QUICK_STRIKE = 2 * FRAME;
+// The idle life (rock, head scan) eases out over this as a spit begins and
+// back in over this after its settle.
+const LIFE_OUT = 0.35;
+const LIFE_IN = 0.6;
 
 // --- Key poses. push: the body's shove along +z (u); lift (u); pitch: nose
 // down (+) or rearing back (-), rad, about the hips; roll; sx / sy: the body's
@@ -141,8 +152,9 @@ const SPIT_TL = createTimeline(
 
 // Pure: the spit's pose at ts seconds into it (the lab's default span; live
 // play maps its telegraph onto this time).
+const SAMPLE = { t: 0, index: 0, id: '', label: '', k: 0 };
 export function mantisSpitPose(ts, out = { ...REST }) {
-  const s = SPIT_TL.sample(ts);
+  const s = SPIT_TL.sample(ts, SAMPLE);
   const k = s.k;
   if (s.id === 'rear') {
     lerpFields(out, REST, REAR, ease.inOut(k), FIELDS);
@@ -273,7 +285,7 @@ function leafGeometry() {
   const r0 = rib(0);
   const e0 = edge(0, -1);
   const e1 = edge(0, 1);
-  pos.push(...e0, ...r0, ...e1);
+  pos.push(...e0, ...e1, ...r0); // facing out of the leaf's base (-Y)
   const g = new BufferGeometry();
   g.setAttribute('position', new Float32BufferAttribute(pos, 3));
   return fz(g, 0.1, 211);
@@ -305,7 +317,7 @@ const HIPS = [new Vector3(-0.055, 0.565, 0.05), new Vector3(0.055, 0.565, 0.05),
 const HOMES = [new Vector3(-0.29, 0, 0.17), new Vector3(0.29, 0, 0.17), new Vector3(-0.33, 0, -0.24), new Vector3(0.33, 0, -0.24)];
 const L1 = 0.32;
 const L2 = 0.4;
-const ANKLE = 0.03;
+const ANKLE = 0.02;
 // the knees: high and out (the classic's angular brackets), the middle pair
 // a touch forward, the hind pair back
 const BEND = [new Vector3(-1, 0.8, 0.3), new Vector3(1, 0.8, 0.3), new Vector3(-1, 0.8, -0.45), new Vector3(1, 0.8, -0.45)];
@@ -387,16 +399,19 @@ function geos() {
     set.abdomen = fz(g, 0.14, 209);
   }
   // Abdomen detail: pale sternite plates down the belly, two cerci at the tip.
+  // Each plate's base ring sinks inside the hide (the belly is a ridge, so a
+  // wide flat plate stood out from it as a saw-tooth fringe); only its ridge
+  // stands proud, a pale step down the keel.
   set.abDetail = bakeParts('mantis:abdomen', () => {
     const out = [];
     const pale = HIDE.mantisBody.clone().lerp(HIDE.mantisPale, 0.5);
     for (let i = 0; i < 5; i++) {
       const u = 0.12 + i * 0.16;
       const r = abR(u);
-      P.set(0, u * AB_LEN, -r * AB_D * 0.84);
+      P.set(0, u * AB_LEN, -r * AB_D * 0.65);
       basis(N.set(0, 0, -1), H.set(0, 1, 0), X, Y, Z);
-      tip(X, Y, Z, -0.2); // the trailing edge lifts toward the tail
-      setTRS(m, P, X, Y, Z, r * 1.6, 0.018, 0.11);
+      tip(X, Y, Z, -0.1); // the trailing edge lifts toward the tail
+      setTRS(m, P, X, Y, Z, r * 1.2, 0.04, 0.07);
       out.push({ geo: scale, m: m.clone(), tint: pale, tone: 1 - 0.05 * (i % 2) });
     }
     for (const s of [-1, 1]) out.push({ geo: wedge, m: at(P.set(s * 0.012, AB_LEN - 0.02, 0.004), new Vector3(s * 0.4, 1, 0.25), new Vector3(0, 0, 1), 0.03, 0.07, 0.03), tint: HIDE.mantisDark });
@@ -445,9 +460,11 @@ function geos() {
     const out = [];
     const dark = HIDE.mantisDark;
     out.push({ geo: fz(new ConeGeometry(0.07, 0.16, 4), 0.12, 215), m: new Matrix4().compose(new Vector3(0, 0.08, -0.03), new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), -0.35), new Vector3(1, 1, 1)), tint: dark });
-    const ant = hornGeometry({ len: 0.3, r: 0.013, bend: 0.55, seg: 3, sides: 3, seed: 217 });
+    // the antennae: short threads raked forward and out over the face (as
+    // on the classic), their tips arching out and down
+    const ant = hornGeometry({ len: 0.22, r: 0.011, bend: 0.5, seg: 3, sides: 3, seed: 217 });
     for (const s of [-1, 1]) {
-      out.push({ geo: ant, m: at(P.set(s * 0.045, 0.085, 0.07), new Vector3(s * 0.3, 0.75, -0.25), new Vector3(0, -0.2, -1), 1, 1, 1), tint: dark });
+      out.push({ geo: ant, m: at(P.set(s * 0.04, 0.07, 0.105), new Vector3(s * 0.35, 0.55, 0.75), new Vector3(s, -0.5, 0.2), 1, 1, 1), tint: dark });
     }
     out.push({ geo: scale, m: at(P.set(0, -0.012, 0.146), new Vector3(0, 0.15, 1), new Vector3(0, -1, 0), 0.1, 0.028, 0.085), tint: HIDE.mantisPale, tone: 0.84 });
     out.push({ geo: wedge, m: at(P.set(0, -0.065, 0.13), new Vector3(0, -1, 0.3), new Vector3(0, 0, 1), 0.05, 0.045, 0.03), tint: dark });
@@ -619,7 +636,10 @@ export function buildMantisFacet() {
   const J2 = new Vector3();
   let age = -1;
   let yawNow = 0;
+  let lifeT = 1; // the idle life's ramp (0 while a spit plays)
   const lifted = [0, 0, 0, 0];
+  const pulled = [0, 0, 0, 0];
+  const drawnFeet = HOMES.map((h) => h.clone()); // where each foot is drawn (rig space)
   // the spit's live state
   let mode = 'idle'; // 'idle' | 'wind' | 'grace' | 'post' | 'quick' | 'fold'
   let telR = 0; // the tracked telegraph's resolve tick
@@ -639,7 +659,8 @@ export function buildMantisFacet() {
     abilities: MANTIS_ABILITIES,
     override: null, // { id: 'spit', t } | null
     lastStrike: null, // { id, tick }
-    feet: () => gait.feet().map((q, i) => ({ ...q, drawnX: gait.out[i].x, drawnZ: gait.out[i].z, drawnY: gait.out[i].y + lifted[i] })),
+    // a foot clampReach pulled in this frame carries no weight
+    feet: () => gait.feet().map((q, i) => ({ ...q, planted: q.planted && !(pulled[i] > 0), drawnX: drawnFeet[i].x, drawnZ: drawnFeet[i].z, drawnY: gait.out[i].y + lifted[i] })),
     pose: () => ({ ...cur }),
     get phase() {
       return mode;
@@ -661,41 +682,52 @@ export function buildMantisFacet() {
     struck = false;
   }
 
+  // The wind-up folds back into the guard: no shot, so no contact either.
+  function foldBack(now) {
+    if (struck) unmarkStrike();
+    mode = 'fold';
+    foldAt = now;
+  }
+
   // The live spit: the telegraph's beats and the fire pulse.
   function liveSpit(P, e, tick, now) {
     const fireK = P.fireK ?? 0;
     const fireEdge = fireK > 0 && lastFireK <= 0;
     lastFireK = fireK;
     if (fireEdge) lastFireAt = now;
-    const beat = watch.update({ e, tick });
+    const beat = watch.update(P);
     if (beat && beat.type === 'wind') {
       mode = 'wind';
       telR = watch.telegraph.resolveTick;
       struck = false;
-    } else if (beat && (beat.type === 'release' || (beat.type === 'cancel' && now - lastFireAt <= 0.1))) {
-      // the shot leaves (a guest's snapshot may clear the telegraph a frame
-      // before its resolve tick: the fire pulse says it was a shot)
-      if (!struck) markStrike(telR);
-      mode = 'post';
-      postAt = now;
-    } else if (beat && beat.type === 'cancel') {
-      if (struck) unmarkStrike();
-      Object.assign(from, cur);
-      // cleared in its last ticks: hold for the shot's pulse a moment (a
-      // guest's snapshot can run a tick ahead of the fire event)
-      mode = tick >= telR - LATE_TICKS ? 'grace' : 'fold';
-      graceAt = now;
-      foldAt = now;
+    } else if (beat && (beat.type === 'release' || beat.type === 'cancel')) {
+      if (now - lastFireAt <= 0.1) {
+        // the shot leaves: only the fire pulse (enemy_fire) says so. On the
+        // host it lands on the release frame; a guest's snapshot may clear
+        // the telegraph a frame either side of it.
+        if (!struck) markStrike(telR);
+        mode = 'post';
+        postAt = now;
+      } else {
+        // the telegraph ended with no shot (yet): a stun, blind or room
+        // clear on (or just before) the resolve tick cancels it before the
+        // shot (sim/enemies.js resolveEnemies), and the watch can only call
+        // that a release when the entity carries no status. In its last
+        // ticks, hold for the pulse a moment (a guest's snapshot can run a
+        // tick ahead of the fire event), unless the sim is known to hold it.
+        Object.assign(from, cur);
+        if ((beat.type === 'release' || tick >= telR - LATE_TICKS) && !heldBy(e, telR)) {
+          mode = 'grace';
+          graceAt = now;
+        } else foldBack(now);
+      }
     }
     if (mode === 'grace') {
       if (fireEdge) {
-        markStrike(telR);
+        if (!struck) markStrike(telR);
         mode = 'post';
         postAt = now;
-      } else if (now - graceAt > GRACE_SEC) {
-        mode = 'fold'; // no shot came: it was a stun, a blind or a retreat
-        foldAt = now;
-      }
+      } else if (now - graceAt > GRACE_SEC) foldBack(now); // no shot came
     }
     // a shot with no telegraph to account for it (a guest's late snapshot):
     // spit on the pulse, one frame of wind-back inside the strike (B1)
@@ -704,9 +736,9 @@ export function buildMantisFacet() {
       lerpFields(wind, from, COIL, 0.5, FIELDS);
       mode = 'quick';
       quickAt = now;
-      strike.tick = tick + (QUICK_WIND + QUICK_STRIKE) * TICK_HZ;
-      prevStrike = lab.lastStrike;
-      lab.lastStrike = strike;
+      // the contact's sim tick: the shown tick (P.tick + 1) plus the quick
+      // wind and strike
+      markStrike(tick + 1 + (QUICK_WIND + QUICK_STRIKE) * TICK_HZ);
     }
 
     if (mode === 'wind') {
@@ -714,14 +746,17 @@ export function buildMantisFacet() {
       if (!tel) return false;
       // the wind-up rides the telegraph's progress: the rear stretches to the
       // span, the coil and the strike keep their ticks, the contact is the
-      // resolve tick
-      const u = telegraphProgress(e, tick);
+      // resolve tick. Sampled on the SHOWN tick: the layer passes
+      // stateTick - 1 + alpha while the telegraph is the state's own, so the
+      // release is seen at P.tick ~ R - 1; one tick ahead, the strike's last
+      // in-between shows and the contact lands on the release frame.
+      const u = telegraphProgress(e, tick + 1);
       const span = Math.max(1, tel.resolveTick - tel.startTick);
       const left = span * (1 - u);
       let ts;
       if (left <= COIL_TICKS + STRIKE_TICKS) ts = SPIT_CONTACT - left / TICK_HZ;
       else ts = Math.min(1, (span * u) / Math.max(1, span - COIL_TICKS - STRIKE_TICKS)) * REAR_SEC;
-      if (!struck && left <= STRIKE_TICKS) markStrike(tick + left);
+      if (!struck && left <= STRIKE_TICKS) markStrike(tel.resolveTick);
       mantisSpitPose(Math.min(SPIT_CONTACT, ts), cur);
       return true;
     }
@@ -800,9 +835,10 @@ export function buildMantisFacet() {
     for (let i = 0; i < 2; i++) {
       const s = i === 0 ? -1 : 1;
       // folded: on the spindle, the outer edge draping, the tip down onto the
-      // tail; fanned: lifted off it and spread out behind the head
-      qa.setFromAxisAngle(ZA, -s * 0.55 * w);
-      qb.setFromAxisAngle(XA, -0.08 + 0.95 * w);
+      // tail; fanned: spread wide out to the sides and lifted off it, clear
+      // of the head (a narrower, steeper fan passed through its back)
+      qa.setFromAxisAngle(ZA, -s * 0.95 * w);
+      qb.setFromAxisAngle(XA, -0.08 + 0.6 * w);
       qc.setFromAxisAngle(YA, s * 0.42 * (1 - 0.6 * w));
       tq.multiplyQuaternions(qa, qb).multiply(qc);
       wp.set(s * 0.03, 0.06, 0.08 + (s > 0 ? 0.006 : 0));
@@ -862,7 +898,12 @@ export function buildMantisFacet() {
     // --- the idle life (never under the lab's override: pure in t): a slow
     // breath, the mantis's leaf-in-the-wind rock, the head's scan
     const live = lab.override ? 0 : 1;
-    const still = live * (acting ? 0 : 1) * (1 - Math.min(1, gait.speed / 0.6));
+    // its weight eases out as a spit begins (the head settles onto the
+    // target through the rear) and back in after the settle, never in one
+    // frame
+    lifeT = acting ? Math.max(0, lifeT - dt / LIFE_OUT) : Math.min(1, lifeT + dt / LIFE_IN);
+    const lifeK = lifeT * lifeT * (3 - 2 * lifeT);
+    const still = live * lifeK * (1 - Math.min(1, gait.speed / 0.6));
     const breath = live * Math.sin(now * 1.7);
     const rock = still * Math.sin(now * 3.4);
     const scan = still * (0.16 * Math.sin(now * 0.7) + 0.06 * Math.sin(now * 1.9 + 1));
@@ -897,10 +938,15 @@ export function buildMantisFacet() {
       foot.copy(gait.out[i]);
       foot.y += ANKLE;
       lifted[i] = liftToReach(hipW, foot, L1, L2);
+      // a foot still past the leg's reach (a fast turn, a short blink) is
+      // drawn pulled in and steps at the next update: never a stretched bone
+      pulled[i] = clampReach(hipW, foot, L1, L2);
+      if (pulled[i] > 0) gait.release(i);
+      drawnFeet[i].copy(foot);
       solveKnee(hipW, foot, L1, L2, BEND[i], knee);
       legs.setMatrixAt(i * 2, segmentMatrix(m, hipW, knee, LEG_R[0], LEG_R[0], 0.025));
       legs.setMatrixAt(i * 2 + 1, segmentMatrix(m, knee, foot, LEG_R[1], LEG_R[1], 0.015));
-      foot.y -= ANKLE * 0.6;
+      foot.y -= ANKLE; // the tarsal claw lies on the floor under the shin's end
       tq.setFromAxisAngle(YA, TARSUS_YAW[i]);
       tarsi.setMatrixAt(i, m.compose(foot, tq, ONE));
     }
