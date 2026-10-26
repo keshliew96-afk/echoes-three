@@ -42,10 +42,11 @@ import { pageQuery } from '../app/harness.js';
 import { mountModelLab } from '../ui/modellab.js';
 import { IcosahedronGeometry } from 'three';
 import { LAB_ENTRIES as BOSS_ENTRIES } from './modellab-bosses.js';
+import { LAB_ENTRIES as CHAMPION_ENTRIES } from './modellab-champions.js';
 
 // Model tabs from entry files (scenes/modellab-bosses.js documents the shape):
 // each builds its model and classic twin on first view and drives both.
-const ENTRIES = [...BOSS_ENTRIES];
+const ENTRIES = [...BOSS_ENTRIES, ...CHAMPION_ENTRIES];
 const entryOf = (id) => ENTRIES.find((e) => e.id === id) || null;
 
 const MODELS = [
