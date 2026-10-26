@@ -49,7 +49,7 @@ const LAB_SHOTS = {
     ['quake-slam', { ability: 'quake', phase: 'hold', at: 0.5 }],
     ['quake-settle', { ability: 'quake', phase: 'settle', at: 0.55 }],
     ['trample-charge', { ability: 'trample', phase: 'charge', at: 0.7 }],
-    ['trample-gore', { ability: 'trample', phase: 'gore', at: 0.5 }],
+    ['trample-gore', { ability: 'trample', phase: 'held', at: 0.5 }],
     ['spawn', { ability: 'spawn', phase: 'grow', at: 0.35 }],
     ['walk', { mode: 'move', movePhase: 1.2, view: 'play', frames: 90 }],
     ['classic-beside', { mode: 'idle', classic: true, azimuth: 0.5 }],

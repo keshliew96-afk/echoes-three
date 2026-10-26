@@ -25,8 +25,8 @@
 //                     contact held, recoil, settle with one overshoot;
 //       Trample       gather (1.5 frames: the sim gives no warning), charge
 //                     (the sim's 12-tick lunge: head down, rack levelled at
-//                     the target, a galloping stride), gore (the rack hooks
-//                     up, held), settle;
+//                     the target, a galloping stride), gore (2.5 frames: the
+//                     rack hooks up), contact held, settle;
 //   * the [M] beats (render/facet/beats.js): a spawn-in grow from the floor,
 //     named points (mouth, the crown as `tip`, chest, each hoof), and the hit
 //     reaction is the shared envelope's (`react`), never its own.
@@ -124,9 +124,10 @@ export const STAG_ABILITIES = Object.freeze({
   trample: createTimeline('trample', 'Trample', [
     { id: 'gather', label: 'gather', dur: GATHER_SEC },
     { id: 'charge', label: 'charge', dur: 0.2 },
-    { id: 'gore', label: 'gore held', dur: HOLD_SEC },
+    { id: 'gore', label: 'gore', dur: STRIKE_SEC },
+    { id: 'held', label: 'gore held', dur: HOLD_SEC },
     { id: 'settle', label: 'settle', dur: 0.45 },
-  ], { cues: [{ at: GATHER_SEC + 0.2, id: 'gore' }] }),
+  ], { cues: [{ at: GATHER_SEC + 0.2 + STRIKE_SEC, id: 'gore' }] }),
   spawn: SPAWN_TIMELINE,
 });
 
@@ -177,7 +178,8 @@ export function abilityChannels(id, s, C = restChannels({})) {
   } else if (id === 'trample') {
     if (s.id === 'gather') mixPose(C, ZERO, LOWERED, ease.out(k) * 0.6);
     else if (s.id === 'charge') mixPose(C, ZERO, LOWERED, 0.6 + 0.4 * kick(Math.min(1, k * 2)));
-    else if (s.id === 'gore') mixPose(C, LOWERED, GORED, kick(Math.min(1, k * 2.5)));
+    else if (s.id === 'gore') mixPose(C, LOWERED, GORED, kick(k));
+    else if (s.id === 'held') mixPose(C, GORED, GORED, 0);
     else mixPose(C, ZERO, GORED, settle(k));
   }
   return C;
@@ -545,13 +547,15 @@ export function buildStagFacet() {
   grow.add(knees, bands);
 
   // --- Ground: the warm boss-light pool (stag.js: the pool IS the boss
-  // light), the hard and soft contact shadows on the floor.
+  // light), the hard and soft contact shadows on the floor. The floor pieces
+  // are the root's own children, so the shared hit envelope (which wraps the
+  // yaw node) never lifts them; setYaw turns the pool's offset by hand.
   const pool = groundGlow(1.9, PALETTE.hearthAmber, 0.44);
   pool.position.set(0, 0.03, -0.3);
-  yaw.add(pool);
+  group.add(pool);
   const spill = groundGlow(3.4, PALETTE.hearthAmber, 0.22);
   spill.position.set(0, 0.02, -0.3);
-  yaw.add(spill);
+  group.add(spill);
   const hardShadow = floorShadow(0.92, 0.92, -6, 6);
   hardShadow.position.set(0, 0.038, 0.62);
   hardShadow.scale.set(1.45, 1.02, 1);
@@ -718,6 +722,8 @@ export function buildStagFacet() {
     react,
     setYaw: (r) => {
       yaw.rotation.y = r;
+      pool.position.set(-0.3 * Math.sin(r), 0.03, -0.3 * Math.cos(r));
+      spill.position.set(-0.3 * Math.sin(r), 0.02, -0.3 * Math.cos(r));
     },
     // §9 #1: each hide material rides from its base emissive to white; the
     // unlit rack, veins and glows are untouched (the flash is the BODY's).

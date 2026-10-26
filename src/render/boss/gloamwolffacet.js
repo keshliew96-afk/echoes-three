@@ -291,7 +291,9 @@ export function buildGloamWolfFacet() {
   const toPale = ratio(FUR_PALE.clone().lerp(FUR, 0.45), FUR);
   const top = (AROUND - 1) / 2;
   tintPlates(coat.plates, RINGS, AROUND, (r, j) => {
-    if (Math.abs(j - top) <= 1 && r >= 2 && r <= 10) return toDark;
+    // the saddle: three plates wide over the middle of the back, a dark
+    // stripe down the spine fore and aft of it
+    if ((Math.abs(j - top) <= 1 && r >= 4 && r <= 8) || (j === top && r >= 2 && r <= 10)) return toDark;
     if ((j === 1 || j === AROUND - 2) && r >= 3 && r <= 8) return toPale;
     return null;
   });

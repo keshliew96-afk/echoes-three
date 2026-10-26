@@ -1,11 +1,14 @@
-# Model standard (pilot, v0.5.332)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
 planes, detail by repeating small parts, and abilities as named, rewindable timelines. He
 picked option (d): build that technique into the game's own renderer. This pilot does it for
 two models, the **Barrow Wyrm** and the **Tank**, so he can judge the look before any
-roster slice. Visual only: no sim, timing, damage or golden changes.
+roster slice. Visual only: no sim, timing, damage or golden changes. The Level I slice
+(v0.5.336) then rebuilt the **Hollow Stag**, the **Thornmother** and the **Gloam Wolf** and
+measured the pilot's Wyrm against the [M] checklist of `/mnt/project-files/plan/VFX_HIT_RULES.md`
+§6.1 (see "The [M] beats" and "The Level I bosses" below).
 
 His ruling for the pilot: the detail goes **on top of** the chibi ink-outline style
 (BUILD_BRIEF §19.2), it does not replace it, and the facets must read clearly.
@@ -17,7 +20,11 @@ His ruling for the pilot: the detail goes **on top of** the chibi ink-outline st
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm: true, tank: true}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,tank` (only those); a player build never sees the param. |
+| `flags.js` | `MODEL_STANDARD = {wyrm, tank, stag, thornmother, gloamwolf}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
+| `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
+| `gait.js` | Locked feet for any number of legs: each foot pinned to the floor in world space while it carries weight; a diagonal pair steps when its homes drift `trigger` away (less once moving), landing ahead along the travel; both pairs may fly at a gallop (`flight`); a foot the leg can no longer reach lifts at once (never slides); `raise(i)`/`raiseTo(i)` hold a foot up for a pose (a reared foreleg, a pawing hoof, a raking paw); `air` lets the body leave the floor (a bound). `solveTwoBone`, `aimSegment`. |
+| `legs.js` | `createLegs`: two-bone legs laid onto a gait by IK, each knee bending toward its pole; `tuck(i)` draws the paws up while the body is in the air. |
+| `shapes.js` | `taperBox` (the boxy skulls, snouts and jaws), `limbBox` (leg segments), `lay` (a part along a direction). |
 
 `critters/common.js` gained `addInstancedInk(mesh, px)`: the same constant-pixel inverted
 hull, drawn per instance from the part's own `instanceMatrix` buffer.
@@ -37,10 +44,12 @@ hull, drawn per instance from the part's own `instanceMatrix` buffer.
   A turntable (the Journal viewer passes `turntable: true`) turns the coil rigidly with
   the head; the death collapse freezes the coil where it lay.
 - **Abilities** (`WYRM_ABILITIES`), driven by the sim in game:
-  - *Ash Breath*: draw back 0.9 s, strike 0.18 s, pour 0.5 s, settle 0.6 s. The draw is
+  - *Ash Breath*: draw back 0.9 s, strike 2.5 frames, contact held 3 frames, pour 0.5 s
+    (the head kicks back off the blast), settle 0.6 s (one overshoot). The draw is
     stretched to the sim's telegraph span; the strike lands when the telegraph resolves.
-  - *Burrow Strike*: dive 0.5 s, tunnel 1.2 s, rise 0.9 s, burst 0.25 s, exposed 1.5 s,
-    settle 0.6 s. Tunnel, rise and exposed hold for as long as the sim's mode does.
+  - *Burrow Strike*: dive 0.5 s, tunnel 1.2 s, rise 0.9 s, burst 2.5 frames, contact held
+    3 frames, exposed 1.5 s, settle 0.6 s (one overshoot). Tunnel, rise and exposed hold
+    for as long as the sim's mode does.
   The legless rule: the coil's base stays planted while the head and neck drive (only the
   first points lift; the probe checks the base moves no more than its rest sway).
 - **Colour.** Slate scales from the enemy hide family (cool, as foes read), a low-saturation
@@ -81,16 +90,102 @@ hull, drawn per instance from the part's own `instanceMatrix` buffer.
   travel in the Tank's own frame: a backpedal leans back, a sidestep leans aside, whatever
   the aim. A collapse unlocks the feet.
 
+## The [M] beats (VFX_HIT_RULES §6.1)
+
+Every model of the standard plays these on its own clock (pose's `t`), so a held clock holds
+them (`src/render/facet/beats.js`):
+
+| Beat | Rule | How |
+|---|---|---|
+| B1 anticipation | The sim's telegraph is the wind-up; an untelegraphed move winds at most 1.5 frames. | Wind-up phases stretch to the telegraph span; `GATHER_SEC` otherwise. |
+| B2 strike | 2 to 3 frames, then the contact pose held 3 frames. | A `STRIKE_SEC` phase, then a `HOLD_SEC` (or longer) phase. |
+| B3 recoil | A rig-only shove off the hit: 2 frames out, ~8 back. | `recoil(age)`. |
+| B4 kick | The strike leaves on its first frame, no ease-in. | `kick(k)`: past 55 % of the way one frame in. |
+| B5 settle | Into idle with one small overshoot, never a plain blend. | `settle(k)`: dips ~8 % past rest once. |
+| B7 spawn-in | The body grows from the floor in ~7 frames, ~10 % over. | `createSpawnClock`: restarts when a pooled rig is posed for a new boss; the Journal's turntable skips it. |
+| B8 points | Named Object3Ds for effects. | `rig.points`: `mouth`, `chest`, `tip`, each foot (`hoofFL`...`pawHR`); the Wyrm's `mouth`, `throat`, `crown`. |
+| B9 lunge | Pull back, lunge past rest, lean in, squash on contact. | `lunge(phase, k)`: the Gloam Wolf's Rend. |
+
+The hit reaction (squash, flinch, white flash) is the shared hit envelope's, never the
+rig's: each rig only tunes it with `rig.react` ({ squash, flinch, knock, axis, midY }). The
+envelope wraps the root's first child (the yaw node), so every rig keeps its floor pieces
+(shadows, the Stag's warm pool, the Wyrm's mound and seam) as the root's other children,
+and never writes the root group's own transform.
+
+### The Barrow Wyrm measured (v0.5.336)
+
+| Item | Pilot | Now |
+|---|---|---|
+| B1 wind-up | the draw stretched to the telegraph | kept |
+| B2 strike and hold | breath strike 0.18 s, burst 0.25 s, no hold | strike and burst 2.5 frames, each followed by a 3-frame held contact |
+| B3 recoil | none | the head kicks back off the breath as it pours |
+| B4 kick | eased strikes | `kick` on the strike and the burst |
+| B5 settle | plain blends | `settle`: one overshoot after the pour and after the exposed sprawl |
+| B7 spawn-in | none | the coil grows from the floor (the lab's Spawn in tab) |
+| B8 points | none | `mouth`, `throat`, `crown` on the head |
+| Hit envelope | no tuning | `react`: a height-only squash with no flinch, so the planted tail never slides |
+| Colour | slate, pewter, violet | unchanged |
+
+## The Level I bosses (v0.5.336)
+
+Each keeps its classic rig's silhouette and colours (the classic's own constants, no new
+hues) and adds the standard's detail on top; the classic rigs stay beside them (`?facet=0`).
+All three walk on **locked feet** (`gait.js` + `legs.js`): a planted hoof or paw never
+slides, the feet step in alternating diagonal pairs along the travel, and every foot is
+planted again at rest.
+
+| Boss | File | Draw calls (classic) | Instanced parts |
+|---|---|---|---|
+| Hollow Stag | `render/boss/stagfacet.js` | 98 (97) | 222 |
+| Thornmother | `render/boss/thornmotherfacet.js` | 58 (32) | 112 |
+| Gloam Wolf | `render/boss/gloamwolffacet.js` | 75 (74) | 196 |
+
+- **Hollow Stag.** A coat of ridged slate plates (Bone-pale over the withers, the classic's
+  pale hump), bone ribs over the violet hollow, a violet ridge and tail fan, a boxed skull
+  and muzzle under a wide rack: two beams with seven tines a side, violet vein cores, a
+  rotating rune ring and a crown star; the warm boss-light pool on the floor as the
+  classic. *Antler Quake*: rear (the 42-tick telegraph: the forelegs fold up, the haunches
+  load), slam (2.5 frames, the forehooves land a step ahead), held, recoil, settle.
+  *Trample*: gather (1.5 frames: the sim gives no warning), charge (the sim's 12-tick lunge:
+  head down, a galloping stride), gore (2.5 frames: the rack hooks up), held, settle.
+- **Thornmother.** The broad slate sow with a saddle of bristled plates over the back (the
+  flanks stay smooth), briar blades in three lanes on the hump, barbs on the flanks,
+  faceted violet seed pods (unlit, stepped per facet), a boxed head with a bristle crest,
+  a snout disc, two tusks a side, flop ears; short legs folding back on split hooves.
+  *Seed Volley*: gather (1.5 frames: no warning in the sim, read off its volley cooldown),
+  heave (2.5 frames: the hump bucks up, the pods go), held, settle while the pods grow back.
+  *Briar Charge*: paw (the 60-tick lane warning: head down, a hind hoof scrapes the floor
+  twice), burst (2.5 frames), charge (held while the sim charges at 10 u/s: a galloping
+  bounce), stop (2.5 frames: the forehooves brace a step ahead), held, skid (the sim's
+  40-tick stand, one overshoot).
+- **Gloam Wolf.** The grey night wolf: a coat of shaggy fur plates whose top plates step
+  dark for the saddle and whose flank plates step pale for the moon streak, a ruff round
+  the neck and cheeks, a boxed skull and long snout, upper and lower fangs, tall ears with
+  pale inner blades, violet slit eyes and throat; a bramble mane with violet buds that
+  rises as hackles; a jointed bushy tail with a pale tip; legs with the elbows folding back
+  and the stifles forward, bone claws. *Pounce*: crouch (the ring warning less the bound,
+  stretched), leap (the sim's 16-tick bound: a 1.1 u arc, the paws tucked, the forepaws
+  reaching), land (2.5 frames: the forepaws take it, the body squashes), held, settle.
+  *Rend*: wind (the 36-tick cone warning: pulled back, the right forepaw raised high and
+  wide), strike (2.5 frames: the B9 lunge and the rake across, the jaw snaps), held, back.
+  *Moon Howl*: rise (the 60-tick ring warning: it sits back on its haunches, the head goes
+  up, the throat fills), cry (2.5 frames), held, settle. *Enraged* (under 40 % HP): the
+  hackles stay up, the eyes and the mane burn, the breathing quickens. A back-to-back
+  pounce of the Hunt starts its crouch from the landing, not from rest.
+
 ## Integration
 
-- `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet` when
-  `facetOn('wyrm')`; it keeps the classic rig's interface (`group`, `mats`, `setYaw`,
-  `setFlash`, `pose`).
+- `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet`,
+  `buildStagFacet`, `buildThornmotherFacet` and `buildGloamWolfFacet` when their flag is on;
+  each keeps the classic rig's interface (`group`, `mats`, `setYaw`, `setFlash`, `pose`)
+  and adds `lab`, `points` and `react`. The boss rigs are pooled: a rig posed for a new
+  boss (a new entity id, a jump in time or place) resets its timelines and spawns in.
 - `critters/index.js` builds `buildTankFacet` when `facetOn('tank')`. The rig's `apply`
   receives the driver's clip name; the critter API gains `cue(kind, ev)` (forwarded from
   `render/allies/index.js` on `ally_basic` / `ally_cast`, and from the camp's seat casts),
   `lab` and `modelStandard`. The classic rigs ignore all three.
-- The classic rigs (`boss/wyrm.js`, `critters/tank.js`) are untouched and stay beside them.
+- The classic rigs (`boss/wyrm.js`, `boss/stag.js`, `boss/slice2.js`, `boss/third.js`,
+  `critters/tank.js`) are untouched and stay beside them.
 
 ## The model lab (`?modellab=1`, harness only)
 
@@ -102,6 +197,16 @@ that holds Still, and the live readout. Each cue beat plays its game sound and a
 URL: `?modellab=1&model=tank&mode=ability&ability=combo&view=play&classic=1`. Probes drive
 it with `__echoes.cmd('lab', {model, mode, ability, t, rate, view, turntable, classic})`.
 
+The Level I bosses are lab entries (`scenes/modellab-bosses.js`): each builds its model and
+its classic twin on first view and drives both (the Stag: Antler Quake, Trample; the
+Thornmother: Seed Volley, Briar Charge; the Gloam Wolf: Pounce, Rend, Moon Howl, Enraged;
+every model, the Wyrm too, a Spawn in tab). The Trample, the Briar Charge and the Pounce
+travel as they do in the game, so the gallop and the bound can be judged on locked feet.
+Still from a playing ability freezes that moment with the feet where the motion left them;
+a scrub re-plants them on the pose's stance. `fixedDt` (s) makes every drawn frame advance
+the lab by that step, so a probe on a slow software-GL machine sees 60 Hz motion
+(`tools/model-standard-level1-shots.mjs` uses 1/60).
+
 ## Adding a model to the standard
 
 1. Build it with the kit: faceted parts (`facetize` + `facetMaterial`), repeated detail on
@@ -111,8 +216,14 @@ it with `__echoes.cmd('lab', {model, mode, ability, t, rate, view, turntable, cl
 3. Heroes and biped foes get the 3-hit combo template; run the self-check (root motion
    matches the legs, planted feet locked until the weight shifts, hips and legs drive each
    swing; a legless body keeps its base planted).
-4. Add it to `MODEL_STANDARD`, a lab tab, and a check in `tools/model-standard-probe.mjs`.
-5. Shoot it in the lab and at play zoom in a busy fight beside its classic twin.
+4. Play the [M] beats (`beats.js`): wind-ups on the telegraphs, 2.5-frame strikes into a
+   held contact, a kick, a settle with one overshoot, the spawn-in, named points, and a
+   `react` tuning for the shared hit envelope; keep floor pieces off the root's first child.
+5. Legged models stand on `createLegs` (locked feet); give each leg a pole that bends the
+   way the animal's joint does.
+6. Add it to `MODEL_STANDARD`, a lab entry (`scenes/modellab-bosses.js` for a boss), and
+   checks in a probe (`tools/model-standard-level1-probe.mjs` shows the pattern).
+7. Shoot it in the lab and at play zoom in a busy fight beside its classic twin.
 
 ## Probe
 
@@ -121,3 +232,12 @@ flat facets; every instanced part inked; the Wyrm's no-slip coil, planted base, 
 burrow driving, turntable and death freeze; the Tank's chain continuity, cadence, skill
 coverage, hips before slab, locked feet in eight directions, steps along the travel, the
 lean, the lunge; the flag; no reserved or amber colours; Bone brightest on the Tank.
+
+`node tools/model-standard-level1-probe.mjs` (in `npm test`): the flags and the classic
+rigs; each Level I rig's interface, floor pieces off the envelope's node, ink on every
+part, faceted geometry under every vertex-coloured material; no reserved or amber colour;
+the [M] beats on every ability (B2 strike and hold, B4 kick, B5 overshoot, B7 spawn-in,
+B8 points, B9 lunge); locked feet on a turning walk (no slide, steps along the travel in
+alternating pairs, planted at rest); the sim's telegraphs, modes, volley cooldown and leap
+driving each ability with the feet held; the Wyrm's re-measure; a pooled rig spawning in
+again; every lab entry playing every ability.
