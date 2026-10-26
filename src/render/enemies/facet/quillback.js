@@ -113,7 +113,7 @@ const THUD_SEC = 2 * FRAME;
 const RECOIL_SEC = 5 * FRAME;
 const LAND_SEC = 6 * FRAME;
 const RECOVER_SEC = 0.38;
-const ABORT_SEC = 0.3;
+const ABORT_SEC = 6 * FRAME; // a false start: a flinch back (at rest by frame 2 to 3, one small overshoot)
 
 const wrapPi = (a) => a - 2 * Math.PI * Math.round(a / (2 * Math.PI));
 const clamp01 = (k) => (k < 0 ? 0 : k > 1 ? 1 : k);
@@ -161,39 +161,38 @@ function bumpPose(tb, out) {
   out.bristle += 0.25 * a;
   return out;
 }
-// Spent: from the captured roll pose, the lurch on the lost momentum, then
-// righting itself and uncurling with one overshoot (B5). The spin carries on
-// FORWARD from the roll's own rate (v0, rad/s) and runs down into the next
-// upright, never back against the travel (rule 1); one that is nearly
-// upright already turns once more. A ball that had stopped dead (a stunned
-// roll: no momentum) rights itself the nearest way. Ends at rest.
+// The ball rolls only as far as the body travels: a short carry-on past the
+// sim's stop (the lurch, about 0.3 rad forward; the bounce, about 0.38 rad
+// back, its 0.13 u recoil at r 0.34), never a wheel-spin in place. The rest
+// of the way to upright is the creature UNROLLING in place: the nearest way,
+// slow (6 rad/s at most at its peak), with the tuck easing out alongside.
+const TAU = 2 * Math.PI;
+const UNROLL_RATE = 4; // rad/s on average (a smooth step peaks at 1.5x)
+const smooth = (k) => k * k * (3 - 2 * k);
+const nearestUp = (p, up = 0) => up + TAU * Math.round((p - up) / TAU);
+// The stop's plan from the captured pitch: carry-on, then the unroll.
+function stopPlan(p0, v0) {
+  const carry = 0.3 * clamp01(v0 / ROLL_RATE); // a ball stunned dead carries nothing on
+  const fwdUp = TAU * Math.ceil(p0 / TAU) - p0; // forward to the next upright
+  const c = Math.min(carry, fwdUp); // it lands upright on the carry-on: done
+  const rem = c < carry ? 0 : nearestUp(p0 + c) - (p0 + c);
+  return { c, rem, dur: Math.max(UNCURL_SEC, Math.abs(rem) / UNROLL_RATE) };
+}
+// Spent: from the captured roll pose, the lurch on the lost momentum (the
+// carry-on), then unrolling upright and uncurling with one overshoot (B5).
 function stopPose(ts, cap, out, v0 = ROLL_RATE) {
+  const pl = stopPlan(cap.pitch, v0);
   if (ts < LURCH_SEC) lerpFields(out, cap, LURCH, ease.out(ts / LURCH_SEC), FIELDS);
-  else lerpFields(out, LURCH, REST, 1 - settle(clamp01((ts - LURCH_SEC) / UNCURL_SEC)), FIELDS);
-  out.pitch = cap.pitch + stopSpin(ts, cap.pitch, v0);
+  else lerpFields(out, LURCH, REST, 1 - settle(clamp01((ts - LURCH_SEC) / pl.dur)), FIELDS);
+  out.pitch = cap.pitch + pl.c * ease.out(clamp01(ts / LURCH_SEC)) + pl.rem * smooth(clamp01((ts - LURCH_SEC) / pl.dur));
   return out;
 }
-const TAU = 2 * Math.PI;
-function stopSpin(ts, p0, v0) {
-  const v = Math.max(0, v0);
-  let D;
-  if (v > 2) {
-    D = TAU * Math.ceil(p0 / TAU) - p0;
-    if (D < 0.8 * Math.min(1, v / ROLL_RATE)) D += TAU;
-  } else D = TAU * Math.round(p0 / TAU) - p0;
-  // a cubic from the roll's spin to still on the upright: it lands in
-  // 2D / v0 (a steady run-down), kept inside the stop
-  const T = Math.min(STOP_SEC, Math.max(0.15, v > 0 ? (2 * Math.abs(D)) / v : STOP_SEC));
-  const u = clamp01(ts / T);
-  return (u * u * u - 2 * u * u + u) * T * v + (3 * u * u - 2 * u * u * u) * D;
-}
-const STOP_SEC = LURCH_SEC + UNCURL_SEC;
+const stopSec = (cap, v0) => LURCH_SEC + stopPlan(cap.pitch, v0).dur;
 // A wall: the thud, the bounce back, the daze held for as long as the sim
-// staggers it. The bounce rolls the ball BACK off the wall (the way the body
-// shoves, rule 1) to its dazed upright: never forward into the wall. The
-// tumble's pitch ends 2 pi * n off the daze's (the same orientation); the
-// recovery wraps it first.
-const TUMBLE_SEC = RECOIL_SEC + LAND_SEC + 5 * FRAME;
+// staggers it. The bounce rolls the ball BACK off the wall by its recoil
+// (never forward into the wall), then it unrolls to its dazed upright in
+// place; the recovery finishes whatever is left.
+const BOUNCE = 0.38;
 function thudPose(ts, cap, out) {
   if (ts < THUD_SEC) {
     lerpFields(out, cap, THUD, ease.out(ts / THUD_SEC), FIELDS);
@@ -202,9 +201,12 @@ function thudPose(ts, cap, out) {
   }
   if (ts < THUD_SEC + RECOIL_SEC) lerpFields(out, THUD, RECOIL, ease.out((ts - THUD_SEC) / RECOIL_SEC), FIELDS);
   else lerpFields(out, RECOIL, DAZE, 1 - settle(clamp01((ts - THUD_SEC - RECOIL_SEC) / LAND_SEC)), FIELDS);
-  const back = DAZE.pitch + 2 * Math.PI * Math.floor((cap.pitch - DAZE.pitch) / (2 * Math.PI)); // <= cap.pitch
-  const k = clamp01((ts - THUD_SEC) / TUMBLE_SEC);
-  out.pitch = cap.pitch + (back - cap.pitch) * (1 - (1 - k) * (1 - k)); // the bounce's spin, running down
+  const backUp = cap.pitch - (DAZE.pitch + TAU * Math.floor((cap.pitch - DAZE.pitch) / TAU)); // back to the upright
+  const c = Math.min(BOUNCE, backUp);
+  const rem = c < BOUNCE ? 0 : nearestUp(cap.pitch - c, DAZE.pitch) - (cap.pitch - c);
+  const dur = Math.min(0.6, Math.max(LAND_SEC, Math.abs(rem) / UNROLL_RATE));
+  const t1 = ts - THUD_SEC;
+  out.pitch = cap.pitch - c * ease.out(clamp01(t1 / RECOIL_SEC)) + rem * smooth(clamp01((t1 - 0.6 * RECOIL_SEC) / dur));
   return out;
 }
 // Back to rest from any captured pose, with one overshoot (B5).
@@ -744,7 +746,7 @@ export function buildQuillbackFacet() {
     }
     if (phase === 'stop') {
       stopPose(now - t0, cap, cur, stopV);
-      if (now - t0 >= STOP_SEC) phase = 'idle';
+      if (now - t0 >= stopSec(cap, stopV)) phase = 'idle';
     } else if (phase === 'thud') {
       thudPose(now - t0, cap, cur);
       const held = now - t0;
