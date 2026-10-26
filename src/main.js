@@ -49,8 +49,9 @@ import { createSocketScreen } from './ui/socket/index.js';
 import { createTechFx } from './render/techfx/index.js';
 import { createSiphonFizzleCue } from './ui/socket/fizzle.js';
 import { createRunUi } from './ui/run/index.js';
-import { updateNumberPools, flushNumberPools, prewarmNumberPools, numeralTally } from './render/numbers.js';
+import { updateNumberPools, flushNumberPools, prewarmNumberPools, numeralTally, numeralsLive } from './render/numbers.js';
 import { warmupUpdate, warmupPending, warmupRetained } from './render/warmup.js';
+import { wireRenderHold, markRenderHold, frameRenderHold, renderHold } from './render/hold.js';
 import { parseBootParams, wipeEchoesStorage } from './app/params.js';
 import { HARNESS, pageQuery } from './app/harness.js';
 import { createApp } from './app/app.js';
@@ -503,6 +504,10 @@ import { SKILLS as VFX_SKILL_ROWS } from './sim/skills.js';
 registerEffectsSetting(app.settings);
 registerSkillAreas(VFX_SKILL_ROWS);
 const signaturefx = PLAYABLE ? createSignatureFx({ stage, world, bus, cosmetic, settings: app.settings }) : null;
+// Render hold on hitstop (render/hold.js, docs/HIT_FEEDBACK.md): each
+// `hitstop` event holds the rig clips, slash sweeps and flares for its ticks.
+wireRenderHold(bus);
+service('content').renderHold = () => renderHold.debug();
 if (signaturefx) {
   setImpactFxDirected(true);
   signaturefx.prewarm();
@@ -860,10 +865,16 @@ function frame(now) {
   input.setPadSuppressed(!!(socketScreen?.isOpen() || runUi?.isOpen()));
 
   let alpha = lastAlpha;
+  // The render hold counts the frozen ticks this step consumes (render/hold.js).
+  const holdBefore = clock.hitstopRemaining;
+  markRenderHold();
   if (!simFrozen && !app.simPaused()) {
     alpha = clock.advance(frameMs, (tick) => simStep(tick));
     lastAlpha = alpha;
   }
+  // The render hold pays the freeze before any layer poses; a co-op guest
+  // (a replica bus: its clock never freezes) pays the replayed hitstops.
+  frameRenderHold(now / 1000, Math.min(0.1, Math.max(0, frameMs / 1000)), bus.replica ? null : holdBefore, bus.replica ? null : clock.hitstopRemaining);
 
   // Render side: read-only over sim state, interpolated by alpha.
   activeScene.update?.(now / 1000, alpha);
@@ -1194,6 +1205,8 @@ window.__echoes = !HARNESS
   playClass: () => playClass.debug(),
   // ATTACK FEEDBACK (docs/HIT_FEEDBACK.md): outgoing numerals per look.
   numerals: () => numeralTally(),
+  // THE HIT AND THE KILL: the live numerals (look, held pop, side, tag).
+  numeralsLive: () => numeralsLive(),
   i18n: () => i18nDebug(), // docs/I18N.md: { lang, misses, seen }
   tutorial: () => service('tutorial'), // docs/TUTORIAL.md: { startNow, skip, debug() ... }
   story: () => service('story'), // docs/STORY.md: { showPrologue, voice, debug() }

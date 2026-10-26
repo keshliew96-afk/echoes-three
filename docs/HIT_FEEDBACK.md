@@ -103,3 +103,104 @@ Damage numbers on enemies split by who dealt the hit:
   looks in one frame, their styles, and the game's own/other split matched
   against a count the probe makes from the hit events). Probe surface:
   `__echoes.numerals()` (outgoing numerals spawned per look).
+
+## The hit and the kill (v0.5.333)
+
+Kesh (2026-10-26): "Go for 1", the VFX and hit feedback slice from his nine
+reference videos (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.2, Part 1:
+items a to e). Render and audio only: no damage, rule, deed or record changes,
+and the nine goldens are untouched. Part 2 (§6.2 f to o: the cast, the shot,
+the reward and the aftermath) is its own PR.
+
+**a. The hit reaction (R2 to R5).** Every foe, champion and boss rig reacts
+to a hit on a wrapper node the layer inserts between the rig's group and its
+body, so the shadow, the elite crown and every floor piece stay on the floor
+(`src/render/react.js`, wired in `src/render/enemies/index.js` and
+`src/render/boss/index.js`; it works on any rig, classic or faceted).
+
+| | What it does | Size |
+|---|---|---|
+| Squash (R2) | a hard cut to full squash, held 2.5 ticks, then a damped stretch back to rest; a new hit restarts it, so rapid hits keep the body squashed | +12 % wide, 12 % shorter on a melee hit; a shot +13 % wide, 6.5 % shorter; a skill or spell +20 % wide, 12 % shorter; a crit 1.2 x; burns, auras, thorns and hazards 0.35 x |
+| Flinch (R3) | the body widens along the hit with its near edge anchored, so its far side bulges away | half the squash |
+| Hop (R4) | a hop, a tilt back then forward, a stretch in the air and a landing squash, sized to the distance the sim really pushes the body (the hit's knockback times the body's own kbScale, read on the first tick it moves) | 0.4 u lift at a 0.55 u push, lands in 14 ticks; no push, no hop |
+| Bosses and champions (R5) | half the squash and flinch; champions keep a small hop at their small push; bosses never hop | 0.5 x |
+
+- Everything counts in sim ticks, so it holds through the hitstop like the
+  hit flash. A weaker hit (a burn or aura tick) never cuts a stronger squash
+  still in play.
+- A standing body squashes with its base on the floor; a floating one (moths,
+  wasps, wisps, censers, owls, kites, chimes, the Hollow Choir) about its
+  middle.
+- The Gallows Hanger and the Bell Abbess hang on ropes: they widen only, never
+  shorten, tilt or hop. The Bog Lamprey, the Leech and the Barrow Wyrm are
+  coiled on the floor: they shorten only, so the coil does not slide.
+
+**b. The render hold (F1, I3).** A `hitstop` event (2 ticks on a melee
+connect, 3 on a kill) now holds the render for the same time: the rig clips
+(foes, champions, bosses, heroes, dummies), the kill pop, the slash ribbons'
+sweep and the flares pause for exactly the frozen ticks the game clock
+consumes, so the frame of the hit stays on screen at any frame rate (at
+60 fps: the hit frame plays, the next 2 or 3 frames hold). A co-op guest,
+whose clock never freezes, holds from the frame after each replayed
+`hitstop`. Below 60 fps the clock can freeze inside the hit's own frame;
+the flares and blooms that hit made that frame owe exactly that part
+(`renderHold.dueBorn`), so they hold as long as the rigs at any frame rate.
+Particles, numbers' drift, telegraphs, the camera and the audio keep
+running; a number's pop holds with the rigs and stops holding when the
+freeze ends (a staggered numeral on a cleave shows after it and never
+holds). No window holds more than 4 ticks (`src/render/hold.js`). The kit's
+flash pool is 64 (was 28), since each hit now keeps two flashes.
+
+**c. The kill (K1, K2, K4, P1, A6).**
+- The body holds 2 frames, swells round (1.38 x wide, 1.3 x tall), then pops
+  flat (`KILL_*` in `src/render/enemies/index.js`).
+- The body is thrown half a body width along the killing hit and tips up to
+  1.2 rad as it goes, still popping flat on the floor. A body killed mid-hop
+  sinks to the floor through the pop.
+- The bone-white flare holds bright 117 ms (5 frames with the freeze) over a
+  white bloom twice a hit's area (2.3 u across).
+- The ground ring of the body's matter lives 0.22 s and draws under the floor
+  warnings, so it never reads as a telegraph.
+- The debris bursts 0.1 s in (held time), as the body pops, and leans along
+  the killing hit.
+- The kill sound keeps its pop, then rings on in a low rumble (150 to 60 Hz
+  over a 55 to 38 Hz body) with a high crackle from +0.3 s; all of it is gone
+  inside 0.8 s.
+
+**d. Numbers (N1 to N3).** The outgoing numerals fly a ballistic arc that
+drifts about 0.3 u to alternating sides (two fanned numerals never cross).
+
+| | Your hits | Everyone else's | Heals | Damage you take |
+|---|---|---|---|---|
+| First frame | big white (Parchment) pop, held through the hitstop | their own small pop in Bone | Bright Heal "+n" | Bruise Umber, drops |
+| Settles to | Hearth Amber within 0.1 s (3 frames), in 3 colour steps | Bone at 45 % | unchanged | unchanged |
+| Crit | 1.55 x (was 1.4) and a "CRIT!" tag a frame later, tilted toward its side, then upright | 1.4 x, no tag | | |
+
+The tag is drawn from the numeral's `data-tag` (the text stays the bare
+number). It is new text in all ten languages: KRIT!, ¡CRÍTICO!, CRITIQUE !,
+クリティカル！, 치명타!, CRÍTICO!, КРИТ!, 暴击！, 暴擊！. Two fanned crits are spaced on
+the tag's real width (full-width CJK characters count 1 em), and a tagged
+numeral pinned at the top edge keeps room above it, so the tag stays on
+screen.
+
+**e. The contact (P3, L5, P1, R1, I1, A1).**
+- A near-white bloom about 2 body widths across (1.6 u; 2.0 u for a skill;
+  1.25 x on a crit) lands on every party hit and holds full strength 100 ms.
+  It is white, not the class glow, because the Healer's glow is your numbers'
+  Hearth Amber. It dims where many glows stack and under Effects: Reduced.
+- The class flare and flash hold full strength 100 ms too.
+- A magic hit leaves through the far side: about 6 gold streaks out past the
+  target's far edge within 25 degrees, 3 back toward the caster, and the
+  stardust leans along the hit.
+- A spell hit (the Healer's, the Tidecaller's and the Bellwright's own hits;
+  never a heal) holds the white flash 5 ticks, then fades it over 27.
+- The first `impact` cue of a sim tick always starts the frame it is heard,
+  like a telegraph, so the thump lands with the flash; the rest of the tick's
+  hits queue under the audio budget as before.
+
+**Probe.** `node tools/vfx-hit-feedback-probe.mjs` (in `npm test`): the
+render hold, the curves, every foe, champion and boss rig built and hit
+through the real layers, the kill through a freeze, the contact and kill
+effects, the numerals in a stub DOM, the kill cue and the colours. Probe
+surfaces: `__echoes.content.enemyfx().react` and `.kills`,
+`__echoes.content.renderHold()`, `__echoes.numeralsLive()`.

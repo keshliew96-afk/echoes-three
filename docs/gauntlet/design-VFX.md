@@ -509,3 +509,26 @@ spawns every shooting enemy and champion alone and meets every shooting boss
 in its boss room, and each must draw its head; `--shots <dir>` films the lab
 and the fights (`--only data|heroes|fights|foes|bosses|shots`, `--kinds a,b`).
 The per-source tally is `__echoes.content.vfx().bolt`.
+
+### The hit and the kill (VFX and hit feedback Part 1, 2026-10-26)
+
+Kesh's hit rules (`/mnt/project-files/plan/VFX_HIT_RULES.md`, [V] rules)
+join the templates: every hit and kill now lands on a held frame. The full
+list is `docs/HIT_FEEDBACK.md` "The hit and the kill"; for a VFX build:
+
+- **Hold the hit, not the world's particles.** A `hitstop` holds the rig
+  clips, the slash sweep and the flares for its ticks (`renderHold` in
+  `src/render/hold.js`: `time(t)` to pose a rig, `rigDt(dt)` for a layer's
+  clock). A kit slot spawned with a `hold` pays the freeze after its pop;
+  particles keep flying.
+- **A contact is a white bloom first.** Every party hit draws a near-white
+  Parchment bloom about 2 body widths across, held 100 ms, under the class
+  flare (held 100 ms too). The magic template's hit leaves through the far
+  side (`MAGIC_EXIT` in `templates.js`). A spell hit holds the body's white
+  flash 5 ticks, then fades it (`SPELL_FLASH` in `src/data/vfx.js`).
+- **A kill holds, swells, then pops.** The bone flare holds 117 ms over a
+  bloom twice a hit's area, the matter ring is gone by 0.22 s and draws under the
+  Ember floor warnings (`KILL_FX` in `signature.js`), and the debris waits
+  0.1 s of held time and leans along the killing hit.
+- Gameplay signals stay as they were: Ember telegraphs, Bright Heal heals,
+  Hearth Amber for your own numbers once they settle.

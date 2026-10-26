@@ -297,6 +297,15 @@ cheek markings, and the classic metrics.
   `room_enter`); the camp forwards the seat casts.
 - The classic rigs (`boss/wyrm.js`, `critters/tank.js`, `healer.js`, `swordsman.js`) are
   untouched and stay beside them.
+- The hit reaction and the render hold (v0.5.333, `docs/HIT_FEEDBACK.md` "The hit and the
+  kill") need nothing from a rig: the foe and boss layers wrap its `body` (else
+  `group.children[0]`) in a `hit-react` node and squash that, and every layer poses a rig
+  with the held clock (`renderHold.time(t)`, `renderHold.rigDt(dt)`), so a rig's own clip
+  freezes on the hit frame. A rig whose body must not bend gets a rope or coil entry in
+  `src/render/react.js`. The model-standard heroes are the exception: they take the raw
+  frame dt (`arena.js`, `allies/index.js`) because they hold themselves on the `hitstop`
+  cue, the attacker at its own contact (B2); the render hold on top would freeze the
+  attacker at the press and hold twice.
 
 ## The model lab (`?modellab=1`, harness only)
 
