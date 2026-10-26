@@ -11,7 +11,7 @@
 //      hit starts where the last one held, comboHitOf counts 1-2-3 and is
 //      order-safe;
 //   3. the blow (B9, B2, B3, B5, B6): melee wind-ups pull back, contacts
-//      lunge and lean 20-25° with the contact squash, snapped back within 3
+//      lunge and lean (capped at 12°) with the contact squash, snapped back within 3
 //      frames; the contact holds through the hitstop the rig struck; the
 //      rig recoils off a connect after the hold (a whiff does not); shots
 //      squash the shooter 20/29/38%; every move settles with one small
@@ -38,7 +38,7 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 const { Box3, Color, Group, Matrix4, Vector3 } = await import('three');
 const { FACET_HEROES } = await import('../src/render/facet/heroes.js');
 const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
-const { FRAME, LUNGE_PITCH_MAX, RECOIL, SHOT, SPAWN, SPAWN_SEC, LEAD, LAG, shotAt } = await import('../src/render/facet/hero.js');
+const { FRAME, LUNGE_PITCH_MAX, leanOf, RECOIL, SHOT, SPAWN, SPAWN_SEC, LEAD, LAG, shotAt } = await import('../src/render/facet/hero.js');
 const { createCritter } = await import('../src/render/critters/index.js');
 const { ALLY_CLASSES } = await import('../src/sim/allies.js');
 const { HEALER } = await import('../src/core/constants.js');
@@ -184,8 +184,9 @@ for (const H of FACET_HEROES) {
   if (!H.ranged) {
     const pulls = hits.map((h) => r3(h.from.rz));
     check('every melee wind-up pulls the weight back before the blow (B9)', hits.every((h) => h.from.rz <= -0.03), pulls);
-    const lean = hits.map((h) => r3(h.strike.pitch));
-    check('every contact leans 20-25° into the target (B9)', hits.every((h) => h.strike.pitch >= 0.35 && h.strike.pitch <= LUNGE_PITCH_MAX + 1e-9), lean);
+    const knee = Math.max(0, hits[0].move.ends[hits[0].move.ends.length - 1].pitch); // the rest lean
+    const lean = hits.map((h) => r3(leanOf(h.strike.pitch, knee)));
+    check('every contact leans into the target, inside Kesh\'s 12° cap', hits.every((h) => leanOf(h.strike.pitch, knee) >= 0.17 && leanOf(h.strike.pitch, knee) <= LUNGE_PITCH_MAX + 1e-9), lean);
     const sq = hits.map((h) => `${r3(h.strike.sw)}x${r3(h.strike.sh)}`);
     check('every contact squashes +19% wide, about -9% tall (B9)', hits.every((h) => Math.abs(h.strike.sw - 1.19) < 0.02 && h.strike.sh <= 0.93 && h.strike.sh >= 0.84), sq);
     const lunge = hits.map((h) => r3(h.strike.rz));
@@ -357,6 +358,16 @@ for (const H of FACET_HEROES) {
     const peakAt = sc.indexOf(peak) * DT;
     const end = sc[sc.length - 1];
     check('the spawn grows from the floor with about 10% overshoot in about 7 frames (B7)', first < 0.45 && peak > 1.07 && peak < 1.13 && peakAt <= 6 * FRAME && Math.abs(end - 1) < 1e-6, { first: r3(first), peak: r3(peak), peakAt: r3(peakAt), end: r3(end) });
+    // only the run's first room grows in (Kesh's pick): a second room entry
+    // plays nothing until a reset starts a new run
+    R.c.cue('spawn');
+    run(R, 2);
+    const again = R.c.lab.clock.spawn();
+    R.c.cue('reset');
+    R.c.cue('spawn');
+    run(R, 2);
+    const newRun = R.c.lab.clock.spawn();
+    check('the spawn plays on the run\'s first room only, again after a reset', again === 1 && newRun < 0.9, { again: r3(again), newRun: r3(newRun) });
     const R2 = rigOf(H.id);
     run(R2, 10);
     R2.c.cue('spawn');

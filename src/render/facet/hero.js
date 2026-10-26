@@ -47,10 +47,19 @@ export const FRAME = 1 / 30;
 // §10 "collapses horizontal": the downed body's tilt (rad, ~78°); the
 // critter factory re-exports it (render/critters/index.js).
 export const FALL_ANGLE = 1.36;
-// The steepest lean an attack may take toward its target at contact (B9:
-// 20 to 25°). The walk and idle stay under the critter factory's 12° ceiling;
-// the head counter-rotates so the face stays up through the lunge.
-export const LUNGE_PITCH_MAX = 0.44;
+// The steepest lean an attack may take toward its target: Kesh's cap (his
+// pick of 2026-10-26), the critter factory's 12° ceiling, where B9 asked 20
+// to 25°. The keys are authored on the B9 scale; leanOf maps them in: a lean
+// up to the knee (a rig's rest lean: the Swordsman's 0.12, else 0) is drawn
+// as keyed, anything steeper eases toward 12° and never passes it (a soft
+// knee, so a fast strike through it never kinks). The head still
+// counter-rotates so the face stays up.
+export const LUNGE_PITCH_MAX = 0.21;
+export function leanOf(p, knee = 0) {
+  if (p <= knee) return p;
+  const span = LUNGE_PITCH_MAX - knee;
+  return knee + span * Math.tanh((p - knee) / span);
+}
 // The hips lead the weapon (the body throws it) by half a frame, the weapon
 // trails by a frame: sampled on one timeline, a frame apart.
 export const LEAD = 0.017;
@@ -279,7 +288,7 @@ export const SPAWN_TIMELINE = createTimeline('spawn', 'Spawn', [
 //   cue('hitstop', ev)  the world froze for ev.ticks: the whole rig holds;
 //                       the attacker plays its strike on to contact and holds
 //                       the pose there instead (B2)
-//   cue('spawn')        the grow-in (B7)
+//   cue('spawn')        the grow-in (B7), on the run's first room only
 //   cue('reset')        forget every move and envelope (a rig that was not
 //                       updated while cues arrived: a scene coming back)
 // A hit taken (the hurt clip, or going down) lets go of the attack over a
@@ -331,6 +340,7 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
   let lastShotAt = -99;
   // spawn
   let spawnSince = -1;
+  let spawned = false; // the grow-in played this run
   // the model lab's pure override
   let override = null;
 
@@ -427,7 +437,10 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       return 0;
     }
     if (kind === 'spawn') {
-      spawnSince = 0;
+      // only the run's first room (Kesh's pick of 2026-10-26): later room
+      // entries do not grow in again until a reset starts a new run
+      if (!spawned) spawnSince = 0;
+      spawned = true;
       return 0;
     }
     if (kind === 'reset') {
@@ -436,6 +449,7 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
       stopTick = stopBucket = connectTick = null;
       recoilArmed = false;
       recoilSince = shotSince = spawnSince = -1;
+      spawned = false;
       shotLevel = 0;
       lastBasicAt = lastShotAt = -99;
       return 0;

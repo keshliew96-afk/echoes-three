@@ -49,7 +49,7 @@ import {
   facetArm,
   fpart,
   HIT_TIMING,
-  LUNGE_PITCH_MAX,
+  leanOf,
   namedPoint,
   posePack,
   RECOIL,
@@ -118,7 +118,7 @@ const O2 = K({ yaw: 0.5, pitch: 0.18, sx: 0.48, sy: 0.84, sz: 0.04, srx: -0.92, 
 // Hit 3, CRUSHING SLAM (the finisher, the biggest: B6): overhead on the toes,
 // stretched tall, then down into the ground ahead with a lunge step, the
 // deepest lean and squash; both paws on the slab.
-const A3 = K({ yaw: 0.14, pitch: -0.2, sx: 0.37, sy: 1.0, sz: -0.2, srx: -1.0, sry: 0.3, srz: -0.3, ry: 0.045, rz: -0.06, sw: 0.94, sh: 1.08, paw: 0 });
+const A3 = K({ yaw: 0.14, pitch: -0.2, sx: 0.37, sy: 1.0, sz: -0.2, srx: -1.0, sry: 0.3, srz: -0.3, ry: 0.045, rz: -0.06, sw: 0.94, sh: 1.08, paw: 1 });
 const S3 = K({ yaw: -0.05, pitch: 0.42, sx: 0.05, sy: 0.3, sz: 0.47, srx: 0.92, sry: 0, srz: 0, ry: -0.07, rz: 0.14, sw: 1.19, sh: 0.88, paw: 1, step: 1 });
 const O3 = K({ yaw: -0.07, pitch: 0.3, sx: 0.05, sy: 0.25, sz: 0.5, srx: 1.0, sry: 0, srz: 0, ry: -0.08, rz: 0.14, sw: 1.06, sh: 0.96, paw: 1, step: 1 });
 // The slab goes up and comes down round the head, never through it: on the
@@ -147,7 +147,7 @@ export const TANK_HITS = HITS;
 // strike (its gather plays after the press, compressed into it), so the
 // blow lands with the sim's hit while the wind-up still shows; the lab plays
 // the whole wind-up. Both settle into the stance with one small overshoot.
-const G_SLAM = K({ yaw: 0.2, pitch: -0.2, sx: 0.35, sy: 1.04, sz: -0.22, srx: -1.1, sry: 0.32, srz: -0.3, ry: 0.05, rz: -0.06, sw: 0.92, sh: 1.1, paw: 0 });
+const G_SLAM = K({ yaw: 0.2, pitch: -0.2, sx: 0.35, sy: 1.04, sz: -0.22, srx: -1.1, sry: 0.32, srz: -0.3, ry: 0.05, rz: -0.06, sw: 0.92, sh: 1.1, paw: 1 });
 const S_SLAM = K({ yaw: -0.04, pitch: 0.42, sx: 0.04, sy: 0.26, sz: 0.5, srx: 1.05, ry: -0.09, rz: 0.14, sw: 1.19, sh: 0.86, paw: 1, step: 1 });
 const G_BRACE = K({ yaw: 0.3, pitch: 0.1, sx: 0.2, sy: 0.42, sz: 0.06, srx: 0.2, sry: 0.4, srz: -0.3, ry: 0.04, sw: 0.95, sh: 1.06 });
 const S_BRACE = K({ yaw: 0, pitch: 0.12, roll: 0, sx: 0.04, sy: 0.4, sz: 0.4, srx: 0.08, sry: 0, srz: 0, ry: -0.05, rz: 0.06, sw: 1.1, sh: 0.92, paw: 1, step: 0.6 });
@@ -422,6 +422,13 @@ export function buildTankFacet(rig, trackAccent) {
   const armL = facetArm(coatMat, 0.06, 0.22);
   armL.position.set(-0.31, 0.46, 0.06);
   body.add(armL);
+  // The off arm bends at the elbow so that, reaching the slab overhead with
+  // both paws, it goes round the back of the head instead of through it.
+  const foreL = facetArm(coatMat, 0.06, 0.22, 53);
+  body.add(foreL);
+  const elbowL = new Vector3();
+  const elbowDir = new Vector3();
+  const segTmp = new Vector3();
   const pawGeo = sharedGeo('facet:paw', () => facetize(new SphereGeometry(1, 7, 5), { jitter: 0.08, seed: 91 }));
   const pawL = fpart(pawGeo, coatMat);
   pawL.scale.setScalar(0.07);
@@ -432,6 +439,45 @@ export function buildTankFacet(rig, trackAccent) {
   const shieldOffGrip = new Vector3(0.0, -0.3, 0.12); // where the off paw grips for a slam
   const gripWorld = new Vector3();
   const offGrip = new Vector3();
+
+  // Shoulder to elbow to paw. Where the straight reach would pass through
+  // the skull (the two-handed overhead), the paw keeps out of it and the
+  // elbow swings out behind the head, so the arm goes round the back.
+  const ARM_CLEAR = 0.33; // the skull's radius plus the arm's, with a margin
+  const PAW_CLEAR = 0.37;
+  const ELBOW_OUT = 0.68;
+  const segGap = (a, b, c) => {
+    elbowDir.copy(b).sub(a);
+    const k = Math.max(0, Math.min(1, segTmp.copy(c).sub(a).dot(elbowDir) / Math.max(1e-9, elbowDir.lengthSq())));
+    return segTmp.copy(a).addScaledVector(elbowDir, k).distanceTo(c);
+  };
+  const toPaw = new Vector3();
+  function routeOffArm(hc) {
+    const sh = armL.position;
+    const paw = pawL.position;
+    const g = segGap(sh, paw, hc);
+    const w = Math.min(1, Math.max(0, (ARM_CLEAR + 0.06 - g) / 0.08));
+    const bend = w * w * (3 - 2 * w);
+    toPaw.copy(paw).sub(hc);
+    const pd = toPaw.length();
+    if (pd < PAW_CLEAR && bend > 0) paw.copy(hc).addScaledVector(toPaw.normalize(), pd + (PAW_CLEAR - pd) * bend);
+    elbowL.copy(sh).add(paw).multiplyScalar(0.5);
+    if (bend > 0) {
+      // out at right angles to both bones' ends, on the back of the head
+      elbowDir.copy(sh).sub(hc).normalize();
+      toPaw.copy(paw).sub(hc).normalize();
+      segTmp.crossVectors(elbowDir, toPaw);
+      if (segTmp.lengthSq() < 1e-6) segTmp.set(0, 0, -1);
+      segTmp.normalize();
+      if (segTmp.z > 0) segTmp.negate();
+      elbowDir.add(toPaw).multiplyScalar(0.3).add(segTmp).normalize();
+      segTmp.copy(hc).addScaledVector(elbowDir, ELBOW_OUT);
+      elbowL.lerp(segTmp, bend);
+    }
+    aimArm(armL, elbowL);
+    foreL.position.copy(elbowL);
+    aimArm(foreL, paw);
+  }
 
   const HOME = [new Vector3(-0.235, 0.052, 0.33), new Vector3(0.235, 0.052, 0.33)];
   const feet = [];
@@ -516,7 +562,7 @@ export function buildTankFacet(rig, trackAccent) {
     // Torso and root: an attack owns them; otherwise the driver's clip does.
     if (attacking) {
       torso.rotation.y = led.yaw * upright;
-      torso.rotation.x = Math.min(LUNGE_PITCH_MAX, led.pitch) * upright;
+      torso.rotation.x = leanOf(led.pitch) * upright;
       torso.rotation.z = led.roll * upright;
       rig.position.x = live.rx * upright;
       rig.position.y += (live.ry + live.hop) * upright;
@@ -557,7 +603,7 @@ export function buildTankFacet(rig, trackAccent) {
     const paw = attacking ? lagged.paw : 0;
     offGrip.copy(shieldOffGrip).applyMatrix4(shield.matrix);
     pawL.position.lerpVectors(PAW_REST, offGrip, paw);
-    aimArm(armL, pawL.position);
+    routeOffArm(head.position);
 
     // Feet: locked to the floor, stepping on their own; through the grow-in
     // they ride the body (a foot planted at full size would stand apart).

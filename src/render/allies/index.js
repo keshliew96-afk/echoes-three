@@ -380,7 +380,8 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   bus.on('hitstop', (ev) => {
     for (const c of critters.values()) if (c.modelStandard) c.cue('hitstop', ev);
   });
-  // A room entry: the party arrives, each model-standard hero grows in (B7).
+  // A room entry: each model-standard hero grows in (B7) on the run's first
+  // room only (the rig ignores the rest until a new run resets it).
   bus.on('room_enter', () => {
     for (const c of critters.values()) if (c.modelStandard) c.cue('spawn');
   });

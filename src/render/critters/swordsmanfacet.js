@@ -78,7 +78,7 @@ import {
   HIT_TIMING,
   LAG,
   LEAD,
-  LUNGE_PITCH_MAX,
+  leanOf,
   namedPoint,
   posePack,
   RECOIL,
@@ -1052,7 +1052,7 @@ export function buildSwordsmanFacet(rig, trackAccent) {
     // (with the rest lean, basePitch).
     if (attacking) {
       torso.rotation.y = led.yaw * upright;
-      torso.rotation.x = Math.min(LUNGE_PITCH_MAX, led.pitch) * upright;
+      torso.rotation.x = leanOf(led.pitch, LEAN) * upright;
       torso.rotation.z = led.roll * upright;
       rig.position.x = live.rx * upright;
       rig.position.y += (live.ry + live.hop) * upright;

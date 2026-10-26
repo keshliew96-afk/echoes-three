@@ -75,11 +75,11 @@ import {
   fpart,
   HIT_TIMING,
   LAG,
-  LUNGE_PITCH_MAX,
+  leanOf,
   namedPoint,
   posePack,
   settleEase,
-  SHOT,
+  RECOIL,
   walkBody,
 } from '../facet/hero.js';
 import { ease } from '../facet/timeline.js';
@@ -161,28 +161,28 @@ const { REST, K } = PACK;
 // shoulder, the chest turned with it and the free paw out ahead; the hips
 // unwind and the staff whips down across the front, the gem snapping out
 // toward the aim; the free paw pulls back for balance.
-const A1 = K({ yaw: 0.32, pitch: -0.05, roll: 0.03, rx: 0.02, rz: -0.03, sw: 1.02, sh: 0.98, hx: 0.46, hy: 0.56, hz: 0.12, az: 2.0, el: 0.75, slide: 0.25, fx: -0.3, fy: 0.46, fz: 0.32, glow: 0.3 });
-const S1 = K({ yaw: -0.28, pitch: 0.12, roll: -0.03, rx: -0.02, rz: 0.04, hx: 0.36, hy: 0.56, hz: 0.32, az: -0.3, el: 1.15, slide: 0.25, fx: -0.37, fy: 0.36, fz: -0.06, glow: 1 });
+const A1 = K({ yaw: 0.32, pitch: -0.05, roll: 0.03, rx: 0.02, rz: -0.05, sw: 1.02, sh: 0.98, hx: 0.46, hy: 0.56, hz: 0.12, az: 2.0, el: 0.75, slide: 0.25, fx: -0.3, fy: 0.46, fz: 0.32, glow: 0.3 });
+const S1 = K({ yaw: -0.28, pitch: 0.38, roll: -0.03, rx: -0.02, rz: 0.08, sw: 1.19, sh: 0.91, hx: 0.36, hy: 0.56, hz: 0.32, az: -0.3, el: 1.15, slide: 0.25, fx: -0.37, fy: 0.36, fz: -0.06, glow: 1 });
 const O1 = K({ yaw: -0.36, pitch: 0.1, roll: -0.04, rx: -0.025, rz: 0.03, sw: 1.01, sh: 0.99, hx: 0.3, hy: 0.53, hz: 0.34, az: -0.9, el: 1.55, slide: 0.25, fx: -0.37, fy: 0.38, fz: -0.08, glow: 0.8 });
 // Hit 2, RISING BACKHAND: the gem held low on the far side (the staff
 // shoulder forward, crouched), then the legs drive up as the staff flicks
 // up and out past the staff side; the free paw swings forward with the
 // counter-turn.
-const A2 = K({ yaw: -0.34, pitch: 0.08, roll: -0.03, rx: -0.02, ry: -0.025, rz: -0.03, sw: 1.04, sh: 0.96, hx: 0.24, hy: 0.5, hz: 0.33, az: -1.2, el: 1.85, slide: 0.25, spin: -0.5, fx: -0.36, fy: 0.5, fz: -0.06, glow: 0.3 });
-const S2 = K({ yaw: 0.3, pitch: 0.1, roll: 0.03, rx: 0.02, ry: 0.02, rz: 0.04, sw: 0.98, sh: 1.03, hx: 0.4, hy: 0.58, hz: 0.28, az: 0.9, el: 0.65, slide: 0.25, spin: 0.3, fx: -0.27, fy: 0.42, fz: 0.32, glow: 1 });
+const A2 = K({ yaw: -0.34, pitch: 0.08, roll: -0.03, rx: -0.02, ry: -0.025, rz: -0.05, sw: 1.04, sh: 0.96, hx: 0.24, hy: 0.5, hz: 0.33, az: -1.2, el: 1.85, slide: 0.25, spin: -0.5, fx: -0.36, fy: 0.5, fz: -0.06, glow: 0.3 });
+const S2 = K({ yaw: 0.3, pitch: 0.37, roll: 0.03, rx: 0.02, ry: 0.02, rz: 0.08, sw: 1.19, sh: 0.91, hx: 0.4, hy: 0.58, hz: 0.28, az: 0.9, el: 0.65, slide: 0.25, spin: 0.3, fx: -0.27, fy: 0.42, fz: 0.32, glow: 1 });
 const O2 = K({ yaw: 0.38, pitch: 0.05, roll: 0.04, rx: 0.025, ry: 0.02, rz: 0.03, sw: 0.99, sh: 1.02, hx: 0.43, hy: 0.6, hz: 0.24, az: 1.2, el: 0.5, slide: 0.25, spin: 0.5, fx: -0.26, fy: 0.44, fz: 0.32, glow: 0.8 });
 // Hit 3, OVERHEAD CAST (the finisher, the biggest: B6): up on the toes,
 // stretched tall, the staff raised back over the staff shoulder with the
 // free paw aiming ahead; then a hop and the staff thrown over the top, the
 // gem flung forward on a long reach (the staff slides through the paw),
-// still in the air at the release, landing squashed two frames later.
-const A3 = K({ yaw: 0.22, pitch: -0.14, roll: 0.02, ry: 0.03, rz: -0.035, sw: 0.96, sh: 1.06, hx: 0.36, hy: 0.66, hz: 0.1, az: 0.1, el: -0.7, slide: 0.3, fx: -0.22, fy: 0.56, fz: 0.32, glow: 0.5 });
-const S3 = K({ yaw: -0.18, pitch: 0.22, roll: -0.02, rz: 0.06, hop: 0.13, sw: 0.93, sh: 1.12, hx: 0.32, hy: 0.6, hz: 0.3, az: 0.05, el: 0.95, slide: 0.35, fx: -0.37, fy: 0.34, fz: -0.06, glow: 1 });
-const O3 = K({ yaw: -0.24, pitch: 0.16, roll: -0.02, rz: 0.05, hop: 0, sw: 1.1, sh: 0.9, hx: 0.3, hy: 0.54, hz: 0.32, az: -0.05, el: 1.15, slide: 0.36, fx: -0.37, fy: 0.33, fz: -0.06, glow: 0.8 });
-// The finisher's flight: the hop and the stretch fall into the landing
-// squash with gravity (accelerating), so she is airborne and stretched at
-// the release and lands squashed at the end of the overshoot.
-const LAND = ['hop', 'sw', 'sh'];
+// coming down at the release squashed into a lunge step, as a melee blow
+// (Kesh's pick of 2026-10-26: her basic plays as melee, not shots).
+const A3 = K({ yaw: 0.22, pitch: -0.14, roll: 0.02, ry: 0.03, rz: -0.05, sw: 0.96, sh: 1.06, hx: 0.36, hy: 0.66, hz: 0.1, az: 0.1, el: -0.7, slide: 0.3, fx: -0.22, fy: 0.56, fz: 0.32, glow: 0.5 });
+const S3 = K({ yaw: -0.18, pitch: 0.42, roll: -0.02, ry: -0.07, rz: 0.14, hop: 0.12, sw: 1.19, sh: 0.86, step: 1, hx: 0.32, hy: 0.6, hz: 0.3, az: 0.05, el: 0.95, slide: 0.35, fx: -0.37, fy: 0.34, fz: -0.06, glow: 1 });
+const O3 = K({ yaw: -0.24, pitch: 0.3, roll: -0.02, ry: -0.08, rz: 0.14, hop: 0, sw: 1.04, sh: 0.97, step: 1, hx: 0.3, hy: 0.54, hz: 0.32, az: -0.05, el: 1.15, slide: 0.36, fx: -0.37, fy: 0.33, fz: -0.06, glow: 0.8 });
+// The finisher's flight: the hop falls into the landing with gravity
+// (accelerating) through the overshoot.
+const LAND = ['hop'];
 function landing(out, s) {
   if (s.id !== 'overshoot') return;
   const k = s.k * s.k;
@@ -195,7 +195,7 @@ const HITS = createCombo(
     { label: 'rising backhand', from: A2, strike: S2, over: O2 },
     { label: 'overhead cast', from: A3, strike: S3, over: O3, extra: landing },
   ],
-  { window: COMBO_WINDOW, timing: TIMING, recoil: false }
+  { window: COMBO_WINDOW, timing: TIMING }
 );
 export const HEALER_HITS = HITS;
 
@@ -668,7 +668,7 @@ export function buildHealerFacet(rig, trackAccent) {
     abilities: HEALER_MOVES,
     skillAbility,
     window: COMBO_WINDOW,
-    ranged: true,
+    ranged: false,
   });
   let lastT = null;
   const live = PACK.make();
@@ -806,7 +806,7 @@ export function buildHealerFacet(rig, trackAccent) {
     const walkBob = clip === 'walk' ? P.bob * upright * 0.6 : 0;
     if (attacking) {
       torso.rotation.y = (led.yaw + walk.twist * 0.6) * upright;
-      torso.rotation.x = (Math.min(LUNGE_PITCH_MAX, led.pitch) + walk.pitch) * upright;
+      torso.rotation.x = leanOf(led.pitch + walk.pitch) * upright;
       torso.rotation.z = (led.roll + walk.roll) * upright;
       rig.position.x = live.rx * upright;
       rig.position.y += (live.ry + live.hop + walk.dy) * upright - walkBob;
@@ -821,17 +821,16 @@ export function buildHealerFacet(rig, trackAccent) {
         torso.rotation.z = walk.roll * upright;
       }
     }
-    // The shooter's squash (B3, shots): 20/29/38% wider on steady fire and
-    // a rig-only shove back off the bolt, after the press.
-    const shot = atk.shot();
-    if (shot.sw !== 1 || shot.sh !== 1) {
-      rig.scale.x *= shot.sw;
-      rig.scale.y *= shot.sh;
-      rig.scale.z *= shot.sw;
+    // The recoil off a connect (B3): her basic plays as melee (Kesh's pick
+    // of 2026-10-26), so a rig-only shove and lean back after the held
+    // contact, as the Tank and the Swordsman.
+    const rc = atk.recoil();
+    if (rc > 0) {
+      rig.position.z -= RECOIL.shove * rc * upright;
+      torso.rotation.x -= RECOIL.lean * rc * upright;
     }
-    if (shot.shove > 0) rig.position.z -= SHOT.shove * shot.shove * upright;
     // The head counter-rotates so the face stays up through every lean.
-    if (attacking || (locked && clip === 'walk')) {
+    if (attacking || rc > 0 || (locked && clip === 'walk')) {
       head.rotation.x = -torso.rotation.x * 0.88 - 0.18 * upright;
       head.rotation.y = -torso.rotation.y * 0.5 * upright;
     }
@@ -970,7 +969,7 @@ export function buildHealerFacet(rig, trackAccent) {
 // heroes probe checks the two agree), each with the shooter's squash. Pure
 // in t, so it rewinds.
 export const SWING_SEC = 0.5;
-export const COMBO_LAB = createComboLab(HITS, { swingSec: SWING_SEC, ranged: true });
+export const COMBO_LAB = createComboLab(HITS, { swingSec: SWING_SEC });
 
 // The Healer in the model-standard registry (render/facet/heroes.js): the
 // lab tab, the probe and the critter factory read her from here.
@@ -983,7 +982,7 @@ export const HEALER_SPEC = Object.freeze({
   skillAbility,
   swingSec: SWING_SEC,
   comboLab: COMBO_LAB,
-  ranged: true,
+  ranged: false,
   walkSpeed: WALK_SPEED,
   weaponField: 'az',
   lab: {

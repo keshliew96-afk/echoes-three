@@ -97,11 +97,14 @@ What every model-standard hero shares, lifted out of the pilot Tank:
   - The contact hold waits for the weapon: a melee strike holds where the weapon lands,
     one weapon lag (2 frames) after the hips, so the held frame shows the blow, not the
     weapon two frames short of it.
-  - `cue('spawn')`: the grow-in from the floor on a room entry (B7: 7 frames, 10% overshoot).
+  - `cue('spawn')`: the grow-in from the floor (B7: 7 frames, 10% overshoot) on the run's
+    first room only (Kesh's pick of 2026-10-26); later room entries play nothing until
+    `cue('reset')` starts a new run.
   - `cue('reset')` forgets every move, hold and envelope. The camp calls it on the rigs of
     the mode coming in (a rig hears every cue on the bus, even while hidden and not updated),
     the run's before its first `room_enter`, so the spawn still plays.
-  - The shooter's squash (B3 for shots): 20%, 29%, then 38% wider and up to 10% shorter over
+  - The shooter's squash (B3 for shots; no hero uses it since the Healer's basic plays as
+    melee, kept for the Archer and other shooters): 20%, 29%, then 38% wider and up to 10% shorter over
     steady fire, back in about 3 frames with a 4% stretch, a rig-only shove eased back over
     0.45 s. A shooter's finisher is a spell throw: it keeps its own hop and stretch, so the
     third shot does not squash and the 38% lands on the fourth.
@@ -125,8 +128,10 @@ What every model-standard hero shares, lifted out of the pilot Tank:
   measures every hit and ability frame by frame.
 - **Named points** (`namedPoint`): `hand` and `tip` on every hero (B8), read through
   `critter.pointWorld(name)`.
-- `LUNGE_PITCH_MAX` (0.44 rad, 25°): an attack's lean at contact may pass the critter
-  factory's 12° walk and idle ceiling (B9 asks 20 to 25°); the head counter-rotates so the
+- `LUNGE_PITCH_MAX` (0.21 rad, 12°): Kesh capped the attack lean at the critter factory's
+  12° walk and idle ceiling (his pick of 2026-10-26; B9 asks 20 to 25°). The keys stay
+  authored on the B9 scale and `leanOf(pitch, restLean)` draws them through a soft knee
+  that eases toward 12° and never passes it; the head counter-rotates so the
   face stays up.
 
 A hero module exports a SPEC (`id`, `label`, `build`, `hits`, `moves`, `skillAbility`,
@@ -145,8 +150,9 @@ its build returns the critter contract plus `cue`, `hold`, `comboHitOf`, `atCont
 - **3-hit combo** (Kesh's template), at the sim's real 0.65 s swing cadence:
   1. *Backhand bash*: horizontal, slab side across to the far side.
   2. *Rising bash*: low on the far side, up across to high on the slab side, clear of the face.
-  3. *Crushing slam*: overhead on the toes, the slab raised one-handed out on its own side
-     (the off paw stays clear of the head), down into the ground ahead with a lunge step.
+  3. *Crushing slam*: overhead on the toes, both paws on the slab out on its own side, down
+     into the ground ahead with a lunge step. The off arm bends at the elbow round the back
+     of the head to reach it (Kesh's pick of 2026-10-26), never through the skull.
 
   The slab goes up and comes down round the head on its own side (the wind-up, the strike,
   the settle into the overhead and the recover swing out by up to 0.2 u), never through it.
@@ -177,12 +183,12 @@ its build returns the critter contract plus `cue`, `hold`, `comboHitOf`, `atCont
 |---|---|---|---|
 | 1 | B1 anticipation | Passed: the wind-up lives in the last settle, 1.5 frames from rest | Kept |
 | 2 | B2 fast strike, held contact | Strike 2.5 frames passed; the contact did not hold (the rig never heard the hitstop, which the sim raises on the press, before the rig's contact) | The attacker holds its contact pose for the hitstop's ticks; every other rig holds at once |
-| 2 | B9 lunge into the contact | No pull back, the lean capped at 12°, no contact squash | Pull back 0.05 to 0.06 u in each wind-up, lunge 0.08 to 0.14 u past rest, lean 21 to 24°, a +19% / -9 to -12% squash at contact back within 3 frames; the travel stays a lunge step (the lead foot steps in about 0.10 u) |
+| 2 | B9 lunge into the contact | No pull back, the lean capped at 12°, no contact squash | Pull back 0.05 to 0.06 u in each wind-up, lunge 0.08 to 0.14 u past rest, lean drawn at 11 to 12° (Kesh's cap; keyed 21 to 24°), a +19% / -9 to -12% squash at contact back within 3 frames; the travel stays a lunge step (the lead foot steps in about 0.10 u) |
 | 3 | B3 recoil | None | A rig-only shove of 0.1 u and a lean back in 2 frames after the held contact, gone in 8; a whiff does not recoil |
 | 4 | B4 kick on the press | The strike eased in from rest (4% of its travel on the first frame) | The strike runs at full speed from the press (20% on the first frame at 60 fps) |
 | 5 | B5 follow-through | The settle into the next wind-up passed; the recover and the abilities' settle were plain blends | Every move recovers with one small overshoot |
 | 6 | B6 third hit biggest | The slam with its lunge step is the biggest pose; the lab played the same beat for all three | Kept; the lab plays the finisher bigger, and `comboHitOf` lets the VFX layer do the same in game |
-| 7 | B7 spawn-in | None | Grows from the floor on every room entry |
+| 7 | B7 spawn-in | None | Grows from the floor on the run's first room (Kesh's pick) |
 | 8 | B8 named points | None | `hand` (the grip paw) and `tip` (the slab's striking edge) |
 | 9 | R2 to R5 hit reaction | Foes only | Not a hero rule |
 | 10 | K2 to K4 death motion | Foes only | Not a hero rule |
@@ -195,8 +201,10 @@ bash's high finish, the slam's overhead wind-up and Heavy Slam's gather (one cor
 shoulder block came within a fifth of the skull's radius of its centre). The overhead keys moved out to the slab side and back
 (0.37 u out, 0.2 u behind), the high finish 0.1 u further out, and the paths between them
 arc round the head; the probe now holds every hero to it. A second review found the off
-paw's arm crossing the head on those overhead keys, so the overhead and Heavy Slam's gather
-are one-handed (the paw rejoins nothing there); the lead foot of the slam's lunge now lands
+paw's arm crossing the head on those overhead keys. Kesh chose to keep both paws on the slab,
+so the off arm is two bones: where the straight reach would cross the skull, the paw keeps
+out of it and the elbow swings out behind the head (each bone at least 0.33 u from the
+skull's centre); the lead foot of the slam's lunge now lands
 with the blow (0.42 s against the contact's 0.41 s), not 0.18 s late.
 
 ## The Healer (`src/render/critters/healerfacet.js`)
@@ -215,19 +223,19 @@ press a few frames before the staff gets there).
   beads; a pewter claw setting of 8 blades round the gem. The leaves are Sage lightened at
   its own hue; the wood is the classic's weathered toward Warm Grey (the classic's own wood
   sits in the amber family); no gold. Two small faceted feet peek out under the front hem.
-- **3-hit combo, as shots** (`ranged`: her basic is a bolt every 0.5 s, and the bolt leaves
-  on the press): wind 1 frame, strike 1.5 frames, overshoot 2, settle 5, recover 0.35 s;
-  the staff gripped low.
+- **3-hit combo, as melee** (Kesh's pick of 2026-10-26: her basic is a bolt every 0.5 s in
+  the sim, but the rig plays it as melee blows: each contact holds, pulls back, lunges in,
+  squashes +19% and recoils off a connect like the Tank and the Swordsman): wind 1 frame,
+  strike 1.5 frames, overshoot 2, settle 5, recover 0.35 s; the staff gripped low.
   1. *Diagonal forehand*: the hips unwind and the staff chops down across the front, the
      gem levelled ahead.
   2. *Rising backhand*: the hips snap back and the staff rises out past the staff side, the
      gem high.
   3. *Overhead cast*: up on her toes, leaning back with the staff over the top, then a hop
-     (0.13 u) and a stretch as it arcs forward and down, landing squashed. Both feet leave
-     the floor.
+     (0.12 u) as it arcs forward and down, coming down squashed into a lunge step at the
+     release.
 
-  The free paw counterbalances every throw; each shot squashes her 20%, 29%, then 38%
-  wider. She casts on the move: the feet keep stepping and the walk's bob, roll and twist
+  The free paw counterbalances every throw. She casts on the move: the feet keep stepping and the walk's bob, roll and twist
   stay under the attack.
 - **Abilities** (by the skill's shape): *Lantern Point* (projectile and direct: the staff
   levelled at the hip, then thrust out like a lance), *Bloom* (nova and aura: up on her toes
@@ -325,7 +333,7 @@ its debug state carries the shown hero's `feet`.
 `FACET_HEROES` through the same checks: the cadence and walk speed match the sim; every
 class skill plays an ability and every ability is played; each hit settles into the next
 hit's wind-up with no pop anywhere; the lab's cues sit on each contact; `comboHitOf` counts
-1-2-3 once per event; the melee wind-ups pull back, contacts lean 20 to 25° and squash
+1-2-3 once per event; the melee wind-ups pull back, contacts lean into the target inside the 12° cap and squash
 +19% / -9%, back within 3 frames, inside a lunge step (B9); the weapon kicks on the press
 (B4); every move settles with one small overshoot (B5); the third hit is the biggest (B6);
 the contact holds through the hitstop the rig struck, and any hitstop holds the whole rig

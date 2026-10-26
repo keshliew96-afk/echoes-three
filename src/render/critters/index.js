@@ -265,7 +265,7 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
     // integrator reports each basic swing and skill cast ('basic' | 'skill',
     // with the sim event) so the rig can play its combo and ability
     // timelines, each `hit` it struck ('connect'), each `hitstop` ('hitstop':
-    // the rig holds) and each room entry ('spawn': it grows in). A no-op on
+    // the rig holds) and each room entry ('spawn': it grows in on the run's first room). A no-op on
     // the classic rigs.
     cue: (kind, ev) => {
       if (built.cue) built.cue(kind, ev);
