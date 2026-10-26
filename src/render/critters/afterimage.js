@@ -18,8 +18,10 @@
 // Excluded from the silhouette: ink hulls (a tinted hull is a bigger copy of
 // the mass it wraps), unlit face/marking decals, the identity ring + contact
 // shadow (they are ground decals, not body), sprites (gem glow/halo), and the
-// melee swing smear.
-import { Color, Group, Mesh, MeshBasicMaterial } from 'three';
+// melee swing smear. A model-standard rig's instanced parts (studs, plates,
+// beads: docs/MODEL_STANDARD.md) ghost as instanced clones that copy the
+// part's instance matrices at each spawn.
+import { Color, Group, InstancedMesh, Mesh, MeshBasicMaterial } from 'three';
 import { PALETTE } from '../../data/palette.js';
 import { mix } from './common.js';
 
@@ -65,6 +67,13 @@ function collectSources(rootObj) {
   return sources;
 }
 
+// An instanced part's ghost: the part's instances as they stand now.
+function copyInstances(clone, src) {
+  clone.instanceMatrix.array.set(src.instanceMatrix.array);
+  clone.instanceMatrix.needsUpdate = true;
+  clone.count = src.count;
+}
+
 // `critter` is a factory rig from createCritter (group + accent). `sceneRoot`
 // is where the ghosts live — world space, NOT under the critter, so a ghost
 // stays planted where it was spawned while the body dashes on.
@@ -86,7 +95,8 @@ export function createAfterimages(critter, sceneRoot, { color = null } = {}) {
     root.matrixAutoUpdate = false;
     root.visible = false;
     const clones = sources.map((src) => {
-      const m = new Mesh(src.geometry, mat);
+      const m = src.isInstancedMesh ? new InstancedMesh(src.geometry, mat, src.instanceMatrix.count) : new Mesh(src.geometry, mat);
+      if (src.isInstancedMesh) m.frustumCulled = false; // its bounds follow the copied instances
       // World transforms are copied straight into matrixWorld at spawn time;
       // the renderer must never recompose them from position/quaternion.
       m.matrixAutoUpdate = false;
@@ -120,6 +130,7 @@ export function createAfterimages(critter, sceneRoot, { color = null } = {}) {
       m.copy(sources[i].matrixWorld);
       m.elements[12] += dx;
       m.elements[14] += dz;
+      if (sources[i].isInstancedMesh) copyInstances(ghost.clones[i], sources[i]);
     }
     ghost.age = age;
     ghost.live = true;
@@ -161,7 +172,10 @@ export function createAfterimages(critter, sceneRoot, { color = null } = {}) {
   function warmup() {
     critter.group.updateWorldMatrix(true, true);
     for (const g of ghosts) {
-      for (let i = 0; i < sources.length; i++) g.clones[i].matrixWorld.copy(sources[i].matrixWorld);
+      for (let i = 0; i < sources.length; i++) {
+        g.clones[i].matrixWorld.copy(sources[i].matrixWorld);
+        if (sources[i].isInstancedMesh) copyInstances(g.clones[i], sources[i]);
+      }
       g.mat.opacity = 0.002;
       g.age = 0;
       g.live = false;

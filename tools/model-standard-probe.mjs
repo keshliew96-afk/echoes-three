@@ -269,8 +269,10 @@ check('the combo swings at the sim cadence', Math.abs(SWING_SEC - ALLY_CLASSES.t
     }
   }
   check('every hit and every chain is continuous (no pop at a phase change)', worst < 0.01, { worst: r3(worst), where });
-  const contact = COMBO_LAB.strikes.map((s) => `${COMBO_LAB.at(s - 0.002).phase}>${COMBO_LAB.at(s + 0.002).phase}`);
-  check("the lab combo's three impact cues sit on the strike's contact frame", contact.every((p) => p === 'strike>overshoot'), contact);
+  // since v0.5.335 the hold (and its cue) sits where the slab lands: it is
+  // drawn a frame behind the hips (docs/MODEL_STANDARD.md, the hero core)
+  const contact = COMBO_LAB.strikes.map((s) => `${COMBO_LAB.at(s - 0.002).held ? 'held' : 'moving'}>${COMBO_LAB.at(s + 0.002).held ? 'held' : 'moving'}`);
+  check("the lab combo's three impact cues sit on the slab's contact frame", contact.every((p) => p === 'moving>held'), contact);
 }
 
 function tankRig(facet = true) {

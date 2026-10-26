@@ -1,16 +1,20 @@
 // MODEL STANDARD (docs/MODEL_STANDARD.md): which models play the faceted
 // model standard. The pilot rebuilt the Barrow Wyrm and the Tank; the Level I
 // slices add the Hollow Stag, the Thornmother, the Gloam Wolf and the eight
-// Level I foes (render/enemies/facet/). The classic rigs stay in the code beside them.
+// Level I foes (render/enemies/facet/); the heroes slice adds the Healer and
+// the Swordsman. The classic rigs stay in the code beside them.
 //
 // A harness build reads `?facet=` to compare (a player build never sees it):
 //   ?facet=0       every model classic
-//   ?facet=wyrm    only the listed models faceted (comma list: wyrm,tank)
+//   ?facet=wyrm    only the listed models faceted (comma list: wyrm,tank,healer,swordsman)
 import { pageQuery } from '../../app/harness.js';
 
 export const MODEL_STANDARD = Object.freeze({
   wyrm: true,
   tank: true,
+  // The heroes.
+  healer: true,
+  swordsman: true,
   // The Level I bosses.
   stag: true,
   thornmother: true,
