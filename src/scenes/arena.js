@@ -573,10 +573,12 @@ export function createArenaScene(stage, toggles, ctx) {
   root.add(healerRig.group);
 
   // Bolts leave the staff-gem tip (§19.2: the gem brightens on cast) — hand
-  // the graybox bolt renderer the live gem world position as its muzzle.
+  // the graybox bolt renderer the gem's world position as its muzzle: where
+  // the gem will be at the shot's release (the faceted Healer swings it out
+  // over a few frames after the press; the classic rig's gem as drawn).
   const muzzleV = new Vector3();
   if (inner.setBoltOrigin && healerRig.tipWorld) {
-    inner.setBoltOrigin(() => healerRig.tipWorld(muzzleV));
+    inner.setBoltOrigin(() => healerRig.releaseWorld(muzzleV));
   }
 
   // Dash smear (baseline-v030 F6): staggered silhouette afterimages of the
@@ -632,11 +634,22 @@ export function createArenaScene(stage, toggles, ctx) {
   let firedFlag = false;
   let hurtFlag = false;
   let healerYaw = 0;
-  bus.on('basic_fire', () => {
+  bus.on('basic_fire', (ev) => {
     firedFlag = true;
+    healerRig.cue('basic', ev); // a model-standard rig's combo (docs/MODEL_STANDARD.md)
   });
+  // The Healer's skills (a model-standard rig plays the skill's ability).
+  bus.on('skill_cast', (ev) => healerRig.cue('skill', ev));
   bus.on('hit', (ev) => {
     if (ev.target === world.player.id) hurtFlag = true;
+    if (ev.attacker === world.player.id) healerRig.cue('connect', ev);
+  });
+  // The world froze (the ally layer tells the party's own rigs).
+  bus.on('hitstop', (ev) => {
+    if (healerRig.modelStandard) healerRig.cue('hitstop', ev);
+  });
+  bus.on('room_enter', () => {
+    if (healerRig.modelStandard) healerRig.cue('spawn');
   });
 
   // --- Entity contact shadows: same treatment for every sim body in the arena
@@ -1689,8 +1702,11 @@ export function createArenaScene(stage, toggles, ctx) {
     else if (castLeft > 0) healerRig.setAnim('cast');
     else healerRig.setAnim(moving ? 'walk' : 'idle');
 
-    healerRig.update(rdt);
-    for (const a of allies) a.update(rdt);
+    // A model-standard hero holds itself on the hitstop cue (the attacker at
+    // its own contact, B2), so it takes the raw dt: the render hold on top
+    // would freeze it at the press and hold it twice.
+    healerRig.update(healerRig.modelStandard ? dt : rdt);
+    for (const a of allies) a.update(a.modelStandard ? dt : rdt);
 
     // Dash afterimages: one ghost per SMEAR_TICK_OFFSETS entry of dash travel
     // (staggered silhouettes, not a per-frame slab); hard-clear at dash

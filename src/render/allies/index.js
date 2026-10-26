@@ -371,6 +371,20 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       const st = rigState.get(a.classId);
       if (st) st.hurtLeft = HURT_HOLD;
     }
+    // A blow this hero struck: a model-standard rig recoils off it and holds
+    // its contact through the hitstop on the same tick (B2, B3).
+    const by = ev.attacker != null ? byId(ev.attacker) : null;
+    if (by && by.kind === 'ally') critters.get(by.classId)?.cue('connect', ev);
+  });
+  // The sim froze the world: every model-standard hero holds (its attacker
+  // holds at its own contact instead). The classic rigs never listen.
+  bus.on('hitstop', (ev) => {
+    for (const c of critters.values()) if (c.modelStandard) c.cue('hitstop', ev);
+  });
+  // A room entry: each model-standard hero grows in (B7) on the run's first
+  // room only (the rig ignores the rest until a new run resets it).
+  bus.on('room_enter', () => {
+    for (const c of critters.values()) if (c.modelStandard) c.cue('spawn');
   });
   // §17 "interrupt = reverse drain at 2x speed". The SIM's drain record is the
   // only arc when nothing restarts (a reviver forced to walk away), but a
@@ -830,7 +844,8 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       else if (st.castLeft > 0) c.setAnim('cast', st.castLeft > CAST_HOLD - Math.max(rdt, 1e-6) * 2 ? CAST_PHASE : undefined);
       else c.setAnim(simSpeed > MOVE_EPS ? 'walk' : 'idle');
 
-      if (!adopted) c.update(rdt);
+      // a model-standard hero holds itself on the hitstop cue (see arena.js)
+      if (!adopted) c.update(c.modelStandard ? dt : rdt);
     }
     if (seen.size) for (const [cls, c] of critters) if (!seen.has(cls) && c.group.visible) c.group.visible = false;
 
