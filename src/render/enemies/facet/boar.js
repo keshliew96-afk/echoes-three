@@ -25,6 +25,13 @@
 //   * the spawn-in grow (B7), named points (B8: the tusk tip, the snout), and
 //     the hit and death tuning the shared envelope reads (§6.1 items 9, 10).
 //
+// The rest of §6.1: no shots (B3 is the shooters'); the tusks are the weapon
+// and kick with the head on the contact frame (B4); the pull-back is 0.07 u
+// and the lunge 0.16 u, inside the travel the feet can step (the root-motion
+// check caps B9's body-width numbers); the hide, belly, bone and charcoal are
+// the classic's, the one indigo tell is the thorn ridge, and nothing is
+// Ember, Bright Heal or Violet (item 11).
+//
 // Faces +Z. Same contract as buildBoar (group, mats, setYaw, pose) plus lab,
 // react, death, points. Render only: the sim, its timing and damage untouched.
 import { BoxGeometry, Color, ConeGeometry, CylinderGeometry, Euler, Group, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three';
@@ -36,8 +43,8 @@ import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM, TELL_INDIGO_GLOW } from '../style.j
 import { facetize } from '../../facet/material.js';
 import { instancedPart, plateGeometry, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { createTimeline, ease } from '../../facet/timeline.js';
-import { FRAME, SPAWN_SEC, bakeParts, hornGeometry, pullBack, scaleGeometry, createAttackWatch, createChain, createFoeClock, createFoeFrame, foeMaterial, foePart, hitPose, hitTimelines, namedPoint, placeBody, spawnScale } from '../../facet/foe.js';
-import { createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
+import { FRAME, SPAWN_SEC, bakeParts, heldBy, hornGeometry, pullBack, scaleGeometry, createAttackWatch, createChain, createFoeClock, createFoeFrame, foeMaterial, foePart, hitPose, hitTimelines, namedPoint, placeBody, spawnScale } from '../../facet/foe.js';
+import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/legs.js';
 
 // The sim's boar (sim/enemies.js ENEMY_STATS.boar): a bite every 48 ticks per
 // target while in contact; 2.0 u/s.
@@ -47,29 +54,30 @@ const RUN_SPEED = 2.0;
 export const GORE_WINDOW = 1.25;
 
 // --- Key poses. push: the body's shove along +z (u); pitch: nose down (+)
-// or up (-), rad; twist: the body's turn (+ toward its left, +x); roll; hy /
-// hp: the head's turn and dip; sx / sy: the body's squash (wide, tall); step:
-// the front hooves' lunge step (0..1 of 0.16 u); hop: the body's lift (u).
-// The lean toward the target is the body's pitch plus the head's dip (about
-// 23° at the tusks on a hook).
-const REST = Object.freeze({ push: 0, pitch: 0, twist: 0, roll: 0, hy: 0, hp: 0, sx: 1, sy: 1, step: 0, hop: 0 });
+// or up (-), rad, about the haunches (the hind legs drive, the rump never
+// rises off them); twist: the body's turn (+ toward its left, +x); roll; hy /
+// hp: the head's turn and dip; sx / sy: the body's squash (wide, tall); hop:
+// the body's lift (u). The lean toward the target is the body's pitch plus
+// the head's dip (about 23° at the tusks on a hook), and the snout never
+// goes into the floor. The front hooves' lunge step is the gait's (pose).
+const REST = Object.freeze({ push: 0, pitch: 0, twist: 0, roll: 0, hy: 0, hp: 0, sx: 1, sy: 1, hop: 0 });
 const K = (o) => Object.freeze({ ...REST, ...o });
 // Hit 1, HOOK: tusks cocked to the boar's right (-x), ripped across to its left.
-const A1 = K({ push: -0.04, pitch: 0.04, twist: -0.22, roll: 0.05, hy: -0.5, hp: 0.28, sx: 0.97, sy: 1.04 });
-const P1 = K({ push: -0.07, pitch: 0.06, twist: -0.3, roll: 0.07, hy: -0.62, hp: 0.36, sx: 0.96, sy: 1.05 });
-const S1 = K({ push: 0.16, pitch: 0.22, twist: 0.2, roll: -0.06, hy: 0.55, hp: 0.18, sx: 1.19, sy: 0.91, step: 1 });
-const O1 = K({ push: 0.13, pitch: 0.18, twist: 0.3, roll: -0.08, hy: 0.72, hp: 0.06, sx: 1.06, sy: 0.97, step: 1 });
+const A1 = K({ push: -0.04, pitch: 0.03, twist: -0.22, roll: 0.05, hy: -0.5, hp: 0.24, sx: 0.97, sy: 1.04 });
+const P1 = K({ push: -0.07, pitch: 0.04, twist: -0.3, roll: 0.07, hy: -0.62, hp: 0.3, sx: 0.96, sy: 1.05 });
+const S1 = K({ push: 0.16, pitch: 0.14, twist: 0.2, roll: -0.06, hy: 0.55, hp: 0.22, sx: 1.19, sy: 0.91 });
+const O1 = K({ push: 0.13, pitch: 0.12, twist: 0.3, roll: -0.08, hy: 0.72, hp: 0.12, sx: 1.06, sy: 0.97 });
 // Hit 2, BACKHAND: from its left, low, hooked back across to its right.
-const A2 = K({ push: -0.03, pitch: 0.05, twist: 0.24, roll: -0.05, hy: 0.52, hp: 0.3, sx: 0.97, sy: 1.04, step: 0.4 });
-const P2 = K({ push: -0.07, pitch: 0.07, twist: 0.3, roll: -0.07, hy: 0.62, hp: 0.38, sx: 0.96, sy: 1.05, step: 0.2 });
-const S2 = K({ push: 0.16, pitch: 0.22, twist: -0.22, roll: 0.06, hy: -0.56, hp: 0.18, sx: 1.19, sy: 0.91, step: 1 });
-const O2 = K({ push: 0.13, pitch: 0.18, twist: -0.32, roll: 0.08, hy: -0.72, hp: 0.06, sx: 1.06, sy: 0.97, step: 1 });
+const A2 = K({ push: -0.03, pitch: 0.04, twist: 0.24, roll: -0.05, hy: 0.52, hp: 0.26, sx: 0.97, sy: 1.04 });
+const P2 = K({ push: -0.07, pitch: 0.05, twist: 0.3, roll: -0.07, hy: 0.62, hp: 0.32, sx: 0.96, sy: 1.05 });
+const S2 = K({ push: 0.16, pitch: 0.14, twist: -0.22, roll: 0.06, hy: -0.56, hp: 0.22, sx: 1.19, sy: 0.91 });
+const O2 = K({ push: 0.13, pitch: 0.12, twist: -0.32, roll: 0.08, hy: -0.72, hp: 0.12, sx: 1.06, sy: 0.97 });
 // Hit 3, TOSS: the head scoops low and square, then heaves up with a stretch
 // and a hop that lifts the front hooves (the biggest hit, §6.1 B6).
-const A3 = K({ push: -0.02, pitch: 0.16, twist: -0.04, hy: -0.06, hp: 0.5, sx: 1.04, sy: 0.94, step: 0.4 });
-const P3 = K({ push: -0.07, pitch: 0.2, hy: 0, hp: 0.6, sx: 1.07, sy: 0.9, step: 0.2 });
-const S3 = K({ push: 0.16, pitch: -0.24, hy: 0, hp: -0.55, sx: 0.9, sy: 1.14, step: 1, hop: 0.05 });
-const O3 = K({ push: 0.14, pitch: -0.3, hy: 0, hp: -0.65, sx: 0.92, sy: 1.12, step: 1, hop: 0.065 });
+const A3 = K({ push: -0.02, pitch: 0.08, twist: -0.04, hy: -0.06, hp: 0.3, sx: 1.04, sy: 0.94 });
+const P3 = K({ push: -0.07, pitch: 0.1, hy: 0, hp: 0.36, sx: 1.07, sy: 0.9 });
+const S3 = K({ push: 0.16, pitch: -0.24, hy: 0, hp: -0.55, sx: 0.9, sy: 1.14, hop: 0.05 });
+const O3 = K({ push: 0.14, pitch: -0.3, hy: 0, hp: -0.65, sx: 0.92, sy: 1.12, hop: 0.065 });
 // pull: the NEXT hit's pull-back from this hit's held wind-up
 const HITS = [
   { label: 'hook', from: A1, pull: P2, strike: S1, over: O1, next: A2 },
@@ -198,11 +206,11 @@ function geos() {
       ];
       PL.forEach(([u, v, w, l], j) => {
         for (const side of [-1, 1]) {
-          hide(u, side * v, P, N, 0.985);
+          hide(u, side * v, P, N, 0.96);
           basis(N, H.set(0, 0, 1), X, Y, Z);
-          tip(X, Y, Z, -0.22);
-          setTRS(m, P, X, Y, Z, w, 0.05, l);
-          out.push({ geo: scale, m: m.clone(), tone: j % 2 ? 0.92 : 1.0 });
+          tip(X, Y, Z, -0.18);
+          setTRS(m, P, X, Y, Z, w, 0.03, l);
+          out.push({ geo: scale, m: m.clone(), tone: j % 2 ? 1.1 : 1.16 });
         }
       });
       // a stub tail tuft at the rump
@@ -241,7 +249,7 @@ function geos() {
       const bar = fz(new BoxGeometry(0.09, 0.022, 0.022), 0, 1);
       const dot = fz(new BoxGeometry(0.022, 0.016, 0.012), 0, 1);
       for (const side of [-1, 1]) {
-        out.push({ geo: bar, m: new Matrix4().compose(new Vector3(side * 0.11, 0, 0.16), new Quaternion().setFromEuler(new Euler(0, side * -0.35, side * 0.45)), new Vector3(1, 1, 1)) });
+        out.push({ geo: bar, m: new Matrix4().compose(new Vector3(side * 0.075, 0.01, 0.17), new Quaternion().setFromEuler(new Euler(0, side * -0.35, side * 0.45)), new Vector3(0.8, 1, 1)) });
         out.push({ geo: dot, m: new Matrix4().compose(new Vector3(side * 0.03, -0.215, 0.405), new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), 0.5), new Vector3(1, 1, 1)) });
       }
       return out;
@@ -291,13 +299,15 @@ function geos() {
 
 // Hips (body space at rest), hoof homes (yaw-space floor), the leg bones.
 const HIPS = [new Vector3(-0.15, 0.31, 0.27), new Vector3(0.15, 0.31, 0.27), new Vector3(-0.15, 0.31, -0.29), new Vector3(0.15, 0.31, -0.29)];
-const HOMES = [new Vector3(-0.17, 0, 0.3), new Vector3(0.17, 0, 0.3), new Vector3(-0.17, 0, -0.31), new Vector3(0.17, 0, -0.31)];
-const L1 = 0.17;
-const L2 = 0.15;
+const HOMES = [new Vector3(-0.17, 0, 0.3), new Vector3(0.17, 0, 0.3), new Vector3(-0.17, 0, -0.3), new Vector3(0.17, 0, -0.3)];
+// front legs, then the longer hind legs that drive the lunge (they reach a
+// 0.16 u shove of the hips with the hooves still planted)
+const L1S = [0.18, 0.18, 0.19, 0.19];
+const L2S = [0.16, 0.16, 0.17, 0.17];
 const ANKLE = 0.045;
 const BEND = [new Vector3(0, 0, 1), new Vector3(0, 0, 1), new Vector3(0, 0, -1), new Vector3(0, 0, -1)];
 const LEG_R = [0.066, 0.04];
-const PIVOT = new Vector3(0, 0.34, -0.05);
+const PIVOT = new Vector3(0, 0.34, -0.2);
 const YAXIS = new Vector3(0, 1, 0);
 
 export function buildBoarFacet() {
@@ -340,10 +350,10 @@ export function buildBoarFacet() {
   F.group.add(groundShadow(0.52, 0.86, { forward: 0.34, wide: 1.2, deep: 0.94 }));
 
   // Named points (B8): the tusk tip (the weapon), the snout (the mouth).
-  const tipPt = namedPoint(head, 'boar-tip', 0.13, -0.05, 0.36);
+  const tipPt = namedPoint(head, 'boar-tip', 0.19, -0.07, 0.345);
   const mouth = namedPoint(head, 'boar-mouth', 0, -0.21, 0.42);
 
-  const gait = createLegs({ homes: HOMES, groups: [[0, 3], [1, 2]], trigger: 0.085, reach: 0.22, lift: 0.07, durMin: 0.085, durMax: 0.16 });
+  const gait = createLegs({ homes: HOMES, groups: [[0, 3], [1, 2]], trigger: 0.085, reach: 0.17, lift: 0.07, durMin: 0.085, durMax: 0.16 });
   const clock = createFoeClock();
   const watch = createAttackWatch();
   const chain = createChain({ hits: HITS, tls: HIT_TL, rest: REST, window: GORE_WINDOW, ease });
@@ -358,6 +368,11 @@ export function buildBoarFacet() {
   const m = new Matrix4();
   let age = -1;
   let lastBiteAt = -99;
+  // the lunge (B9): the front hooves step 0.16 u in for each strike, timed to
+  // land by its contact, and back out as the snap settles, so the next
+  // wind-up pulls back over feet the legs can reach
+  let lunge = 0;
+  let armedFor = null; // the contact the lunge step was timed for
   let seenContact = null;
   const strike = { id: '', tick: 0 };
   let yawNow = 0;
@@ -368,6 +383,7 @@ export function buildBoarFacet() {
     abilities: BOAR_ABILITIES,
     override: null, // { id: 'gore', t } | null
     lastStrike: null, // { id, tick }: the sim tick the latest live strike's contact lands on
+    // the planted world spot (x, z), and the drawn hoof in yaw space (drawn*)
     feet: () => gait.feet().map((q, i) => ({ ...q, drawnX: gait.out[i].x, drawnZ: gait.out[i].z, drawnY: gait.out[i].y + lifted[i] })),
     pose: () => ({ ...cur }),
     get hit() {
@@ -377,9 +393,17 @@ export function buildBoarFacet() {
   };
 
   function frontShift(i, o) {
-    if (i < 2) o.z += 0.16 * cur.step; // the lunge: the front hooves step in
-    else o.z -= 0.03 * cur.step; // the hind pair braces back
+    if (i < 2) o.z += 0.16 * lunge; // the lunge: the front hooves step in
     return o;
+  }
+  // Time the front hooves' lunge step to land on the contact (both at once,
+  // whatever the trot has in the air: a hoof mid-step is re-aimed).
+  function armLunge(contactAt, now) {
+    if (armedFor !== null && Math.abs(armedFor - contactAt) < FRAME) return;
+    armedFor = contactAt;
+    const dur = Math.max(1.5 * FRAME, contactAt - now - 0.25 * FRAME);
+    gait.release(0, dur);
+    gait.release(1, dur);
   }
 
   function pose(P) {
@@ -407,15 +431,33 @@ export function buildBoarFacet() {
         lastBiteAt = now;
       }
       // the next bite is due when this target's cooldown lapses (the sim's
-      // per-target clock), while the boar stays pressed against it
+      // per-target clock), while the boar stays pressed against it: not while
+      // it moves off (its own last step), nor while the sim holds it (a stun
+      // or a blind: no bite comes)
+      const moving = e && Number.isFinite(e.px) ? Math.hypot(e.x - e.px, e.z - e.pz) > 0.01 : (P.moveK ?? 0) > 0.35;
       let due = null;
-      if (e && e.cdByTarget && e.targetId != null && now - lastBiteAt < GORE_WINDOW && (P.moveK ?? 0) < 0.35) {
+      if (e && e.cdByTarget && e.targetId != null && now - lastBiteAt < GORE_WINDOW && !moving && !heldBy(e, tick)) {
         const next = e.cdByTarget[e.targetId];
         // (a cooldown already lapsed says nothing: the boar is out of reach)
         if (next != null && next > tick) due = (next - tick) / 60;
       }
+      // it chases off: a held wind-up recovers instead of riding along
+      if (moving && (P.moveK ?? 0) > 0.5) chain.recover(now);
       active = chain.pose(now, cur, due);
       if (!active) Object.assign(cur, REST);
+      // the lunge step: as the strike begins (the hips have pulled back),
+      // landing as the shove arrives
+      const c0 = chain.contactAt;
+      if (active && c0 !== null && c0 > now && c0 - now <= 3.5 * FRAME + 1e-6) armLunge(c0, now);
+      if (!active) armedFor = null;
+      // the hooves stand in from the step to the end of the snap, then step
+      // back out together (before the next wind-up pulls the hips back)
+      const was = lunge;
+      lunge = armedFor !== null && now < armedFor + 4.5 * FRAME ? 1 : 0;
+      if (was && !lunge) {
+        gait.release(0, 4 * FRAME);
+        gait.release(1, 4 * FRAME);
+      }
       // a new strike (on the bite, or started early on the predicted bite):
       // the tick its contact lands, for the probe
       const c = chain.contactAt;
@@ -456,7 +498,15 @@ export function buildBoarFacet() {
       hipW.copy(HIPS[i]).applyMatrix4(body.matrix);
       foot.copy(gait.out[i]);
       foot.y += ANKLE;
+      const L1 = L1S[i];
+      const L2 = L2S[i];
       lifted[i] = liftToReach(hipW, foot, L1, L2);
+      // never a stretched bone: a hoof a fast turn left past reach is drawn
+      // at the reach and steps now
+      if (clampReach(hipW, foot, L1, L2) > 1e-4) {
+        gait.release(i);
+        lifted[i] = Math.max(lifted[i], 1e-3);
+      }
       solveKnee(hipW, foot, L1, L2, BEND[i], knee);
       legs.setMatrixAt(i * 2, segmentMatrix(m, hipW, knee, LEG_R[0], LEG_R[0], 0.03));
       legs.setMatrixAt(i * 2 + 1, segmentMatrix(m, knee, foot, LEG_R[1], LEG_R[1], 0.02));

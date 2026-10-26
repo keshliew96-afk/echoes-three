@@ -172,17 +172,28 @@ export function createLegs({ homes, groups, trigger = 0.09, reach = 0.24, lift =
         if (!wantStep[i]) continue;
         const d = wantStep[i];
         wantStep[i] = 0;
-        if (feet[i].swing < 0) {
+        const f = feet[i];
+        if (f.swing < 0) {
           startStep(i, fr, shift);
-          if (d > 0) {
-            // a quick step of its own length (a lunge step that must land by
-            // the contact): re-aim its lead for that duration
-            const f = feet[i];
-            f.to.x -= vel.x * (f.dur - d) * lead;
-            f.to.z -= vel.z * (f.dur - d) * lead;
-            f.dur = d;
-          }
+          // a quick step of its own length (a lunge step that must land by
+          // the contact)
+          if (d > 0) f.dur = d;
           if (flying < 0) flying = groupOf[i];
+        } else if (d > 0) {
+          // already in the air (the trot's step): re-aim it at its new home
+          // from where it is now, at the height it is now, landing within d
+          const k0 = ease.inOut(f.swing);
+          const cx = f.from.x + (f.to.x - f.from.x) * k0;
+          const cz = f.from.z + (f.to.z - f.from.z) * k0;
+          const s1 = Math.min(f.swing, 1 - f.swing); // same height, rising or falling
+          homeLocal(i, shift, f.aim);
+          toWorld(fr, f.aim.x, f.aim.z, f.to);
+          const k1 = ease.inOut(s1);
+          // the lerp from `from` to `to` at k1 passes through where it is
+          f.from.x = k1 < 1 ? (cx - f.to.x * k1) / (1 - k1) : cx;
+          f.from.z = k1 < 1 ? (cz - f.to.z * k1) / (1 - k1) : cz;
+          f.swing = s1;
+          f.dur = d / Math.max(0.05, 1 - s1);
         }
       }
       // start a group's step: the group furthest from home, if too far (a
