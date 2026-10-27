@@ -313,7 +313,10 @@ The end of the wobble, the squash, the snap and the hold fit inside the
 reveals (1.2 s for the secrets, 1.4 s for the vault: sim numbers, unchanged).
 The rays, the stars and the rising sparks run on after the draft, as the
 vault's gold geyser always did. The vault's and the secret chests' existing
-bursts now go off on the snap instead of the press. A chest built already
+bursts now go off on the snap instead of the press; the vault's waits for
+the end of the hold and is softer (a 1.4 u flash, not a 2.6 u held white-out),
+so the snap, the lid, the sheet and the stars read. The stars are a deeper
+gold (#E9B949), drawn over the light. A chest built already
 open (a loaded save, a joining guest) shows open with no burst.
 
 - **The champion chest** has no press: it wobbles from the champion's fall

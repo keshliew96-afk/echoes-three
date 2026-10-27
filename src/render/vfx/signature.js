@@ -4984,11 +4984,14 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // the hop, the lid, the light and the stars); the vault's burst and a 2%
     // zoom punch go off on the snap, the punch inside the hold at its top.
     chestPunch();
-    after(CHEST_BEAT.snap, () => {
-      kit.pillar({ x, z, radius: 1.1, height: 8, color: VK_GOLD, life: 1.8, opacity: 0.6 });
-      kit.pillar({ x, z, radius: 0.35, height: 9, color: VK_HOT, life: 1.4, opacity: 0.9 });
-      flare(x, 1.0, z, VK_GOLD, 3.4, { kind: 'burst', life: 0.45, core: VK_HOT, spin: 0.8 });
-      kit.flash({ x, y: 1.1, z, color: VK_HOT, size: 2.6, life: 0.5, hold: 0.12 });
+    // The burst waits for the end of the hold at the top of the hop and is
+    // softer than it was on the press (a 1.4 u flash, not a 2.6 u held
+    // white-out), so the snap, the lid, the light sheet and the stars read.
+    after(CHEST_BEAT.snap + CHEST_BEAT.rise + CHEST_BEAT.hold, () => {
+      kit.pillar({ x, z, radius: 1.1, height: 8, color: VK_GOLD, life: 1.8, opacity: 0.45 });
+      kit.pillar({ x, z, radius: 0.35, height: 9, color: VK_HOT, life: 1.4, opacity: 0.6 });
+      flare(x, 1.0, z, VK_GOLD, 2.2, { kind: 'burst', life: 0.4, core: VK_HOT, spin: 0.8 });
+      kit.flash({ x, y: 1.1, z, color: VK_HOT, size: 1.4, life: 0.35 });
       kit.light({ x, z, radius: 6.0, color: VK_GOLD, opacity: 0.7, life: 2.0, attack: 0.03 });
       shock(x, z, 4.4, VK_GOLD, { life: 0.7, width: 0.22, core: VK_HOT });
       kit.ring({ x, z, r0: 0.5, r1: 2.6, width: 0.12, life: 1.0, core: VK_HOT, glow: VK_GOLD, soft: 0.6, y: 0.06, delay: 0.15, opacity: 0.8 });

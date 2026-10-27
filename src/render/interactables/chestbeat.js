@@ -106,6 +106,7 @@ export const STAR_POP_TIMES = Object.freeze(Array.from({ length: CHEST_BEAT.star
 const CREAM = '#FFF1C9';
 const GOLD = PALETTE.paleGold;
 const GOLD_HOT = '#F7E7C0';
+const STAR_GOLD = '#E9B949'; // a deeper gold than the light, so the stars read on it
 
 // The beat's own clock after the snap with the 4-frame hold taken out.
 export function heldClock(b) {
@@ -273,7 +274,7 @@ export function attachChestBeat(group, body, spec, fx = impactFx, cosmetic = nul
   const stars = [];
   if (tex) {
     for (let i = 0; i < B.stars; i++) {
-      const mat = new SpriteMaterial({ map: tex.fill, color: new Color(GOLD), transparent: true, opacity: 0, depthWrite: false, toneMapped: false, blending: AdditiveBlending });
+      const mat = new SpriteMaterial({ map: tex.fill, color: new Color(STAR_GOLD), transparent: true, opacity: 0, depthWrite: false, depthTest: false, toneMapped: false }); // normal blending: a star must read on the chest's own bright light
       const sp = new Sprite(mat);
       sp.visible = false;
       fx0.add(sp);
@@ -380,7 +381,7 @@ export function attachChestBeat(group, body, spec, fx = impactFx, cosmetic = nul
       const up = B.starUp * w * e;
       s.sp.position.set(Math.sin(s.a) * w * 0.55 * e, spec.rim + 0.1 + up * (0.75 + 0.25 * Math.cos(s.a)) + 0.02 * Math.sin(b * 3 + s.a * 5), 0.05);
       let size = s.size * B.starDraw * w;
-      let col = GOLD;
+      let col = STAR_GOLD;
       let map = tex.fill;
       let op = 0.95;
       const p = b - s.pop;
