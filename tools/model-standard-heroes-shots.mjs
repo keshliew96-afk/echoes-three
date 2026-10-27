@@ -6,6 +6,8 @@
 //
 //   node tools/model-standard-heroes-shots.mjs [--url http://127.0.0.1:5199/]
 //     [--shots captures/model-standard-heroes] [--room 3] [--seed 5]
+//     [--lineup healer,tank,swordsman,tidecaller]  (a Level I campaign run
+//     with that party, for a hero outside the default four)
 //
 // A Linux cloud session as root also needs PUPPETEER_EXECUTABLE_PATH and
 // ECHOES_CHROME_ARGS (CLAUDE.md "Running things"). Software GL runs at a few
@@ -24,6 +26,7 @@ const SHOTS = opt('shots', 'captures/model-standard-heroes');
 const ROOM = Number(opt('room', 3));
 const SEED = Number(opt('seed', 5));
 const COUNT = Number(opt('count', 6));
+const LINEUP = opt('lineup') ? opt('lineup').split(',') : null;
 mkdirSync(SHOTS, { recursive: true });
 const extra = (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -49,7 +52,8 @@ async function fight(facet) {
     }
     return null;
   };
-  await cmd('startRun', { act: 1 });
+  if (LINEUP) await cmd('startCampaign', { level: 1, lineup: LINEUP });
+  else await cmd('startRun', { act: 1 });
   await untilRoom(1);
   if (ROOM > 1) {
     await cmd('skipToRoom', ROOM, { act: 1 });
