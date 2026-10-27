@@ -205,7 +205,7 @@ effects, the numerals in a stub DOM, the kill cue and the colours. Probe
 surfaces: `__echoes.content.enemyfx().react` and `.kills`,
 `__echoes.content.renderHold()`, `__echoes.numeralsLive()`.
 
-## The cast, the shot, the reward and the aftermath (v0.5.339)
+## The cast, the shot, the reward and the aftermath (v0.5.341)
 
 Part 2 of Kesh's "Go for 1" (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.2
 f to o). Render and audio only, like Part 1: no damage, rule, deed or record
@@ -341,3 +341,11 @@ air, the chest beat's whole timeline on the pure pose and through every chest
 rig, the chest sounds' timing, the impact families, the whiz rule and the
 colours. The cue figures come from `node tools/smallfixes2-cuecal.mjs --only
 impactcues,chestcues --write` (a press layer takes its `_now` layer's figure).
+
+### The glare budget (v0.5.341)
+
+After Kesh's "too bright, can't see anything" (10-27), every additive wash the VFX kit draws is scaled by
+`GLARE` in `src/render/vfx/kit.js`: floor lights ×0.65, flashes and blooms ×0.6, pillars ×0.65. It
+stacks on the Effects setting's light gain. Slashes, rings, stars, marks and particles keep their strength,
+so shapes and gameplay signals still read; only the wash over the bodies dims. The contact and kill
+blooms, shot and near-side lights, and the vault's geyser, pillars and burst were also cut at their source.
