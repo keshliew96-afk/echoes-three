@@ -217,7 +217,12 @@ async function gameShots(kind, facet) {
     if (v.phase === 'combat') await cmd('clearRoom');
     else if (v.phase === 'reward') {
       await cmd('draftDecline');
-      await page.keyboard.press('Escape');
+      // the socket screen may follow a draft; Escape anywhere else pauses
+      const socket = await page.evaluate(() => {
+        const el = document.getElementById('socket-screen');
+        return !!el && getComputedStyle(el).display !== 'none' && getComputedStyle(el).visibility !== 'hidden' && Number(getComputedStyle(el).opacity) > 0;
+      });
+      if (socket) await page.keyboard.press('Escape');
     } else if (v.phase === 'relic') await cmd('relicChoose', 0);
     await sleep(500);
     v = await run();
