@@ -955,6 +955,12 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   bus.on('event_chest', () => {
     takeHoldUntil = performance.now() + TAKE_HOLD_MS;
   });
+  // CHESTS (VFX_HIT_RULES §6.2 i): the champion chest snaps open on the clear
+  // with no press, so the room stays in view a moment for its snap, light
+  // and first stars before the draft (UI only, as after a Take).
+  bus.on('champion_chest', () => {
+    takeHoldUntil = performance.now() + TAKE_HOLD_MS;
+  });
   // ESCORT AND HOLD: the pilgrim's arrival and the sealed ring get the same
   // moment in view before the draft opens.
   bus.on('pilgrim_arrive', () => {

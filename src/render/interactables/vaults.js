@@ -40,6 +40,7 @@ import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { sharedGeo } from '../geocache.js';
 import { addInk, groundShadow, mix } from '../critters/common.js';
 import { hslColor } from '../../env/colors.js';
+import { attachChestBeat, nearestHero } from './chestbeat.js';
 
 export const VAULT_KINDS = Object.freeze(['vault_key', 'vault_pile', 'vault_platter', 'vault_chest']);
 
@@ -388,35 +389,56 @@ export function buildVaultChest() {
     dust.push({ d, x0: Math.sin(i * 12.9898) * 4.2, z0: Math.cos(i * 78.233) * 3.2 + 1.2, ph: (i * 0.618) % 1, sp: 0.06 + (i % 5) * 0.015 });
   }
   g.add(groundShadow(0.8, 0.45));
+  // The chest's opening beat (chestbeat.js): it wobbles as a hero comes
+  // near, presses, snaps open at CHEST_BEAT.snap after the press; the lid
+  // and the vault's light follow the snap.
+  const beat = attachChestBeat(g, body, { w: 1.04, d: 0.68, rim: 0.72, hasp: { y: 0.5, z: 0.37 }, lockScale: 1.3 });
   let open = 0;
   let opening = false;
   let openAge = 9;
   let lastT = null;
+  let lidK = 0;
+  let spentFor = 0;
   return {
     group: g,
-    update(e, tSec) {
+    beat,
+    update(e, tSec, ctx) {
       const dt = lastT === null ? 0 : Math.min(0.1, tSec - lastT);
       lastT = tSec;
-      if (e && e.uses === 0 && !opening) {
-        opening = true;
-        openAge = 9; // a restored (already open) vault skips the burst
+      // Built already open (a restored save, a joining guest): no burst. Shut
+      // on the sim but no press heard: open on the beat a moment later.
+      if (e && e.uses === 0 && !opening && beat.state().mode === 'idle') {
+        if (dt === 0) {
+          opening = true;
+          openAge = 9;
+          beat.restore();
+        } else if ((spentFor += dt) > 0.3) beat.press();
       }
+      const wp = g.position;
+      const pose = beat.update(dt, nearestHero(ctx && ctx.party, wp.x, wp.z), wp.x, wp.z);
+      if (!opening && beat.state().mode === 'open') {
+        opening = true;
+        openAge = 0;
+      }
+      lidK = pose.lid;
       openAge += dt;
       open += ((opening ? 1 : 0) - open) * (1 - Math.exp(-7 * dt));
       const breathe = 0.82 + 0.18 * Math.sin(tSec * 2);
       runesOut.rotation.y = tSec * 0.12;
       spokes.rotation.y = -tSec * 0.05;
-      inlayMat.opacity = (0.5 + 0.2 * open) * breathe;
-      runeMat.opacity = (0.55 + 0.25 * Math.max(0, Math.sin(tSec * 2.6))) * (1 + 0.4 * open);
-      spokeMat.opacity = 0.3 * breathe;
-      sPool.opacity = (0.22 + 0.25 * open) * breathe;
+      // The floor dims as the chest opens (the glare budget, 10-27): the
+      // chest's own rays and stars carry the reveal, not the ring.
+      inlayMat.opacity = (0.4 - 0.15 * open) * breathe;
+      runeMat.opacity = (0.4 + 0.18 * Math.max(0, Math.sin(tSec * 2.6))) * (1 - 0.45 * open);
+      spokeMat.opacity = 0.24 * breathe;
+      sPool.opacity = (0.16 + 0.04 * open) * breathe;
       for (const fl of flames) {
         const s = 0.5 + 0.08 * Math.sin(tSec * 9 + fl.ph) + 0.05 * Math.sin(tSec * 21 + fl.ph * 3);
         fl.f.scale.set(s, s * 1.5, 1);
         fl.fc.scale.set(s * 0.45, s * 0.7, 1);
         fl.halo.material.opacity = 0.13 + 0.04 * Math.sin(tSec * 7 + fl.ph);
       }
-      hinge.rotation.x = -1.95 * open;
+      hinge.rotation.x = -1.95 * lidK;
       gem.rotation.y = tSec * 1.2;
       holeMat.opacity = opening ? 0.3 : 0.7 + 0.3 * Math.max(0, Math.sin(tSec * 3.4));
       holeGlow.material.opacity = opening ? 0.1 : 0.4 + 0.3 * Math.max(0, Math.sin(tSec * 3.4));
@@ -425,8 +447,8 @@ export function buildVaultChest() {
       seamMat.opacity = opening ? 0.9 * (1 - open) : 0;
       inside.material.opacity = 0.75 * open + 0.1 * Math.sin(tSec * 4) * open;
       const burst = openAge < 2.4 ? 1 - openAge / 2.4 : 0;
-      geyser.material.opacity = 0.45 * burst + 0.12 * open;
-      geyserCore.material.opacity = 0.7 * burst + 0.1 * open;
+      geyser.material.opacity = 0.18 * burst + 0.06 * open; // softer since the chest beat: the stars must read
+      geyserCore.material.opacity = 0.28 * burst + 0.05 * open;
       geyser.scale.set(1.2 + 1.2 * burst, 7, 1);
       for (const s of shafts) s.material.opacity = (0.06 + 0.02 * Math.sin(tSec * 0.7 + s.position.x)) * (1 + open * 0.6);
       for (const p of dust) {
@@ -436,10 +458,7 @@ export function buildVaultChest() {
       }
     },
     onEvent(type) {
-      if (type === 'vault_open') {
-        opening = true;
-        openAge = 0;
-      }
+      if (type === 'vault_open') beat.press();
     },
   };
 }

@@ -242,6 +242,9 @@ const clipFns = {
   },
 };
 
+const CAST_SEC = 1.5; // the cast clip's loop (cast(): P)
+const CAST_RELEASE = 0.3; // where its release pop starts (u)
+const KICK_SEC = 2 / 60; // B4: the prop is copied straight this long after the press
 const BLEND_RATE = 18; // 1/s — snappy enough to keep the hurt snap intact
 const FALL_SEC = 0.45; // §10 collapse travel time
 const RISE_RATE = 3;
@@ -309,6 +312,14 @@ export function createPoseDriver(cosmetic) {
     // so it is copied rather than exponentially blended (an 18/s filter loses
     // ~40% of a 120 ms pulse).
     pose.swing = target.swing;
+    // B4 (VFX_HIT_RULES §6.2 h): the weapon kicks on the press frame itself.
+    // For the first 2 frames of a release the prop is copied straight, like
+    // the swing, so it jumps instead of ramping in over the blend; then it
+    // settles through the filter as before.
+    if (clip === 'cast') {
+      const rel = (tClip % CAST_SEC) - CAST_SEC * CAST_RELEASE;
+      if (rel >= 0 && rel < KICK_SEC) pose.prop = target.prop;
+    }
     pose.collapse = collapse;
     pose.desat += (target.desat - pose.desat) * (1 - Math.exp(-5 * dt));
 

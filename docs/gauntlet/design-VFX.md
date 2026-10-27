@@ -532,3 +532,31 @@ list is `docs/HIT_FEEDBACK.md` "The hit and the kill"; for a VFX build:
   0.1 s of held time and leans along the killing hit.
 - Gameplay signals stay as they were: Ember telegraphs, Bright Heal heals,
   Hearth Amber for your own numbers once they settle.
+
+### The cast, the shot, the reward and the aftermath (Part 2, 2026-10-27)
+
+The full list is `docs/HIT_FEEDBACK.md` "The cast, the shot, the reward and
+the aftermath"; for a VFX build:
+
+- **A shot grows toward its target.** Big and round at the hand, stretched in
+  flight, its own size, brightness and height; it lights the target's near
+  side about 1.5 body widths out (`NEAR_LIGHT`), drains into the contact,
+  holds there 3 frames, and leaves sparks. A light follows it on the floor.
+- **A stroke tapers.** A sword swipe is thickest at the blade and thins to a
+  point toward its start (`uSwipe` in `BLAZE_VERT`), fades in on a concave
+  ramp and flashes a 4-point tip glint on its first frame.
+- **Animate with drawings.** `createFlipbook` swaps code-drawn frames every
+  2 ticks and ends on a hard cut; the crit book is the first. A new book is
+  a new `drawFrame` set: thick and bright first, then thinner, broken,
+  fragments.
+- **The aftermath holds the place.** Spatter in the body's matter colour,
+  arrows stuck in the floor, a gold rim of 0.8 s or less on blade hits, and
+  an element's air (`ELEMENT_AIR`: about 100 twinkles and a faint mist for
+  1 to 2 s).
+- **A reward is a beat, not a burst.** `attachChestBeat` gives any chest the
+  wobble, the press, the snap with its hold at the top of the hop, the
+  padlock, the light from inside and the stars; the burst goes off on the
+  snap. A trap's lid opens on Ember from the lock, no light, no stars.
+- Colours: the crit book is pale gold, the chest light warm cream and gold,
+  the frost air the Frost Bomb's own cyan; nothing new is Ember (but the
+  Trapped Chest's threat), Bright Heal or Violet.

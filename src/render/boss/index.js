@@ -28,6 +28,7 @@ import { HITFLASH, TICK_HZ, CAMERA } from '../../core/constants.js';
 // body most of the way to white and the whole silhouette blew out again.
 const BOSS_FLASH = Object.freeze({ ticks: 5, peak: 0.28, refractoryTicks: 8 });
 import { PALETTE } from '../../data/palette.js';
+import { vfxSpellHit } from '../../data/vfx.js';
 import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
 import { buildHeron } from './heron.js';
@@ -198,7 +199,7 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
     if (!rec || ev.target !== rec.id) return;
     // R5: the squash and flinch at half, never a hop (a boss is never pushed).
     // Armed before the flash's refractory gap: every hit reacts.
-    armReaction(rec.react, ev, rec.e);
+    armReaction(rec.react, ev, rec.e, vfxSpellHit(ev));
     if (ev.tick - rec.flashStartTick < BOSS_FLASH.refractoryTicks) return;
     rec.flashStartTick = ev.tick;
   });

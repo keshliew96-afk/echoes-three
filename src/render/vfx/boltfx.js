@@ -20,13 +20,39 @@
 //
 // Render-only: reads sim entities and events, never writes either; all
 // randomness from the COSMETIC stream.
-import { vfxFoeTone, vfxFoeWeight, vfxTemplate, FOE_TEMPLATE } from '../../data/vfx.js';
+import { CylinderGeometry, ConeGeometry, Group, Mesh, MeshBasicMaterial } from 'three';
+import { vfxFoeTone, vfxFoeWeight, vfxTemplate, vfxSkillClass, FOE_TEMPLATE } from '../../data/vfx.js';
 import { TICK_HZ } from '../../core/constants.js';
+import { PALETTE } from '../../data/palette.js';
 
 const KINDS = new Set(['bolt', 'skillbolt', 'eshot', 'eglob']);
 const MODE = { blade: 'fire', magic: 'celestial', scifi: 'holo' };
 const GLOB_PEAK = 1.7; // render/enemies/extras.js: a lob's arc height at mid-flight
 const TRAIL_BUDGET = 70; // particles shed per frame across every shot
+// THE CAST AND THE SHOT (VFX_HIT_RULES §6.2 f, n; docs/HIT_FEEDBACK.md):
+export const SHOT_FX = Object.freeze({
+  swell: 0.6, // S1: the head starts 1.6x at the hand...
+  settleSec: 0.1, // ...and settles to flight size over 0.1 s...
+  settleU: 1.0, // ...or 1 u of flight, whichever comes first
+  stretch: 1.8, // S3: in flight the head runs about 2 to 1 along its travel
+  tailSec: 0.22, // S2: the tail is speed x 0.22 s...
+  tailMin: 1.1, // ...between 1.1 u (about 2.3 target widths)...
+  tailMax: 2.0, // ...and 2 u
+  jitSize: [0.88, 1.14], // S4: each shot its own size,
+  jitBright: [0.75, 0.95], // brightness
+  jitY: [-0.05, 0.07], // and height (u), from the cosmetic stream
+  drainSec: 0.083, // S5: the trail flows into the contact over 5 frames
+  holdSec: 0.05, // n: a body hit holds the head at the contact 3 frames, then the burst
+  light: 0.12, // S7: the floor glow under a shot in flight (opacity)
+  lights: 6, // at most this many shots light the floor at once
+  sparks: [5, 10], // P4: a star of short pale streaks where a shot lands
+});
+// R6: the near-side light (reach about 1.5 bw from the body's centre).
+export const NEAR_LIGHT = Object.freeze({ reach: 1.0, side: 0.3, y: 0.7, size: 0.6, radius: 0.8, opacity: 0.2, sec: 0.12 });
+// D2: an arrow that lands stays stuck in the floor a few seconds.
+export const STUCK = Object.freeze({ cap: 10, life: 3, fade: 0.3, tilt: 0.6, back: 0.28 });
+const P4_PALE = '#E7D5A3';
+const P4_CORE = '#FFFCC6';
 
 export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, player, heroTone }) {
   // Per-kind tally for the probe (__echoes.content.vfx().bolt).
@@ -112,13 +138,91 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
     }
   }
 
+  // ------------------------------------------------- arrows in the floor --
+  const stuck = [];
+  {
+    const shaftGeo = new CylinderGeometry(0.026, 0.026, 0.55, 5);
+    shaftGeo.translate(0, 0.275, 0);
+    const fletchGeo = new ConeGeometry(0.08, 0.16, 4);
+    fletchGeo.translate(0, 0.5, 0);
+    for (let i = 0; i < STUCK.cap; i++) {
+      const g = new Group();
+      const mat = new MeshBasicMaterial({ color: PALETTE.bone, transparent: true });
+      g.add(new Mesh(shaftGeo, mat));
+      g.add(new Mesh(fletchGeo, mat));
+      g.visible = false;
+      kit.root.add(g);
+      stuck.push({ g, mat, t: 0, live: false });
+    }
+  }
+  let stuckCursor = 0;
+  function stick(x, z, dx, dz) {
+    const s = stuck.find((q) => !q.live) ?? stuck[stuckCursor++ % stuck.length];
+    s.g.position.set(x, 0, z);
+    // Nose down, tail up and back along its flight.
+    s.g.rotation.set(0, 0, 0);
+    s.g.rotation.order = 'YXZ';
+    s.g.rotation.y = Math.atan2(dx, dz);
+    s.g.rotation.x = -STUCK.tilt;
+    s.mat.opacity = 1;
+    s.t = 0;
+    s.live = true;
+    s.g.visible = true;
+    count('arrow', 'stuck');
+  }
+  function stuckFrame(dt) {
+    for (const s of stuck) {
+      if (!s.live) continue;
+      s.t += dt;
+      if (s.t >= STUCK.life) {
+        s.live = false;
+        s.g.visible = false;
+        continue;
+      }
+      s.mat.opacity = Math.min(1, (STUCK.life - s.t) / STUCK.fade);
+    }
+  }
+  const isArrow = (rec) => !rec.foe && vfxSkillClass(rec.src) === 'archer';
+
+  const litCount = () => {
+    let n = 0;
+    for (const r of live.values()) if (r.lt) n++;
+    return n;
+  };
+  // P4: a star of short pale streaks over a soft glow where a shot lands, on
+  // a body or a wall; a foe's shot sparks in its own tone.
+  function landSparks(rec) {
+    const y = Math.max(0.35, rec.y);
+    const n = Math.round(rnd(...SHOT_FX.sparks));
+    const pale = rec.foe ? rec.tp.a : P4_PALE;
+    const core = rec.foe ? rec.tp.core : P4_CORE;
+    tk.sparks(rec.x, y, rec.z, n, { color: pale, color2: core, spread: Math.PI, speed: [1.4, 3.2], up: [0.2, 1.2], life: [0.12, 0.2], gravity: 2, len: 0.035, width: [0.025, 0.045] });
+    kit.flash({ x: rec.x, y, z: rec.z, color: core, size: 0.45 * Math.sqrt(rec.w), life: 0.2, hold: 0.05, opacity: 0.35, grow: 0.2 });
+  }
+
   // ---------------------------------------------------------- per frame --
   function track(id, e, x, y, z, vx, vz, speed, traveled, dt) {
     let rec = live.get(id);
     if (!rec) {
       const tone = e.tone ?? toneOf(e);
       if (!tone) return null;
-      rec = { ...tone, x, y, z, dx: 1, dz: 0, owe: 0, h: null, token: 0 };
+      rec = {
+        ...tone,
+        x,
+        y,
+        z,
+        dx: 1,
+        dz: 0,
+        owe: 0,
+        h: null,
+        token: 0,
+        age: 0,
+        jS: rnd(...SHOT_FX.jitSize),
+        jB: rnd(...SHOT_FX.jitBright),
+        jY: e.kind === 'eglob' ? 0 : rnd(...SHOT_FX.jitY),
+        lt: null,
+        ltTok: 0,
+      };
       live.set(id, rec);
       count(rec.src, 'head');
       mark(`tpl:bolt_${rec.tp.id}_head`);
@@ -128,24 +232,72 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
       rec.dx = vx / vl;
       rec.dz = vz / vl;
     }
+    y += rec.jY;
     rec.x = x;
     rec.y = y;
     rec.z = z;
-    const size = (rec.foe ? 0.56 : 0.52) * Math.sqrt(rec.w) * (rec.tp.id === 'blade' ? 1.25 : 1); // a comet's head is its whole body
-    const len = Math.min(traveled + 0.05, Math.max(0.45, Math.min(2.0, speed * 0.1))) * Math.sqrt(rec.w);
+    rec.age += dt;
+    // S1: big at the hand, settling to flight size; S3: round at the hand,
+    // stretched along the travel once it flies.
+    const k = Math.min(1, Math.max(rec.age / SHOT_FX.settleSec, traveled / SHOT_FX.settleU));
+    const swell = 1 + SHOT_FX.swell * (1 - k) * (1 - k);
+    const stretch = 1 + (SHOT_FX.stretch - 1) * k;
+    const size = (rec.foe ? 0.56 : 0.52) * Math.sqrt(rec.w) * (rec.tp.id === 'blade' ? 1.25 : 1) * rec.jS * swell; // a comet's head is its whole body
+    const len = Math.min(traveled + 0.05, Math.max(SHOT_FX.tailMin, Math.min(SHOT_FX.tailMax, speed * SHOT_FX.tailSec))) * Math.sqrt(rec.w);
     if (!rec.h || rec.h.token !== rec.token || !rec.h.live) {
       if (rec.h && rec.token) return rec; // recycled by a fuller pool: no head this flight
       const tp = rec.tp;
       const fire = tp.id === 'blade';
-      rec.h = tk.head({ x, y, z, dx: rec.dx, dz: rec.dz, size, len, mode: MODE[tp.id] ?? 'celestial', core: tp.core, a: tp.a, b: fire ? tp.deep : tp.b, opacity: fire && !rec.foe ? 0.7 : 0.9, gain: fire && !rec.foe ? 1.0 : 1.1 }); // gold fire blooms hottest: a hero comet runs softer
+      rec.h = tk.head({ x, y, z, dx: rec.dx, dz: rec.dz, size, len, stretch, mode: MODE[tp.id] ?? 'celestial', core: tp.core, a: tp.a, b: fire ? tp.deep : tp.b, opacity: (fire && !rec.foe ? 0.7 : 0.9) * rec.jB, gain: fire && !rec.foe ? 1.0 : 1.1 }); // gold fire blooms hottest: a hero comet runs softer
       rec.token = rec.h.token;
-    } else tk.moveHead(rec.h, x, y, z, rec.dx, rec.dz, len, size);
+    } else tk.moveHead(rec.h, x, y, z, rec.dx, rec.dz, len, size, stretch);
+    // S7: the floor under the shot glows as it flies.
+    if (rec.lt && !kit.moveLight(rec.lt, rec.ltTok, x, z)) rec.lt = null;
+    if (!rec.lt && !rec.litOnce && litCount() < SHOT_FX.lights) {
+      rec.litOnce = true;
+      rec.lt = kit.light({ x, z, radius: 0.75 * Math.sqrt(rec.w), color: rec.tp.a, opacity: SHOT_FX.light, life: Infinity, attack: 0.05 });
+      rec.ltTok = rec.lt ? rec.lt.token : 0;
+    }
+    // R6: the shot lights its target's near side in its last frames before
+    // contact (about 1 bw out), once per flight.
+    if (!rec.nearLit) {
+      const t = nearTarget(rec);
+      if (t) {
+        rec.nearLit = true;
+        const ox = t.x - rec.dx * NEAR_LIGHT.side;
+        const oz = t.z - rec.dz * NEAR_LIGHT.side;
+        kit.flash({ x: ox, y: NEAR_LIGHT.y, z: oz, color: rec.tp.a, size: NEAR_LIGHT.size * Math.sqrt(rec.w), life: NEAR_LIGHT.sec, opacity: NEAR_LIGHT.opacity });
+        kit.light({ x: ox, z: oz, radius: NEAR_LIGHT.radius, color: rec.tp.a, opacity: NEAR_LIGHT.opacity, life: NEAR_LIGHT.sec + 0.05, attack: 0.02 });
+        count(rec.src, 'near');
+      }
+    }
     rec.owe += (rec.tp.dust?.trail ?? 26 * rec.w) * dt;
     return rec;
   }
+  // The body a shot is about to reach: ahead of it, within NEAR_LIGHT.reach.
+  let bodies = [];
+  function nearTarget(rec) {
+    let best = null;
+    let bd = NEAR_LIGHT.reach;
+    for (const b of bodies) {
+      if (rec.foe ? b.partyIndex === undefined : b.faction !== 'hostile') continue;
+      const ax = b.x - rec.x;
+      const az = b.z - rec.z;
+      if (ax * rec.dx + az * rec.dz <= 0) continue;
+      const d = Math.hypot(ax, az);
+      if (d < bd) {
+        bd = d;
+        best = b;
+      }
+    }
+    return best;
+  }
   function frame(dt, entities) {
+    stuckFrame(dt);
     const seen = new Set();
     const tick = world.tick ?? 0;
+    bodies = [];
+    for (const e of entities) if (e.hp > 0 && (e.faction === 'hostile' || e.partyIndex !== undefined) && !KINDS.has(e.kind)) bodies.push(e);
     for (const e of entities) {
       if (!KINDS.has(e.kind)) continue;
       let x = e.x;
@@ -194,8 +346,18 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
     // Shots that stopped this frame: their end, then their head goes.
     for (const [id, rec] of live) {
       if (seen.has(id)) continue;
-      if (rec.h && rec.h.token === rec.token) tk.endHead(rec.h, 0.08);
-      burst(rec, cause.get(id) ?? 'impact');
+      const why = cause.get(id) ?? 'impact';
+      const ended = why === 'expired' || why === 'room_clear' || why === 'charm';
+      // S5: the trail drains into the contact; n: on a body the head holds
+      // there 3 frames and the burst replaces it.
+      if (rec.h && rec.h.token === rec.token) tk.endHead(rec.h, ended ? 0.08 : SHOT_FX.drainSec, !ended);
+      if (rec.lt) kit.endLight(rec.lt, rec.ltTok, 0.1);
+      if (!ended) landSparks(rec);
+      if (why !== 'room_clear' && why !== 'charm' && isArrow(rec)) stick(rec.x - rec.dx * (why === 'impact' ? STUCK.back : 0), rec.z - rec.dz * (why === 'impact' ? STUCK.back : 0), rec.dx, rec.dz);
+      if (why === 'impact') {
+        const r = { ...rec };
+        after(SHOT_FX.holdSec, () => burst(r, why));
+      } else burst(rec, why);
       live.delete(id);
       cause.delete(id);
       shooter.delete(id);
@@ -224,11 +386,18 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
     return names.length;
   }
   function teardown() {
-    for (const rec of live.values()) if (rec.h && rec.h.token === rec.token) tk.endHead(rec.h, 0.01);
+    for (const rec of live.values()) {
+      if (rec.h && rec.h.token === rec.token) tk.endHead(rec.h, 0.01);
+      if (rec.lt) kit.endLight(rec.lt, rec.ltTok, 0.01);
+    }
     live.clear();
     shooter.clear();
     cause.clear();
     demos.length = 0;
+    for (const s of stuck) {
+      s.live = false;
+      s.g.visible = false;
+    }
   }
   const counts = () => Object.fromEntries([...tally].map(([k, v]) => [k, { ...v }]));
   return { frame, showcase, teardown, counts };

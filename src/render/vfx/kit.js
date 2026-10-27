@@ -58,6 +58,7 @@ import { HOLD_CAP } from '../hold.js';
 // flash pool keeps base's margin, so a busy fight never steals a live enemy
 // tell flash it would not have stolen before.
 export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 64, streak: 64, cracks: 12, pillar: 8, star: 64, mark: 24, glow: 32 });
+export const GLARE = Object.freeze({ light: 0.65, flash: 0.6, pillar: 0.65 });
 const FLASH_HOLD = 0.066; // s — 4 frames at 60 fps at full strength
 const STAR_HOLD = 0.05; // s — a star's default full-strength beat after its pop
 const STAR_POP = 0.035; // s — a star's pop-in
@@ -591,16 +592,38 @@ export function createVfxKit({ stage, cosmetic }) {
     return { obj: mesh, mat };
   });
   let lightGain = 1;
+  // The glare budget (Kesh, 10-27: "too bright, can't see anything"): every
+  // additive light, flash and pillar the kit draws is scaled down so a busy
+  // fight keeps its bodies, numbers and floor warnings readable. Shapes,
+  // slashes, rings and stars keep their strength; only the wash dims.
   // opts: x, z, radius, color, opacity, life, attack (s), y.
+  let lightTokens = 0;
+  // A light the caller moves (S7: the floor under a shot in flight): it
+  // lives until endLight; follow it only while slot.token matches.
+  function moveLight(s, token, x, z) {
+    if (!s || s.token !== token || !s.live) return false;
+    s.obj.position.x = x;
+    s.obj.position.z = z;
+    return true;
+  }
+  function endLight(s, token, fade = 0.08) {
+    if (!s || s.token !== token || !s.live) return;
+    const t = Math.max(0, s.age - s.delay);
+    s.endAt = t;
+    s.endFade = fade;
+    s.life = t + fade;
+  }
   function light(o) {
     if (lightGain <= 0) return null;
     const s = lights.take();
+    s.token = ++lightTokens;
+    s.endAt = -1;
     s.live = true;
     s.age = 0;
     s.delay = o.delay ?? 0;
     s.life = o.life ?? 0.35;
     s.attack = o.attack ?? 0.03;
-    s.op = (o.opacity ?? 0.5) * 0.75 * lightGain;
+    s.op = (o.opacity ?? 0.5) * 0.75 * GLARE.light * lightGain;
     s.r = o.radius ?? 1;
     s.mat.color.copy(soft(o.color ?? PALETTE.hearthAmber));
     s.mat.opacity = 0;
@@ -610,7 +633,7 @@ export function createVfxKit({ stage, cosmetic }) {
     return s;
   }
   function stepLight(s, t) {
-    const a = t < s.attack ? t / s.attack : Math.pow(1 - (t - s.attack) / Math.max(0.01, s.life - s.attack), 2);
+    const a = s.endAt >= 0 ? (s.endAt < s.attack ? Math.min(1, s.endAt / s.attack) : 1) * Math.pow(Math.max(0, 1 - (t - s.endAt) / s.endFade), 2) : t < s.attack ? t / s.attack : Math.pow(1 - (t - s.attack) / Math.max(0.01, s.life - s.attack), 2);
     s.mat.opacity = s.op * Math.max(0, a);
     const sc = s.r * (0.85 + 0.15 * Math.min(1, t / Math.max(0.01, s.attack * 3)));
     s.obj.scale.set(sc, sc, 1);
@@ -640,7 +663,7 @@ export function createVfxKit({ stage, cosmetic }) {
     s.holdT = Math.min(s.life * 0.6, o.hold ?? FLASH_HOLD);
     s.size = o.size ?? 0.5;
     s.grow = o.grow ?? 0.4;
-    s.op = (o.opacity ?? 0.75) * 0.8;
+    s.op = (o.opacity ?? 0.75) * 0.8 * GLARE.flash;
     s.mat.color.copy(soft(o.color ?? PALETTE.parchment));
     s.obj.position.set(o.x, o.y ?? 0.45, o.z);
     s.obj.scale.set(s.size, s.size, 1);
@@ -822,7 +845,7 @@ export function createVfxKit({ stage, cosmetic }) {
     s.age = 0;
     s.delay = o.delay ?? 0;
     s.life = o.life ?? 0.5;
-    s.op = o.opacity ?? 0.7;
+    s.op = (o.opacity ?? 0.7) * GLARE.pillar;
     s.r = o.radius ?? 0.4;
     s.h = o.height ?? 1.6;
     s.mat.color.copy(col(o.color ?? PALETTE.parchment));
@@ -1115,5 +1138,5 @@ export function createVfxKit({ stage, cosmetic }) {
     lightGain = l;
   }
 
-  return { root, slash, ring, light, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, prewarm, setIntensity };
+  return { root, slash, ring, light, moveLight, endLight, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, prewarm, setIntensity };
 }

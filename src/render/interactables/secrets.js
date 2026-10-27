@@ -44,6 +44,7 @@ import { PALETTE, SECRET_COLORS, SHRINE_COLORS, TONIC_COLORS } from '../../data/
 import { toonMaterial } from '../toon.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { sharedGeo } from '../geocache.js';
+import { attachChestBeat, nearestHero } from './chestbeat.js';
 import { addInk, groundShadow, mix } from '../critters/common.js';
 import { hslColor } from '../../env/colors.js';
 import { buildPile } from './vaults.js';
@@ -423,12 +424,14 @@ function buildReliquary() {
   const stone = toonMaterial({ color: hslColor(220, 0.06, 0.36) });
   const stoneDark = toonMaterial({ color: hslColor(222, 0.08, 0.22) });
   const silver = toonMaterial({ color: mix(GLOW, PALETTE.warmGrey, 0.3), emissive: GLOW, emissiveIntensity: 0.25 });
-  add(g, new Mesh(sharedGeo('sr-plinth', () => new BoxGeometry(1.0, 0.22, 0.7)), stoneDark), { y: 0.11 });
-  add(g, new Mesh(sharedGeo('sr-casket', () => new BoxGeometry(0.78, 0.4, 0.5)), stone), { y: 0.42 });
-  for (const x of [-0.3, 0.3]) add(g, new Mesh(sharedGeo('sr-band', () => new BoxGeometry(0.05, 0.42, 0.52)), silver), { x, y: 0.42 });
+  const body = new Group(); // the casket the chest beat rocks (chestbeat.js)
+  g.add(body);
+  add(body, new Mesh(sharedGeo('sr-plinth', () => new BoxGeometry(1.0, 0.22, 0.7)), stoneDark), { y: 0.11 });
+  add(body, new Mesh(sharedGeo('sr-casket', () => new BoxGeometry(0.78, 0.4, 0.5)), stone), { y: 0.42 });
+  for (const x of [-0.3, 0.3]) add(body, new Mesh(sharedGeo('sr-band', () => new BoxGeometry(0.05, 0.42, 0.52)), silver), { x, y: 0.42 });
   const lid = new Group();
   lid.position.set(0, 0.62, 0);
-  g.add(lid);
+  body.add(lid);
   add(lid, new Mesh(sharedGeo('sr-lid', () => new BoxGeometry(0.84, 0.08, 0.56)), stoneDark), { y: 0.04 });
   add(lid, new Mesh(sharedGeo('sr-ridge', () => new BoxGeometry(0.84, 0.06, 0.14)), stone), { y: 0.11 });
   add(lid, new Mesh(sharedGeo('sr-sigil', () => new TorusGeometry(0.09, 0.018, 6, 18)), silver), { y: 0.1, z: 0.29 });
@@ -445,19 +448,21 @@ function buildReliquary() {
   const ring = flat(new Mesh(sharedGeo('sr-ring', () => new RingGeometry(0.62, 0.68, 40)), ringMat), 0.03);
   g.add(ring);
   g.add(groundShadow(0.7, 0.4));
-  return { group: g, parts: { lid, relic, gem, halo, core, ringMat }, kind: 'relic' };
+  return { group: g, body, beat: { w: 0.78, d: 0.5, rim: 0.62, hasp: { y: 0.44, z: 0.25 } }, parts: { lid, relic, gem, halo, core, ringMat }, kind: 'relic' };
 }
 function buildCache() {
   const g = new Group();
   const wood = toonMaterial({ color: hslColor(28, 0.32, 0.3) });
   const woodDark = toonMaterial({ color: hslColor(26, 0.3, 0.19) });
   const iron = toonMaterial({ color: hslColor(220, 0.08, 0.2) });
-  add(g, new Mesh(sharedGeo('st-box', () => new BoxGeometry(0.86, 0.46, 0.56)), woodDark), { y: 0.23 });
-  for (const y of [0.1, 0.24, 0.38]) add(g, new Mesh(sharedGeo('st-slat', () => new BoxGeometry(0.88, 0.09, 0.58)), wood), { y });
-  for (const x of [-0.4, 0.4]) add(g, new Mesh(sharedGeo('st-corner', () => new BoxGeometry(0.07, 0.48, 0.6)), iron), { x, y: 0.24 });
+  const body = new Group(); // the crate the chest beat rocks (chestbeat.js)
+  g.add(body);
+  add(body, new Mesh(sharedGeo('st-box', () => new BoxGeometry(0.86, 0.46, 0.56)), woodDark), { y: 0.23 });
+  for (const y of [0.1, 0.24, 0.38]) add(body, new Mesh(sharedGeo('st-slat', () => new BoxGeometry(0.88, 0.09, 0.58)), wood), { y });
+  for (const x of [-0.4, 0.4]) add(body, new Mesh(sharedGeo('st-corner', () => new BoxGeometry(0.07, 0.48, 0.6)), iron), { x, y: 0.24 });
   const lid = new Group();
   lid.position.set(0, 0.47, -0.28);
-  g.add(lid);
+  body.add(lid);
   add(lid, new Mesh(sharedGeo('st-lid', () => new BoxGeometry(0.9, 0.07, 0.6)), wood), { y: 0.035, z: 0.28 });
   // Two vials glowing through, a third lying beside it.
   const vials = [];
@@ -467,7 +472,7 @@ function buildCache() {
     const glass = toonMaterial({ color: c.glow, emissive: c.glow, emissiveIntensity: 0.5 });
     const v = new Group();
     v.position.set(x, 0.42, z);
-    g.add(v);
+    body.add(v);
     add(v, new Mesh(sharedGeo('st-vial', () => new SphereGeometry(0.1, 10, 8)), glass), { y: 0.12 });
     add(v, new Mesh(sharedGeo('st-neck', () => new CylinderGeometry(0.035, 0.04, 0.12, 8)), glass), { y: 0.24 });
     add(v, new Mesh(sharedGeo('st-cork', () => new CylinderGeometry(0.04, 0.035, 0.05, 8)), wood), { y: 0.32 });
@@ -477,7 +482,7 @@ function buildCache() {
     vials.push({ v, s, x });
   }
   g.add(groundShadow(0.6, 0.38));
-  return { group: g, parts: { lid, vials }, kind: 'tonics' };
+  return { group: g, body, beat: { w: 0.86, d: 0.56, rim: 0.47, hasp: { y: 0.36, z: 0.29 } }, parts: { lid, vials }, kind: 'tonics' };
 }
 function buildLectern() {
   const g = new Group();
@@ -524,33 +529,55 @@ function buildLectern() {
 export function buildSecretBody(e) {
   const r = e.content === 'relic' ? buildReliquary() : e.content === 'tonics' ? buildCache() : buildLectern();
   const P = r.parts;
+  // The reliquary and the cache open on the chest beat (chestbeat.js): a
+  // wobble as a hero nears, the press on the Take, the snap inside the
+  // 1.2 s reveal. The lectern is not a chest: it keeps its own opening.
+  const beat = r.body ? attachChestBeat(r.group, r.body, r.beat) : null;
   let opened = false;
   let openAge = 9;
   let open = 0;
+  let lid = 0;
+  let spentFor = 0;
   let lastT = null;
   return {
     group: r.group,
-    update(ent, tSec) {
+    beat,
+    update(ent, tSec, ctx) {
       const dt = lastT === null ? 0 : Math.min(0.1, tSec - lastT);
       lastT = tSec;
-      if (ent && ent.uses === 0 && !opened) {
-        opened = true;
-        openAge = 9;
+      // Built already open (a restored save, a joining guest): no burst. Spent
+      // on the sim but no Take heard: open on the beat a moment later.
+      if (ent && ent.uses === 0 && !opened && (!beat || beat.state().mode === 'idle')) {
+        if (!beat || dt === 0) {
+          opened = true;
+          openAge = 9;
+          if (beat) beat.restore();
+        } else if ((spentFor += dt) > 0.3) beat.press();
+      }
+      if (beat) {
+        const wp = r.group.position;
+        const pose = beat.update(dt, opened ? Infinity : nearestHero(ctx && ctx.party, wp.x, wp.z), wp.x, wp.z);
+        lid = pose.lid;
+        if (!opened && beat.state().mode === 'open') {
+          opened = true;
+          openAge = 0;
+        }
       }
       openAge += dt;
       open += ((opened ? 1 : 0) - open) * (1 - Math.exp(-6 * dt));
+      if (!beat) lid = open;
       const burst = openAge < 1.2 ? 1 - openAge / 1.2 : 0;
       if (r.kind === 'relic') {
         P.relic.rotation.y = tSec * 1.1;
         P.relic.position.y = 1.15 + 0.08 * Math.sin(tSec * 1.8) + 0.5 * open;
-        P.lid.position.x = 0.5 * open;
-        P.lid.rotation.z = -0.35 * open;
+        P.lid.position.x = 0.5 * lid;
+        P.lid.rotation.z = -0.35 * lid;
         P.halo.material.opacity = 0.4 + 0.12 * Math.sin(tSec * 2.6) + 0.5 * burst;
         P.core.material.opacity = (0.75 + 0.2 * Math.sin(tSec * 3.1)) * (1 - 0.7 * open) + 0.4 * burst;
         P.gem.visible = open < 0.95;
         P.ringMat.opacity = (0.45 + 0.15 * Math.sin(tSec * 2)) * (1 - 0.6 * open);
       } else if (r.kind === 'tonics') {
-        P.lid.rotation.x = -1.9 * open;
+        P.lid.rotation.x = -1.9 * lid;
         for (const vv of P.vials) {
           vv.v.position.y = 0.42 + 0.5 * open + 0.03 * Math.sin(tSec * 2 + vv.x * 9);
           vv.s.material.opacity = 0.32 + 0.12 * Math.sin(tSec * 3 + vv.x * 7) + 0.5 * burst;
@@ -568,8 +595,11 @@ export function buildSecretBody(e) {
     },
     onEvent(type) {
       if (type === 'take') {
-        opened = true;
-        openAge = 0;
+        if (beat) beat.press();
+        else {
+          opened = true;
+          openAge = 0;
+        }
       }
     },
   };

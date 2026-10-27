@@ -723,10 +723,14 @@ export function createInteractableLayer({ stage, world, bus, cosmetic }) {
   }
 
   let lastT = null;
+  const party = [];
   function update(tSec) {
     const dt = lastT === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastT));
     lastT = tSec;
-    const ctx = { tick: world.tick, cosmetic, camQuat: stage.camera.quaternion, asleep: roomAsleep };
+    // CHESTS: the living heroes, for the chest beat's wobble (chestbeat.js).
+    party.length = 0;
+    for (const e of world.entities()) if (e.partyIndex !== undefined && e.hp > 0) party.push(e);
+    const ctx = { tick: world.tick, cosmetic, camQuat: stage.camera.quaternion, asleep: roomAsleep, party };
     const seen = new Set();
     for (const e of world.entities()) {
       if (e.kind !== 'dewfont' && e.kind !== 'barricade' && e.kind !== 'keg' && e.kind !== 'kegfuse' && e.kind !== 'sluice' && e.kind !== 'bell' && e.kind !== 'encounter' && !VAULT_KINDS.includes(e.kind) && !TONIC_KINDS.includes(e.kind) && !SHRINE_KINDS.includes(e.kind) && !SECRET_KINDS.includes(e.kind)) continue;

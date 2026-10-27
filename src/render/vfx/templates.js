@@ -188,18 +188,40 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   // afterimages behind it, sharp sparks flung off the edge; a skill adds a
   // golden energy wave rolling on past the reach and an explosion at the tip.
   const side = new Map();
+  const SWIPE = Object.freeze({
+    band: 0.68, // T2: band width over the tip's radius
+    window: 1.1, // T5: rad of arc lit at once (about 63 degrees)
+    glintSize: 0.65, // T6: the star's spikes span about 1.5 bw
+    glintSec: 0.05, // about 1 frame at full, then gone
+    shards: [6, 10], // T6: on a low sweep
+    shardsBig: [4, 7], // on an overhead skill swing
+  });
   function bladeSwing(tp, id, x, z, angle, reach, half, { big = false, strokes = 1, scale = 1 } = {}) {
     fire(big ? 'blade_skill' : 'blade_swing');
     const rev = !side.get(id);
     side.set(id, rev);
     const R = reach * 0.95;
-    const W = (big ? 0.75 : 0.52) * scale;
+    // T2: the band reaches nearly to the hilt (its inner edge at about 0.3
+    // of the tip's radius).
+    const W = Math.max((big ? 0.75 : 0.52) * scale, SWIPE.band * R);
     const sweep = big ? 0.09 : 0.075;
     const sign = rev ? -1 : 1;
+    const span = half * 2.1;
+    // T5: a travelling window of 40 to 70 degrees, not a fan.
+    const tail = Math.min(0.95, SWIPE.window / Math.max(0.01, span));
     for (let i = 0; i < strokes; i++) {
       const d = i * 0.06;
       const ri = rev !== (i % 2 === 1);
-      tk.blaze({ x, z, angle: angle + (i % 2 ? 0.1 : -0.06) * (strokes > 1 ? 1 : 0), radius: R * (1 - i * 0.08), width: W, span: half * 2.1, sweep, life: big ? 0.44 : 0.32, reverse: ri, delay: d, mode: 'fire', core: tp.core, a: tp.a, b: tp.deep, y: 0.46, lift: 0.22, tail: 0.95, gain: 1.35 });
+      const a = angle + (i % 2 ? 0.1 : -0.06) * (strokes > 1 ? 1 : 0);
+      tk.blaze({ x, z, angle: a, radius: R * (1 - i * 0.08), width: W, span, sweep, life: big ? 0.44 : 0.32, reverse: ri, delay: d, mode: 'fire', core: tp.core, a: tp.a, b: tp.deep, y: 0.46, lift: 0.22, tail, gain: 1.35, swipe: true });
+      // T6: a tip glint on the first strike frame, then short shards round
+      // the tip in the slash's own colours (never blue).
+      const a0 = a + (ri ? span / 2 : -span / 2);
+      const gx = x + Math.cos(a0) * R * (1 - i * 0.08);
+      const gz = z + Math.sin(a0) * R * (1 - i * 0.08);
+      kit.star({ x: gx, y: 0.6, z: gz, size: SWIPE.glintSize, life: SWIPE.glintSec, hold: 0, color: tp.core, angle: 0, delay: d, opacity: 1 });
+      const n = Math.round(rnd(...(big ? SWIPE.shardsBig : SWIPE.shards)));
+      tk.sparks(gx, 0.55, gz, n, { color: tp.a, color2: tp.core, speed: [1.2, 2.6], up: [0.1, 0.8], life: [0.08, 0.16], len: 0.05, width: [0.02, 0.035], gravity: 1, delay: d + 1 / 60 });
       // Motion blur: two fading afterimages a beat behind, slightly back
       // along the swing.
       for (let j = 1; j <= 2; j++) {

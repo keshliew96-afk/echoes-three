@@ -44,6 +44,11 @@ import { createTonicFx } from './tonicfx.js';
 import { createShrineFx } from './shrinefx.js';
 import { createSecretFx } from './secretfx.js';
 import { createRelic6Fx } from './relic6fx.js';
+import { createAnimeFx } from './animefx.js';
+import { createFlipbook } from './flipbook.js';
+import { CHEST_BEAT } from '../interactables/chestbeat.js';
+import { SKILLS } from '../../sim/skills.js';
+import { isOwnBody } from './hitfeedback.js';
 
 const EMBER = PALETTE.emberDanger;
 const PARCH = PALETTE.parchment;
@@ -80,8 +85,11 @@ const ENEMY_SHOT_TRAIL = Object.freeze({
 // a hit's area (K1: 1.41 x its width), the ground ring gone within 0.22 s and drawn under
 // any Ember ring, and the debris burst waiting for the body's swell (K2),
 // leaning slightly along the killing hit (P1).
-const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.6, bloomSkill: 2.0, bloomCrit: 1.25, bloomOpacity: 0.55, bloomGrow: 0.1, crowd: 0.12 });
-const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.3, bloomOpacity: 0.6, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
+const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.4, bloomSkill: 1.7, bloomCrit: 1.2, bloomOpacity: 0.3, bloomGrow: 0.1, crowd: 0.12 });
+const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.0, bloomOpacity: 0.35, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
+
+// D3: the air an element leaves (§6.2 m).
+export const ELEMENT_AIR = Object.freeze({ twinkles: 100, sec: [1.0, 1.9], mist: 3, mistOpacity: 0.16 });
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
   const kit = createVfxKit({ stage, cosmetic });
@@ -104,6 +112,16 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     return (typeof s === 'number' ? s : 1) * intensity.camera;
   };
   const camfx = createCameraFx({ camera: stage.camera, gain: shakeGain });
+  // §6.2 k and o (VFX_HIT_RULES): the local anime frame and the camera punch.
+  const animeFx = createAnimeFx({ root: kit.root, cosmetic });
+  // l (L4): a crit's contact is drawn as a 5-drawing flipbook in pale gold.
+  const flipbook = createFlipbook({ root: kit.root, cosmetic });
+  const CRIT_BOOK = '#FFE7A8';
+  const animeTick = new Map(); // attacker id -> the tick its finisher last played
+  // Every combo finisher in the data (a skill with a combo bonus).
+  const FINISHERS = new Set(Object.values(SKILLS).filter((d) => d.combo).map((d) => d.id));
+  const CAM_PUNCH = Object.freeze({ bigKill: 0.06, chest: 0.02, sec: 0.12, shotKick: 0.015 });
+  const NO_SHOT_KICK = new Set(['archer', 'healer']);
   const N = (k) => (k > 0 ? Math.max(1, Math.round(k * intensity.particles)) : 0);
   // Recipe counters for probes (__echoes.content.vfx().recipes): how many
   // times each creature-specific recipe has played this session.
@@ -896,17 +914,32 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // Nightfall and the blind over each enemy live in duskfx.js.
   const duskFx = createDuskFx({ kit, bus, byId, spray, flare, shock, after, camfx, N, rnd, mark, world });
   // TONICS AND BOMBS (docs/CONSUMABLES.md): the carry slot's beats.
-  const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark });
+  // D3 (VFX_HIT_RULES §6.2 m): an element leaves its air behind. About 100
+  // tiny twinkles and a faint mist hold the place 1 to 2 s after the Frost
+  // Bomb and the Frozen elite's burst, so the cold stays where it landed.
+  function elementAir(x, z, radius, color, core, n = ELEMENT_AIR.twinkles) {
+    tk.dust(x, 0.45, z, n, { tex: 'star', color, color2: core, radius, speed: [0, 0.12], up: [0.02, 0.22], size: [0.05, 0.09], life: ELEMENT_AIR.sec, gravity: 0, drag: 1.2, twinkle: 18, stagger: 0.25 });
+    spray('smoke', x, 0.3, z, N(ELEMENT_AIR.mist), { color: core, speed: [0.02, 0.1], up: [0, 0.06], size: [radius * 0.7, radius * 1.0], grow: 1.25, life: ELEMENT_AIR.sec, opacity: ELEMENT_AIR.mistOpacity, gravity: 0, drag: 2, jitter: radius * 0.4 });
+    mark('element_air');
+  }
+  // i (C2): the 2% zoom punch of a chest's snap, peaking inside the hold at
+  // the top of the hop (S+5 on, easing out by about S+25). snapIn: seconds
+  // from now to the snap.
+  function chestPunch(snapIn = CHEST_BEAT.snap) {
+    after(snapIn + 5 / 30, () => camfx.punch(CAM_PUNCH.chest, 0.6));
+  }
+  const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world, elementAir });
   // HAZARDS AND SHRINES (docs/SHRINES.md): crystal spurs, shrines, blessings.
   const shrineFx = createShrineFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world });
   // SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and the chamber.
-  createSecretFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, rnd, mark, player });
+  createSecretFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, rnd, mark, player, chestPunch });
   // RELICS batch 6 (docs/RELICS.md "Batch 6"): the lantern, the burning,
   // the dive, the crown, the lens, the veil, the heart, and the three
   // curses (the seal, the dark, the crowns).
   const relic6Fx = createRelic6Fx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, player, world, stage });
   // THE VFX TEMPLATES (design-VFX.md §11): magic, blade and sci-fi, played
   // over every hero beat above (registered last, so they draw on top).
+  bus.on('champion_chest', () => chestPunch(0));
   const tplFx = createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area: (id) => SKILL_AREA.get(id) ?? null });
   // The same templates on the enemies, champions and bosses (foefx.js).
   const foeFx = createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, ink: INK, player });
@@ -1057,10 +1090,59 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
     const cls = classOf(atk) ?? vfxSkillClass(ev.source) ?? 'healer';
     lastClassHit.set(ev.target, cls);
+    // k: a combo finisher's contact plays the local anime frame (one a cast).
+    if (FINISHERS.has(ev.source) && animeTick.get(ev.attacker) !== ev.tick && intensity.camera > 0) {
+      animeTick.set(ev.attacker, ev.tick);
+      animeFx.play(ev.x, ev.z);
+    }
     classImpact(vfxClassStyle(cls), ev.x, ev.z, ev.dirX || 0, ev.dirZ || 0, { crit: !!ev.crit, big: ev.delivery !== 'basic' });
+    if (ev.crit) flipbook.play(ev.x, 0.8, ev.z, CRIT_BOOK, ev.kind === 'boss' || ev.kind === 'stag' ? 1.4 : 1);
+    spatter(ev, atk);
   });
+
+  // D2 (VFX_HIT_RULES §6.2 m): a hit leaves a mess, in the body's own matter
+  // colour (never red: Ember and the crimsons are taken). A splash on the
+  // floor behind the body 2 frames on, then droplets back toward the hitter
+  // from +3 frames, landing short of the body on its side. The splash stays
+  // a few seconds; one per body every SPATTER.every s keeps the marks pool
+  // for the skills.
+  const SPATTER = Object.freeze({ drops: [8, 14], splash: 0.34, life: 3.5, every: 0.45, behind: 0.35 });
+  const spatterAt = new Map(); // body id -> the time of its last splash
+  const SPATTER_SOFT = new Set(['aura', 'burn', 'molten', 'thorns', 'kindle', 'sear', 'hazard']); // ticks, not blows
+  let fxClock = 0; // s since boot (update)
+  function spatter(ev, atk) {
+    if (SPATTER_SOFT.has(ev.shape) || !(ev.amount > 0)) return;
+    let dx = ev.dirX || 0;
+    let dz = ev.dirZ || 0;
+    if (Math.hypot(dx, dz) < 1e-4 && atk) {
+      dx = ev.x - atk.x;
+      dz = ev.z - atk.z;
+    }
+    const l = Math.hypot(dx, dz);
+    if (l < 1e-4) return;
+    dx /= l;
+    dz /= l;
+    const matter = vfxMatterColor(vfxEnemyStyle(ev.kind).matter);
+    const now = fxClock;
+    if (now - (spatterAt.get(ev.target) ?? -9) >= SPATTER.every) {
+      spatterAt.set(ev.target, now);
+      if (spatterAt.size > 128) spatterAt.clear();
+      kit.mark({ x: ev.x + dx * SPATTER.behind, z: ev.z + dz * SPATTER.behind, radius: SPATTER.splash, kind: 'splash', angle: Math.atan2(dz, dx), stretch: 1.3, stain: matter, glow: null, life: SPATTER.life, opacity: 0.45, delay: 2 / 60 });
+    }
+    const x = ev.x;
+    const z = ev.z;
+    const n = Math.round(rnd(...SPATTER.drops));
+    after(3 / 60, () => spray('shard', x, 0.5, z, n, { color: matter, tile: SHARD_TILE.drop, dir: { x: -dx, z: -dz }, dirBias: 0.85, speed: [1.6, 2.6], up: [0.6, 1.2], size: [0.04, 0.07], life: [0.35, 0.55], gravity: 7 }));
+  }
   bus.on('death', (ev) => {
     if (ev.kind === 'player' || ev.kind === 'ally') return;
+    // k and o: an elite, champion or boss kill plays the local anime frame
+    // and punches the camera in up to 6% (C2), sprung back in 4 frames.
+    const dead = byId(ev.id);
+    if (dead && (dead.elite || dead.champion || ev.kind === 'stag' || isVfxBoss(ev.kind)) && intensity.camera > 0) {
+      animeFx.play(ev.x, ev.z);
+      camfx.punch(CAM_PUNCH.bigKill, CAM_PUNCH.sec);
+    }
     const killer = lastClassHit.get(ev.id) ?? null;
     lastClassHit.delete(ev.id);
     const lh = lastHitDir.get(ev.id);
@@ -4898,22 +4980,29 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const x = ev.x ?? 0;
     const z = ev.z ?? -4.2;
     anticipate(x, z, 1.8, VK_GOLD, { y: 0.6, lines: 10, core: VK_HOT });
-    after(ANTICIP, () => {
-      kit.pillar({ x, z, radius: 1.1, height: 8, color: VK_GOLD, life: 1.8, opacity: 0.6 });
-      kit.pillar({ x, z, radius: 0.35, height: 9, color: VK_HOT, life: 1.4, opacity: 0.9 });
-      flare(x, 1.0, z, VK_GOLD, 3.4, { kind: 'burst', life: 0.45, core: VK_HOT, spin: 0.8 });
-      kit.flash({ x, y: 1.1, z, color: VK_HOT, size: 2.6, life: 0.5, hold: 0.12 });
-      kit.light({ x, z, radius: 6.0, color: VK_GOLD, opacity: 0.7, life: 2.0, attack: 0.03 });
+    // i: the chest presses, then snaps open at CHEST_BEAT.snap (its rig plays
+    // the hop, the lid, the light and the stars); the vault's burst and a 2%
+    // zoom punch go off on the snap, the punch inside the hold at its top.
+    chestPunch();
+    // The burst waits for the end of the hold at the top of the hop and is
+    // softer than it was on the press (a 1.4 u flash, not a 2.6 u held
+    // white-out), so the snap, the lid, the light sheet and the stars read.
+    after(CHEST_BEAT.snap + CHEST_BEAT.rise + CHEST_BEAT.hold, () => {
+      kit.pillar({ x, z, radius: 1.1, height: 8, color: VK_GOLD, life: 1.4, opacity: 0.22 });
+      kit.pillar({ x, z, radius: 0.35, height: 9, color: VK_HOT, life: 1.1, opacity: 0.32 });
+      flare(x, 1.0, z, VK_GOLD, 1.6, { kind: 'burst', life: 0.4, core: VK_HOT, spin: 0.8 });
+      kit.flash({ x, y: 1.1, z, color: VK_HOT, size: 1.2, life: 0.3, opacity: 0.6 });
+      kit.light({ x, z, radius: 4.0, color: VK_GOLD, opacity: 0.4, life: 1.6, attack: 0.03 });
       shock(x, z, 4.4, VK_GOLD, { life: 0.7, width: 0.22, core: VK_HOT });
       kit.ring({ x, z, r0: 0.5, r1: 2.6, width: 0.12, life: 1.0, core: VK_HOT, glow: VK_GOLD, soft: 0.6, y: 0.06, delay: 0.15, opacity: 0.8 });
-      spray('chunk', x, 0.9, z, 30, { color: VK_GOLD, speed: [0.6, 2.0], up: [3.0, 5.0], size: [0.06, 0.11], life: [1.0, 1.5], jitter: 0.4 });
-      spray('spark', x, 0.8, z, 40, { color: VK_HOT, speed: [0.1, 0.8], up: [2.0, 4.4], size: [0.05, 0.1], life: [1.2, 2.0], gravity: -0.15, drag: 0.9, jitter: 0.4, opacity: 0.95 });
+      spray('chunk', x, 0.9, z, 18, { color: VK_GOLD, speed: [0.6, 2.0], up: [3.0, 5.0], size: [0.06, 0.11], life: [1.0, 1.5], jitter: 0.4 });
+      spray('spark', x, 0.8, z, 24, { color: VK_HOT, speed: [0.1, 0.8], up: [2.0, 4.4], size: [0.05, 0.1], life: [1.2, 2.0], gravity: -0.15, drag: 0.9, jitter: 0.4, opacity: 0.8 });
       kit.mark({ x, z, radius: 2.4, kind: 'sigil', stain: INK, glow: VK_GOLD, cool: 2.0, life: 5, opacity: 0.35 });
       camfx.dolly(x, z, 0.5, 0.5);
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.2, 0.16);
     });
     // The rest of the hoard pours into the party: gold streaks to each hero.
-    after(0.35, () => {
+    after(CHEST_BEAT.snap + 0.3, () => {
       for (const e of world.entities()) {
         if (e.partyIndex === undefined || !(e.hp > 0)) continue;
         kit.streak({ a: { x, y: 2.2, z }, b: { x: e.x, y: 1.1, z: e.z }, width: 0.06, tailW: 0, core: VK_HOT, glow: VK_GOLD, life: 0.3, fall: 1.0 });
@@ -6423,6 +6512,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       spray('smoke', x, 0.2, z, 4, { color: c, speed: [0.6, 1.4], up: [0.1, 0.3], size: [0.4, 0.6], grow: 1.4, life: [0.7, 1.1], opacity: 0.3, gravity: -0.05, drag: 2.4, jitter: r * 0.5 });
       kit.mark({ x, z, radius: r * 1.2, kind: 'sigil', stain: c, glow: c, cool: 1.2, life: 1.6, opacity: 0.35 });
       kit.light({ x, z, radius: r * 1.6, color: c, opacity: 0.6, life: 0.6 });
+      elementAir(x, z, r * 0.8, c, PARCH);
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.05, 0.1);
       return;
     }
@@ -6683,7 +6773,24 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // hitstop (render/hold.js); timers, trails and particles run on.
     kit.update(dt, renderHold);
     tk.update(dt, renderHold);
+    animeFx.update(dt);
+    flipbook.update(dt);
+    fxClock += dt;
   }
+
+  // C1: a small kick against the fire direction on your own seat's shots
+  // (the Archer's and the Healer's wait for Kesh, §6.3 item 7).
+  const ownShotKick = (shooter, dx, dz) => {
+    if (!shooter || !isOwnBody(shooter) || NO_SHOT_KICK.has(classOf(shooter) ?? 'healer')) return;
+    camfx.kick(-(dx || 0), -(dz || 0), CAM_PUNCH.shotKick, 0.08);
+  };
+  bus.on('ally_basic', (ev) => {
+    if (ev.shape !== 'melee_arc') ownShotKick(byId(ev.id), ev.dx, ev.dz);
+  });
+  bus.on('skill_bolt_spawn', (ev) => {
+    const b = byId(ev.id);
+    if (b && !ev.heal) ownShotKick(byId(b.sourceId), ev.dx, ev.dz);
+  });
 
   // After every layer placed the camera this frame.
   function applyCamera(tSec) {
@@ -7602,6 +7709,10 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     lastClassHit.clear();
     swingSide.clear();
     camfx.clear();
+    animeFx.clear();
+    flipbook.clear();
+    animeTick.clear();
+    spatterAt.clear();
     relic6Fx.teardown();
     tplFx.teardown();
     foeFx.teardown();

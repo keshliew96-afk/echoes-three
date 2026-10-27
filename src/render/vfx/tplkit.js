@@ -335,11 +335,16 @@ uniform float uSpan;
 uniform float uY;
 uniform float uLift;
 uniform float uTaper;
+uniform float uSwipe;
+uniform float uHead;
 varying vec2 vUv;
 void main() {
   vUv = uv;
   float a = uStart + uv.x * uSpan;
   float taper = mix( 1.0, pow( max( sin( 3.14159265 * uv.x ), 0.0 ), 0.5 ), uTaper );
+  // L3: a sword swipe is thickest at the blade (its head) and thins to a
+  // point toward the swing's start.
+  taper = mix( taper, pow( clamp( uv.x / max( uHead, 0.05 ), 0.0, 1.0 ), 0.75 ), uSwipe );
   float r = uRadius + ( uv.y - 1.0 ) * uWidth * taper;
   vec3 p = vec3( cos( a ) * r, uY + uLift * uv.y, sin( a ) * r );
   gl_Position = projectionMatrix * modelViewMatrix * vec4( p, 1.0 );
@@ -356,12 +361,18 @@ uniform float uTime;
 uniform float uSeed;
 uniform float uMode;
 uniform float uGain;
+uniform float uSwipe;
 varying vec2 vUv;
 ${NOISE}
 void main() {
   float u = vUv.x;
   float v = vUv.y;
   float lead = 1.0 - smoothstep( uHead - 0.04, uHead, u );
+  // T4: a sword swipe's start fades in on a concave ease-out ramp, opaque
+  // by about 42% of the arc; T5: 7 streak lines along the arc boil in place
+  // under the travelling window.
+  float ramp = mix( 1.0, 1.0 - pow( 1.0 - clamp( u / 0.42, 0.0, 1.0 ), 1.6 ), uSwipe );
+  float streak = mix( 1.0, 0.55 + 0.45 * smoothstep( -0.2, 0.8, sin( v * 43.98 + tplN( vec2( u * 3.0 + uSeed, uTime * 4.0 ) ) * 3.0 ) ), uSwipe );
   float trail = smoothstep( uHead - uTail, uHead - uTail * 0.2, u );
   float along = lead * trail;
   float behind = clamp( ( uHead - u ) / max( uTail, 0.001 ), 0.0, 1.0 );
@@ -375,7 +386,7 @@ void main() {
     float heat = smoothstep( 0.25, 0.95, v ) * ( 1.0 - behind * 0.6 ) + ( n - 0.5 ) * 0.35 + 0.1;
     vec3 c = mix( uB, uA, smoothstep( 0.05, 0.5, heat ) );
     c = mix( c, uCore * uGain, smoothstep( 0.55, 0.95, heat ) );
-    float a = along * body * flame * uOpacity;
+    float a = along * body * flame * ramp * streak * uOpacity;
     gl_FragColor = vec4( c, clamp( a, 0.0, 1.0 ) );
   } else {
     // WAVE: a clean bright leading rim over a soft inner glow, shimmering.
@@ -471,6 +482,7 @@ uniform vec3 uCenter;
 uniform vec3 uDir;
 uniform float uSize;
 uniform float uLen;
+uniform float uStretch;
 varying vec2 vP;
 void main() {
   vec4 mv = viewMatrix * vec4( uCenter, 1.0 );
@@ -479,10 +491,12 @@ void main() {
   d = dl > 1e-4 ? d / dl : vec2( 1.0, 0.0 );
   vec2 n = vec2( -d.y, d.x );
   float r = uSize * 0.5;
-  float along = mix( -uLen - r, r * 1.6, position.x + 0.5 );
+  // S3: the head stretches along its travel (uStretch 1 is round); vP keeps
+  // the core round in its own stretched space.
+  float along = mix( -uLen - r * uStretch, r * 1.6 * uStretch, position.x + 0.5 );
   float across = position.y * 3.2 * r;
   mv.xy += d * along + n * across;
-  vP = vec2( along, across ) / r;
+  vP = vec2( along / uStretch, across ) / r;
   gl_Position = projectionMatrix * mv;
 }
 `;
@@ -816,6 +830,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       uSeed: { value: 0 },
       uMode: { value: 0 },
       uGain: { value: 1.2 },
+      uSwipe: { value: 0 },
     };
     const mat = new ShaderMaterial({ uniforms: u, vertexShader: BLAZE_VERT, fragmentShader: BLAZE_FRAG, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
     const mesh = new Mesh(arcGeo, mat);
@@ -853,6 +868,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uA.value.copy(col(o.a ?? '#FFB43C'));
     u.uB.value.copy(col(o.b ?? '#F5952E'));
     u.uMode.value = o.mode === 'wave' ? 1 : 0;
+    u.uSwipe.value = o.swipe && !o.ring ? 1 : 0;
     u.uGain.value = o.gain ?? 1.25;
     u.uSeed.value = rnd(0, 60);
     u.uRadius.value = s.r0;
@@ -912,6 +928,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       uSize: { value: 0.4 },
       uLen: { value: 0.5 },
       uLenR: { value: 2.5 },
+      uStretch: { value: 1 },
       uCore: { value: new Color() },
       uA: { value: new Color() },
       uB: { value: new Color() },
@@ -946,25 +963,31 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uSeed.value = rnd(0, 40);
     u.uGain.value = o.gain ?? 1.3;
     u.uOpacity.value = 0;
+    u.uStretch.value = o.stretch ?? 1;
     s.op = o.opacity ?? 1;
+    s.drain = 0;
     moveHead(s, o.x, o.y ?? 0.55, o.z, o.dx ?? 1, o.dz ?? 0, o.len ?? 0.5, o.size ?? 0.4);
     return s;
   }
-  function moveHead(s, x, y, z, dx, dz, len, size) {
+  function moveHead(s, x, y, z, dx, dz, len, size, stretch = null) {
     const u = s.u;
+    if (stretch != null) u.uStretch.value = Math.max(1, stretch);
     u.uCenter.value.set(x, y, z);
     const l = Math.hypot(dx, dz);
     if (l > 1e-5) u.uDir.value.set(dx / l, 0, dz / l);
     if (size != null) u.uSize.value = size;
     u.uLen.value = Math.max(0, len);
-    u.uLenR.value = Math.max(0.01, len / (u.uSize.value * 0.5));
+    u.uLenR.value = Math.max(0.01, len / (u.uSize.value * 0.5 * u.uStretch.value));
     s.cx = x;
     s.cz = z;
   }
-  function endHead(s, fade = 0.1) {
+  // drain (S5): the head stays at its contact and its tail flows into it
+  // over the fade, instead of flaring open where it lies.
+  function endHead(s, fade = 0.1, drain = false) {
     if (!s.live || s.ending >= 0) return;
     s.ending = fade;
     s.fade = fade;
+    s.drain = drain ? s.u.uLen.value : 0;
   }
   function stepHead(s, t, dt) {
     const u = s.u;
@@ -976,7 +999,16 @@ export function createTemplateKit({ stage, cosmetic }) {
         u.uOpacity.value = 0;
         return;
       }
-      u.uOpacity.value = s.op * (s.ending / s.fade);
+      const k = s.ending / s.fade;
+      if (s.drain > 0) {
+        // The tail runs into the contact; the head holds bright until the
+        // last of it arrives, then goes.
+        u.uLen.value = s.drain * k;
+        u.uLenR.value = Math.max(0.01, u.uLen.value / (u.uSize.value * 0.5 * u.uStretch.value));
+        u.uOpacity.value = s.op * Math.min(1, k * 2.5);
+        return;
+      }
+      u.uOpacity.value = s.op * k;
       u.uSize.value *= 1 + dt * 3; // it flares open as it goes
       return;
     }

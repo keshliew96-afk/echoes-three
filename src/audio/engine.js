@@ -106,7 +106,8 @@ export const FRAME_BUDGET = Object.freeze({
   // heard on a sim tick always starts the frame it is heard, like a
   // telegraph, so the thump lands with the contact's flash. The rest of the
   // tick's hits queue as before.
-  firstPerTick: Object.freeze(['impact']),
+  // The impact families (audio/impactcues.js, A3) share the one slot.
+  firstPerTick: Object.freeze(['impact', 'imp_boom', 'imp_thunk', 'imp_cut']),
 });
 const COST_RING = 900;
 const CENTROID_EVERY_SEC = 0.066; // one probe FFT per ~66 ms (was every 4th frame)
@@ -616,9 +617,11 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       counters.stolen += 1;
     }
     const t = ctx.currentTime + 0.003;
-    // Cosmetic pitch jitter (±2.5 %) so repeats never machine-gun.
+    // Cosmetic pitch jitter (±2.5 %) so repeats never machine-gun; a cue
+    // request may widen it (A5: the impact families nudge ±6 %).
     const base = Number(opts.pitch) || 1;
-    const jitter = opts.exactPitch ? 1 : 1 + (Math.random() - 0.5) * 0.05;
+    const jw = Number.isFinite(opts.jitter) ? Math.max(0, Math.min(0.12, opts.jitter)) : 0.025;
+    const jitter = opts.exactPitch ? 1 : 1 + (Math.random() - 0.5) * 2 * jw;
     const vid = nextVoiceId++;
     let end;
     let src = null;
@@ -902,8 +905,8 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
         if (!r || !r.cue) continue;
         const def = cues.get(r.cue);
         let first = false;
-        if (FRAME_BUDGET.firstPerTick.includes(r.cue) && Number.isFinite(ev.tick) && firstTick.get(r.cue) !== ev.tick) {
-          firstTick.set(r.cue, ev.tick);
+        if (FRAME_BUDGET.firstPerTick.includes(r.cue) && Number.isFinite(ev.tick) && firstTick.get('impact') !== ev.tick) {
+          firstTick.set('impact', ev.tick);
           first = true;
           qStats.firstImpacts += 1;
         }

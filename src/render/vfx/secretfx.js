@@ -23,6 +23,7 @@
 // createSecretFx(h) takes the signature director's helpers.
 import { PALETTE, SECRET_COLORS, VFX_MATTER } from '../../data/palette.js';
 import { SHARD_TILE } from './particles.js';
+import { CHEST_BEAT } from '../interactables/chestbeat.js';
 
 const GLOW = SECRET_COLORS.glow;
 const CORE = SECRET_COLORS.core;
@@ -33,7 +34,7 @@ const GOLD_HOT = '#F7E7C0';
 const INK = PALETTE.voidCharcoal;
 const TAU = Math.PI * 2;
 
-export function createSecretFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, rnd, mark, player }) {
+export function createSecretFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, rnd, mark, player, chestPunch = null }) {
   // The wall's face, a step into the room, and its facing.
   const face = (ev, k = 0.35) => {
     const yaw = ev.yaw ?? 0;
@@ -117,9 +118,13 @@ export function createSecretFx({ kit, bus, byId, spray, flare, shock, after, ant
     mark(`secret_take_${ev.content}`);
     const { x, z } = ev;
     const p = player();
+    // i: the reliquary and the cache press, then snap open at
+    // CHEST_BEAT.snap (their rigs play the hop, the lid, the light and the
+    // stars); their burst and a 2% zoom punch go off on the snap.
+    if ((ev.content === 'relic' || ev.content === 'tonics') && chestPunch) chestPunch();
     if (ev.content === 'relic') {
       anticipate(x, z, 1.0, GLOW, { y: 1.1, lines: 7, core: CORE });
-      after(0.06, () => {
+      after(CHEST_BEAT.snap, () => {
         flare(x, 1.4, z, GLOW, 1.8, { kind: 'star', life: 0.3, core: CORE });
         kit.pillar({ x, z, radius: 0.5, height: 7, color: GLOW, life: 1.3, opacity: 0.5 });
         kit.pillar({ x, z, radius: 0.14, height: 7.5, color: CORE, life: 1.0, opacity: 0.9 });
@@ -130,16 +135,18 @@ export function createSecretFx({ kit, bus, byId, spray, flare, shock, after, ant
         camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.08, 0.12);
       });
     } else if (ev.content === 'tonics') {
-      flare(x, 0.7, z, GLOW, 1.2, { kind: 'burst', life: 0.22, core: CORE });
-      spray('chunk', x, 0.5, z, 8, { color: VFX_MATTER.oak, speed: [0.6, 1.4], up: [1.0, 2.0], size: [0.05, 0.09], life: [0.5, 0.8], jitter: 0.3 });
+      after(CHEST_BEAT.snap, () => {
+        flare(x, 0.7, z, GLOW, 1.2, { kind: 'burst', life: 0.22, core: CORE });
+        spray('chunk', x, 0.5, z, 8, { color: VFX_MATTER.oak, speed: [0.6, 1.4], up: [1.0, 2.0], size: [0.05, 0.09], life: [0.5, 0.8], jitter: 0.3 });
+      });
       const tx = p ? p.x : x;
       const tz = p ? p.z : z;
       (ev.tonics ?? []).forEach((_id, i) => {
         const lift = 1.0 + i * 0.3;
-        kit.streak({ a: { x: x + (i ? 0.2 : -0.2), y: lift, z }, b: { x: (x + tx) / 2, y: lift + 0.9, z: (z + tz) / 2 }, width: 0.07, tailW: 0, core: CORE, glow: GLOW, life: 0.24, delay: 0.1 + i * 0.08, fall: 1.0 });
-        kit.streak({ a: { x: (x + tx) / 2, y: lift + 0.9, z: (z + tz) / 2 }, b: { x: tx, y: 1.1, z: tz }, width: 0.07, tailW: 0, core: CORE, glow: GLOW, life: 0.24, delay: 0.22 + i * 0.08, fall: 1.0 });
+        kit.streak({ a: { x: x + (i ? 0.2 : -0.2), y: lift, z }, b: { x: (x + tx) / 2, y: lift + 0.9, z: (z + tz) / 2 }, width: 0.07, tailW: 0, core: CORE, glow: GLOW, life: 0.24, delay: CHEST_BEAT.snap + 0.1 + i * 0.08, fall: 1.0 });
+        kit.streak({ a: { x: (x + tx) / 2, y: lift + 0.9, z: (z + tz) / 2 }, b: { x: tx, y: 1.1, z: tz }, width: 0.07, tailW: 0, core: CORE, glow: GLOW, life: 0.24, delay: CHEST_BEAT.snap + 0.22 + i * 0.08, fall: 1.0 });
       });
-      after(0.45, () => kit.ring({ x: tx, z: tz, r0: 0.3, r1: 1.6, width: 0.1, life: 0.55, core: CORE, glow: GLOW, soft: 0.5, y: 0.06 }));
+      after(CHEST_BEAT.snap + 0.45, () => kit.ring({ x: tx, z: tz, r0: 0.3, r1: 1.6, width: 0.1, life: 0.55, core: CORE, glow: GLOW, soft: 0.5, y: 0.06 }));
     } else if (ev.content === 'lore') {
       flare(x, 1.5, z, PARCH, 1.4, { kind: 'star', life: 0.28, core: CORE });
       kit.flash({ x, y: 1.5, z, color: PARCH, size: 1.3, life: 0.35, hold: 0.06 });

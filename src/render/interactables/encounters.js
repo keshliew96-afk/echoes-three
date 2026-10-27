@@ -270,6 +270,8 @@ function propWell(g) {
   };
 }
 
+const TRAP_LID = Object.freeze({ sec: 3 / 30 });
+
 function propChest(g) {
   const wood = toonMaterial({ color: WOOD });
   const iron = toonMaterial({ color: IRON });
@@ -288,24 +290,35 @@ function propChest(g) {
   inside.material.toneMapped = false;
   inside.position.y = 0.62;
   g.add(inside);
+  // The trap's Take springs the ambush at once: the lid is flung open in 3
+  // frames (the chest beat's snap, VFX_HIT_RULES §6.2 i) on Ember sparks spat
+  // from the lock, with no light and no stars, so it never reads as a safe
+  // chest's reward. Until then it keeps its lure twitch.
   let open = 0;
   let opening = false;
+  let since = 9;
   return {
     update(t, k, dt) {
-      open += ((opening ? 1 : 0) - open) * (1 - Math.exp(-6 * dt));
+      since += dt;
+      if (opening) open = since >= TRAP_LID.sec ? 1 : 1 - (1 - since / TRAP_LID.sec) ** 2;
+      else open += (0 - open) * (1 - Math.exp(-6 * dt));
       // A trap is a lure: the lid twitches now and then while it waits.
       const twitch = !opening && Math.sin(t * 0.9) > 0.985 ? 0.08 : 0;
       lid.rotation.x = -1.7 * open - twitch;
       lockMat.emissiveIntensity = 0.25 + 0.25 * Math.max(0, Math.sin(t * 2.6)) * Math.min(1, k);
-      inside.material.opacity = 0.7 * open;
+      inside.material.opacity = 0;
     },
     take(x, z) {
       opening = true;
+      since = 0;
       // The ambush: Ember sparks spit from the lock (an enemy threat).
       impactFx.embers(x, z, { color: PALETTE.emberDanger, n: 16, radius: 0.5, tall: 1.4 });
+      impactFx.spray('spark', x, 0.4, z, 14, { color: PALETTE.emberDanger, speed: [0.8, 2.0], up: [0.6, 1.6], size: [0.035, 0.06], life: [0.25, 0.45], gravity: 3, drag: 0.8, jitter: 0.15 });
     },
     restore(taken) {
       opening = !!taken;
+      since = 9;
+      open = taken ? 1 : 0;
     },
   };
 }
