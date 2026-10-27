@@ -348,4 +348,5 @@ After Kesh's "too bright, can't see anything" (10-27), every additive wash the V
 `GLARE` in `src/render/vfx/kit.js`: floor lights ×0.65, flashes and blooms ×0.6, pillars ×0.65. It
 stacks on the Effects setting's light gain. Slashes, rings, stars, marks and particles keep their strength,
 so shapes and gameplay signals still read; only the wash over the bodies dims. The contact and kill
-blooms, shot and near-side lights, and the vault's geyser, pillars and burst were also cut at their source.
+blooms, shot and near-side lights, and the vault's geyser, pillars and burst were also cut at their source, and the
+vault's floor ring (inlay, runes, pool) now dims as the chest opens instead of brightening.

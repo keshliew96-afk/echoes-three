@@ -426,10 +426,12 @@ export function buildVaultChest() {
       const breathe = 0.82 + 0.18 * Math.sin(tSec * 2);
       runesOut.rotation.y = tSec * 0.12;
       spokes.rotation.y = -tSec * 0.05;
-      inlayMat.opacity = (0.5 + 0.2 * open) * breathe;
-      runeMat.opacity = (0.55 + 0.25 * Math.max(0, Math.sin(tSec * 2.6))) * (1 + 0.4 * open);
-      spokeMat.opacity = 0.3 * breathe;
-      sPool.opacity = (0.22 + 0.25 * open) * breathe;
+      // The floor dims as the chest opens (the glare budget, 10-27): the
+      // chest's own rays and stars carry the reveal, not the ring.
+      inlayMat.opacity = (0.4 - 0.15 * open) * breathe;
+      runeMat.opacity = (0.4 + 0.18 * Math.max(0, Math.sin(tSec * 2.6))) * (1 - 0.45 * open);
+      spokeMat.opacity = 0.24 * breathe;
+      sPool.opacity = (0.16 + 0.04 * open) * breathe;
       for (const fl of flames) {
         const s = 0.5 + 0.08 * Math.sin(tSec * 9 + fl.ph) + 0.05 * Math.sin(tSec * 21 + fl.ph * 3);
         fl.f.scale.set(s, s * 1.5, 1);
