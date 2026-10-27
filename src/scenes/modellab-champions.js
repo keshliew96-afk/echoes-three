@@ -107,6 +107,7 @@ const knightEntry = {
 // The Moss Hart. The bound crosses the frame over the sim's flight, so the
 // tucked legs and the landing on the forehooves can be judged.
 const LEAP_SPAN = 5;
+const HART_LEAP_H = 1.5; // the rig's peak lift, so the lab camera rises with it
 function leapTravel(abT) {
   const tl = HART_ABILITIES.leap;
   const a = tl.startOf('bound');
@@ -195,6 +196,7 @@ const hartEntry = {
           vfx.ring({ x: c.x, z: c.z, r0: 0.3, r1: 2.0, width: 0.3, life: 0.45, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
         }
       },
+      lift: () => HART_LEAP_H * rig.lab.channels().air,
       debug: () => ({ feet: rig.lab.feet(), grow: rig.lab.grow(), channels: rig.lab.channels() }),
     };
   },

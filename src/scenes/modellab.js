@@ -413,6 +413,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   }
 
   const look = new Vector3();
+  let camLift = 0;
   function placeCamera(dt) {
     const F = FRAME[state.model];
     const cam = stage.camera;
@@ -433,8 +434,13 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     const dist = F.dist * (state.classic ? 1.75 : 1) + (state.mode === 'move' ? F.loop * 1.6 : 0);
     const cx = state.classic || state.mode === 'move' ? 0 : g.position.x;
     const cz = (state.classic || state.mode === 'move' ? 0 : g.position.z) + F.z;
-    look.set(cx, F.y, cz);
-    cam.position.set(cx + Math.sin(state.azimuth) * Math.cos(SHOW_ELEV) * dist, F.y + Math.sin(SHOW_ELEV) * dist, cz + Math.cos(state.azimuth) * Math.cos(SHOW_ELEV) * dist);
+    // An entry that leaves the floor (the Hart's Leap) lends its height, so the
+    // camera rises with the bound and the head stays in frame.
+    const entry = entryOf(state.model) ? entryModel(state.model) : null;
+    camLift += ((entry?.lift ? entry.lift() : 0) - camLift) * Math.min(1, dt * 8);
+    const ly = F.y + camLift;
+    look.set(cx, ly, cz);
+    cam.position.set(cx + Math.sin(state.azimuth) * Math.cos(SHOW_ELEV) * dist, ly + Math.sin(SHOW_ELEV) * dist, cz + Math.cos(state.azimuth) * Math.cos(SHOW_ELEV) * dist);
     cam.lookAt(look);
   }
 
