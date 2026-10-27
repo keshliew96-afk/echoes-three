@@ -350,7 +350,7 @@ export function attachChestBeat(group, body, spec, fx = impactFx, cosmetic = nul
     sheet.scale.set(w * ss, spec.d * ss, 1);
     edge.scale.set(w * ss * 1.41, spec.d * ss * 1.41, 1);
     // The contents glow hot from S.
-    core.material.opacity = open ? (st.restored ? 0.35 : Math.max(0.35, 1 - b / 1.5)) : 0;
+    core.material.opacity = open ? (st.restored ? 0.25 : Math.max(0.25, 0.6 - b / 2.5)) : 0;
     // The rays: from S+4, fast for a second, then slow turning.
     const rt = b - B.raysFrom;
     const rk = open && !st.restored && rt > 0 ? Math.min(1, rt / 0.15) * (rt < B.raysFast + B.raysSlow ? 1 : Math.max(0, 1 - (rt - B.raysFast - B.raysSlow) / 0.8)) : 0;
@@ -359,7 +359,7 @@ export function attachChestBeat(group, body, spec, fx = impactFx, cosmetic = nul
       const shimmer = 0.85 + 0.15 * Math.sin(rt * (rt < B.raysFast ? 31 : 7) + r.sp * 9);
       const ang = r.a + 0.25 * Math.sin(spin);
       const len = 0.45 * w * 1.6;
-      r.r.material.opacity = 0.55 * rk * shimmer;
+      r.r.material.opacity = 0.4 * rk * shimmer;
       r.r.material.rotation = -ang;
       r.r.scale.set(0.06 * w * 1.6, len, 1);
       r.r.position.set(Math.sin(ang) * len * 0.5, spec.rim + 0.08 + Math.cos(ang) * len * 0.5, 0);

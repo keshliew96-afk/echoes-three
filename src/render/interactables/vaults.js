@@ -445,8 +445,8 @@ export function buildVaultChest() {
       seamMat.opacity = opening ? 0.9 * (1 - open) : 0;
       inside.material.opacity = 0.75 * open + 0.1 * Math.sin(tSec * 4) * open;
       const burst = openAge < 2.4 ? 1 - openAge / 2.4 : 0;
-      geyser.material.opacity = 0.45 * burst + 0.12 * open;
-      geyserCore.material.opacity = 0.7 * burst + 0.1 * open;
+      geyser.material.opacity = 0.18 * burst + 0.06 * open; // softer since the chest beat: the stars must read
+      geyserCore.material.opacity = 0.28 * burst + 0.05 * open;
       geyser.scale.set(1.2 + 1.2 * burst, 7, 1);
       for (const s of shafts) s.material.opacity = (0.06 + 0.02 * Math.sin(tSec * 0.7 + s.position.x)) * (1 + open * 0.6);
       for (const p of dust) {

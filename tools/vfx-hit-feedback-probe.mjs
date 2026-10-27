@@ -485,7 +485,7 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   bus.emit(10, 'hit', { target: 9, kind: 'boar', attacker: 2, amount: 5, delivery: 'basic', shape: 'melee', kb: 0.3, dirX: 1, dirZ: 0, x: 0, z: 0 });
   bus.emit(10, 'hitstop', { ticks: 2, cause: 'melee' });
   frame();
-  const bloom0 = sprites().find((s) => s.scale.x >= 1.5);
+  const bloom0 = sprites().find((s) => s.scale.x >= 1.3);
   const op0 = bloom0?.material.opacity ?? 0;
   const ops = [];
   for (let i = 0; i < 12; i++) {
@@ -494,7 +494,7 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   }
   // Held 100 ms of effect time; the freeze adds its 2 ticks on top.
   const fullFor = ops.findIndex((o) => o < op0 - 1e-6);
-  check('P3: a near-white bloom about 2 body widths across lands on the contact', !!bloom0 && bloom0.scale.x >= 1.5 && bloom0.scale.x <= 2.2, bloom0 ? r3(bloom0.scale.x) : null);
+  check('P3: a near-white bloom about 2 body widths across lands on the contact', !!bloom0 && bloom0.scale.x >= 1.3 && bloom0.scale.x <= 2.2, bloom0 ? r3(bloom0.scale.x) : null);
   check('L5: the bloom holds full strength 100 ms (more with the freeze), then fades', fullFor >= 6 && fullFor <= 10 && ops[ops.length - 1] < op0 * 0.5, { fullFor, ops: ops.map(r3) });
   // The kill: a bigger bloom held 117 ms, a ring gone by 0.22 s, the burst after the swell, leaning.
   for (let i = 0; i < 30; i++) frame();
@@ -505,7 +505,7 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   bus.emit(20, 'hitstop', { ticks: 3, cause: 'kill' });
   frame();
   // Twice the area: about 1.41 x the hit bloom's 1.6 u width.
-  const kb = sprites().filter((s) => s.scale.x >= 2.2 && s.scale.x <= 2.6);
+  const kb = sprites().filter((s) => s.scale.x >= 1.9 && s.scale.x <= 2.3);
   check('K1: the kill\'s white bloom is twice a hit\'s area', kb.length > 0, kb.map((s) => r3(s.scale.x)));
   const ringOrders = [];
   stage.scene.traverse((o) => {

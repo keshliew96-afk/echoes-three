@@ -158,7 +158,7 @@ flash pool is 64 (was 28), since each hit now keeps two flashes.
   1.2 rad as it goes, still popping flat on the floor. A body killed mid-hop
   sinks to the floor through the pop.
 - The bone-white flare holds bright 117 ms (5 frames with the freeze) over a
-  white bloom twice a hit's area (2.3 u across).
+  white bloom twice a hit's area (2.0 u across, at 35 %).
 - The ground ring of the body's matter lives 0.22 s and draws under the floor
   warnings, so it never reads as a telegraph.
 - The debris bursts 0.1 s in (held time), as the body pops, and leans along
@@ -184,8 +184,8 @@ numeral pinned at the top edge keeps room above it, so the tag stays on
 screen.
 
 **e. The contact (P3, L5, P1, R1, I1, A1).**
-- A near-white bloom about 2 body widths across (1.6 u; 2.0 u for a skill;
-  1.25 x on a crit) lands on every party hit and holds full strength 100 ms.
+- A near-white bloom about 2 body widths across (1.4 u at 30 %; 1.7 u for a
+  skill; 1.2 x on a crit) lands on every party hit and holds full strength 100 ms.
   It is white, not the class glow, because the Healer's glow is your numbers'
   Hearth Amber. It dims where many glows stack and under Effects: Reduced.
 - The class flare and flash hold full strength 100 ms too.
@@ -216,14 +216,14 @@ changes, and the nine goldens are untouched.
 - the head swells 1.6 x at the hand and settles to flight size in 0.1 s or
   1 u, round at the hand and stretched 1.8 x along its travel once it flies;
 - the trail is 0.22 s of travel long (1.1 to 2 u);
-- each shot has its own size (0.88 to 1.14 x), brightness (0.85 to 1.1 x) and
+- each shot has its own size (0.88 to 1.14 x), brightness (0.75 to 0.95 x) and
   height (-0.05 to +0.07 u), from the cosmetic stream;
 - a floor light follows it (six at once at most);
 - where it stops, the trail drains into the contact over 5 frames and 5 to 10
   sharp sparks show the spot;
 - **l (R6):** about 1.5 body widths before it reaches a body, it lights that
   body's near side once (a soft flash and a light pool in its own colour,
-  0.12 s; `NEAR_LIGHT`).
+  0.12 s, at 20 %; `NEAR_LIGHT`).
 
 **n. The ranged hold.** A shot or spell that lands on a foe holds the foe's
 squash, its white flash and its number 3 frames (render only, `REACT.rangedHold`,
@@ -285,7 +285,7 @@ for Kesh (§6.3 item 4).
 - A hit splashes the body's own matter colour on the floor behind it (one
   per body every 0.45 s) and throws droplets back toward the hitter.
 - An Archer arrow that lands stays stuck in the floor, nose down, tail up
-  along its flight, for 3 s, then fades (`STUCK`, a pool of 10).
+  along its flight, 0.55 u long, for 3 s, then fades (`STUCK`, a pool of 10).
 - The Frost Bomb and the Frozen elite's burst leave their air: about 100
   tiny twinkles and a faint mist hold the place 1 to 1.9 s, and 16 more
   twinkles on each foe the bomb froze (`ELEMENT_AIR`).
@@ -315,7 +315,9 @@ The rays, the stars and the rising sparks run on after the draft, as the
 vault's gold geyser always did. The vault's and the secret chests' existing
 bursts now go off on the snap instead of the press; the vault's waits for
 the end of the hold and is softer (a 1.4 u flash, not a 2.6 u held white-out),
-so the snap, the lid, the sheet and the stars read. The stars are a deeper
+so the snap, the lid, the sheet and the stars read. Its pillars, light,
+sparks and gold geyser are about half as bright as before (Kesh 2026-10-27:
+"the effect too bright"). The stars are a deeper
 gold (#E9B949), drawn over the light. A chest built already
 open (a loaded save, a joining guest) shows open with no burst.
 

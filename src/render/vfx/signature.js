@@ -85,11 +85,11 @@ const ENEMY_SHOT_TRAIL = Object.freeze({
 // a hit's area (K1: 1.41 x its width), the ground ring gone within 0.22 s and drawn under
 // any Ember ring, and the debris burst waiting for the body's swell (K2),
 // leaning slightly along the killing hit (P1).
-const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.6, bloomSkill: 2.0, bloomCrit: 1.25, bloomOpacity: 0.55, bloomGrow: 0.1, crowd: 0.12 });
-const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.3, bloomOpacity: 0.6, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
+const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.4, bloomSkill: 1.7, bloomCrit: 1.2, bloomOpacity: 0.3, bloomGrow: 0.1, crowd: 0.12 });
+const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.0, bloomOpacity: 0.35, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
 
 // D3: the air an element leaves (§6.2 m).
-export const ELEMENT_AIR = Object.freeze({ twinkles: 100, sec: [1.0, 1.9], mist: 3, mistOpacity: 0.12 });
+export const ELEMENT_AIR = Object.freeze({ twinkles: 100, sec: [1.0, 1.9], mist: 3, mistOpacity: 0.16 });
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
   const kit = createVfxKit({ stage, cosmetic });
@@ -918,7 +918,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // tiny twinkles and a faint mist hold the place 1 to 2 s after the Frost
   // Bomb and the Frozen elite's burst, so the cold stays where it landed.
   function elementAir(x, z, radius, color, core, n = ELEMENT_AIR.twinkles) {
-    tk.dust(x, 0.45, z, n, { tex: 'star', color, color2: core, radius, speed: [0, 0.12], up: [0.02, 0.22], size: [0.025, 0.05], life: ELEMENT_AIR.sec, gravity: 0, drag: 1.2, twinkle: 18, stagger: 0.25 });
+    tk.dust(x, 0.45, z, n, { tex: 'star', color, color2: core, radius, speed: [0, 0.12], up: [0.02, 0.22], size: [0.05, 0.09], life: ELEMENT_AIR.sec, gravity: 0, drag: 1.2, twinkle: 18, stagger: 0.25 });
     spray('smoke', x, 0.3, z, N(ELEMENT_AIR.mist), { color: core, speed: [0.02, 0.1], up: [0, 0.06], size: [radius * 0.7, radius * 1.0], grow: 1.25, life: ELEMENT_AIR.sec, opacity: ELEMENT_AIR.mistOpacity, gravity: 0, drag: 2, jitter: radius * 0.4 });
     mark('element_air');
   }
@@ -4988,15 +4988,15 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // softer than it was on the press (a 1.4 u flash, not a 2.6 u held
     // white-out), so the snap, the lid, the light sheet and the stars read.
     after(CHEST_BEAT.snap + CHEST_BEAT.rise + CHEST_BEAT.hold, () => {
-      kit.pillar({ x, z, radius: 1.1, height: 8, color: VK_GOLD, life: 1.8, opacity: 0.45 });
-      kit.pillar({ x, z, radius: 0.35, height: 9, color: VK_HOT, life: 1.4, opacity: 0.6 });
-      flare(x, 1.0, z, VK_GOLD, 2.2, { kind: 'burst', life: 0.4, core: VK_HOT, spin: 0.8 });
-      kit.flash({ x, y: 1.1, z, color: VK_HOT, size: 1.4, life: 0.35 });
-      kit.light({ x, z, radius: 6.0, color: VK_GOLD, opacity: 0.7, life: 2.0, attack: 0.03 });
+      kit.pillar({ x, z, radius: 1.1, height: 8, color: VK_GOLD, life: 1.4, opacity: 0.22 });
+      kit.pillar({ x, z, radius: 0.35, height: 9, color: VK_HOT, life: 1.1, opacity: 0.32 });
+      flare(x, 1.0, z, VK_GOLD, 1.6, { kind: 'burst', life: 0.4, core: VK_HOT, spin: 0.8 });
+      kit.flash({ x, y: 1.1, z, color: VK_HOT, size: 1.2, life: 0.3, opacity: 0.6 });
+      kit.light({ x, z, radius: 4.0, color: VK_GOLD, opacity: 0.4, life: 1.6, attack: 0.03 });
       shock(x, z, 4.4, VK_GOLD, { life: 0.7, width: 0.22, core: VK_HOT });
       kit.ring({ x, z, r0: 0.5, r1: 2.6, width: 0.12, life: 1.0, core: VK_HOT, glow: VK_GOLD, soft: 0.6, y: 0.06, delay: 0.15, opacity: 0.8 });
-      spray('chunk', x, 0.9, z, 30, { color: VK_GOLD, speed: [0.6, 2.0], up: [3.0, 5.0], size: [0.06, 0.11], life: [1.0, 1.5], jitter: 0.4 });
-      spray('spark', x, 0.8, z, 40, { color: VK_HOT, speed: [0.1, 0.8], up: [2.0, 4.4], size: [0.05, 0.1], life: [1.2, 2.0], gravity: -0.15, drag: 0.9, jitter: 0.4, opacity: 0.95 });
+      spray('chunk', x, 0.9, z, 18, { color: VK_GOLD, speed: [0.6, 2.0], up: [3.0, 5.0], size: [0.06, 0.11], life: [1.0, 1.5], jitter: 0.4 });
+      spray('spark', x, 0.8, z, 24, { color: VK_HOT, speed: [0.1, 0.8], up: [2.0, 4.4], size: [0.05, 0.1], life: [1.2, 2.0], gravity: -0.15, drag: 0.9, jitter: 0.4, opacity: 0.8 });
       kit.mark({ x, z, radius: 2.4, kind: 'sigil', stain: INK, glow: VK_GOLD, cool: 2.0, life: 5, opacity: 0.35 });
       camfx.dolly(x, z, 0.5, 0.5);
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.2, 0.16);

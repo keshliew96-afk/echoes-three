@@ -39,16 +39,16 @@ export const SHOT_FX = Object.freeze({
   tailMin: 1.1, // ...between 1.1 u (about 2.3 target widths)...
   tailMax: 2.0, // ...and 2 u
   jitSize: [0.88, 1.14], // S4: each shot its own size,
-  jitBright: [0.85, 1.1], // brightness
+  jitBright: [0.75, 0.95], // brightness
   jitY: [-0.05, 0.07], // and height (u), from the cosmetic stream
   drainSec: 0.083, // S5: the trail flows into the contact over 5 frames
   holdSec: 0.05, // n: a body hit holds the head at the contact 3 frames, then the burst
-  light: 0.22, // S7: the floor glow under a shot in flight (opacity)
+  light: 0.12, // S7: the floor glow under a shot in flight (opacity)
   lights: 6, // at most this many shots light the floor at once
   sparks: [5, 10], // P4: a star of short pale streaks where a shot lands
 });
 // R6: the near-side light (reach about 1.5 bw from the body's centre).
-export const NEAR_LIGHT = Object.freeze({ reach: 1.0, side: 0.3, y: 0.7, size: 0.8, radius: 0.9, opacity: 0.38, sec: 0.12 });
+export const NEAR_LIGHT = Object.freeze({ reach: 1.0, side: 0.3, y: 0.7, size: 0.6, radius: 0.8, opacity: 0.2, sec: 0.12 });
 // D2: an arrow that lands stays stuck in the floor a few seconds.
 export const STUCK = Object.freeze({ cap: 10, life: 3, fade: 0.3, tilt: 0.6, back: 0.28 });
 const P4_PALE = '#E7D5A3';
@@ -141,10 +141,10 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
   // ------------------------------------------------- arrows in the floor --
   const stuck = [];
   {
-    const shaftGeo = new CylinderGeometry(0.014, 0.014, 0.34, 5);
-    shaftGeo.translate(0, 0.17, 0);
-    const fletchGeo = new ConeGeometry(0.045, 0.1, 4);
-    fletchGeo.translate(0, 0.3, 0);
+    const shaftGeo = new CylinderGeometry(0.026, 0.026, 0.55, 5);
+    shaftGeo.translate(0, 0.275, 0);
+    const fletchGeo = new ConeGeometry(0.08, 0.16, 4);
+    fletchGeo.translate(0, 0.5, 0);
     for (let i = 0; i < STUCK.cap; i++) {
       const g = new Group();
       const mat = new MeshBasicMaterial({ color: PALETTE.bone, transparent: true });
