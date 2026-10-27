@@ -20,7 +20,7 @@ the Healer and the Swordsman first, and re-measures the pilot Tank against the [
 the VFX/hit rules doc (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.1). Everything a hero
 rig shares now lives in one hero core, so each later hero is its body, its poses and its
 abilities, and the same probe holds every one of them to the same rules. The Archer
-followed in v0.5.339 ("The Archer" below).
+followed in v0.5.339 and the Tidecaller in v0.5.342 (their sections below).
 
 ## The kit (`src/render/facet/`)
 
@@ -29,7 +29,7 @@ followed in v0.5.339 ("The Archer" below).
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, stag, thornmother, gloamwolf, the eight Level I foes}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
+| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, stag, thornmother, gloamwolf, the eight Level I foes}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `hero.js` | The hero core (below). |
 | `heroes.js` | `FACET_HEROES`: the registry of model-standard heroes. The critter factory, the model lab and the heroes probe read it, so a hero listed here is built, shown and checked. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
@@ -329,6 +329,42 @@ string at rest. The classic metrics are unchanged.
   paw setting the trap) and *Kestrel Watch* (the paw shading the eyes, a slow look out).
 - The draw-side foot lunges; downed, the bow lies flat beside her in front.
 
+## The Tidecaller (`src/render/critters/tidecallerfacet.js`, v0.5.342)
+
+The classic contract stays: the long low body stretched front to back, the thick tapering
+tail trailing along the ground (the only mass in the party that runs backwards), the tall
+reed staff topped with a shell standing taller than her head, the cream throat and muzzle,
+small low ears, whiskers, the river-blue sash, the dripping satchel and the conch on its
+cord. The classic metrics are unchanged.
+
+- **Detail.** A ruff of 10 fur tufts at the throat, 8 small shells strung along the sash,
+  5 kelp streamers under the staff's shell, 4 cord bindings on the grip, the satchel's
+  3-plate flap, and 9 fur ridges down the three tail segments. The reed is weathered umber
+  toward warm grey (the classic's leaned to Pale Gold, in the amber family).
+- **3-cast combo** at the sim's 0.35 s cadence, combo window 0.9 s, as a shooter (the shot
+  squash 20/29/38%, the finisher keeping its stretch): wind 1 frame, strike 1.5, overshoot
+  2, settle 4.
+  1. *Staff fling*: the shell cocked back over the shoulder, then the staff thrown
+     forward at the target, the free paw pushing after the water.
+  2. *Side sweep*: the staff laid out wide, then swept up and forward past the shoulder;
+     the tail swings against the hips.
+  3. *Overhead slam*: the staff raised back over the head, then a 0.13 u hop and the staff
+     brought down in front with a 1.12 stretch, landing squashed.
+
+  The hips turn the staff shoulder forward through each cast (small, 0.08 to 0.26 rad,
+  like the Archer's) and the staff follows a frame behind; the staff's top always leans
+  outboard of the face.
+- **Abilities** for all eleven skills (by skill, with a fallback by shape): *Bolt*
+  (Riverbolt), *Jet* (Torrent: braced, the staff levelled and shuddering through the jet),
+  *Swirl* (Undertow, Whirlpool: the staff dipped and stirred, then planted), *Squall* (Rain
+  Squall: the staff raised high beside her), *Breaker* (Breaker, Crashing Wave, Maelstrom:
+  a crouch and a sweep up and over), *Tidepool* (the staff planted, the paw spread over the
+  water), *Ripple Step* (a hop off the water) and *Bubble Ward* (the staff upright, the paw
+  lifting the bubble).
+- Downed, the staff falls with her and lies beside her.
+- `tools/model-standard-heroes-shots.mjs --lineup healer,tank,swordsman,tidecaller` shoots
+  a hero outside the default four (a Level I campaign run with that party).
+
 ## The [M] beats (VFX_HIT_RULES §6.1)
 
 Every Level I boss and the Wyrm plays these on its own clock (pose's `t`), so a held clock
@@ -581,7 +617,7 @@ own timelines with key poses instead, as the template's ranged clause reads.
   disposes its own instance buffers there (`render/geocache.js`). `addPartInk` in
   `critters/common.js` gives a baked detail row the thinner part ink.
 - The classic rigs (`boss/wyrm.js`, `boss/stag.js`, `boss/slice2.js`, `boss/third.js`,
-  `critters/tank.js`, `healer.js`, `swordsman.js`, `archer.js`, `enemies/boar.js`, `enemies/mantis.js`,
+  `critters/tank.js`, `healer.js`, `swordsman.js`, `archer.js`, `tidecaller.js`, `enemies/boar.js`, `enemies/mantis.js`,
   `enemies/archetypes.js`, `enemies/woodmill.js`) are untouched and stay beside them.
 - The hit reaction and the render hold (v0.5.333, `docs/HIT_FEEDBACK.md` "The hit and the
   kill") need nothing from a rig: the foe and boss layers wrap its `body` (else
