@@ -38,6 +38,16 @@ const FOES = {
   owl: { label: 'Shriek Owl', y: 1.65, dist: 4.4, side: 1.5, speed: 2.4, loop: 1.6, sound: { strike: 'wm_shriek' } },
   // its lash reaches 5.4 u down the lane: the camera looks ahead of it
   lasher: { label: 'Vine Lasher', y: 0.5, z: 2.6, dist: 9.5, side: 1.4, speed: 0.8, loop: 1.0, sound: { strike: 'wm_lash', yank: 'wm_yank' } },
+  // The Level II foes. The game plays no sound for the snail's mend, the
+  // crab's snap or the lamprey's lunge (their hits play the hit sound).
+  snail: { label: 'Lantern Snail', y: 0.4, dist: 3.4, side: 1.3, speed: 0.6, loop: 1.2, sound: {} },
+  toad: { label: 'Mire Toad', y: 0.35, dist: 3.2, side: 1.3, speed: 1.0, loop: 1.4, sound: { strike: 'm4b_lob' } },
+  moth: { label: 'Gloam Moth', y: 0.9, dist: 3.8, side: 1.4, speed: 2.4, loop: 1.8, sound: { strike: 'm4b_swoop' } },
+  // its lunge runs 5 u down the lane: the camera looks ahead of it
+  lamprey: { label: 'Bog Lamprey', y: 0.2, z: 0.8, dist: 4.4, side: 1.2, speed: 1.6, loop: 1.4, sound: { strike: 'm4b_erupt' } },
+  leech: { label: 'Mire Leech', y: 0.2, dist: 3.2, side: 1.2, speed: 2.0, loop: 1.6, sound: { strike: 'wm_latch', drain: 'wm_drain' } },
+  miller: { label: 'Drowned Miller', y: 0.9, dist: 4.6, side: 1.5, speed: 1.1, loop: 1.4, sound: { strike: 'wm_sweep', toss: 'wm_toss' } },
+  crab: { label: 'Weir Crab', y: 0.3, dist: 3.4, side: 1.4, speed: 1.9, loop: 1.6, sound: { strike: 'bite' } },
 };
 
 // A combo (an object with `at(t)`) or a plain timeline, read the same way.

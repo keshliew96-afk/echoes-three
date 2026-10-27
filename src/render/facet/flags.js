@@ -32,6 +32,14 @@ export const MODEL_STANDARD = Object.freeze({
   thornling: true,
   owl: true,
   lasher: true,
+  // The Level II foes (data/levels.js row 2: the kinds Level I has not built).
+  snail: true,
+  crab: true,
+  toad: true,
+  moth: true,
+  lamprey: true,
+  leech: true,
+  miller: true,
   // The Level I champions.
   briar_knight: true,
   moss_hart: true,
