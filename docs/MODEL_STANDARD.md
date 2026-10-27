@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339; Level I foes v0.5.338; Level I champions v0.5.340)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -8,7 +8,9 @@ two models, the **Barrow Wyrm** and the **Tank**, so he can judge the look befor
 roster slice. Visual only: no sim, timing, damage or golden changes. The Level I slice
 (v0.5.336) then rebuilt the **Hollow Stag**, the **Thornmother** and the **Gloam Wolf** and
 measured the pilot's Wyrm against the [M] checklist of `/mnt/project-files/plan/VFX_HIT_RULES.md`
-§6.1 (see "The [M] beats" and "The Level I bosses" below).
+§6.1 (see "The [M] beats" and "The Level I bosses" below); its second part (v0.5.339) rebuilt
+the Hollow Wood's two champions, the **Briar Knight** and the **Moss Hart** ("The Level I
+champions").
 
 His ruling for the pilot: the detail goes **on top of** the chibi ink-outline style
 (BUILD_BRIEF §19.2), it does not replace it, and the facets must read clearly.
@@ -17,7 +19,8 @@ The heroes slice (v0.5.337, Kesh's pick of 2026-10-26) rolls the standard out to
 the Healer and the Swordsman first, and re-measures the pilot Tank against the [M] rules of
 the VFX/hit rules doc (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.1). Everything a hero
 rig shares now lives in one hero core, so each later hero is its body, its poses and its
-abilities, and the same probe holds every one of them to the same rules.
+abilities, and the same probe holds every one of them to the same rules. The Archer
+followed in v0.5.339 ("The Archer" below).
 
 ## The kit (`src/render/facet/`)
 
@@ -26,7 +29,7 @@ abilities, and the same probe holds every one of them to the same rules.
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, stag, thornmother, gloamwolf}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
+| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, stag, thornmother, gloamwolf, the eight Level I foes}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `hero.js` | The hero core (below). |
 | `heroes.js` | `FACET_HEROES`: the registry of model-standard heroes. The critter factory, the model lab and the heroes probe read it, so a hero listed here is built, shown and checked. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
@@ -95,7 +98,8 @@ What every model-standard hero shares, lifted out of the pilot Tank:
   - A connect up to 0.25 s after the contact (a guest's late event) still recoils at once.
   - Every move hands back to the body's live base pose (the walk's lean and twist, or
     the stance), never to a fixed rest: at its natural end the move lets go over 4
-    frames into whatever the legs are doing, so a swing on the walk takes over from the
+    frames, eased in and out (v0.5.339; it used to start at full speed, which a big
+    hip turn read as a kick), into whatever the legs are doing, so a swing on the walk takes over from the
     walk and gives it back without a cut.
   - A hit taken (the `hurt` or `downed` clip) lets the move go the same way, from where
     each channel of the body stood (hips, torso and the lagged weapon each from its own
@@ -287,6 +291,44 @@ cheek markings, and the classic metrics.
   lets the spin go over the 4-frame let-go the short way round instead of snapping back,
   and the smear trails it.
 
+## The Archer (`src/render/critters/archerfacet.js`, v0.5.339)
+
+The classic contract stays: the tallest, thinnest column, the very long upright ears (the
+party's only vertical double-spike, swaying as one pair so they never cross), the olive
+tunic with its Bone bib, the blaze and painted face, the puff tail, the quiver raked back
+clear of the skull, and the bow as an open C off to the side, opening outboard, with no
+string at rest. The classic metrics are unchanged.
+
+- **Detail.** A feathered mantle of 12 notched plates round the shoulders (open over the
+  bib), 6 leather ties down the bib, 5 arrows in the quiver with 10 fletching vanes, 4
+  wrapped bindings on the grip, horn nocks on the limb tips, a belt pouch. The bow's wood is
+  weathered umber toward warm grey (the classic's sat in the amber family; amber stays the
+  damage numbers'), the arrowhead pewter.
+- **The string and the arrow** show only while she draws: the string runs from each nock to
+  the draw paw, an arrow lies on the bow, and both go on the release (the sim's arrow takes
+  over). At rest the C keeps its negative space.
+- **3-shot combo** at the sim's 0.4 s cadence, combo window 1.0 s, as a ranged hero (the
+  shot squash 20/29/38%, the finisher keeping its stretch): wind 1 frame, strike 1.5,
+  overshoot 2, settle 5.
+  1. *Quick loose*: side-on, full draw under the chin; the back shoulder pulls through and
+     the draw paw flies back past the ear.
+  2. *Canted shot*: down in a crouch with the bow laid over flat, the legs driving up
+     through the loose; the hips turn on hardest of the three.
+  3. *Leaping power shot*: up on the toes at the deepest draw, a 0.13 u hop with a 1.12
+     stretch at the release, landing squashed two frames later.
+
+  The hips turn on through each loose (their yaw grows from draw to release) and the bow
+  holds the aim a frame behind them. The turn is kept small (0.12 to 0.3 rad) so a hit
+  taken mid-shot lets go inside the no-cut bar; the side-on read comes from the arms.
+- **Abilities** for all eleven skills (by skill, with a fallback by shape): *Power Shot*
+  (Piercing Shot, Pinning Arrow, Hunter's Mark: a long full draw, leaning back, then the
+  body driving through), *Fan* (Volley, Feather Fan: three looses with the bow swept across
+  the front), *Vault Shot* (a crouch, a hop back and the loose in the air, then a landing),
+  *Sky Shot* (Rain of Arrows, Sundering Nova: the bow tipped to the sky), *Set Trap*
+  (Detonating Charge, Barbed Trap: the bow lowered to point at the floor, a lunge and the
+  paw setting the trap) and *Kestrel Watch* (the paw shading the eyes, a slow look out).
+- The draw-side foot lunges; downed, the bow lies flat beside her in front.
+
 ## The [M] beats (VFX_HIT_RULES §6.1)
 
 Every Level I boss and the Wyrm plays these on its own clock (pose's `t`), so a held clock
@@ -392,6 +434,52 @@ planted again at rest.
   hackles stay up, the eyes and the mane burn, the breathing quickens. A back-to-back
   pounce of the Hunt starts its crouch from the landing, not from rest.
 
+## The Level I champions (v0.5.340)
+
+The Hollow Wood's two champions, rebuilt the way the bosses were: each keeps its classic
+rig's silhouette, colours (the classic's own constants) and its ONE indigo tell, adds the
+standard's detail on top, and walks on **locked feet**; the classic rigs stay beside them
+(`?facet=0`). Both keep the champion table's soft hit flash (`CHAMPION_FLASH`) and the
+presence layer's crown, sigil and chest, which ride on the rig's group as before.
+
+| Champion | File | Draw calls (classic) | Instances |
+|---|---|---|---|
+| Briar Knight | `render/enemies/champfacet/briarknight.js` | 95 (52) | 93 |
+| Moss Hart | `render/enemies/champfacet/mosshart.js` | 74 (113) | 113 |
+
+- **Briar Knight.** The knight grown out of the Wood: a dark hip drum under a bark chest
+  with two rings of ridged bark plates laid brick-wise (the upper ring lit), a belt of root
+  knots and a skirt of bark tassets, thorn pauldrons, a faceted helm with a brim, a fan of
+  thorn crest blades and the indigo visor slit, a moss collar and a cape of five moss
+  strips that sway on their own, a barbed briar lance with a leaf-blade tip and a vamplate,
+  a seven-sided buckler with a thorn boss and a ring of thorns. It is a **biped**: two root
+  feet on `createLegs` (three splayed toes each, a knot at the knee), and both arms reach
+  their hands by the same two-bone IK, so the hands stay on the lance's grip and the
+  buckler in every pose. *Bramble Charge*: couch (the 60-tick lane warning less one
+  strike: the lance comes level under the arm, the body cocks back on a long lead step,
+  the buckler up), drive (2.5 frames, landing as the sim starts to charge: thrown forward
+  into the run), run (held while the sim charges at 9 u/s: the cape streams back), stop (a
+  braced skid on the sim's charge end, a wall or the lane spent, with the B3 recoil),
+  settle. *Thorn Ring*: raise (the 72-tick ring warning less one strike: the lance lifted
+  high, point down, the stance wide, the buckler out), plant (2.5 frames, on the ring's
+  tick: the lance driven into the floor, the knees deep), held, recoil, settle.
+- **Moss Hart.** The great hart of bark and moss: a faceted barrel, chest and haunches,
+  ridged bark plates down each flank, the moss mantle as faceted lumps with blade strands
+  hanging off its edge and lichen motes glowing in it, a ruff of moss blades round the
+  throat, a boxed skull and muzzle, the indigo crack down the brow, and a rack of two
+  segmented beams with eight tines a side, a lichen bud on every tine and beam tip and
+  moss drapes off the beams. *Antler Toss*: lower (the 56-tick cone warning less one
+  strike: the head dropped, the rack levelled, the haunches set), fling (2.5 frames, on
+  the toss's tick: the rack flung up and back, the forehooves a step ahead), held, recoil,
+  settle. *Hart's Leap* follows the sim's own clock: gather (its crouch, the first 45 % of
+  the 74-tick warning: the haunches load), bound (the sim's flight to 95 %: the height is
+  the classic's `hartLift`, the crown's own, every hoof off the floor, the forelegs
+  reaching then all four tucked), land (2.5 frames, on the forehooves), the landing held
+  from the sim's landing tick (the resolve), settle.
+
+A warning is known by its move and start tick, never by object identity. A new champion
+(a new entity id, or a clock that went back) spawns in; a jump in place re-plants the feet.
+A dying champion is never posed again (the enemy layer's kill takes the rig).
 ## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
 Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
@@ -466,6 +554,10 @@ own timelines with key poses instead, as the template's ranged clause reads.
   boss (a new entity id, or a clock that went back) resets its timelines and spawns in; a
   jump in place (a new room, a hitch mid-charge) only re-plants the feet. A dying rig (posed
   with no entity) collapses in the pose it died in: no wind-up runs on into its strike.
+- `render/enemies/champions.js` builds `buildBriarKnightFacet` and `buildMossHartFacet` in
+  the champion table when their flag is on, so the enemy layer, the prewarm and the Journal
+  viewer all take them; the enemy layer wraps the rig's first child in its hit-react node
+  and lifts the hit flash on its `mats` as for any champion.
 - The boss prewarm (`render/warmup.js`) parks each rig unculled for a few frames, then gives
   every part its own culling flag back, so the moving instanced parts stay unculled.
 - The Journal viewer frames a model by its instanced parts' real instances (`ui/story/viewer.js`).
@@ -489,7 +581,7 @@ own timelines with key poses instead, as the template's ranged clause reads.
   disposes its own instance buffers there (`render/geocache.js`). `addPartInk` in
   `critters/common.js` gives a baked detail row the thinner part ink.
 - The classic rigs (`boss/wyrm.js`, `boss/stag.js`, `boss/slice2.js`, `boss/third.js`,
-  `critters/tank.js`, `healer.js`, `swordsman.js`, `enemies/boar.js`, `enemies/mantis.js`,
+  `critters/tank.js`, `healer.js`, `swordsman.js`, `archer.js`, `enemies/boar.js`, `enemies/mantis.js`,
   `enemies/archetypes.js`, `enemies/woodmill.js`) are untouched and stay beside them.
 - The hit reaction and the render hold (v0.5.333, `docs/HIT_FEEDBACK.md` "The hit and the
   kill") need nothing from a rig: the foe and boss layers wrap its `body` (else
@@ -526,6 +618,10 @@ falls back to its first ability. `fixedDt` (s) makes every drawn frame advance
 the lab by that step, so a probe on a slow software-GL machine sees 60 Hz motion
 (`tools/model-standard-level1-shots.mjs` uses 1/60).
 
+The Level I champions are lab entries too (`scenes/modellab-champions.js`, the same shape):
+the Briar Knight (Bramble Charge, which crosses the frame at the sim's 9 u/s, Thorn Ring)
+and the Moss Hart (Antler Toss, Hart's Leap, which bounds across the frame), each with a
+Spawn in tab and its classic twin beside.
 The Level I foes bring their own tabs (`scenes/modellab-foes.js`, entries the lab sets
 before the Effect kit): each foe's framing, its game speed on the Move loop (forward for
 half a lap, then a sidestep and a backpedal facing the middle), its abilities on their
@@ -550,12 +646,28 @@ URL: `?modellab=1&model=boar&mode=ability&ability=gore&view=play&classic=1`.
    points, and a `react` tuning for the shared hit envelope; keep floor pieces off the
    root's first child. Legged models stand on `createLegs` (locked feet); give each leg a
    pole that bends the way the animal's joint does. Add it to `MODEL_STANDARD`, a lab entry
-   (`scenes/modellab-bosses.js` for a boss), and checks in a probe
+   (`scenes/modellab-bosses.js` for a boss, `scenes/modellab-champions.js` for a champion),
+   and checks in a probe
    (`tools/model-standard-level1-probe.mjs` shows the pattern).
 6. Shoot it in the lab and at play zoom in a busy fight beside its classic twin
    (`tools/model-standard-heroes-shots.mjs` shoots the heroes' fight faceted and with `?facet=0`).
 
 ## Probes
+
+`node tools/model-standard-champions-probe.mjs` (in `npm test`) holds the two champions to
+the rules: the flags and the champion table's soft flash; the classic interface plus `lab`,
+`points` and `react`, the body under the root's first child and the shadow a floor piece,
+every part inked and faceted, the hit flash's white emissive on every body material, named
+points, no reserved colour; strikes of 2.5 frames into a held contact, off on the first
+frame, one overshoot in the settle, the lab's cue on the contact; locked feet through a
+walk with a turn, a rest with no step loop and a spin in place; each move driven by a sim
+entity (the couch through its warning, the drive on the resolve, the run while the sim
+charges, the braced stop; the ring's plant on its tick; the toss's fling on its tick; the
+leap's gather, its bound at `hartLift`'s height with every hoof off the floor, the landing
+held on the resolve), a fresh copy of a warning every tick never restarting it; the
+knight's hands on the lance and the buckler in every pose; the spawn-in on a new champion
+only; the rage flaring the tell; the lab entries. `tools/model-standard-champions-shots.mjs`
+shoots both in the lab and in their crown rooms, faceted and with `?facet=0`.
 
 `node tools/model-standard-heroes-probe.mjs [--only id]` (in `npm test`) runs every hero in
 `FACET_HEROES` through the same checks: the cadence and walk speed match the sim; every

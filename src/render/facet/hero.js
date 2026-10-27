@@ -292,10 +292,11 @@ export const SPAWN_TIMELINE = createTimeline('spawn', 'Spawn', [
 //   cue('reset')        forget every move and envelope (a rig that was not
 //                       updated while cues arrived: a scene coming back)
 // A hit taken (the hurt clip, or going down) lets go of the attack over a
-// few frames (RELEASE_SEC) instead of dropping it, and every move that ends
-// hands back the same way: into the body the rig would draw without it (the
-// walk's lean, the hurt flinch: the base each rig sets every frame with
-// setBase), so nothing pops either way. A move takes over from that base too.
+// few frames (RELEASE_SEC, eased in and out so the hand-off has no kick)
+// instead of dropping it, and every move that ends hands back the same way:
+// into the body the rig would draw without it (the walk's lean, the hurt
+// flinch: the base each rig sets every frame with setBase), so nothing pops
+// either way. A move takes over from that base too.
 // The contact holds where the weapon lands (LAG after the move's contact:
 // the weapon is drawn a frame behind the hips).
 export const RELEASE_SEC = 4 * FRAME;
@@ -351,7 +352,7 @@ export function createAttackClock({ pack, hits, abilities, skillAbility, window 
     if (!cur) return pack.copy(out, override ? pack.REST : base);
     const from = fromOf(shift);
     if (cur.kind === 'release') {
-      const k = ease.out(Math.min(1, Math.max(0, cur.t + shift) / RELEASE_SEC));
+      const k = ease.inOut(Math.min(1, Math.max(0, cur.t + shift) / RELEASE_SEC));
       return pack.lerp(out, from, override ? pack.REST : base, k);
     }
     return cur.mv.pose(cur.t + shift, from, out, 0, cur.t0, !!cur.fade);
