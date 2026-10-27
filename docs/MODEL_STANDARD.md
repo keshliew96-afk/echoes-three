@@ -96,7 +96,8 @@ What every model-standard hero shares, lifted out of the pilot Tank:
   - A connect up to 0.25 s after the contact (a guest's late event) still recoils at once.
   - Every move hands back to the body's live base pose (the walk's lean and twist, or
     the stance), never to a fixed rest: at its natural end the move lets go over 4
-    frames into whatever the legs are doing, so a swing on the walk takes over from the
+    frames, eased in and out (v0.5.339; it used to start at full speed, which a big
+    hip turn read as a kick), into whatever the legs are doing, so a swing on the walk takes over from the
     walk and gives it back without a cut.
   - A hit taken (the `hurt` or `downed` clip) lets the move go the same way, from where
     each channel of the body stood (hips, torso and the lagged weapon each from its own
