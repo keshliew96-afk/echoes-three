@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339; Level I foes v0.5.338; Level I champions v0.5.340)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -8,7 +8,9 @@ two models, the **Barrow Wyrm** and the **Tank**, so he can judge the look befor
 roster slice. Visual only: no sim, timing, damage or golden changes. The Level I slice
 (v0.5.336) then rebuilt the **Hollow Stag**, the **Thornmother** and the **Gloam Wolf** and
 measured the pilot's Wyrm against the [M] checklist of `/mnt/project-files/plan/VFX_HIT_RULES.md`
-§6.1 (see "The [M] beats" and "The Level I bosses" below).
+§6.1 (see "The [M] beats" and "The Level I bosses" below); its second part (v0.5.339) rebuilt
+the Hollow Wood's two champions, the **Briar Knight** and the **Moss Hart** ("The Level I
+champions").
 
 His ruling for the pilot: the detail goes **on top of** the chibi ink-outline style
 (BUILD_BRIEF §19.2), it does not replace it, and the facets must read clearly.
@@ -432,6 +434,52 @@ planted again at rest.
   hackles stay up, the eyes and the mane burn, the breathing quickens. A back-to-back
   pounce of the Hunt starts its crouch from the landing, not from rest.
 
+## The Level I champions (v0.5.340)
+
+The Hollow Wood's two champions, rebuilt the way the bosses were: each keeps its classic
+rig's silhouette, colours (the classic's own constants) and its ONE indigo tell, adds the
+standard's detail on top, and walks on **locked feet**; the classic rigs stay beside them
+(`?facet=0`). Both keep the champion table's soft hit flash (`CHAMPION_FLASH`) and the
+presence layer's crown, sigil and chest, which ride on the rig's group as before.
+
+| Champion | File | Draw calls (classic) | Instances |
+|---|---|---|---|
+| Briar Knight | `render/enemies/champfacet/briarknight.js` | 95 (52) | 93 |
+| Moss Hart | `render/enemies/champfacet/mosshart.js` | 74 (113) | 113 |
+
+- **Briar Knight.** The knight grown out of the Wood: a dark hip drum under a bark chest
+  with two rings of ridged bark plates laid brick-wise (the upper ring lit), a belt of root
+  knots and a skirt of bark tassets, thorn pauldrons, a faceted helm with a brim, a fan of
+  thorn crest blades and the indigo visor slit, a moss collar and a cape of five moss
+  strips that sway on their own, a barbed briar lance with a leaf-blade tip and a vamplate,
+  a seven-sided buckler with a thorn boss and a ring of thorns. It is a **biped**: two root
+  feet on `createLegs` (three splayed toes each, a knot at the knee), and both arms reach
+  their hands by the same two-bone IK, so the hands stay on the lance's grip and the
+  buckler in every pose. *Bramble Charge*: couch (the 60-tick lane warning less one
+  strike: the lance comes level under the arm, the body cocks back on a long lead step,
+  the buckler up), drive (2.5 frames, landing as the sim starts to charge: thrown forward
+  into the run), run (held while the sim charges at 9 u/s: the cape streams back), stop (a
+  braced skid on the sim's charge end, a wall or the lane spent, with the B3 recoil),
+  settle. *Thorn Ring*: raise (the 72-tick ring warning less one strike: the lance lifted
+  high, point down, the stance wide, the buckler out), plant (2.5 frames, on the ring's
+  tick: the lance driven into the floor, the knees deep), held, recoil, settle.
+- **Moss Hart.** The great hart of bark and moss: a faceted barrel, chest and haunches,
+  ridged bark plates down each flank, the moss mantle as faceted lumps with blade strands
+  hanging off its edge and lichen motes glowing in it, a ruff of moss blades round the
+  throat, a boxed skull and muzzle, the indigo crack down the brow, and a rack of two
+  segmented beams with eight tines a side, a lichen bud on every tine and beam tip and
+  moss drapes off the beams. *Antler Toss*: lower (the 56-tick cone warning less one
+  strike: the head dropped, the rack levelled, the haunches set), fling (2.5 frames, on
+  the toss's tick: the rack flung up and back, the forehooves a step ahead), held, recoil,
+  settle. *Hart's Leap* follows the sim's own clock: gather (its crouch, the first 45 % of
+  the 74-tick warning: the haunches load), bound (the sim's flight to 95 %: the height is
+  the classic's `hartLift`, the crown's own, every hoof off the floor, the forelegs
+  reaching then all four tucked), land (2.5 frames, on the forehooves), the landing held
+  from the sim's landing tick (the resolve), settle.
+
+A warning is known by its move and start tick, never by object identity. A new champion
+(a new entity id, or a clock that went back) spawns in; a jump in place re-plants the feet.
+A dying champion is never posed again (the enemy layer's kill takes the rig).
 ## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
 Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
@@ -506,6 +554,10 @@ own timelines with key poses instead, as the template's ranged clause reads.
   boss (a new entity id, or a clock that went back) resets its timelines and spawns in; a
   jump in place (a new room, a hitch mid-charge) only re-plants the feet. A dying rig (posed
   with no entity) collapses in the pose it died in: no wind-up runs on into its strike.
+- `render/enemies/champions.js` builds `buildBriarKnightFacet` and `buildMossHartFacet` in
+  the champion table when their flag is on, so the enemy layer, the prewarm and the Journal
+  viewer all take them; the enemy layer wraps the rig's first child in its hit-react node
+  and lifts the hit flash on its `mats` as for any champion.
 - The boss prewarm (`render/warmup.js`) parks each rig unculled for a few frames, then gives
   every part its own culling flag back, so the moving instanced parts stay unculled.
 - The Journal viewer frames a model by its instanced parts' real instances (`ui/story/viewer.js`).
@@ -566,6 +618,10 @@ falls back to its first ability. `fixedDt` (s) makes every drawn frame advance
 the lab by that step, so a probe on a slow software-GL machine sees 60 Hz motion
 (`tools/model-standard-level1-shots.mjs` uses 1/60).
 
+The Level I champions are lab entries too (`scenes/modellab-champions.js`, the same shape):
+the Briar Knight (Bramble Charge, which crosses the frame at the sim's 9 u/s, Thorn Ring)
+and the Moss Hart (Antler Toss, Hart's Leap, which bounds across the frame), each with a
+Spawn in tab and its classic twin beside.
 The Level I foes bring their own tabs (`scenes/modellab-foes.js`, entries the lab sets
 before the Effect kit): each foe's framing, its game speed on the Move loop (forward for
 half a lap, then a sidestep and a backpedal facing the middle), its abilities on their
@@ -590,12 +646,28 @@ URL: `?modellab=1&model=boar&mode=ability&ability=gore&view=play&classic=1`.
    points, and a `react` tuning for the shared hit envelope; keep floor pieces off the
    root's first child. Legged models stand on `createLegs` (locked feet); give each leg a
    pole that bends the way the animal's joint does. Add it to `MODEL_STANDARD`, a lab entry
-   (`scenes/modellab-bosses.js` for a boss), and checks in a probe
+   (`scenes/modellab-bosses.js` for a boss, `scenes/modellab-champions.js` for a champion),
+   and checks in a probe
    (`tools/model-standard-level1-probe.mjs` shows the pattern).
 6. Shoot it in the lab and at play zoom in a busy fight beside its classic twin
    (`tools/model-standard-heroes-shots.mjs` shoots the heroes' fight faceted and with `?facet=0`).
 
 ## Probes
+
+`node tools/model-standard-champions-probe.mjs` (in `npm test`) holds the two champions to
+the rules: the flags and the champion table's soft flash; the classic interface plus `lab`,
+`points` and `react`, the body under the root's first child and the shadow a floor piece,
+every part inked and faceted, the hit flash's white emissive on every body material, named
+points, no reserved colour; strikes of 2.5 frames into a held contact, off on the first
+frame, one overshoot in the settle, the lab's cue on the contact; locked feet through a
+walk with a turn, a rest with no step loop and a spin in place; each move driven by a sim
+entity (the couch through its warning, the drive on the resolve, the run while the sim
+charges, the braced stop; the ring's plant on its tick; the toss's fling on its tick; the
+leap's gather, its bound at `hartLift`'s height with every hoof off the floor, the landing
+held on the resolve), a fresh copy of a warning every tick never restarting it; the
+knight's hands on the lance and the buckler in every pose; the spawn-in on a new champion
+only; the rage flaring the tell; the lab entries. `tools/model-standard-champions-shots.mjs`
+shoots both in the lab and in their crown rooms, faceted and with `?facet=0`.
 
 `node tools/model-standard-heroes-probe.mjs [--only id]` (in `npm test`) runs every hero in
 `FACET_HEROES` through the same checks: the cadence and walk speed match the sim; every

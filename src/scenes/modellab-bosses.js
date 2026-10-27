@@ -22,21 +22,21 @@ import { buildGloamWolfFacet, WOLF_ABILITIES, WOLF_WALK } from '../render/boss/g
 export function loopPath(phase, loop) {
   return { x: Math.sin(phase) * loop, z: -Math.cos(phase) * loop + loop * 0.4, yaw: Math.atan2(Math.cos(phase), Math.sin(phase)) };
 }
-const abilityOn = (state) => state.mode === 'ability' || (state.mode === 'still' && state.t > 0);
+export const abilityOn = (state) => state.mode === 'ability' || (state.mode === 'still' && state.t > 0);
 // Locked feet in the lab: a jump back in the ability (its loop restarting) or
 // a scrub while Still re-plants them on the pose's stance; a frozen moment
 // keeps them where the motion left them.
 // A reset from the lab (a new mode or model) waits for the next update, so
 // the feet plant where the model is placed, not where it was.
 const lastAbT = new WeakMap();
-const pending = new WeakSet();
-function replant(rig, state, on, abT) {
+export const pending = new WeakSet();
+export function replant(rig, state, on, abT) {
   const last = lastAbT.get(rig) ?? 0;
   if (pending.has(rig) || (on && abT < last - 0.25) || (state.mode === 'still' && Math.abs(abT - last) > 0.05)) rig.lab.reset();
   pending.delete(rig);
   lastAbT.set(rig, on ? abT : 0);
 }
-const follow = (v, target, dt, rate) => v + (target - v) * (1 - Math.exp(-rate * dt));
+export const follow = (v, target, dt, rate) => v + (target - v) * (1 - Math.exp(-rate * dt));
 
 // The Hollow Stag. Trample travels in the lab as it does in the game (the
 // sim's 12-tick lunge at 5.4 u/s), so the gallop's locked hooves can be judged.

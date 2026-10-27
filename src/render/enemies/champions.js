@@ -67,6 +67,11 @@ import { HIDE, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 import { impactFx } from '../vfx/hub.js';
 import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SECOND_CHAMPION_BUILDERS, SECOND_CHAMPION_CROWN_Y, hartLift, abbessLift } from './champions2.js';
+// MODEL STANDARD (docs/MODEL_STANDARD.md "Level I champions"): the faceted
+// Briar Knight and Moss Hart; the classic rigs stay beside them (?facet=0).
+import { buildBriarKnightFacet } from './champfacet/briarknight.js';
+import { buildMossHartFacet } from './champfacet/mosshart.js';
+import { facetOn } from '../facet/flags.js';
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
 const inkMat = () => new MeshBasicMaterial({ color: exactColor(PALETTE.voidCharcoal), toneMapped: false });
@@ -1031,13 +1036,14 @@ const softFlash = (build) => (...args) => {
 export const CHAMPION_BUILDERS = Object.freeze(
   Object.fromEntries(
     Object.entries({
-      briar_knight: buildBriarKnight,
+      briar_knight: facetOn('briar_knight') ? buildBriarKnightFacet : buildBriarKnight,
       sluice_warden: buildSluiceWarden,
       bone_reeve: buildBoneReeve,
       hollow_choir: buildHollowChoir,
       gale_herald: buildGaleHerald,
       // Second champions (plan 4 slice 8): render/enemies/champions2.js.
       ...SECOND_CHAMPION_BUILDERS,
+      moss_hart: facetOn('moss_hart') ? buildMossHartFacet : SECOND_CHAMPION_BUILDERS.moss_hart,
     }).map(([k, build]) => [k, softFlash(build)])
   )
 );

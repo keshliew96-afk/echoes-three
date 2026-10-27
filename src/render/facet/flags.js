@@ -1,7 +1,8 @@
 // MODEL STANDARD (docs/MODEL_STANDARD.md): which models play the faceted
 // model standard. The pilot rebuilt the Barrow Wyrm and the Tank; the Level I
 // slices add the Hollow Stag, the Thornmother, the Gloam Wolf and the eight
-// Level I foes (render/enemies/facet/); the heroes slice adds the Healer,
+// Level I foes (render/enemies/facet/), then the Briar Knight and the
+// Moss Hart (render/enemies/champfacet/); the heroes slice adds the Healer,
 // the Swordsman and the Archer. The classic rigs stay in the code beside them.
 //
 // A harness build reads `?facet=` to compare (a player build never sees it):
@@ -29,6 +30,9 @@ export const MODEL_STANDARD = Object.freeze({
   thornling: true,
   owl: true,
   lasher: true,
+  // The Level I champions.
+  briar_knight: true,
+  moss_hart: true,
 });
 
 export function facetOn(kind, query = pageQuery()) {
