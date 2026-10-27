@@ -344,12 +344,14 @@ cord. The classic metrics are unchanged.
 - **3-cast combo** at the sim's 0.35 s cadence, combo window 0.9 s, as a shooter (the shot
   squash 20/29/38%, the finisher keeping its stretch): wind 1 frame, strike 1.5, overshoot
   2, settle 4.
-  1. *Staff fling*: the shell cocked back over the shoulder, then the staff thrown
-     forward at the target, the free paw pushing after the water.
+  1. *Staff fling*: the shell cocked back over the shoulder, then the staff swung
+     forward and out to the staff side (Kesh's pick: clear of the face, a sideways swing
+     instead of a forward tip), the free paw pushing after the water.
   2. *Side sweep*: the staff laid out wide, then swept up and forward past the shoulder;
      the tail swings against the hips.
   3. *Overhead slam*: the staff raised back over the head, then a 0.13 u hop and the staff
-     brought down in front with a 1.12 stretch, landing squashed.
+     brought down forward and out on the staff side with a 1.12 stretch, landing
+     squashed.
 
   The hips turn the staff shoulder forward through each cast (small, 0.08 to 0.26 rad,
   like the Archer's) and the staff follows a frame behind; the staff's top always leans

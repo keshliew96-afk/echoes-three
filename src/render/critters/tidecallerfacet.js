@@ -103,11 +103,11 @@ const TIMING = Object.freeze({ ...HIT_TIMING, wind: FRAME, strike: 1.5 * FRAME, 
 const PACK = posePack({ px: 0.29, py: 0.12, pz: 0.1, prx: 0, prz: -0.12, ox: -0.17, oy: 0.34, oz: 0.12 });
 const { REST, K } = PACK;
 // Cast 1, STAFF FLING: the shell cocked back over the shoulder, then the
-// staff thrown forward to point at the target, the free paw pushing after
-// the water.
-const A1 = K({ yaw: -0.08, pitch: -0.04, rz: -0.02, sw: 0.98, sh: 1.03, px: 0.29, py: 0.2, pz: 0.02, prx: -0.3, prz: -0.15, ox: -0.12, oy: 0.38, oz: 0.2 });
-const S1 = K({ yaw: -0.2, pitch: 0.1, rz: 0.03, sw: 1.02, sh: 0.98, px: 0.28, py: 0.2, pz: 0.2, prx: 0.55, prz: -0.1, ox: -0.05, oy: 0.42, oz: 0.34 });
-const O1 = K({ yaw: -0.18, pitch: 0.08, rz: 0.02, px: 0.28, py: 0.19, pz: 0.19, prx: 0.5, prz: -0.1, ox: -0.06, oy: 0.4, oz: 0.3 });
+// staff swung forward and out to the staff side (clear of the face, Kesh's
+// pick), the free paw pushing after the water.
+const A1 = K({ yaw: -0.08, pitch: -0.04, rz: -0.02, sw: 0.98, sh: 1.03, px: 0.29, py: 0.2, pz: 0.02, prx: -0.3, prz: -0.25, ox: -0.12, oy: 0.38, oz: 0.2 });
+const S1 = K({ yaw: -0.2, pitch: 0.1, rz: 0.03, sw: 1.02, sh: 0.98, px: 0.31, py: 0.2, pz: 0.2, prx: 0.55, prz: -0.6, ox: -0.05, oy: 0.42, oz: 0.34 });
+const O1 = K({ yaw: -0.18, pitch: 0.08, rz: 0.02, px: 0.31, py: 0.19, pz: 0.19, prx: 0.5, prz: -0.55, ox: -0.06, oy: 0.4, oz: 0.3 });
 // Cast 2, SIDE SWEEP: the staff laid out wide to the staff side, then swept
 // up and forward past the shoulder (the shell kept outboard of the face),
 // the tail swinging against it.
@@ -116,10 +116,11 @@ const S2 = K({ yaw: -0.26, pitch: 0.1, roll: -0.04, rx: -0.02, rz: 0.03, sw: 0.9
 const O2 = K({ yaw: -0.24, pitch: 0.08, roll: -0.05, rx: -0.025, rz: 0.02, sw: 0.99, sh: 1.02, px: 0.26, py: 0.18, pz: 0.17, prx: 0.42, prz: -0.03, ox: -0.09, oy: 0.39, oz: 0.28 });
 // Cast 3, OVERHEAD SLAM (the finisher, the biggest: B6): the staff raised
 // back over the head, up on the toes; then a hop and the staff brought down
-// in front, stretched tall at the release, landing squashed.
-const A3 = K({ yaw: -0.1, pitch: -0.14, rz: -0.03, sw: 0.96, sh: 1.06, px: 0.28, py: 0.3, pz: -0.04, prx: -0.55, prz: -0.2, ox: -0.1, oy: 0.5, oz: 0.1 });
-const S3 = K({ yaw: -0.24, pitch: 0.16, rz: 0.06, hop: 0.13, sw: 0.93, sh: 1.12, px: 0.27, py: 0.24, pz: 0.22, prx: 0.95, prz: -0.1, ox: -0.04, oy: 0.44, oz: 0.34 });
-const O3 = K({ yaw: -0.22, pitch: 0.12, rz: 0.07, hop: 0, sw: 1.1, sh: 0.9, px: 0.27, py: 0.16, pz: 0.2, prx: 0.85, prz: -0.1, ox: -0.05, oy: 0.4, oz: 0.3 });
+// forward and out on the staff side (clear of the face), stretched tall at
+// the release, landing squashed.
+const A3 = K({ yaw: -0.1, pitch: -0.14, rz: -0.03, sw: 0.96, sh: 1.06, px: 0.28, py: 0.3, pz: -0.04, prx: -0.55, prz: -0.3, ox: -0.1, oy: 0.5, oz: 0.1 });
+const S3 = K({ yaw: -0.24, pitch: 0.16, rz: 0.06, hop: 0.13, sw: 0.93, sh: 1.12, px: 0.31, py: 0.24, pz: 0.22, prx: 0.95, prz: -0.7, ox: -0.04, oy: 0.44, oz: 0.34 });
+const O3 = K({ yaw: -0.22, pitch: 0.12, rz: 0.07, hop: 0, sw: 1.1, sh: 0.9, px: 0.31, py: 0.16, pz: 0.2, prx: 0.85, prz: -0.62, ox: -0.05, oy: 0.4, oz: 0.3 });
 // The finisher's flight: the hop and the stretch fall into the landing
 // squash with gravity, so she is airborne and stretched at the release and
 // lands squashed at the end of the overshoot.
@@ -149,7 +150,7 @@ const breathe = (out, s) => {
 // Bolt (Riverbolt): the staff drawn back with both paws, then thrust at the
 // target.
 const G_BOLT = K({ yaw: -0.06, pitch: -0.06, sw: 1.03, sh: 0.97, px: 0.28, py: 0.2, pz: 0.0, prx: -0.25, prz: -0.12, ox: 0.06, oy: 0.4, oz: 0.12 });
-const S_BOLT = K({ yaw: -0.2, pitch: 0.14, sw: 0.96, sh: 1.05, step: 0.5, px: 0.26, py: 0.22, pz: 0.24, prx: 0.7, prz: -0.06, ox: 0.08, oy: 0.44, oz: 0.36 });
+const S_BOLT = K({ yaw: -0.2, pitch: 0.14, sw: 0.96, sh: 1.05, step: 0.5, px: 0.3, py: 0.22, pz: 0.24, prx: 0.7, prz: -0.5, ox: 0.08, oy: 0.44, oz: 0.36 });
 // Jet (Torrent): braced wide, the staff levelled at the target and held
 // while the jet runs, the body shuddering with it.
 const G_JET = K({ yaw: -0.08, pitch: -0.04, sw: 1.06, sh: 0.94, px: 0.28, py: 0.2, pz: 0.08, prx: 0.2, prz: -0.12, ox: -0.06, oy: 0.4, oz: 0.2 });
@@ -184,7 +185,7 @@ const S_SQUALL = K({ yaw: -0.08, pitch: -0.08, sw: 0.94, sh: 1.08, px: 0.3, py: 
 // Breaker (Breaker, Crashing Wave, Maelstrom): a crouch with the staff
 // swung back low, then a wide sweep up and over as the wave breaks.
 const G_BREAK = K({ yaw: 0.06, pitch: 0.12, rz: -0.03, sw: 1.1, sh: 0.9, px: 0.3, py: 0.14, pz: -0.02, prx: -0.3, prz: -0.45, ox: -0.14, oy: 0.3, oz: 0.14 });
-const S_BREAK = K({ yaw: -0.22, pitch: -0.08, rz: 0.04, hop: 0.06, sw: 0.94, sh: 1.08, step: 0.6, px: 0.26, py: 0.24, pz: 0.22, prx: 0.8, prz: -0.05, ox: -0.04, oy: 0.46, oz: 0.34 });
+const S_BREAK = K({ yaw: -0.22, pitch: -0.08, rz: 0.04, hop: 0.06, sw: 0.94, sh: 1.08, step: 0.6, px: 0.3, py: 0.24, pz: 0.22, prx: 0.8, prz: -0.5, ox: -0.04, oy: 0.46, oz: 0.34 });
 // Tidepool (the aura): the staff planted upright beside her, the free paw
 // spread low over the water, a slow breath.
 const G_POOL = K({ yaw: 0.04, pitch: 0.06, sw: 1.02, sh: 0.98, px: 0.3, py: 0.08, pz: 0.12, prx: 0.06, prz: -0.06, ox: -0.2, oy: 0.26, oz: 0.24 });
