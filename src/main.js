@@ -326,6 +326,10 @@ registerHitCues(service('audio'), { world, settings: app.settings });
 import { registerImpactCues } from './audio/impactcues.js';
 import { DEFAULT_EVENT_CUES } from './audio/cues.js';
 registerImpactCues(service('audio'), { world, defaults: DEFAULT_EVENT_CUES });
+// THE CHEST BEAT (docs/HIT_FEEDBACK.md): a sound per layer of a reward
+// chest's opening (src/audio/chestcues.js).
+import { registerChestCues } from './audio/chestcues.js';
+registerChestCues(service('audio'));
 // @gnt:AUDIO end
 
 const buildScene = await SCENES[sceneKey]();

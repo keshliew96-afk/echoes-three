@@ -33,12 +33,12 @@ export const IMPACT_SOUND = Object.freeze({
 // peaks at its levelDb — tools/smallfixes2-cuecal.mjs --only impactcues --write.
 export const IMPACT_CUE_CAL = {
   // @cal begin
-  imp_boom: 0,
-  imp_thunk: 0,
-  imp_cut: 0,
-  cast_whoosh: 0,
-  shot_whiz: 0,
-  wall_ping: 0,
+  imp_boom: 5.1,
+  imp_thunk: -0.6,
+  imp_cut: 1.6,
+  cast_whoosh: -6.8,
+  shot_whiz: -6.9,
+  wall_ping: -2.1,
   // @cal end
 };
 

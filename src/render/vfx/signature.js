@@ -46,6 +46,7 @@ import { createSecretFx } from './secretfx.js';
 import { createRelic6Fx } from './relic6fx.js';
 import { createAnimeFx } from './animefx.js';
 import { createFlipbook } from './flipbook.js';
+import { CHEST_BEAT } from '../interactables/chestbeat.js';
 import { SKILLS } from '../../sim/skills.js';
 import { isOwnBody } from './hitfeedback.js';
 
@@ -921,17 +922,24 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     spray('smoke', x, 0.3, z, N(ELEMENT_AIR.mist), { color: core, speed: [0.02, 0.1], up: [0, 0.06], size: [radius * 0.7, radius * 1.0], grow: 1.25, life: ELEMENT_AIR.sec, opacity: ELEMENT_AIR.mistOpacity, gravity: 0, drag: 2, jitter: radius * 0.4 });
     mark('element_air');
   }
+  // i (C2): the 2% zoom punch of a chest's snap, peaking inside the hold at
+  // the top of the hop (S+5 on, easing out by about S+25). snapIn: seconds
+  // from now to the snap.
+  function chestPunch(snapIn = CHEST_BEAT.snap) {
+    after(snapIn + 5 / 30, () => camfx.punch(CAM_PUNCH.chest, 0.6));
+  }
   const tonicFx = createTonicFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world, elementAir });
   // HAZARDS AND SHRINES (docs/SHRINES.md): crystal spurs, shrines, blessings.
   const shrineFx = createShrineFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, world });
   // SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and the chamber.
-  createSecretFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, rnd, mark, player });
+  createSecretFx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, rnd, mark, player, chestPunch });
   // RELICS batch 6 (docs/RELICS.md "Batch 6"): the lantern, the burning,
   // the dive, the crown, the lens, the veil, the heart, and the three
   // curses (the seal, the dark, the crowns).
   const relic6Fx = createRelic6Fx({ kit, bus, byId, spray, flare, shock, after, anticipate, embersUp, camfx, N, rnd, mark, player, world, stage });
   // THE VFX TEMPLATES (design-VFX.md §11): magic, blade and sci-fi, played
   // over every hero beat above (registered last, so they draw on top).
+  bus.on('champion_chest', () => chestPunch(0));
   const tplFx = createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area: (id) => SKILL_AREA.get(id) ?? null });
   // The same templates on the enemies, champions and bosses (foefx.js).
   const foeFx = createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, ink: INK, player });
@@ -4972,7 +4980,11 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const x = ev.x ?? 0;
     const z = ev.z ?? -4.2;
     anticipate(x, z, 1.8, VK_GOLD, { y: 0.6, lines: 10, core: VK_HOT });
-    after(ANTICIP, () => {
+    // i: the chest presses, then snaps open at CHEST_BEAT.snap (its rig plays
+    // the hop, the lid, the light and the stars); the vault's burst and a 2%
+    // zoom punch go off on the snap, the punch inside the hold at its top.
+    chestPunch();
+    after(CHEST_BEAT.snap, () => {
       kit.pillar({ x, z, radius: 1.1, height: 8, color: VK_GOLD, life: 1.8, opacity: 0.6 });
       kit.pillar({ x, z, radius: 0.35, height: 9, color: VK_HOT, life: 1.4, opacity: 0.9 });
       flare(x, 1.0, z, VK_GOLD, 3.4, { kind: 'burst', life: 0.45, core: VK_HOT, spin: 0.8 });
@@ -4987,7 +4999,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
       camfx.kick(rnd(-1, 1), rnd(-1, 1), 0.2, 0.16);
     });
     // The rest of the hoard pours into the party: gold streaks to each hero.
-    after(0.35, () => {
+    after(CHEST_BEAT.snap + 0.3, () => {
       for (const e of world.entities()) {
         if (e.partyIndex === undefined || !(e.hp > 0)) continue;
         kit.streak({ a: { x, y: 2.2, z }, b: { x: e.x, y: 1.1, z: e.z }, width: 0.06, tailW: 0, core: VK_HOT, glow: VK_GOLD, life: 0.3, fall: 1.0 });

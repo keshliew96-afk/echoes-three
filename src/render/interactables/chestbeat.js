@@ -42,6 +42,7 @@ import { sharedGeo } from '../geocache.js';
 import { toonMaterial } from '../toon.js';
 import { addInk } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
+import { impactFx } from '../vfx/hub.js';
 
 const F = 1 / 30; // one frame of the 30 fps captures (2 ticks)
 
@@ -206,18 +207,30 @@ function buildPadlock(k) {
 
 const flatMat = (color, opacity) => new MeshBasicMaterial({ color: new Color(color), transparent: true, opacity, toneMapped: false, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
 
+// The nearest living hero's distance to (x, z) from a list of bodies.
+export function nearestHero(party, x, z) {
+  let d = Infinity;
+  for (const p of party ?? []) d = Math.min(d, Math.hypot(p.x - x, p.z - z));
+  return d;
+}
+
 // Attach the beat to a chest.
 //   group  the chest rig's root (its local frame: +z the front, y up)
 //   body   the part that wobbles, squashes and hops (its origin on the floor)
 //   spec   { w: width, d: depth, rim: rim height, hasp: {y, z} the lock's
 //            place on the front, mode: 'press' | 'auto' }
-//   fx     { spray(mode, x, y, z, n, opts) } in world space, or null
+//   fx     { spray(mode, x, y, z, n, opts) } in world space (the VFX hub)
 // Returns { update(dt, near, wx, wz) -> pose, press(), open(), restore(),
 //   state(), lidK } — the rig drives its own lid from pose.lid.
-export function attachChestBeat(group, body, spec, fx = null, cosmetic = null) {
+export function attachChestBeat(group, body, spec, fx = impactFx, cosmetic = null) {
   const B = CHEST_BEAT;
   const w = spec.w;
-  const rnd = (a, b) => (cosmetic ? cosmetic.range(a, b) : (a + b) / 2);
+  let seed = (Math.round(w * 977 + spec.rim * 131) >>> 0) || 1;
+  const rnd = (a, b) => {
+    if (cosmetic) return cosmetic.range(a, b);
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return a + (b - a) * (seed / 4294967296);
+  };
   const st = { mode: 'idle', t: 0, ph: 0, amp: 0, bout: 0, rest: 0, amp0: 0, ph0: 0, restored: false };
   // The padlock on the hasp.
   const lock = buildPadlock(spec.lockScale ?? 1);
@@ -495,6 +508,6 @@ export function attachChestBeat(group, body, spec, fx = null, cosmetic = null) {
     force(k) {
       st.forced = k;
     },
-    state: () => ({ mode: st.mode, t: st.t, restored: st.restored, landed: lockSt.landed }),
+    state: () => ({ mode: st.mode, t: st.t, restored: st.restored, landed: lockSt.landed, stars: stars.filter((q) => q.sp.visible).length }),
   };
 }
