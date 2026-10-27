@@ -65,6 +65,7 @@ import { PALETTE, VFX_MATTER } from '../../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { HIDE, TELL_INDIGO, TELL_INDIGO_GLOW } from './style.js';
 import { impactFx } from '../vfx/hub.js';
+import { attachChestBeat } from '../interactables/chestbeat.js';
 import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUtils.js';
 import { SECOND_CHAMPION_BUILDERS, SECOND_CHAMPION_CROWN_Y, hartLift, abbessLift } from './champions2.js';
 // MODEL STANDARD (docs/MODEL_STANDARD.md "Level I champions"): the faceted
@@ -1110,18 +1111,20 @@ function buildChest() {
   const g = new Group();
   const wood = toonMaterial({ color: mix(PALETTE.bruiseUmber, PALETTE.voidCharcoal, 0.2) });
   const goldM = new MeshBasicMaterial({ color: exactColor(GOLD), toneMapped: false });
+  const body = new Group(); // what the chest beat rocks (interactables/chestbeat.js)
+  g.add(body);
   const box = new Mesh(sharedGeo('ch-chest-box', () => new BoxGeometry(0.9, 0.5, 0.6)), wood);
   box.position.y = 0.25;
   addInk(box);
-  g.add(box);
+  body.add(box);
   for (const x of [-0.36, 0, 0.36]) {
     const band = new Mesh(sharedGeo('ch-chest-band', () => new BoxGeometry(0.07, 0.52, 0.62)), goldM);
     band.position.set(x, 0.25, 0);
-    g.add(band);
+    body.add(band);
   }
   const hinge = new Group();
   hinge.position.set(0, 0.5, -0.3);
-  g.add(hinge);
+  body.add(hinge);
   const lid = new Mesh(sharedGeo('ch-chest-lid', () => new CylinderGeometry(0.3, 0.3, 0.9, 10, 1, false, 0, Math.PI).rotateZ(Math.PI / 2).translate(0, 0, 0.3)), wood);
   addInk(lid);
   hinge.add(lid);
@@ -1131,7 +1134,7 @@ function buildChest() {
   const seamMat = new MeshBasicMaterial({ color: new Color(GOLD_HOT), transparent: true, opacity: 0.0, toneMapped: false, blending: AdditiveBlending, depthWrite: false });
   const seam = new Mesh(sharedGeo('ch-chest-seam', () => new BoxGeometry(0.92, 0.04, 0.62)), seamMat);
   seam.position.y = 0.5;
-  g.add(seam);
+  body.add(seam);
   const glow = makeGlowSprite({ color: GOLD, size: 2.2, opacity: 0.0 });
   glow.material.toneMapped = false;
   glow.position.y = 0.6;
@@ -1142,7 +1145,8 @@ function buildChest() {
   beam.position.y = 3;
   g.add(beam);
   g.add(groundShadow(0.6, 0.6));
-  return { g, hinge, seamMat, glow, beam, mats: [wood] };
+  const beat = attachChestBeat(g, body, { w: 0.9, d: 0.6, rim: 0.5, hasp: { y: 0.36, z: 0.3 } });
+  return { g, hinge, seamMat, glow, beam, beat, mats: [wood] };
 }
 
 export function createChampionFx({ root, world, bus, cosmetic }) {
@@ -1215,6 +1219,7 @@ export function createChampionFx({ root, world, bus, cosmetic }) {
     if (!chest) return;
     chest.open = true;
     chest.openAge = 0;
+    chest.rec.beat.open(); // no press: it snaps on the clear
     counts.opened += 1;
     wave(chest.x, chest.z, GOLD_HOT, 3.0, 0.5);
     impactFx.spray('spark', chest.x, 0.7, chest.z, 26, { color: GOLD_HOT, speed: [0.2, 0.9], up: [1.6, 3.4], size: [0.05, 0.1], life: [1.2, 2.0], gravity: -0.4, drag: 1.0, jitter: 0.3 });
@@ -1265,12 +1270,14 @@ export function createChampionFx({ root, world, bus, cosmetic }) {
       chest.age += dt;
       const rise = Math.min(1, chest.age / 0.7);
       chest.rec.g.position.y = -0.6 + 0.6 * (1 - (1 - rise) * (1 - rise));
-      chest.rec.g.rotation.y = 0.15 * Math.sin(chest.age * 0.8);
+      // It wobbles from the champion's fall to the clear, then snaps open
+      // (the chest beat: O1, O3 to O5).
+      chest.rec.beat.force(0.5);
+      const pose = chest.rec.beat.update(dt, Infinity, chest.x, chest.z);
       chest.rec.seamMat.opacity = chest.open ? 0.9 : 0.35 + 0.25 * Math.sin(chest.age * 3);
       if (chest.open) {
         chest.openAge += dt;
-        const o = Math.min(1, chest.openAge / 0.45);
-        chest.rec.hinge.rotation.x = -1.9 * (1 - (1 - o) * (1 - o) * (1 - o));
+        chest.rec.hinge.rotation.x = -1.9 * pose.lid;
         chest.rec.glow.material.opacity = 0.75 + 0.15 * Math.sin(chest.openAge * 4);
         chest.rec.beam.material.opacity = Math.max(0.18, 0.7 * (1 - chest.openAge / 1.6));
         if (cosmetic.range(0, 1) < dt * 10) impactFx.spray('spark', chest.x, 0.6, chest.z, 1, { color: GOLD, speed: [0.05, 0.3], up: [0.8, 1.6], size: [0.04, 0.08], life: [0.8, 1.3], gravity: -0.4, drag: 1.4, jitter: 0.3 });

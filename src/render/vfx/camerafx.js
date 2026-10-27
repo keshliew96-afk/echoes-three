@@ -6,6 +6,9 @@
 //   dolly(x, z, amp, dur)       a short move toward a world point along the
 //                               view ray (big heals breathe in, the Stag's
 //                               quake lands)
+//   punch(frac, dur)            C2 (VFX_HIT_RULES §6.2 o): a zoom punch, the
+//                               FOV narrowed by frac (0.06 = 6%) and sprung
+//                               back over dur; its own clamp (MAX_PUNCH)
 //
 // The sim's §9 `screenshake` event is untouched; this adds weight without
 // adding shake. Both scale with Settings ▸ Gameplay ▸ Screen shake (Off = no
@@ -20,6 +23,8 @@ import { Vector3 } from 'three';
 
 const MAX_OFFSET = 0.09; // u
 const ATTACK = 0.035; // s to full push
+const MAX_PUNCH = 0.06; // C2: at most 6% (about 2.3 deg of the 45 deg FOV)
+const PUNCH_IN = 0.017; // s: a punch lands in about a frame
 
 export function createCameraFx({ camera, gain = () => 1 }) {
   const kicks = []; // { x, z, amp, dur, t }
@@ -29,6 +34,9 @@ export function createCameraFx({ camera, gain = () => 1 }) {
   const tmp = new Vector3();
   const fwd = new Vector3();
   let last = 0;
+  const punches = []; // { frac, dur, t }
+  let baseFov = camera.fov;
+  let wroteFov = camera.fov;
 
   const env = (t, dur) => (t < ATTACK ? t / ATTACK : Math.pow(Math.max(0, 1 - (t - ATTACK) / Math.max(0.01, dur - ATTACK)), 2));
 
@@ -45,6 +53,13 @@ export function createCameraFx({ camera, gain = () => 1 }) {
     if (!(g > 0) || !(amp > 0)) return;
     if (dollies.length >= 4) dollies.shift();
     dollies.push({ x, z, amp: amp * g, dur, t: 0 });
+  }
+
+  function punch(frac, dur = 0.12) {
+    const g = gain();
+    if (!(g > 0) || !(frac > 0)) return;
+    if (punches.length >= 4) punches.shift();
+    punches.push({ frac: Math.min(MAX_PUNCH, frac) * Math.min(1, g), dur, t: 0 });
   }
 
   function apply(nowSec) {
@@ -83,13 +98,34 @@ export function createCameraFx({ camera, gain = () => 1 }) {
     if (len > MAX_OFFSET) applied.multiplyScalar(MAX_OFFSET / len);
     if (len > 0) camera.position.add(applied);
     written.copy(camera.position);
+    // C2: the FOV channel. A scene that sets its own FOV becomes the base.
+    if (camera.fov !== wroteFov) baseFov = camera.fov;
+    let p = 0;
+    for (let i = punches.length - 1; i >= 0; i--) {
+      const q = punches[i];
+      q.t += dt;
+      if (q.t >= q.dur) {
+        punches.splice(i, 1);
+        continue;
+      }
+      const e = q.t < PUNCH_IN ? q.t / PUNCH_IN : Math.pow(1 - (q.t - PUNCH_IN) / Math.max(0.01, q.dur - PUNCH_IN), 2);
+      p = Math.max(p, q.frac * e);
+    }
+    const fov = baseFov * (1 - Math.min(MAX_PUNCH, p));
+    if (fov !== camera.fov) {
+      camera.fov = fov;
+      camera.updateProjectionMatrix?.();
+    }
+    wroteFov = camera.fov;
   }
 
   function clear() {
     kicks.length = 0;
     dollies.length = 0;
+    punches.length = 0;
   }
   const offset = () => Math.round(applied.length() * 10000) / 10000;
+  const zoom = () => Math.round((1 - camera.fov / baseFov) * 10000) / 10000;
 
-  return { kick, dolly, apply, clear, offset, live: () => kicks.length + dollies.length };
+  return { kick, dolly, punch, apply, clear, offset, zoom, live: () => kicks.length + dollies.length + punches.length };
 }

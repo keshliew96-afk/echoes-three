@@ -40,6 +40,7 @@ import { setImpactFx, impactFx } from '../render/vfx/hub.js';
 import { sharedGeo } from '../render/geocache.js';
 import { service } from '../app/registry.js'; // M1: gameplay.screenshake (SHAKE-SCALE)
 import { renderHold } from '../render/hold.js';
+import { vfxSpellHit } from '../data/vfx.js';
 
 // Graybox scaffold numbers (render-only): wall height 0.75 u sits inside the
 // §13 band (70-80% of the 1.05 u standing height — never fully occludes);
@@ -270,6 +271,8 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
       who,
       tick: ev.tick,
       absorbed: ev.absorbed ?? 0,
+      // §6.2 n: a shot or a spell holds its numeral's pop 3 frames.
+      ranged: !partyVictim && (ev.shape === 'projectile' || vfxSpellHit(ev, entityById(ev.attacker))),
     });
     // REFERENCE_BAR check 5 ("a single hit reads as an event"): every hit
     // throws debris + a spark + a smoke puff along the impact direction, so a
