@@ -204,3 +204,135 @@ through the real layers, the kill through a freeze, the contact and kill
 effects, the numerals in a stub DOM, the kill cue and the colours. Probe
 surfaces: `__echoes.content.enemyfx().react` and `.kills`,
 `__echoes.content.renderHold()`, `__echoes.numeralsLive()`.
+
+## The cast, the shot, the reward and the aftermath (v0.5.339)
+
+Part 2 of Kesh's "Go for 1" (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.2
+f to o). Render and audio only, like Part 1: no damage, rule, deed or record
+changes, and the nine goldens are untouched.
+
+**f. Shots and spells (S1 to S5, S7, P4).** Every hero and foe shot
+(`src/render/vfx/boltfx.js`, `SHOT_FX`):
+- the head swells 1.6 x at the hand and settles to flight size in 0.1 s or
+  1 u, round at the hand and stretched 1.8 x along its travel once it flies;
+- the trail is 0.22 s of travel long (1.1 to 2 u);
+- each shot has its own size (0.88 to 1.14 x), brightness (0.85 to 1.1 x) and
+  height (-0.05 to +0.07 u), from the cosmetic stream;
+- a floor light follows it (six at once at most);
+- where it stops, the trail drains into the contact over 5 frames and 5 to 10
+  sharp sparks show the spot;
+- **l (R6):** about 1.5 body widths before it reaches a body, it lights that
+  body's near side once (a soft flash and a light pool in its own colour,
+  0.12 s; `NEAR_LIGHT`).
+
+**n. The ranged hold.** A shot or spell that lands on a foe holds the foe's
+squash, its white flash and its number 3 frames (render only, `REACT.rangedHold`,
+`NUMERAL_FEEL.rangedHold`). The head holds at the contact and the burst
+replaces it when the hold ends.
+
+**g. Sound (A2 to A5; `src/audio/impactcues.js`).**
+
+| Cue | When | What |
+|---|---|---|
+| `imp_boom` | a spell lands on a foe | a sub thump under a short high crack, a 0.3 s tail |
+| `imp_thunk` | an arrow or bolt lands | a dull wooden knock |
+| `imp_cut` | a blade lands | a bright cut over a low boom, gone in about 240 ms |
+| `cast_whoosh` | a magic skill leaves the hand (never a heal, never the Tidecaller, who keeps her own water voices) | a breathy low rush |
+| `shot_whiz` | from a frame after your own seat's shots, and a foe shot whose line passes within 1.6 u of your hero | a falling air whistle |
+| `wall_ping` | a shot stops on a wall or a blocker | a short ring |
+
+The families replace the plain `impact` snap on a party hit and share its
+first-of-the-tick slot. Each plays with about ±6 % pitch. *My limit, not the
+video's:* only your own shots and the foe shots that pass near you whiz, so a
+busy room does not hiss.
+
+**h. The weapon kick (B4).** Every rig's weapon snaps to its cast pose on
+the first 2 frames of the release, in the shared driver
+(`src/render/critters/driver.js`), so a press answers on its own frame.
+
+**j. Slash ribbons (T2 to T6).** The blade template's swing trail fades in
+on a concave ramp (opaque by 42 % of the arc), carries 7 streak lines that
+boil in place, is at least 0.68 of the swing's reach wide, a 1.1 rad window
+long, and **(L3)** thickest at the blade, thinning to a point toward the
+swing's start. A 4-point white tip glint (0.65 u) flashes for 3 frames on
+the first strike frame, and 6 to 10 short shards in the slash's own gold
+(the Swordsman's silver) fly off the tip. The glint sits at the arc's start,
+not traced from the rig's weapon tip (T1 is left for the rigs that expose a
+tip).
+
+**k. The local anime frame (§2.13).** On a combo finisher's contact (the
+Crescent Finisher today) and on an elite, champion, stag or boss kill, a disc
+about 3 body widths across lies on the floor at the contact for 4 frames: paper,
+ink focus lines running in from its rim (the centre 42 % stays clear, so the
+bodies keep their colour standing on it) and a black spike star at the hit
+(`src/render/vfx/animefx.js`). No full-screen panel (Kesh's §6.3 item 8). Off
+under Effects: Reduced.
+
+**o. The camera punch (C2).** A field-of-view channel in camfx with its own
+6 % clamp, scaled by Screen shake and Effects (off under Reduced): 6 % on an
+elite, champion, stag or boss kill, 2 % on a chest's snap. A small kick
+against the fire direction (0.015 u) on your own seat's shots, never the
+Archer's or the Healer's (§6.3 item 7). The punches on ordinary hits wait
+for Kesh (§6.3 item 4).
+
+**m. The aftermath (D1 to D3).**
+- A gold rim (a view-angle fresnel edge on the rig's own lit materials,
+  `src/render/rim.js`) lights on a blade-template hit, flares 8 frames, holds
+  at 42 % and is gone by 0.8 s. Foes and champions (classic and faceted);
+  bosses keep their own hit looks.
+- The two real burns, the Kiln Coal's and the Fire Bomb's patch, taper over
+  their last second.
+- A hit splashes the body's own matter colour on the floor behind it (one
+  per body every 0.45 s) and throws droplets back toward the hitter.
+- An Archer arrow that lands stays stuck in the floor, nose down, tail up
+  along its flight, for 3 s, then fades (`STUCK`, a pool of 10).
+- The Frost Bomb and the Frozen elite's burst leave their air: about 100
+  tiny twinkles and a faint mist hold the place 1 to 1.9 s, and 16 more
+  twinkles on each foe the bomb froze (`ELEMENT_AIR`).
+
+**l. The flipbook (L4).** A crit's contact plays a 5-drawing book in pale
+gold (`src/render/vfx/flipbook.js`): six jagged rays with a white core on
+drawing 1, thinner on 2, broken at a bend on 3, in three pieces on 4, a short
+fragment of each on 5, then a hard cut. Each drawing holds 2 ticks.
+
+**i. Chests (O1 to O5; `src/render/interactables/chestbeat.js`).** The vault
+chest, the secret reliquary and the secret cache:
+
+| Beat | When | What |
+|---|---|---|
+| Wobble | a hero within 4.5 u | bouts of 3.5 swings onto one bottom edge then the other, about 2.3°; each swing quicker (0.3 s to 0.23 s a swing, the last 0.2 s), the bouts closer together as the hero nears (0.9 s rest far, 0.12 s close) |
+| Press | the E (`vault_open`, `secret_take`) | the last half-swing settles in 0.1 s, then a squash to 0.92 tall, 1.07 wide (90 % of it in the first 8 of 15 frames) with a tremble |
+| Snap | 0.5 s after the press | un-squash and hop 8 % of its width, narrowing 1.5 %, tipping a little; the lid half open on S and fully by S+3, a touch past and back, never slammed |
+| Hold | S+4 to S+7 | the pose, the padlock, the light sheet and the stars hold at the top of the hop; particles run on. It lands on S+11 |
+| Light | S on | a cream line round the rim for one frame; a cream sheet at rim height grows from 1.2 to 1.55 widths, breaks from its edges S+8 to S+10, gone S+11; the contents glow hot (#FFF589); from S+4 four soft rays fan up, quick for 1 s, then turning slowly for 2.2 s |
+| Stars | S on | 8 five-pointed stars burst up 0.65 widths into an arc; from 0.87 s one pops every 0.1 s in random order (swells 2 x and whitens, a hollow outline, gone, a spark scatter); tiny sparks blink and rise for 2.6 s |
+| Padlock | S on | flips up off the hasp, tumbles down the front, hits the floor on S+31, settles by S+35 and stays |
+| Camera | S+5 | a 2 % zoom punch, eased out by about S+25 |
+
+The end of the wobble, the squash, the snap and the hold fit inside the
+reveals (1.2 s for the secrets, 1.4 s for the vault: sim numbers, unchanged).
+The rays, the stars and the rising sparks run on after the draft, as the
+vault's gold geyser always did. The vault's and the secret chests' existing
+bursts now go off on the snap instead of the press. A chest built already
+open (a loaded save, a joining guest) shows open with no burst.
+
+- **The champion chest** has no press: it wobbles from the champion's fall
+  and snaps on the clear (`champion_chest`), with the light, the stars and
+  the padlock. The run UI then holds the room in view 1.5 s before the draft
+  (`TAKE_HOLD_MS`, UI only, as after a Take).
+- **The Trapped Chest** keeps its lure twitch. Its Take still springs the
+  ambush at once; its lid is now flung open in 3 frames on Ember sparks spat
+  from the lock, with no light inside and no stars, so it never reads as a
+  safe chest. No reward beat on its later `event_chest`.
+- **Sounds** (`src/audio/chestcues.js`, beside each chest's own cue):
+  `cb_tremble` (the press), `cb_snap`, `cb_shine` (the light), `cb_lock` (the
+  padlock lands) and `cb_stars` (a ting per pop, on the pop's frame). The
+  press chests' layers wait the 0.5 s to the snap; the champion chest's
+  (`_now`) start on its event.
+
+**Probe.** `node tools/vfx-hit-feedback2-probe.mjs` (in `npm test`): shots
+near the boar, the stuck arrow's life, the flipbook's drawings, the frost
+air, the chest beat's whole timeline on the pure pose and through every chest
+rig, the chest sounds' timing, the impact families, the whiz rule and the
+colours. The cue figures come from `node tools/smallfixes2-cuecal.mjs --only
+impactcues,chestcues --write` (a press layer takes its `_now` layer's figure).
