@@ -229,8 +229,8 @@ async function gameShots(kind, facet) {
     return;
   }
   await cmd('pathChoose', side);
-  await untilPhase('combat');
-  await page.waitForFunction(() => { const r = window.__echoes.state().room; return !!(r && r.champion && r.champion.spawned); }, { timeout: 120000, polling: 250 });
+  // the fade into the crown room runs on sim ticks: minutes on software GL
+  await page.waitForFunction(() => { const r = window.__echoes.state().room; return !!(r && r.champion && r.champion.spawned); }, { timeout: 900000, polling: 500 });
   const champ = () => page.evaluate(() => {
     const st = window.__echoes.state();
     const c = st.room && st.room.champion;
