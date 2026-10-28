@@ -12,6 +12,9 @@ import { buildWyrmFacet } from '../../render/boss/wyrmfacet.js';
 import { buildStagFacet } from '../../render/boss/stagfacet.js';
 import { buildThornmotherFacet } from '../../render/boss/thornmotherfacet.js';
 import { buildGloamWolfFacet } from '../../render/boss/gloamwolffacet.js';
+import { buildHeronFacet } from '../../render/boss/heronfacet.js';
+import { buildMillwheelFacet } from '../../render/boss/millwheelfacet.js';
+import { buildMireKingFacet } from '../../render/boss/mirekingfacet.js';
 import { facetOn } from '../../render/facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from '../../render/boss/slice2.js';
 import { buildCantor, buildColossus } from '../../render/boss/heart.js';
@@ -25,15 +28,15 @@ export const BUILDERS = {
   ...ARCH_BUILDERS,
   ...facetFoeBuilders(), // the model standard's Level I foes (docs/MODEL_STANDARD.md)
   stag: facetOn('stag') ? buildStagFacet : buildStag, // model standard (docs/MODEL_STANDARD.md)
-  heron: buildHeron,
+  heron: facetOn('heron') ? buildHeronFacet : buildHeron,
   wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, // the model standard pilot (docs/MODEL_STANDARD.md)
   thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother,
-  millwheel: buildMillwheel,
+  millwheel: facetOn('millwheel') ? buildMillwheelFacet : buildMillwheel,
   lichram: buildLichram,
   cantor: buildCantor,
   colossus: buildColossus,
   gloamwolf: facetOn('gloamwolf') ? buildGloamWolfFacet : buildGloamWolf,
-  mireking: buildMireKing,
+  mireking: facetOn('mireking') ? buildMireKingFacet : buildMireKing,
   ashraven: buildAshRaven,
   veinweaver: buildVeinWeaver,
   hush: buildHush,

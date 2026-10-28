@@ -13,10 +13,14 @@
 import { PALETTE } from '../data/palette.js';
 import { buildStag } from '../render/boss/stag.js';
 import { buildStagFacet, STAG_ABILITIES, STAG_WALK } from '../render/boss/stagfacet.js';
-import { buildThornmother } from '../render/boss/slice2.js';
 import { buildThornmotherFacet, THORN_ABILITIES, THORN_CHARGE, THORN_WALK } from '../render/boss/thornmotherfacet.js';
-import { buildGloamWolf } from '../render/boss/third.js';
+import { buildGloamWolf, buildMireKing } from '../render/boss/third.js';
 import { buildGloamWolfFacet, WOLF_ABILITIES, WOLF_WALK } from '../render/boss/gloamwolffacet.js';
+import { buildHeron } from '../render/boss/heron.js';
+import { buildHeronFacet, HERON_ABILITIES, HERON_DASH, HERON_WALK } from '../render/boss/heronfacet.js';
+import { buildMillwheel, buildThornmother } from '../render/boss/slice2.js';
+import { buildMillwheelFacet, MILL_ABILITIES, MILL_CUT, MILL_ROLL } from '../render/boss/millwheelfacet.js';
+import { buildMireKingFacet, MIRE_ABILITIES, MIRE_WALK } from '../render/boss/mirekingfacet.js';
 
 // The Move loop every entry walks: a circle of radius `loop`, facing along it.
 export function loopPath(phase, loop) {
@@ -311,4 +315,303 @@ const wolfEntry = {
   },
 };
 
-export const LAB_ENTRIES = [stagEntry, thornEntry, wolfEntry];
+// --- Level II (docs/MODEL_STANDARD.md "The Level II bosses").
+
+// The Drowned Heron. The Bill Spear dashes across the frame at the sim's
+// 11 u/s, so the skim, the trailed legs and the landing's plant can be judged.
+function dashTravel(abT) {
+  const tl = HERON_ABILITIES.spear;
+  const a = tl.startOf('dash');
+  const b = tl.startOf('land');
+  const span = HERON_DASH * (b - a);
+  return HERON_DASH * (Math.min(b, Math.max(a, abT)) - a) - span / 2;
+}
+
+const heronEntry = {
+  id: 'heron',
+  label: 'Drowned Heron',
+  abilities: [
+    ['spear', 'Bill Spear'],
+    ['wingbeat', 'Wingbeat'],
+    ['dive', 'Submerge'],
+    ['surface', 'Surface'],
+    ['spawn', 'Spawn in'],
+  ],
+  frame: { y: 1.5, z: 0, dist: 8.6, speed: HERON_WALK, loop: 3.4, side: 2.6 },
+  build({ cosmetic, vfx, play }) {
+    const rig = buildHeronFacet();
+    const classic = buildHeron(cosmetic);
+    let tel = 0;
+    let lunge = 0;
+    let walk = 0;
+    let idle = 0;
+    let yaw = 0;
+    const stand = { telegraph: null, submerged: false };
+    return {
+      group: rig.group,
+      classic: classic.group,
+      rig,
+      get yaw() {
+        return yaw;
+      },
+      timeline: (id) => HERON_ABILITIES[id] || HERON_ABILITIES.spear,
+      cues: (id) => (HERON_ABILITIES[id] || HERON_ABILITIES.spear).cues || [],
+      reset() {
+        rig.group.position.set(0, 0, 0);
+        classic.group.position.set(0, 0, 0);
+        rig.setYaw(0);
+        classic.setYaw(0);
+        pending.add(rig);
+      },
+      update(state, dt, abT) {
+        const F = heronEntry.frame;
+        const moving = state.mode === 'move';
+        const on = abilityOn(state);
+        const ability = on ? state.ability : null;
+        const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
+        const side = state.classic ? F.side : 0;
+        const ahead = ability === 'spear' ? dashTravel(abT) : 0;
+        yaw = p.yaw;
+        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.setYaw(yaw);
+        rig.group.updateMatrixWorld(true);
+        replant(rig, state, on, abT);
+        rig.lab.pose({ dt, ability, abT });
+        // the classic twin, fed a stand-in entity for the same beats
+        idle += dt;
+        const s = ability && ability !== 'spawn' ? HERON_ABILITIES[ability].sample(abT) : null;
+        const ph = s ? s.id : null;
+        const warn = (ability === 'spear' && ph === 'coil') || (ability === 'wingbeat' && ph === 'raise');
+        tel = warn ? s.k : follow(tel, 0, dt, 12);
+        lunge = follow(lunge, ability === 'spear' && (ph === 'thrust' || ph === 'dash') ? 1 : 0, dt, 18);
+        stand.telegraph = warn ? { attack: ability } : null;
+        stand.submerged = (ability === 'dive' && ph === 'under') || (ability === 'surface' && ph === 'rise');
+        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
+        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        classic.setYaw(yaw);
+        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
+        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, lungeK: lunge, hpFrac: 1, e: stand });
+      },
+      onCue(id, at) {
+        const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
+        if (id === 'spear') {
+          play('bx_heron_spear');
+          const c = fx(1.6);
+          vfx.flash({ x: c.x, y: 1.4, z: c.z, size: 0.8, color: PALETTE.godstuffViolet, life: 0.2 });
+        } else if (id === 'land') {
+          play('bx_heron_pierce');
+          const c = fx(0.3);
+          vfx.ring({ x: c.x, z: c.z, r0: 0.2, r1: 1.1, width: 0.25, life: 0.35, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'wingbeat') {
+          play('bx_heron_wing');
+          vfx.ring({ x: at.x, z: at.z, r0: 0.4, r1: 2.2, width: 0.3, life: 0.45, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'dive') {
+          play('bx_heron_dive');
+          vfx.ring({ x: at.x, z: at.z, r0: 0.3, r1: 1.3, width: 0.25, life: 0.5, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'surface') {
+          play('bx_heron_surface');
+          vfx.crack({ x: at.x, z: at.z, radius: 1.8, glow: PALETTE.godstuffViolet });
+          vfx.ring({ x: at.x, z: at.z, r0: 0.3, r1: 1.8, width: 0.3, life: 0.5, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        }
+      },
+      debug: () => ({ feet: rig.lab.feet(), grow: rig.lab.grow(), channels: rig.lab.channels() }),
+    };
+  },
+};
+
+// The Millwheel. The Crosscut rolls across the frame at the sim's 9 u/s, so
+// the roll on its paddles can be judged at speed (the planted paddle holds
+// its spot while the hub pivots over it).
+function cutTravel(abT) {
+  const tl = MILL_ABILITIES.crosscut;
+  const a = tl.startOf('burst');
+  const b = tl.startOf('slam');
+  const span = MILL_CUT * (b - a);
+  return MILL_CUT * (Math.min(b, Math.max(a, abT)) - a) - span / 2;
+}
+
+const millEntry = {
+  id: 'millwheel',
+  label: 'Millwheel',
+  abilities: [
+    ['shards', 'Cog Shards'],
+    ['crosscut', 'Crosscut'],
+    ['spawn', 'Spawn in'],
+  ],
+  frame: { y: 1.3, z: 0, dist: 8.2, speed: MILL_ROLL, loop: 3.4, side: 2.6 },
+  build({ cosmetic, vfx, play }) {
+    const rig = buildMillwheelFacet();
+    const classic = buildMillwheel(cosmetic);
+    let tel = 0;
+    let idle = 0;
+    let yaw = 0;
+    let spin = 0;
+    let lastAhead = 0;
+    let lastMove = null;
+    const stand = { telegraph: null, mode: 'roll', spin: 0 };
+    return {
+      group: rig.group,
+      classic: classic.group,
+      rig,
+      get yaw() {
+        return yaw;
+      },
+      timeline: (id) => MILL_ABILITIES[id] || MILL_ABILITIES.shards,
+      cues: (id) => (MILL_ABILITIES[id] || MILL_ABILITIES.shards).cues || [],
+      reset() {
+        rig.group.position.set(0, 0, 0);
+        classic.group.position.set(0, 0, 0);
+        rig.setYaw(0);
+        classic.setYaw(0);
+        rig.lab.reset();
+      },
+      update(state, dt, abT) {
+        const F = millEntry.frame;
+        const moving = state.mode === 'move';
+        const on = abilityOn(state);
+        const ability = on ? state.ability : null;
+        const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
+        const side = state.classic ? F.side : 0;
+        const ahead = ability === 'crosscut' ? cutTravel(abT) : 0;
+        yaw = p.yaw;
+        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.setYaw(yaw);
+        rig.group.updateMatrixWorld(true);
+        rig.lab.pose({ dt, ability, abT });
+        // the classic twin, fed a stand-in entity: its roll from the same travel
+        idle += dt;
+        const s = ability && ability !== 'spawn' ? MILL_ABILITIES[ability].sample(abT) : null;
+        const ph = s ? s.id : null;
+        const warn = (ability === 'shards' && ph === 'wind') || (ability === 'crosscut' && ph === 'rock');
+        tel = warn ? s.k : follow(tel, 0, dt, 12);
+        stand.telegraph = warn ? { attack: ability } : null;
+        stand.mode = ph === 'dizzy' ? 'dizzy' : ph === 'cut' || ph === 'burst' ? 'cut' : 'roll';
+        if (moving && lastMove !== null) spin += Math.abs(state.movePhase - lastMove) * F.loop;
+        spin += Math.abs(ahead - lastAhead);
+        lastMove = moving ? state.movePhase : null;
+        lastAhead = ahead;
+        stand.spin = spin;
+        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        classic.setYaw(yaw);
+        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
+        classic.pose({ t: idle, telegraphK: tel, hpFrac: 1, e: stand });
+      },
+      onCue(id, at) {
+        const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
+        if (id === 'shards') {
+          play('bx_millwheel_shards');
+          const c = fx(1.4);
+          vfx.flash({ x: c.x, y: 1.3, z: c.z, size: 1.0, color: PALETTE.godstuffViolet, life: 0.22 });
+        } else if (id === 'crosscut') {
+          play('bx_millwheel_saw');
+          const c = fx(-0.6);
+          vfx.ring({ x: c.x, z: c.z, r0: 0.2, r1: 1.1, width: 0.25, life: 0.35, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'slam') {
+          play('bx_millwheel_clank');
+          const c = fx(0.9);
+          vfx.crack({ x: c.x, z: c.z, radius: 1.2, glow: PALETTE.godstuffViolet });
+        }
+      },
+      debug: () => ({ roll: rig.lab.roll(), grow: rig.lab.grow(), channels: rig.lab.channels() }),
+    };
+  },
+};
+
+// The Mire King. The Belly Flop leaps across the frame (the sim's flop
+// covers 3 to 8 u in 20 ticks; the lab's is 3.6 u), so the heave, the arc,
+// the spread legs and the landing's plant can be judged.
+const FLOP_SPAN = 3.6;
+function flopTravel(abT) {
+  const tl = MIRE_ABILITIES.flop;
+  const a = tl.startOf('leap');
+  const b = tl.startOf('hold');
+  return FLOP_SPAN * (Math.min(b, Math.max(a, abT)) - a) / (b - a) - FLOP_SPAN / 2;
+}
+
+const mireEntry = {
+  id: 'mireking',
+  label: 'Mire King',
+  abilities: [
+    ['lash', 'Tongue Lash'],
+    ['flop', 'Belly Flop'],
+    ['swallow', 'Swallow'],
+    ['rage', 'Enraged'],
+    ['spawn', 'Spawn in'],
+  ],
+  frame: { y: 1.0, z: 1.2, dist: 9.6, speed: MIRE_WALK, loop: 3.0, side: 3.0 },
+  build({ vfx, play }) {
+    const rig = buildMireKingFacet();
+    const classic = buildMireKing();
+    let tel = 0;
+    let walk = 0;
+    let idle = 0;
+    let yaw = 0;
+    const stand = { telegraph: null, mode: 'wade', enraged: false };
+    return {
+      group: rig.group,
+      classic: classic.group,
+      rig,
+      get yaw() {
+        return yaw;
+      },
+      timeline: (id) => MIRE_ABILITIES[id] || MIRE_ABILITIES.lash,
+      cues: (id) => (MIRE_ABILITIES[id] || MIRE_ABILITIES.lash).cues || [],
+      reset() {
+        rig.group.position.set(0, 0, 0);
+        classic.group.position.set(0, 0, 0);
+        rig.setYaw(0);
+        classic.setYaw(0);
+        pending.add(rig);
+      },
+      update(state, dt, abT) {
+        const F = mireEntry.frame;
+        const moving = state.mode === 'move';
+        const on = abilityOn(state);
+        const ability = on ? state.ability : null;
+        const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
+        const side = state.classic ? F.side : 0;
+        const ahead = ability === 'flop' ? flopTravel(abT) : 0;
+        yaw = p.yaw;
+        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.setYaw(yaw);
+        rig.group.updateMatrixWorld(true);
+        replant(rig, state, on, abT);
+        rig.lab.pose({ dt, ability, abT });
+        // the classic twin, fed a stand-in entity for the same beats
+        idle += dt;
+        const s = ability && ability !== 'spawn' ? MIRE_ABILITIES[ability].sample(abT) : null;
+        const ph = s ? s.id : null;
+        const warn = (ability === 'lash' && ph === 'draw') || (ability === 'flop' && (ph === 'heave' || ph === 'leap' || ph === 'land')) || (ability === 'swallow' && ph === 'gape');
+        tel = warn ? s.k : follow(tel, 0, dt, 12);
+        stand.telegraph = warn ? { attack: ability } : null;
+        stand.mode = ability === 'flop' ? (ph === 'heave' ? 'heave' : ph === 'leap' || ph === 'land' ? 'flop' : 'wade') : 'wade';
+        stand.enraged = ability === 'rage';
+        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
+        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        classic.setYaw(yaw);
+        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
+        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, hpFrac: 1, e: stand });
+      },
+      onCue(id, at) {
+        const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
+        if (id === 'lash') {
+          play('bx_mireking_lash');
+          const c = fx(3.5);
+          vfx.flash({ x: c.x, y: 0.5, z: c.z, size: 0.9, color: PALETTE.godstuffViolet, life: 0.2 });
+        } else if (id === 'leap') play('bx_mireking_tell');
+        else if (id === 'flop') {
+          play('bx_mireking_flop');
+          vfx.crack({ x: at.x, z: at.z, radius: 2.0, glow: PALETTE.godstuffViolet });
+          vfx.ring({ x: at.x, z: at.z, r0: 0.4, r1: 2.0, width: 0.3, life: 0.5, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'swallow') {
+          play('bx_mireking_swallow');
+          const c = fx(1.6);
+          vfx.flash({ x: c.x, y: 1.0, z: c.z, size: 1.1, color: PALETTE.godstuffViolet, life: 0.22 });
+        }
+      },
+      debug: () => ({ feet: rig.lab.feet(), grow: rig.lab.grow(), channels: rig.lab.channels(), tongue: rig.lab.tongueLength() }),
+    };
+  },
+};
+
+export const LAB_ENTRIES = [stagEntry, thornEntry, wolfEntry, heronEntry, millEntry, mireEntry];

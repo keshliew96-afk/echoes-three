@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339; Level I foes v0.5.338; Level I champions v0.5.340)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -10,7 +10,8 @@ roster slice. Visual only: no sim, timing, damage or golden changes. The Level I
 measured the pilot's Wyrm against the [M] checklist of `/mnt/project-files/plan/VFX_HIT_RULES.md`
 §6.1 (see "The [M] beats" and "The Level I bosses" below); its second part (v0.5.339) rebuilt
 the Hollow Wood's two champions, the **Briar Knight** and the **Moss Hart** ("The Level I
-champions").
+champions"). The Level II slice (v0.5.344) rebuilt the Sunken Mill's three bosses, the
+**Drowned Heron**, the **Millwheel** and the **Mire King** ("The Level II bosses").
 
 His ruling for the pilot: the detail goes **on top of** the chibi ink-outline style
 (BUILD_BRIEF §19.2), it does not replace it, and the facets must read clearly.
@@ -551,6 +552,80 @@ presence layer's crown, sigil and chest, which ride on the rig's group as before
 A warning is known by its move and start tick, never by object identity. A new champion
 (a new entity id, or a clock that went back) spawns in; a jump in place re-plants the feet.
 A dying champion is never posed again (the enemy layer's kill takes the rig).
+## The Level II bosses (v0.5.344)
+
+The Sunken Mill's three bosses, on the same terms as Level I: each keeps its classic rig's
+silhouette and colours (the classic's own constants and value steps of them), adds the
+standard's detail on top, and keeps the classic beside it (`?facet=0`). The Heron and the
+Mire King walk on **locked feet**; the Millwheel has no feet, so it **rolls on its paddles**:
+a planted paddle tip never slides along the roll.
+
+| Boss | File | Draw calls (classic) | Instances |
+|---|---|---|---|
+| Drowned Heron | `render/boss/heronfacet.js` | 64 (34) | 155 |
+| Millwheel | `render/boss/millwheelfacet.js` | 30 (23) | 116 |
+| Mire King | `render/boss/mirekingfacet.js` | 77 (60) | 149 |
+
+- **Drowned Heron.** The only vertical boss, the gaunt slate wader: a mantle of feather
+  plates in a brick pattern over the back, a fan of tail feathers, breast plumes off the
+  neck's root, a neck of feather rings laid over an S (an analytic three-segment neck posed
+  by angles, so the plates follow it as it coils), a boxed skull, a two-part bill with the
+  classic's violet vein (the lower half gapes), a crest of three plumes; wings as nested
+  groups (lift, swing, roll) with a flat blade, eight secondaries, five primaries and a
+  covert row, violet weed trailing off them; two stilt legs on locked feet, each joint
+  bending back the way a heron's does, three toes forward and one back; the classic's violet
+  pool and a ripple ring on the floor. *Bill Spear*: coil (the 48-tick lane warning less one
+  strike: the S draws tight over the back, the weight on the back foot, the bill gapes,
+  turned square to the lane), thrust (2.5 frames on the resolve: the B9 lunge, the neck
+  straight down the lane), dash (held while the sim drives it down the lane at 11 u/s: a
+  skim on spread wings, the legs trailed back, no foot on the floor), land (2.5 frames as
+  the dash ends: both feet down, the lead foot ahead, the wings braking), held with a
+  recoil, settle. *Wingbeat*: raise (the 42-tick ring warning less one strike: up on its
+  toes, the wings up and open over the back), beat (2.5 frames on the hit: the wings slam
+  down and forward, the body drops), held with a recoil, settle. *Submerge* (an add phase,
+  no warning): gather (1.5 frames), plunge (2.5 frames: nose down into the water), held,
+  under (it sinks below the floor and stays hidden while the sim glides it; only the ripple
+  shows). *Surface*: rise (the 48-tick ring warning less one strike: the bill breaks the
+  water first, then the head and the neck), burst (2.5 frames on the hit: up out of the
+  water, the wings flung wide), held with a recoil, settle.
+- **Millwheel.** The torn mill wheel: a faceted oak tyre bound in iron band plates, twelve
+  radial paddles with rivets, six spokes with iron straps, a hub with sixteen bolts and
+  violet hub lights, the torn axle's collars with the snapped bracket arms hanging off them
+  and swinging as damped pendulums; a ring of iron cog teeth that the Cog Shards bare. It
+  rolls as a twelve-sided polygon: the planted paddle tip holds its spot while the hub
+  pivots over it (the hub rises and falls a little over each paddle) and the next paddle
+  takes the weight; a jump of over 2.5 u (a new room) re-plants the roll only.
+  *Cog Shards*: wind (the 48-tick cone warning less one strike: the teeth slide out, the
+  wheel sits back, the hub lights), loose (2.5 frames on the hit: the teeth fire off, the
+  wheel squashes), held with a recoil, settle while the teeth grow back. *Crosscut*: rock
+  (the 66-tick lane warning less one strike: it rocks back on its paddles, turned square to
+  the lane), burst (2.5 frames), cut (the sim's 9 u/s cut, rolled on its paddles at speed),
+  slam (2.5 frames at the cut's end), held, dizzy (the sim's 75-tick stand: it wobbles on
+  its rim, tilting side to side), settle.
+- **Mire King.** The vast squat toad, mottled teal-slate over a pale belly: a saddle of warty
+  hide plates over the back (the flanks stay smooth), a scatter of faceted warts down the
+  flanks, two glands behind the eyes, brow ridges, a lip of small plates along the mouth,
+  weed off the back; the crown as a faceted band with seven rusted mill-grate bars, rivets
+  and violet gems; a violet throat sac and maw; a tongue of ten faceted segments that truly
+  reaches the lane's far end; four legs on locked feet: splayed fore-limbs on four-fingered
+  hands, great folded hind legs on long webbed feet. *Tongue Lash*: draw (the 48-tick lane
+  warning less one strike: the head up, the mouth open, the sac filling, the body pulled
+  back), lash (2.5 frames on the hit: the B9 lunge, the tongue shot the lane's length), held
+  with a recoil, reel (the sim's 12-tick yank: the tongue drawn back in), settle.
+  *Belly Flop*: heave (the ring warning less the sim's 20-tick leap: it rears on its hind
+  legs, the fore-feet lifted off the floor toward the chest), leap (the sim's flight to the
+  ring: a 1.4 u arc, the legs spread wide), land (2.5 frames ending on the hit: belly down,
+  every foot planted wide, squashed), held with a recoil, settle. *Swallow*: gape (the
+  78-tick ring warning less one strike: the jaw falls wide, the head tips back, the sac and
+  body swell, the maw burns), snap (2.5 frames on the hit: the jaw slams shut), held with a
+  recoil, settle. *Enraged* (under 40 % HP): the sac beats faster, the eyes and the crown's
+  gems burn.
+
+Every warning is known by its attack and start tick (a co-op guest's fresh copies never
+restart a wind-up), every wind-up is stretched to the sim's ticks so its strike lands on the
+resolve, the facing eases to the lane while the Heron, the Millwheel and the Mire King wind
+up on one, and a boss killed in its wind-up collapses in it.
+
 ## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
 Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
@@ -619,7 +694,8 @@ own timelines with key poses instead, as the template's ranged clause reads.
 ## Integration
 
 - `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet`,
-  `buildStagFacet`, `buildThornmotherFacet` and `buildGloamWolfFacet` when their flag is on;
+  `buildStagFacet`, `buildThornmotherFacet`, `buildGloamWolfFacet`, `buildHeronFacet`,
+  `buildMillwheelFacet` and `buildMireKingFacet` when their flag is on;
   each keeps the classic rig's interface (`group`, `mats`, `setYaw`, `setFlash`, `pose`)
   and adds `lab`, `points` and `react`. The boss rigs are pooled: a rig posed for a new
   boss (a new entity id, or a clock that went back) resets its timelines and spawns in; a
@@ -681,7 +757,11 @@ its debug state carries the shown hero's `feet`.
 The Level I bosses are lab entries (`scenes/modellab-bosses.js`): each builds its model and
 its classic twin on first view and drives both (the Stag: Antler Quake, Trample; the
 Thornmother: Seed Volley, Briar Charge; the Gloam Wolf: Pounce, Rend, Moon Howl, Enraged;
-every model, the Wyrm too, a Spawn in tab). The Trample, the Briar Charge and the Pounce
+every model, the Wyrm too, a Spawn in tab). The Level II bosses follow (the Drowned Heron:
+Bill Spear, Wingbeat, Submerge, Surface; the Millwheel: Cog Shards, Crosscut; the Mire
+King: Tongue Lash, Belly Flop, Swallow, Enraged); the Bill Spear dashes across the frame at
+11 u/s, the Crosscut rolls across it at 9 u/s and the Belly Flop leaps across it, and
+`tools/model-standard-level2-shots.mjs` shoots them in the lab and in the game. The Trample, the Briar Charge and the Pounce
 travel as they do in the game, so the gallop and the bound can be judged on locked feet.
 Still from a playing ability freezes that moment with the feet where the motion left them;
 a scrub re-plants them on the scrubbed pose's stance. An ability id the model does not have
@@ -724,6 +804,22 @@ URL: `?modellab=1&model=boar&mode=ability&ability=gore&view=play&classic=1`.
    (`tools/model-standard-heroes-shots.mjs` shoots the heroes' fight faceted and with `?facet=0`).
 
 ## Probes
+
+`node tools/model-standard-level2-probe.mjs` (in `npm test`) holds the Level II bosses to
+the rules: the flags (the Level III bosses still classic) and the classic rigs; the classic
+interface plus `lab`, `points` and `react`, floor pieces beside the body, every part inked
+and faceted, named points, no reserved colour; strikes of 2.5 frames into a held contact,
+off on the first frame, one overshoot in each settle, a recoil on every hit, the lash's
+lunge; the Heron's and the Mire King's locked feet through a walk with a turn, a rest and a
+spin in place; the Millwheel's roll at 2.4 u/s with the planted tip held (and held along
+the roll through a turn, where it only pivots), stepping from paddle to paddle with the hub
+rising and falling; each move driven by a sim entity (the spear's lane, its 11 u/s dash in
+the air and its landing; the wingbeat; the dive under and the surfacing; the shards; the
+crosscut cut at 9 u/s on its paddles, its slam and its dizzy; the lash's tongue at the
+lane's length, reeled in; the flop's heave with the fore-feet up, its leap and its landing
+on the hit; the swallow's gape and snap; the rage), the strikes on the sim's hit, a co-op
+guest's fresh copies, a boss killed in its wind-up, a hitch; the spawn-in, the pooled rig,
+the turntable; the lab entries.
 
 `node tools/model-standard-champions-probe.mjs` (in `npm test`) holds the two champions to
 the rules: the flags and the champion table's soft flash; the classic interface plus `lab`,

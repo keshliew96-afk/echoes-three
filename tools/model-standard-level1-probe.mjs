@@ -78,7 +78,7 @@ const BOSSES = [
   check('the Level I bosses play the model standard by default', kinds.every((k) => MODEL_STANDARD[k] === true && facetOn(k, q(''))) && facetOn('wyrm', q('')) && facetOn('tank', q('')));
   check('?facet=0 turns them classic', kinds.every((k) => !facetOn(k, q('facet=0'))));
   check('?facet=stag keeps only the Stag faceted', facetOn('stag', q('facet=stag')) && !facetOn('thornmother', q('facet=stag')) && !facetOn('gloamwolf', q('facet=stag')));
-  check('bosses outside the slice stay classic', !facetOn('heron', q('')) && !facetOn('millwheel', q('')) && !facetOn('mireking', q('')));
+  check('bosses outside the standard stay classic', !facetOn('lichram', q('')) && !facetOn('ashraven', q('')) && !facetOn('veinweaver', q('')));
   const classics = BOSSES.map((B) => B.classic()).filter((r) => r && r.group && typeof r.pose === 'function' && !r.group.userData.modelStandard);
   check('the classic rigs still build beside the faceted ones', classics.length === BOSSES.length);
 }
