@@ -564,7 +564,8 @@ export function buildHeronFacet() {
     }
     lastMode = mode;
     // posed afresh while it is under (a guest joining mid-dive)
-    under = mode === 'submerged' || (mode === 'surfacing' && !(ab && ab.id === 'surface'));
+    // (a live surface warning is the rise itself, never under)
+    under = mode === 'submerged' || (mode === 'surfacing' && !tel && !(ab && ab.id === 'surface'));
     if (ab) {
       const tl = HERON_ABILITIES[ab.id];
       if (ab.id === 'dive') {
@@ -575,7 +576,12 @@ export function buildHeronFacet() {
         if (tel && ab.t < windEnd) {
           const span = Math.max(0.05, (tel.resolveTick - tel.startTick) / 60 - STRIKE_SEC);
           ab.t = telAge < span ? Math.min(windEnd - 1e-4, (windEnd * telAge) / span) : windEnd;
-        } else ab.t = Math.max(ab.t, windEnd) + dt;
+        } else {
+          ab.t = Math.max(ab.t, windEnd) + dt;
+          // the strike may land ahead of the resolve on a slow frame (a 1 fps
+          // machine), but the contact holds until the warning is gone
+          if (tel) ab.t = Math.min(ab.t, windEnd + STRIKE_SEC);
+        }
         if (ab.id === 'spear' && mode === 'dash') ab.t = Math.min(SP.startOf('land') - 1e-4, ab.t);
       }
       if (ab.t >= tl.duration) ab = null;

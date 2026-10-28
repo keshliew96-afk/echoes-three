@@ -20,6 +20,8 @@ const opt = (k, d = null) => {
 const URL0 = opt('url', 'http://127.0.0.1:5199/');
 const SHOTS = opt('shots', 'captures/model-standard-level2');
 const ONLY = opt('only', null);
+const NAMES = opt('names', null); // a comma list of game shot names to take (the rest skipped)
+const TRACE = opt('trace', '0') === '1'; // relay the page's console (a trace of the boss every 300 ticks)
 const LAB = opt('lab', '1') !== '0';
 const GAME = opt('game', '1') !== '0';
 mkdirSync(SHOTS, { recursive: true });
@@ -159,14 +161,17 @@ const GAME_SHOTS = {
     ['lash-draw', "b.attack === 'lash' && b.telK > 0.85", 1],
     ['lash-out', "p && p.attack === 'lash' && !b.tel", 0],
     // the flop wants its target 3 to 8 u off: the party is set back from the toad
-    ['flop-heave', "b.mode === 'heave' && b.telK > 0.6", 1, 'back(5)'],
-    ['flop-leap', "p && b.mode === 'flop' && p.mode === 'flop' && b.telK > 0.85", 0],
-    ['swallow', "b.attack === 'swallow' && b.telK > 0.85", 1],
+    // (at 1 fps only the beat being shot steps one tick a frame: the other
+    // warnings run in batches, so the wait stays minutes, not hours)
+    ['flop-heave', "b.mode === 'heave' && b.telK > 0.6", 1, 'back(5)', "b.attack === 'flop'"],
+    ['flop-leap', "p && b.mode === 'flop' && p.mode === 'flop' && b.telK > 0.85", 0, null, "b.attack === 'flop'"],
+    ['swallow', "b.attack === 'swallow' && b.telK > 0.85", 1, null, "b.attack === 'swallow'"],
   ],
 };
 async function gameShots(kind, facet) {
   const page = await browser.newPage();
   page.on('pageerror', (e) => errors.push(`${kind}${facet ? '' : ' classic'}: ${String(e && e.message ? e.message : e)}`));
+  if (TRACE) page.on('console', (m) => console.log('  page:', m.text()));
   await page.goto(`${URL0}?seed=5&tips=0&story=0${facet ? '' : '&facet=0'}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
   await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
   const cmd = (name, ...args) => page.evaluate((n, a) => window.__echoes.cmd(n, ...a), name, args);
@@ -190,9 +195,9 @@ async function gameShots(kind, facet) {
       n
     );
   // step the frozen sim until the predicate holds (or `max` ticks pass)
-  const stepUntil = (src, max) =>
+  const stepUntil = (src, max, setup = null, liveSrc = null) =>
     page.evaluate(
-      (src, max, k) => {
+      (src, max, k, setup, liveSrc, TRACE) => {
         const E = window.__echoes;
         const view = () => {
           const e = E.content.world().entities().find((x) => x.kind === k);
@@ -204,17 +209,26 @@ async function gameShots(kind, facet) {
         const pred = new Function('b', 'p', `return (${src});`);
         // a move is live: the boss layer must see each tick of it rendered,
         // or its rig starts the wind-up late (and the shot shows another moment)
-        const live = (b) => b.tel || (b.mode && b.mode !== 'root' && b.mode !== 'stalk' && b.mode !== 'roll' && b.mode !== 'wade') || b.lunge > 0 || (b.nv !== null && E.tick >= b.nv - 6);
+        const live = liveSrc ? new Function('b', `return (${liveSrc});`) : (b) => b.tel || (b.mode && b.mode !== 'root' && b.mode !== 'stalk' && b.mode !== 'roll' && b.mode !== 'wade') || b.lunge > 0 || (b.nv !== null && E.tick >= b.nv - 6);
         E.sim.freeze();
         let prev = view();
         let n = 0;
         return new Promise((res) => {
           const frame = () => {
             // quiet ticks run in a batch; a live move steps one tick a frame
-            for (let k = 0; k < 30; k++) {
+            for (let j = 0; j < 30; j++) {
               E.sim.stepN(1);
               n++;
+              // the party cannot dodge at 1 fps: keep it alive, so the fight (and the boss) goes on
+              for (const e of E.content.world().entities()) {
+                if (e.faction === 'party' && e.hp > 0 && e.hp < e.maxHp) e.hp = e.maxHp;
+                // and the boss outlives the wait for a late beat (above its second add phase)
+                if (e.kind === k && e.hp > 0 && e.hp < e.maxHp * 0.55) e.hp = Math.round(e.maxHp * 0.6);
+              }
+              // a 'back' prep holds: the party is set back again every 20 ticks until the beat
+              if (setup && /^back/.test(setup) && n % 20 === 0) window.__msPrep(setup, k);
               const b = view();
+              if (TRACE && n % 300 === 0) console.log(`trace n=${n} tick=${E.tick} ${JSON.stringify(b)}`);
               if (!b) return res(null);
               if (pred(b, prev)) return res(b);
               prev = b;
@@ -228,7 +242,10 @@ async function gameShots(kind, facet) {
       },
       src,
       max,
-      kind
+      kind,
+      setup,
+      liveSrc,
+      TRACE
     );
   // game shots carry their own prefix: lab stills share some of the names
   const tag = facet ? '-game' : '-game-classic';
@@ -244,9 +261,8 @@ async function gameShots(kind, facet) {
   console.log(`shot ${kind}-room${tag}`);
   // a shot's prep sets the fight up for a beat the slow party would not reach:
   // hp(f) sets the boss to f of its hp, back(d) sets the party d u from it
-  const prep = (src) =>
-    page.evaluate(
-      (src, k) => {
+  await page.evaluate(() => {
+    window.__msPrep = (src, k) => {
         const E = window.__echoes;
         const ents = E.content.world().entities();
         const b = ents.find((x) => x.kind === k);
@@ -255,39 +271,36 @@ async function gameShots(kind, facet) {
         if (!m) return;
         if (m[1] === 'hp') b.hp = Math.round(b.maxHp * Number(m[2]));
         else if (m[1] === 'back') {
+          // toward the arena's centre, so nobody is set past a wall (or out
+          // of the room: a hero past the edge ends the fight)
           const d = Number(m[2]);
+          const l = Math.hypot(b.x, b.z) || 1;
+          let i = 0;
           for (const e of ents) {
-            if (e.faction !== 'player' && e.faction !== 'ally') continue;
-            const dx = e.x - b.x;
-            const dz = e.z - b.z;
-            const l = Math.hypot(dx, dz) || 1;
-            e.x = b.x + (dx / l) * d;
-            e.z = b.z + (dz / l) * d;
+            if (e.faction !== 'party') continue;
+            const a = (i++ - 1.5) * 0.25;
+            e.x = b.x - (b.x / l) * d * Math.cos(a) + (b.z / l) * d * Math.sin(a);
+            e.z = b.z - (b.z / l) * d * Math.cos(a) - (b.x / l) * d * Math.sin(a);
           }
         }
-      },
-      src,
-      kind
-    );
-  for (const [name, pred, wait, setup = null] of GAME_SHOTS[kind] || []) {
+    };
+  });
+  const prep = (src) => page.evaluate((src, k) => window.__msPrep(src, k), src, kind);
+  for (const [name, pred, wait, setup = null, liveSrc = null] of GAME_SHOTS[kind] || []) {
+    if (NAMES && !NAMES.split(',').includes(name)) continue;
     if (setup) await prep(setup);
-    const hit = await stepUntil(pred, 120 * 60);
+    const hit = await stepUntil(pred, 120 * 60, setup, liveSrc);
     if (!hit) {
-      console.log(`miss ${kind}-${name}${tag}  ${JSON.stringify(await page.evaluate((k) => { const e = window.__echoes.content.world().entities().find((x) => x.kind === k); return e ? { hp: e.hp, mode: e.mode, tel: e.telegraph ? e.telegraph.attack : null, tick: window.__echoes.tick, nextFlop: e.nextFlopTick, nextSwallow: e.nextSwallowTick } : null; }, kind))}`);
-      await page.evaluate(() => window.__echoes.sim.thaw());
+      console.log(`miss ${kind}-${name}${tag}  ${JSON.stringify(await page.evaluate((k) => { const e = window.__echoes.content.world().entities().find((x) => x.kind === k); return { boss: e ? { hp: e.hp, mode: e.mode, tel: e.telegraph ? e.telegraph.attack : null, nextFlop: e.nextFlopTick, nextSwallow: e.nextSwallowTick } : null, tick: window.__echoes.tick, run: window.__echoes.cmd('runState'), kinds: [...new Set(window.__echoes.content.world().entities().map((x) => x.kind))] }; }, kind))}`);
       continue;
     }
     await frames(wait + 1);
     await page.screenshot({ path: `${SHOTS}/${kind}-${name}${tag}.png` });
     console.log(`shot ${kind}-${name}${tag}  ${JSON.stringify(hit)}`);
-    // heal the party between beats so the fight goes on
-    await page.evaluate(() => {
-      const E = window.__echoes;
-      for (const e of E.content.world().entities()) if (e.faction === 'player' || e.faction === 'ally') e.hp = e.maxHp ?? e.hp;
-      E.sim.thaw();
-    });
-    await sleep(300);
+    // the sim stays frozen between beats: a thaw would run the sim's clock
+    // through the wall-clock the stepping took (thousands of ticks at 1 fps)
   }
+  await page.evaluate(() => window.__echoes.sim.thaw());
   await page.close();
 }
 
