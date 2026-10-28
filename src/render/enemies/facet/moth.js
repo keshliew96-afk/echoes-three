@@ -387,7 +387,10 @@ export function buildMothFacet() {
     const bob = 0.06 * Math.sin(tt * 2.3 + id) + 0.012 * cur.wAmp * Math.cos(ph);
     body.rotation.set(cur.pitch + leanP, cur.twist, cur.roll + leanR);
     body.scale.set(cur.sx, cur.sy, cur.sz);
-    placeBody(body, PIVOT, cur.push, HOVER_Y + cur.lift + bob);
+    // the hover rides the spawn node: a moth grows in where it flies (and the
+    // hit layer, measuring it on its first frame, finds it floating)
+    F.spawn.position.y = HOVER_Y;
+    placeBody(body, PIVOT, cur.push, cur.lift + bob);
     const h = HOVER_Y + cur.lift + bob;
     const s = 0.8 + 0.4 * (1 - (h - 0.4) / 0.7);
     shadow.scale.set(s, 1, s);

@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339; Level I foes v0.5.338; Level I champions v0.5.340)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339; Level I foes v0.5.338; Level I champions v0.5.340; Level II foes v0.5.344)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -616,6 +616,37 @@ The heroes' 3-hit template runs on every repeating melee attack (the boar's, the
 the Lasher's); the telegraphed one-shot attacks (spit, charge, dart, plant, shriek) get their
 own timelines with key poses instead, as the template's ranged clause reads.
 
+## The Level II foes (`src/render/enemies/facet/`, v0.5.344)
+
+Every creature Level II rolls that Level I had not built (its roster's toad, moth, snail,
+crab and lamprey, its campaign roster's leech and miller) plays the standard, on the same
+foe kit and rules as the Level I foes: baked detail for the crowd, world-locked feet, the
+sim's clock as the anticipation, the classic rig kept behind `?facet=0`, visual only. One
+kit piece is new:
+
+| Piece | What it gives |
+|---|---|
+| `createStrikeClip`, `strikeTimeline`, `strikePoseAt`, `strikeAbility` (`render/facet/foestrike.js`) | The wasp's telegraphed dart made generic, for any foe whose attack is one telegraphed blow. A rig hands it each frame's watch beat and the sim's own word that the strike is under way (`holding`: a dive or lunge mode; `fired`: a new strike tick) plus `{ coil, strike, over }` poses per blow. The coil samples on the shown tick, the strike takes the last 2.5 frames and lands its contact on the release frame (B1, B2), the contact holds while the sim keeps the mode and 3 frames at least, then the snap back and the settle with one overshoot (B5). A cancel takes back a strike already begun; a strike begun with no wind-up seen snaps in within a frame (an unwarned throw). `strikeAbility` builds the lab's pure timelines (one blow, or an n-blow string cycling the variants) and the classic twin's inputs. |
+
+The probe adds a crown check: every ability pose of every foe stays under its elite crown
+(`CROWN_Y`), measured on the drawn vertices.
+
+### The seven foes
+
+| Foe | Attack (lab tab) | In game | Calls (faceted / classic) |
+|---|---|---|---|
+| Mire Toad | Lob; Lob string | The sim's lob is unwarned (`throwTick`, cooldown 204), so the gather is read ahead from `nextAttackTick`: over the last 30 ticks the toad crouches, tucks its chin and fills its sac, and stays loaded until the sim throws; on the throw tick it snaps in within a frame (reared, the head thrown up, the jaw wide, the sac emptied), the shooter squash held 3 frames with a recoil shove (B3). Four webbed feet locked to the floor in diagonal pairs (folded hind legs, short fore legs). Lobs cycle flung from its left, from its right, the heave (B6). | 14 / 27 |
+| Gloam Moth | Swoop; Swoop string | A flier: the 45-tick lane is the coil (risen, nose up, wings high, beating hard); the strike's contact lands on the release frame (dropped, nose down, wings swept flat, the abdomen curled) and holds while the sim's mode is `'swoop'`; then the pull-up. The wasp's flyer's lean from the real travel (rule 1). Solid faceted wing plates (fore and hind coupled) with the eyespot on both faces; the wings' V stays under the crown (1.75) in every phase. Swoops cycle banked from its left, from its right, the plunge. | 9 / 25 |
+| Lantern Snail | Mend; Mend string | The 30-tick mend wind-up (`mendStartTick` to `mendTick`) is the coil: the lantern swells and brightens, the stalk cranes; the pulse lands on the mend tick with the floor ring sweeping out. A creep: a muscle wave down the foot from the real travel, the shell rocking against it. Variants swing the lantern to its left, to its right, then rear up. | 11 / 13 |
+| Weir Crab | Snap; Snap string | The 42-tick cone is the coil; the contact lands on the resolve tick (`snapTick`), the dactyls slammed shut on the first frame (B4), a recoil shove after the hold (B3). Six jointed legs in two tripods on locked feet, stepping sideways along the real scuttle; the two claws as IK arms (merus, carpus, palm, hinged dactyl), the big claw half again the small one. The guard down (`e.guard.active` false for 45 ticks after a snap) lowers both claws: the archers' window reads from the model. Snaps cycle the big claw hooking in, the small claw's jab, the scissor slam off a hop (B6). | 13 / 17 |
+| Bog Lamprey | Lunge; Lunge string; Beached | Lurking (`burrowed`) it is sunk under the floor with only the ripple (a floor piece); it surfaces as the sim breaks it out (`rise`). The 48-tick lane is the coil (the body bunched into an S, the head reared and cocked, the disc gaping); the contact lands on the release frame and holds while the mode is `'lunge'` (thrown out straight, stretched, a fast tail beat). Beached: rolled onto its side, thrashing, gasping, until it slides back under. Six rings on one instanced row swimming an S-wave at the real travel; the oral disc (lip ring, raked teeth, dark throat) baked. Lunges cycle coiled to its left, to its right, the strike from on high. | 7 / 18 |
+| Mire Leech | Leap; Leap string; Latched (drains); Flopped | The 42-tick lane is the coil (the front three rings reared, the body bunched, the sucker gaping); the contact lands on the release frame and holds while the mode is `'leap'`. Latched: stood up against the host with the sucker pressed in, and a gulp swells down the body on every drain (the sim's `nextDrainTick` moving on). Flopped: rolled on its side, writhing. A creep: a hump runs tail to head at the real travel. Leaps cycle reared to its left, to its right, the high leap. | 7 / 39 |
+| Drowned Miller | Flail sweep; Sweep string; Sack toss; Toss string | The 60-tick ring (`whirl`) is the coil: feet planted, the stone spun up round the raised hand through two whole turns, accelerating, the body wound against it; the sweep lands on the resolve tick (`sweepTick`) and holds 3 frames; then the stone swings on round and comes to hang. Kesh's 3-hit flow: the flat whirl swept to his right, the reverse low to his left, then the overhead slam into the floor in front (hips sunk, body thrown into it). The sack toss is unwarned (`tossTick`): one frame into the throw, held, the follow-through; overarm, side-arm, the heave. Two long legs on locked feet (a heavy plod), both arms by IK from the shoulders (rule 3), the chain of seven links taut from the hand to the stone, rolling as it flies. | 16 / 42 |
+
+Three attacks have no sound of their own in the game (the crab's snap, the lamprey's
+lunge, the snail's mend play only their hit or VFX): the lab's cues play the bite, the
+emerge and nothing for those; adding sounds is an open choice, not part of this slice.
+
 ## Integration
 
 - `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet`,
@@ -788,3 +819,16 @@ loop and live attacks, the group never written, planted feet never slide, the le
 the travel, each ability pure in t and moving the rig, live contacts on the sim's tick (a
 telegraph's resolve, a predicted bite's tick, an unwarned bite inside the B1 budget), the B7
 grow, the Journal turntable, the B8 points, the hit and death envelopes, no reserved colours.
+
+`node tools/model-standard-level2-foes-probe.mjs [kind,kind]` (in `npm test`): the strike
+clip (the contact on the release frame, a cancel inside the strike frames taken back, the
+snap-in within a frame, the hold while the sim's mode lasts and 3 frames at least, one
+overshoot); the Level II roster derived from `data/levels.js`; then per foe the Level I
+checks (flags, lab tabs, the classic kept, draw calls, shared buffers, ink, facets, live
+play, purity, the live contact on the sim's tick or inside the B1 budget, cancel, stun on
+the resolve, B7, the turntable, B8, the envelopes, reserved colours) plus every ability
+pose under the elite crown and each foe's own beats (the snail's swell and ring, the toad's
+read-ahead gather held loaded and emptied, the lamprey's sink, surface and beach, the
+leech's stand-up, gulps and flop, the moth's swoop drop, the miller's toss budget and the
+stone's turns and return). `tools/model-standard-level2-foes-shots.mjs` shoots each in the
+lab and a Level II fight with all seven spawned, faceted and with `?facet=0`.

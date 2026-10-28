@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// MODEL STANDARD, THE LEVEL II FOES probe (v0.5.343) — headless Node, builds
+// MODEL STANDARD, THE LEVEL II FOES probe (v0.5.344) — headless Node, builds
 // the rigs; no browser. Every creature Level II rolls that Level I has not
 // already rebuilt (the roster's toad, moth, snail, crab and lamprey, the
 // campaign roster's leech and miller) is rebuilt on the model standard
