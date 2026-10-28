@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339; Level I foes v0.5.338; Level I champions v0.5.340)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.344; Level I foes v0.5.338; Level I champions v0.5.340)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -20,8 +20,8 @@ the Healer and the Swordsman first, and re-measures the pilot Tank against the [
 the VFX/hit rules doc (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.1). Everything a hero
 rig shares now lives in one hero core, so each later hero is its body, its poses and its
 abilities, and the same probe holds every one of them to the same rules. The Archer
-followed in v0.5.339, the Tidecaller in v0.5.342 and the Bellwright in v0.5.343 (their
-sections below).
+followed in v0.5.339, the Tidecaller in v0.5.342, the Bellwright in v0.5.343 and the
+Duskwing in v0.5.344 (their sections below): all seven heroes now play the standard.
 
 ## The kit (`src/render/facet/`)
 
@@ -399,6 +399,36 @@ are unchanged.
   *Hum* (the paw at the chest feeling the note), *Bell Swing* (a wide swing through the
   front), *Wing Hop* (the wing cases snap open for the hop) and *Chime* (Vesper Chime,
   Tuning Fork: the fork tapped on the mallet and held up).
+
+## The Duskwing (`src/render/critters/duskwingfacet.js`, v0.5.344)
+
+The classic contract stays: the plump pear body with its pale chest ruff, the two big leaf
+ears splayed wide and lined in rose, the pug nose and two small fangs, and the leather wings
+folded at his sides like a cloak (the party's only wings, and the only outline that changes
+width when he strikes). The classic metrics are unchanged.
+
+- **Detail.** A fringe of 9 ruff tufts along the bib's lower edge, a crest of 4 tufts on the
+  crown, a mane of 6 down the back between the wings, and 4 knuckle claws on each wing (the
+  wrist and the three finger tips). The wing membranes are faceted leather with the finger
+  bones a four-sided section over them.
+- **3-hit combo** at the sim's 0.3 s cadence (the fastest in the party), combo window
+  0.6 s, as a melee hero (the B9 contact squash, the recoil off a connect): wind 1 frame,
+  strike 1.5 (2.5 for the finisher), overshoot 2, settle 4. The right wing is his weapon
+  (`weaponField` `rws`, its sweep), its claws whipping ahead of the body's ease.
+  1. *Forehand wing rake*: the right wing cocked open and back, swept forward round the
+     front, right to left.
+  2. *Rising backhand rake*: the wing gathered low across the chest, raked back out and up
+     to the side, left to right.
+  3. *Diving bite*: a crouch with both wings raised, a 0.16 u leap, both wings beating down
+     and forward and the head darting in for the bite, landing in the deepest lunge.
+- **Abilities** for all eleven skills (by skill, with a fallback by shape): *Dusk Dive*
+  (wings wrapped for the drop, snapped wide on the landing), *Bloodbite* (wings cupped
+  round the prey, the bite held while he drinks), *Nightfall* (Nightfall, Blood Moon: both
+  wings raised high, one deep downbeat), *Echo Screech* (the head drawn back, then thrust
+  out on the shriek), *Talon Rake* (both wings raked round the front), *Bat Swarm* (wings
+  gathered low, flung open), *Shadow Veil* (wings wrapped shut, snapped open), *Flit* (a
+  flick and a hop away) and *Night Wings* (Night Wings, Blood Scent: the wings half open,
+  the nose up, one slow beat).
 
 ## The [M] beats (VFX_HIT_RULES §6.1)
 
