@@ -58,7 +58,7 @@ const IRON = HIDE.ramDark.clone().lerp(new Color(PALETTE.warmGrey), 0.3).multipl
 const STONE = new Color(PALETTE.warmGrey).lerp(new Color(PALETTE.signalBlue), 0.15).multiplyScalar(0.85);
 // the standard's value steps: a lit hide over the gut's crown, a dark plank
 // in the gate's shade, a weed green off the sill
-const HIDE_LIT = WARDEN_HIDE.clone().lerp(new Color(PALETTE.bone), 0.14);
+const HIDE_LIT = WARDEN_HIDE.clone().lerp(new Color(PALETTE.bone), 0.06);
 const PLANK_DARK = PLANK.clone().multiplyScalar(0.72);
 const IRON_DARK = IRON.clone().multiplyScalar(0.7);
 const WEED = slate(0.3, 0.22).lerp(new Color(PALETTE.sageCloak), 0.55);
@@ -256,9 +256,9 @@ export function buildSluiceWardenFacet() {
   hip.position.y = 0.92;
   const gut = mesh(G.gut(), hide, body);
   gut.position.y = 1.2;
-  const crownLit = placeRow(plate, hideLit, 6, (i, m) => {
-    const a = -0.9 + (i / 5) * 1.8;
-    lay(m, Math.sin(a) * 0.5, 1.58, Math.cos(a) * 0.42 + 0.08, Math.sin(a) * 0.5, 1, Math.cos(a) * 0.5, 0.22, 0.12, 0.26, 0.1 * (i % 2));
+  const crownLit = placeRow(plate, hideLit, 4, (i, m) => {
+    const a = -0.75 + (i / 3) * 1.5;
+    lay(m, Math.sin(a) * 0.5, 1.58, Math.cos(a) * 0.42 + 0.08, Math.sin(a) * 0.5, 1, Math.cos(a) * 0.5, 0.16, 0.07, 0.2, 0.1 * (i % 2));
   }, { name: 'sluice-gut-lit', inkPx: PART_INK_PX, mottle: 0.1, seed: 51 });
   body.add(crownLit);
   const hump = mesh(G.hump(), dark, body);

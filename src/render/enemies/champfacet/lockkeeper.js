@@ -7,19 +7,19 @@
 // lock-box lantern at the left hip, and a great rusted key on a chain, as
 // long as his arm, in the right hand. What the standard adds:
 //
-//   * a coat of six faceted panels hung from the belt that swing on their
-//     own, torn tails off every hem, a riveted collar and two strapped
+//   * the long coat to the floor with eight faceted panels hung from the
+//     belt over it that swing on their own, torn tails off every hem, a riveted collar and two strapped
 //     bands, a row of lock-buttons down the chest, a boxed face with a
 //     hollow cheek either side, a hat of a faceted crown and a sagging brim
 //     with its edge torn, the keyhole buckle in the band, a lantern of
 //     riveted iron with a pale flame, a key of a faceted bow, a collared
 //     shaft and three bits, and a chain of fourteen links laid link by link from
 //     the left hand to the key's bow;
-//   * TWO LOCKED FEET (render/facet/gait.js): the coat stops at the shin, so
-//     the boots show: each is pinned to the floor while it carries weight and
-//     the legs reach it by two-bone IK; it lopes along the real travel, and a
-//     foot the leg can no longer reach lifts, never slides; both arms reach
-//     their hands by the same IK;
+//   * TWO LOCKED FEET (render/facet/gait.js) under the coat: each boot is
+//     pinned to the floor while it carries weight and the legs reach it by
+//     two-bone IK; it lopes along the real travel, and a foot the leg can no
+//     longer reach lifts, never slides (the coat hides them, as the classic's
+//     does); both arms reach their hands by the same IK;
 //   * two ability timelines driven by the sim:
 //       Chain Hook  whirl (the warning less one strike: the key swung up
 //                   behind the shoulder, whirling on its chain, the body
@@ -43,7 +43,7 @@
 // `points`, `react`. Faces +Z. Render only: it reads the sim entity and never
 // writes it; every clip runs off pose's t. The thrown key flies down the
 // sim's lane (telegraph.length), as the classic's does.
-import { BoxGeometry, CircleGeometry, Color, CylinderGeometry, Group, IcosahedronGeometry, Matrix4, Mesh, MeshBasicMaterial, TorusGeometry, Vector3 } from 'three';
+import { BoxGeometry, CircleGeometry, Color, CylinderGeometry, DoubleSide, Group, IcosahedronGeometry, Matrix4, Mesh, MeshBasicMaterial, TorusGeometry, Vector3 } from 'three';
 import { addInk, groundShadow, mix } from '../../critters/common.js';
 import { PALETTE, VFX_MATTER } from '../../../data/palette.js';
 import { makeGlowSprite } from '../../glow.js';
@@ -204,9 +204,10 @@ const SWING = 0.07;
 const geo = (key, make, seed, jitter = 0.09) => sharedGeo(`facet:keeper-${key}`, () => facetize(make(), { jitter, seed }));
 const G = {
   belt: () => geo('belt', () => new CylinderGeometry(0.36, 0.3, 0.2, 8), 401),
+  skirt: () => geo('skirt', () => new CylinderGeometry(0.3, 0.6, 1.0, 8, 1, true).translate(0, 0.5, 0), 402, 0.05),
   chest: () => geo('chest', () => new CylinderGeometry(0.42, 0.33, 0.8, 8).translate(0, 0.38, 0), 403),
   collar: () => geo('collar', () => new CylinderGeometry(0.3, 0.47, 0.26, 8).translate(0, 0.86, 0), 405),
-  panel: (len, seed) => sharedGeo(`facet:keeper-panel-${len}-${seed}`, () => facetize(taperBox(0.3, len, 0.06, 1.15, 1).translate(0, -len / 2, 0), { jitter: 0.1, seed })),
+  panel: (len, seed) => sharedGeo(`facet:keeper-panel-${len}-${seed}`, () => facetize(taperBox(0.3, len, 0.06, 1.4, 1).translate(0, -len / 2, 0), { jitter: 0.1, seed })),
   face: () => geo('face', () => taperBox(0.26, 0.42, 0.26, 0.85, 0.9, 0.03), 407),
   brim: () => geo('brim', () => new CylinderGeometry(0.54, 0.58, 0.05, 12), 409, 0.06),
   crown: () => geo('crown', () => new CylinderGeometry(0.21, 0.28, 0.32, 8).translate(0, 0.16, 0), 411),
@@ -293,22 +294,28 @@ export function buildLockkeeperFacet() {
   };
   const wedge = wedgeGeometry();
 
-  // --- The coat: a belt at the hip with six panels hung from it, each
-  // swinging on its own, torn tails off every hem; the chest and collar above.
+  // --- The coat: a long sodden coat to the floor (the classic's skirt) with
+  // eight faceted panels hung from the belt over it, each swinging on its
+  // own, torn tails off every hem; the chest and collar above. The locked
+  // boots walk under it, unseen.
   const belt = mesh(G.belt(), coatDark, torso);
   belt.position.y = 1.08;
+  const skirt = mesh(G.skirt(), coatDark, torso);
+  skirt.material.side = DoubleSide;
+  skirt.position.y = 0.04;
+  const PANELS = 8;
   const panels = [];
-  for (let i = 0; i < 6; i++) {
-    const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+  for (let i = 0; i < PANELS; i++) {
+    const a = (i / PANELS) * Math.PI * 2 + Math.PI / 8;
     const g = new Group();
     g.position.set(Math.sin(a) * 0.3, 1.02, Math.cos(a) * 0.28);
     g.rotation.y = a;
     torso.add(g);
-    const len = 0.74 + 0.05 * (i % 2);
+    const len = 0.96 + 0.03 * (i % 2);
     const p = new Mesh(G.panel(len, 441 + i), i % 2 ? coatDark : coat);
     addInk(p);
     g.add(p);
-    const tails = placeRow(wedge, coatDark, 2, (j, m) => lay(m, j ? 0.09 : -0.08, -len + 0.02, 0.0, j ? 0.2 : -0.15, -1, 0.05, 0.12, 0.2 + 0.06 * j, 0.4), { name: 'keeper-tails', inkPx: PART_INK_PX, mottle: 0.1, seed: 451 + i });
+    const tails = placeRow(wedge, coatDark, 2, (j, m) => lay(m, j ? 0.12 : -0.1, -len + 0.04, 0.0, j ? 0.2 : -0.15, -1, 0.05, 0.12, 0.16 + 0.05 * j, 0.4), { name: 'keeper-tails', inkPx: PART_INK_PX, mottle: 0.1, seed: 451 + i });
     g.add(tails);
     panels.push({ g, ph: i * 1.1, a, i });
   }
@@ -607,11 +614,14 @@ export function buildLockkeeperFacet() {
     hat.rotation.set(0.04 * Math.sin(idle * 0.7) + 0.08 * C.drive, 0, 0.02 * Math.sin(idle * 0.9));
     // the coat: the panels sway with the stride, lift with the lean and
     // stream back off a throw
+    // (the hem flares out; a crouch shortens the coat so it stays off the floor)
     for (const p of panels) {
       const fwd = Math.cos(p.a);
-      p.g.rotation.x = 0.06 + 0.12 * Math.sin(walkPh * 2 + p.ph) * Math.min(1, sp) + 0.05 * Math.sin(idle * 2.6 + p.ph) + 0.35 * Math.max(0, C.lean) * fwd + 0.25 * C.shove * fwd + 0.3 * C.crouch * Math.abs(fwd);
+      p.g.rotation.x = 0.2 + 0.12 * Math.sin(walkPh * 2 + p.ph) * Math.min(1, sp) + 0.05 * Math.sin(idle * 2.6 + p.ph) + 0.35 * Math.max(0, C.lean) * fwd + 0.25 * C.shove * fwd + 0.3 * C.crouch * Math.abs(fwd);
       p.g.rotation.z = 0.04 * Math.sin(idle * 1.7 + p.ph) + 0.08 * Math.sin(walkPh + p.ph) * Math.min(1, sp);
+      p.g.scale.y = 1 - 0.22 * C.crouch;
     }
+    skirt.scale.y = 1 - 0.22 * C.crouch;
     lantern.rotation.z = 0.25 * Math.sin(idle * 1.9 + walkPh * 0.5) + 0.2 * C.shove;
     pivot.updateMatrix();
     squashG.updateMatrix();
@@ -732,7 +742,7 @@ export function buildLockkeeperFacet() {
       gait,
       legs: legRig, // probes: where each leg's IK reached
       arms, // probes: where each hand reached
-      parts: { pivot, chest: chestG, head, hat, key, thrownKey: thrownKey.g, links, lantern, legs, panels },
+      parts: { pivot, chest: chestG, head, hat, key, thrownKey: thrownKey.g, links, lantern, legs, panels, skirt },
       reach: () => reach,
       pose({ dt, ability = null, abT = 0, rigid = false }) {
         if (lastT === null) lastT = 0;

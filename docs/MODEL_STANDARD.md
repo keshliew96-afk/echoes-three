@@ -677,7 +677,7 @@ the parts in the instanced rows.
 | Lockkeeper | `render/enemies/champfacet/lockkeeper.js` | 108 (72) | 150 |
 
 - **Sluice Warden.** The hulking weir-keeper: a dark hip drum under a faceted gut with a
-  lit crown of plates, the hump over it, the weir's two iron bands laid as riveted plates
+  faint lit crown of four plates, the hump over it, the weir's two iron bands laid as riveted plates
   brick-wise round the gut, iron shoulder caps, a small boxed skull under an iron brow
   plate and a grating of five bars with the indigo eye slit behind it; the sluice gate on
   the left arm, four faceted planks in a riveted iron frame with weed hanging off its sill
@@ -692,16 +692,18 @@ the parts in the instanced rows.
   warning less one strike: the maul swung up overhead, the stance wide, the body back),
   smash (2.5 frames, on the ring's tick: the stone brought down before him, the knees
   deep), held, recoil, settle.
-- **Lockkeeper.** The gaunt keeper: a coat of six faceted panels hung from the belt that
-  swing with the stride and stream back off a throw, torn tails off every hem, the chest
+- **Lockkeeper.** The gaunt keeper: the long coat to the floor (the classic's skirt) with
+  eight faceted panels hung from the belt over it that swing with the stride and stream
+  back off a throw, torn tails off every hem, the chest
   and riveted collar with lit shoulders, two strapped bands and a row of lock-buttons; a
   long boxed face with hollow cheeks, the beard, the indigo eye (and the keyhole buckle in
   the hat band, for the view from above), a hat of a faceted crown and a sagging brim with
   its edge torn; the riveted lock-box lantern at the left hip with its pale flame; the great
   key, a faceted bow round the indigo hole, a collared shaft and three bits, and a chain of
-  fourteen links laid link by link from the left hand to the live key's bow. The coat stops at
-  the shin, so the **boots show**: a biped on `createLegs`, both arms on the same IK, the
-  hands on the key and the chain in every pose. *Chain Hook*: whirl (the 58-tick lane
+  fourteen links laid link by link from the left hand to the live key's bow. It is a biped on
+  `createLegs` under the coat: the **locked boots** walk unseen beneath the hem (a crouch
+  shortens the coat so it stays off the floor), both arms on the same IK, the hands on the
+  key and the chain in every pose. *Chain Hook*: whirl (the 58-tick lane
   warning less one strike: the key swung up behind the shoulder, swinging round on its
   chain, the body turned away on the right foot), throw (2.5 frames, on the lane's tick:
   the arm whips forward on a long lead step and the key leaves the hand), fly (the contact
