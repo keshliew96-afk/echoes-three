@@ -13,6 +13,10 @@
 //   wm_sweep   the miller's sweep: a heavy whoosh round and a stone thud
 //   wm_toss    the sack leaving his hand: a grunt of air
 //   wm_sack    the sack landing: a soft heavy thump and a flour hiss
+// The Level II foes (model standard): the three attacks that had no voice —
+//   wm_snap    the weir crab's claw snapping shut: a hard shell click and a clack
+//   wm_lunge   the bog lamprey's lunge: a wet surge out of the bog and a hiss
+//   wm_mend    the lantern snail's mend: a soft rising lantern chime
 const P = (p, f) => f * (p && p.pitch ? p.pitch : 1);
 
 // Measured design peaks (dBFS at unity gain, max of 3 takes) so each cue
@@ -28,6 +32,9 @@ export const WOODMILL_CUE_CAL = {
   wm_sweep: 1.2,
   wm_toss: -9.8,
   wm_sack: 1.2,
+  wm_snap: -3.4,
+  wm_lunge: -4.4,
+  wm_mend: -5.8,
   // @cal end
 };
 
@@ -83,6 +90,25 @@ const CUES = {
       k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 700, f1: 200, q: 0.8, d: 0.3, gain: 0.7 }),
       k.noise(d, t + 0.04, { type: 'highpass', f0: P(p, 3200), f1: P(p, 5200), q: 0.7, a: 0.05, d: 0.6, gain: 0.25 })
     ) },
+  wm_snap: { levelDb: -9, priority: 4, maxVoices: 2, cooldownMs: 80, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 2600), f1: P(p, 1400), q: 2.5, d: 0.04, gain: 1 }),
+      k.tone(d, t + 0.01, { type: 'square', f0: P(p, 820), f1: P(p, 360), d: 0.05, gain: 0.5, filter: { f0: 2400, q: 2 } }),
+      k.noise(d, t + 0.05, { type: 'bandpass', f0: P(p, 1700), f1: P(p, 900), q: 3, d: 0.08, gain: 0.7 }),
+      k.tone(d, t + 0.05, { f0: P(p, 240), f1: P(p, 120), d: 0.1, gain: 0.45 })
+    ) },
+  wm_lunge: { levelDb: -9, priority: 4, maxVoices: 2, cooldownMs: 150, fn: (k, t, d, p) =>
+    Math.max(
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 500, f1: 1600, q: 1, a: 0.03, d: 0.24, gain: 0.9 }),
+      k.tone(d, t, { type: 'sawtooth', f0: P(p, 90), f1: P(p, 230), a: 0.03, d: 0.22, gain: 0.3, filter: { f0: 700, q: 3 } }),
+      k.noise(d, t + 0.06, { type: 'highpass', f0: P(p, 2200), f1: P(p, 4200), q: 0.8, a: 0.04, d: 0.3, gain: 0.45 })
+    ) },
+  wm_mend: { levelDb: -13, priority: 3, maxVoices: 2, cooldownMs: 200, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'sine', f0: P(p, 660), f1: P(p, 880), a: 0.04, d: 0.42, gain: 0.5 }),
+      k.tone(d, t + 0.08, { type: 'triangle', f0: P(p, 1320), f1: P(p, 1760), a: 0.05, d: 0.4, gain: 0.22 }),
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 3000), f1: P(p, 5000), q: 4, a: 0.1, d: 0.35, gain: 0.12 })
+    ) },
 };
 
 export const WOODMILL_CUE_IDS = Object.freeze(Object.keys(CUES));
@@ -103,6 +129,9 @@ export function createWoodMillEventCues() {
     leech_drain: (ev, h) => one('wm_drain', at(ev, h, ev.id)),
     leech_shed: (ev, h) => one('wm_shed', at(ev, h, ev.id)),
     miller_sweep: (ev, h) => one('wm_sweep', at(ev, h, ev.id)),
+    crab_snap: (ev, h) => one('wm_snap', at(ev, h, ev.id)),
+    lamprey_lunge: (ev, h) => one('wm_lunge', at(ev, h, ev.id)),
+    snail_mend: (ev, h) => one('wm_mend', at(ev, h, ev.id)),
     // The sack replaces the generic lob and splash; other globs fall through.
     enemy_lob: (ev, h) => (ev.sack ? one('wm_toss', at(ev, h, ev.id)) : null),
     enemy_glob_land: (ev, h) => (ev.sack ? one('wm_sack', at(ev, h)) : null),

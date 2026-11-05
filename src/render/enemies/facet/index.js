@@ -16,6 +16,14 @@ import { buildWaspFacet, WASP_ABILITIES } from './wasp.js';
 import { buildThornlingFacet, THORNLING_ABILITIES } from './thornling.js';
 import { buildOwlFacet, OWL_ABILITIES } from './owl.js';
 import { buildLasherFacet, LASHER_ABILITIES } from './lasher.js';
+// The Level II foes (data/levels.js row 2, the kinds Level I has not built).
+import { buildSnailFacet, SNAIL_ABILITIES } from './snail.js';
+import { buildCrabFacet, CRAB_ABILITIES } from './crab.js';
+import { buildToadFacet, TOAD_ABILITIES } from './toad.js';
+import { buildMothFacet, MOTH_ABILITIES } from './moth.js';
+import { buildLampreyFacet, LAMPREY_ABILITIES } from './lamprey.js';
+import { buildLeechFacet, LEECH_ABILITIES } from './leech.js';
+import { buildMillerFacet, MILLER_ABILITIES } from './miller.js';
 
 export const FACET_FOES = Object.freeze({
   boar: buildBoarFacet,
@@ -26,6 +34,13 @@ export const FACET_FOES = Object.freeze({
   thornling: buildThornlingFacet,
   owl: buildOwlFacet,
   lasher: buildLasherFacet,
+  snail: buildSnailFacet,
+  crab: buildCrabFacet,
+  toad: buildToadFacet,
+  moth: buildMothFacet,
+  lamprey: buildLampreyFacet,
+  leech: buildLeechFacet,
+  miller: buildMillerFacet,
 });
 // Each foe's lab abilities (the model lab, the probe).
 export const FOE_ABILITIES = Object.freeze({
@@ -37,6 +52,13 @@ export const FOE_ABILITIES = Object.freeze({
   thornling: THORNLING_ABILITIES,
   owl: OWL_ABILITIES,
   lasher: LASHER_ABILITIES,
+  snail: SNAIL_ABILITIES,
+  crab: CRAB_ABILITIES,
+  toad: TOAD_ABILITIES,
+  moth: MOTH_ABILITIES,
+  lamprey: LAMPREY_ABILITIES,
+  leech: LEECH_ABILITIES,
+  miller: MILLER_ABILITIES,
 });
 
 export function facetFoeBuilders(query) {
