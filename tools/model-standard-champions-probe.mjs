@@ -64,7 +64,7 @@ const CHAMPS = [
   const kinds = CHAMPS.map((c) => c.kind);
   check('the Level I champions play the model standard by default', kinds.every((k) => MODEL_STANDARD[k] === true && facetOn(k, q(''))));
   check('?facet=0 keeps them classic; ?facet=moss_hart only the Hart', kinds.every((k) => !facetOn(k, q('facet=0'))) && facetOn('moss_hart', q('facet=moss_hart')) && !facetOn('briar_knight', q('facet=moss_hart')));
-  check('the other champions stay classic', !facetOn('sluice_warden', q('')) && !facetOn('gale_herald', q('')) && !facetOn('lockkeeper', q('')));
+  check('the other champions stay classic', !facetOn('bone_reeve', q('')) && !facetOn('gale_herald', q('')) && !facetOn('gravebell_ringer', q('')));
   const built = kinds.map((k) => CHAMPION_BUILDERS[k](cosmetic));
   check("the champion table builds the faceted rigs with the champions' soft flash", built.every((b) => b.group.userData.modelStandard === true && b.flashScale === CHAMPION_FLASH && typeof b.pose === 'function'), built.map((b) => b.flashScale));
   const classics = CHAMPS.map((C) => C.classic(cosmetic)).filter((r) => r && r.group && typeof r.pose === 'function' && !r.group.userData.modelStandard);
@@ -412,7 +412,7 @@ for (const B of CHAMPS) {
 
 // --- 8. the lab ---------------------------------------------------------------------------
 {
-  check('the model lab lists both champions', LAB_ENTRIES.map((e) => e.id).join(',') === 'briar_knight,moss_hart', LAB_ENTRIES.map((e) => e.id));
+  check('the model lab lists both champions (the Level II pair after them)', LAB_ENTRIES.map((e) => e.id).slice(0, 2).join(',') === 'briar_knight,moss_hart', LAB_ENTRIES.map((e) => e.id));
   const bad = [];
   const vfx = new Proxy({}, { get: () => () => null });
   for (const E of LAB_ENTRIES) {

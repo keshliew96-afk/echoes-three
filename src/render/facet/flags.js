@@ -2,8 +2,9 @@
 // model standard. The pilot rebuilt the Barrow Wyrm and the Tank; the Level I
 // slices add the Hollow Stag, the Thornmother, the Gloam Wolf and the eight
 // Level I foes (render/enemies/facet/), then the Briar Knight and the
-// Moss Hart (render/enemies/champfacet/); the Level II slice adds the Drowned
-// Heron, the Millwheel and the Mire King; the heroes slice adds the Healer,
+// Moss Hart (render/enemies/champfacet/); the Level II slices add the Drowned
+// Heron, the Millwheel and the Mire King, then the Sluice Warden and the
+// Lockkeeper; the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
 //
@@ -50,6 +51,9 @@ export const MODEL_STANDARD = Object.freeze({
   // The Level I champions.
   briar_knight: true,
   moss_hart: true,
+  // The Level II champions.
+  sluice_warden: true,
+  lockkeeper: true,
 });
 
 export function facetOn(kind, query = pageQuery()) {
