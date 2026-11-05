@@ -11,7 +11,9 @@ measured the pilot's Wyrm against the [M] checklist of `/mnt/project-files/plan/
 §6.1 (see "The [M] beats" and "The Level I bosses" below); its second part (v0.5.339) rebuilt
 the Hollow Wood's two champions, the **Briar Knight** and the **Moss Hart** ("The Level I
 champions"). The Level II slice (v0.5.344) rebuilt the Sunken Mill's three bosses, the
-**Drowned Heron**, the **Millwheel** and the **Mire King** ("The Level II bosses").
+**Drowned Heron**, the **Millwheel** and the **Mire King** ("The Level II bosses"), and its
+second part (v0.5.347) the Mill's two champions, the **Sluice Warden** and the
+**Lockkeeper** ("The Level II champions").
 
 His ruling for the pilot: the detail goes **on top of** the chibi ink-outline style
 (BUILD_BRIEF §19.2), it does not replace it, and the facets must read clearly.
@@ -660,6 +662,64 @@ gone; a live surface warning is never "under". The Level I bosses (the Stag's sl
 Gloam Wolf's rend and howl) hold the same way since v0.5.344; the Thornmother's paw already
 held just short of its burst.
 
+## The Level II champions (v0.5.347)
+
+The Sunken Mill's two champions, on the Level I champions' terms: each keeps its classic
+rig's silhouette, colours (the classic's own constants and value steps of them) and its ONE
+indigo tell, adds the standard's detail on top, walks on **locked feet**, and keeps the
+classic beside it (`?facet=0`), the champion table's soft flash and the presence layer's
+crown, sigil and chest. Draw calls count every mesh, ink hull and sprite; instances are
+the parts in the instanced rows.
+
+| Champion | File | Draw calls (classic) | Instances |
+|---|---|---|---|
+| Sluice Warden | `render/enemies/champfacet/sluicewarden.js` | 77 (37) | 195 |
+| Lockkeeper | `render/enemies/champfacet/lockkeeper.js` | 108 (72) | 150 |
+
+- **Sluice Warden.** The hulking weir-keeper: a dark hip drum under a faceted gut with a
+  faint lit crown of four plates, the hump over it, the weir's two iron bands laid as riveted plates
+  brick-wise round the gut, iron shoulder caps, a small boxed skull under an iron brow
+  plate and a grating of five bars with the indigo eye slit behind it; the sluice gate on
+  the left arm, four faceted planks in a riveted iron frame with weed hanging off its sill
+  and water beads that run down the planks and fall; the millstone maul in the right hand,
+  a ferruled haft and a ten-sided stone with chisel marks round its rim. It is a **biped**
+  on two boots with iron toe caps (`createLegs`, an iron cap at each knee), and both arms
+  reach their hands by two-bone IK, so the hands stay on the gate's grip and the haft in
+  every pose. *Floodgate*: heave (the 66-tick cone warning less one strike: the gate
+  hauled up and back over the shoulder, the body cocked back on the right foot), slam (2.5
+  frames, on the cone's tick: the gate thrust forward and down, its sill into the floor
+  ahead on a long lead step), held, recoil, settle. *Undertow*: raise (the 78-tick ring
+  warning less one strike: the maul swung up overhead, the stance wide, the body back),
+  smash (2.5 frames, on the ring's tick: the stone brought down before him, the knees
+  deep), held, recoil, settle.
+- **Lockkeeper.** The gaunt keeper: the long coat to the floor (the classic's skirt) with
+  eight faceted panels hung from the belt over it that swing with the stride and stream
+  back off a throw, torn tails off every hem, the chest
+  and riveted collar with lit shoulders, two strapped bands and a row of lock-buttons; a
+  long boxed face with hollow cheeks, the beard, the indigo eye (and the keyhole buckle in
+  the hat band, for the view from above), a hat of a faceted crown and a sagging brim with
+  its edge torn; the riveted lock-box lantern at the left hip with its pale flame; the great
+  key, a faceted bow round the indigo hole, a collared shaft and three bits, and a chain of
+  fourteen links laid link by link from the left hand to the live key's bow. It is a biped on
+  `createLegs` under the coat: the **locked boots** walk unseen beneath the hem (a crouch
+  shortens the coat so it stays off the floor), both arms on the same IK, the hands on the
+  key and the chain in every pose. *Chain Hook*: whirl (the 58-tick lane
+  warning less one strike: the key swung up behind the shoulder, swinging round on its
+  chain, the body turned away on the right foot), throw (2.5 frames, on the lane's tick:
+  the arm whips forward on a long lead step and the key leaves the hand), fly (the contact
+  held: the key's copy out at the lane's end, `telegraph.length`, bit first, the chain
+  taut), reel (the key hauled back to the hand, the body rocking back, with the B3
+  recoil), settle. *Lock Turn*: lift (the 70-tick ring warning less one strike: the key
+  raised overhead in both hands, the stance wide), drive (2.5 frames, on the ring's tick:
+  the key driven into the floor before him, the knees deep), turn (held, the key turned a
+  quarter), recoil, settle.
+
+Both wind up the way the Level II bosses do: a warning is known by its move and start
+tick, the wind-up is stretched to the sim's ticks so the strike lands on the resolve, and
+on a slow frame the strike runs no further than its contact while the warning is live. A
+new champion spawns in; a jump in place re-plants the feet; a dying champion is never posed
+again.
+
 ## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
 Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
@@ -772,8 +832,8 @@ read small at play zoom.
   boss (a new entity id, or a clock that went back) resets its timelines and spawns in; a
   jump in place (a new room, a hitch mid-charge) only re-plants the feet. A dying rig (posed
   with no entity) collapses in the pose it died in: no wind-up runs on into its strike.
-- `render/enemies/champions.js` builds `buildBriarKnightFacet` and `buildMossHartFacet` in
-  the champion table when their flag is on, so the enemy layer, the prewarm and the Journal
+- `render/enemies/champions.js` builds `buildBriarKnightFacet`, `buildMossHartFacet`,
+  `buildSluiceWardenFacet` and `buildLockkeeperFacet` in the champion table when their flag is on, so the enemy layer, the prewarm and the Journal
   viewer all take them; the enemy layer wraps the rig's first child in its hit-react node
   and lifts the hit flash on its `mats` as for any champion.
 - The boss prewarm (`render/warmup.js`) parks each rig unculled for a few frames, then gives
@@ -843,7 +903,9 @@ the lab by that step, so a probe on a slow software-GL machine sees 60 Hz motion
 The Level I champions are lab entries too (`scenes/modellab-champions.js`, the same shape):
 the Briar Knight (Bramble Charge, which crosses the frame at the sim's 9 u/s, Thorn Ring)
 and the Moss Hart (Antler Toss, Hart's Leap, which bounds across the frame), each with a
-Spawn in tab and its classic twin beside.
+Spawn in tab and its classic twin beside. The Level II champions follow in the same file:
+the Sluice Warden (Floodgate, Undertow) and the Lockkeeper (Chain Hook, whose key flies
+down a lab lane of `LAB_HOOK` 5 u and reels back, Lock Turn).
 The Level I foes bring their own tabs (`scenes/modellab-foes.js`, entries the lab sets
 before the Effect kit): each foe's framing, its game speed on the Move loop (forward for
 half a lap, then a sidestep and a backpedal facing the middle), its abilities on their
@@ -891,6 +953,19 @@ lane's length, reeled in; the flop's heave with the fore-feet up, its leap and i
 on the hit; the swallow's gape and snap; the rage), the strikes on the sim's hit, a co-op
 guest's fresh copies, a boss killed in its wind-up, a hitch; the spawn-in, the pooled rig,
 the turntable; the lab entries.
+
+`node tools/model-standard-level2-champions-probe.mjs` (in `npm test`) holds the Level II
+champions to the same rules as the Level I pair below (the flags, the Level III champions
+still classic; the rig, the beats, the locked feet, the spawn-in, the rage, the lab), and
+to their own moves: the Floodgate's heave through its warning and its slam on the resolve;
+the Undertow's raise and smash; the Chain Hook's whirl, its throw on the resolve with the
+key's copy flying to the lane's length and reeling back to the hand; the Lock Turn's lift,
+its drive on the resolve and the turn while held; a fresh copy of a warning every tick never
+restarting a wind-up; a slow frame (a whole warning in 66 one-second frames) holding the
+slam at its contact; the hands on the gate, the maul and the key in every pose; the chain
+running from the left hand to the live key's bow at rest, whirling, flying and driven.
+`tools/model-standard-level2-champions-shots.mjs` shoots both in the lab and in their Mill
+crown rooms, faceted and with `?facet=0`, with the sim frozen between beats.
 
 `node tools/model-standard-champions-probe.mjs` (in `npm test`) holds the two champions to
 the rules: the flags and the champion table's soft flash; the classic interface plus `lab`,
