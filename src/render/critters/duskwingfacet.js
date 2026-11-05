@@ -384,6 +384,9 @@ export function buildDuskwingFacet(rig, trackAccent) {
   const furMat = facetMaterial(furHex);
   const furDarkMat = facetMaterial(furDarkHex);
   const ruffMat = facetMaterial(ruffHex);
+  // the fringe a step lighter than the bib (Kesh's pick on #125), so its
+  // edge reads at play zoom
+  const tuftMat = facetMaterial(mix(ruffHex, PALETTE.parchment, 0.22).getHex());
   const leatherMat = trackAccent(facetMaterial(leatherHex));
   const roseMat = facetMaterial(roseHex);
   const boneMat = facetMaterial(PALETTE.bone);
@@ -409,7 +412,7 @@ export function buildDuskwingFacet(rig, trackAccent) {
   const Y = new Vector3();
   const Z = new Vector3();
   const SHAG = 9;
-  const shag = placeRow(wedge, ruffMat, SHAG, (i, m) => {
+  const shag = placeRow(wedge, tuftMat, SHAG, (i, m) => {
     const a = -0.56 + (1.12 * i) / (SHAG - 1); // along the bib's lower edge
     const y = 0.19 + 0.012 * (i % 2);
     const r = coatR(y) * 1.065;
@@ -417,7 +420,7 @@ export function buildDuskwingFacet(rig, trackAccent) {
     Y.set(Math.sin(a) * 0.3, -0.95, Math.cos(a) * 0.3).normalize(); // hanging down
     X.set(Math.cos(a), 0, -Math.sin(a));
     Z.crossVectors(X, Y).normalize();
-    setTRS(m, P, X, Y, Z, 0.095, 0.05 + 0.02 * (i % 2), 0.045);
+    setTRS(m, P, X, Y, Z, 0.1, 0.06 + 0.02 * (i % 2), 0.05);
   }, { name: 'bat-shag', seed: 505, mottle: 0.06 });
   body.add(shag);
   // A mane of dark fur down the back, between the wings.
