@@ -29,7 +29,11 @@
 //      the hit and death tuning and the named points the VFX layer reads, the
 //      whole moving body under the envelope's node;
 //   8. colour: no Ember, Bright Heal or Violet anywhere in a rig;
-//   9. each foe's own beats (its tell, its strike mode held, its lurk).
+//   9. each foe's own beats (its tell, its strike mode held, its lurk);
+//  10. Kesh's fix-first picks: the crab's snap, the lamprey's lunge and the
+//      snail's mend each have a cue of their own (audio/woodmillcues.js,
+//      measured), the lab plays them, and the miller's millstone is a size
+//      larger than the classic's 0.17 u.
 //
 //   node tools/model-standard-level2-foes-probe.mjs [kind,kind]
 // Exit code 1 on any failure.
@@ -638,6 +642,30 @@ function OWN_snail(build) {
   }
   check('snail: the lantern bulb swells through the 30-tick wind-up', bulbWind > bulbRest * 1.2, { rest: r3(bulbRest), wind: r3(bulbWind) });
   check('snail: the pulse ring sweeps out on the mend', ring >= 20, ring);
+}
+
+// --- 10. the fix-first picks ---------------------------------------------------
+{
+  const { WOODMILL_CUE_IDS, WOODMILL_CUE_CAL, createWoodMillEventCues } = await import('../src/audio/woodmillcues.js');
+  const map = createWoodMillEventCues();
+  const h = { pos: () => null, player: () => ({ x: 0, z: 0 }) };
+  for (const [evName, cue, foe] of [['crab_snap', 'wm_snap', 'crab'], ['lamprey_lunge', 'wm_lunge', 'lamprey'], ['snail_mend', 'wm_mend', 'snail']]) {
+    const out = typeof map[evName] === 'function' ? map[evName]({ id: 3, x: 1.5, z: -2 }, h) : null;
+    check(`${foe}: the sim's ${evName} plays its own cue ${cue}, at the foe`, Array.isArray(out) && out.length === 1 && out[0].cue === cue && out[0].x === 1.5 && out[0].z === -2, out);
+    check(`${foe}: ${cue} is registered and measured`, WOODMILL_CUE_IDS.includes(cue) && Number.isFinite(WOODMILL_CUE_CAL[cue]) && WOODMILL_CUE_CAL[cue] !== 0, WOODMILL_CUE_CAL[cue]);
+    const lab = LAB_ENTRIES.find((l) => l.id === foe);
+    const snd = lab && lab.sound ? lab.sound.strike : null;
+    check(`${foe}: the lab's attack plays ${cue}`, snd === cue, snd);
+  }
+  // the millstone: the faceted stone's radius against the classic's 0.17
+  const rig = FACET_FOES.miller();
+  rig.pose({ t: 0.5, tick: 30, walkPhase: 0, moveK: 0, lungeK: 0, telegraphK: 0, fireK: 0, e: null });
+  const stone = rig.lab.parts.stone;
+  // its axis runs along x: the rim's radius is the widest point off that axis
+  const pa = stone.geometry.attributes.position;
+  let r = 0;
+  for (let i = 0; i < pa.count; i++) r = Math.max(r, Math.hypot(pa.getY(i), pa.getZ(i)));
+  check('miller: the millstone is a size larger than the classic\'s 0.17 u (rim radius)', r >= 0.21 && r <= 0.3, r3(r));
 }
 
 console.log(fails.length ? `\n${fails.length} FAILED` : '\nALL PASS');

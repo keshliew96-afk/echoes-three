@@ -189,6 +189,8 @@ const qa = (ax, ay, az, a) => new Quaternion().setFromAxisAngle(new Vector3(ax, 
 const TORSO_AT = new Vector3(0, 0.66, 0);
 const NECK_AT = new Vector3(0, 0.7, 0.06);
 const CHAIN_L = 0.55;
+// the millstone's radius (the classic's is 0.17; a size larger reads at play zoom)
+const STONE_R = 0.22;
 const LINKS = 7;
 let SET = null;
 function geos() {
@@ -249,16 +251,18 @@ function geos() {
   // The millstone (its axis along x): the faced disc, the hole through it,
   // the groove round each face.
   set.stone = bakeParts('miller:stone', () => {
-    const out = [{ geo: fz(new CylinderGeometry(0.17, 0.17, 0.09, 10), 0.08, 1161), m: M(0, 0, 0, 1, 1, 1, qa(0, 0, 1, Math.PI / 2)), tint: STONE }];
+    const r = STONE_R;
+    const k = r / 0.17; // the classic's stone, a size larger (Kesh's pick)
+    const out = [{ geo: fz(new CylinderGeometry(r, r, 0.09 * k, 10), 0.08, 1161), m: M(0, 0, 0, 1, 1, 1, qa(0, 0, 1, Math.PI / 2)), tint: STONE }];
     for (const s of [-1, 1]) {
-      out.push({ geo: fz(new CylinderGeometry(0.04, 0.04, 0.01, 8), 0, 1), m: M(s * 0.046, 0, 0, 1, 1, 1, qa(0, 0, 1, Math.PI / 2)), tint: CHARCOAL });
-      out.push({ geo: fz(new TorusGeometry(0.12, 0.009, 3, 14), 0, 1), m: M(s * 0.046, 0, 0, 1, 1, 1, qa(0, 1, 0, Math.PI / 2)), tint: SMOCK_DARK });
+      out.push({ geo: fz(new CylinderGeometry(0.04 * k, 0.04 * k, 0.01, 8), 0, 1), m: M(s * 0.046 * k, 0, 0, 1, 1, 1, qa(0, 0, 1, Math.PI / 2)), tint: CHARCOAL });
+      out.push({ geo: fz(new TorusGeometry(0.12 * k, 0.009 * k, 3, 14), 0, 1), m: M(s * 0.046 * k, 0, 0, 1, 1, 1, qa(0, 1, 0, Math.PI / 2)), tint: SMOCK_DARK });
     }
     // a few chipped teeth on the rim
     const chip = wedgeGeometry();
     for (let i = 0; i < 5; i++) {
       const a = (i / 5) * TWO_PI + 0.3;
-      out.push({ geo: chip, m: new Matrix4().compose(new Vector3(0, Math.cos(a) * 0.165, Math.sin(a) * 0.165), new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), new Vector3(0, Math.cos(a), Math.sin(a))), new Vector3(0.08, 0.05, 0.06)), tint: STONE, tone: 0.85 });
+      out.push({ geo: chip, m: new Matrix4().compose(new Vector3(0, Math.cos(a) * (r - 0.005), Math.sin(a) * (r - 0.005)), new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), new Vector3(0, Math.cos(a), Math.sin(a))), new Vector3(0.08 * k, 0.05 * k, 0.06 * k)), tint: STONE, tone: 0.85 });
     }
     return out;
   });
@@ -517,7 +521,7 @@ export function buildMillerFacet() {
     Z.set(sa * ce, Math.sin(el), ca * ce);
     C.copy(hr).addScaledVector(Z, CHAIN_L);
     // never into the floor
-    if (C.y < 0.17) C.y = 0.17;
+    if (C.y < STONE_R) C.y = STONE_R;
     D.subVectors(C, hr);
     const len = D.length();
     D.normalize();
@@ -526,7 +530,7 @@ export function buildMillerFacet() {
     X.normalize();
     Y.crossVectors(D, X);
     for (let i = 0; i < LINKS; i++) {
-      B.copy(hr).addScaledVector(D, ((i + 0.5) / LINKS) * (len - 0.15));
+      B.copy(hr).addScaledVector(D, ((i + 0.5) / LINKS) * (len - STONE_R + 0.02));
       // alternate links turned a quarter round the chain (right-handed
       // frames: X, D, X x D and X x D, D, -X)
       A.crossVectors(X, D);
