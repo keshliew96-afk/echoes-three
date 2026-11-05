@@ -676,7 +676,12 @@ export function buildStagFacet() {
     if (ab.id === 'quake' && quakeSeen && ab.t < slamAt) {
       telAge += dt;
       ab.t = telAge < teleSpan ? Math.min(slamAt - 1e-4, (telAge * 0.7) / teleSpan) : slamAt;
-    } else ab.t += dt;
+    } else {
+      ab.t += dt;
+      // the slam may land ahead of the resolve on a slow frame (a 1 fps
+      // machine), but the contact holds until the warning is gone
+      if (ab.id === 'quake' && quakeSeen) ab.t = Math.min(ab.t, slamAt + STRIKE_SEC);
+    }
     if (ab.id === 'trample' && e && e.lungeHit && ab.t < tl.startOf('gore')) ab.t = tl.startOf('gore');
     abilityChannels(ab.id, tl.sample(ab.t), C, from);
     if (ab.t >= tl.duration) ab = null;

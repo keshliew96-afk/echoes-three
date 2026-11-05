@@ -9,6 +9,7 @@ import { SWORDSMAN_SPEC } from '../critters/swordsmanfacet.js';
 import { ARCHER_SPEC } from '../critters/archerfacet.js';
 import { TIDECALLER_SPEC } from '../critters/tidecallerfacet.js';
 import { BELLWRIGHT_SPEC } from '../critters/bellwrightfacet.js';
+import { DUSKWING_SPEC } from '../critters/duskwingfacet.js';
 
-export const FACET_HEROES = Object.freeze([TANK_SPEC, HEALER_SPEC, SWORDSMAN_SPEC, ARCHER_SPEC, TIDECALLER_SPEC, BELLWRIGHT_SPEC]);
+export const FACET_HEROES = Object.freeze([TANK_SPEC, HEALER_SPEC, SWORDSMAN_SPEC, ARCHER_SPEC, TIDECALLER_SPEC, BELLWRIGHT_SPEC, DUSKWING_SPEC]);
 export const FACET_HERO = Object.freeze(Object.fromEntries(FACET_HEROES.map((h) => [h.id, h])));

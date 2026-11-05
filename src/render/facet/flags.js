@@ -2,13 +2,14 @@
 // model standard. The pilot rebuilt the Barrow Wyrm and the Tank; the Level I
 // slices add the Hollow Stag, the Thornmother, the Gloam Wolf and the eight
 // Level I foes (render/enemies/facet/), then the Briar Knight and the
-// Moss Hart (render/enemies/champfacet/); the heroes slice adds the Healer,
-// the Swordsman, the Archer, the Tidecaller and the Bellwright. The classic
-// rigs stay in the code beside them.
+// Moss Hart (render/enemies/champfacet/); the Level II slice adds the Drowned
+// Heron, the Millwheel and the Mire King; the heroes slice adds the Healer,
+// the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
+// The classic rigs stay in the code beside them.
 //
 // A harness build reads `?facet=` to compare (a player build never sees it):
 //   ?facet=0       every model classic
-//   ?facet=wyrm    only the listed models faceted (comma list: wyrm,tank,healer,swordsman,archer,tidecaller,bellwright)
+//   ?facet=wyrm    only the listed models faceted (comma list: wyrm,tank,healer,swordsman,archer,tidecaller,bellwright,duskwing)
 import { pageQuery } from '../../app/harness.js';
 
 export const MODEL_STANDARD = Object.freeze({
@@ -20,10 +21,15 @@ export const MODEL_STANDARD = Object.freeze({
   archer: true,
   tidecaller: true,
   bellwright: true,
+  duskwing: true,
   // The Level I bosses.
   stag: true,
   thornmother: true,
   gloamwolf: true,
+  // The Level II bosses.
+  heron: true,
+  millwheel: true,
+  mireking: true,
   // The Level I foes (data/levels.js row 1: its roster and campaign roster).
   boar: true,
   mantis: true,
