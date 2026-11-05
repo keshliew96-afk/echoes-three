@@ -241,7 +241,7 @@ const G = {
   gland: () => geo('gland', () => new IcosahedronGeometry(0.26, 0), 513),
   sac: () => geo('sac', () => new IcosahedronGeometry(0.42, 1), 515, 0.12),
   band: () => geo('band', () => new TorusGeometry(0.42, 0.05, 4, 14).rotateX(Math.PI / 2), 517),
-  bar: () => geo('bar', () => new BoxGeometry(0.07, 1, 0.07).translate(0, 0.5, 0), 519),
+  bar: () => geo('bar', () => new BoxGeometry(0.055, 1, 0.055).translate(0, 0.5, 0), 519),
   gem: () => geo('gem', () => new IcosahedronGeometry(0.055, 0), 521, 0.16),
   tongue: () => geo('tongue', () => new CylinderGeometry(0.5, 0.5, 1, 6).translate(0, 0.5, 0), 523),
   tip: () => geo('tongue-tip', () => new IcosahedronGeometry(0.17, 0), 525),
@@ -326,14 +326,16 @@ export function buildMireKingFacet() {
   coat.plates.position.set(0, -0.62, 0);
   bulk.add(coat.plates);
   // warts down the flanks and over the rump, mottled dark
-  const WARTS = 26;
-  bulk.add(placeRow(G.wart(), dark, WARTS, (i, m) => {
+  // (fewer, smaller and a step closer to the hide than the first draft:
+  // Kesh's pick, they read busy at play zoom)
+  const WARTS = 18;
+  bulk.add(placeRow(G.wart(), warty, WARTS, (i, m) => {
     const side = i % 2 ? 1 : -1;
     const a = hash01(i, 3) * 1.1 + 0.25;
     const z = 0.45 - hash01(i, 7) * 1.45;
     const x = side * (1.3 * Math.sin(a)) * (0.92 - 0.15 * Math.max(0, -z - 0.6));
     const y = 0.95 + 0.72 * Math.cos(a) * 0.95;
-    const sc = 0.7 + hash01(i, 11) * 0.8;
+    const sc = 0.55 + hash01(i, 11) * 0.6;
     m.makeScale(sc, sc * 0.75, sc).setPosition(x, y, z);
   }, { name: 'mire-warts', inkPx: PART_INK_PX, mottle: 0.2, seed: 81 }));
   // weed hanging off the back
@@ -399,16 +401,16 @@ export function buildMireKingFacet() {
   mesh(G.band(), rust, crown);
   crown.add(placeRow(G.bar(), rust, 7, (i, m) => {
     const a = (i / 7) * Math.PI * 2;
-    const h = 0.38 + (i % 2) * 0.16;
+    const h = 0.32 + (i % 2) * 0.12;
     lay(m, Math.cos(a) * 0.42, 0, Math.sin(a) * 0.42, Math.cos(a) * 0.2, 1, Math.sin(a) * 0.2, 1, h, 1);
   }, { name: 'mire-bars', inkPx: PART_INK_PX, mottle: 0.12, seed: 89 }));
   crown.add(placeRow(G.wart(), rust, 7, (i, m) => {
     const a = ((i + 0.5) / 7) * Math.PI * 2;
-    m.makeScale(0.45, 0.45, 0.45).setPosition(Math.cos(a) * 0.45, 0.02, Math.sin(a) * 0.45);
+    m.makeScale(0.35, 0.35, 0.35).setPosition(Math.cos(a) * 0.45, 0.02, Math.sin(a) * 0.45);
   }, { name: 'mire-rivets', inkPx: PART_INK_PX, mottle: 0 }));
   const gems = placeRow(G.gem(), gemMat, 4, (i, m) => {
     const a = ((i * 2) / 7) * Math.PI * 2;
-    m.makeTranslation(Math.cos(a) * 0.43, 0.42, Math.sin(a) * 0.43); // on the short bars' tops
+    m.makeTranslation(Math.cos(a) * 0.43, 0.36, Math.sin(a) * 0.43); // on the short bars' tops
   }, { name: 'mire-gems', ink: false, mottle: 0 });
   crown.add(gems);
 

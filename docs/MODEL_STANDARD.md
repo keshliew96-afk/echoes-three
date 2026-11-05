@@ -603,7 +603,7 @@ a planted paddle tip never slides along the roll.
   slam (2.5 frames at the cut's end), held, dizzy (the sim's 75-tick stand: it wobbles on
   its rim, tilting side to side), settle.
 - **Mire King.** The vast squat toad, mottled teal-slate over a pale belly: a saddle of warty
-  hide plates over the back (the flanks stay smooth), a scatter of faceted warts down the
+  hide plates over the back (the flanks stay smooth), a light scatter of faceted warts down the
   flanks, two glands behind the eyes, brow ridges, a lip of small plates along the mouth,
   weed off the back; the crown as a faceted band with seven rusted mill-grate bars, rivets
   and violet gems; a violet throat sac and maw; a tongue of ten faceted segments that truly
@@ -624,7 +624,11 @@ a planted paddle tip never slides along the roll.
 Every warning is known by its attack and start tick (a co-op guest's fresh copies never
 restart a wind-up), every wind-up is stretched to the sim's ticks so its strike lands on the
 resolve, the facing eases to the lane while the Heron, the Millwheel and the Mire King wind
-up on one, and a boss killed in its wind-up collapses in it.
+up on one, and a boss killed in its wind-up collapses in it. On a slow frame (a 1 fps
+machine) a strike may land ahead of the resolve, but its contact holds until the warning is
+gone; a live surface warning is never "under". The Level I bosses (the Stag's slam, the
+Gloam Wolf's rend and howl) hold the same way since v0.5.344; the Thornmother's paw already
+held just short of its burst.
 
 ## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
