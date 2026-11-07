@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level IV foes v0.5.348)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349; Level IV foes v0.5.350)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -13,7 +13,8 @@ the Hollow Wood's two champions, the **Briar Knight** and the **Moss Hart** ("Th
 champions"). The Level II slice (v0.5.344) rebuilt the Sunken Mill's three bosses, the
 **Drowned Heron**, the **Millwheel** and the **Mire King** ("The Level II bosses"), and its
 second part (v0.5.347) the Mill's two champions, the **Sluice Warden** and the
-**Lockkeeper** ("The Level II champions").
+**Lockkeeper** ("The Level II champions"). The Level III slice (v0.5.348) rebuilt the Ashen
+Barrow's two bosses, the **Lich Ram** and the **Ash Raven** ("The Level III bosses").
 
 His ruling for the pilot: the detail goes **on top of** the chibi ink-outline style
 (BUILD_BRIEF §19.2), it does not replace it, and the facets must read clearly.
@@ -33,7 +34,7 @@ Duskwing in v0.5.345 (their sections below): all seven heroes now play the stand
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, the Level I, Level II and Level IV foes}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
+| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, heron, millwheel, mireking, lichram, ashraven, the Level I, II, III and IV foes, the Level I and II champions}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `hero.js` | The hero core (below). |
 | `heroes.js` | `FACET_HEROES`: the registry of model-standard heroes. The critter factory, the model lab and the heroes probe read it, so a hero listed here is built, shown and checked. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
@@ -720,6 +721,71 @@ on a slow frame the strike runs no further than its contact while the warning is
 new champion spawns in; a jump in place re-plants the feet; a dying champion is never posed
 again.
 
+## The Level III bosses (v0.5.348)
+
+The Ashen Barrow's two bosses, on the same terms as Levels I and II: each keeps its classic
+rig's silhouette and colours (the classic's own constants and value steps of them), adds the
+standard's detail on top, and keeps the classic beside it (`?facet=0`). The Barrow Wyrm,
+the land's third boss, is the pilot's. The Lich Ram trots on four **locked hooves** in
+diagonal pairs; the Ash Raven **hops**, both talons leaving and landing together, and only
+leaves the floor for its dive.
+
+| Boss | File | Draw calls (classic) | Instances |
+|---|---|---|---|
+| Lich Ram | `render/boss/lichramfacet.js` | 69 (26) | 276 |
+| Ash Raven | `render/boss/ashravenfacet.js` | 72 (68) | 252 |
+
+- **Lich Ram.** The bone ram, a skeleton in the classic's old-bone and horn tones: a spine
+  of ten vertebrae with neural blades laid along a curve, six ribs a side in three
+  faceted segments each curving round to a sternum, a pelvis with iliac blades and a knob of tail bones, scapulae
+  over the fore-legs, three neck bones laid each frame so the skull follows the pose, a
+  boxed skull with a muzzle, a hinged jaw and two rows of teeth, hollow sockets with coals
+  and the classic's violet eye glow, two spiral horns of fourteen bone segments a side with
+  ridges and violet runes that burn while the guard holds and go dark when it is stuck;
+  a violet heart in the ribs with its glow, knobs at every joint; four legs of two bones on
+  locked hooves; the classic's shadow and a violet grave mist on the floor. *Bone Rush*:
+  wind (the 54-tick lane warning less one strike: the head goes down, the horns level, the
+  weight back, the left fore-hoof paws the floor twice), burst (2.5 frames on the resolve:
+  the B9 lunge, the shove through the hips), run (held while the sim drives it down the
+  lane at 11 u/s: a gallop on locked hooves, the stride long), slam (2.5 frames as the sim
+  sticks it: the horns into the floor, squashed), held, stuck (the sim's 75-tick stand, the
+  guard down: it sags on its horns, the runes dark), free (2.5
+  frames as the stuck ends: it wrenches back out), settle. *Grave Call* (the sim gives no
+  warning): gather (the last 30 ticks before the sim's next call, read ahead from its
+  cooldown: the right fore-hoof lifts, the head goes up; a call the sim holds back waits at
+  the top of the gather), stamp (2.5 frames on the call's tick: the hoof down, the jaw
+  wide, the body squashed), held with a recoil, settle. *Enraged* (under 40 % HP): the heart
+  beats faster, the eyes and the runes burn.
+- **Ash Raven.** The great carrion bird in the classic's slate blue: a breast and a back of
+  faceted icosahedra under a mantle of feather plates on a five-point spine, hackles of
+  plumes and ash on the nape, breast plumes, a fan of tail quills with ash tips; wings as
+  nested groups (fold, lift, roll) with a flat blade, eight secondaries, three quill and
+  three ash primaries, a covert row and tips that trail ash; a neck of rings, a boxed skull
+  with a bone mask, a two-part beak (the lower half gapes), cracks across the mask, hollow
+  sockets with coals, the eye glow and a throat glow in the classic's violet; thighs,
+  black shanks and four talons a foot; knots at the joints; the classic's shadow. *Carrion
+  Dive*: rise (the 50-tick lane warning less the sim's 14-tick dive and one strike: it
+  beats up into the air and hangs at 1.5 u, wings wide, the talons tucked), stoop (2.5
+  frames as the sim's dive begins: it tips over, the wings swept), dive (held while the sim
+  drives it down the lane: a skim at 0.45 u on swept wings), strike (2.5 frames on the
+  resolve: it lands, both talons down, squashed), held with a recoil, preen (the sim's
+  40-tick stand: it preens a wing), settle. *Wing Gust*: mantle (the 40-tick cone warning
+  less one strike: it crouches, the hackles up, the wings raised wide), beat (2.5 frames on
+  the hit: the wings thrown forward, the body dropping), held with a recoil, settle.
+  *Omen*: call (the 84-tick ring warning less one strike: the wings go up and the head
+  back, the beak opening wide), caw (2.5 frames on the hit: the head thrown up, the beak wide, the
+  body squashed), held with a recoil, settle. *Enraged* (under 40 % HP): the hackles stay
+  up, the eyes and throat burn.
+
+Every warning is known by its attack and start tick (a co-op guest's fresh copies never
+restart a wind-up), every wind-up is stretched to the sim's ticks so its strike lands on the
+resolve, the facing eases to the lane while the Ram and the Raven wind up on one, and a
+boss killed in its wind-up collapses in it. On a slow frame a strike may land ahead of the
+resolve, but its contact holds until the warning is gone. The Grave Call is the first move
+whose wind-up is read from a cooldown rather than a warning: the boss layer passes the sim
+tick into `pose`, and the rig gathers over the 30 ticks before `nextGraveTick` and stamps
+when that tick moves on (render only; the call fires when the sim says).
+
 ## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
 Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
@@ -822,7 +888,42 @@ them. His other pick: the miller's millstone a size larger than the classic's (r
 `STONE_R` 0.22 u against 0.17; the chain's end and the floor clamp follow it), since it
 read small at play zoom.
 
-## The Level IV foes (`src/render/enemies/facet/`, v0.5.348)
+## The Level III foes (`src/render/enemies/facet/`, v0.5.349)
+
+Every creature Level III (the Ashen Barrow) rolls that Levels I and II had not built (its
+roster's ram, mole, crow, brood spider, grave wisp, bone knight, keener and sexton, and
+the brood's broodling, which the room rolls with its mother) plays the standard, on the
+same foe kit and rules as the earlier levels: baked detail for the crowd, world-locked
+feet, the sim's clock as the anticipation, the classic rig (`enemies/archetypes.js`,
+`enemies/slice2.js`, `enemies/barrowheart.js`) kept behind `?facet=0`, visual only. No
+kit piece is new: the ram, the crow, the knight and the keener are on the strike clip,
+the brood and broodling on the bite chain (the boar's), the mole, the wisp and the sexton
+on pure timelines, and the fliers (the wisp, the gliding keener) take the moth's lean
+from the real travel.
+
+### The nine foes
+
+| Foe | Attack (lab tab) | In game | Calls (faceted / classic) |
+|---|---|---|---|
+| Barrow Ram | Horn slam; Slam string | The 60-tick cone is the coil; the contact lands on the resolve tick (`enemy_slam`) and holds 3 frames with a recoil shove. Four hooves on locked feet in diagonal pairs; the front pair steps in for the strike by its contact and back out as it settles. The horns curl from a riveted ten-sided disc that is its guard, with the indigo rim unlit; the guard's glow flares on every blocked shot (`lastBlockedTick`). Slams cycle the hook from its right, the reverse hook, the heave (a low gather and an upward throw, so the horns stay under the crown). | 14 / 29 |
+| Grave Mole | Emergence; Emergence string; Dig in | Burrowed, it is sunk under the floor with only its mound (a floor piece that churns with the tunnelling); the 60-tick ring is the coil (the mound heaves and quakes, the mole under); the burst lands on the resolve tick (up out of the earth, claws spread), holds 3 frames and lands on its feet. The dig back in plays when the sim takes it under (nose down, the claws rake in turn, the body sinks). Four legs on locked feet (big fore paws with baked claws, hind feet). Bursts cycle one claw raking up, the other, both claws off a leap. | 19 / 28 |
+| Barrow Crow | Caw; Caw string | The 45-tick cone is the coil (the head drawn back, the beak wide, the wings raised); the volley lands on the resolve tick (`fireTick`) with the shooter squash held. A hop on both feet (one gait group) along the real travel; instanced wing plates composed on the body; charcoal bones and feet. Caws cycle fanned to its left, to its right, the full fan. | 17 / 17 |
+| Brood Spider | Bite chain | The bite is unwarned (contact, a per-target cooldown of 60 ticks): on the kit's 3-hit chain a predicted bite's contact lands on the sim's bite tick, an unwarned one strikes quick; the front legs step in by the contact. Eight legs on locked tips by two-bone IK with the knee arched high, stepping in two alternating tetrapods along the real skitter. The abdomen with its bristle and pale underside, the slit eyes, the fanged chelicerae; the hourglass unlit on its own row. Bites cycle the right fang, the left fang, the pounce (reared on its back legs with the front pair raised, down on the target off a hop). | 12 / 25 |
+| Broodling | Bite chain | The brood's rig at half its size with the dot tell and the sim's 45-tick cooldown; a bigger knock. | 12 / 24 |
+| Grave Wisp | Ward; Tether snaps | A flier with no attack: the hover rides the spawn node (the moth's), the tail streams back along the real travel and two hem ribbons sway behind it. The ward is unwarned (`wisp_tether`): the hood draws in and the core gathers over a frame, then the hood flares, the sleeves fling wide and the body lurches at its ward with the core burst; while the tether holds the core stays swollen; when it ends (`wisp_tether_end`) the hood snaps shut and the wisp recoils. The slit eyes are baked into the hood's row at a black tone, the sleeves an unlit dark row, so the calls match the classic's seven. | 7 / 7 |
+| Bone Knight | Overhead slam; Slam string | The 66-tick ring is the coil (the guard down: the shield swings out to its left and the body turns open, from the sim's `e.guard.active`); the blow lands on the resolve tick (`slamTick`) and holds 3 frames; the guard stays down through the settle and the sim's 50 ticks. Two bone legs on locked feet in a heavy march; both arms by IK from the shoulders, the tower shield and the sword hung off real elbows. The helm rides the torso's row (the classic's never turned), the visor slit unlit with its glow. Slams cycle the cleave (the blade laid back over its right shoulder, brought down before it), the cross cut (wound low to its left, swept across), the two-handed drive (the shield flung wide, the point driven into the floor with the whole body falling on it). Always Elite; every pose under the crown. | 13 / 14 |
+| Ash Keener | Wail; Wail string | The 54-tick cone is the coil (the keen); the wail lands on the resolve tick (`wailTick`) and holds with a shudder. It glides (no feet): the robe takes the moth's lean, the hem trails the glide. The head on its own row so the hood throws back; the mouth an unlit indigo hollow that swells through the keen and peaks on the wail. Wails cycle the keen (hood back, head up, arms spread; thrown forward), the lament from its left (turned, one arm high; whipped round), the dirge (sunk low, arms crossed over the mask; hurled forward with the robe flaring widest). | 9 / 18 |
+| Barrow Sexton | Dig a snare; Dig string | The sim's 36-tick dig (mode `'dig'`) is a pure timeline: down on a knee, the spade off the shoulder, chop 1 from its right, chop 2 from its left, chop 3 the two-handed stamp, then the bury: the spade's flat pats the earth on the dig tick (`digTick`, the contact) and holds; then up with the spade shouldered. A dig spoiled by a stun rises at once, nothing patted. Two bowed legs on locked feet in a short shuffle; the spade and the lantern off IK arms; the lantern hangs plumb and swings with the walk, its flame flaring through the dig. | 15 / 27 |
+
+Three Barrow beats had no sound of their own (the knight's slam, the wisp's tether and
+the brood's split played only their VFX). Each has a cue in `audio/barrowheartcues.js` on
+the sim's own event, listen-only like the rest of the file: `bh_slam` on `knight_slam`
+(iron on grave earth), `bh_ward` on `wisp_tether` (a thin rising hum and a chime, at the
+wisp), `bh_split` on `brood_split` (a wet pop and a chitter), measured with
+`tools/smallfixes2-cuecal.mjs --only barrowheartcues` (the older entries restored by hand:
+a `--write` re-measures the whole file); the lab's tabs play them.
+
+## The Level IV foes (`src/render/enemies/facet/`, v0.5.350)
 
 Every creature the Hollow Heart rolls that no earlier level built (its roster's husk,
 lancer, geode and censer, its campaign roster's bloom and siphon; the crow, the brood, the
@@ -860,7 +961,9 @@ Every attack already had a cue in the game (`audio/heartcues.js`: `hx_surge`, `h
 
 - `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet`,
   `buildStagFacet`, `buildThornmotherFacet`, `buildGloamWolfFacet`, `buildHeronFacet`,
-  `buildMillwheelFacet` and `buildMireKingFacet` when their flag is on;
+  `buildMillwheelFacet`, `buildMireKingFacet`, `buildLichramFacet` and `buildAshRavenFacet`
+  when their flag is on (the boss layer passes the sim tick into `pose` for the Ram's
+  Grave Call);
   each keeps the classic rig's interface (`group`, `mats`, `setYaw`, `setFlash`, `pose`)
   and adds `lab`, `points` and `react`. The boss rigs are pooled: a rig posed for a new
   boss (a new entity id, or a clock that went back) resets its timelines and spawns in; a
@@ -897,7 +1000,7 @@ Every attack already had a cue in the game (`audio/heartcues.js`: `hx_surge`, `h
   first, still-collapsed frame.
 - The classic rigs (`boss/wyrm.js`, `boss/stag.js`, `boss/slice2.js`, `boss/third.js`,
   `critters/tank.js`, `healer.js`, `swordsman.js`, `archer.js`, `tidecaller.js`, `bellwright.js`, `enemies/boar.js`, `enemies/mantis.js`,
-  `enemies/archetypes.js`, `enemies/woodmill.js`) are untouched and stay beside them.
+  `enemies/archetypes.js`, `enemies/woodmill.js`, `enemies/slice2.js`, `enemies/barrowheart.js`) are untouched and stay beside them.
 - The hit reaction and the render hold (v0.5.333, `docs/HIT_FEEDBACK.md` "The hit and the
   kill") need nothing from a rig: the foe and boss layers wrap its `body` (else
   `group.children[0]`) in a `hit-react` node and squash that, and every layer poses a rig
@@ -929,7 +1032,10 @@ every model, the Wyrm too, a Spawn in tab). The Level II bosses follow (the Drow
 Bill Spear, Wingbeat, Submerge, Surface; the Millwheel: Cog Shards, Crosscut; the Mire
 King: Tongue Lash, Belly Flop, Swallow, Enraged); the Bill Spear dashes across the frame at
 11 u/s, the Crosscut rolls across it at 9 u/s and the Belly Flop leaps across it, and
-`tools/model-standard-level2-shots.mjs` shoots them in the lab and in the game. The Trample, the Briar Charge and the Pounce
+`tools/model-standard-level2-shots.mjs` shoots them in the lab and in the game. The Level III
+bosses follow (the Lich Ram: Bone Rush, Grave Call, Enraged; the Ash Raven: Carrion Dive,
+Wing Gust, Omen, Enraged); the Bone Rush gallops across the frame at 11 u/s and the Carrion
+Dive skims across it, and `tools/model-standard-level3-shots.mjs` shoots them. The Trample, the Briar Charge and the Pounce
 travel as they do in the game, so the gallop and the bound can be judged on locked feet.
 Still from a playing ability freezes that moment with the feet where the motion left them;
 a scrub re-plants them on the scrubbed pose's stance. An ability id the model does not have
@@ -978,8 +1084,21 @@ cues on its beats.
 
 ## Probes
 
+`node tools/model-standard-level3-probe.mjs` (in `npm test`) holds the Level III bosses to
+the same rules (the flags, the Level IV bosses still classic; the rig, the colours with the
+amber family banned, the beats, the rush's pull-back and drive; the Ram's four locked
+hooves through a trot with a turn, a rest and a spin, stepping in diagonal pairs; the
+Raven's hop with both talons leaving and landing together), and to their own moves driven
+by a sim entity: the rush's lane wind-up with the pawing hoof, the 11 u/s gallop, the slam,
+the stuck with the guard down and the wrench free; the call's gather read ahead from
+`nextGraveTick`, nothing earlier, the stamp on the call's tick, a held-back call waiting at
+the top; the dive's rise, the stoop as the sim dives, the skim, the landing on the resolve
+and the preen; the gust's mantle and beat; the omen's call and caw; the rage; the strikes
+on the sim's hit, a co-op guest's fresh copies, a boss killed in its wind-up, a hitch; the
+spawn-in, the pooled rig, the turntable; the lab entries.
+
 `node tools/model-standard-level2-probe.mjs` (in `npm test`) holds the Level II bosses to
-the rules: the flags (the Level III bosses still classic) and the classic rigs; the classic
+the rules: the flags (the Level IV bosses still classic) and the classic rigs; the classic
 interface plus `lab`, `points` and `react`, floor pieces beside the body, every part inked
 and faceted, named points, no reserved colour; strikes of 2.5 frames into a held contact,
 off on the first frame, one overshoot in each settle, a recoil on every hit, the lash's
@@ -1083,6 +1202,17 @@ read-ahead gather held loaded and emptied, the lamprey's sink, surface and beach
 leech's stand-up, gulps and flop, the moth's swoop drop, the miller's toss budget and the
 stone's turns and return). `tools/model-standard-level2-foes-shots.mjs` shoots each in the
 lab and a Level II fight with all seven spawned, faceted and with `?facet=0`.
+
+`node tools/model-standard-level3-foes-probe.mjs [kind,kind]` (in `npm test`): the same
+checks for the nine Level III foes (the roster derived from `data/levels.js`, the broodling
+added), with their live attacks (the ram's, crow's, knight's and keener's telegraphs, the
+mole's emergence, the brood's and broodling's bites on the sim's bite tick, the wisp's
+tether inside the B1 budget, the sexton's bury on the dig tick, a spoiled dig patting
+nothing) and each foe's own beats (the ram's guard flare, the mole under its mound and the
+mound's quake, the wisp's core, the knight's shield, the keener's mouth, the sexton's knee
+and spade), plus the three Barrow cues registered, measured and mapped, and the lab playing
+each foe's cue. `tools/model-standard-level3-foes-shots.mjs` shoots each in the lab and a
+Level III fight with all nine spawned, faceted and with `?facet=0`.
 
 `node tools/model-standard-level4-foes-probe.mjs [kind,kind]` (in `npm test`): the Level IV
 roster derived from `data/levels.js` (the six kinds no earlier level built), then per foe the

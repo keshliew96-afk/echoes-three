@@ -48,6 +48,16 @@ const FOES = {
   leech: { label: 'Mire Leech', y: 0.2, dist: 3.2, side: 1.2, speed: 2.0, loop: 1.6, sound: { strike: 'wm_latch', drain: 'wm_drain' } },
   miller: { label: 'Drowned Miller', y: 0.9, dist: 4.6, side: 1.5, speed: 1.1, loop: 1.4, sound: { strike: 'wm_sweep', toss: 'wm_toss' } },
   crab: { label: 'Weir Crab', y: 0.3, dist: 3.4, side: 1.4, speed: 1.9, loop: 1.6, sound: { strike: 'wm_snap' } },
+  // Level III, the Ashen Barrow (audio/barrowheartcues.js, render/hazards/cues.js)
+  ram: { label: 'Barrow Ram', y: 0.55, dist: 3.8, side: 1.4, speed: 1.1, loop: 1.6, sound: { strike: 'm4b_thud' } },
+  mole: { label: 'Grave Mole', y: 0.3, dist: 3.2, side: 1.3, speed: 2.2, loop: 1.6, sound: { strike: 'm4b_erupt', dig: 'm4b_dig' } },
+  crow: { label: 'Barrow Crow', y: 0.5, dist: 3.4, side: 1.3, speed: 2.0, loop: 1.6, sound: { strike: 'spit' } },
+  brood: { label: 'Brood Spider', y: 0.4, dist: 3.6, side: 1.4, speed: 1.7, loop: 1.8, sound: { strike: 'bite' } },
+  broodling: { label: 'Broodling', y: 0.2, dist: 2.6, side: 1.0, speed: 2.8, loop: 1.4, sound: { strike: 'bite' } },
+  gravewisp: { label: 'Grave Wisp', y: 1.0, dist: 3.6, side: 1.3, speed: 2.3, loop: 1.6, sound: { ward: 'bh_ward' } },
+  knight: { label: 'Bone Knight', y: 0.8, dist: 4.4, side: 1.5, speed: 0.95, loop: 1.4, sound: { strike: 'bh_slam' } },
+  keener: { label: 'Ash Keener', y: 0.9, dist: 4.4, side: 1.5, speed: 1.45, loop: 1.6, sound: { strike: 'bh_keen' } },
+  sexton: { label: 'Barrow Sexton', y: 0.7, dist: 4.0, side: 1.4, speed: 1.4, loop: 1.6, sound: { dig: 'bh_dig', bury: 'bh_bury' } },
   // The Level IV foes (their cues in audio/heartcues.js and
   // audio/barrowheartcues.js; the bloom's root plays no sound in the game).
   husk: { label: 'Hollow Husk', y: 0.6, dist: 3.6, side: 1.3, speed: 1.6, loop: 1.6, sound: { strike: 'bite', surge: 'hx_surge' } },
