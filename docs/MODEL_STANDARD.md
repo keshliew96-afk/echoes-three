@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level IV champions v0.5.349)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -33,7 +33,7 @@ Duskwing in v0.5.345 (their sections below): all seven heroes now play the stand
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, the eight Level I foes}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
+| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, the Level II bosses, the Level I and II foes, the Level I, II and IV champions}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `hero.js` | The hero core (below). |
 | `heroes.js` | `FACET_HEROES`: the registry of model-standard heroes. The critter factory, the model lab and the heroes probe read it, so a hero listed here is built, shown and checked. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
@@ -720,6 +720,61 @@ on a slow frame the strike runs no further than its contact while the warning is
 new champion spawns in; a jump in place re-plants the feet; a dying champion is never posed
 again.
 
+## The Level IV champions (v0.5.349)
+
+The Hollow Heart's two champions, on the same terms as the Level II pair: each keeps its
+classic rig's silhouette and colours (the classic's own constants and value steps of them),
+adds the standard's detail on top, and keeps the classic beside it (`?facet=0`). Neither
+has feet. The Hollow Choir **floats** (the Hollow Cantor's rule): its hems hold a hover of
+0.55 u over the floor with a slow breath, never touch it and never drag, a strike is a lean
+and a reach off the hover, and the lean comes from its own velocity. The Vein Matron
+**glides on her roots** (the legless rule: the base stays planted): the root tips rest on
+the floor and ripple with the travel, the skirt never lifts off it except the pulse's
+heave, and she leans into her travel from her own velocity.
+
+| Champion | File | Draw calls (classic) | Instances |
+|---|---|---|---|
+| Hollow Choir | `render/enemies/champfacet/hollowchoir.js` | 87 (38) | 103 |
+| Vein Matron | `render/enemies/champfacet/veinmatron.js` | 80 (86) | 109 |
+
+- **Hollow Choir.** Three choristers in bone-violet gowns back to back round the heart: a
+  faceted gown of six pleat plates and six shaded folds on each, four torn tatters off its
+  hem swinging with the hover, a cowl of four hood plates over a boxed skull, a lit mouth,
+  slit eyes, two arms of faceted segments ending in three crystal fingers each; the heart a
+  faceted violet gem in a cage of six bone ribs, the indigo tell behind it; the halo as
+  seven faceted crystals between seven runes on a thin ring; five motes drifting round the
+  whole. At rest the three turn slowly about the heart. *Shard Hymn*: gather (the 60-tick
+  cone warning less one strike: the three turn to face the lane together, the lead centred
+  and the two fanned beside it, the mouths open, the arms up, the heart swelling), sing
+  (2.5 frames on the resolve: the heads thrust forward, the mouths wide, the halo flung
+  up), held with a recoil, settle. *Discord*: swell (the 72-tick ring warning less one
+  strike: the three drift out from the heart, which swells, the halo widening), burst (2.5
+  frames on the resolve: the three flung out wide and tipped down, the heart flaring),
+  held with a recoil, settle (they drift back in). *Raged* (under half HP): the heart
+  beats faster, the tell burns.
+- **Vein Matron.** The tall crystal matriarch on her skirt of nine faceted vein-roots,
+  each with a lit vein row down its back and a crystal knuckle at its bend; a ring of hip
+  plates; a faceted waist with lit plates over its crown and a collar of six bone plates;
+  three crystal breast plates over a lining of lit wedges, the heart lit through the
+  split; a faceted skull under a veil of plates, the third eye's indigo tell, two lit
+  eyes, the crown's seven faceted spines with six small crystals between; two whips of ten
+  faceted tapering segments off the shoulders, laid link by link along a chain that coils
+  as it hangs, five lit vein beads along each and a gem at each tip. *Vein Lash*: draw
+  (the 58-tick lane warning less one strike: the right whip drawn back over the shoulder,
+  the torso twisted away, the hips sunk into the roots), crack (2.5 frames on the resolve:
+  the whip shot straight down the lane to the warning's length, the torso twisted into
+  it), held, drink (the heart flares and the beads and root veins run with light as she
+  drinks), settle. *Heart Pulse*: swell (the 70-tick ring warning less one strike: she
+  rears back, the roots tip up off the floor, the heart and the crown swell, both whips
+  raised), beat (2.5 frames on the resolve: the body drops, the roots slam flat, the heart
+  flares, the whips flung out wide), held with a recoil, settle. *Raged*: the heart races,
+  the tell burns.
+
+Both wind up the way the Level II champions do: a warning is known by its move and start
+tick (a fresh copy every tick, a co-op guest's snapshot, never restarts it), stretched over
+the sim's ticks so the strike lands on the resolve, and on a slow frame the strike holds at
+its contact while the warning is live. The Level III and Level V champions stay classic.
+
 ## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
 Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
@@ -833,7 +888,7 @@ read small at play zoom.
   jump in place (a new room, a hitch mid-charge) only re-plants the feet. A dying rig (posed
   with no entity) collapses in the pose it died in: no wind-up runs on into its strike.
 - `render/enemies/champions.js` builds `buildBriarKnightFacet`, `buildMossHartFacet`,
-  `buildSluiceWardenFacet` and `buildLockkeeperFacet` in the champion table when their flag is on, so the enemy layer, the prewarm and the Journal
+  `buildSluiceWardenFacet`, `buildLockkeeperFacet`, `buildHollowChoirFacet` and `buildVeinMatronFacet` in the champion table when their flag is on, so the enemy layer, the prewarm and the Journal
   viewer all take them; the enemy layer wraps the rig's first child in its hit-react node
   and lifts the hit flash on its `mats` as for any champion.
 - The boss prewarm (`render/warmup.js`) parks each rig unculled for a few frames, then gives
@@ -905,7 +960,11 @@ the Briar Knight (Bramble Charge, which crosses the frame at the sim's 9 u/s, Th
 and the Moss Hart (Antler Toss, Hart's Leap, which bounds across the frame), each with a
 Spawn in tab and its classic twin beside. The Level II champions follow in the same file:
 the Sluice Warden (Floodgate, Undertow) and the Lockkeeper (Chain Hook, whose key flies
-down a lab lane of `LAB_HOOK` 5 u and reels back, Lock Turn).
+down a lab lane of `LAB_HOOK` 5 u and reels back, Lock Turn). The Level IV champions have
+their own file (`scenes/modellab-champions-level4.js`): the Hollow Choir (Shard Hymn,
+Discord) and the Vein Matron (Vein Lash, whose whip cracks down a lab lane of `LAB_LASH`
+5 u, Heart Pulse); `tools/model-standard-level4-champions-shots.mjs` shoots both in the lab
+and in their Heart crown rooms, faceted and with `?facet=0`.
 The Level I foes bring their own tabs (`scenes/modellab-foes.js`, entries the lab sets
 before the Effect kit): each foe's framing, its game speed on the Move loop (forward for
 half a lap, then a sidestep and a backpedal facing the middle), its abilities on their
@@ -966,6 +1025,18 @@ slam at its contact; the hands on the gate, the maul and the key in every pose; 
 running from the left hand to the live key's bow at rest, whirling, flying and driven.
 `tools/model-standard-level2-champions-shots.mjs` shoots both in the lab and in their Mill
 crown rooms, faceted and with `?facet=0`, with the sim frozen between beats.
+
+`node tools/model-standard-level4-champions-probe.mjs` (in `npm test`) holds the Level IV
+champions to the same rules (the flags, the Level V champions still classic; the rig, the
+beats, the spawn-in, the rage on the tell, the lab), with the feet rules replaced by their
+own: the Choir has no feet and its hems hold their hover band through a walk with a turn,
+a rest, a spin and every ability; the Matron has no feet and her lowest root tip stays on
+the floor through the same, never under it, lifted only by the pulse's heave and slammed
+flat by its beat; both lean into their travel. Its own moves: the hymn's turn to the lane
+through its warning and its sing on the resolve; the discord's swell and burst; the lash's
+draw, its crack to the warning's length with the whip's tip at the lane's end, and the
+drink after; the pulse's rear with the roots lifted and its beat; every whip segment on
+its chain's point in every pose, the hanging whips' tips below the shoulders.
 
 `node tools/model-standard-champions-probe.mjs` (in `npm test`) holds the two champions to
 the rules: the flags and the champion table's soft flash; the classic interface plus `lab`,

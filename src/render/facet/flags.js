@@ -4,7 +4,8 @@
 // Level I foes (render/enemies/facet/), then the Briar Knight and the
 // Moss Hart (render/enemies/champfacet/); the Level II slices add the Drowned
 // Heron, the Millwheel and the Mire King, then the Sluice Warden and the
-// Lockkeeper; the heroes slice adds the Healer,
+// Lockkeeper; the Level IV champions slice adds the Hollow Choir and the Vein
+// Matron; the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
 //
@@ -54,6 +55,9 @@ export const MODEL_STANDARD = Object.freeze({
   // The Level II champions.
   sluice_warden: true,
   lockkeeper: true,
+  // The Level IV champions.
+  hollow_choir: true,
+  vein_matron: true,
 });
 
 export function facetOn(kind, query = pageQuery()) {
