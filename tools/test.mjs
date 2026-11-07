@@ -46,6 +46,7 @@ export const SUITE = [
   { file: 'tools/model-standard-level2-probe.mjs', args: [], what: 'the model standard on the Level II bosses: Drowned Heron, Millwheel (rolled on its paddles), Mire King' },
   { file: 'tools/model-standard-level2-champions-probe.mjs', args: [], what: 'the model standard on the Level II champions: Sluice Warden, Lockkeeper' },
   { file: 'tools/model-standard-level2-foes-probe.mjs', args: [], what: 'the model standard on the Level II foes: crowd budget, crown, locked feet, strikes on the sim tick' },
+  { file: 'tools/model-standard-level3-probe.mjs', args: [], what: 'the model standard on the Level III bosses: Lich Ram (trot, rush, call read ahead), Ash Raven (hop, dive, gust, omen)' },
   { file: 'tools/vfx-hit-feedback-probe.mjs', args: [], what: 'the hit and the kill: render hold, hit reaction, kill pop, contact bloom, numbers, kill rumble' },
   { file: 'tools/vfx-hit-feedback2-probe.mjs', args: [], what: 'the cast, the shot, the reward and the aftermath: near light, stuck arrows, crit flipbook, frost air, the chest beat and its sounds' },
   { file: 'tools/vfx-extras-probe.mjs', args: [], what: 'the traced blade slash, the bigger stuck arrows and frost twinkles' },
