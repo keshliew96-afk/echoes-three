@@ -1,4 +1,4 @@
-// MODEL LAB, THE LEVEL I FOES (docs/MODEL_STANDARD.md "Foes"): one tab per
+// MODEL LAB, THE FOES (docs/MODEL_STANDARD.md "Foes"): one tab per
 // foe the model standard rebuilt (render/enemies/facet/), plugged into the
 // lab (scenes/modellab.js) through its entries hook. Each tab plays:
 //
@@ -58,6 +58,16 @@ const FOES = {
   knight: { label: 'Bone Knight', y: 0.8, dist: 4.4, side: 1.5, speed: 0.95, loop: 1.4, sound: { strike: 'bh_slam' } },
   keener: { label: 'Ash Keener', y: 0.9, dist: 4.4, side: 1.5, speed: 1.45, loop: 1.6, sound: { strike: 'bh_keen' } },
   sexton: { label: 'Barrow Sexton', y: 0.7, dist: 4.0, side: 1.4, speed: 1.4, loop: 1.6, sound: { dig: 'bh_dig', bury: 'bh_bury' } },
+  // The Level IV foes (their cues in audio/heartcues.js and
+  // audio/barrowheartcues.js; the bloom's root plays no sound in the game).
+  husk: { label: 'Hollow Husk', y: 0.6, dist: 3.6, side: 1.3, speed: 1.6, loop: 1.6, sound: { strike: 'bite', surge: 'hx_surge' } },
+  // its lance runs 7 u down the lane: the camera looks ahead of it
+  lancer: { label: 'Vein Lancer', y: 0.8, z: 1.6, dist: 6.0, side: 1.5, speed: 1.5, loop: 1.4, sound: { strike: 'hx_lance' } },
+  geode: { label: 'Geode Brute', y: 0.6, dist: 4.4, side: 1.7, speed: 0.9, loop: 1.4, sound: { strike: 'hx_slam' } },
+  censer: { label: 'Heart Censer', y: 1.5, dist: 4.4, side: 1.4, speed: 2.0, loop: 1.6, sound: { strike: 'hx_mend', gather: 'hx_gather', spill: 'hx_spill' } },
+  bloom: { label: 'Heart Bloom', y: 0.5, dist: 3.8, side: 1.5, speed: 0.7, loop: 1.2, sound: { strike: 'bh_pulse', open: 'bh_open', root: null } },
+  // its lash runs 5.4 u down the lane
+  siphon: { label: 'Vein Siphon', y: 0.9, z: 1.2, dist: 5.2, side: 1.4, speed: 1.9, loop: 1.6, sound: { strike: 'bh_lash', drink: 'bh_drink' } },
 };
 
 // A combo (an object with `at(t)`) or a plain timeline, read the same way.

@@ -6,7 +6,8 @@
 // Heron, the Millwheel and the Mire King, then the Sluice Warden and the
 // Lockkeeper; the Level III slice adds the Lich Ram and the Ash Raven (the
 // Barrow Wyrm is the pilot's) and the Level III foes slice the Barrow's eight
-// (nine with the broodling); the heroes slice adds the Healer,
+// (nine with the broodling); the Level IV foes slice adds the six Heart foes;
+// the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
 //
@@ -63,6 +64,13 @@ export const MODEL_STANDARD = Object.freeze({
   knight: true,
   keener: true,
   sexton: true,
+  // The Level IV foes (data/levels.js row 4: the Hollow Heart's own kinds).
+  husk: true,
+  lancer: true,
+  geode: true,
+  censer: true,
+  bloom: true,
+  siphon: true,
   // The Level I champions.
   briar_knight: true,
   moss_hart: true,
