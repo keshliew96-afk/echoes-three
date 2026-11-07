@@ -138,7 +138,8 @@ const GAME_SHOTS = {
     ['call-stamp', "p && b.ng !== null && p.ng !== null && b.ng > p.ng", 1, null, "b.ng !== null && b.ng - b.tick <= 32 && b.mode === 'stalk' && !b.tel"],
   ],
   ashraven: [
-    ['dive-rise', "b.attack === 'dive' && b.mode === 'rise' && b.telK > 0.6", 1],
+    // the dive needs its prey 2 u off at least: at 1 fps the party stands under its beak, so it is set back
+    ['dive-rise', "b.attack === 'dive' && b.mode === 'rise' && b.telK > 0.6", 1, 'back(5)'],
     ['dive-skim', "p && b.mode === 'dive' && p.mode === 'dive'", 0],
     ['preen', "p && b.mode === 'preen' && p.mode === 'preen'", 4],
     ['gust', "b.attack === 'gust' && b.telK > 0.85", 1],
