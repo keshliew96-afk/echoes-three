@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level IV foes v0.5.348)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -33,7 +33,7 @@ Duskwing in v0.5.345 (their sections below): all seven heroes now play the stand
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, the eight Level I foes}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
+| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, the Level I, Level II and Level IV foes}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `hero.js` | The hero core (below). |
 | `heroes.js` | `FACET_HEROES`: the registry of model-standard heroes. The critter factory, the model lab and the heroes probe read it, so a hero listed here is built, shown and checked. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
@@ -822,6 +822,40 @@ them. His other pick: the miller's millstone a size larger than the classic's (r
 `STONE_R` 0.22 u against 0.17; the chain's end and the floor clamp follow it), since it
 read small at play zoom.
 
+## The Level IV foes (`src/render/enemies/facet/`, v0.5.348)
+
+Every creature the Hollow Heart rolls that no earlier level built (its roster's husk,
+lancer, geode and censer, its campaign roster's bloom and siphon; the crow, the brood, the
+gravewisp and the knight belong to the Level III slice, the moth to Level II) plays the
+standard, on the same foe kit and rules as the Level I and Level II foes: baked detail for
+the crowd, world-locked feet, the sim's clock as the anticipation, the classic rig kept
+behind `?facet=0`, visual only. One kit piece is new:
+
+| Piece | What it gives |
+|---|---|
+| `heartfoe.js` (`render/enemies/facet/`) | The Heart's shared look: the vein material and `veinColor(k)` (dim, vein, hot across the heartbeat's `heartbeatK`), `heartGlow` sprites, `crystalMaterial` (the Heart's crystal with an emissive the rig drives), the `TINT` table over the `HEART` palette (ash, flesh, bone, cloth, stone, crystal, cavity), and the small matrix helpers (`M`, `qa`, `qTo`, `rodM`). Every one of the six keeps Violet for corruption and never touches Ember or Bright Heal. |
+
+Two of the six have no feet: the Bone Censer hangs from a chain and the Vein Siphon
+floats, so both lean from the real travel (rule 1) like the moth and the wasp, and the
+censer's chain hangs above the elite crown as the classic's does (the crown check leaves
+the chain out). The Vein Bloom's roots are its feet: seven locked feet it drags on the creep
+and sinks on the root.
+
+### The six foes
+
+| Foe | Attack (lab tab) | In game | Calls (faceted / classic) |
+|---|---|---|---|
+| Hollow Husk | Bite chain; Heartbeat | A skeleton hunched over an open ribcage with the Heart's own heart throbbing inside it, veins down the bones in the heartbeat's colour. The contact bite is unwarned (`biteTick`, a cooldown per target), so the chain predicts it from `cdByTarget` and lands each bite inside the B1 budget; Kesh's 3-hit flow: the claw swipe, the backhand claw, the double rake (both claws driven down, the biggest shove, B6). The heartbeat's surge (mode `'surge'`) drops the hunch deeper and lengthens the stride. Two legs and two arms on IK from the hips and shoulders, feet locked. | 16 / 18 |
+| Bone Lancer | Lance; Lance string | The 54-tick lane (mode `'aim'`) is the coil: the spear drawn back over the shoulder, the body wound, the off hand sighting along the lane; the throw lands on the resolve tick (`lanceTick`), the spear gone from the hand within 0.12 s and grown back by 0.62 s (`spearReform`), its tip glowing as it fills. Throws cycle over the shoulder, side-arm, the plunge (both hands high). Two long legs on locked feet. | 15 / 23 |
+| Vein Geode | Slam; Slam string | A four-legged crystal brute: the 60-tick ring (mode `'slam'`) is the coil with one fist raised high off the floor (that foot reports unplanted while it is up), the back spires flaring; the slam lands on the resolve tick (`slamTick`), the fist driven into the floor ahead, and the hand is released back to its home when the lift ends. Slams cycle the left fist, the right fist, both fists off a reared pitch (B6). Hind feet and fore fists on `createLegs` in diagonal pairs. | 15 / 19 |
+| Bone Censer | Gather; Spill | A hanging censer on a chain (`CHAIN_TOP` 2.35 u, the chain baked with the part ink): the pendulum trails the real travel. The 48-tick gather (mode `'gather'`, `gatherUntil`) is the coil: the coals flare, the rose halo spins up and widens; the mend lands on `mendTick` with the halo burst and a blink after. A stun inside the gather spills: the coals dim, the pot drops and swings wide, the mend never fires (`censerSpillPose`). | 8 / 9 |
+| Vein Bloom | Pulse; Pulse string; Root | A corruption flower on seven root-feet. The 54-tick ring (mode `'rooted'`) is the coil: the roots sink and spread, the petals open from their hinges in the Heart's crystal; the pulse lands on `pulseTick` with the petals snapped shut and the knot jolted. Pulses cycle splayed to its left, to its right, the full bloom (B6). The root (`rootTick`) drives the knot down and the roots out; the creep drags the roots as locked feet. The base never leaves the floor. | 10 / 19 |
+| Vein Siphon | Lash; Lash string; Drink | A floating sac (`SAC_Y` 1.15 u) netted in veins, four hanging tendrils laid as instanced segments. The 54-tick lane (mode `'cast'`) is the coil: the tendrils drawn back and the mouth gaping; the lash lands on `castTick` with the tendrils whipped forward. Lashes cycle from its left, from its right, the plunge (B6). Drinking (mode `'drink'`) reaches the tendrils onto the host and gulps on every drain (`nextDrainTick` moving on). | 8 / 19 |
+
+Every attack already had a cue in the game (`audio/heartcues.js`: `hx_surge`, `hx_lance`,
+`hx_slam`, `hx_gather`, `hx_mend`, `hx_spill`; `audio/barrowheartcues.js`: `bh_open`,
+`bh_pulse`, `bh_lash`, `bh_drink`); the lab's tabs play them on the same cue names.
+
 ## Integration
 
 - `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet`,
@@ -857,7 +891,10 @@ read small at play zoom.
   kind per `MODEL_STANDARD` flag; the layer feeds each rig what it feeds a classic one. A
   baked crowd geometry is marked shared, so `releaseTree` keeps it, and an instanced row now
   disposes its own instance buffers there (`render/geocache.js`). `addPartInk` in
-  `critters/common.js` gives a baked detail row the thinner part ink.
+  `critters/common.js` gives a baked detail row the thinner part ink. The Level II and
+  Level IV foes join the same table: a floating rig (the censer, the siphon) carries its
+  hover height on its spawn node, since the hit-react node measures the body on the rig's
+  first, still-collapsed frame.
 - The classic rigs (`boss/wyrm.js`, `boss/stag.js`, `boss/slice2.js`, `boss/third.js`,
   `critters/tank.js`, `healer.js`, `swordsman.js`, `archer.js`, `tidecaller.js`, `bellwright.js`, `enemies/boar.js`, `enemies/mantis.js`,
   `enemies/archetypes.js`, `enemies/woodmill.js`) are untouched and stay beside them.
@@ -912,7 +949,10 @@ half a lap, then a sidestep and a backpedal facing the middle), its abilities on
 timelines with the game's own sound per cue, and Classic beside with the classic rig fed
 stand-in inputs at the same moment. Each replay hands the classic's one-shot clip fields
 (`biteTick`, `shriekTick`, `lashTick`) fresh ticks, so the classic plays its clip every lap.
-URL: `?modellab=1&model=boar&mode=ability&ability=gore&view=play&classic=1`.
+URL: `?modellab=1&model=boar&mode=ability&ability=gore&view=play&classic=1`. The Level II
+and Level IV foes add their tabs to the same file (the Level IV six: Hollow Husk, Bone
+Lancer, Vein Geode, Bone Censer, Vein Bloom, Vein Siphon), each with the game's own Heart
+cues on its beats.
 
 ## Adding a model to the standard
 
@@ -1043,3 +1083,18 @@ read-ahead gather held loaded and emptied, the lamprey's sink, surface and beach
 leech's stand-up, gulps and flop, the moth's swoop drop, the miller's toss budget and the
 stone's turns and return). `tools/model-standard-level2-foes-shots.mjs` shoots each in the
 lab and a Level II fight with all seven spawned, faceted and with `?facet=0`.
+
+`node tools/model-standard-level4-foes-probe.mjs [kind,kind]` (in `npm test`): the Level IV
+roster derived from `data/levels.js` (the six kinds no earlier level built), then per foe the
+same checks as Level II (flags, lab tabs, the classic kept, draw calls, shared buffers, ink,
+facets, live play, purity, the live contact on the sim's tick or inside the B1 budget,
+cancel, stun on the resolve, B7, the turntable, B8, the envelopes, reserved colours, every
+pose under the elite crown with the censer's chain left out) plus each foe's own beats (the
+husk's vein colour and throb on the heartbeat, its deeper hunch in the surge and its third
+bite the biggest; the lancer's aim and the spear gone then reformed; the geode's fist high
+and unplanted then driven into the floor and the spires' flare; the censer's halo and coals
+on the gather, the burst, the blink and the spill never striking; the bloom's knot jolt,
+root sink, petals open then shut and the base on the floor; the siphon's tendrils drawn
+back then whipped forward and the gulps on the drink).
+`tools/model-standard-level4-foes-shots.mjs` shoots each in the lab and a Level IV fight
+with all six spawned, faceted and with `?facet=0`.

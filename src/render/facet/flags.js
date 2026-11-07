@@ -4,7 +4,8 @@
 // Level I foes (render/enemies/facet/), then the Briar Knight and the
 // Moss Hart (render/enemies/champfacet/); the Level II slices add the Drowned
 // Heron, the Millwheel and the Mire King, then the Sluice Warden and the
-// Lockkeeper; the heroes slice adds the Healer,
+// Lockkeeper, and the seven Level II foes; the Level IV foes slice adds the
+// six Heart foes; the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
 //
@@ -48,6 +49,13 @@ export const MODEL_STANDARD = Object.freeze({
   lamprey: true,
   leech: true,
   miller: true,
+  // The Level IV foes (data/levels.js row 4: the Hollow Heart's own kinds).
+  husk: true,
+  lancer: true,
+  geode: true,
+  censer: true,
+  bloom: true,
+  siphon: true,
   // The Level I champions.
   briar_knight: true,
   moss_hart: true,

@@ -24,6 +24,13 @@ import { buildMothFacet, MOTH_ABILITIES } from './moth.js';
 import { buildLampreyFacet, LAMPREY_ABILITIES } from './lamprey.js';
 import { buildLeechFacet, LEECH_ABILITIES } from './leech.js';
 import { buildMillerFacet, MILLER_ABILITIES } from './miller.js';
+// The Level IV foes (data/levels.js row 4, the Hollow Heart's own kinds).
+import { buildHuskFacet, HUSK_ABILITIES } from './husk.js';
+import { buildLancerFacet, LANCER_ABILITIES } from './lancer.js';
+import { buildGeodeFacet, GEODE_ABILITIES } from './geode.js';
+import { buildCenserFacet, CENSER_ABILITIES } from './censer.js';
+import { buildBloomFacet, BLOOM_ABILITIES } from './bloom.js';
+import { buildSiphonFacet, SIPHON_ABILITIES } from './siphon.js';
 
 export const FACET_FOES = Object.freeze({
   boar: buildBoarFacet,
@@ -41,6 +48,12 @@ export const FACET_FOES = Object.freeze({
   lamprey: buildLampreyFacet,
   leech: buildLeechFacet,
   miller: buildMillerFacet,
+  husk: buildHuskFacet,
+  lancer: buildLancerFacet,
+  geode: buildGeodeFacet,
+  censer: buildCenserFacet,
+  bloom: buildBloomFacet,
+  siphon: buildSiphonFacet,
 });
 // Each foe's lab abilities (the model lab, the probe).
 export const FOE_ABILITIES = Object.freeze({
@@ -59,6 +72,12 @@ export const FOE_ABILITIES = Object.freeze({
   lamprey: LAMPREY_ABILITIES,
   leech: LEECH_ABILITIES,
   miller: MILLER_ABILITIES,
+  husk: HUSK_ABILITIES,
+  lancer: LANCER_ABILITIES,
+  geode: GEODE_ABILITIES,
+  censer: CENSER_ABILITIES,
+  bloom: BLOOM_ABILITIES,
+  siphon: SIPHON_ABILITIES,
 });
 
 export function facetFoeBuilders(query) {
