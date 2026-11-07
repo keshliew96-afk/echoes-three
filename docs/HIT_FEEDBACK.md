@@ -256,9 +256,10 @@ boil in place, is at least 0.68 of the swing's reach wide, a 1.1 rad window
 long, and **(L3)** thickest at the blade, thinning to a point toward the
 swing's start. A 4-point white tip glint (0.65 u) flashes for 3 frames on
 the first strike frame, and 6 to 10 short shards in the slash's own gold
-(the Swordsman's silver) fly off the tip. The glint sits at the arc's start,
-not traced from the rig's weapon tip (T1 is left for the rigs that expose a
-tip).
+(the Swordsman's silver) fly off the tip. Since v0.5.348 a model-standard
+rig's swing is traced from its weapon tip and the glint sits on the tip
+itself ("The extras" below); the arc's-start glint is the fallback for a
+classic rig.
 
 **k. The local anime frame (§2.13).** On a combo finisher's contact (the
 Crescent Finisher today) and on an elite, champion, stag or boss kill, a disc
@@ -350,3 +351,53 @@ stacks on the Effects setting's light gain. Slashes, rings, stars, marks and par
 so shapes and gameplay signals still read; only the wash over the bodies dims. The contact and kill
 blooms, shot and near-side lights, and the vault's geyser, pillars and burst were also cut at their source, and the
 vault's floor ring (inlay, runes, pool) now dims as the chest opens instead of brightening.
+
+## The extras (v0.5.348)
+
+The items the two slices above and the VFX rework left open, built as
+written, render only (the nine goldens are identical):
+
+**T1. The slash traced from the weapon.** Every model-standard hero rig
+exposes its hand and its weapon tip (B8, `points` in
+`src/render/critters/*facet.js`); the arena and the ally layer register each
+hero's live rig by class (`src/render/critters/rigs.js`), and the blade
+template (`src/render/vfx/templates.js`) reads them. When a blade swing's
+rig is mid-move (`moveLive`, the attack clock before its contact hold), the
+first stroke is a **trace** (`tk.trace`, `src/render/vfx/tplkit.js`): a
+ribbon whose columns are the tip's own path through the swing, fed one hand
+and tip pair a frame for 0.25 s (`TRACE.sec`), spread evenly over that clock
+and interpolated (Catmull-Rom) between the samples, so a 30 fps swing of
+five samples still draws a smooth arc. The outer edge keeps the tip's
+heading and height; a tip inside the sim's reach is pushed out to it, so
+the slash still reaches the target's near surface where a short weapon
+(the Tank's shield, the Duskwing's wing) stays inside the body from the
+top-down camera, and a tip beyond the reach (the Swordsman's sword) stays
+its own. The inner edge sits the band (0.68 of the reach, T2) in toward the
+hero at the hand's height. The blaze fragment draws it (the fire mode, the
+T4 ramp, the T5 travelling window, which follows the record's clock and
+then runs on with the tail), and two ghosts lag it by 1 and 2 frames,
+narrower and fainter, as its motion blur. The template's procedural arc at
+the reach still plays under a traced stroke at 55 % (`TRACE_FX.under`), with
+no afterimages of its own; the strokes after the first (Flurry, Blade Dance)
+stay procedural. A trace holds through the hitstop like a blaze. A classic
+rig, a rig at rest or a swing with no rig plays the arc as before.
+
+**T6 at the tip.** The first frame the tip sweeps faster than 3.5 u/s
+(`TRACE_FX.strikeSpeed`; an idle bob is under 1, a strike 6 to 60) is the
+strike frame: the glint and the shards fire there, at the tip, instead of
+the arc's start.
+
+**D2, D3 bigger.** The stuck arrow is 0.8 u long with a 0.04 u shaft and
+0.12 u vanes (was 0.55, 0.026, 0.08; `STUCK` in `boltfx.js`), same pool
+and 3 s life. The frost twinkles are 0.09 to 0.16 u (was 0.05 to 0.09;
+`ELEMENT_AIR.size`), same count and 1 to 1.9 s.
+
+**The vault's stars** already read since the glare budget halved the
+geyser and the pillars (v0.5.341); nothing more was changed there.
+
+**Probe.** `node tools/vfx-extras-probe.mjs` (in `npm test`): the registry,
+the trace on the Swordsman, the Tank and the Duskwing (three slots, the
+reach, the heights, the glint on a strike frame, gone within 0.8 s), the
+fallbacks, the hold and the token, the sizes, the colours. Shots:
+`node tools/vfx-extras-shots.mjs` on the dev server (a virtual clock at
+30 fps; `--only fight|classic|arrows|frost|vault`).

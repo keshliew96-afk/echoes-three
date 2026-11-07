@@ -50,7 +50,10 @@ export const SHOT_FX = Object.freeze({
 // R6: the near-side light (reach about 1.5 bw from the body's centre).
 export const NEAR_LIGHT = Object.freeze({ reach: 1.0, side: 0.3, y: 0.7, size: 0.6, radius: 0.8, opacity: 0.2, sec: 0.12 });
 // D2: an arrow that lands stays stuck in the floor a few seconds.
-export const STUCK = Object.freeze({ cap: 10, life: 3, fade: 0.3, tilt: 0.6, back: 0.28 });
+// The extras (v0.5.348) made it bigger, Kesh's open choice from Part 2: len
+// the shaft (u, was 0.55), girth its radius (was 0.026), fletch the vanes'
+// radius and length (were 0.08 and 0.16).
+export const STUCK = Object.freeze({ cap: 10, life: 3, fade: 0.3, tilt: 0.6, back: 0.28, len: 0.8, girth: 0.04, fletch: [0.12, 0.24] });
 const P4_PALE = '#E7D5A3';
 const P4_CORE = '#FFFCC6';
 
@@ -141,10 +144,10 @@ export function createBoltFx({ kit, tk, bus, byId, after, rnd, mark, world, play
   // ------------------------------------------------- arrows in the floor --
   const stuck = [];
   {
-    const shaftGeo = new CylinderGeometry(0.026, 0.026, 0.55, 5);
-    shaftGeo.translate(0, 0.275, 0);
-    const fletchGeo = new ConeGeometry(0.08, 0.16, 4);
-    fletchGeo.translate(0, 0.5, 0);
+    const shaftGeo = new CylinderGeometry(STUCK.girth, STUCK.girth, STUCK.len, 5);
+    shaftGeo.translate(0, STUCK.len / 2, 0);
+    const fletchGeo = new ConeGeometry(STUCK.fletch[0], STUCK.fletch[1], 4);
+    fletchGeo.translate(0, STUCK.len - STUCK.fletch[1] * 0.3, 0);
     for (let i = 0; i < STUCK.cap; i++) {
       const g = new Group();
       const mat = new MeshBasicMaterial({ color: PALETTE.bone, transparent: true });

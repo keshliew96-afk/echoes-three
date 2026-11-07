@@ -383,6 +383,15 @@ so a hero keeps its own shapes; the template is the finish on top.
 No hero carries a technological weapon; sci-fi is the machines' template
 on the foe side (below).
 
+### The traced slash (v0.5.348)
+
+A blade swing of a model-standard rig is traced from the rig's own weapon
+tip (VFX_HIT_RULES T1): the ribbon's outer edge is the tip's path, pushed
+out to the sim's reach where the weapon is short, the glint fires at the
+tip on the first strike frame, and the template's fire arc plays softer
+underneath. docs/HIT_FEEDBACK.md "The extras" has the rules and numbers;
+`tk.trace` in `src/render/vfx/tplkit.js` is the primitive.
+
 ### Review
 
 - `?vfxlab=1` ▸ **VFX templates**: Magic / Blade / Sci-fi play every beat of
