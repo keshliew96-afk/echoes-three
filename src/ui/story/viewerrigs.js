@@ -15,6 +15,9 @@ import { buildGloamWolfFacet } from '../../render/boss/gloamwolffacet.js';
 import { buildHeronFacet } from '../../render/boss/heronfacet.js';
 import { buildMillwheelFacet } from '../../render/boss/millwheelfacet.js';
 import { buildMireKingFacet } from '../../render/boss/mirekingfacet.js';
+import { buildCantorFacet } from '../../render/boss/cantorfacet.js';
+import { buildColossusFacet } from '../../render/boss/colossusfacet.js';
+import { buildVeinWeaverFacet } from '../../render/boss/veinweaverfacet.js';
 import { facetOn } from '../../render/facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from '../../render/boss/slice2.js';
 import { buildCantor, buildColossus } from '../../render/boss/heart.js';
@@ -33,12 +36,12 @@ export const BUILDERS = {
   thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother,
   millwheel: facetOn('millwheel') ? buildMillwheelFacet : buildMillwheel,
   lichram: buildLichram,
-  cantor: buildCantor,
-  colossus: buildColossus,
+  cantor: facetOn('cantor') ? buildCantorFacet : buildCantor,
+  colossus: facetOn('colossus') ? buildColossusFacet : buildColossus,
   gloamwolf: facetOn('gloamwolf') ? buildGloamWolfFacet : buildGloamWolf,
   mireking: facetOn('mireking') ? buildMireKingFacet : buildMireKing,
   ashraven: buildAshRaven,
-  veinweaver: buildVeinWeaver,
+  veinweaver: facetOn('veinweaver') ? buildVeinWeaverFacet : buildVeinWeaver,
   hush: buildHush,
   skyhorn: buildSkyhorn,
   hourwarden: buildHourwarden,

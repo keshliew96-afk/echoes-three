@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level IV bosses v0.5.348)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -33,7 +33,7 @@ Duskwing in v0.5.345 (their sections below): all seven heroes now play the stand
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, the eight Level I foes}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
+| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, the Level II and Level IV bosses, the Level I and II foes and champions}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `hero.js` | The hero core (below). |
 | `heroes.js` | `FACET_HEROES`: the registry of model-standard heroes. The critter factory, the model lab and the heroes probe read it, so a hero listed here is built, shown and checked. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
@@ -720,6 +720,93 @@ on a slow frame the strike runs no further than its contact while the warning is
 new champion spawns in; a jump in place re-plants the feet; a dying champion is never posed
 again.
 
+## The Level IV bosses (v0.5.348)
+
+The Heart's three bosses, on the same terms as Level II: each keeps its classic rig's
+silhouette and colours (the classic's own constants and value steps of them), adds the
+standard's detail on top, and keeps the classic beside it (`?facet=0`). The Colossus
+walks on four **locked feet** (its two fists and its two stubby legs) and the Vein Weaver
+on eight; the Hollow Cantor has no feet, so it **floats**: its hem holds a hover of 0.32 u
+over the floor, never touches it and never drags, and its lean comes from its own velocity.
+The two unwarned throws (Geode Rain, Brood Sacs) have no telegraph, so the rig reads the
+sim's next throw tick ahead (`e.nextRainTick`, `e.nextBroodTick`, with the `tick` the boss
+layer now passes): it loads over the last 30 ticks before the throw and fires when the next
+tick jumps past it, a 1.5-frame heave into a 2.5-frame strike.
+
+| Boss | File | Draw calls (classic) | Instances |
+|---|---|---|---|
+| Hollow Cantor | `render/boss/cantorfacet.js` | 54 (56) | 163 |
+| Geode Colossus | `render/boss/colossusfacet.js` | 55 (60) | 95 |
+| Vein Weaver | `render/boss/veinweaverfacet.js` | 75 (61) | 62 |
+
+- **Hollow Cantor.** The hooded floater, deep plum over violet: a robe of nine pleat rings
+  (ten plates each, bands every third ring), a row of torn tatters that moves with the
+  sway, cowl plates over the shoulders, eight ribs in two rows and a sternum over a violet
+  heart gem, hood plates, a mask with a mouth that opens to sing and lit eyes, a halo ring
+  with seven floating notes (recoloured per verse) and seven runes, sleeves with cuff
+  plates and three crystal fingers each, six motes drifting about it; the classic's violet
+  pool on the floor. *Hollow Note*: draw (the 48-tick ring warning less one strike: the
+  chest fills, the hands spread, the halo brightens), sing (2.5 frames on the hit: the
+  mouth wide, the halo flung out, the robe squashed), held with a recoil, settle.
+  *Sung Lance*: gather (the 54-tick lane warning less one strike: both hands crossed at
+  the chest, the body turned square to the lane, leaned back), lance (2.5 frames on the
+  resolve: the B9 lunge, both hands shoved down the lane), held with a recoil, settle.
+  *Heart Pulse* (Third Verse): swell (the 60-tick ring warning less one strike: the chest
+  and the halo swell, the sleeves lift), pulse (2.5 frames on the hit: the robe flares,
+  the motes fly out), held, settle. *Echo Step* (an unwarned mode, no damage): fold (the
+  sim's 18-tick fade: the robe folds in on itself and the hood drops into it), gone (the
+  rig stays hidden while the sim moves it), rise (the spawn-in's seven frames at the far
+  side: it grows back out of the floor), stand. *Verse* (each add phase): a flare of the
+  halo and the heart with the notes recoloured for the verse, played over whatever the
+  rig is doing unless a wind-up is live, in which case it waits for the settle.
+- **Geode Colossus.** The hunched crystal brute, slate stone over a violet geode: a faceted
+  torso under a saddle of plate rings, seven glass spires and twelve crust crystals on the
+  back (the classic's glass, emissive), seven cracks of violet light that widen with the
+  rage, a geode cavity in the chest with nine lining wedges round a heart and its glow, a
+  tapered head with brows and lit eyes, two fists with three studs and four knuckle plates
+  each, pads on the stubby hind legs. It walks on its fists like a gorilla: the fists hang
+  from the shoulders in body space, the legs from the hips, all four on locked feet, so a
+  heave or a rear leaves the planted ones where they are until the weight shifts.
+  *Fissure*: raise (the 54-tick lane warning less one strike: the right fist lifts high
+  and forward, the body rears, turned square to the lane), slam (2.5 frames on the
+  resolve: the fist drives into the floor at the lane's mouth, the body crouches, the
+  cracks flare), held with a recoil, settle (the fist steps home one foot at a time).
+  *Geode Rain* (unwarned): load (the last 30 ticks before the throw: both fists come up to
+  the chest and the geode glows), heave (1.5 frames), hurl (2.5 frames on the throw: both
+  fists flung up and out, the body up on its legs), held, settle. *Geode Burst*: swell (the
+  60-tick ring warning less one strike: the body crouches wide, the geode and every spire
+  swell), burst (2.5 frames on the hit: the chest thrown open, the body flung up), held,
+  spent (the sim's 80-tick stand: it slumps on its fists, the geode dark, the head down),
+  recover. *Enraged* (under 40 % HP): the cracks widen and burn, the eyes and the geode
+  flare.
+- **Vein Weaver.** The crystal-backed spider, dark plum legs under a violet crystal
+  abdomen: a faceted thorax of plates, a crystal abdomen with a crown of spires grown out
+  of its back and three spinnerets at its tip, six faceted gem eyes under a brow plate, two
+  hooked fangs on dark bases; eight legs in
+  four pairs on locked feet, each with a crystal cap on the knee and a crystal tip on the
+  foot, the poles set out and up so each knee bends the way a spider's does; a thread of
+  fourteen strands on a bezier from the spinneret over the head down the lane, with the
+  anchor gem at its end. *Bind*: spin (the 44-tick lane warning less one strike: the
+  abdomen lifts and swells, the front legs raise, turned square to the lane), cast (2.5
+  frames on the resolve: the thread shot to the lane's length, the body lunged), held with
+  a recoil, draw (while a hero is bound: the thread stays taut and the rig braces back on
+  its hind legs), settle. *Heartbeat Slam*: rear (the 60-tick ring warning less one
+  strike: it rears on its hind pairs, the front legs high and wide, the fangs bared), slam
+  (2.5 frames on the hit: every leg driven flat, the body squashed to the floor), held
+  with a recoil, settle. *Brood Sacs* (unwarned): load (the last 30 ticks before the
+  throw: the abdomen swells and lifts), heave (1.5 frames), lob (2.5 frames on the throw:
+  the abdomen flicks up, the sacs flung), held, settle. *Enraged* (under 40 % HP): the
+  eyes and the abdomen's crystal burn, the fangs stay bared.
+
+Every warning is known by its attack and start tick (a co-op guest's fresh copies never
+restart a wind-up), every wind-up is stretched to the sim's ticks so its strike lands on the
+resolve, the facing eases to the lane while the Cantor, the Colossus and the Weaver wind up
+on one, and a boss killed in its wind-up collapses in it. On a slow frame a strike may land
+ahead of the resolve, but its contact holds until the warning is gone. The Cantor's Echo
+Step moves it across the room: that jump is a step, not a new boss, so it rises where it
+lands instead of spawning in. The Level V bosses (the Hush, the Skyhorn, the Hourwarden)
+stay classic.
+
 ## The Level I foes (`src/render/enemies/facet/`, v0.5.338)
 
 Every creature Level I rolls (its roster's boar, mantis, quillback, rotcap, wasp and
@@ -826,7 +913,9 @@ read small at play zoom.
 
 - `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet`,
   `buildStagFacet`, `buildThornmotherFacet`, `buildGloamWolfFacet`, `buildHeronFacet`,
-  `buildMillwheelFacet` and `buildMireKingFacet` when their flag is on;
+  `buildMillwheelFacet`, `buildMireKingFacet`, `buildCantorFacet`, `buildColossusFacet` and
+  `buildVeinWeaverFacet` when their flag is on; the boss layer passes each rig the sim's
+  `tick` too, which the Level IV rigs read for their unwarned throws;
   each keeps the classic rig's interface (`group`, `mats`, `setYaw`, `setFlash`, `pose`)
   and adds `lab`, `points` and `react`. The boss rigs are pooled: a rig posed for a new
   boss (a new entity id, or a clock that went back) resets its timelines and spawns in; a
@@ -892,7 +981,12 @@ every model, the Wyrm too, a Spawn in tab). The Level II bosses follow (the Drow
 Bill Spear, Wingbeat, Submerge, Surface; the Millwheel: Cog Shards, Crosscut; the Mire
 King: Tongue Lash, Belly Flop, Swallow, Enraged); the Bill Spear dashes across the frame at
 11 u/s, the Crosscut rolls across it at 9 u/s and the Belly Flop leaps across it, and
-`tools/model-standard-level2-shots.mjs` shoots them in the lab and in the game. The Trample, the Briar Charge and the Pounce
+`tools/model-standard-level2-shots.mjs` shoots them in the lab and in the game. The Level IV
+bosses follow (`scenes/modellab-level4.js`: the Hollow Cantor: Hollow Note, Sung Lance,
+Heart Pulse, Echo Step, which folds away and rises 4 u across the frame, Verse; the Geode
+Colossus: Fissure, Geode Rain, Geode Burst, Enraged; the Vein Weaver: Bind, Heartbeat Slam,
+Brood Sacs, Enraged); `tools/model-standard-level4-shots.mjs` shoots them in the lab and in
+their Heart rooms. The Trample, the Briar Charge and the Pounce
 travel as they do in the game, so the gallop and the bound can be judged on locked feet.
 Still from a playing ability freezes that moment with the feet where the motion left them;
 a scrub re-plants them on the scrubbed pose's stance. An ability id the model does not have
@@ -953,6 +1047,21 @@ lane's length, reeled in; the flop's heave with the fore-feet up, its leap and i
 on the hit; the swallow's gape and snap; the rage), the strikes on the sim's hit, a co-op
 guest's fresh copies, a boss killed in its wind-up, a hitch; the spawn-in, the pooled rig,
 the turntable; the lab entries.
+
+`node tools/model-standard-level4-probe.mjs` (in `npm test`) holds the Level IV bosses to
+the same rules (the flags, the Level V bosses still classic; the rig, every part inked and
+faceted, named points, no reserved colour; the beats; the Colossus's four and the Weaver's
+eight locked feet through a walk with a turn, a rest and a spin in place, the feet
+alternating by group; the Cantor's hem held in its hover band, never on the floor; each move
+driven by a sim entity: the note's draw and its sing on the hit with the halo flung; the
+lance's gather and its lunge on the resolve; the pulse; the Echo Step's fold, its hidden
+stretch and its rise where it lands; the verse flare; the fissure's raise and its slam at
+the lane's mouth; the rain and the brood loaded ahead of the sim's next throw tick and
+thrown within 1.5 frames of it; the burst and its spent slump held while the sim holds it;
+the bind's spin and cast to the lane's length, the thread taut while a hero is bound; the
+slam flat on the hit; the rage), the strikes on the sim's hit, a co-op guest's fresh copies,
+a boss killed in its wind-up, a hitch, the spawn-in, the pooled rig, the turntable, the lab
+entries.
 
 `node tools/model-standard-level2-champions-probe.mjs` (in `npm test`) holds the Level II
 champions to the same rules as the Level I pair below (the flags, the Level III champions
