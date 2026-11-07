@@ -23,8 +23,10 @@
 //
 // Render-only: reads sim entities and events, never writes either; all
 // randomness from the COSMETIC stream.
+import { Vector3 } from 'three';
 import { PALETTE } from '../../data/palette.js';
 import { vfxTemplate, vfxTemplateFor, vfxSkillClass, VFX_HEAL_SKILLS } from '../../data/vfx.js';
+import { TRACE } from './tplkit.js';
 
 const TAU = Math.PI * 2;
 const HEAL = PALETTE.brightHeal;
@@ -36,7 +38,18 @@ const HEALS = VFX_HEAL_SKILLS;
 // len), living about 5 frames, within ±25° of the hit.
 const MAGIC_EXIT = Object.freeze({ edge: 0.33, y: 0.55, out: 6, back: 3, speed: [4.5, 6.5], up: [-0.2, 0.4], life: [0.07, 0.1], len: 0.065, width: [0.03, 0.05], spread: 0.44 });
 
-export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area }) {
+// T1 (VFX_HIT_RULES, docs/HIT_FEEDBACK.md j): a blade slash traced from the
+// rig's weapon tip. strikeSpeed: the tip speed (u/s) that marks the first
+// strike frame, where the glint and the shards fire at the tip itself (an
+// idle bob moves it under 1 u/s; a strike sweeps it at 6 to 12). ghosts:
+// the two motion-blur afterimages, each [lag s, band, opacity], the window
+// running that far behind the blade. sec: the record (TRACE.sec).
+// under: the opacity of the template's procedural fire arc beneath a traced
+// stroke (the sim-reach energy wave the target reads; the trace draws the
+// weapon's own path on top of it).
+export const TRACE_FX = Object.freeze({ strikeSpeed: 3.5, ghosts: [[0.03, 0.8, 0.45], [0.06, 0.6, 0.3]], under: 0.55 });
+
+export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area, rigPoint = null, rigCenter = null, rigMoving = null }) {
   const tpl = (classId, skill) => vfxTemplate(vfxTemplateFor(classId, skill));
   // A magic heal: Bright Heal takes the purple's place, the gold stays.
   const healTone = (tp) => ({ ...tp, a: HEAL, deep: '#2E7A45', heal: true });
@@ -196,7 +209,13 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     shards: [6, 10], // T6: on a low sweep
     shardsBig: [4, 7], // on an overhead skill swing
   });
-  function bladeSwing(tp, id, x, z, angle, reach, half, { big = false, strokes = 1, scale = 1 } = {}) {
+  // The traces being fed (T1): one per swing of a rig mid-move, with its
+  // two ghosts; frame() samples the rig's hand and tip each frame.
+  const traced = [];
+  const vHand = new Vector3();
+  const vTip = new Vector3();
+  const vFeet = new Vector3();
+  function bladeSwing(tp, id, x, z, angle, reach, half, { big = false, strokes = 1, scale = 1, cls = null } = {}) {
     fire(big ? 'blade_skill' : 'blade_swing');
     const rev = !side.get(id);
     side.set(id, rev);
@@ -209,22 +228,42 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     const span = half * 2.1;
     // T5: a travelling window of 40 to 70 degrees, not a fan.
     const tail = Math.min(0.95, SWIPE.window / Math.max(0.01, span));
+    // T1: a rig mid-move with a hand and a tip gets its first stroke traced
+    // from the weapon itself (the glint and the shards fire at the tip on
+    // its first strike frame, from frame()); the procedural arc otherwise.
+    const trace = !!(cls && rigPoint && rigCenter && rigMoving && rigMoving(cls) && rigPoint(cls, 'hand', vHand) && rigPoint(cls, 'tip', vTip));
+    if (trace) {
+      fire('blade_trace');
+      const slots = [];
+      const main = tk.trace({ x, z, radius: R, life: big ? 0.44 : 0.36, tail, mode: 'fire', core: tp.core, a: tp.a, b: tp.deep, gain: 1.35 });
+      slots.push({ s: main, tok: main.tok });
+      for (const [lag, band, opacity] of TRACE_FX.ghosts) {
+        const g = tk.trace({ x, z, radius: R, band, lag, life: big ? 0.4 : 0.32, tail: tail * 0.6, mode: 'wave', core: tp.core, a: tp.b, b: tp.b, opacity, gain: 1.1 });
+        slots.push({ s: g, tok: g.tok });
+      }
+      traced.push({ cls, slots, tp, big, t: 0, prev: null, glint: false });
+    }
     for (let i = 0; i < strokes; i++) {
       const d = i * 0.06;
       const ri = rev !== (i % 2 === 1);
       const a = angle + (i % 2 ? 0.1 : -0.06) * (strokes > 1 ? 1 : 0);
-      tk.blaze({ x, z, angle: a, radius: R * (1 - i * 0.08), width: W, span, sweep, life: big ? 0.44 : 0.32, reverse: ri, delay: d, mode: 'fire', core: tp.core, a: tp.a, b: tp.deep, y: 0.46, lift: 0.22, tail, gain: 1.35, swipe: true });
+      // The template's fire arc at the sim's reach (the energy wave the
+      // target reads); under a traced first stroke it plays softer, and
+      // the trace's ghosts stand in for its afterimages.
+      const under = trace && i === 0;
+      tk.blaze({ x, z, angle: a, radius: R * (1 - i * 0.08), width: W, span, sweep, life: big ? 0.44 : 0.32, reverse: ri, delay: d, mode: 'fire', core: tp.core, a: tp.a, b: tp.deep, y: 0.46, lift: 0.22, tail, gain: under ? 1.1 : 1.35, opacity: under ? TRACE_FX.under : 1, swipe: true });
       // T6: a tip glint on the first strike frame, then short shards round
-      // the tip in the slash's own colours (never blue).
-      const a0 = a + (ri ? span / 2 : -span / 2);
-      const gx = x + Math.cos(a0) * R * (1 - i * 0.08);
-      const gz = z + Math.sin(a0) * R * (1 - i * 0.08);
-      kit.star({ x: gx, y: 0.6, z: gz, size: SWIPE.glintSize, life: SWIPE.glintSec, hold: 0, color: tp.core, angle: 0, delay: d, opacity: 1 });
-      const n = Math.round(rnd(...(big ? SWIPE.shardsBig : SWIPE.shards)));
-      tk.sparks(gx, 0.55, gz, n, { color: tp.a, color2: tp.core, speed: [1.2, 2.6], up: [0.1, 0.8], life: [0.08, 0.16], len: 0.05, width: [0.02, 0.035], gravity: 1, delay: d + 1 / 60 });
+      // the tip in the slash's own colours (never blue). A traced stroke's
+      // glint fires at the tip itself, from frame().
+      if (!under) {
+        const a0 = a + (ri ? span / 2 : -span / 2);
+        const gx = x + Math.cos(a0) * R * (1 - i * 0.08);
+        const gz = z + Math.sin(a0) * R * (1 - i * 0.08);
+        glint(tp, gx, 0.6, gz, big, d);
+      }
       // Motion blur: two fading afterimages a beat behind, slightly back
       // along the swing.
-      for (let j = 1; j <= 2; j++) {
+      for (let j = 1; j <= 2 && !under; j++) {
         tk.blaze({ x, z, angle: angle - sign * 0.14 * j, radius: R * (1 - 0.05 * j), width: W * (0.7 - 0.15 * j), span: half * 2, sweep: sweep * 1.2, life: 0.26, reverse: ri, delay: d + j * 0.025, mode: 'wave', core: tp.core, a: tp.b, b: tp.b, y: 0.44, lift: 0.18, tail: 0.6, opacity: 0.5 - 0.15 * j, gain: 1.1 });
       }
     }
@@ -387,6 +426,38 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     tk.blast({ x, y: 0.6, z, size: 1.6, mode: 'holo', core: tp.core, a: tp.a, b: tp.b, life: 0.4, delay: 0.05 });
   }
 
+  // T6: the tip glint (a 4-point white star for about a frame) and the
+  // short shards round the tip, in the slash's own colours.
+  function glint(tp, x, y, z, big, delay = 0) {
+    kit.star({ x, y, z, size: SWIPE.glintSize, life: SWIPE.glintSec, hold: 0, color: tp.core, angle: 0, delay, opacity: 1 });
+    const n = Math.round(rnd(...(big ? SWIPE.shardsBig : SWIPE.shards)));
+    tk.sparks(x, y - 0.05, z, n, { color: tp.a, color2: tp.core, speed: [1.2, 2.6], up: [0.1, 0.8], life: [0.08, 0.16], len: 0.05, width: [0.02, 0.035], gravity: 1, delay: delay + 1 / 60 });
+  }
+  // Per frame (T1): feed every live trace the rig's hand and tip; the
+  // first frame the tip sweeps faster than TRACE_FX.strikeSpeed is the
+  // strike frame, where the glint and the shards fire at the tip.
+  function frame(dt) {
+    for (let i = traced.length - 1; i >= 0; i--) {
+      const r = traced[i];
+      r.t += dt;
+      const h = rigPoint(r.cls, 'hand', vHand);
+      const t = h && rigPoint(r.cls, 'tip', vTip) && rigCenter(r.cls, vFeet);
+      let path = -1;
+      // the main trace first: it writes the outer point back into vTip
+      if (t) for (const { s, tok } of r.slots) path = Math.max(path, tk.feedTrace(s, tok, vFeet, vHand, vTip));
+      if (!t || path < 0 || r.t > TRACE.sec + 0.05) {
+        traced.splice(i, 1);
+        continue;
+      }
+      if (!r.glint && r.prev && dt > 0 && vTip.distanceTo(r.prev) / dt >= TRACE_FX.strikeSpeed) {
+        r.glint = true;
+        glint(r.tp, vTip.x, vTip.y, vTip.z, r.big);
+        fire('blade_glint');
+      }
+      (r.prev ??= new Vector3()).copy(vTip);
+    }
+  }
+
   // ------------------------------------------------------------ dispatch --
   // One effect, by its template.
   function playSwing(tp, id, x, z, angle, reach, half, opts) {
@@ -431,7 +502,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     const z = ev.z ?? a?.z;
     if (x == null) return;
     const tp = tpl(ev.classId, `${ev.classId}_basic`);
-    if (ev.shape === 'melee_arc') playSwing(tp, ev.id, x, z, Math.atan2(ev.dz ?? 0, ev.dx ?? 1), ev.reach ?? 0.9, ((ev.halfAngle ?? 50) * Math.PI) / 180, { big: false });
+    if (ev.shape === 'melee_arc') playSwing(tp, ev.id, x, z, Math.atan2(ev.dz ?? 0, ev.dx ?? 1), ev.reach ?? 0.9, ((ev.halfAngle ?? 50) * Math.PI) / 180, { big: false, cls: ev.classId });
     else playRelease(tp, x, z, ev.dx ?? 0, ev.dz ?? 1);
   });
 
@@ -442,7 +513,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     const tp = toneFor(ev.classId, ev.skill);
     const angle = Math.atan2(ev.dz ?? 0, ev.dx ?? 1);
     if (ev.shape === 'melee_arc') {
-      playSwing(tp, ev.id, x, z, angle, ev.reach ?? 1, ((ev.halfAngle ?? 50) * Math.PI) / 180, { big: true, strokes: STROKES[ev.skill] ?? 1 });
+      playSwing(tp, ev.id, x, z, angle, ev.reach ?? 1, ((ev.halfAngle ?? 50) * Math.PI) / 180, { big: true, strokes: STROKES[ev.skill] ?? 1, cls: ev.classId });
     } else if (ev.shape === 'nova') {
       playNova(tp, x, z, ev.radius ?? area(ev.skill) ?? 1.3);
     } else if (ev.shape === 'projectile') {
@@ -598,6 +669,6 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     tickClock.clear();
   }
 
-  return { boltTone, showcase, teardown, recipes: { magicCast, magicNova, magicZone, bladeSwing, bladeBlast, bladeNova, laser } };
+  return { boltTone, showcase, teardown, frame, traced: () => traced.length, recipes: { magicCast, magicNova, magicZone, bladeSwing, bladeBlast, bladeNova, laser } };
 }
 
