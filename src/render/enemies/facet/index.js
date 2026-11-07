@@ -33,6 +33,13 @@ import { buildGravewispFacet, GRAVEWISP_ABILITIES } from './gravewisp.js';
 import { buildKnightFacet, KNIGHT_ABILITIES } from './knight.js';
 import { buildKeenerFacet, KEENER_ABILITIES } from './keener.js';
 import { buildSextonFacet, SEXTON_ABILITIES } from './sexton.js';
+// The Level IV foes (data/levels.js row 4, the Hollow Heart's own kinds).
+import { buildHuskFacet, HUSK_ABILITIES } from './husk.js';
+import { buildLancerFacet, LANCER_ABILITIES } from './lancer.js';
+import { buildGeodeFacet, GEODE_ABILITIES } from './geode.js';
+import { buildCenserFacet, CENSER_ABILITIES } from './censer.js';
+import { buildBloomFacet, BLOOM_ABILITIES } from './bloom.js';
+import { buildSiphonFacet, SIPHON_ABILITIES } from './siphon.js';
 
 export const FACET_FOES = Object.freeze({
   boar: buildBoarFacet,
@@ -59,6 +66,12 @@ export const FACET_FOES = Object.freeze({
   knight: buildKnightFacet,
   keener: buildKeenerFacet,
   sexton: buildSextonFacet,
+  husk: buildHuskFacet,
+  lancer: buildLancerFacet,
+  geode: buildGeodeFacet,
+  censer: buildCenserFacet,
+  bloom: buildBloomFacet,
+  siphon: buildSiphonFacet,
 });
 // Each foe's lab abilities (the model lab, the probe).
 export const FOE_ABILITIES = Object.freeze({
@@ -86,6 +99,12 @@ export const FOE_ABILITIES = Object.freeze({
   knight: KNIGHT_ABILITIES,
   keener: KEENER_ABILITIES,
   sexton: SEXTON_ABILITIES,
+  husk: HUSK_ABILITIES,
+  lancer: LANCER_ABILITIES,
+  geode: GEODE_ABILITIES,
+  censer: CENSER_ABILITIES,
+  bloom: BLOOM_ABILITIES,
+  siphon: SIPHON_ABILITIES,
 });
 
 export function facetFoeBuilders(query) {
