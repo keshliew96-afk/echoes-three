@@ -4,8 +4,9 @@
 // Level I foes (render/enemies/facet/), then the Briar Knight and the
 // Moss Hart (render/enemies/champfacet/); the Level II slices add the Drowned
 // Heron, the Millwheel and the Mire King, then the Sluice Warden and the
-// Lockkeeper; the Level III slice adds the Lich Ram and the Ash Raven (the
-// Barrow Wyrm is the pilot's) and the Level III foes slice the Barrow's eight
+// Lockkeeper; the Level III slices add the Lich Ram and the Ash Raven (the
+// Barrow Wyrm is the pilot's), then the Bone Reeve and the Gravebell Ringer,
+// and the Level III foes slice the Barrow's eight
 // (nine with the broodling); the Level IV foes slice adds the six Heart foes;
 // the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
@@ -77,6 +78,9 @@ export const MODEL_STANDARD = Object.freeze({
   // The Level II champions.
   sluice_warden: true,
   lockkeeper: true,
+  // The Level III champions.
+  bone_reeve: true,
+  gravebell_ringer: true,
 });
 
 export function facetOn(kind, query = pageQuery()) {
