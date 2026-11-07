@@ -40,6 +40,9 @@ import { buildGloamWolfFacet } from './gloamwolffacet.js';
 import { buildHeronFacet } from './heronfacet.js';
 import { buildMillwheelFacet } from './millwheelfacet.js';
 import { buildMireKingFacet } from './mirekingfacet.js';
+import { buildCantorFacet } from './cantorfacet.js';
+import { buildColossusFacet } from './colossusfacet.js';
+import { buildVeinWeaverFacet } from './veinweaverfacet.js';
 import { facetOn } from '../facet/flags.js';
 import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
 import { buildCantor, buildColossus } from './heart.js';
@@ -60,7 +63,7 @@ import { hitNode, resetNode, measureBody, createReaction, armReaction, evalReact
 // The Barrow Wyrm and the Level I bosses play the model standard
 // (docs/MODEL_STANDARD.md) unless `?facet=` (harness only) or MODEL_STANDARD
 // asks for the classic rig.
-const BUILDERS = { stag: facetOn('stag') ? buildStagFacet : buildStag, heron: facetOn('heron') ? buildHeronFacet : buildHeron, wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother, millwheel: facetOn('millwheel') ? buildMillwheelFacet : buildMillwheel, lichram: buildLichram, cantor: buildCantor, colossus: buildColossus, gloamwolf: facetOn('gloamwolf') ? buildGloamWolfFacet : buildGloamWolf, mireking: facetOn('mireking') ? buildMireKingFacet : buildMireKing, ashraven: buildAshRaven, veinweaver: buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
+const BUILDERS = { stag: facetOn('stag') ? buildStagFacet : buildStag, heron: facetOn('heron') ? buildHeronFacet : buildHeron, wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother, millwheel: facetOn('millwheel') ? buildMillwheelFacet : buildMillwheel, lichram: buildLichram, cantor: facetOn('cantor') ? buildCantorFacet : buildCantor, colossus: facetOn('colossus') ? buildColossusFacet : buildColossus, gloamwolf: facetOn('gloamwolf') ? buildGloamWolfFacet : buildGloamWolf, mireking: facetOn('mireking') ? buildMireKingFacet : buildMireKing, ashraven: buildAshRaven, veinweaver: facetOn('veinweaver') ? buildVeinWeaverFacet : buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
@@ -428,6 +431,8 @@ export function createBossLayer({ stage, world, bus, cosmetic }) {
         lungeK: rec.lungeK,
         hpFrac,
         e: ent,
+        // the Level IV rigs read an unwarned throw's next tick ahead of this one
+        tick,
       });
 
       // Linear decay from the hit tick; peak capped below HITFLASH.intensity so
