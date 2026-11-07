@@ -155,7 +155,7 @@ export function abilityChannels(id, s, C = restChannels({}), from = ZERO) {
     if (s.id === 'wind') {
       mix(C, from, WOUND, ease.inOut(Math.min(1, k * 1.4)));
       // the paw: the hoof lifts and comes down twice through the warning
-      C.paw = WOUND.paw * Math.max(0, Math.sin(Math.PI * Math.min(1, k * 1.4) * 2)) * Math.min(1, k * 4);
+      C.paw = WOUND.paw * Math.abs(Math.sin(Math.PI * Math.min(1, k * 1.4) * 2)) * Math.min(1, k * 4);
       const L = lunge('pull', k);
       C.reach += L.reach * 0.6;
     } else if (s.id === 'burst') {
@@ -370,10 +370,10 @@ export function buildLichramFacet() {
   muzzle.rotation.x = 0.18;
   // the nasal ridge and the brow plates: the skull's mask
   head.add(placeRow(wedge, bonePale, 3, (i, m) => {
-    if (i === 2) lay(m, 0, 0.14, 0.42, 0, 0.35, 1, 0.08, 0.34, 0.4);
+    if (i === 2) lay(m, 0, 0.16, 0.3, 0, 0.3, 1, 0.07, 0.3, 0.3);
     else {
       const side = i ? 1 : -1;
-      lay(m, side * 0.14, 0.2, 0.3, side * 0.5, 0.25, 0.8, 0.18, 0.2, 0.5, side * 0.6);
+      lay(m, side * 0.16, 0.2, 0.2, side * 0.7, 0.6, -0.3, 0.16, 0.16, 0.4, side * 0.6);
     }
   }, { name: 'lichram-brow', inkPx: PART_INK_PX, mottle: 0 }));
   const jaw = new Group();

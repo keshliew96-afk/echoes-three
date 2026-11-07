@@ -738,7 +738,7 @@ const ravenEntry = {
     ['rage', 'Enraged'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.5, z: 0, dist: 9.0, speed: RAVEN_WALK, loop: 3.4, side: 3.0 },
+  frame: { y: 1.9, z: 0, dist: 10.0, speed: RAVEN_WALK, loop: 3.4, side: 3.0 },
   build({ vfx, play }) {
     const rig = buildAshRavenFacet();
     const classic = buildAshRaven();

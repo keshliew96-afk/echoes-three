@@ -146,7 +146,7 @@ const ZERO = restChannels({});
 const pose = (o) => ({ ...ZERO, ...o });
 const RISEN = pose({ alt: HOVER_H, pitch: 0.15, open: 1, flap: 0.6, neck: 0.2, tail: 0.5, tuck: 1, fever: 0.6 });
 const STOOPED = pose({ alt: HOVER_H * 0.8, pitch: 0.75, open: 0.8, flap: 0.1, sweep: 0.7, neck: 0.3, tail: 0.3, tuck: 1, fever: 1 });
-const DIVING = pose({ alt: SKIM_H, pitch: 0.95, open: 0.65, flap: -0.1, sweep: 1, neck: 0.35, head: 0.1, tail: 0.3, tuck: 1, fever: 1 });
+const DIVING = pose({ alt: SKIM_H, pitch: 0.6, open: 0.65, flap: -0.1, sweep: 1, neck: 0.35, head: 0.1, tail: 0.3, tuck: 1, fever: 1 });
 const LANDED = pose({ dip: 0.22, pitch: 0.1, reach: 0.1, open: 1, flap: 0.9, neck: 0.3, head: 0.1, tail: 0.6, crouch: 1, squash: 1, fever: 0.4 });
 const PREENING = pose({ dip: 0.06, pitch: 0.3, open: 0.1, neck: 0.25, preen: 1, crouch: 0.3 });
 const MANTLED = pose({ dip: 0.1, pitch: -0.1, open: 0.9, flap: 0.9, sweep: 0.4, neck: 0.45, head: 0.2, hackle: 1, crouch: 0.8, fever: 0.6 });
@@ -610,9 +610,9 @@ export function buildAshRavenFacet() {
       const open = C.open;
       // folded: swung back along the flank, standing on edge; open: out to
       // the side, swept back for the dive, thrown forward for the gust
-      W.fold.rotation.set(0, s * (1.25 * (1 - open) + 0.55 * C.sweep - 0.5 * C.fore), 0);
+      W.fold.rotation.set(0, s * (1.4 * (1 - open) + 0.55 * C.sweep - 0.5 * C.fore), 0);
       W.lift.rotation.set(0, 0, s * (0.3 * (1 - open) + (0.75 * C.flap - 0.1) * open + 0.25 * C.preen * (1 - open)));
-      W.roll.rotation.set(-s * 1.25 * (1 - open) + 0.35 * C.sweep * open - 0.3 * C.fore * open + 0.05 * Math.sin(idle * 1.8) * (1 - open), 0, 0);
+      W.roll.rotation.set(-1.25 * (1 - open) + 0.35 * C.sweep * open - 0.3 * C.fore * open + 0.05 * Math.sin(idle * 1.8) * (1 - open), 0, 0);
     }
     pivot.updateMatrix();
 
