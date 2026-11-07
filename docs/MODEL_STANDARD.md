@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -34,7 +34,7 @@ Duskwing in v0.5.345 (their sections below): all seven heroes now play the stand
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, heron, millwheel, mireking, lichram, ashraven, the Level I and II foes and champions}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
+| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, heron, millwheel, mireking, lichram, ashraven, the Level I, II and III foes, the Level I and II champions}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `hero.js` | The hero core (below). |
 | `heroes.js` | `FACET_HEROES`: the registry of model-standard heroes. The critter factory, the model lab and the heroes probe read it, so a hero listed here is built, shown and checked. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |
@@ -888,6 +888,41 @@ them. His other pick: the miller's millstone a size larger than the classic's (r
 `STONE_R` 0.22 u against 0.17; the chain's end and the floor clamp follow it), since it
 read small at play zoom.
 
+## The Level III foes (`src/render/enemies/facet/`, v0.5.349)
+
+Every creature Level III (the Ashen Barrow) rolls that Levels I and II had not built (its
+roster's ram, mole, crow, brood spider, grave wisp, bone knight, keener and sexton, and
+the brood's broodling, which the room rolls with its mother) plays the standard, on the
+same foe kit and rules as the earlier levels: baked detail for the crowd, world-locked
+feet, the sim's clock as the anticipation, the classic rig (`enemies/archetypes.js`,
+`enemies/slice2.js`, `enemies/barrowheart.js`) kept behind `?facet=0`, visual only. No
+kit piece is new: the ram, the crow, the knight and the keener are on the strike clip,
+the brood and broodling on the bite chain (the boar's), the mole, the wisp and the sexton
+on pure timelines, and the fliers (the wisp, the gliding keener) take the moth's lean
+from the real travel.
+
+### The nine foes
+
+| Foe | Attack (lab tab) | In game | Calls (faceted / classic) |
+|---|---|---|---|
+| Barrow Ram | Horn slam; Slam string | The 60-tick cone is the coil; the contact lands on the resolve tick (`enemy_slam`) and holds 3 frames with a recoil shove. Four hooves on locked feet in diagonal pairs; the front pair steps in for the strike by its contact and back out as it settles. The horns curl from a riveted ten-sided disc that is its guard, with the indigo rim unlit; the guard's glow flares on every blocked shot (`lastBlockedTick`). Slams cycle the hook from its right, the reverse hook, the heave (a low gather and an upward throw, so the horns stay under the crown). | 14 / 29 |
+| Grave Mole | Emergence; Emergence string; Dig in | Burrowed, it is sunk under the floor with only its mound (a floor piece that churns with the tunnelling); the 60-tick ring is the coil (the mound heaves and quakes, the mole under); the burst lands on the resolve tick (up out of the earth, claws spread), holds 3 frames and lands on its feet. The dig back in plays when the sim takes it under (nose down, the claws rake in turn, the body sinks). Four legs on locked feet (big fore paws with baked claws, hind feet). Bursts cycle one claw raking up, the other, both claws off a leap. | 19 / 28 |
+| Barrow Crow | Caw; Caw string | The 45-tick cone is the coil (the head drawn back, the beak wide, the wings raised); the volley lands on the resolve tick (`fireTick`) with the shooter squash held. A hop on both feet (one gait group) along the real travel; instanced wing plates composed on the body; charcoal bones and feet. Caws cycle fanned to its left, to its right, the full fan. | 17 / 17 |
+| Brood Spider | Bite chain | The bite is unwarned (contact, a per-target cooldown of 60 ticks): on the kit's 3-hit chain a predicted bite's contact lands on the sim's bite tick, an unwarned one strikes quick; the front legs step in by the contact. Eight legs on locked tips by two-bone IK with the knee arched high, stepping in two alternating tetrapods along the real skitter. The abdomen with its bristle and pale underside, the slit eyes, the fanged chelicerae; the hourglass unlit on its own row. Bites cycle the right fang, the left fang, the pounce (reared on its back legs with the front pair raised, down on the target off a hop). | 12 / 25 |
+| Broodling | Bite chain | The brood's rig at half its size with the dot tell and the sim's 45-tick cooldown; a bigger knock. | 12 / 24 |
+| Grave Wisp | Ward; Tether snaps | A flier with no attack: the hover rides the spawn node (the moth's), the tail streams back along the real travel and two hem ribbons sway behind it. The ward is unwarned (`wisp_tether`): the hood draws in and the core gathers over a frame, then the hood flares, the sleeves fling wide and the body lurches at its ward with the core burst; while the tether holds the core stays swollen; when it ends (`wisp_tether_end`) the hood snaps shut and the wisp recoils. The slit eyes are baked into the hood's row at a black tone, the sleeves an unlit dark row, so the calls match the classic's seven. | 7 / 7 |
+| Bone Knight | Overhead slam; Slam string | The 66-tick ring is the coil (the guard down: the shield swings out to its left and the body turns open, from the sim's `e.guard.active`); the blow lands on the resolve tick (`slamTick`) and holds 3 frames; the guard stays down through the settle and the sim's 50 ticks. Two bone legs on locked feet in a heavy march; both arms by IK from the shoulders, the tower shield and the sword hung off real elbows. The helm rides the torso's row (the classic's never turned), the visor slit unlit with its glow. Slams cycle the cleave (the blade laid back over its right shoulder, brought down before it), the cross cut (wound low to its left, swept across), the two-handed drive (the shield flung wide, the point driven into the floor with the whole body falling on it). Always Elite; every pose under the crown. | 13 / 14 |
+| Ash Keener | Wail; Wail string | The 54-tick cone is the coil (the keen); the wail lands on the resolve tick (`wailTick`) and holds with a shudder. It glides (no feet): the robe takes the moth's lean, the hem trails the glide. The head on its own row so the hood throws back; the mouth an unlit indigo hollow that swells through the keen and peaks on the wail. Wails cycle the keen (hood back, head up, arms spread; thrown forward), the lament from its left (turned, one arm high; whipped round), the dirge (sunk low, arms crossed over the mask; hurled forward with the robe flaring widest). | 9 / 18 |
+| Barrow Sexton | Dig a snare; Dig string | The sim's 36-tick dig (mode `'dig'`) is a pure timeline: down on a knee, the spade off the shoulder, chop 1 from its right, chop 2 from its left, chop 3 the two-handed stamp, then the bury: the spade's flat pats the earth on the dig tick (`digTick`, the contact) and holds; then up with the spade shouldered. A dig spoiled by a stun rises at once, nothing patted. Two bowed legs on locked feet in a short shuffle; the spade and the lantern off IK arms; the lantern hangs plumb and swings with the walk, its flame flaring through the dig. | 15 / 27 |
+
+Three Barrow beats had no sound of their own (the knight's slam, the wisp's tether and
+the brood's split played only their VFX). Each has a cue in `audio/barrowheartcues.js` on
+the sim's own event, listen-only like the rest of the file: `bh_slam` on `knight_slam`
+(iron on grave earth), `bh_ward` on `wisp_tether` (a thin rising hum and a chime, at the
+wisp), `bh_split` on `brood_split` (a wet pop and a chitter), measured with
+`tools/smallfixes2-cuecal.mjs --only barrowheartcues` (the older entries restored by hand:
+a `--write` re-measures the whole file); the lab's tabs play them.
+
 ## Integration
 
 - `render/boss/index.js` and `ui/story/viewerrigs.js` build `buildWyrmFacet`,
@@ -928,7 +963,7 @@ read small at play zoom.
   `critters/common.js` gives a baked detail row the thinner part ink.
 - The classic rigs (`boss/wyrm.js`, `boss/stag.js`, `boss/slice2.js`, `boss/third.js`,
   `critters/tank.js`, `healer.js`, `swordsman.js`, `archer.js`, `tidecaller.js`, `bellwright.js`, `enemies/boar.js`, `enemies/mantis.js`,
-  `enemies/archetypes.js`, `enemies/woodmill.js`) are untouched and stay beside them.
+  `enemies/archetypes.js`, `enemies/woodmill.js`, `enemies/slice2.js`, `enemies/barrowheart.js`) are untouched and stay beside them.
 - The hit reaction and the render hold (v0.5.333, `docs/HIT_FEEDBACK.md` "The hit and the
   kill") need nothing from a rig: the foe and boss layers wrap its `body` (else
   `group.children[0]`) in a `hit-react` node and squash that, and every layer poses a rig
@@ -1127,3 +1162,14 @@ read-ahead gather held loaded and emptied, the lamprey's sink, surface and beach
 leech's stand-up, gulps and flop, the moth's swoop drop, the miller's toss budget and the
 stone's turns and return). `tools/model-standard-level2-foes-shots.mjs` shoots each in the
 lab and a Level II fight with all seven spawned, faceted and with `?facet=0`.
+
+`node tools/model-standard-level3-foes-probe.mjs [kind,kind]` (in `npm test`): the same
+checks for the nine Level III foes (the roster derived from `data/levels.js`, the broodling
+added), with their live attacks (the ram's, crow's, knight's and keener's telegraphs, the
+mole's emergence, the brood's and broodling's bites on the sim's bite tick, the wisp's
+tether inside the B1 budget, the sexton's bury on the dig tick, a spoiled dig patting
+nothing) and each foe's own beats (the ram's guard flare, the mole under its mound and the
+mound's quake, the wisp's core, the knight's shield, the keener's mouth, the sexton's knee
+and spade), plus the three Barrow cues registered, measured and mapped, and the lab playing
+each foe's cue. `tools/model-standard-level3-foes-shots.mjs` shoots each in the lab and a
+Level III fight with all nine spawned, faceted and with `?facet=0`.

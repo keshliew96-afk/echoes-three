@@ -5,7 +5,8 @@
 // Moss Hart (render/enemies/champfacet/); the Level II slices add the Drowned
 // Heron, the Millwheel and the Mire King, then the Sluice Warden and the
 // Lockkeeper; the Level III slice adds the Lich Ram and the Ash Raven (the
-// Barrow Wyrm is the pilot's); the heroes slice adds the Healer,
+// Barrow Wyrm is the pilot's) and the Level III foes slice the Barrow's eight
+// (nine with the broodling); the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
 //
@@ -52,6 +53,16 @@ export const MODEL_STANDARD = Object.freeze({
   lamprey: true,
   leech: true,
   miller: true,
+  // The Level III foes (data/levels.js row 3: the kinds Levels I and II have not built).
+  ram: true,
+  mole: true,
+  crow: true,
+  brood: true,
+  broodling: true,
+  gravewisp: true,
+  knight: true,
+  keener: true,
+  sexton: true,
   // The Level I champions.
   briar_knight: true,
   moss_hart: true,
