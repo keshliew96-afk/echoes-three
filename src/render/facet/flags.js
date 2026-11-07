@@ -4,8 +4,9 @@
 // Level I foes (render/enemies/facet/), then the Briar Knight and the
 // Moss Hart (render/enemies/champfacet/); the Level II slices add the Drowned
 // Heron, the Millwheel and the Mire King, then the Sluice Warden and the
-// Lockkeeper; the Level III foes slice adds the Barrow's eight (nine with the
-// broodling); the heroes slice adds the Healer,
+// Lockkeeper; the Level III slice adds the Lich Ram and the Ash Raven (the
+// Barrow Wyrm is the pilot's) and the Level III foes slice the Barrow's eight
+// (nine with the broodling); the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
 //
@@ -32,6 +33,9 @@ export const MODEL_STANDARD = Object.freeze({
   heron: true,
   millwheel: true,
   mireking: true,
+  // The Level III bosses (the Wyrm is the pilot's).
+  lichram: true,
+  ashraven: true,
   // The Level I foes (data/levels.js row 1: its roster and campaign roster).
   boar: true,
   mantis: true,

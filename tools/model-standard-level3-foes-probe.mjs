@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// MODEL STANDARD, THE LEVEL III FOES probe (v0.5.348) — headless Node, builds
+// MODEL STANDARD, THE LEVEL III FOES probe (v0.5.349) — headless Node, builds
 // the rigs; no browser. Every creature Level III (the Ashen Barrow) rolls
 // that Levels I and II have not already rebuilt (the ram, the mole, the
 // crow, the brood spider and its broodling, the grave wisp, the bone knight,

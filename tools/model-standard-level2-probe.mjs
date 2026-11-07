@@ -73,7 +73,7 @@ const LEGGED = BOSSES.filter((B) => B.kind !== 'millwheel');
   check('the Level II bosses play the model standard by default', kinds.every((k) => MODEL_STANDARD[k] === true && facetOn(k, q(''))));
   check('?facet=0 turns them classic', kinds.every((k) => !facetOn(k, q('facet=0'))));
   check('?facet=heron keeps only the Heron faceted', facetOn('heron', q('facet=heron')) && !facetOn('millwheel', q('facet=heron')) && !facetOn('mireking', q('facet=heron')));
-  check('the Level III bosses stay classic', !facetOn('lichram', q('')) && !facetOn('ashraven', q('')) && !facetOn('veinweaver', q('')));
+  check('the Level IV bosses stay classic', !facetOn('cantor', q('')) && !facetOn('colossus', q('')) && !facetOn('veinweaver', q('')));
   const classics = BOSSES.map((B) => B.classic()).filter((r) => r && r.group && typeof r.pose === 'function' && !r.group.userData.modelStandard);
   check('the classic rigs still build beside the faceted ones', classics.length === BOSSES.length);
 }
