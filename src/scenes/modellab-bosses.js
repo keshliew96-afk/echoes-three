@@ -21,6 +21,10 @@ import { buildHeronFacet, HERON_ABILITIES, HERON_DASH, HERON_WALK } from '../ren
 import { buildMillwheel, buildThornmother } from '../render/boss/slice2.js';
 import { buildMillwheelFacet, MILL_ABILITIES, MILL_CUT, MILL_ROLL } from '../render/boss/millwheelfacet.js';
 import { buildMireKingFacet, MIRE_ABILITIES, MIRE_WALK } from '../render/boss/mirekingfacet.js';
+import { buildLichram } from '../render/boss/slice2.js';
+import { buildAshRaven } from '../render/boss/third.js';
+import { buildLichramFacet, LICHRAM_ABILITIES, LICHRAM_RUSH, LICHRAM_WALK } from '../render/boss/lichramfacet.js';
+import { buildAshRavenFacet, RAVEN_ABILITIES, RAVEN_WALK } from '../render/boss/ashravenfacet.js';
 
 // The Move loop every entry walks: a circle of radius `loop`, facing along it.
 export function loopPath(phase, loop) {
@@ -614,4 +618,199 @@ const mireEntry = {
   },
 };
 
-export const LAB_ENTRIES = [stagEntry, thornEntry, wolfEntry, heronEntry, millEntry, mireEntry];
+// --- Level III (docs/MODEL_STANDARD.md "The Level III bosses").
+
+// The Lich Ram. The Bone Rush crosses the frame at the sim's 11 u/s, so the
+// gallop on locked hooves, the slam into the floor and the stuck can be judged.
+function rushTravel(abT) {
+  const tl = LICHRAM_ABILITIES.rush;
+  const a = tl.startOf('run');
+  const b = tl.startOf('slam');
+  const span = LICHRAM_RUSH * (b - a);
+  return LICHRAM_RUSH * (Math.min(b, Math.max(a, abT)) - a) - span / 2;
+}
+
+const lichramEntry = {
+  id: 'lichram',
+  label: 'Lich Ram',
+  abilities: [
+    ['rush', 'Bone Rush'],
+    ['call', 'Grave Call'],
+    ['rage', 'Enraged'],
+    ['spawn', 'Spawn in'],
+  ],
+  frame: { y: 1.2, z: 0, dist: 8.4, speed: LICHRAM_WALK, loop: 3.4, side: 2.8 },
+  build({ vfx, play }) {
+    const rig = buildLichramFacet();
+    const classic = buildLichram();
+    let tel = 0;
+    let lunge = 0;
+    let walk = 0;
+    let idle = 0;
+    let yaw = 0;
+    const stand = { telegraph: null, mode: 'stalk', enraged: false };
+    return {
+      group: rig.group,
+      classic: classic.group,
+      rig,
+      get yaw() {
+        return yaw;
+      },
+      timeline: (id) => LICHRAM_ABILITIES[id] || LICHRAM_ABILITIES.rush,
+      cues: (id) => (LICHRAM_ABILITIES[id] || LICHRAM_ABILITIES.rush).cues || [],
+      reset() {
+        rig.group.position.set(0, 0, 0);
+        classic.group.position.set(0, 0, 0);
+        rig.setYaw(0);
+        classic.setYaw(0);
+        pending.add(rig);
+      },
+      update(state, dt, abT) {
+        const F = lichramEntry.frame;
+        const moving = state.mode === 'move';
+        const on = abilityOn(state);
+        const ability = on ? state.ability : null;
+        const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
+        const side = state.classic ? F.side : 0;
+        const ahead = ability === 'rush' ? rushTravel(abT) : 0;
+        yaw = p.yaw;
+        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.setYaw(yaw);
+        rig.group.updateMatrixWorld(true);
+        replant(rig, state, on, abT);
+        rig.lab.pose({ dt, ability, abT });
+        // the classic twin, fed a stand-in entity for the same beats
+        idle += dt;
+        const s = ability && ability !== 'spawn' ? LICHRAM_ABILITIES[ability].sample(abT) : null;
+        const ph = s ? s.id : null;
+        const warn = ability === 'rush' && ph === 'wind';
+        tel = warn ? s.k : follow(tel, 0, dt, 12);
+        lunge = follow(lunge, ability === 'rush' && (ph === 'burst' || ph === 'run') ? 1 : 0, dt, 18);
+        stand.telegraph = warn ? { attack: 'rush' } : null;
+        stand.mode = ability === 'rush' ? (ph === 'burst' || ph === 'run' ? 'rush' : ph === 'slam' || ph === 'hold' || ph === 'stuck' ? 'stuck' : 'stalk') : 'stalk';
+        stand.enraged = ability === 'rage';
+        walk += (moving || stand.mode === 'rush' ? F.speed * (stand.mode === 'rush' ? 5 : 1) : 0) * dt * Math.PI * 2.2;
+        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        classic.setYaw(yaw);
+        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
+        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, lungeK: lunge, hpFrac: 1, e: stand });
+      },
+      onCue(id, at) {
+        const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
+        if (id === 'rush') {
+          play('bx_lichram_rush');
+          const c = fx(-0.8);
+          vfx.ring({ x: c.x, z: c.z, r0: 0.2, r1: 1.0, width: 0.25, life: 0.35, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'stuck') {
+          play('bx_lichram_stuck');
+          const c = fx(1.1);
+          vfx.crack({ x: c.x, z: c.z, radius: 1.2, glow: PALETTE.godstuffViolet });
+        } else if (id === 'call') {
+          play('bx_lichram_call');
+          const c = fx(0.6);
+          vfx.ring({ x: c.x, z: c.z, r0: 0.3, r1: 1.6, width: 0.3, life: 0.5, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+          vfx.flash({ x: at.x, y: 1.0, z: at.z, size: 1.0, color: PALETTE.godstuffViolet, life: 0.22 });
+        }
+      },
+      debug: () => ({ feet: rig.lab.feet(), grow: rig.lab.grow(), channels: rig.lab.channels() }),
+    };
+  },
+};
+
+// The Ash Raven. The Carrion Dive crosses the frame (the sim's dive covers up
+// to 9 u in 14 ticks; the lab's is 4.5 u), so the rise, the stoop, the skim
+// and the landing on locked feet can be judged.
+const DIVE_SPAN = 4.5;
+function diveTravel(abT) {
+  const tl = RAVEN_ABILITIES.dive;
+  const a = tl.startOf('dive');
+  const b = tl.startOf('strike');
+  return (DIVE_SPAN * (Math.min(b, Math.max(a, abT)) - a)) / (b - a) - DIVE_SPAN / 2;
+}
+
+const ravenEntry = {
+  id: 'ashraven',
+  label: 'Ash Raven',
+  abilities: [
+    ['dive', 'Carrion Dive'],
+    ['gust', 'Wing Gust'],
+    ['omen', 'Omen'],
+    ['rage', 'Enraged'],
+    ['spawn', 'Spawn in'],
+  ],
+  frame: { y: 1.5, z: 0, dist: 9.0, speed: RAVEN_WALK, loop: 3.4, side: 3.0 },
+  build({ vfx, play }) {
+    const rig = buildAshRavenFacet();
+    const classic = buildAshRaven();
+    let tel = 0;
+    let walk = 0;
+    let idle = 0;
+    let yaw = 0;
+    const stand = { telegraph: null, mode: 'stalk', enraged: false };
+    return {
+      group: rig.group,
+      classic: classic.group,
+      rig,
+      get yaw() {
+        return yaw;
+      },
+      timeline: (id) => RAVEN_ABILITIES[id] || RAVEN_ABILITIES.dive,
+      cues: (id) => (RAVEN_ABILITIES[id] || RAVEN_ABILITIES.dive).cues || [],
+      reset() {
+        rig.group.position.set(0, 0, 0);
+        classic.group.position.set(0, 0, 0);
+        rig.setYaw(0);
+        classic.setYaw(0);
+        pending.add(rig);
+      },
+      update(state, dt, abT) {
+        const F = ravenEntry.frame;
+        const moving = state.mode === 'move';
+        const on = abilityOn(state);
+        const ability = on ? state.ability : null;
+        const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
+        const side = state.classic ? F.side : 0;
+        const ahead = ability === 'dive' ? diveTravel(abT) : 0;
+        yaw = p.yaw;
+        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.setYaw(yaw);
+        rig.group.updateMatrixWorld(true);
+        replant(rig, state, on, abT);
+        rig.lab.pose({ dt, ability, abT });
+        // the classic twin, fed a stand-in entity for the same beats
+        idle += dt;
+        const s = ability && ability !== 'spawn' ? RAVEN_ABILITIES[ability].sample(abT) : null;
+        const ph = s ? s.id : null;
+        const warn = (ability === 'dive' && (ph === 'rise' || ph === 'stoop' || ph === 'dive')) || (ability === 'gust' && ph === 'mantle') || (ability === 'omen' && ph === 'call');
+        tel = warn ? s.k : follow(tel, 0, dt, 12);
+        stand.telegraph = warn ? { attack: ability } : null;
+        stand.mode = ability === 'dive' ? (ph === 'rise' ? 'rise' : ph === 'stoop' || ph === 'dive' ? 'dive' : ph === 'strike' || ph === 'hold' || ph === 'preen' ? 'preen' : 'stalk') : ability === 'omen' && ph === 'call' ? 'call' : 'stalk';
+        stand.enraged = ability === 'rage';
+        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
+        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        classic.setYaw(yaw);
+        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
+        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, hpFrac: 1, e: stand });
+      },
+      onCue(id, at) {
+        const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
+        if (id === 'rise') play('bx_ashraven_tell');
+        else if (id === 'dive') {
+          play('bx_ashraven_dive');
+          const c = fx(0.4);
+          vfx.ring({ x: c.x, z: c.z, r0: 0.3, r1: 1.4, width: 0.3, life: 0.45, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'gust') {
+          play('bx_ashraven_gust');
+          const c = fx(1.6);
+          vfx.flash({ x: c.x, y: 1.3, z: c.z, size: 1.1, color: PALETTE.godstuffViolet, life: 0.22 });
+        } else if (id === 'omen') {
+          play('bx_ashraven_omen');
+          vfx.ring({ x: at.x, z: at.z, r0: 0.5, r1: 2.6, width: 0.35, life: 0.6, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        }
+      },
+      debug: () => ({ feet: rig.lab.feet(), grow: rig.lab.grow(), channels: rig.lab.channels() }),
+    };
+  },
+};
+
+export const LAB_ENTRIES = [stagEntry, thornEntry, wolfEntry, heronEntry, millEntry, mireEntry, lichramEntry, ravenEntry];
