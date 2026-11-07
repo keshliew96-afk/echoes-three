@@ -47,6 +47,7 @@ export const SUITE = [
   { file: 'tools/model-standard-level2-champions-probe.mjs', args: [], what: 'the model standard on the Level II champions: Sluice Warden, Lockkeeper' },
   { file: 'tools/model-standard-level2-foes-probe.mjs', args: [], what: 'the model standard on the Level II foes: crowd budget, crown, locked feet, strikes on the sim tick' },
   { file: 'tools/model-standard-level3-probe.mjs', args: [], what: 'the model standard on the Level III bosses: Lich Ram (trot, rush, call read ahead), Ash Raven (hop, dive, gust, omen)' },
+  { file: 'tools/model-standard-level3-foes-probe.mjs', args: [], what: 'the model standard on the Level III foes: crowd budget, crown, locked feet, strikes on the sim tick, the Barrow cues' },
   { file: 'tools/vfx-hit-feedback-probe.mjs', args: [], what: 'the hit and the kill: render hold, hit reaction, kill pop, contact bloom, numbers, kill rumble' },
   { file: 'tools/vfx-hit-feedback2-probe.mjs', args: [], what: 'the cast, the shot, the reward and the aftermath: near light, stuck arrows, crit flipbook, frost air, the chest beat and its sounds' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
