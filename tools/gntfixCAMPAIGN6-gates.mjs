@@ -171,8 +171,8 @@ const cardState = (page) =>
       vfx: { numerals: s.vfx.numerals, decals: s.vfx.decals, scorch: s.vfx.scorch },
       bossfx: { boss: s.bossfx.boss, ring: s.bossfx.ring, bursts: s.bossfx.bursts },
       techfx: s.techfx,
-      skillfx: { zoneRigs: s.skillfx.zoneRigs, beams: s.skillfx.beams, rings: s.skillfx.rings },
-      allyfx: { zones: s.allyfx.zones, reviveRings: s.allyfx.reviveRings, mark: s.allyfx.mark },
+      skillfx: { zoneCircles: __echoes.content.vfx().zoneCircles, beams: s.skillfx.beams, rings: s.skillfx.rings },
+      allyfx: { reviveRings: s.allyfx.reviveRings, mark: s.allyfx.mark },
       hudMarkers,
       teardown: t ? t.teardown : null,
       card: c.card ? { kind: c.card.kind, from: c.card.from, to: c.card.to, summary: c.card.summary, leftovers: c.card.leftovers } : null,
@@ -254,8 +254,7 @@ async function legFlow(browser) {
       !card.bossfx.ring &&
       card.techfx.arcs === 0 &&
       card.techfx.rings === 0 &&
-      card.skillfx.zoneRigs === 0 &&
-      card.allyfx.zones === 0 &&
+      card.skillfx.zoneCircles === 0 &&
       card.allyfx.reviveRings === 0 &&
       Array.isArray(card.leftovers) &&
       card.leftovers.length === 0;

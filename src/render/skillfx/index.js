@@ -12,8 +12,8 @@
 //     motes + a rising "+HP" glyph sprite (§17 Zone 3 heal grammar)
 //   - skill bolts (sim kind 'skillbolt'): core capsule + glow + trail motes +
 //     ground blob shadow, colored by heal/damage; impact flash on despawn
-//   - Sanctuary zones (sim kind 'zone'): layered translucent discs + rim ring
-//     + drifting motes, tick pulse ring on `zone_tick`
+//   - (Sanctuary and every other zone: the template layer's held circle,
+//     render/vfx/templates.js "zone circles")
 //   - Warding Aura: 0.9 u field ring + soft disc riding the Healer, breathing;
 //     bright pulse on every `aura_pulse` (§7: visibly pulse-heals 1/s)
 //   - Nova Bloom: expanding ring burst to the 1.4 u area radius
@@ -48,7 +48,7 @@ import {
 } from 'three';
 import { PALETTE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
-import { makeGlowSprite, getRadialTexture } from '../glow.js';
+import { makeGlowSprite } from '../glow.js';
 import { sharedGeo, markShared, releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { impactFx } from '../vfx/hub.js';
@@ -889,60 +889,6 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     trails.push({ s, age: 0 });
   }
 
-  // ------------------------------------------------------------------ zones --
-  // Sanctuary: layered translucent discs + rim + motes (§19.4 AoE grammar).
-  const zoneRigs = new Map(); // id -> { g, radius, emit }
-  const ZONE_WALL = 1.25; // u — clears the ~1.05 u chibi standing height (§19.2)
-  function makeZoneRig(radius) {
-    const g = new Group();
-    // Zone rigs are built per sim zone entity and dropped when it expires:
-    // every disc, rim and wall below is shared per radius (F1).
-    // fix-CAMPAIGN-r6 (GC.6): UNIT shapes scaled to the radius — keyed by
-    // radius, every new zone radius a build reached (Reach nodes) minted four
-    // GL geometries that were never released.
-    const fill = new Mesh(sharedGeo('zone-fill:unit', () => new CircleGeometry(1, 40)), groundMat(HEAL, 0.13));
-    fill.scale.set(radius, radius, 1);
-    fill.rotation.x = -Math.PI / 2;
-    fill.renderOrder = -6;
-    g.add(fill);
-    const inner = new Mesh(sharedGeo('zone-inner:unit', () => new CircleGeometry(1, 32)), groundMat(HEAL, 0.18));
-    inner.scale.set(radius * 0.55, radius * 0.55, 1);
-    inner.rotation.x = -Math.PI / 2;
-    inner.position.y = 0.004;
-    inner.renderOrder = -6;
-    g.add(inner);
-    const rim = new Mesh(sharedGeo('zone-rim:unit', () => new RingGeometry(0.93, 1, 44)), groundMat(HEAL, 0.55));
-    rim.scale.set(radius, radius, 1);
-    rim.rotation.x = -Math.PI / 2;
-    rim.position.y = 0.006;
-    rim.renderOrder = -5;
-    rim.name = 'rim';
-    g.add(rim);
-    const halo = makeGlowSprite({ color: HEAL, size: radius * 2.4, opacity: 0.2 });
-    halo.position.y = 0.25;
-    g.add(halo);
-    // Above-plane slice: a standing wall of light around the zone edge. The
-    // Sanctuary disc is the shape the party stands INSIDE, so on the ground
-    // plane alone it is exactly what four bunched bodies cover; the wall is
-    // what still says "you are in the zone" when they do. Fades out with
-    // height (getRiseTexture), so it reads as light rising off the rim.
-    // Opacity 0.20 (a first cut ran 0.42): a Sanctuary lives 4 s (§7), and at
-    // 0.42 the near half of the wall sat over the party for all four of them —
-    // measured on a bunched capture, the four bodies washed to near-white and
-    // lost the REFERENCE_BAR check-3 silhouette read. At 0.20 the wall is a
-    // veil in front and a clear standing rim behind, and the zone still reads
-    // from above the bodies.
-    const wall = new Mesh(
-      sharedGeo('zone-wall:unit', () => new CylinderGeometry(1, 1, ZONE_WALL, 44, 1, true)),
-      riseMat(HEAL, 0.20)
-    );
-    wall.scale.set(radius, 1, radius);
-    wall.position.y = ZONE_WALL / 2;
-    wall.renderOrder = 2;
-    wall.name = 'wall';
-    g.add(wall);
-    return g;
-  }
 
   // ------------------------------------------------------------------- aura --
   // Warding Aura field: radius from the skill table (0.9 u), rides the player.
@@ -1024,13 +970,6 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     auraPulseT = 0.45;
     spawnRing(world.player.x, world.player.z, { color: HEAL, from: 0.25, to: AURA.area, life: 0.4, opacity: 0.55 });
   });
-  bus.on('zone_tick', (ev) => {
-    const rig = zoneRigs.get(ev.id);
-    if (!rig) return;
-    rig.pulseT = 0.35;
-    spawnRing(rig.g.position.x, rig.g.position.z, { color: HEAL, from: 0.3, to: rig.radius, life: 0.3, opacity: 0.5 });
-    spawnMotes(rig.g.position.x, rig.g.position.z, { color: HEAL, count: 6, spread: rig.radius * 0.8 });
-  });
   bus.on('skill_cast', (ev) => {
     const p = world.player;
     if (CONTENT_CAST_SKILLS.has(ev.skill)) return;
@@ -1076,7 +1015,6 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     warmed = true;
     warmPark(root, makeBoltRig(true));
     warmPark(root, makeBoltRig(false));
-    warmPark(root, makeZoneRig(SKILLS.sanctuary ? SKILLS.sanctuary.area : 1.5));
     // gauntlet r4 J4-F1 (INT): the Swift Mend bond arc — transparent,
     // double-sided ribbons, i.e. a back-face and a front-face program each —
     // linked 4 programs on the first Swift Mend of the first fight (a 55-109 ms
@@ -1148,45 +1086,6 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
         tr.s.material.opacity = 0.62 * k * k;
         const w = 0.34 * (0.34 + 0.66 * k); // taper: a wake, not a bead chain
         tr.s.scale.set(w, w, 1);
-      }
-    }
-
-    // Zones: sync rigs to sim zone entities; breathe; drip motes.
-    const seenZones = new Set();
-    for (const e of world.entities()) {
-      if (e.kind !== 'zone' || e.damage) continue; // damage zones: ./content.js
-      seenZones.add(e.id);
-      let rig = zoneRigs.get(e.id);
-      if (!rig) {
-        rig = { g: makeZoneRig(e.radius), radius: e.radius, pulseT: 0, moteClock: 0 };
-        rig.g.position.set(e.x, 0.012, e.z);
-        zoneRigs.set(e.id, rig);
-        root.add(rig.g);
-      }
-      rig.pulseT = Math.max(0, rig.pulseT - dt);
-      const breathe = 1 + 0.06 * Math.sin(tSec * 2.2 + e.id);
-      rig.g.scale.set(breathe, 1, breathe);
-      const rim = rig.g.getObjectByName('rim');
-      rim.material.opacity = 0.55 + 0.35 * (rig.pulseT / 0.35) + 0.08 * Math.sin(tSec * 3 + e.id);
-      // The wall breathes with the rim and flares on every zone tick, so the
-      // 1.0 s cadence (§6) is legible from above the bodies too.
-      const wall = rig.g.getObjectByName('wall');
-      wall.material.opacity = 0.17 + 0.20 * (rig.pulseT / 0.35) + 0.03 * Math.sin(tSec * 2.2 + e.id);
-      rig.moteClock += dt;
-      if (rig.moteClock > 0.22) {
-        rig.moteClock = 0;
-        spawnMotes(
-          rig.g.position.x + cosmetic.range(-rig.radius * 0.7, rig.radius * 0.7),
-          rig.g.position.z + cosmetic.range(-rig.radius * 0.7, rig.radius * 0.7),
-          { color: HEAL, count: 1, spread: 0.05 }
-        );
-      }
-    }
-    for (const [id, rig] of zoneRigs) {
-      if (!seenZones.has(id)) {
-        root.remove(rig.g);
-        releaseTree(rig.g);
-        zoneRigs.delete(id);
       }
     }
 
@@ -1351,7 +1250,6 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       beams: beams.length,
       wedges: wedges.length,
       boltRigs: boltRigs.size,
-      zoneRigs: zoneRigs.size,
       auraOn,
       overrideIndex,
     };
@@ -1366,11 +1264,6 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       releaseTree(g);
     }
     boltRigs.clear();
-    for (const rig of zoneRigs.values()) {
-      root.remove(rig.g);
-      releaseTree(rig.g);
-    }
-    zoneRigs.clear();
     const snap = world.snapshotState();
     auraOn = (snap.skills || []).some((s) => s && s.id === 'warding_aura');
     overrideIndex = snap.healOverride ?? null;

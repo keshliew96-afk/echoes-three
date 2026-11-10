@@ -17,10 +17,8 @@
 //     instrument is drawn by InkOverlayPass below, AFTER UnrealBloomPass, so
 //     the band lands on the exact §19.1 Parchment hex instead of clipping to
 //     white and blooming the downed body out.
-//   - ally kit ground_aoe zones (Ground Crack / Caltrops / Detonating Charge)
-//     as layered discs + rim + motes, in the party's Parchment/Hearth Amber
-//     damage family (§19.4 — never Ember, which is enemy-only, and never
-//     Bright Heal, which is heal-only)
+//   - (ally kit zones: the template layer's held circle,
+//     render/vfx/templates.js "zone circles")
 //   - melee-arc swipe wedges and nova rings for ally attacks, so every ally
 //     hit is a >=3-layer event (core + glow + particles) like the player's
 //
@@ -47,13 +45,12 @@ import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { makeGlowSprite } from '../glow.js';
-import { sharedGeo, releaseTree } from '../geocache.js';
+import { sharedGeo } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { createCritter, FALL_ANGLE } from '../critters/index.js';
 import { registerHeroRig } from '../critters/rigs.js';
 import { exactColor, exactHex, makeSwingSmear } from '../critters/common.js';
-import { ALLY_CLASSES, ALLY_KITS, REVIVE } from '../../sim/allies.js';
-import { vfxClassStyle } from '../../data/vfx.js';
+import { ALLY_CLASSES, REVIVE } from '../../sim/allies.js';
 import { impactFx } from '../vfx/hub.js';
 import { renderHold } from '../hold.js';
 import { cap, onHintsChange } from '../../app/controls.js';
@@ -406,19 +403,6 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     if (pct > 0) drains.set(ev.target, Math.max(drains.get(ev.target) ?? 0, pct));
   });
   bus.on('revive', (ev) => drains.delete(ev.target));
-  bus.on('azone_tick', (ev) => {
-    const rig = zoneRigs.get(ev.id);
-    if (!rig) return;
-    rig.pulseT = 0.35;
-    spawnRing(rig.g.position.x, rig.g.position.z, {
-      from: 0.25,
-      to: rig.radius,
-      life: 0.3,
-      opacity: 0.6,
-      color: rig.glow,
-    });
-    spawnMotes(rig.g.position.x, rig.g.position.z, { count: 5, spread: rig.radius * 0.8, color: rig.glow });
-  });
   bus.on('revive', (ev) => {
     const m = byId(ev.target);
     if (!m) return;
@@ -601,46 +585,6 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     return g;
   }
 
-  // ----------------------------------------------------------- ally zones --
-  // §19.4 AoE grammar: layered translucent discs + rim + particles. Party
-  // damage family = Parchment core over a Hearth Amber glow.
-  const zoneRigs = new Map(); // azone id -> { g, radius, pulseT, moteClock }
-  // VFX redesign: a zone wears its caster's class signature (Tank Forge
-  // Steel, Swordsman Fox Crimson, Archer Wind Jade) instead of the shared
-  // Hearth Amber, so whose ground it is reads at a glance.
-  function makeZoneRig(radius, classId = null) {
-    const vs = vfxClassStyle(classId);
-    const AMBER = vs.glow;
-    const PARCH = vs.id === 'swordsman' ? vs.second : vs.core;
-    const g = new Group();
-    // Shared per radius (F1): an ally AoE rig is built per sim zone and dropped
-    // when it expires, so these three discs used to leak on every kit cast.
-    // fix-CAMPAIGN-r6 (GC.6): UNIT discs scaled to the radius (a radius-keyed
-    // cache minted 3 GL geometries for every new radius a build reached).
-    const fill = new Mesh(sharedGeo('ally-zone-fill:unit', () => new CircleGeometry(1, 36)), flatMat(AMBER, 0.14, true));
-    fill.scale.set(radius, radius, 1);
-    fill.rotation.x = -Math.PI / 2;
-    fill.renderOrder = -6;
-    g.add(fill);
-    const inner = new Mesh(sharedGeo('ally-zone-inner:unit', () => new CircleGeometry(1, 28)), flatMat(PARCH, 0.16, true));
-    inner.scale.set(radius * 0.5, radius * 0.5, 1);
-    inner.rotation.x = -Math.PI / 2;
-    inner.position.y = 0.004;
-    inner.renderOrder = -6;
-    g.add(inner);
-    const rim = new Mesh(sharedGeo('ally-zone-rim:unit', () => new RingGeometry(0.9, 1, 40)), flatMat(AMBER, 0.6, true));
-    rim.scale.set(radius, radius, 1);
-    rim.rotation.x = -Math.PI / 2;
-    rim.position.y = 0.006;
-    rim.renderOrder = -5;
-    rim.name = 'rim';
-    g.add(rim);
-    const halo = makeGlowSprite({ color: AMBER, size: radius * 2.2, opacity: 0.22 });
-    halo.position.y = 0.22;
-    g.add(halo);
-    return g;
-  }
-
   // -------------------------------------------------------------- FX pools --
   const flashes = [];
   const flashPool = [];
@@ -775,13 +719,6 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   let inkWarmFrames = 0;
   function prewarm() {
     warmed = true;
-    // One zone per kit ground_aoe radius: the discs are shared per radius, so
-    // this also uploads each radius' geometry once.
-    const zoneRadii = new Set();
-    for (const kit of Object.values(ALLY_KITS))
-      for (const s of kit) if (s.shape === 'ground_aoe' && s.area) zoneRadii.add(s.area);
-    if (zoneRadii.size === 0) zoneRadii.add(0.7);
-    for (const r of zoneRadii) warmPark(root, makeZoneRig(r));
     const smear = makeSwingSmear();
     smear.visible = true; // uOpacity stays 0: drawn, never seen
     warmPark(root, smear);
@@ -932,36 +869,6 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     // instrument in its scene (see prewarm) — that is what compiles the
     // ink-scene programs at boot instead of on the first downed body.
     if (inkPass) inkPass.enabled = reviveRigs.size > 0 || inkWarmFrames > 0;
-
-    // --- ally kit zones synced to sim `azone` entities.
-    const seenZones = new Set();
-    for (const e of world.entities()) {
-      if (e.kind !== 'azone') continue;
-      seenZones.add(e.id);
-      let rig = zoneRigs.get(e.id);
-      if (!rig) {
-        rig = { g: makeZoneRig(e.radius, e.classId), radius: e.radius, pulseT: 0, moteClock: 0, glow: vfxClassStyle(e.classId).glow };
-        rig.g.position.set(e.x, 0.012, e.z);
-        root.add(rig.g);
-        zoneRigs.set(e.id, rig);
-      }
-      rig.pulseT = Math.max(0, rig.pulseT - dt);
-      const flare = rig.pulseT / 0.35;
-      const rim = rig.g.getObjectByName('rim');
-      rim.material.opacity = 0.45 + 0.4 * flare + 0.08 * Math.sin(tSec * 3.1);
-      rig.moteClock += dt;
-      if (rig.moteClock > 0.35) {
-        rig.moteClock = 0;
-        spawnMotes(e.x, e.z, { count: 2, spread: rig.radius * 0.85, color: rig.glow });
-      }
-    }
-    for (const [id, rig] of zoneRigs) {
-      if (!seenZones.has(id)) {
-        root.remove(rig.g);
-        releaseTree(rig.g); // discs are shared; the three materials are this zone's
-        zoneRigs.delete(id);
-      }
-    }
 
     // --- pools tick down.
     for (let i = flashes.length - 1; i >= 0; i--) {
@@ -1155,7 +1062,6 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       inkPass: inkPass ? stage.composer.passes.indexOf(inkPass) : -1,
       inkPassEnabled: inkPass ? inkPass.enabled : false,
       inkPasses: stage.composer?.passes?.map((p) => p.constructor.name) ?? [],
-      zones: zoneRigs.size,
       wedges: wedges.length,
       motes: motes.length,
       adopted,
@@ -1164,16 +1070,10 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     };
   }
 
-  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the sim: kit zones are
-  // keyed by entity id (drop them silently, update() rebuilds), the revive
+  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the sim: the revive
   // rings and their reverse-drain memory belong to the moment that left.
   // The four critters are keyed by class and simply follow the new bodies.
   bus.on('state_restored', () => {
-    for (const rig of zoneRigs.values()) {
-      root.remove(rig.g);
-      releaseTree(rig.g);
-    }
-    zoneRigs.clear();
     drains.clear();
     for (const g of reviveRigs.values()) {
       inkRoot.remove(g);

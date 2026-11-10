@@ -401,3 +401,24 @@ reach, the heights, the glint on a strike frame, gone within 0.8 s), the
 fallbacks, the hold and the token, the sizes, the colours. Shots:
 `node tools/vfx-extras-shots.mjs` on the dev server (a virtual clock at
 30 fps; `--only fight|classic|arrows|frost|vault`).
+
+## Zone circles: the AOE indicator (v0.5.355, feature-freeze cleanup)
+
+Every lasting area skill shows one circle, its template's own: arcane runes for magic, the flame ring
+for blades, the hexagon for sci-fi; a healing zone keeps Bright Heal in its runes.
+
+- It opens when the zone spawns, sits with its bold outer ring exactly on the zone's radius, stays at
+  full strength for the zone's whole life, flares on each zone tick, and fades over 0.25 s when the zone
+  ends. Stardust drips inside it every 0.3 s.
+- It covers both zone kinds: the skill bar's `zone` (Sanctuary, Rootsnare, Dewfall) and the heroes'
+  kit `azone` (Ground Crack, Caltrops, Detonating Charge, Rain of Arrows, the Tidecaller's pools, the
+  Bellwright's hung bells, the Duskwing's swarm, and every other kit zone).
+- Code: `render/vfx/templates.js` "zone circles" follows the sim's zone entities each frame;
+  `render/vfx/tplkit.js` holds the circle (`hold: true`, `moveCircle`, `pulseCircle`, `endCircle`).
+  The cast recipes (`magicZone`, `bladeZone`) no longer draw a one-shot circle of their own, and the zone
+  tick no longer draws one either.
+- Removed: the plain filled discs, rims and walls that `render/skillfx/index.js` (Sanctuary),
+  `render/skillfx/content.js` (Rootsnare's rings; its roots stay) and `render/allies/index.js` (every
+  kit zone) drew for the zone's life, and their tick rings.
+- Probe: `node tools/zone-circle-probe.mjs` (needs `npm run dev`): every live zone has exactly one live
+  circle at its exact radius, none outlives its zone, Sanctuary's lasts its 4 s.

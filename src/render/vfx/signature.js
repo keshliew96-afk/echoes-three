@@ -6772,7 +6772,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     shrineFx.frame(dt, world.entities());
     relic6Fx.frame(dt, world.entities());
     boltFx.frame(dt, world.entities());
-    tplFx.frame(dt); // T1: the traced slashes read the rigs' tips
+    tplFx.frame(dt, world.entities()); // T1: the traced slashes read the rigs' tips; every zone's AOE circle
     // The slash sweeps, flashes, stars, blazes and blasts hold through the
     // hitstop (render/hold.js); timers, trails and particles run on.
     kit.update(dt, renderHold);
@@ -7734,7 +7734,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   }
 
   function debugCounts() {
-    return { ...kit.counts(), tpl: tk.counts(), foe: foeFx.counts(), bolt: boltFx.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
+    return { ...kit.counts(), tpl: tk.counts(), zoneCircles: tplFx.zoneCircles().length, zoneCircleList: tplFx.zoneCircles(), foe: foeFx.counts(), bolt: boltFx.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
   }
 
   return { update, applyCamera, prewarm, debugCounts, kit, camfx, showcase: (id, at) => tplFx.showcase(id, at), foeShowcase: (kind, at) => foeFx.showcase(kind, at), boltShowcase: (names, at) => boltFx.showcase(names, at) };

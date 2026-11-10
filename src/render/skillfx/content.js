@@ -483,24 +483,8 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
   const zoneRigs = new Map();
   function makeRootRig(radius) {
     const g = new Group();
-    // fix-CAMPAIGN-r6 (GC.6): UNIT shapes scaled to the zone's radius — a
-    // radius-keyed cache minted 3 new GL geometries for every new Rootsnare
-    // radius a build reached (Reach stacks), so memory grew with the builds.
-    const ink = new Mesh(sharedGeo('cfx-root-ink:unit', () => new RingGeometry(0.9, 1.03, 48)), flat(INK, 0.6));
-    ink.rotation.x = -Math.PI / 2;
-    ink.position.y = 0.012;
-    ink.scale.set(radius, radius, 1);
-    const rim = new Mesh(sharedGeo('cfx-root-rim:unit', () => new RingGeometry(0.93, 1, 48)), flat(BLUE, 0.85));
-    rim.rotation.x = -Math.PI / 2;
-    rim.position.y = 0.016;
-    rim.scale.set(radius, radius, 1);
-    rim.name = 'rim';
-    const fill = new Mesh(sharedGeo('cfx-root-fill:unit', () => new CircleGeometry(1, 40)), additive(AMBER, 0.06));
-    fill.rotation.x = -Math.PI / 2;
-    fill.position.y = 0.01;
-    fill.scale.set(radius, radius, 1);
-    fill.name = 'fill';
-    g.add(ink, rim, fill);
+    // The zone's edge is the template layer's held circle
+    // (render/vfx/templates.js "zone circles"); the roots are its own.
     // Root strands: dark tendrils with a parchment edge, radial from the centre.
     const n = 9;
     for (let i = 0; i < n; i++) {
@@ -518,7 +502,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       edge.position.set(Math.cos(a) * len * 0.5, 0.021, Math.sin(a) * len * 0.5);
       g.add(strand, edge);
     }
-    return { g, radius, pulse: 0, mote: 0 };
+    return { g, radius, mote: 0 };
   }
 
   // -------------------------------------------------------- Mending Tide wedge --
@@ -637,8 +621,6 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
   bus.on('zone_tick', (ev) => {
     const rig = zoneRigs.get(ev.id);
     if (rig) {
-      rig.pulse = 0.35;
-      spawnRing(rig.g.position.x, rig.g.position.z, { color: BLUE, from: 0.3, to: rig.radius, life: 0.35, opacity: 0.6, width: 0.08 });
       spawnMotes(rig.g.position.x, rig.g.position.z, { color: AMBER, count: 5, spread: rig.radius * 0.8, vyMin: 0.2, vyMax: 0.5 });
       return;
     }
@@ -830,10 +812,6 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
         zoneRigs.set(e.id, rig);
         root.add(rig.g);
       }
-      rig.pulse = Math.max(0, rig.pulse - dt);
-      const rim = rig.g.getObjectByName('rim');
-      rim.material.opacity = 0.7 + 0.25 * (rig.pulse / 0.35) + 0.05 * Math.sin(tSec * 3 + e.id);
-      rig.g.getObjectByName('fill').material.opacity = 0.05 + 0.08 * (rig.pulse / 0.35);
       rig.mote += dt;
       if (rig.mote > 0.3) {
         rig.mote = 0;
