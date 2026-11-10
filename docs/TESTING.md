@@ -25,6 +25,17 @@ npx vite build                          # clean apart from the chunk-size warnin
   model beside); `__echoes.cmd('lab', {model, mode, ability, t, view, classic})` drives it
   from a probe. `?facet=0` shows the classic models in the game.
 
+### npm run check (v0.5.351)
+
+`npm run check` (`tools/check.mjs`, Playwright) is the play check to run after every change during
+the feature freeze (`CLAUDE.md`). It starts `npm run dev` unless a server already answers on 5199,
+opens the title on a wiped profile and presses a key, then plays a few seconds of real input (W A S D,
+mouse attacks, Space) in camp and in the first room of a Level I run. It saves `title.png`,
+`camp.png`, `room1.png` and `check-report.json` under `captures/check/` (`--out <dir>`), and exits 1
+on any console error, uncaught page error or failed request. Warnings are listed, not failed.
+It opens a browser, so it stays out of `npm test` and CI. Without `npm run net` the title's cloud
+probe logs a 502 through the dev proxy, which the check counts as an error.
+
 ### npm test and CI (v0.5.318)
 
 `npm test` runs `tools/test.mjs`: 25 browser-free probes one after another (about 5 minutes,

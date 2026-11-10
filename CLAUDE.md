@@ -12,6 +12,19 @@ anything you need from the data tables in `src/data/` and `src/sim/`, not from o
 `docs/BUILD_BRIEF.md` is the original spec: its rulings still hold except where a later ruling
 (A19 on) or a per-system doc replaces them.
 
+## Feature freeze (Kesh, 2026-11-10)
+
+No new features, mechanics or visuals until Kesh lifts the freeze. Work now is setup and cleanup only.
+His rules, verbatim: "one implementation per system; replace, never duplicate; small changes only;
+run checks after every change."
+
+- One implementation per system: before adding code, find the module that already owns the job
+  (File structure and Current systems below) and change it there.
+- Replace, never duplicate: a replacement deletes the old code and updates every caller in the same change.
+- Small changes only: one item per commit.
+- Run checks after every change: `npm run check` (below), plus `npm test` and `npx vite build`
+  when sim, data or build files change.
+
 ## Slice rules
 
 - One draft PR into `gauntlet` from its current head. Bump `src/version.js` to the next free patch.
@@ -84,14 +97,88 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
 
 ## Running things
 
+```bash
+npm ci                 # Node 22; add --ignore-scripts to skip Puppeteer's browser download
+npm run dev            # the game at http://127.0.0.1:5199 (strict port)
+npm run net            # the session server on :7800: co-op, cloud saves, Daily board
+npm run check          # the play check: dev server, title, camp, room 1, screenshots, fails on console errors
+npm test               # the headless suite (tools/test.mjs, about 5 minutes; CI runs it)
+npx vite build         # player build into dist/ (only the chunk-size warning is expected)
+npm run serve          # build, then serve dist/ and the session server together on :7800
+```
+
+- `npm run check` (`tools/check.mjs`, Playwright) starts `npm run dev` unless something already
+  answers on 5199, opens the title on a wiped profile, presses a key, walks, attacks and dashes in
+  camp and in the first room of a Level I run, saves `title.png`, `camp.png`, `room1.png` and
+  `check-report.json` to `captures/check/` (`--out <dir>` to change it), and exits 1 on any console
+  error, uncaught page error or failed request. The dev server proxies `/cloud/`, `/daily/` and the
+  co-op socket to `npm run net`; without that server the title's cloud probe logs a 502.
+- Playwright is pinned to the version whose Chromium the cloud image ships (`/opt/pw-browsers`); on a
+  laptop run `npx playwright install chromium` once.
 - `npm run dev` serves on port 5199. Editing `src/` while a probe runs reloads the page and kills the probe.
 - Headless Node sim runs are fast (a 5-seed campaign takes about 25 s); prefer them for balance work.
-- Linux cloud session, as root: `PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome`
+- Linux cloud session, as root: `PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome`
   and `ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader"`
   (read by `tools/gnt-arch-browser.mjs` and most newer probes). Software GL runs at 1 to 25 fps, so
   hold keys for about 250 ms and wait on sim state, not on time. Use `--wait domcontentloaded`, since
   `networkidle2` never settles. `captures/` is gitignored.
 - Some old `*-r6` probes import libraries that were never committed; skip them.
+
+## File structure
+
+```
+index.html, vite.config.js   page shell, boot splash; dev port 5199, proxies to the session server, bundle split
+src/main.js                  boot: stage, sim core, scenes, fixed-tick loop, window.__echoes debug API
+src/version.js               the one version string
+src/app/        app shell and screen state machine, frame loop, settings, display, gamepad, nav, harness gating
+src/core/       sim core: 60 Hz clock, seeded RNG streams, entity registry, event bus, input -> intents, hashing
+src/sim/        the simulation (no DOM, no wall clock): world, run and campaign flow, combat, skills, nodes,
+                party and AI seats, enemies/ and bosses/, affixes, hazards, shrines, vaults, relics, events
+src/data/       content tables: classes, levels and rosters, layouts, lineup, unlocks, journal, vows,
+                endless, daily, rush, story, palette, vfx, difficulty
+src/campaign/   level manager (transitions between levels) and the camp map table
+src/scenes/     camp hub, arena (the dressed rooms), model labs, test scenes (graybox, simtest, rendertest, chartest)
+src/env/        room dressings: biomes/ per land, camp/ props
+src/render/     three.js views of sim state: stage and post, critters/ (heroes), facet/ (model standard kit),
+                enemies/, boss/, allies/, npcs/, hazards/, interactables/, skillfx/, techfx/, vfx/, numbers
+src/ui/         DOM UI: hud/, menu/ (title, settings, pause), run/ (class pick, draft, shop, cards), socket/,
+                story/ (journal, prologue), tutorial/, net/, interact/, bookends/, vfxlab, modellab, debug
+src/audio/      Web Audio engine, mixer, synthesized sfx and music
+src/save/       saves, slots, autosave, profile, deeds, cloud saves client
+src/net/        co-op: transport, lobby client, host driver, replica, prediction, WebRTC mesh, protocol/
+src/daily/      Daily Descent client
+src/i18n/       text lookup and the ten locales (locales/*.json, catalog.json)
+server/         zero-dependency Node session server: WebSocket lobby and relay, cloud saves, Daily board, static host
+tools/          probes (Node and browser), test.mjs (npm test), check.mjs (npm run check), goldens
+docs/           one doc per system (see the list in the file names); TESTING.md, I18N.md, BUILD_BRIEF.md
+.github/        CI: npm test and the player build on every push to gauntlet and every PR
+```
+
+## Current systems
+
+- **Boot and app:** `src/main.js` wires everything; `src/app/app.js` runs title, camp, run and pause
+  screens; `src/app/loop.js` paces render frames over a fixed 60 Hz sim (`src/core/clock.js`).
+- **Input and movement:** `src/core/input.js` turns keys, mouse and pad into intents
+  (`src/core/intents.js`, `bindings.js`); `src/sim/movement.js` moves bodies and collides.
+- **Combat:** `src/sim/combat.js`, `projectiles.js`, `status.js`, `shapes.js`; hit feedback in
+  `src/render/vfx/`, `src/render/numbers.js`.
+- **Skills and nodes:** `src/data/classes.js`, `src/sim/skills.js`, `nodes.js`, `draft.js`;
+  hero class kits in `src/sim/party*.js`, `allycast.js`, `duskwing.js`; casts drawn by `src/render/skillfx/`
+  and `src/render/vfx/`.
+- **Heroes and AI seats:** `src/app/playclass.js`, `src/data/lineup.js`, `src/sim/allies.js`, `partyai.js`,
+  `autopilot.js`; rigs in `src/render/critters/` and `src/render/facet/`.
+- **Enemies, champions, bosses:** `src/sim/enemies/`, `champions.js`, `src/sim/bosses/`, `boss.js`;
+  rigs in `src/render/enemies/`, `src/render/boss/`.
+- **Rooms and runs:** `src/sim/run.js` (rooms, rewards, campaign, Endless, Daily, Boss Rush),
+  `waves.js`, `objectives.js`, `encounters.js`, `secrets.js`; levels and layouts in `src/data/`;
+  dressings in `src/scenes/arena.js` and `src/env/`.
+- **Room extras:** affixes, hazards, shrines, vaults, consumables, relics and interactables, one module
+  each under `src/sim/`.
+- **Meta:** unlocks, deeds, vows, journal, profile and saves (`src/data/`, `src/save/`); camp in
+  `src/scenes/camp.js`, `src/env/camp/`.
+- **UI, audio, text:** `src/ui/`, `src/audio/`, `src/i18n/`.
+- **Co-op and online:** `src/net/` with `server/`; Daily board `src/daily/`, `server/daily.mjs`;
+  cloud saves `src/save/cloud.js`, `server/cloud.mjs`.
 
 ## Map
 

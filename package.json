@@ -11,12 +11,14 @@
     "test": "node tools/test.mjs",
     "net": "node server/index.mjs",
     "serve": "vite build && node server/index.mjs --static dist --host 0.0.0.0 --origins self",
-    "start": "node server/index.mjs --static dist --host 0.0.0.0 --origins self"
+    "start": "node server/index.mjs --static dist --host 0.0.0.0 --origins self",
+    "check": "node tools/check.mjs"
   },
   "dependencies": {
     "three": "^0.185.1"
   },
   "devDependencies": {
+    "playwright": "1.63.0",
     "puppeteer": "^25.7.0",
     "sharp": "^0.35.3",
     "vite": "^8.2.1"
