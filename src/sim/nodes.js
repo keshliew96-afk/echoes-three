@@ -873,7 +873,7 @@ export function createBuildSystem({
         return;
       }
       case 'skill_cast': {
-        if (!liveTechs(ev.skill).includes('echo')) return;
+        if (ev.classId || !liveTechs(ev.skill).includes('echo')) return; // the Healer's own casts only
         const due = ev.tick + TECH.echoDelayTicks;
         echoQueue.push({ due, skill: ev.skill, cast: ev });
         events.emit(getTick(), 'echo_armed', { skill: ev.skill, dueTick: due });

@@ -566,18 +566,18 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
   });
   // THE BELLWRIGHT: Bell-Rope, one heal per bell her Peal or Carillon rang
   // (a Peal with no bell hung rings round her and rings none).
-  events.on('ally_cast', (ev) => {
+  events.on('skill_cast', (ev) => {
     if (!on || !live() || !has('bell_rope') || ev.classId !== 'bellwright' || !Array.isArray(ev.bells)) return;
     const n = ev.bells.filter((b) => b && b.id !== null && b.id !== undefined).length;
     if (n > 0 && registry.byId(ev.id)) pending.push({ kind: 'rope', target: ev.id, bells: n });
   });
   // THE DUSKWING: Ripe Fig, one heal per enemy his Dusk Dive's landing struck.
-  events.on('ally_cast', (ev) => {
+  events.on('skill_cast', (ev) => {
     if (!on || !live() || !has('ripe_fig') || ev.classId !== 'duskwing' || ev.skill !== 'dusk_dive' || !Array.isArray(ev.targets)) return;
     if (ev.targets.length > 0 && registry.byId(ev.id)) pending.push({ kind: 'fig', target: ev.id, struck: ev.targets.length });
   });
   // ... and Verdigris Clapper: a toll of one of her bells that struck someone.
-  events.on('azone_tick', (ev) => {
+  events.on('zone_tick', (ev) => {
     if (!on || !live() || !has('verdigris_clapper') || !Array.isArray(ev.hit) || ev.hit.length === 0) return;
     const z = registry.byId(ev.id);
     if (!z || !z.bell || bodyCls(z.sourceId) !== 'bellwright') return;

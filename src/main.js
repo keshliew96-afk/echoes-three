@@ -501,7 +501,8 @@ if (classfx) service('content').classFx = () => classfx.debugCounts();
 // every class's swings / bursts / zones / dashes / hits, every enemy's attack
 // and death debris and the Stag's beats, styled from src/data/vfx.js, plus
 // the render-only camera kick / dolly. Probe: __echoes.content.vfx().
-import { createSignatureFx, registerSkillAreas } from './render/vfx/signature.js';
+import { createSignatureFx } from './render/vfx/signature.js';
+import { registerSkillAreas } from './render/vfx/sig/common.js';
 import { setImpactFxDirected } from './render/vfx/hub.js';
 import { registerEffectsSetting } from './ui/run/effects.js';
 import { SKILLS as VFX_SKILL_ROWS } from './sim/skills.js';

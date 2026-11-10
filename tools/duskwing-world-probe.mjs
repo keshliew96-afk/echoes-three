@@ -266,7 +266,7 @@ const freed = (prof) => U.duskwingFreed(prof.get().meta, prof.get().records);
   }
   const evs = W.log.slice(from);
   const sable = ally(W, 3);
-  const dives = evs.filter((e) => e.type === 'ally_cast' && e.partyIndex === 3 && e.skill === 'dusk_dive' && Array.isArray(e.targets) && e.targets.length > 0);
+  const dives = evs.filter((e) => e.type === 'skill_cast' && e.partyIndex === 3 && e.skill === 'dusk_dive' && Array.isArray(e.targets) && e.targets.length > 0);
   const figs = evs.filter((e) => e.type === 'relic_proc' && e.relic === 'ripe_fig');
   const figHeals = evs.filter((e) => e.type === 'heal' && e.source === 'ripe_fig');
   check(dives.length > 0 && figs.length === dives.length && figs.every((p, i) => p.target === sable.id && p.struck === dives[i].targets.length), `Ripe Fig: one heal per Dusk Dive that struck, sized by what it struck (${figs.length} / ${dives.length} dives)`);

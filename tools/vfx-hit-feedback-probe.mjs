@@ -27,7 +27,11 @@
 //
 //   node tools/vfx-hit-feedback-probe.mjs
 // Exit code 1 on any failure.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+
+// The signature director's whole source: signature.js and its parts under
+// render/vfx/sig/ (the split of the freeze cleanup).
+const sigSource = () => [new URL('../src/render/vfx/signature.js', import.meta.url), ...readdirSync(new URL('../src/render/vfx/sig/', import.meta.url)).filter((f) => f.endsWith('.js')).sort().map((f) => new URL(`../src/render/vfx/sig/${f}`, import.meta.url))].map((u) => readFileSync(u, 'utf8')).join('\n');
 
 // --- a stub DOM: enough for canvases, the numerals' divs and their styles. --
 const grad = { addColorStop() {} };
@@ -519,7 +523,7 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   const burst = calls.find((c) => !c.shard);
   check('K2: the debris bursts after the swell (0.1 s held, plus the freeze)', !!burst && burst.at - killAt >= 0.1 + 3 / 60 - 1e-6 && burst.at - killAt <= 0.2, burst ? r3(burst.at - killAt) : null);
   check('P1: the kill burst leans along the killing hit', burst && burst.o.dir && burst.o.dir.z > 0.99 && burst.o.dirBias > 0 && burst.o.dirBias <= 0.3, burst?.o);
-  const src = readFileSync(new URL('../src/render/vfx/signature.js', import.meta.url), 'utf8');
+  const src = sigSource();
   const killFx = /const KILL_FX = Object\.freeze\(\{([^}]*)\}\)/.exec(src)?.[1] ?? '';
   const num = (k) => Number(new RegExp(`${k}: ([0-9.]+)`).exec(killFx)?.[1]);
   check('K1: the flare holds 117 ms (5 frames with the freeze), the ring lives 0.22 s under the floor warnings', num('flareHold') >= 0.1 && num('flareHold') <= 0.167 && num('ringLife') <= 0.25 && num('ringOrder') === 0, killFx.trim());
@@ -641,7 +645,7 @@ check('the version is 0.5.333 or later', cmp(VERSION, '0.5.333') >= 0, VERSION);
   const reserved = [PALETTE.emberDanger, PALETTE.brightHeal, PALETTE.godstuffViolet].filter(Boolean).map((h) => h.toUpperCase());
   const files = ['src/render/react.js', 'src/render/hold.js'];
   const hits = files.filter((f) => reserved.some((h) => readFileSync(new URL(`../${f}`, import.meta.url), 'utf8').toUpperCase().includes(h)));
-  const sig = readFileSync(new URL('../src/render/vfx/signature.js', import.meta.url), 'utf8');
+  const sig = sigSource();
   const blocks = [/function bloom\([\s\S]*?\n  \}/.exec(sig)?.[0] ?? '', /function enemyDeath\([\s\S]*?\n  \}/.exec(sig)?.[0] ?? ''];
   const bad = blocks.filter((b) => /EMBER|HEAL\b|VIOLET/.test(b));
   check('nothing new draws in Ember, Bright Heal or Violet', hits.length === 0 && bad.length === 0 && reserved.length === 3, { hits, bad: bad.length });

@@ -144,11 +144,11 @@ export function createImpactEventCues({ world, defaults }) {
       return out;
     },
     skill_cast: (ev, h) => {
+      if (ev.classId) return withWhoosh('ally_cast', ev, h, ev.classId, ev.skill); // a hero kit's cast
       let pl = null;
       for (const e of world.entities()) if (e.kind === 'player') pl = e;
       return withWhoosh('skill_cast', ev, h, pl ? pl.classId ?? 'healer' : null, ev.skill);
     },
-    ally_cast: (ev, h) => withWhoosh('ally_cast', ev, h, ev.classId, ev.skill),
     basic_fire: () => {
       const me = ownHero();
       return me && me.kind === 'player' ? [{ cue: 'shot_whiz', x: me.x, z: me.z }] : null;

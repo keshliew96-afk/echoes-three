@@ -641,7 +641,9 @@ export function createArenaScene(stage, toggles, ctx) {
     healerRig.cue('basic', ev); // a model-standard rig's combo (docs/MODEL_STANDARD.md)
   });
   // The Healer's skills (a model-standard rig plays the skill's ability).
-  bus.on('skill_cast', (ev) => healerRig.cue('skill', ev));
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) healerRig.cue('skill', ev); // a hero kit's cast is its own rig's
+  });
   bus.on('hit', (ev) => {
     if (ev.target === world.player.id) hurtFlag = true;
     if (ev.attacker === world.player.id) healerRig.cue('connect', ev);

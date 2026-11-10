@@ -326,7 +326,8 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
   });
 
   // ------------------------------------------------------------ bus wiring --
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
     switch (ev.skill) {
       // taunting_roar: the roar's shockwave is the Tank's nova recipe in
       // render/vfx/signature.js (VFX redesign); the taunt plates stay here.
@@ -507,7 +508,7 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
     }
     // Rain of Arrows: falling parchment streaks inside each live zone.
     for (const z of world.entities()) {
-      if (z.kind !== 'azone' || z.skill !== 'rain_of_arrows') continue;
+      if (z.kind !== 'zone' || z.skill !== 'rain_of_arrows') continue;
       if (cosmetic.float() < dt * 26) {
         const a = cosmetic.range(0, Math.PI * 2);
         const r = Math.sqrt(cosmetic.float()) * z.radius;

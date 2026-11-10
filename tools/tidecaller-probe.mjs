@@ -173,7 +173,7 @@ let saved = null;
     if (W.run.view().phase !== 'combat') break;
   }
   const evs = W.log.slice(from);
-  const mine = evs.filter((e) => e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo);
+  const mine = evs.filter((e) => e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo);
   const castSet = [...new Set(mine.map((e) => e.skill))].sort();
   check(mine.length > 0 && mine.every((e) => e.classId === 'tidecaller' && KIT.includes(e.skill)), `the AI casts her skills (${mine.length}: ${castSet.join(',')})`);
   check(castSet.includes('riverbolt') && castSet.includes('undertow'), 'Riverbolt and Undertow both cast');
@@ -248,12 +248,12 @@ let saved = null;
   W.stepSeat(3, emptySnapshot());
   const evs = W.log.slice(from);
   const dodge = evs.find((e) => e.type === 'ally_dodge' && e.partyIndex === 3);
-  const puddle = evs.find((e) => e.type === 'azone_spawn' && e.skill === 'dive');
+  const puddle = evs.find((e) => e.type === 'zone_spawn' && e.skill === 'dive');
   check(!!dodge && !!puddle, `Dive dodges and leaves a puddle (${!!dodge} / ${!!puddle})`);
   const wet = foe && foe.status && foe.status.soaked;
   check(!foe || !!wet, 'the puddle soaks an enemy standing in it');
   for (let i = 0; i < 70; i++) W.stepSeat(3, emptySnapshot());
-  check(!W.registry.all().some((z) => z.kind === 'azone' && z.skill === 'dive'), 'the puddle dries after 1 s');
+  check(!W.registry.all().some((z) => z.kind === 'zone' && z.skill === 'dive'), 'the puddle dries after 1 s');
 }
 
 // ----------------------------------------------------------- 5. the shop --

@@ -18,9 +18,13 @@
 //      hang and drop beats (foefx weightHang / weightDrop), not a muzzle shot,
 //      and its landing blow is the template tone, not Ember.
 // Exit code 1 on any failure.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+
+// The signature director's whole source: signature.js and its parts under
+// render/vfx/sig/ (the split of the freeze cleanup).
+const sigSource = () => [new URL('../src/render/vfx/signature.js', import.meta.url), ...readdirSync(new URL('../src/render/vfx/sig/', import.meta.url)).filter((f) => f.endsWith('.js')).sort().map((f) => new URL(`../src/render/vfx/sig/${f}`, import.meta.url))].map((u) => readFileSync(u, 'utf8')).join('\n');
 
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const u = (p) => pathToFileURL(join(here, p)).href;
@@ -146,7 +150,7 @@ const check = (ok, what) => {
   emit('enemy_lob', { tick: 100, id: 1, glob: 9, x: 0, z: 0, tx: 1, tz: 1, landTick: 150 });
   check(marks.includes('tpl:foe_scifi_shot'), 'any other lob still plays its muzzle shot');
   // The landing blow (signature.js weightLand) in the template tone.
-  const sig = src('src/render/vfx/signature.js');
+  const sig = sigSource();
   const land = sig.slice(sig.indexOf('function weightLand('), sig.indexOf('function weightLand(') + 900);
   check(/vfxFoeShotColor\('hourwarden'\)/.test(land) && !/EMBER/.test(land), "the landing flare and shock wear the Hourwarden's tone, not Ember");
 }

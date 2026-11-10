@@ -90,7 +90,7 @@ await page.evaluate(() => {
   window.__duskSeen = { dash: 0, land: 0, bite: 0, night: 0, blind: 0, sip: 0 };
   const S = window.__duskSeen;
   window.__echoes.on('ally_dash', (e) => e && e.skill === 'dusk_dive' && S.dash++);
-  window.__echoes.on('ally_cast', (e) => {
+  window.__echoes.on('skill_cast', (e) => {
     if (!e) return;
     if (e.skill === 'dusk_dive') S.land++;
     if (e.skill === 'blood_bite') S.bite++;

@@ -146,14 +146,14 @@ const at = (ev, h, id) => {
   return p || h.player() || {};
 };
 const one = (cue, where, extra) => [{ cue, ...where, ...extra }];
-const bellZones = new Map(); // hung bells: azone id -> { x, z, size } (tolls speak from there)
+const bellZones = new Map(); // hung bells: zone id -> { x, z, size } (tolls speak from there)
 // Her casts with a voice of their own (the Peal family is handled apart).
 const CAST_CUE = { hang_bell: 'bw_hang', great_bell: 'bw_great', clapper: 'bw_clap', knell: 'bw_knell', bell_swing: 'bw_swing', wing_hop: 'bw_hop', vesper_chime: 'bw_vesper', tuning_fork: 'bw_fork' };
 
 export function createBellEventCues() {
   return {
     ally_basic: (ev, h) => (ev.classId === 'bellwright' ? one('bw_ding', at(ev, h, ev.id)) : null),
-    ally_cast: (ev, h) => {
+    skill_cast: (ev, h) => {
       if (ev.classId !== 'bellwright') return null;
       if (ev.skill === 'peal') return one('bw_peal', at(ev, h, ev.id));
       if (ev.skill === 'carillon') return one('bw_carillon', at(ev, h, ev.id));
@@ -163,13 +163,13 @@ export function createBellEventCues() {
       const where = ev.skill === 'hang_bell' || ev.skill === 'great_bell' ? at({ x: ev.zx, z: ev.zz }, h, ev.id) : at(ev, h, ev.id);
       return one(cue, where);
     },
-    azone_spawn: (ev) => {
+    zone_spawn: (ev) => {
       if (!ev.bell) return null;
       bellZones.set(ev.id, { x: ev.x, z: ev.z, size: ev.bellSize ?? 1 });
       if (bellZones.size > 16) bellZones.delete(bellZones.keys().next().value);
       return []; // the cast's thunk speaks for it
     },
-    azone_tick: (ev) => {
+    zone_tick: (ev) => {
       const b = bellZones.get(ev.id);
       if (!b) return null;
       // Alternate tolls a step apart so three bells read as a peal, not a
@@ -177,7 +177,7 @@ export function createBellEventCues() {
       const base = b.size > 1.1 ? 0.75 : b.size < 0.9 ? 2 : 1;
       return one('bw_toll', { x: b.x, z: b.z }, { pitch: base * (ev.n % 2 === 0 ? 1 : 1.122) });
     },
-    azone_expire: (ev) => {
+    zone_expire: (ev) => {
       bellZones.delete(ev.id);
       return null;
     },

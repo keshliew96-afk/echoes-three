@@ -534,6 +534,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
 
   // ----------------------------------------------------------- bus wiring --
   bus.on('skill_cast', (ev) => {
+    if (ev.classId) return; // the Healer's own kit (a hero kit's cast carries its classId)
     const p = player();
     if (!p) return;
     const def = SKILLS[ev.skill];

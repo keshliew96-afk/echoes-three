@@ -16,6 +16,11 @@
 // hero is still told apart by shape first while every beat reaches the
 // template's finish: a gather, a white-hot burst, light, particles that hang.
 //
+// One director (AUDIT D5): this layer is built by the signature director
+// (render/vfx/sig/party.js) and its `bus` is the director's dispatch
+// (sig/common.js createVfxDispatch), not the sim bus: its handlers run in the
+// same per-event chain as the class layer's, in registration order.
+//
 // Gameplay signals keep their own colours: enemy warnings stay Ember (the
 // enemies' own template layer is foefx.js, in foe tones), heals keep Bright Heal (a magic heal
 // swaps the purple for green and keeps the gold), and damage numbers are a
@@ -436,8 +441,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   // first frame the tip sweeps faster than TRACE_FX.strikeSpeed is the
   // strike frame, where the glint and the shards fire at the tip.
   // ------------------------------------------------------- zone circles --
-  // Every lasting area skill (a sim `zone` from the skill bar, an `azone` from
-  // a hero's kit) shows its template's circle as its AOE indicator: it opens
+  // Every lasting area skill (a sim `zone`, from the Healer's skill bar or a
+  // hero's kit) shows its template's circle as its AOE indicator: it opens
   // when the zone spawns, sits exactly on the zone's radius for the zone's
   // whole life, flares on each zone tick, and fades when the zone is gone.
   // Arcane runes for magic, the flame ring for blades, the hexagon for sci-fi;
@@ -458,7 +463,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   function zoneFrame(dt, entities) {
     const seen = new Set();
     for (const e of entities) {
-      if ((e.kind !== 'zone' && e.kind !== 'azone') || !(e.radius > 0)) continue;
+      if (e.kind !== 'zone' || !(e.radius > 0)) continue;
       seen.add(e.id);
       let z = zoneCircles.get(e.id);
       if (!z || !tk.moveCircle(z.s, z.tok, e.x, e.z, e.radius)) {
@@ -560,7 +565,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     else playRelease(tp, x, z, ev.dx ?? 0, ev.dz ?? 1);
   });
 
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
     const x = ev.x;
     const z = ev.z;
     if (x == null) return;
@@ -589,6 +595,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
 
   // The Healer's own casts (and any seat that casts through the skill bar).
   bus.on('skill_cast', (ev) => {
+    if (ev.classId) return; // the Healer's own kit (a hero kit's cast carries its classId)
     const p = player();
     if (!p || ev.skill == null) return;
     const cls = classOf(p) ?? vfxSkillClass(ev.skill);
@@ -650,12 +657,13 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     after(0.06, () => bladeBlast(tp, x, z, 0.9, { dir: { x: ev.dx ?? 0, z: ev.dz ?? 0 } }));
   });
 
-  // Zone pulses: the template's breath on every tick, once in a while.
+  // An ally kit's zone pulses (its circle flares in zoneTick above): the
+  // template's breath on every tick, once in a while.
   const tickClock = new Map();
-  bus.on('azone_tick', (ev) => {
+  bus.on('zone_tick', (ev) => {
+    if (!ev.classId) return;
     const zEnt = byId(ev.id);
     if (!zEnt) return;
-    zoneTick(ev.id);
     const now = (tickClock.get(ev.id) ?? 0) + 1;
     tickClock.set(ev.id, now);
     if (now % 2 === 0) return; // every other tick: a zone stays readable
@@ -665,7 +673,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     if (tp.id === 'blade') bladeTick(tp, zEnt.x, zEnt.z, r);
     else magicTick(tp, zEnt.x, zEnt.z, r);
   });
-  bus.on('azone_expire', (ev) => tickClock.delete(ev.id));
+  bus.on('zone_expire', (ev) => tickClock.delete(ev.id));
 
   // Passives that pulse on the enemies they touch.
   bus.on('aura_pulse', (ev) => {

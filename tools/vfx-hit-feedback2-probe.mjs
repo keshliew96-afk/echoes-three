@@ -29,7 +29,11 @@
 //
 //   node tools/vfx-hit-feedback2-probe.mjs
 // Exit code 1 on any failure.
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
+
+// The signature director's whole source: signature.js and its parts under
+// render/vfx/sig/ (the split of the freeze cleanup).
+const sigSource = () => [new URL('../src/render/vfx/signature.js', import.meta.url), ...readdirSync(new URL('../src/render/vfx/sig/', import.meta.url)).filter((f) => f.endsWith('.js')).sort().map((f) => new URL(`../src/render/vfx/sig/${f}`, import.meta.url))].map((u) => readFileSync(u, 'utf8')).join('\n');
 
 // --- a stub DOM: enough for canvases and sprites. --------------------------------
 const grad = { addColorStop() {} };
@@ -74,7 +78,8 @@ const { createEventBus } = await import('../src/core/events.js');
 const { createCosmeticRng } = await import('../src/core/rng.js');
 const { TICK_HZ } = await import('../src/core/constants.js');
 const { PALETTE } = await import('../src/data/palette.js');
-const { createSignatureFx, ELEMENT_AIR } = await import('../src/render/vfx/signature.js');
+const { createSignatureFx } = await import('../src/render/vfx/signature.js');
+const { ELEMENT_AIR } = await import('../src/render/vfx/sig/common.js');
 const { setImpactFx } = await import('../src/render/vfx/hub.js');
 const { SHOT_FX, STUCK, NEAR_LIGHT } = await import('../src/render/vfx/boltfx.js');
 const { FLIPBOOK, FLIPBOOK_SEC, flipFrame } = await import('../src/render/vfx/flipbook.js');
@@ -383,7 +388,7 @@ function fight() {
   check('i: the champion chest wobbles from the fall and snaps on the clear', /chest\.rec\.beat\.force\(0\.5\)/.test(csrc) && /chest\.rec\.beat\.open\(\)/.test(csrc) && /hinge\.rotation\.x = -1\.9 \* pose\.lid/.test(csrc));
   const usrc = src('src/ui/run/index.js');
   check('i: the champion chest gets a UI-only hold before the draft', /bus\.on\('champion_chest', \(\) => \{\s*takeHoldUntil = performance\.now\(\) \+ TAKE_HOLD_MS;/.test(usrc));
-  const ssrc = src('src/render/vfx/signature.js');
+  const ssrc = sigSource();
   check('C2: a chest snap punches the camera 2%, inside the hold', /chest: 0\.02/.test(ssrc) && /after\(snapIn \+ 5 \/ 30, \(\) => camfx\.punch\(CAM_PUNCH\.chest, 0\.6\)\)/.test(ssrc) && /bus\.on\('champion_chest', \(\) => chestPunch\(0\)\)/.test(ssrc));
 }
 function B_SNAP() {
@@ -423,7 +428,7 @@ function B_SNAP() {
     for (const tok of ['#FF5A36', '#5FE873', '#B79CF0', 'emberDanger', 'brightHeal', 'violet']) if (s.includes(tok)) bad.push(`${f}: ${tok}`);
   }
   check('colour: nothing new draws in Ember, Bright Heal or Violet', bad.length === 0, bad);
-  check('colour: the crit book is pale gold, the frost air its own cyan', src('src/render/vfx/signature.js').includes("const CRIT_BOOK = '#FFE7A8'"));
+  check('colour: the crit book is pale gold, the frost air its own cyan', sigSource().includes("const CRIT_BOOK = '#FFE7A8'"));
 }
 
 console.log(fails.length ? `\n${fails.length} FAILED` : '\nALL PASS');

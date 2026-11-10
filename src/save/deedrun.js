@@ -44,7 +44,7 @@ export function createDeedRunTracker(bus) {
   bus.on('vault_open', () => {
     run.vaults += 1;
   });
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
     if (ev.classId !== 'bellwright' || !Array.isArray(ev.bells) || !Array.isArray(ev.targets)) return;
     if (ev.bells.filter((b) => b && b.id !== null && b.id !== undefined).length < 3) return;
     if (ev.targets.length > run.pealBest) run.pealBest = ev.targets.length;

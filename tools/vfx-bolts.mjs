@@ -19,7 +19,7 @@
 //   npx vite --port 5199 &
 //   PUPPETEER_EXECUTABLE_PATH=... node tools/vfx-bolts.mjs [--url http://127.0.0.1:5199/]
 //     [--only data|heroes|fights|foes|bosses|shots] [--kinds mantis,crow] [--shots captures/vfx-bolts]
-import { mkdirSync, rmSync, readFileSync } from 'node:fs';
+import { mkdirSync, rmSync, readFileSync, readdirSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -28,6 +28,10 @@ import { SKILLS } from '../src/sim/skills.js';
 import { VFX_TEMPLATES, FOE_TEMPLATE, vfxTemplateFor, vfxFoeTone, vfxFoeShotColor } from '../src/data/vfx.js';
 import { PALETTE } from '../src/data/palette.js';
 import { LEVELS } from '../src/data/levels.js';
+
+// The signature director's whole source: signature.js and its parts under
+// render/vfx/sig/ (the split of the freeze cleanup).
+const sigSource = () => [new URL('../src/render/vfx/signature.js', import.meta.url), ...readdirSync(new URL('../src/render/vfx/sig/', import.meta.url)).filter((f) => f.endsWith('.js')).sort().map((f) => new URL(`../src/render/vfx/sig/${f}`, import.meta.url))].map((u) => readFileSync(u, 'utf8')).join('\n');
 
 const here = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const argv = process.argv.slice(2);
@@ -76,7 +80,7 @@ const BOSS_SHOTS = ['millwheel', 'skyhorn', 'colossus', 'cantor', 'lichram', 've
   const src = (f) => readFileSync(join(here, f), 'utf8');
   const rig = src('src/render/enemies/index.js');
   const rigShot = rig.slice(rig.indexOf("bus.on('enemy_fire'"), rig.indexOf("bus.on('telegraph_resolve'")) + rig.slice(rig.indexOf('function makeShotRig'), rig.indexOf('first-draw warm-up')) + rig.slice(rig.indexOf('// --- Enemy shots.'), rig.indexOf('for (let i = trails.length'));
-  const sig = src('src/render/vfx/signature.js');
+  const sig = sigSource();
   const sigShot = sig.slice(sig.indexOf('const ENEMY_SHOT_TRAIL'), sig.indexOf('export function createSignatureFx')) + sig.slice(sig.indexOf("bus.on('enemy_fire'"), sig.indexOf("bus.on('enemy_lob'"));
   const embered = [/emberDanger|EMBER_EXACT/.test(rigShot) && 'render/enemies/index.js', /EMBER\b/.test(sigShot) && 'render/vfx/signature.js'].filter(Boolean);
   check(hot.length === 0 && embered.length === 0, `no enemy shot wears Ember (core, glow, trail, muzzle or stop)${hot.length ? `; Ember hue: ${hot.join(', ')}` : ''}${embered.length ? `; Ember in ${embered.join(', ')}` : ''}`);

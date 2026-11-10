@@ -10,7 +10,12 @@
 // v4 (PARTY, PLAN §16.5 / GP.10): the per-character build event shapes,
 // snapshot keys and strings appended to the static tables (evshapes.js,
 // bvalue.js) — existing indices unchanged, a v3 peer is refused as before.
-export const PROTOCOL_VERSION = 4;
+// v5 (AUDIT D2, one cast path): the ally kits' `azone` bodies and events
+// became `zone` ones with a classId; their shapes renamed in place, the
+// `azone` strings and the `azones` view key left the dictionaries; the ally
+// kits' `ally_cast` became `skill_cast` with its classId (shapes renamed in
+// place, the string left the dictionary).
+export const PROTOCOL_VERSION = 5;
 export const WS_PATH = '/echoes';
 export const DEFAULT_PORT = 7800; // player default; agents use their own ports (PLAN §6.3)
 export const DEFAULT_URL = `ws://127.0.0.1:${DEFAULT_PORT}${WS_PATH}`;

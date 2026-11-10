@@ -238,7 +238,7 @@ const cast0 = (x, z) => cmd(W, 'partyCast', 3, 0, { x, z });
   const ds = spawnAt(W, [[0.4, 0.9], [1.2, -0.6], [-0.2, -0.7]]);
   const from = W.log.length;
   cast0(0.4, 0);
-  const zone = since(from, 'azone_spawn', (e) => e.skill === 'whirlpool')[0];
+  const zone = since(from, 'zone_spawn', (e) => e.skill === 'whirlpool')[0];
   steps(W, 64);
   check(!!zone && near(zone.radius, 1.4), 'Whirlpool lands (radius 1.4)');
   check(ds.every((d) => live(d, 'soaked') > 0 && near(live(d, 'slow'), 0.3, 1e-6)), `everyone inside is soaked and slowed 30% (${ds.map((d) => `${live(d, 'soaked')}/${live(d, 'slow')}`).join(' ')})`);
@@ -254,7 +254,7 @@ const cast0 = (x, z) => cmd(W, 'partyCast', 3, 0, { x, z });
   const from = W.log.length;
   cast0(0.4, 0);
   steps(W, 64);
-  const zone = since(from, 'azone_spawn', (e) => e.skill === 'rain_squall')[0];
+  const zone = since(from, 'zone_spawn', (e) => e.skill === 'rain_squall')[0];
   check(!!zone && near(zone.radius, 1.8) && zone.totalTicks === 6, 'Rain Squall lands for 6 s (radius 1.8)');
   check(ds.every((d) => live(d, 'soaked') > 0 && near(live(d, 'slow'), 0.25, 1e-6)), 'everyone under it is soaked and slowed 25%');
   check(since(from, 'hit', (e) => e.source === 'rain_squall').every((h) => h.kb >= 0), 'the squall never drags');
@@ -270,7 +270,7 @@ const cast0 = (x, z) => cmd(W, 'partyCast', 3, 0, { x, z });
   cast0(0.6, 0);
   steps(W, 20);
   const dash = since(from, 'ally_dash', (e) => e.skill === 'ripple_step')[0];
-  const zone = since(from, 'azone_spawn', (e) => e.skill === 'ripple_step')[0];
+  const zone = since(from, 'zone_spawn', (e) => e.skill === 'ripple_step')[0];
   check(!!dash && dash.cause === 'vault' && dash.x1 < dash.x0 - 1.5, `she vaults away from the enemy (${dash && `${dash.x0} -> ${dash.x1}`})`);
   check(!!zone && near(zone.x, 0, 0.05) && near(zone.z, 0, 0.05), `the puddle lands where she stood (${zone && `${zone.x},${zone.z}`})`);
   check(Math.hypot(r.x, r.z) > 1.5, `and she is clear of it (${r.x.toFixed(2)},${r.z.toFixed(2)})`);
@@ -297,7 +297,7 @@ W = campaign(5);
   sword.hp = sword.maxHp * 0.4;
   let from = W.log.length;
   cast0(0, 1);
-  let cast = since(from, 'ally_cast', (e) => e.skill === 'bubble_ward')[0];
+  let cast = since(from, 'skill_cast', (e) => e.skill === 'bubble_ward')[0];
   check(!!cast && same(cast.targets, [sword.id]), `the bubble goes to the most hurt, the Tank last (${cast && cast.targets})`);
   check(!!sword.bubble && !!sword.status.shield && sword.status.shield.skill === 'bubble_ward' && near(sword.status.shield.mag, 14), 'a 14 shield and a bubble on its bearer');
   // Pop it: a dummy beside the bearer is soaked when the shield is spent.
@@ -316,7 +316,7 @@ W = campaign(5);
   r.cds = [0, 0, 0, 0];
   from = W.log.length;
   cast0(0, 1);
-  cast = since(from, 'ally_cast', (e) => e.skill === 'bubble_ward')[0];
+  cast = since(from, 'skill_cast', (e) => e.skill === 'bubble_ward')[0];
   check(!!cast && same(cast.targets, [W.world.player.id]), `the member an enemy is after gets the bubble (${cast && cast.targets})`);
   // Running out also bursts it.
   clearDummies(W);
@@ -334,7 +334,7 @@ W = campaign(5);
   soak(W, ds[0]);
   const from = W.log.length;
   cast0(1, 0);
-  const cast = since(from, 'ally_cast', (e) => e.skill === 'crashing_wave')[0];
+  const cast = since(from, 'skill_cast', (e) => e.skill === 'crashing_wave')[0];
   const hits = since(from, 'hit', (e) => e.source === 'crashing_wave');
   check(!!cast && cast.targets.length === 3 && near(cast.reach, 2.2) && cast.halfAngle === 50, `the wave reaches all three (${cast && cast.targets.length})`);
   check(since(from, 'crash', (e) => e.skill === 'crashing_wave').length === 1, 'and crashes the soaked one');
@@ -350,7 +350,7 @@ W = campaign(5);
   const before = ds.map((d) => Math.hypot(d.x, d.z));
   const from = W.log.length;
   cast0(1, 0);
-  const cast = since(from, 'ally_cast', (e) => e.skill === 'maelstrom')[0];
+  const cast = since(from, 'skill_cast', (e) => e.skill === 'maelstrom')[0];
   check(!!cast && cast.drawn.length === 4 && cast.delayTicks === 60, `the Maelstrom draws all four in (${cast && cast.drawn.length})`);
   ally(W, 3).x = ally(W, 3).px = -3; // she may walk off: the burst stays where she cast it
   steps(W, 30);
@@ -403,11 +403,11 @@ function nodeRoom(seed, ids, nodes) {
   const from = W.log.length;
   cast0(0.5, 0);
   steps(W, 30);
-  const p = since(from, 'azone_spawn', (e) => e.skill === 'deluge')[0];
+  const p = since(from, 'zone_spawn', (e) => e.skill === 'deluge')[0];
   const hit = since(from, 'hit', (e) => e.source === 'riverbolt')[0];
   check(!!p && !!hit && p.puddle === true && Math.hypot(p.x - hit.x, p.z - hit.z) < 0.05, 'Deluge: a puddle where the bolt landed');
   steps(W, 130);
-  check(!W.registry.all().some((z) => z.kind === 'azone' && z.skill === 'deluge'), 'it dries after 2 s');
+  check(!W.registry.all().some((z) => z.kind === 'zone' && z.skill === 'deluge'), 'it dries after 2 s');
 }
 {
   // Current: Torrent swells +15% per soaked enemy near where it lands.
@@ -417,7 +417,7 @@ function nodeRoom(seed, ids, nodes) {
   ds.forEach((d) => soak(W, d));
   const from = W.log.length;
   cast0(0.5, 0);
-  const cast = since(from, 'ally_cast', (e) => e.skill === 'torrent')[0];
+  const cast = since(from, 'skill_cast', (e) => e.skill === 'torrent')[0];
   check(!!cast && near(cast.power, 18 * 1.45, 0.05), `Current: three soaked near the landing, +45% (${cast && cast.power})`);
 }
 {
@@ -495,7 +495,7 @@ function nodeRoom(seed, ids, nodes) {
       mend(W2);
       if (W2.run.view().phase !== 'combat') break;
     }
-    for (const e of W2.log.slice(from)) if (e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
+    for (const e of W2.log.slice(from)) if (e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
   }
   const actives = ALL.filter((id) => SKILLS[id].shape !== 'aura');
   const missing = actives.filter((id) => !castBy.has(id));
@@ -529,7 +529,7 @@ function nodeRoom(seed, ids, nodes) {
   cmd(W3, 'partyCast', 3, 1, { x: h.x, z: h.z });
   cmd(W3, 'partyCast', 3, 0, { x: h.x + 1, z: h.z });
   W3.step();
-  const pending = W3.registry.all().some((z) => z.kind === 'azone' && z.burst) && party(W3).some((m) => m.bubble);
+  const pending = W3.registry.all().some((z) => z.kind === 'zone' && z.burst) && party(W3).some((m) => m.bubble);
   check(pending, 'the save is taken with a bubble up and a Maelstrom pending');
   const snap = clonePlain(W3.io.capture());
   for (let i = 0; i < 400; i++) {

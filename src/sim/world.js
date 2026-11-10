@@ -39,6 +39,7 @@ import { createWaveDirector } from './waves.js';
 import { createSkillSystem, STARTING_SKILLS, PARTY_ALLIES, SKILLS as SKILLS_REF } from './skills.js';
 import { createBuildSystem } from './nodes.js';
 import { createAllySystem } from './allies.js';
+import { createZoneSystem } from './zones.js';
 import { installNightHunger } from './duskwing.js';
 import { createBossSystem } from './boss.js';
 import { createRunSystem } from './run.js';
@@ -199,6 +200,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     resolve: (def) => (buildSys ? buildSys.resolveDef(def) : def),
   });
   for (const id of STARTING_SKILLS) skillSys.giveSkill(id); // §7 starting kit
+  // Every lasting `ground_aoe` zone, the Healer's and the allies' (AUDIT D2).
+  const zoneSys = createZoneSystem({ registry, events, combat, getTick: () => currentTick, isIframed });
 
   // --- Enemies & waves (enemies block, §11): Thorn Boar / Spitting Mantis AI
   // with the telegraph cadence governor, seeded wave schedules and the
@@ -235,7 +238,12 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     getTick: () => currentTick,
     getRoomState: () => waves.roomState(),
     party: () => partySys,
+    zones: zoneSys,
   });
+  zoneSys.setAllyHit(allySys.zoneHit);
+  // One cast delivery for every kit (AUDIT D2): the Healer's casts and her
+  // Echo replays deliver through the party's caster too.
+  skillSys.attachDelivery((a, def, power, c) => allySys.caster().deliver(a, def, power, c));
   events.on('room_cleared', () => allySys.onRoomBoundary('room_clear'));
   events.on('room_start', () => allySys.onRoomBoundary('room_start'));
   events.on('hit', (ev) => allySys.onHit(ev));
@@ -341,6 +349,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     skillSys,
     buildSys,
     allySys,
+    zones: zoneSys,
     combat,
     party: partySys,
   });
@@ -667,18 +676,20 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       drainContinuations();
     }
 
-    // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal, then
-    // the Warding Aura cadence (skills block). Zone/aura heals can carry
-    // techniques (Siphon per tick per occupant) — drain ③ after.
-    skillSys.zonePhase();
+    // ④ persistent-zone scheduled ticks, ascending zone spawn ordinal (every
+    // kit's zones, sim/zones.js), then the Warding Aura cadence (skills
+    // block). Zone/aura heals can carry techniques (Siphon per tick per
+    // occupant) — drain ③ after.
+    zoneSys.phase();
+    skillSys.auraPhase();
     drainContinuations();
     // PARTY: the ally class passives (Iron Stance, Razor Wake, Kestrel Watch)
     // pulse on their 1.0 s cadence, ascending slot per seat.
     partySys.pulsePhase();
     drainContinuations();
 
-    // ④ continued: ally damage zones (ally block, §7 ground_aoe kit rows),
-    // then the §2 defeat rule on live HP so an all-four-down lands its
+    // ④ continued: the ally block's end of tick (Bubble Ward bursts), then
+    // the §2 defeat rule on live HP so an all-four-down lands its
     // `defeat` event on the exact tick — before the room's clear predicate,
     // which §2 says defeat outranks.
     allySys.endOfTick();
@@ -1038,31 +1049,22 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
       // Build-system state (nodes block, §15): bench, sockets, resolved stats.
       build: buildSys.view(),
       healOverride: skillSys.getOverride(),
+      // Every lasting zone (sim/zones.js): the Healer's, and the ally kits'
+      // (Ground Crack / Caltrops / Detonating Charge and kin), which carry
+      // their classId.
       zones: registry
         .all()
         .filter((e) => e.kind === 'zone')
         .map((z) => ({
           id: z.id,
           skill: z.skill,
-          x: r2(z.x),
-          z: r2(z.z),
-          radius: z.radius,
-          ticksDone: z.ticksDone,
-          nextTickTick: z.nextTickTick,
-        })),
-      // Ally kit ground_aoe zones (ally block, §7 Ground Crack / Caltrops /
-      // Detonating Charge).
-      azones: registry
-        .all()
-        .filter((e) => e.kind === 'azone')
-        .map((z) => ({
-          id: z.id,
-          skill: z.skill,
+          ...(z.classId ? { classId: z.classId } : {}),
           x: r2(z.x),
           z: r2(z.z),
           radius: z.radius,
           ticksDone: z.ticksDone,
           totalTicks: z.totalTicks,
+          nextTickTick: z.nextTickTick,
         })),
       skillBolts: registry
         .all()

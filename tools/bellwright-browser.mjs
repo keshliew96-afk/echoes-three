@@ -88,9 +88,9 @@ await page.screenshot({ path: `${OUT}/bellwright-3-camp.png` });
 // The player's own Level 1 start: Tolly on seat 3, played by the player.
 await page.evaluate(() => {
   window.__bellSeen = { hang: 0, toll: 0, peal: 0, ring: 0 };
-  window.__echoes.on('azone_spawn', (e) => e && e.bell && window.__bellSeen.hang++);
-  window.__echoes.on('azone_tick', (e) => e && e.skill === 'hang_bell' && window.__bellSeen.toll++);
-  window.__echoes.on('ally_cast', (e) => e && e.skill === 'peal' && window.__bellSeen.peal++);
+  window.__echoes.on('zone_spawn', (e) => e && e.bell && window.__bellSeen.hang++);
+  window.__echoes.on('zone_tick', (e) => e && e.skill === 'hang_bell' && window.__bellSeen.toll++);
+  window.__echoes.on('skill_cast', (e) => e && e.skill === 'peal' && window.__bellSeen.peal++);
   window.__echoes.on('bell_ring_hit', () => window.__bellSeen.ring++);
 });
 await cmd('campChoose', 1);

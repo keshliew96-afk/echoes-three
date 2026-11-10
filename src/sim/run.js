@@ -71,93 +71,60 @@
 //   - view() keeps its exact shape (the Node golden traces hash it); the
 //     campaign is read through campaign(), and no new event fires before the
 //     first level clear, so the 9 goldens stay bit-identical.
-import { TICK_HZ, SKILL_SLOTS, ARENA } from '../core/constants.js';
+import { SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS, HEALER_SKILL_IDS } from './skills.js';
-import { createDraftSystem, SPOILS_PER_CLEAR, refreshPrice } from './draft.js';
+import { createDraftSystem } from './draft.js';
 import { NODES } from './nodes.js';
-import { levelFor, ACT_IDS, CAMPAIGN_ACTS, ROADS, DEFAULT_ROAD, roadOfAct, bossFor, campaignLevel } from '../data/levels.js';
+import { levelFor, ACT_IDS, CAMPAIGN_ACTS, roadOfAct, bossFor, campaignLevel } from '../data/levels.js';
 // ENDLESS (docs/ENDLESS.md): the descent past Act III.
-import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, endlessRules, levelOfDepth, beyondCampaign } from '../data/endless.js';
+import { endlessDifficulty, endlessLevel, endlessBossIndex, endlessNextLevel, beyondCampaign } from '../data/endless.js';
 import { LAYOUTS, arenaOf } from '../data/layouts.js';
-import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '../data/difficulty.js';
+import { difficulty, CHALLENGE, isDifficultyLegacy } from '../data/difficulty.js';
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 // RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
-import { createRelicSystem, cursedDiff, dailyOmen, RELICS, RELIC_RULES, CURSES, CURSE_IDS } from './relics.js';
+import { createRelicSystem, cursedDiff, dailyOmen, CURSES } from './relics.js';
 // DAILY DESCENT (docs/DAILY.md): the shared run of the UTC day.
-import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
+import { isDailyKey, dailySeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
 // BOSS RUSH (docs/BOSS_RUSH.md): the bosses back to back.
-import { RUSH_RULES, rushLine, rushDifficulty, rushNextLevel, rushSupply, rushReward, rushAct, rushRules } from '../data/rush.js';
+import { RUSH_RULES, rushLine, rushDifficulty, rushNextLevel, rushSupply, rushReward } from '../data/rush.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt and purge rooms.
 import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives.js';
 // CHAMPION ROOMS (docs/CHAMPIONS.md): the crown door and its relic chest.
-import { crownFor, crownSide, championPick, championById, CHAMPION_RULES, isChampionKind } from './champions.js';
+import { championPick, CHAMPION_RULES, isChampionKind } from './champions.js';
 // KEYS AND VAULTS (docs/VAULTS.md): keys from elites and champions, the vault
 // door and its treasure room.
-import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES, VAULT_SPOTS, VAULT_CHEST } from './vaults.js';
-import { createConsumableSystem, eliteDropsTonic, chestTonic, standKind, CONSUMABLES } from './consumables.js';
-import { staticClearance, blockerClearance } from './movement.js';
+import { createVaultSystem, eliteDropsKey } from './vaults.js';
+import { createConsumableSystem, eliteDropsTonic, chestTonic, CONSUMABLES } from './consumables.js';
 // SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and its hidden chamber.
-import { createSecretSystem, wallRolls, wallPref, chamberContent, chamberPage, chamberEvent, SECRET_RULES, SECRET_BODY } from './secrets.js';
+import { createSecretSystem, wallRolls, SECRET_RULES } from './secrets.js';
 import { refreshBlockers } from './interactables.js';
-import { SPAWN_POINTS } from './waves.js';
-import { SHRINES, SHRINE_RULES, shrineOfBiome, shrineRoomFor, shrineSpotStart, shrineCurseFor, shrineSpec, bless } from './shrines.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
-import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
+import { createEncounterSystem } from './encounters.js';
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): how many powers an elite carries.
-import { affixCountFor, AFFIX_RULES, AFFIXES, LATE_AFFIX_ROOM } from './affixes.js';
-import { encounterSpec } from './interactables.js';
+import { affixCountFor, LATE_AFFIX_ROOM } from './affixes.js';
 // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
 import { sanitizeBoons } from '../data/unlocks.js';
 import { VOW_RANKS, rankIn, rankValue, vowScale, vowFuseRule, vowLevelOf } from '../data/vows.js';
-import { swapSuggestion, PARTY_DEADLINES } from '../data/classes.js';
 import { DEFAULT_LINEUP } from '../data/lineup.js';
 // PARTY (PLAN §16.3): the party page + the party shelves.
 import { createPartyPages } from './partypage.js';
-import { suggestShelf } from './partyai.js';
 import { fillStress } from './party.js';
 import { STRESS_LOADOUT, gatedPool } from '../data/classes.js';
 import { SHARED_NODE_IDS } from './nodes.js';
-import {
-  CARRY_RULES,
-  TRANSIT,
-  FIRST_LEVEL,
-  nextLevel,
-  nextLevels,
-  isLevel,
-  grantFor,
-  campaignRules,
-} from '../data/campaign.js';
+import { FIRST_LEVEL, nextLevel, nextLevels, isLevel, grantFor, campaignRules } from '../data/campaign.js';
 
-// Plain-data deep copy (sim state only — structuredClone keeps -Infinity/NaN).
-const cloneData = (v) => (v === null || v === undefined ? v : structuredClone(v));
-
-const r2 = (v) => Math.round(v * 100) / 100;
-
-// TUTORIAL (docs/TUTORIAL.md): the guided room's layout (Level 1's clearing
-// with a dewfont) and how much gentler it is than a real room 1.
-export const TUTORIAL_LAYOUT = 2;
-export function tutorialDiff(d) {
-  return Object.freeze({ ...d, budget: d.budget * 0.5, hpMul: d.hpMul * 0.6, dmgMul: d.dmgMul * 0.4, eliteChance: 0 });
-}
-
-export const RUN = Object.freeze({
-  rooms: 8, // §2
-  combatRooms: 6, // rooms 1-6
-  defendCount: 2, // §2: exactly 2 of rooms 1-6 are defend
-  shopRoom: 7, // §2 fixed
-  bossRoom: 8, // §2 fixed
-  stipend: 12, // §14 clear stipend, per combat-room clear (incl. boss)
-  startingGlint: 0, // §14
-  shopWallet: 72, // §14 deterministic wallet at the shop = 0 + 12x6
-  spoilsPerClear: SPOILS_PER_CLEAR, // M4c: nodes dropped on the bench per combat-room clear (rooms 1-6)
-  pathRooms: 5, // §2: rooms 1-5 clear -> path choice
-  fadeTicks: Math.round(0.3 * TICK_HZ), // §16 enter/exit <= 300 ms fades
-});
-
-// §16 path doors carry ONLY these two glyph channels.
-export const WIN_GLYPH = Object.freeze({ kill_all: '⚔', defend: '⛨', boss: '☠', event: '?', hunt: '➶', purge: '✹', escort: '⚑', hold: '◎', champion: '♛', vault: '⚿' });
-export const REWARD_GLYPH = Object.freeze({ skill: '✦', node: '◈' });
+import { cloneData, r2, TUTORIAL_LAYOUT, tutorialDiff, RUN } from './run/rules.js';
+import { createRunReward } from './run/reward.js';
+import { createRunLevels } from './run/levels.js';
+import { createRunView } from './run/view.js';
+import { createRunSave } from './run/save.js';
+import { createRunCommands } from './run/cmds.js';
+import { createEventRoom } from './run/eventroom.js';
+import { createSecretRoom } from './run/secretroom.js';
+import { createVaultRoom } from './run/vaultroom.js';
+import { createRunShrines } from './run/shrines.js';
+import { createRunShop } from './run/shop.js';
 
 export function createRunSystem({
   rng,
@@ -171,13 +138,16 @@ export function createRunSystem({
   skillSys,
   buildSys,
   allySys,
+  zones, // every lasting zone (sim/zones.js)
   combat,
   party = null, // PARTY: the party system (sim/party.js)
 }) {
   // MORE CLASS SKILLS (docs/CLASS_SKILLS.md): the 2026-10-08 skills and
   // nodes join the pools in a campaign (Endless too), never in the tutorial or
   // the legacy single-level run, so the nine golden traces draw as before.
-  const poolsGrown = () => !!(campaign && campaign.mode === 'campaign' && !campaign.tutorial);
+  const rs = {}; // the run's mutable state (one object, shared with the run's modules)
+  const RF = {}; // the run's functions, shared with its parts under sim/run/ (filled below)
+  const poolsGrown = () => !!(rs.campaign && rs.campaign.mode === 'campaign' && !rs.campaign.tutorial);
   // NEW ENEMIES (docs/WOOD_MILL_ENEMIES.md): the campaign-only creatures join
   // the wave rosters on the same gate (campaign, Endless, the Daily; never the
   // tutorial or the legacy single-level run, so the goldens hold).
@@ -205,10 +175,10 @@ export function createRunSystem({
         humansInSession: () => controllers().filter((c) => c === 'human').length,
       })
     : null;
-  let supplyOn = !!party;
-  let harnessGrant = null; // ?partygrant=N | 'max' — applied at the next run start
-  let relicsDefault = true; // RELICS: campaigns roll relics + curses (cmd('relicsDefault'))
-  const allyOn = () => supplyOn && !!pages;
+  rs.supplyOn = !!party;
+  rs.harnessGrant = null; // ?partygrant=N | 'max' — applied at the next run start
+  rs.relicsDefault = true; // RELICS: campaigns roll relics + curses (cmd('relicsDefault'))
+  const allyOn = () => rs.supplyOn && !!pages;
   if (typeof buildSys.attachSkills === 'function') buildSys.attachSkills(skillSys);
   const statusTracker = createStatusTracker({ registry, events, getTick });
   // RELICS batch 5: the run's Vow level (Oathkeeper's Brand) and the carry
@@ -220,16 +190,16 @@ export function createRunSystem({
     combat,
     skillSys,
     player,
-    live: () => active,
+    live: () => rs.active,
     glint: (n, reason) => gainGlint(n, reason),
-    vowMods: () => (active ? vowMods() : null),
-    vowLevel: () => (active && campaign && campaign.boons ? vowLevelOf(campaign.boons) : 0),
+    vowMods: () => (rs.active ? vowMods() : null),
+    vowLevel: () => (rs.active && rs.campaign && rs.campaign.boons ? vowLevelOf(rs.campaign.boons) : 0),
     tonicSlot: { get: (seat) => tonics.slot(seat), set: (seat, id) => tonics.setSlot(seat, id) },
   });
   // EVENT ROOMS: on with the relics (campaigns only, never the tutorial).
   const encounters = createEncounterSystem({ events, getTick });
-  const encCtx = () => ({ wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length, majors: relics.majorCurses().length, land: levelFor(act)?.biome ?? null });
-  events.on('event_touch', () => openEncounter());
+  const encCtx = () => ({ wallet: rs.wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length, majors: relics.majorCurses().length, land: levelFor(rs.act)?.biome ?? null });
+  events.on('event_touch', () => RF.openEncounter());
   const autopilot = createAutopilot({
     registry,
     player,
@@ -245,99 +215,99 @@ export function createRunSystem({
   // keeps its ungated spawns. The same predicate gates kill hitstop
   // (sim/world.js) so a stray kill can never stall the sim on an end card.
   function combatAllowed() {
-    return !everStarted || (active && phase === 'combat');
+    return !rs.everStarted || (rs.active && rs.phase === 'combat');
   }
   enemies.setSpawnGate(combatAllowed);
   // RELICS (Short Fuse): a cursed room's shorter telegraphs.
   // UNLOCKS round two: the Short Fuse vow shortens them in every combat room
   // (read live from the run's boons, so a loaded save keeps it).
-  if (typeof enemies.setFuse === 'function') enemies.setFuse(() => (active ? relics.fuse() ?? vowFuse() : null));
+  if (typeof enemies.setFuse === 'function') enemies.setFuse(() => (rs.active ? relics.fuse() ?? vowFuse() : null));
   // RELICS batch 4: Warding Chalk slows the Hold ring's fade; Pauper's Mark
   // thins the ally purses too.
-  if (typeof waves.setHoldFadeMul === 'function') waves.setHoldFadeMul(() => (active ? relics.holdFadeMul() : 1));
-  if (party && typeof party.setGlintMul === 'function') party.setGlintMul(() => (active ? relics.glintMul() : 1));
+  if (typeof waves.setHoldFadeMul === 'function') waves.setHoldFadeMul(() => (rs.active ? relics.holdFadeMul() : 1));
+  if (party && typeof party.setGlintMul === 'function') party.setGlintMul(() => (rs.active ? relics.glintMul() : 1));
   // ELITE AFFIXES (docs/ELITE_AFFIXES.md): elites in a campaign's wave rooms
   // (and the trapped chest's ambush) carry named powers. Never the boss room,
   // the tutorial, the legacy single-level run or the ?room= harness (relics
   // off), so the nine golden traces see none.
   if (typeof enemies.setAffixRule === 'function') enemies.setAffixRule(affixRule);
   function affixRule() {
-    if (!active || phase !== 'combat' || !frame || !campaign || campaign.mode !== 'campaign' || campaign.tutorial || !relics.enabled()) return null;
-    if (frame.modes[roomIndex - 1] === 'boss') return null;
+    if (!rs.active || rs.phase !== 'combat' || !rs.frame || !rs.campaign || rs.campaign.mode !== 'campaign' || rs.campaign.tutorial || !relics.enabled()) return null;
+    if (rs.frame.modes[rs.roomIndex - 1] === 'boss') return null;
     const depth = endlessDepth();
     // Endless: Depths 1-4 are the campaign's own count; two powers from Depth 5.
     // Batch two (Gusting, Crystal, Tolling, Cinder) joins from room 4 on.
     // RELICS batch 6: Heavy Crowns adds a power (three at most).
-    const salt = `${frame.seed}:${depth || act}:${campaign.index}:${roomIndex}`;
-    const count = affixCountFor({ act, room: roomIndex, endless: beyondCampaign(depth) });
-    return { count: Math.min(3, count + relics.affixAdd(salt)), salt, late: roomIndex >= LATE_AFFIX_ROOM };
+    const salt = `${rs.frame.seed}:${depth || rs.act}:${rs.campaign.index}:${rs.roomIndex}`;
+    const count = affixCountFor({ act: rs.act, room: rs.roomIndex, endless: beyondCampaign(depth) });
+    return { count: Math.min(3, count + relics.affixAdd(salt)), salt, late: rs.roomIndex >= LATE_AFFIX_ROOM };
   }
 
-  let active = false;
+  rs.active = false;
   // fix-M4a-r5 (GP.8, data/classes.js AI_ENGAGE): the AI-held seats' campaign
   // engagement rules run while a run is live — never in the ?room= harness and
   // never under the Node-only legacy switch (the §16.9 determinism proof).
-  if (allySys && typeof allySys.setEngage === 'function') allySys.setEngage(() => active && !isDifficultyLegacy());
-  let roomIndex = 0; // 1..8 while a run is live
-  let phase = 'idle'; // idle | combat | reward | path | shop | fade | victory | defeat
-  let wallet = RUN.startingGlint;
-  let frame = null;
-  let reward = null; // live draft candidate
-  let path = null; // live path offer
-  let shop = null; // live shelf
-  let summary = null; // frozen run summary for the end screens
-  let pendingRoom = 0; // room the fade is walking toward
-  let fadeUntilTick = 0;
-  let rewardFor = {}; // room index -> promised reward type
-  let clearedRooms = 0; // COMBAT rooms cleared — drives the §14 stipend only
-  let roomsDone = 0; // every room left behind (combat + the shop) — the §18 summary row
-  let startTick = 0;
-  let everStarted = false; // once true, enemies exist only inside live combat
+  if (allySys && typeof allySys.setEngage === 'function') allySys.setEngage(() => rs.active && !isDifficultyLegacy());
+  rs.roomIndex = 0; // 1..8 while a run is live
+  rs.phase = 'idle'; // idle | combat | reward | path | shop | fade | victory | defeat
+  rs.wallet = RUN.startingGlint;
+  rs.frame = null;
+  rs.reward = null; // live draft candidate
+  rs.path = null; // live path offer
+  rs.shop = null; // live shelf
+  rs.summary = null; // frozen run summary for the end screens
+  rs.pendingRoom = 0; // room the fade is walking toward
+  rs.fadeUntilTick = 0;
+  rs.rewardFor = {}; // room index -> promised reward type
+  rs.clearedRooms = 0; // COMBAT rooms cleared — drives the §14 stipend only
+  rs.roomsDone = 0; // every room left behind (combat + the shop) — the §18 summary row
+  rs.startTick = 0;
+  rs.everStarted = false; // once true, enemies exist only inside live combat
   // M4c clear spoils: the last drop `{ room, nodes: [id...] }` (the reward page
   // names it) and the run's running total (the end card / probes).
-  let spoils = null;
-  let spoilsTotal = 0;
+  rs.spoils = null;
+  rs.spoilsTotal = 0;
   // Expedition state (serialised with the run).
-  let act = 1;
-  let challenge = 'standard';
-  let layout = null; // { act, layoutId, biome, room, mode } of the live room
-  let lastCombatLayout = null; // the "never the same layout twice in a row" memory
-  let roomPlanView = null; // difficulty numbers of the live room (probe)
-  let roomHooks = { enter: null, exit: null }; // M4b's content systems (contract (a))
+  rs.act = 1;
+  rs.challenge = 'standard';
+  rs.layout = null; // { act, layoutId, biome, room, mode } of the live room
+  rs.lastCombatLayout = null; // the "never the same layout twice in a row" memory
+  rs.roomPlanView = null; // difficulty numbers of the live room (probe)
+  rs.roomHooks = { enter: null, exit: null }; // M4b's content systems (contract (a))
   // Linear campaign (PLAN §12.2) — plain data, serialised with the run:
   //   { mode: 'campaign'|'single', harness, startLevel, level, index,
   //     levels: [{ level, index, startTick, rooms, cleared, ticks }],
   //     startTick, levelStartTick, clearedAt, card, grant, transitions }
   // card (phase 'transit') = { kind: 'clear'|'depart', from, to, startTick,
   //   untilTick, minSkipTick, hardUntilTick, summary }.
-  let campaign = null;
+  rs.campaign = null;
   // Content slice 2: which boss room 8 holds is bossFor(act, frame.seed) — a
   // pure hash of the seed, nothing saved. `bossPick` is the harness override
   // (cmd('startRun', { act, boss })), saved only while it is set.
-  let bossPick = null;
+  rs.bossPick = null;
   // THIRD BOSSES (docs/THIRD_BOSSES.md): the acts whose gated boss this run
   // can meet (the save had felled the act's other bosses when it set out;
   // never in the Daily). Saved only while non-empty.
-  let thirdOpen = [];
+  rs.thirdOpen = [];
   // ENDLESS: past the first cycle each cycle meets the act's other boss in turn.
   const currentBoss = () => {
     // BOSS RUSH: the fight's boss is the run's seeded line.
-    if (!bossPick && rushFight()) {
-      const want = campaign.rush.line[rushFight() - 1];
-      const lv = levelFor(act);
+    if (!rs.bossPick && rushFight()) {
+      const want = rs.campaign.rush.line[rushFight() - 1];
+      const lv = levelFor(rs.act);
       const row = want && lv.bosses ? lv.bosses.find((b) => b.kind === want.kind) : null;
       if (row) return row;
     }
-    if (!bossPick && beyondCampaign(endlessDepth())) {
-      const lv = levelFor(act);
-      if (lv.bosses && lv.bosses.length) return lv.bosses[endlessBossIndex(endlessDepth(), frame ? frame.seed : null, thirdOpen)];
+    if (!rs.bossPick && beyondCampaign(endlessDepth())) {
+      const lv = levelFor(rs.act);
+      if (lv.bosses && lv.bosses.length) return lv.bosses[endlessBossIndex(endlessDepth(), rs.frame ? rs.frame.seed : null, rs.thirdOpen)];
     }
-    return bossFor(act, frame ? frame.seed : null, bossPick, thirdOpen);
+    return bossFor(rs.act, rs.frame ? rs.frame.seed : null, rs.bossPick, rs.thirdOpen);
   };
   // ENDLESS: the depth of a live endless campaign (= its level index), else 0.
-  const endlessDepth = () => (campaign && campaign.endless ? campaign.index : 0);
+  const endlessDepth = () => (rs.campaign && rs.campaign.endless ? rs.campaign.index : 0);
   // BOSS RUSH: the fight of a live rush (= its level index, 1..10), else 0.
-  const rushFight = () => (campaign && campaign.rush ? campaign.index : 0);
+  const rushFight = () => (rs.campaign && rs.campaign.rush ? rs.campaign.index : 0);
   // The level after `level` in this campaign: the endless cycle wraps; the
   // rush's line runs on into its second lap and ends after its last fight.
   // The Daily plays the campaign's own CAMPAIGN_ACTS levels (five since the
@@ -368,54 +338,54 @@ export function createRunSystem({
   };
   // The room a level opens in: room 1, or in the rush the boss room for the
   // first fight and the Peddler's clearing (then the boss) for the others.
-  const firstRoom = () => (campaign && campaign.rush ? (campaign.index === 1 ? RUN.bossRoom : RUN.shopRoom) : 1);
+  const firstRoom = () => (rs.campaign && rs.campaign.rush ? (rs.campaign.index === 1 ? RUN.bossRoom : RUN.shopRoom) : 1);
   // CAMPAIGN COMPLETE card -> camp at this tick (survives the run-end wipe).
-  let autoReturnTick = null;
+  rs.autoReturnTick = null;
 
   // ROOM OBJECTIVES: on for campaigns (Endless too), off for the tutorial and
   // the legacy single-level run (the goldens).
-  const objectivesOn = () => !!(campaign && campaign.mode === 'campaign' && !campaign.tutorial);
+  const objectivesOn = () => !!(rs.campaign && rs.campaign.mode === 'campaign' && !rs.campaign.tutorial);
   // CHAMPION ROOMS: the crown door rides the same gate (campaign, Endless and
   // the Daily; never the tutorial or the legacy single-level run).
   const championsOn = () => objectivesOn();
-  let forcedCrown = null; // probe: the next path screen's crown ({ room, side })
+  rs.forcedCrown = null; // probe: the next path screen's crown ({ room, side })
   // SECRET ROOMS probes: a wall in room n of this level / a chamber's content.
-  let forcedWall = null;
-  let forcedHolds = null;
-  let forcedChampion = null; // probe: this level's champion ({ index, id })
+  rs.forcedWall = null;
+  rs.forcedHolds = null;
+  rs.forcedChampion = null; // probe: this level's champion ({ index, id })
   // SECOND CHAMPIONS: the level's champion (one of its act's, by seed).
   const levelChampion = () => {
-    if (forcedChampion && forcedChampion.index === campaign.index) return forcedChampion.id;
-    return championPick(frame.seed, campaign.index, act).id;
+    if (rs.forcedChampion && rs.forcedChampion.index === rs.campaign.index) return rs.forcedChampion.id;
+    return championPick(rs.frame.seed, rs.campaign.index, rs.act).id;
   };
   // KEYS AND VAULTS: on with the champions (campaign, Endless and the Daily;
   // never the tutorial or the legacy single-level run, so the goldens never
   // see a key).
   const vaults = createVaultSystem({ registry, events, getTick });
-  let forcedVault = null; // probe: the next path screen's vault side (0 | 1)
+  rs.forcedVault = null; // probe: the next path screen's vault side (0 | 1)
   // The champion leaves a key where it fell (its chest spot)...
   events.on('champion_fall', (ev) => {
-    if (active && vaults.enabled() && phase === 'combat') vaults.drop('champion', ev.champion, ev.x, ev.z, roomIndex);
+    if (rs.active && vaults.enabled() && rs.phase === 'combat') vaults.drop('champion', ev.champion, ev.x, ev.z, rs.roomIndex);
   });
   // ...and an elite now and then (a hash of the level, the room and its id).
   events.on('death', (ev) => {
-    if (!active || !vaults.enabled() || phase !== 'combat' || !frame || !campaign) return;
+    if (!rs.active || !vaults.enabled() || rs.phase !== 'combat' || !rs.frame || !rs.campaign) return;
     const e = registry.byId(ev.id);
     if (!e || !e.elite || e.faction !== 'hostile' || isChampionKind(e.kind)) return;
-    if (eliteDropsKey(frame.seed, campaign.index, roomIndex, e.id)) vaults.drop('elite', e.kind, ev.x, ev.z, roomIndex);
+    if (eliteDropsKey(rs.frame.seed, rs.campaign.index, rs.roomIndex, e.id)) vaults.drop('elite', e.kind, ev.x, ev.z, rs.roomIndex);
   });
-  events.on('vault_touch', () => openVault());
+  events.on('vault_touch', () => RF.openVault());
   // TONICS AND BOMBS (docs/CONSUMABLES.md): one carry slot per hero, on with
   // the keys (campaign, Endless, the Daily and Boss Rush; never the tutorial
   // or the legacy single-level run, so the goldens never see one). Elites
   // drop them by a hash roll; the champion's and the vault's chests pay one.
   // RELICS batch 5: a Corked room seals every slot.
-  const tonics = createConsumableSystem({ registry, events, getTick, combat, isChampion: isChampionKind, sealed: () => active && relics.corked() });
+  const tonics = createConsumableSystem({ registry, events, getTick, combat, isChampion: isChampionKind, sealed: () => rs.active && relics.corked() });
   events.on('death', (ev) => {
-    if (!active || !tonics.enabled() || phase !== 'combat' || !frame || !campaign) return;
+    if (!rs.active || !tonics.enabled() || rs.phase !== 'combat' || !rs.frame || !rs.campaign) return;
     const e = registry.byId(ev.id);
     if (!e || !e.elite || e.faction !== 'hostile' || isChampionKind(e.kind)) return;
-    const id = eliteDropsTonic(frame.seed, campaign.index, roomIndex, e.id);
+    const id = eliteDropsTonic(rs.frame.seed, rs.campaign.index, rs.roomIndex, e.id);
     if (id) tonics.drop(id, 'elite', ev.x ?? e.x, ev.z ?? e.z);
   });
   // SECRET ROOMS (docs/SECRET_ROOMS.md): on with the keys. A bomb bursting
@@ -424,25 +394,25 @@ export function createRunSystem({
   const secrets = createSecretSystem({ registry, events, getTick });
   const humanSeat = (seat) => seat === 0 || controllers()[seat] === 'human';
   events.on('wall_blow', (ev) => {
-    if (!active || !secrets.shut() || phase !== 'combat') return;
+    if (!rs.active || !secrets.shut() || rs.phase !== 'combat') return;
     const by = ev.attacker != null ? registry.byId(ev.attacker) : null;
     if (!by || by.partyIndex === undefined) return;
     // RELICS batch 6: Delver's Lantern opens it to any blow from a person's
     // hero; a Sealed Door keeps it shut whatever lands (a knock and its seal).
     const heavy = humanSeat(by.partyIndex) && ((ev.delivery === 'skill' && ev.base >= SECRET_RULES.heavyMin) || relics.lanternOpens());
     if (heavy && relics.wallSealed()) sealedKnock(by.partyIndex);
-    else if (heavy) openWall('hit', by.partyIndex);
+    else if (heavy) RF.openWall('hit', by.partyIndex);
     else if (secrets.knock()) {
       const w = secrets.wall();
       events.emit(getTick(), 'secret_knock', { id: w.id, seat: by.partyIndex, base: ev.base, x: r2(w.x), z: r2(w.z) });
     }
   });
   events.on('tonic_burst', (ev) => {
-    if (!active || !secrets.shut() || phase !== 'combat' || !humanSeat(ev.seat)) return;
+    if (!rs.active || !secrets.shut() || rs.phase !== 'combat' || !humanSeat(ev.seat)) return;
     const w = secrets.wall();
     if (Math.hypot(ev.x - w.x, ev.z - w.z) > (ev.radius ?? 0) + SECRET_RULES.bombReach) return;
     if (relics.wallSealed()) sealedKnock(ev.seat);
-    else openWall('bomb', ev.seat);
+    else RF.openWall('bomb', ev.seat);
   });
   // A Sealed Door's wall turns a breaking blow: the seal flares (at most as
   // often as a knock's dust).
@@ -451,11 +421,11 @@ export function createRunSystem({
     const w = secrets.wall();
     events.emit(getTick(), 'curse_proc', { curse: 'sealed_door', stage: 'refuse', wall: w.id, seat: seat ?? null, yaw: r2(w.yaw ?? 0), x: r2(w.x), z: r2(w.z) });
   }
-  events.on('secret_touch', () => openSecret());
+  events.on('secret_touch', () => RF.openSecret());
 
   // The quarry is marked for the whole party the moment it breaks cover.
   events.on('quarry_spawn', (ev) => {
-    if (active && allySys && typeof allySys.cmd === 'function') allySys.cmd('mark', [ev.id]);
+    if (rs.active && allySys && typeof allySys.cmd === 'function') allySys.cmd('mark', [ev.id]);
   });
 
   // ------------------------------------------------------------ run frame --
@@ -496,9 +466,9 @@ export function createRunSystem({
   function startRun(opts = {}) {
     const o = opts && typeof opts === 'object' ? opts : {};
     openRun({ act: o.act, challenge: o.challenge, mode: 'single', harness: true });
-    if (typeof o.boss === 'string') bossPick = o.boss;
+    if (typeof o.boss === 'string') rs.bossPick = o.boss;
     enterRoom(1);
-    return view();
+    return RF.view();
   }
 
   // startCampaign({ level, challenge, depart, harness }) — a CAMPAIGN from
@@ -539,11 +509,11 @@ export function createRunSystem({
     });
     // THIRD BOSSES: the Daily is the same run for everyone, so its gated
     // bosses never join; a campaign or Endless takes the acts the camp passed.
-    thirdOpen = !daily && Array.isArray(o.thirdBosses) ? o.thirdBosses.map(Number).filter((a) => ACT_IDS.includes(a)) : [];
-    if (o.harness && typeof o.boss === 'string') bossPick = o.boss;
-    if (o.depart) beginTransit('depart', null, act, getTick());
+    rs.thirdOpen = !daily && Array.isArray(o.thirdBosses) ? o.thirdBosses.map(Number).filter((a) => ACT_IDS.includes(a)) : [];
+    if (o.harness && typeof o.boss === 'string') rs.bossPick = o.boss;
+    if (o.depart) RF.beginTransit('depart', null, rs.act, getTick());
     else enterRoom(firstRoom());
-    return view();
+    return RF.view();
   }
 
   function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false, daily = null, rush = false, lineup = null, thirdBosses = null }) {
@@ -551,34 +521,34 @@ export function createRunSystem({
     // nothing picked, and then nothing below differs from a plain run.
     const boons = mode === 'campaign' ? sanitizeBoons(rawBoons) : null;
     wipeState({ silent: true });
-    autoReturnTick = null;
-    bossPick = null;
-    thirdOpen = [];
-    act = ACT_IDS.includes(Number(a)) ? Number(a) : 1;
-    challenge = CHALLENGE[c] ? c : 'standard';
+    rs.autoReturnTick = null;
+    rs.bossPick = null;
+    rs.thirdOpen = [];
+    rs.act = ACT_IDS.includes(Number(a)) ? Number(a) : 1;
+    rs.challenge = CHALLENGE[c] ? c : 'standard';
     // DAILY: the day's seed, whatever stream the session was on.
     const day = daily && mode === 'campaign' ? { key: daily.key, seed: dailySeed(daily.key), practice: !!daily.practice } : null;
     if (day) reseedTo(day.seed);
-    frame = rollFrame();
-    active = true;
-    everStarted = true;
-    wallet = RUN.startingGlint;
-    clearedRooms = 0;
-    roomsDone = 0;
-    rewardFor = { 1: 'skill' }; // §2: room 1's reward is always a Skill draft
-    summary = null;
-    spoils = null;
-    spoilsTotal = 0;
-    startTick = getTick();
-    campaign = {
+    rs.frame = rollFrame();
+    rs.active = true;
+    rs.everStarted = true;
+    rs.wallet = RUN.startingGlint;
+    rs.clearedRooms = 0;
+    rs.roomsDone = 0;
+    rs.rewardFor = { 1: 'skill' }; // §2: room 1's reward is always a Skill draft
+    rs.summary = null;
+    rs.spoils = null;
+    rs.spoilsTotal = 0;
+    rs.startTick = getTick();
+    rs.campaign = {
       mode,
       harness: !!harness,
-      startLevel: act,
-      level: act,
+      startLevel: rs.act,
+      level: rs.act,
       index: 1,
-      levels: [{ level: act, index: 1, startTick, rooms: 0, cleared: false, ticks: 0 }],
-      startTick,
-      levelStartTick: startTick,
+      levels: [{ level: rs.act, index: 1, startTick: rs.startTick, rooms: 0, cleared: false, ticks: 0 }],
+      startTick: rs.startTick,
+      levelStartTick: rs.startTick,
       clearedAt: 0,
       card: null,
       grant: null,
@@ -603,13 +573,13 @@ export function createRunSystem({
     // rolled with the third bosses the camp passed).
     if (rush && mode === 'campaign') {
       const open = Array.isArray(thirdBosses) ? thirdBosses.map(Number).filter((x) => ACT_IDS.includes(x)) : [];
-      campaign.rush = { seed: frame.seed, line: rushLine(frame.seed, open), fights: RUSH_RULES.fights };
-      rewardFor[RUN.bossRoom] = rushReward(1);
+      rs.campaign.rush = { seed: rs.frame.seed, line: rushLine(rs.frame.seed, open), fights: RUSH_RULES.fights };
+      rs.rewardFor[RUN.bossRoom] = rushReward(1);
     }
     // ROOM OBJECTIVES: campaigns (never the tutorial) turn one kill_all room
     // of rooms 4-6 into a hunt, a purge, an escort or a hold (two of
     // different kinds on later levels). No draws.
-    if (objectivesOn()) assignObjectives(frame.modes, frame.seed, campaign.index);
+    if (objectivesOn()) assignObjectives(rs.frame.modes, rs.frame.seed, rs.campaign.index);
     // PARTY: every ally back to its starting loadout, empty build, purse 0;
     // the party stream seeded from the run SEED (no gameplay draw).
     // UNLOCKS: an equipped kit replaces a class's starting skills.
@@ -617,7 +587,7 @@ export function createRunSystem({
     // another class; every other run is the default four. Before the reset,
     // so the reset loads each seat's own class.
     if (party) party.setLineup(mode === 'campaign' && !tutorial ? lineup : DEFAULT_LINEUP);
-    if (party) party.resetForRun(frame.seed, boons && boons.kits ? boons.kits : null);
+    if (party) party.resetForRun(rs.frame.seed, boons && boons.kits ? boons.kits : null);
     if (boons && boons.kits && boons.kits.healer) {
       const kit = new Array(SKILL_SLOTS).fill(null);
       boons.kits.healer.slice(0, SKILL_SLOTS).forEach((id, i) => {
@@ -627,33 +597,33 @@ export function createRunSystem({
     }
     if (pages) pages.reset();
     // RELICS: on for campaigns, off for the legacy single-level run (goldens).
-    relics.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
-    encounters.reset(frame.seed, mode === 'campaign' && relicsDefault && !tutorial);
+    relics.reset(rs.frame.seed, mode === 'campaign' && rs.relicsDefault && !tutorial);
+    encounters.reset(rs.frame.seed, mode === 'campaign' && rs.relicsDefault && !tutorial);
     vaults.reset(championsOn());
     tonics.reset(championsOn());
     secrets.reset(championsOn());
-    shrineReset();
-    if (campaign.daily) relics.grantDaily(campaign.daily.relic, campaign.daily.curse);
+    RF.shrineReset();
+    if (rs.campaign.daily) relics.grantDaily(rs.campaign.daily.relic, rs.campaign.daily.curse);
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
-      seed: frame.seed,
-      modes: [...frame.modes],
-      defendAt: [...frame.defendAt],
-      sides: [...frame.sides],
-      act,
-      actName: levelFor(act).name,
-      challenge,
+      seed: rs.frame.seed,
+      modes: [...rs.frame.modes],
+      defendAt: [...rs.frame.defendAt],
+      sides: [...rs.frame.sides],
+      act: rs.act,
+      actName: levelFor(rs.act).name,
+      challenge: rs.challenge,
       // TUTORIAL: key present only on the guided room (golden payloads unchanged).
       ...(tutorial && mode === 'campaign' ? { tutorial: true } : {}),
     });
     // PARTY: an explicit harness grant (?partygrant) REPLACES a Level-N
     // start's ally grant (never stacks, BUILD_BRIEF §25.10); `max` = the
     // deterministic max-stress build for all four seats.
-    const hg = harnessGrant;
-    harnessGrant = null;
-    if (act !== FIRST_LEVEL && hg !== 'max') applyStarterGrant(act, { allies: hg === null });
+    const hg = rs.harnessGrant;
+    rs.harnessGrant = null;
+    if (rs.act !== FIRST_LEVEL && hg !== 'max') applyStarterGrant(rs.act, { allies: hg === null });
     // BOSS RUSH: the rush sets out with the Level II starter kit.
-    else if (campaign.rush && hg !== 'max') {
+    else if (rs.campaign.rush && hg !== 'max') {
       applyStarterGrant(RUSH_RULES.grantLevel, { allies: hg === null });
       applyRushSupply(0);
     }
@@ -673,10 +643,10 @@ export function createRunSystem({
       vows: b.vows ? [...b.vows] : [],
     });
   }
-  const runVows = () => (campaign && campaign.boons && Array.isArray(campaign.boons.vows) ? campaign.boons.vows : null);
+  const runVows = () => (rs.campaign && rs.campaign.boons && Array.isArray(rs.campaign.boons.vows) ? rs.campaign.boons.vows : null);
   // VOW RANKS (data/vows.js): each vow reads its rank (I unless the boons
   // name another), so a rank-I vow is the curse it always was.
-  const vowRank = (v) => rankIn(campaign && campaign.boons, v);
+  const vowRank = (v) => rankIn(rs.campaign && rs.campaign.boons, v);
   function vowedDiff(diff) {
     const vows = runVows();
     if (vows) for (const v of vows) diff = cursedDiff(diff, v, vowScale(v, vowRank(v)));
@@ -684,7 +654,7 @@ export function createRunSystem({
   }
   function vowFuse() {
     const vows = runVows();
-    if (!vows || phase !== 'combat' || !frame || frame.modes[roomIndex - 1] === 'boss') return null;
+    if (!vows || rs.phase !== 'combat' || !rs.frame || rs.frame.modes[rs.roomIndex - 1] === 'boss') return null;
     for (const v of vows) {
       if (VOW_RANKS[v] && VOW_RANKS[v].fuse) return vowFuseRule(v, vowRank(v));
       if (CURSES[v] && CURSES[v].fuse) return CURSES[v].fuse;
@@ -707,7 +677,7 @@ export function createRunSystem({
 
   // `?partygrant=N` / `max` (PLAN §16.11) — marks the run harness.
   function applyHarnessGrant(g) {
-    if (campaign) campaign.harness = true;
+    if (rs.campaign) rs.campaign.harness = true;
     if (g === 'max') {
       stressHealer();
       party.stress();
@@ -765,12 +735,12 @@ export function createRunSystem({
       buildSys.autoFill();
     }
     if (g.glint) gainGlint(g.glint, 'starter_grant');
-    campaign.grant = { level, skills, nodes, glint: g.glint ?? 0 };
+    rs.campaign.grant = { level, skills, nodes, glint: g.glint ?? 0 };
     events.emit(tick, 'starter_grant', { level, skills: [...skills], nodes: [...nodes], glint: g.glint ?? 0 });
     // PARTY §25.10: each ally's STARTER_GRANT[N].allies (party stream, after
     // the Healer's, seat order; swaps by the §25.8 AI rule).
-    if (allies && allyOn() && g.allies) campaign.grant.allies = party.applyGrant(g.allies, 'grant');
-    return campaign.grant;
+    if (allies && allyOn() && g.allies) rs.campaign.grant.allies = party.applyGrant(g.allies, 'grant');
+    return rs.campaign.grant;
   }
 
   // §4.1 room table roll: one layout per combat room from the act's pool,
@@ -779,38 +749,38 @@ export function createRunSystem({
   // Slice 2 layouts (10-15) join campaign tables only: the legacy single-level
   // run keeps `legacyLayouts`, so the goldens roll the same rooms.
   function rollLayout(n, mode) {
-    const level = levelFor(act);
+    const level = levelFor(rs.act);
     // THIRD BOSSES (plan 3 slice 10): a boss row may name its own room (the
     // Gloam Wolf hunts in the Thornwood Ring, the Mire King sits in the
     // Millrace Basin); boss rooms carry no hazards, so only the dressing moves.
     if (mode === 'boss') return currentBoss().layout ?? level.bossLayout;
-    const table = campaign && campaign.mode !== 'campaign' && level.legacyLayouts ? level.legacyLayouts : level.layouts;
+    const table = rs.campaign && rs.campaign.mode !== 'campaign' && level.legacyLayouts ? level.legacyLayouts : level.layouts;
     // EVENT ROOMS: a "?" room stands in the last combat room's clearing, as
     // the shop does (no draw).
     // KEYS AND VAULTS: so does the vault.
-    if (mode === 'shop' || mode === 'event' || mode === 'vault') return lastCombatLayout ?? table[0];
-    const pool = table.filter((id) => id !== lastCombatLayout);
+    if (mode === 'shop' || mode === 'event' || mode === 'vault') return rs.lastCombatLayout ?? table[0];
+    const pool = table.filter((id) => id !== rs.lastCombatLayout);
     let pick = pool.length > 0 ? pool[rng.int(pool.length)] : table[0];
     // NEW LAYOUTS (plan 3 slice 8): a champion or Hold room stands in the
     // act's open arena, unless the last combat room was already it. The draw
     // above still happens, so the stream keeps its length.
     if (mode === 'champion' || mode === 'hold') {
       const arena = arenaOf(table);
-      if (arena !== null && arena !== lastCombatLayout) pick = arena;
+      if (arena !== null && arena !== rs.lastCombatLayout) pick = arena;
     }
-    lastCombatLayout = pick;
+    rs.lastCombatLayout = pick;
     return pick;
   }
 
   function exitRoom(tick) {
-    if (layout && typeof roomHooks.exit === 'function') roomHooks.exit(tick);
-    layout = null;
+    if (rs.layout && typeof rs.roomHooks.exit === 'function') rs.roomHooks.exit(tick);
+    rs.layout = null;
     // KEYS AND VAULTS: the vault's piles and platter stay in their room.
     for (const e of registry.all()) if (e.kind === 'vault_pile' || e.kind === 'vault_platter') registry.despawn(e.id);
     // SECRET ROOMS: the wall, the chamber and what it held stay here.
     let walled = false;
     for (const e of registry.all()) {
-      if (!isSecretBody(e)) continue;
+      if (!RF.isSecretBody(e)) continue;
       if (e.collider) walled = true;
       registry.despawn(e.id);
     }
@@ -853,22 +823,22 @@ export function createRunSystem({
     leaveRoomBodies(tick);
     // PARTY: no socket hold outlives the room change.
     if (pages && pages.screensAny()) for (let s = 0; s < 4; s++) pages.setScreen(s, false);
-    roomIndex = n;
-    const mode = frame.modes[n - 1];
+    rs.roomIndex = n;
+    const mode = rs.frame.modes[n - 1];
     const depth = endlessDepth();
     // ENDLESS: the wave director rolls from the depth's (mixed) roster.
-    const level = depth ? endlessLevel(depth) : roomLevel(levelFor(act));
-    reward = null;
-    path = null;
+    const level = depth ? endlessLevel(depth) : roomLevel(levelFor(rs.act));
+    rs.reward = null;
+    rs.path = null;
     positionParty();
     const combatRoom = mode === 'kill_all' || mode === 'defend' || mode === 'champion' || isObjectiveMode(mode);
-    const baseDiff = rushFight() ? rushDifficulty(rushFight(), challenge) : beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
+    const baseDiff = rushFight() ? rushDifficulty(rushFight(), rs.challenge) : beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), rs.challenge) : difficulty(rs.act, Math.min(6, n), rs.challenge);
     // SHRINES: the Grave Shrine's curse binds this fight (unless a door's
     // curse, room or major, already did).
-    if (combatRoom && mode !== 'boss' && shrine && shrine.curse && !relics.curseHeldFor(n)) {
-      relics.takeCurse(shrine.curse, n);
-      events.emit(tick, 'shrine_curse', { room: n, curse: shrine.curse });
-      shrine.curse = null;
+    if (combatRoom && mode !== 'boss' && rs.shrine && rs.shrine.curse && !relics.curseHeldFor(n)) {
+      relics.takeCurse(rs.shrine.curse, n);
+      events.emit(tick, 'shrine_curse', { room: n, curse: rs.shrine.curse });
+      rs.shrine.curse = null;
     }
     // RELICS: a cursed room rolls its waves with the curse's numbers.
     const roomCurse = combatRoom ? relics.curseFor(n) : null;
@@ -882,7 +852,7 @@ export function createRunSystem({
     if (combatRoom) diff = vowedDiff(diff);
     // NEW ENEMIES: campaign kinds roll in campaign rooms only (levels.js
     // CAMPAIGN_ONLY_ENEMIES), on the objectives' gate.
-    if (combatRoom) waves.planRoom(mode, { act, room: n, challenge, level, diff, campaignKinds: objectivesOn(), ...(mode === 'champion' ? { champion: levelChampion() } : {}) });
+    if (combatRoom) waves.planRoom(mode, { act: rs.act, room: n, challenge: rs.challenge, level, diff, campaignKinds: objectivesOn(), ...(mode === 'champion' ? { champion: levelChampion() } : {}) });
     // Layout AFTER the schedule (one fixed roll order per room).
     // TUTORIAL: always the clearing with a dewfont (the spring the coach
     // sends the player to); no layout draw.
@@ -894,12 +864,12 @@ export function createRunSystem({
     // of the rolled schedule toward its favoured types, again with no draw.
     const mix = combatRoom ? LAYOUTS[layoutId]?.mix : null;
     if (mix) waves.favourRoster(mix, level, n);
-    layout = { act, layoutId, biome: level.biome, room: n, mode };
-    roomPlanView = {
-      act,
+    rs.layout = { act: rs.act, layoutId, biome: level.biome, room: n, mode };
+    rs.roomPlanView = {
+      act: rs.act,
       room: n,
       mode,
-      challenge,
+      challenge: rs.challenge,
       layoutId,
       hpMul: combatRoom ? diff.hpMul : null,
       dmgMul: combatRoom ? diff.dmgMul : null,
@@ -912,37 +882,37 @@ export function createRunSystem({
       addHpMul: mode === 'boss' ? diff.addHpMul : null,
       addDmgMul: mode === 'boss' ? diff.addDmgMul : null,
     };
-    if (typeof roomHooks.enter === 'function') roomHooks.enter({ ...layout }, tick);
-    events.emit(tick, 'layout_enter', { room: n, act, layoutId, biome: level.biome, mode });
+    if (typeof rs.roomHooks.enter === 'function') rs.roomHooks.enter({ ...rs.layout }, tick);
+    events.emit(tick, 'layout_enter', { room: n, act: rs.act, layoutId, biome: level.biome, mode });
     // SHRINES: the level's shrine stands in its first combat room from the
     // hashed room on (never the boss room); the Grave Shrine's curse lands
     // on the next fight.
-    if (combatRoom && shrinesOn() && mode !== 'boss') placeShrine(n, mode, level.biome, tick);
+    if (combatRoom && RF.shrinesOn() && mode !== 'boss') RF.placeShrine(n, mode, level.biome, tick);
     // SECRET ROOMS: from room 4 on, a plain fight may hide a cracked wall.
-    if (combatRoom && secrets.canPlace() && frame && campaign && !tutorialOn() && !rushFight() && (forcedWall === n || wallRolls(frame.seed, campaign.index, n, mode))) placeWall(n, mode, tick);
-    if (forcedWall === n) forcedWall = null;
+    if (combatRoom && secrets.canPlace() && rs.frame && rs.campaign && !tutorialOn() && !rushFight() && (rs.forcedWall === n || wallRolls(rs.frame.seed, rs.campaign.index, n, mode))) RF.placeWall(n, mode, tick);
+    if (rs.forcedWall === n) rs.forcedWall = null;
     events.emit(tick, 'room_enter', {
       index: n,
       mode,
-      reward: rewardFor[n] ?? null,
-      wallet,
-      act,
+      reward: rs.rewardFor[n] ?? null,
+      wallet: rs.wallet,
+      act: rs.act,
       layoutId,
     });
     if (combatRoom) {
-      phase = 'combat'; // §13 step 7: next room's first tick, combat_active := true
+      rs.phase = 'combat'; // §13 step 7: next room's first tick, combat_active := true
       // TUTORIAL: the waves wait for the coach's release.
-      if (!(tutorialOn() && campaign.tutorial.hold)) waves.beginRoom();
+      if (!(tutorialOn() && rs.campaign.tutorial.hold)) waves.beginRoom();
       relics.onRoomEnter(n, mode);
     } else if (mode === 'shop') {
-      phase = 'shop';
-      openShop();
+      rs.phase = 'shop';
+      RF.openShop();
     } else if (mode === 'event') {
-      enterEvent(n, tick);
+      RF.enterEvent(n, tick);
     } else if (mode === 'vault') {
-      enterVault(n, tick);
+      RF.enterVault(n, tick);
     } else if (mode === 'boss') {
-      phase = 'combat';
+      rs.phase = 'combat';
       enemies.reset();
       // §23.1/§23.2: the Stag scales with the act (HP 2400·T after the
       // M4a tuning note, damage × 1 + 0.5(T − 1)) and calls the act's own
@@ -968,7 +938,7 @@ export function createRunSystem({
   // §13 boundary sequence, steps 1-6. Fires off the `room_cleared` event, so
   // waves-cleared rooms and the boss room walk the identical path.
   function onRoomCleared(ev) {
-    if (!active || phase !== 'combat') return;
+    if (!rs.active || rs.phase !== 'combat') return;
     const tick = getTick();
     // KEYS AND VAULTS: a key still on the floor flies to the party.
     vaults.sweep();
@@ -976,8 +946,8 @@ export function createRunSystem({
     tonics.sweep();
     // EVENT ROOMS: the trapped chest's ambush is won — the chest pays.
     const enc = encounters.live();
-    if (enc && enc.state === 'ambush' && enc.room === roomIndex) {
-      ambushCleared(tick);
+    if (enc && enc.state === 'ambush' && enc.room === rs.roomIndex) {
+      RF.ambushCleared(tick);
       return;
     }
     // 2. every live combat entity ends — the player-side half (enemy shots and
@@ -994,55 +964,55 @@ export function createRunSystem({
     //    arithmetic rides on; `roomsDone` is the §18 summary's "rooms cleared"
     //    and counts every room left behind, the shop included — a flawless run
     //    must read 8 / 8, not 7 / 8.
-    clearedRooms += 1;
-    roomsDone = Math.max(roomsDone, roomIndex);
+    rs.clearedRooms += 1;
+    rs.roomsDone = Math.max(rs.roomsDone, rs.roomIndex);
     gainGlint(RUN.stipend, 'clear_stipend');
     if (allyOn()) pages.stipend('clear_stipend'); // PARTY: +12 per ally purse
     // ROOM OBJECTIVES: an objective room won pays its bounty.
     if (ev.objective && ev.won) gainGlint(OBJECTIVE_RULES.bounty, `${ev.objective}_bounty`);
     // RELICS: clear procs (Grave Coin, Hearthstone), the curse lifts, and a
     // relic pick is owed after room 1 and after a cursed room.
-    relics.onRoomCleared(roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: roomIndex === RUN.bossRoom, objective: ev.objective ?? null, won: !!ev.won, champion: ev.champion ?? null });
+    relics.onRoomCleared(rs.roomIndex, { forfeited: !!ev.softFailed, gainGlint, boss: rs.roomIndex === RUN.bossRoom, objective: ev.objective ?? null, won: !!ev.won, champion: ev.champion ?? null });
     // SHRINES: the Geode Shrine's pick (a relic outright when the room
     // already owes one: the curse's).
-    if (shrine && shrine.pick === roomIndex) {
-      shrine.pick = null;
+    if (rs.shrine && rs.shrine.pick === rs.roomIndex) {
+      rs.shrine.pick = null;
       if (!ev.softFailed) {
-        if (!relics.owed()) relics.owe(roomIndex, 'shrine');
+        if (!relics.owed()) relics.owe(rs.roomIndex, 'shrine');
         else relics.grantTier('shrine', ['legendary', 'rare'], null, player);
       }
     }
     // CHAMPION ROOMS: the champion's chest opens; its greater relic pick
     // comes after the room's draft (the crown door is never cursed, so no
     // other pick is owed here).
-    if (ev.champion && !ev.softFailed && relics.owe(roomIndex, CHAMPION_RULES.chestSource)) {
+    if (ev.champion && !ev.softFailed && relics.owe(rs.roomIndex, CHAMPION_RULES.chestSource)) {
       const at = ev.chest ?? { x: 0, z: 0 };
-      events.emit(tick, 'champion_chest', { room: roomIndex, champion: ev.champion, x: at.x, z: at.z });
+      events.emit(tick, 'champion_chest', { room: rs.roomIndex, champion: ev.champion, x: at.x, z: at.z });
       // TONICS AND BOMBS: the chest pays one into the first empty slot.
-      if (tonics.enabled() && frame) tonics.grant(chestTonic(frame.seed, campaign.index, roomIndex, 'champion'), 'champion', null, at.x, at.z);
+      if (tonics.enabled() && rs.frame) tonics.grant(chestTonic(rs.frame.seed, rs.campaign.index, rs.roomIndex, 'champion'), 'champion', null, at.x, at.z);
     }
 
-    if (roomIndex === RUN.bossRoom && rushFight()) {
+    if (rs.roomIndex === RUN.bossRoom && rushFight()) {
       rushCleared(tick);
       return;
     }
-    if (roomIndex === RUN.bossRoom) {
-      onLevelCleared(tick);
+    if (rs.roomIndex === RUN.bossRoom) {
+      RF.onLevelCleared(tick);
       return;
     }
     // 6. reward presentation — SKIPPED (silently, no reward event) when the
     //    defend objective died: §11 soft-fail forfeits the room reward.
     const forfeited = !!ev.softFailed;
     if (forfeited) {
-      spoils = null; // the soft-fail forfeits the spoils with the reward
-      events.emit(tick, 'reward_forfeited', { room: roomIndex });
-      afterReward();
+      rs.spoils = null; // the soft-fail forfeits the spoils with the reward
+      events.emit(tick, 'reward_forfeited', { room: rs.roomIndex });
+      RF.afterReward();
       return;
     }
     dropSpoils(tick);
     // PARTY: each ally's clear spoils (party stream, after the Healer's).
-    const allySpoils = allyOn() ? pages.dropSpoils(roomIndex) : null;
-    presentReward(allySpoils);
+    const allySpoils = allyOn() ? pages.dropSpoils(rs.roomIndex) : null;
+    RF.presentReward(allySpoils);
   }
 
   // BOSS RUSH: a boss felled pays its bounty; then, before the next fight,
@@ -1053,19 +1023,19 @@ export function createRunSystem({
     const n = rushFight();
     gainGlint(RUSH_RULES.bounty, 'rush_bounty');
     if (allyOn()) for (const i of [1, 2, 3]) party.gainPurse(i, RUSH_RULES.bounty, 'rush_bounty');
-    events.emit(tick, 'rush_felled', { fight: n, boss: currentBoss().kind ?? 'stag', of: RUSH_RULES.fights, ticks: tick - startTick });
+    events.emit(tick, 'rush_felled', { fight: n, boss: currentBoss().kind ?? 'stag', of: RUSH_RULES.fights, ticks: tick - rs.startTick });
     if (n >= RUSH_RULES.fights) {
-      onLevelCleared(tick);
+      RF.onLevelCleared(tick);
       return;
     }
     // The fight is over: out of combat first, so the war chest's auto-fill
     // may socket (the build refuses while combat is live).
-    phase = 'reward';
+    rs.phase = 'reward';
     applyRushSupply(n);
-    if (RUSH_RULES.relicAfter.includes(n)) relics.owe(roomIndex, 'free');
+    if (RUSH_RULES.relicAfter.includes(n)) relics.owe(rs.roomIndex, 'free');
     dropSpoils(tick);
-    const allySpoils = allyOn() ? pages.dropSpoils(roomIndex) : null;
-    presentReward(allySpoils);
+    const allySpoils = allyOn() ? pages.dropSpoils(rs.roomIndex) : null;
+    RF.presentReward(allySpoils);
   }
 
   // The war chest (data/rush.js rushSupply): the Healer's skills and its nodes
@@ -1124,8 +1094,7 @@ export function createRunSystem({
         });
         registry.despawn(e.id);
       } else if (e.kind === 'zone') {
-        events.emit(tick, 'zone_expire', { id: e.id, skill: e.skill, cause });
-        registry.despawn(e.id);
+        zones.expire(tick, e, { cause }); // every kit's zones (an ally's carries its classId)
       }
     }
   }
@@ -1134,9 +1103,9 @@ export function createRunSystem({
     // RELICS batch 4: Pauper's Mark (a major curse) thins every gain.
     const gm = amount > 0 ? relics.glintMul() : 1;
     if (gm !== 1) amount = Math.max(1, Math.round(amount * gm));
-    wallet += amount;
-    events.emit(getTick(), 'glint_gain', { amount, wallet, reason, room: roomIndex });
-    return wallet;
+    rs.wallet += amount;
+    events.emit(getTick(), 'glint_gain', { amount, wallet: rs.wallet, reason, room: rs.roomIndex });
+    return rs.wallet;
   }
 
   // --------------------------------------------------------- clear spoils --
@@ -1151,1477 +1120,68 @@ export function createRunSystem({
     // auto-fill swaps them in over a weaker node), named on the reward page.
     const upgrades = ids.filter((id) => draft.upgradeInfo(id) !== null);
     for (const id of ids) buildSys.grantNode(id, 'spoils');
-    spoils = upgrades.length ? { room: roomIndex, nodes: ids, upgrades } : { room: roomIndex, nodes: ids };
-    spoilsTotal += ids.length;
+    rs.spoils = upgrades.length ? { room: rs.roomIndex, nodes: ids, upgrades } : { room: rs.roomIndex, nodes: ids };
+    rs.spoilsTotal += ids.length;
     events.emit(tick, 'spoils_drop', {
-      room: roomIndex,
+      room: rs.roomIndex,
       nodes: [...ids],
-      total: spoilsTotal,
+      total: rs.spoilsTotal,
       ...(upgrades.length ? { upgrades: [...upgrades] } : {}),
     });
   }
 
-  // ----------------------------------------------------------------- draft --
-  // Ruling A17: the Healer's loadout in slot order (null = empty slot).
-  const healerSlots = () => skillSys.slotsView().map((s) => (s ? s.id : null));
 
-  function presentReward(allySpoils = null) {
-    const promised = rewardFor[roomIndex] ?? 'skill';
-    reward = draft.offer(promised);
-    // Ruling A17 (the user's rule): a SWAP offer carries the §25.8 suggestion
-    // — `replace` = the slot the Replaces selector opens on (the lowest-
-    // priority owned skill), `suggest` = take|leave. No draw: state only.
-    if (reward.swap) {
-      const s = swapSuggestion('healer', healerSlots(), reward.id);
-      reward.replace = s.replace;
-      reward.suggest = s.choice;
-    }
-    phase = 'reward';
-    // NOTE (binding, whole module): the bus builds every event as
-    // `{ tick, type, ...payload }` (core/events.js), so a payload key named
-    // `type` OVERWRITES the event's own type and makes the event unfindable by
-    // `events.some(e => e.type === 'reward_offer')`. The reward's kind
-    // therefore rides on `reward:` here, in draft_taken and in draft_declined.
-    events.emit(getTick(), 'reward_offer', {
-      room: roomIndex,
-      promised,
-      reward: reward.type,
-      id: reward.id,
-      substituted: reward.substituted,
-      line: reward.line,
-      freeSkillSlots: reward.freeSkillSlots,
-      poolSize: reward.poolSize,
-      // fix-M4a-r4: an UPGRADE offer names its swap target; an empty offer
-      // names why (keys present only when set, so fill-pool traces are
-      // byte-identical to the pre-fix ones).
-      ...(reward.pool ? { pool: reward.pool, upgrade: reward.upgrade ? { ...reward.upgrade } : null } : {}),
-      ...(reward.reason ? { reason: reward.reason } : {}),
-      // Ruling A17: keys present only on a swap offer (fill-case traces keep
-      // their exact payload) — exactly `swap` + `replace` (PLAN §16.3; the
-      // suggestion rides the run view, never the event).
-      ...(reward.swap ? { swap: true, replace: reward.replace } : {}),
-    });
-    // PARTY: the ally cards (party stream, seats 1 → 3) — the Healer's card 0
-    // mirrors run.reward. With the ally supply off no page opens (the §16.9
-    // proof: exactly v0.5.150's events).
-    if (allyOn()) pages.open(roomIndex, promised, reward, allySpoils);
-  }
 
-  // Ruling A17: move the pending Replaces choice of a swap offer (the UI's
-  // W/S / wheel / click, cmd('draftReplace')). Plain run state — saved,
-  // replicated, and what takeReward() uses when it is given no slot.
-  function setRewardReplace(slot) {
-    if (phase !== 'reward' || !reward || !reward.swap) return null;
-    const s = Number(slot);
-    if (!(Number.isInteger(s) && s >= 0 && s < SKILL_SLOTS) || !healerSlots()[s]) return null;
-    reward.replace = s;
-    // The party page's card 0 mirrors run.reward: its mark follows at once
-    // (was stale until the Healer's decision — state().run.party.cards[0]
-    // .replace disagreed with the card on screen; PARTY r6 advisory).
-    const c0 = pages && pages.isOpen() ? pages.card(0) : null;
-    if (c0 && c0.swap) c0.replace = s;
-    return s;
-  }
 
-  // PARTY (PLAN §16.3): a card's decision. Seat 0 = the Healer's card (its
-  // swap slot moves run.reward.replace); seats 1-3 = the ally cards. The page
-  // COMMITS when every card is decided (commitIfReady) — in Suggested mode
-  // the AI-held cards open decided, so the Healer's one decision commits.
-  function partyPick(seat, choice, replace = null, { by = 'human' } = {}) {
-    if (phase !== 'reward') return { denied: 'closed' };
-    const s = Number(seat);
-    if (s === 0) {
-      if (choice === 'take' && (!reward || !reward.type)) return { denied: 'nothing_to_take' };
-      if (reward && reward.swap && Number.isInteger(replace)) setRewardReplace(replace);
-      if (pages && pages.isOpen()) pages.pick(0, choice, reward && reward.swap ? reward.replace : null, { by });
-      else return choice === 'take' ? takeReward(replace ?? undefined) : declineReward();
-      return commitIfReady() ?? { ok: true, seat: 0, choice };
-    }
-    if (!pages || !pages.isOpen()) return { denied: 'closed' };
-    const r = pages.pick(s, choice, replace, { by });
-    if (r && r.denied) return r;
-    return commitIfReady() ?? r;
-  }
-  function commitIfReady() {
-    if (!pages || !pages.isOpen()) return null;
-    if (pages.undecided().length > 0) return null;
-    return commitPage('commit');
-  }
-  // Apply the page: seat 0 exactly as today, then seats 1-3, then the doors.
-  function commitPage(reason = 'commit') {
-    const c0 = pages && pages.isOpen() ? pages.card(0) : null;
-    const choice0 = c0 && c0.decided ? c0.choice : reward && reward.type ? 'take' : 'leave';
-    const taken = choice0 === 'take' && reward && reward.type ? applyTake(reward.swap ? reward.replace : undefined) : applyDecline();
-    if (pages && pages.isOpen()) pages.applyAllies(reason);
-    if (party && party.autoSocketOwn(0) && controllers()[0] === 'human') buildSys.autoFill();
-    // v0.5.227: an AI-held Healer sockets its own nodes, like the AI seats.
-    else if (party && controllers()[0] !== 'human' && party.mode() !== 'manual') buildSys.autoFill();
-    afterReward(taken);
-    return taken ?? { declined: true };
-  }
 
-  // §16: take-or-decline, no confirm, no reroll, no reopen. The legacy
-  // one-call entry (the harness, the autopilot, cmd('draftTake')): the
-  // Healer's card taken, then the page committed with the ally cards as the
-  // mode left them (Suggested: today's one-call behaviour).
-  // Ruling A17: on a SWAP offer `replace` names the slot the new skill takes
-  // (default: the pending choice, reward.replace); the old skill leaves the
-  // loadout and its nodes go to the bench.
-  function takeReward(replace) {
-    if (phase !== 'reward' || !reward || !reward.type) return null;
-    if (pages && pages.isOpen()) {
-      if (reward.swap && Number.isInteger(replace)) setRewardReplace(replace);
-      pages.pick(0, 'take', reward.swap ? reward.replace : null, { by: 'human' });
-      return commitPage('commit');
-    }
-    const taken = applyTake(replace);
-    if (taken) afterReward(taken);
-    return taken;
-  }
 
-  function applyTake(replace) {
-    if (!reward || !reward.type) return null;
-    const tick = getTick();
-    const taken = { type: reward.type, id: reward.id };
-    if (reward.type === 'skill' && reward.swap) {
-      const slot = Number.isInteger(replace) && healerSlots()[replace] ? replace : reward.replace;
-      const old = healerSlots()[slot];
-      if (!old) return null; // defensive: a swap always has 4 owned
-      const released = buildSys.releaseSkill(old);
-      const r = skillSys.replaceSkill(slot, reward.id);
-      if (!r || r.error) return null;
-      taken.slot = slot;
-      taken.replaced = old;
-      taken.released = released;
-      events.emit(tick, 'draft_taken', { reward: 'skill', id: reward.id, slot, swap: true, replaced: old, released: [...released] });
-      events.emit(tick, 'skill_swapped', { seat: 0, id: reward.id, slot, replaced: old, released: [...released] });
-    } else if (reward.type === 'skill') {
-      const r = skillSys.giveSkill(reward.id); // -> first empty slot (§16)
-      events.emit(tick, 'draft_taken', { reward: 'skill', id: reward.id, slot: r.slot ?? null });
-    } else {
-      buildSys.grantNode(reward.id, 'drafted'); // -> bench, never auto-socketed
-      events.emit(tick, 'draft_taken', { reward: 'node', id: reward.id, bench: true });
-    }
-    reward = null;
-    return taken;
-  }
 
-  function declineReward() {
-    if (phase !== 'reward') return null;
-    if (pages && pages.isOpen()) {
-      pages.pick(0, 'leave', null, { by: 'human' });
-      return commitPage('commit');
-    }
-    const r = applyDecline();
-    afterReward(null);
-    return r;
-  }
-  function applyDecline() {
-    const type = reward ? reward.type : null;
-    const id = reward ? reward.id : null;
-    events.emit(getTick(), 'draft_declined', { reward: type, id }); // declines have no memory
-    reward = null;
-    return { declined: true, type, id };
-  }
 
-  function afterReward(taken = null) {
-    // RELICS: an owed relic pick comes after the draft, before the doors.
-    if (relics.presentDue(gainGlint)) {
-      phase = 'relic';
-      return taken;
-    }
-    afterRelic();
-    return taken;
-  }
-  function afterRelic() {
-    // SECRET ROOMS: a wall broken open in this room: the party steps through
-    // the breach before the doors.
-    if (secrets.chamberDue(roomIndex)) {
-      enterSecret(getTick());
-      return;
-    }
-    // BOSS RUSH: the fight's draft and pick are done; on to the next land.
-    if (rushFight() && roomIndex === RUN.bossRoom) {
-      onLevelCleared(getTick());
-      return;
-    }
-    if (roomIndex <= RUN.pathRooms) {
-      presentPath();
-    } else {
-      // Rooms 6->7 and 7->8 are fixed transitions (§2: no choice).
-      beginFade(roomIndex + 1);
-    }
-  }
 
-  // RELICS: the relic page (phase 'relic') — one of three, no reroll.
-  function focusRelic(i) {
-    if (phase !== 'relic') return null;
-    return relics.focus(i);
-  }
-  function chooseRelic(i) {
-    if (phase !== 'relic') return null;
-    const id = relics.choose(i);
-    if (!id) return null;
-    afterRelic();
-    return { relic: id };
-  }
 
-  // ------------------------------------------------------------------ path --
-  function presentPath() {
-    const nextRoom = roomIndex + 1;
-    const win = frame.modes[nextRoom - 1];
-    const skillLeft = frame.sides[roomIndex - 1] === 0;
-    const options = [
-      { side: 0, win, reward: skillLeft ? 'skill' : 'node' },
-      { side: 1, win, reward: skillLeft ? 'node' : 'skill' },
-    ];
-    // RELICS: one door may carry a curse (key present only then).
-    const dc = relics.rollDoorCurse();
-    if (dc) {
-      options[dc.side].curse = dc.curse;
-      if (dc.major) options[dc.side].major = true;
-    }
-    // EVENT ROOMS: maybe a "?" door, never the cursed one (keys present only then).
-    const ed = encounters.rollDoor(nextRoom, dc ? dc.side : null, encCtx());
-    if (ed) options[ed.side] = { side: ed.side, win: 'event', reward: 'event', event: true, encounter: ed.id };
-    // CHAMPION ROOMS: the level's crown door (never the cursed one; over the
-    // event door when the other is cursed). Its reward stays the door's own.
-    const crown = championsOn() ? (forcedCrown ?? crownFor(frame.seed, campaign.index)) : null;
-    forcedCrown = null;
-    if (crown && crown.room === nextRoom) {
-      const side = crownSide(crown.side, dc ? dc.side : null, ed ? ed.side : null);
-      const keep = options[side].event ? { side, win: 'champion', reward: frame.sides[roomIndex - 1] === 0 ? (side === 0 ? 'skill' : 'node') : side === 0 ? 'node' : 'skill' } : { ...options[side], win: 'champion' };
-      options[side] = { ...keep, champion: levelChampion() };
-    }
-    // KEYS AND VAULTS: while the party holds a key, the vault door (never the
-    // cursed or the crown door; over a "?" door only when it must). It keeps
-    // its door's own reward: the draft still follows the vault.
-    const R = VAULT_RULES;
-    if (vaults.enabled() && vaults.held() && vaults.open() && nextRoom >= R.doorRooms[0] && nextRoom <= R.doorRooms[1]) {
-      const crownAt = options.findIndex((o) => o.champion);
-      const eventAt = options.findIndex((o) => o.event);
-      const pref = forcedVault ?? vaultPref(frame.seed, campaign.index, nextRoom);
-      const side = vaultSide(pref, dc ? dc.side : null, eventAt >= 0 ? eventAt : null, crownAt >= 0 ? crownAt : null);
-      if (side !== null) {
-        const reward = frame.sides[roomIndex - 1] === 0 ? (side === 0 ? 'skill' : 'node') : side === 0 ? 'node' : 'skill';
-        options[side] = { side, win: 'vault', reward, vault: true };
-      }
-    }
-    forcedVault = null;
-    path = {
-      nextRoom,
-      options,
-      focus: 0,
-      freeSkillSlots: draft.freeSkillSlots(),
-    };
-    phase = 'path';
-    if (pages) pages.armDoor(getTick()); // PARTY: network door deadline (≥ 2 humans)
-    events.emit(getTick(), 'path_offer', {
-      room: roomIndex,
-      nextRoom,
-      options: options.map((o) => ({ side: o.side, win: o.win, reward: o.reward, ...(o.curse ? { curse: o.curse } : {}), ...(o.major ? { major: true } : {}), ...(o.event ? { event: true } : {}), ...(o.champion ? { champion: o.champion } : {}), ...(o.vault ? { vault: true } : {}) })),
-      freeSkillSlots: path.freeSkillSlots,
-    });
-  }
 
-  function focusPath(side) {
-    if (phase !== 'path' || !path) return null;
-    path.focus = side === 1 ? 1 : 0;
-    return path.focus;
-  }
 
-  function choosePath(side, { hold = true } = {}) {
-    if (phase !== 'path' || !path) return null;
-    if (path.hold) return { held: true, side: path.hold.side, untilTick: path.hold.untilTick };
-    // PARTY (BUILD_BRIEF §25.7): a committed door waits <= socketHoldTicks
-    // while a human's socket screen is open (network only: the screens are
-    // reported only in a session with >= 2 humans).
-    if (hold && pages && pages.humans() >= 2 && pages.humanScreenOpen()) {
-      const untilTick = getTick() + PARTY_DEADLINES.socketHoldTicks;
-      path.hold = { side: side === 1 ? 1 : 0, untilTick };
-      if (pages) pages.clearDoor();
-      events.emit(getTick(), 'party_deadline', { what: 'socket_hold', tick: untilTick, side: path.hold.side });
-      return { held: true, side: path.hold.side, untilTick };
-    }
-    const opt = path.options[side === 1 ? 1 : 0];
-    if (pages) pages.clearDoor();
-    rewardFor[path.nextRoom] = opt.reward;
-    events.emit(getTick(), 'path_chosen', {
-      room: roomIndex,
-      nextRoom: path.nextRoom,
-      side: opt.side,
-      win: opt.win,
-      reward: opt.reward,
-    });
-    const next = path.nextRoom;
-    if (opt.curse) relics.takeCurse(opt.curse, next);
-    // EVENT ROOMS: the "?" door turns the next room into its event room.
-    if (opt.event) {
-      frame.modes[next - 1] = 'event';
-      frame.defendAt = frame.defendAt.filter((r) => r !== next);
-      encounters.arm(next, opt.encounter);
-    }
-    // CHAMPION ROOMS: the crown door turns the next room into the champion's.
-    if (opt.champion) {
-      frame.modes[next - 1] = 'champion';
-      frame.defendAt = frame.defendAt.filter((r) => r !== next);
-      events.emit(getTick(), 'crown_door_taken', { room: next });
-    }
-    // KEYS AND VAULTS: the key turns in the lock; the next room is the vault.
-    if (opt.vault) {
-      frame.modes[next - 1] = 'vault';
-      frame.defendAt = frame.defendAt.filter((r) => r !== next);
-      vaults.spend(next);
-    }
-    path = null;
-    // TUTORIAL: the door is the last lesson — back to camp.
-    if (tutorialOn()) {
-      endTutorial('done');
-      return { nextRoom: next, reward: opt.reward, win: opt.win, tutorial: 'done' };
-    }
-    beginFade(next);
-    return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}), ...(opt.event ? { event: true } : {}), ...(opt.champion ? { champion: opt.champion } : {}), ...(opt.vault ? { vault: true } : {}) };
-  }
 
-  // ------------------------------------------------------- event rooms --
-  // EVENT ROOMS (docs/EVENT_ROOMS.md). Phase 'event': the party walks in
-  // with the encounter standing ahead (E · Inspect). Phase 'encounter': its
-  // card (Take or Leave). Take pays the cost, then the reward: a relic page,
-  // a Skill draft, Glint, a heal, or (the trapped chest) a short fight first.
-  // Then the doors, as after any room.
-  function enterEvent(n, tick) {
-    phase = 'event';
-    const enc = encounters.enter(n);
-    relics.onRoomEnter(n, 'event');
-    if (!enc) {
-      afterRelic(); // defensive: a "?" room with nothing armed walks on
-      return;
-    }
-    const e = registry.spawn(encounterSpec(enc.id, EVENT_RULES.spot.x, EVENT_RULES.spot.z, EVENT_RULES.bodyRadius));
-    events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'encounter', x: r2(e.x), z: r2(e.z) });
-  }
 
   const encounterBody = () => registry.all().find((e) => e.itype === 'encounter');
 
-  function openEncounter() {
-    if (phase !== 'event' || !encounters.open(encCtx())) return null;
-    const body = encounterBody();
-    if (body && body.uses > 0) body.uses = 0;
-    phase = 'encounter';
-    return encounters.view(encCtx());
-  }
 
-  function focusEncounter(i) {
-    if (phase !== 'encounter') return null;
-    return encounters.focus(i);
-  }
 
-  function spend(amount, reason) {
-    wallet = Math.max(0, wallet - amount);
-    events.emit(getTick(), 'glint_spend', { amount, wallet, reason, room: roomIndex });
-  }
 
-  // choice: 'take' | 'leave' (default: the card's focus).
-  function chooseEncounter(choice) {
-    if (phase !== 'encounter') return null;
-    const enc = encounters.live();
-    if (!enc) return null;
-    const pick = choice === 'take' || choice === 'leave' ? choice : enc.focus === 1 ? 'leave' : 'take';
-    const tick = getTick();
-    const room = roomIndex;
-    if (pick === 'take') {
-      const why = encounters.refusal(encCtx());
-      if (why) {
-        events.emit(tick, 'event_denied', { room, encounter: enc.id, reason: why });
-        return { denied: why };
-      }
-    }
-    roomsDone = Math.max(roomsDone, room);
-    if (pick === 'leave') {
-      encounters.finish('done', { left: true });
-      events.emit(tick, 'event_leave', { room, encounter: enc.id });
-      afterRelic();
-      return { left: true, encounter: enc.id };
-    }
-    const E = ENCOUNTERS[enc.id];
-    const R = EVENT_RULES;
-    const result = { took: true };
-    const bodies = registry.all().filter((e) => e.partyIndex !== undefined && e.hp > 0);
-    switch (enc.id) {
-      case 'blood_shrine': {
-        let paid = 0;
-        for (const e of bodies) {
-          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.hpCost));
-          e.hp = r2(e.hp - loss);
-          paid += loss;
-        }
-        result.hp = r2(paid);
-        relics.owe(room, 'shrine');
-        break;
-      }
-      case 'wishing_well': {
-        spend(E.price, 'event_well');
-        const relic = encounters.coin() ? relics.grantRandom('well', encounterBody() ?? player) : null;
-        if (relic) result.relic = relic;
-        else {
-          gainGlint(R.wellGlint, 'event_well');
-          result.glint = R.wellGlint;
-        }
-        break;
-      }
-      case 'trapped_chest':
-        startAmbush(tick);
-        events.emit(tick, 'event_take', { room, encounter: enc.id, ambush: true });
-        return { ambush: true, encounter: enc.id };
-      case 'lost_pilgrim':
-        spend(E.price, 'event_pilgrim');
-        result.draft = 'skill';
-        break;
-      case 'corrupted_altar': {
-        const id = encounters.pick(relics.freeMajors());
-        relics.takeMajor(id, room);
-        relics.owe(room, 'altar', { curse: id });
-        result.curse = id;
-        break;
-      }
-      case 'wandering_spirit': {
-        const lost = relics.loseNewest('spirit');
-        relics.owe(room, 'spirit', { not: lost ? [lost] : null });
-        result.lost = lost;
-        break;
-      }
-      case 'forgotten_cache':
-        gainGlint(R.cacheGlint, 'event_cache');
-        if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, R.cachePurse, 'event_cache');
-        result.glint = R.cacheGlint;
-        break;
-      // MORE EVENT ROOMS (slice 6).
-      case 'fey_ring': {
-        const paid = wallet;
-        spend(paid, 'event_fey');
-        relics.owe(room, 'fey');
-        result.paid = paid;
-        break;
-      }
-      case 'sluice_gate': {
-        if (encounters.coin()) {
-          const relic = relics.grantRandom('sluice', encounterBody() ?? player);
-          if (relic) result.relic = relic;
-          gainGlint(R.sluiceGlint, 'event_sluice');
-          result.glint = R.sluiceGlint;
-        } else {
-          let lost = 0;
-          for (const e of bodies) {
-            const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.sluiceFlood));
-            e.hp = r2(e.hp - loss);
-            lost += loss;
-          }
-          result.flood = true;
-          result.hp = r2(lost);
-        }
-        break;
-      }
-      case 'barrow_ossuary': {
-        let paid = 0;
-        for (const e of bodies) {
-          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.ossuaryCost));
-          e.hp = r2(e.hp - loss);
-          paid += loss;
-        }
-        result.hp = r2(paid);
-        result.draft = 'node';
-        break;
-      }
-      case 'heart_crystal': {
-        const grown = [];
-        const n = relics.majorCurses().length;
-        for (let k = 0; k < n; k++) {
-          const relic = relics.grantRandom('crystal', encounterBody() ?? player);
-          if (!relic) break;
-          grown.push(relic);
-        }
-        result.relics = grown;
-        if (grown.length < n) {
-          gainGlint(RELIC_RULES.emptyPoolGlint * (n - grown.length), 'relic_pool_empty');
-          result.glint = RELIC_RULES.emptyPoolGlint * (n - grown.length);
-        }
-        break;
-      }
-      // THE STILL SPIRE (plan 4 slice 7).
-      case 'gods_seat': {
-        const lost = [];
-        for (let k = 0; k < R.seatRelics; k++) {
-          const id = relics.loseNewest('seat');
-          if (id) lost.push(id);
-        }
-        relics.owe(room, 'seat', { not: lost });
-        result.lost = lost;
-        break;
-      }
-      case 'silent_bell': {
-        let paid = 0;
-        for (const e of bodies) {
-          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.bellCost));
-          e.hp = r2(e.hp - loss);
-          paid += loss;
-        }
-        result.hp = r2(paid);
-        const lifted = relics.liftMajor('bell');
-        if (lifted) result.lifted = lifted;
-        break;
-      }
-      // THE EMBER KILN (content plan 5 slice 9): Glint poured into the
-      // mould, 40 for each relic, up to three; the rest stays in the purse.
-      case 'molten_bell': {
-        const n = Math.min(R.pourMax, Math.floor(wallet / R.pourStep));
-        spend(n * R.pourStep, 'event_bell');
-        const rung = [];
-        for (let k = 0; k < n; k++) {
-          const relic = relics.grantRandom('molten', encounterBody() ?? player);
-          if (!relic) break;
-          rung.push(relic);
-        }
-        result.paid = n * R.pourStep;
-        result.relics = rung;
-        if (rung.length < n) {
-          gainGlint(RELIC_RULES.emptyPoolGlint * (n - rung.length), 'relic_pool_empty');
-          result.glint = RELIC_RULES.emptyPoolGlint * (n - rung.length);
-        }
-        break;
-      }
-      case 'traveling_smith': {
-        spend(E.price, 'event_smith');
-        const lost = relics.loseNewest('smith');
-        const was = lost ? RELICS[lost].rarity : 'common';
-        const tiers = was === 'common' ? [['rare'], ['legendary']] : [['legendary']];
-        const relic = relics.grantTier('smith', tiers, lost ? [lost] : null, encounterBody() ?? player);
-        result.lost = lost;
-        if (relic) result.relic = relic;
-        break;
-      }
-      case 'gamblers_dice': {
-        spend(E.price, 'event_dice');
-        const dice = encounters.dice();
-        result.dice = dice;
-        if (dice[0] === dice[1]) {
-          const relic = relics.grantTier('dice', [['rare', 'legendary']], null, encounterBody() ?? player);
-          if (relic) result.relic = relic;
-          else {
-            gainGlint(R.diceGlint, 'event_dice');
-            result.glint = R.diceGlint;
-          }
-        } else if (dice[0] + dice[1] >= R.diceHigh) {
-          gainGlint(R.diceGlint, 'event_dice');
-          result.glint = R.diceGlint;
-        }
-        break;
-      }
-      case 'healing_spring': {
-        let healed = 0;
-        for (const e of bodies) {
-          if (e.hp >= e.maxHp) continue;
-          combat.applyHeal(e, e.maxHp - e.hp, { source: 'healing_spring' });
-          e.hp = e.maxHp; // full, whatever the curses and relics say
-          healed += 1;
-        }
-        result.healed = healed;
-        break;
-      }
-      default:
-        break;
-    }
-    encounters.finish('done', result);
-    events.emit(tick, 'event_take', { room, encounter: enc.id, ...result });
-    if (result.draft) {
-      rewardFor[room] = result.draft;
-      presentReward(null);
-      return { took: true, encounter: enc.id, ...result };
-    }
-    afterReward(null);
-    return { took: true, encounter: enc.id, ...result };
-  }
 
   // ------------------------------------------------------------ shrines --
   // SHRINES (docs/SHRINES.md, sim/shrines.js). One a level, on the champions'
   // gate (campaign, Endless and the Daily; never the tutorial or the legacy
   // single-level run, so the goldens never see one). Boss Rush has none.
   // shrine: { aim, room, id, used, usedBy, pick, curse, offered } | null
-  let shrine = null;
-  const shrinesOn = () => !!shrine && championsOn() && !(campaign && campaign.rush);
-  function shrineReset() {
-    shrine = championsOn() && !(campaign && campaign.rush) ? { aim: shrineRoomFor(frame.seed, campaign.index), room: null, id: null, used: false, usedBy: null, pick: null, curse: null, offered: 0 } : null;
-    for (const e of registry.all()) if (e.partyIndex !== undefined && e.blessing) delete e.blessing;
-  }
-  function shrineLevelReset() {
-    if (!shrine) return;
-    // The Grave Shrine's curse waits for the next fight, even past a level's end.
-    shrine = { ...shrine, aim: shrineRoomFor(frame.seed, campaign.index), room: null, id: null, used: false, usedBy: null, pick: null };
-  }
-  // A free spot: clear of the clearing's props, the hazards and assets, the
-  // spawn ring and the party's entry.
-  function shrineSpot(n) {
-    const S = SHRINE_RULES.spots;
-    const start = shrineSpotStart(frame.seed, campaign.index, n);
-    const ring = LAYOUTS[layout?.layoutId]?.spawns ?? SPAWN_POINTS;
-    const content = registry.all().filter((e) => e.kind === 'hazard' || e.interactable || e.kind === 'barricade' || e.kind === 'keg');
-    const pts = [];
-    for (const e of content) {
-      if (e.vents) for (const v of e.vents) pts.push([v.x, v.z, 0.7]);
-      else if (e.lane) {
-        const L = e.lane;
-        for (let k = 0; k <= 8; k++) pts.push([L.x0 + ((L.x1 - L.x0) * k) / 8, L.z0 + ((L.z1 - L.z0) * k) / 8, L.w / 2]);
-      } else if (e.htype === 'rockfall' || e.htype === 'spur') continue;
-      else pts.push([e.x, e.z, e.radius ?? 0.5]);
-    }
-    for (let k = 0; k < S.length; k++) {
-      const [x, z] = S[(start + k) % S.length];
-      if (staticClearance(x, z, SHRINE_RULES.radius + 0.3) < 0.15) continue;
-      if (Math.hypot(x, z) < 3 || Math.abs(x) > ARENA.halfW - 1.2 || Math.abs(z) > ARENA.halfD - 1.0) continue;
-      if (ring.some(([sx, sz]) => Math.hypot(sx - x, sz - z) < 1.5)) continue;
-      if (pts.some(([px, pz, pr]) => Math.hypot(px - x, pz - z) < pr + SHRINE_RULES.radius + 0.9)) continue;
-      return [x, z];
-    }
-    return null;
-  }
-  function spawnShrine(id, x, z, tick) {
-    const e = registry.spawn(shrineSpec(id, x, z));
-    events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'shrine', x: r2(x), z: r2(z) });
-    events.emit(tick, 'shrine_spawn', { id: e.id, shrine: id, room: roomIndex, x: r2(x), z: r2(z) });
-    return e.id;
-  }
-  function placeShrine(n, mode, biome, tick) {
-    if (shrine.room !== null || n < shrine.aim) return;
-    const id = shrineOfBiome(biome) ? biome : null;
-    if (!id) return;
-    const at = shrineSpot(n);
-    if (!at) return; // a crowded room: the next combat room tries
-    shrine.room = n;
-    shrine.id = id;
-    spawnShrine(id, at[0], at[1], tick);
-    void mode;
-  }
-  // Pay the Tithe Shrine from the offering seat's own Glint.
-  function seatGlint(seat) {
-    return seat !== 0 && seatPursesOn() ? party.purse(seat) : wallet;
-  }
-  function payGlint(seat, n) {
-    if (seat !== 0 && seatPursesOn()) party.gainPurse(seat, -n, 'shrine_tithe');
-    else spend(n, 'shrine_tithe');
-  }
-  // E at the shrine (any human seat), or cmd('shrineUse'). The price, then
-  // the blessing; a price the party cannot pay gives the use back.
-  function useShrine(seat = 0) {
-    const body = registry.all().find((e) => e.kind === 'shrine');
-    if (!active || !shrine || !body || phase !== 'combat') return null;
-    const tick = getTick();
-    const S = SHRINES[body.shrine];
-    const by = registry.all().find((e) => e.partyIndex === seat) ?? player;
-    let why = null;
-    if (shrine.used) why = 'used';
-    else if (S.cost === 'glint' && seatGlint(seat) < SHRINE_RULES.glintCost) why = 'glint';
-    else if (S.cost === 'key' && !vaults.held()) why = 'key';
-    else if (S.cost === 'tonic' && !(tonics.enabled() && tonics.slot(seat))) why = 'tonic';
-    else if (S.cost === 'curse' && !relics.enabled()) why = 'curse';
-    else if (S.cost === 'relic' && !relics.newestOf('common')) why = 'relic';
-    if (why) {
-      if (why !== 'used') {
-        body.uses = 1;
-        body.usedTick = -1;
-        body.usedBy = null;
-      }
-      events.emit(tick, 'shrine_denied', { id: body.id, shrine: S.id, seat, reason: why, x: r2(body.x), z: r2(body.z) });
-      return { denied: why };
-    }
-    body.uses = 0;
-    body.usedTick = tick;
-    body.usedBy = by.id;
-    const bodies = registry.all().filter((e) => e.partyIndex !== undefined);
-    const result = { shrine: S.id, seat };
-    if (S.cost === 'hp') {
-      let paid = 0;
-      for (const e of bodies) {
-        if (!(e.hp > 0)) continue;
-        const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * SHRINE_RULES.hpCost));
-        e.hp = r2(e.hp - loss);
-        paid += loss;
-      }
-      result.hp = r2(paid);
-    } else if (S.cost === 'glint') {
-      payGlint(seat, SHRINE_RULES.glintCost);
-      result.glint = SHRINE_RULES.glintCost;
-    } else if (S.cost === 'curse') {
-      shrine.curse = shrineCurseFor(frame.seed, campaign.index, roomIndex, CURSE_IDS);
-      result.curse = shrine.curse;
-    } else if (S.cost === 'key') {
-      vaults.surrender('shrine');
-      shrine.pick = roomIndex;
-      result.pick = true;
-    } else if (S.cost === 'tonic') {
-      result.tonic = tonics.slot(seat);
-      tonics.setSlot(seat, null);
-    } else if (S.cost === 'relic') {
-      // THE EMBER KILN's Forge Shrine (content plan 5 slice 9).
-      result.relic = relics.loseNewestOf('forge', 'common');
-    }
-    // RELICS batch 5: Votive Ribbon makes the blessing last longer.
-    const B = S.gift !== 'relic' ? bless(bodies, S.gift, tick, Math.round(SHRINE_RULES.blessTicks * relics.blessMul())) : null;
-    if (B) result.blessing = B.id;
-    shrine.used = true;
-    shrine.usedBy = seat;
-    shrine.offered += 1;
-    events.emit(tick, 'shrine_offer', { id: body.id, by: by.id, x: r2(body.x), z: r2(body.z), ...result, ...(B ? { untilTick: B.untilTick } : {}) });
-    return result;
-  }
-  events.on('shrine_touch', (ev) => useShrine(ev.seat ?? 0));
-  function shrineView() {
-    const tick = getTick();
-    const b = player.blessing && player.blessing.untilTick > tick ? player.blessing : null;
-    const live = registry.all().find((e) => e.kind === 'shrine');
-    return {
-      aim: shrine.aim,
-      room: shrine.room,
-      id: shrine.id,
-      used: shrine.used,
-      offered: shrine.offered,
-      ...(shrine.curse ? { curse: shrine.curse } : {}),
-      ...(shrine.pick !== null ? { pick: shrine.pick } : {}),
-      ...(live ? { body: { id: live.id, x: live.x, z: live.z, shrine: live.shrine } } : {}),
-      ...(b ? { blessing: { id: b.id, ticksLeft: b.untilTick - tick } } : {}),
-    };
-  }
+  rs.shrine = null;
+  events.on('shrine_touch', (ev) => RF.useShrine(ev.seat ?? 0));
 
-  // --------------------------------------------------- keys and vaults --
-  // KEYS AND VAULTS (docs/VAULTS.md). Phase 'vault': the party walks into the
-  // treasure room. A hero walking over a Glint pile or the food platter takes
-  // it; E on the chest opens it, gathers whatever is left, then pays the
-  // door's draft and a relic pick. Then the doors, as after any room.
-  const clearSpot = (row, r) => {
-    for (const [x, z] of row) if (staticClearance(x, z, r) >= 0.15) return [x, z];
-    return row[0];
-  };
-  function enterVault(n, tick) {
-    phase = 'vault';
-    const v = vaults.enterRoom(n);
-    relics.onRoomEnter(n, 'vault');
-    const S = VAULT_SPOTS;
-    const [cx, cz] = clearSpot(S.chest, VAULT_RULES.chestRadius + 0.3);
-    const chest = registry.spawn(vaultChestSpec(cx, cz));
-    events.emit(tick, 'interactable_spawn', { id: chest.id, itype: 'vault_chest', x: r2(cx), z: r2(cz) });
-    const piles = S.piles.map((row, i) => {
-      const [x, z] = clearSpot(row, 0.4);
-      const e = registry.spawn({ kind: 'vault_pile', faction: 'neutral', pile: i, x, z, px: x, pz: z, yaw: i * 2.1 });
-      return { id: e.id, x: r2(x), z: r2(z) };
-    });
-    const [px, pz] = clearSpot(S.platter, 0.45);
-    const platter = registry.spawn({ kind: 'vault_platter', faction: 'neutral', x: px, z: pz, px, pz, yaw: 0.4 });
-    events.emit(tick, 'vault_enter', {
-      room: n,
-      chest: { id: chest.id, x: r2(cx), z: r2(cz) },
-      piles,
-      platter: { id: platter.id, x: r2(px), z: r2(pz) },
-      reward: rewardFor[n] ?? null,
-    });
-    return v;
-  }
 
-  function vaultChestSpec(x, z) {
-    return {
-      kind: 'vault_chest',
-      itype: 'vault_chest',
-      faction: 'neutral',
-      x,
-      z,
-      px: x,
-      pz: z,
-      yaw: 0,
-      interactable: true,
-      interactRadius: VAULT_CHEST.interactRadius,
-      radius: VAULT_RULES.chestRadius,
-      verb: VAULT_CHEST.verb,
-      spentLabel: VAULT_CHEST.spentLabel,
-      uses: 1,
-      cooldownUntilTick: 0,
-      activeUntilTick: 0,
-      usedTick: -1,
-      usedBy: null,
-      collider: { r: VAULT_RULES.chestRadius },
-      blocksMovement: true,
-    };
-  }
 
-  // A Glint pile: the Healer's wallet and each ally purse.
-  function takePile(e, by) {
-    const R = VAULT_RULES;
-    // RELICS batch 4: Vault Ledger doubles each pile.
-    const lm = relics.vaultPileMul();
-    const g = Math.round(R.pileGlint * lm);
-    gainGlint(g, 'vault_pile');
-    if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, Math.round(R.pilePurse * lm), 'vault_pile');
-    const v = vaults.live();
-    if (v) v.glint += g;
-    events.emit(getTick(), 'vault_pile', { id: e.id, pile: e.pile, by, glint: g, x: r2(e.x), z: r2(e.z) });
-    if (lm !== 1) events.emit(getTick(), 'relic_proc', { relic: 'vault_ledger', pile: e.pile, glint: g, x: r2(e.x), z: r2(e.z) });
-    registry.despawn(e.id);
-  }
-  // The food platter: every living hero heals half their max HP.
-  function takePlatter(e, by) {
-    let healed = 0;
-    for (const h of registry.all()) {
-      if (h.partyIndex === undefined || !(h.hp > 0) || h.hp >= h.maxHp) continue;
-      if (combat.applyHeal(h, h.maxHp * VAULT_RULES.platterHeal, { source: 'vault_platter' })) healed += 1;
-    }
-    const v = vaults.live();
-    if (v) v.healed = healed;
-    events.emit(getTick(), 'vault_platter', { id: e.id, by, healed, x: r2(e.x), z: r2(e.z) });
-    registry.despawn(e.id);
-  }
-  function stepVault() {
-    const v = vaults.live();
-    if (v && v.state === 'open') {
-      if (!v.paid && getTick() >= v.payAt) {
-        v.paid = true;
-        presentReward(null);
-      }
-      return;
-    }
-    for (const e of registry.all()) {
-      if (e.kind !== 'vault_pile' && e.kind !== 'vault_platter') continue;
-      const h = vaults.toucher(e);
-      if (!h) continue;
-      if (e.kind === 'vault_pile') takePile(e, h.id);
-      else takePlatter(e, h.id);
-    }
-  }
 
-  // E on the chest (any hero), the autopilot, or cmd('vaultOpen').
-  function openVault() {
-    if (phase !== 'vault') return null;
-    const v = vaults.live();
-    if (!v || v.state !== 'shut') return null;
-    const tick = getTick();
-    const chest = registry.all().find((e) => e.kind === 'vault_chest');
-    if (chest && chest.uses > 0) chest.uses = 0;
-    // The party gathers the rest of the hoard as the lid comes up.
-    for (const e of registry.all()) {
-      if (e.kind === 'vault_pile') takePile(e, null);
-      else if (e.kind === 'vault_platter') takePlatter(e, null);
-    }
-    vaults.finishRoom();
-    roomsDone = Math.max(roomsDone, roomIndex);
-    // TONICS AND BOMBS: the chest pays one into the first empty slot.
-    if (tonics.enabled() && frame && campaign) tonics.grant(chestTonic(frame.seed, campaign.index, roomIndex, 'vault'), 'vault', null, chest ? chest.x : undefined, chest ? chest.z : undefined);
-    const owed = relics.owe(roomIndex, VAULT_RULES.chestSource);
-    events.emit(tick, 'vault_open', {
-      room: roomIndex,
-      glint: v.glint,
-      healed: v.healed,
-      relic: !!owed,
-      ...(chest ? { x: r2(chest.x), z: r2(chest.z) } : {}),
-    });
-    // The lid comes up and the hoard's light rises for a moment; then the
-    // door's own draft, the relic pick and the doors (stepVault).
-    v.payAt = tick + Math.round(VAULT_RULES.revealSec * TICK_HZ);
-    return { opened: true, room: roomIndex, glint: v.glint, healed: v.healed, relic: !!owed };
-  }
 
-  // ---------------------------------------------------- secret rooms --
-  // SECRET ROOMS (docs/SECRET_ROOMS.md). The cracked wall stands flush with
-  // the room's edge at its hashed spot (the first clear one after it). Broken
-  // open in the fight, it leads to phase 'secret' once the room's reward and
-  // relic pick are done: the hidden chamber stands in the same clearing (no
-  // layout draw), dark but for its own light. Its body pays on E (the hoard
-  // by walking); then the doors, as after any room.
-  const SECRET_KINDS = ['secret_wall', 'secret_chamber', 'secret_pile', 'secret_body'];
-  const isSecretBody = (e) => SECRET_KINDS.includes(e.kind) || (e.itype === 'encounter' && e.secret === true);
-  function placeWall(n, mode, tick) {
-    const R = SECRET_RULES;
-    const W = R.wall;
-    const pref = wallPref(frame.seed, campaign.index, n);
-    const near = registry.all().filter((e) => e.kind === 'hazard' || e.interactable || e.kind === 'barricade' || e.kind === 'keg' || e.kind === 'shrine');
-    let spot = null;
-    for (let k = 0; k < R.spots.length && !spot; k++) {
-      const [x, z, yaw] = R.spots[(pref + k) % R.spots.length];
-      // The slab's face, 0.6 u into the room, must be clear of props and of
-      // the room's own content, so the party can reach it.
-      const fx = x + Math.sin(yaw) * 0.6;
-      const fz = z + Math.cos(yaw) * 0.6;
-      if (blockerClearance(fx, fz, 0.5) < 0.1) continue;
-      if (near.some((e) => Math.hypot(e.x - x, e.z - z) < 1.7)) continue;
-      if (SPAWN_POINTS.some(([sx, sz]) => Math.hypot(sx - x, sz - z) < 1.2)) continue;
-      spot = [x, z, yaw];
-    }
-    if (!spot) return null;
-    const [x, z, yaw] = spot;
-    const holds = forcedHolds ?? chamberContent(frame.seed, campaign.index, n);
-    forcedHolds = null;
-    const e = registry.spawn({
-      kind: 'secret_wall',
-      faction: 'neutral',
-      x,
-      z,
-      px: x,
-      pz: z,
-      yaw,
-      hittable: true,
-      hp: 1,
-      maxHp: 1,
-      lifecycle: 'break',
-      knockbackable: false,
-      radius: W.hx,
-      collider: { hx: W.hx, hz: W.hz, yaw },
-      blocksMovement: true,
-      blocksProjectiles: true,
-      shut: true,
-      biome: layout ? layout.biome : null,
-    });
-    refreshBlockers(registry);
-    secrets.placed({ id: e.id, room: n, x, z, yaw, content: holds });
-    events.emit(tick, 'secret_wall', { id: e.id, room: n, mode, x: r2(x), z: r2(z), yaw: r2(yaw) });
-    return e;
-  }
-  // The wall breaks open: its collider goes, the breach stays dark until
-  // the party walks through.
-  function openWall(how, seat) {
-    const w = secrets.open(how, seat);
-    if (!w) return null;
-    const e = registry.byId(w.id);
-    if (e) {
-      e.shut = false;
-      e.hittable = false;
-      delete e.collider;
-      e.blocksMovement = false;
-      e.blocksProjectiles = false;
-      refreshBlockers(registry);
-    }
-    events.emit(getTick(), 'secret_open', { id: w.id, room: w.room, how, seat: seat ?? null, content: w.content, x: r2(w.x), z: r2(w.z), yaw: r2(w.yaw) });
-    return w;
-  }
-  function secretBodySpec(content, x, z) {
-    const B = SECRET_BODY[content];
-    return {
-      kind: 'secret_body',
-      itype: 'secret_body',
-      content,
-      faction: 'neutral',
-      x,
-      z,
-      px: x,
-      pz: z,
-      yaw: 0,
-      interactable: true,
-      interactRadius: B.interactRadius,
-      radius: B.radius,
-      verb: B.verb,
-      spentLabel: B.spentLabel,
-      uses: 1,
-      cooldownUntilTick: 0,
-      activeUntilTick: 0,
-      usedTick: -1,
-      usedBy: null,
-      collider: { r: B.radius },
-      blocksMovement: true,
-    };
-  }
-  function enterSecret(tick) {
-    const w = secrets.wall();
-    const n = roomIndex;
-    const S = SECRET_RULES.spotsIn;
-    const level = levelFor(act);
-    const land = encCtx().land ?? level.biome;
-    let content = w.content;
-    let extra = {};
-    // The rare event: one of the land's encounters (the travellers too).
-    if (content === 'event') {
-      const ids = Object.keys(ENCOUNTERS).filter((id) => !ENCOUNTERS[id].land || ENCOUNTERS[id].land === land);
-      const id = encounters.enabled() ? chamberEvent(frame.seed, campaign.index, n, ids) : null;
-      if (id) extra = { encounter: id };
-      else content = 'hoard';
-    }
-    if (content === 'lore') extra = { page: chamberPage(frame.seed, campaign.index, n, land) };
-    positionParty();
-    phase = 'secret';
-    const c = secrets.enterChamber(n, content, extra);
-    const [lx, lz] = S.light;
-    registry.spawn({ kind: 'secret_chamber', faction: 'neutral', content, x: lx, z: lz, px: lx, pz: lz, yaw: 0, wallX: w.x, wallZ: w.z, biome: layout ? layout.biome : level.biome });
-    const bodies = [];
-    if (content === 'hoard') {
-      S.piles.forEach((row, i) => {
-        const [x, z] = clearSpot(row, 0.4);
-        const e = registry.spawn({ kind: 'secret_pile', faction: 'neutral', pile: i, x, z, px: x, pz: z, yaw: i * 2.3 });
-        bodies.push({ id: e.id, x: r2(x), z: r2(z) });
-      });
-    } else if (content === 'event') {
-      const sp = EVENT_RULES.spot;
-      encounters.armHidden(n, extra.encounter);
-      const enc = encounters.enter(n);
-      const e = registry.spawn({ ...encounterSpec(enc.id, sp.x, sp.z, EVENT_RULES.bodyRadius), secret: true });
-      events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'encounter', x: r2(e.x), z: r2(e.z) });
-      bodies.push({ id: e.id, x: r2(e.x), z: r2(e.z) });
-    } else {
-      const [x, z] = clearSpot(S.body, SECRET_BODY[content].radius + 0.3);
-      const e = registry.spawn(secretBodySpec(content, x, z));
-      events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'secret_body', x: r2(x), z: r2(z) });
-      bodies.push({ id: e.id, x: r2(x), z: r2(z) });
-    }
-    refreshBlockers(registry);
-    events.emit(tick, 'secret_enter', { room: n, content, ...extra, bodies, x: r2(w.x), z: r2(w.z) });
-    // The rare event plays as a "?" room does (its card ends at the doors).
-    if (content === 'event') {
-      c.state = 'open';
-      phase = 'event';
-    }
-    return c;
-  }
-  function takeSecretPile(e, by) {
-    const R = SECRET_RULES;
-    const g = R.hoardGlint;
-    gainGlint(g, 'secret_pile');
-    if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, R.hoardPurse, 'secret_pile');
-    const c = secrets.chamber();
-    if (c) c.glint += g;
-    events.emit(getTick(), 'secret_pile', { id: e.id, pile: e.pile, by, glint: g, x: r2(e.x), z: r2(e.z) });
-    registry.despawn(e.id);
-  }
-  function stepSecret() {
-    const c = secrets.chamber();
-    if (!c) return;
-    if (c.state === 'open') {
-      if (!c.paid && getTick() >= c.payAt) {
-        c.paid = true;
-        c.state = 'done';
-        roomsDone = Math.max(roomsDone, roomIndex);
-        // The reliquary's pick, else on to the doors.
-        if (relics.presentDue(gainGlint)) phase = 'relic';
-        else afterRelic();
-      }
-      return;
-    }
-    if (c.content !== 'hoard') return;
-    for (const e of registry.all()) {
-      if (e.kind !== 'secret_pile') continue;
-      const h = secrets.toucher(e);
-      if (h) takeSecretPile(e, h.id);
-    }
-    // The last pile taken: the hoard is the party's.
-    if (!registry.all().some((e) => e.kind === 'secret_pile')) openSecret();
-  }
-  // E on the chamber's body (any hero), the autopilot, or cmd('secretTake').
-  function openSecret() {
-    if (phase !== 'secret') return null;
-    const c = secrets.chamber();
-    if (!c || c.state !== 'shut') return null;
-    const tick = getTick();
-    const R = SECRET_RULES;
-    const body = registry.all().find((e) => e.kind === 'secret_body');
-    if (body && body.uses > 0) body.uses = 0;
-    const at = body ?? player;
-    const out = { content: c.content };
-    if (c.content === 'hoard') {
-      for (const e of registry.all()) if (e.kind === 'secret_pile') takeSecretPile(e, null);
-      out.glint = c.glint;
-    } else if (c.content === 'relic') {
-      out.relic = relics.owe(roomIndex, R.relicSource);
-      if (!out.relic) {
-        gainGlint(R.loreGlint, 'secret_relic');
-        c.glint += R.loreGlint;
-      }
-    } else if (c.content === 'tonics') {
-      const items = [chestTonic(frame.seed, campaign.index, roomIndex, 'secret'), chestTonic(frame.seed, campaign.index, roomIndex, 'secret2')];
-      out.tonics = [];
-      for (const id of items) {
-        const free = [0, 1, 2, 3].some((s) => tonics.slot(s) === null && registry.all().some((e) => e.partyIndex === s && e.hp > 0));
-        if (tonics.enabled() && free && tonics.grant(id, 'secret', null, at.x, at.z) >= 0) out.tonics.push(id);
-        else {
-          gainGlint(R.tonicGlint, 'secret_cache');
-          c.glint += R.tonicGlint;
-        }
-      }
-    } else if (c.content === 'lore') {
-      gainGlint(R.loreGlint, 'secret_lore');
-      c.glint += R.loreGlint;
-      secrets.notePage(c.page);
-      out.page = c.page;
-    }
-    c.state = 'open';
-    c.payAt = tick + Math.round(R.revealSec * TICK_HZ);
-    events.emit(tick, 'secret_take', { room: roomIndex, content: c.content, glint: c.glint, ...(out.page ? { page: out.page } : {}), ...(out.tonics ? { tonics: [...out.tonics] } : {}), ...(c.content === 'relic' ? { relic: !!out.relic } : {}), x: r2(at.x), z: r2(at.z) });
-    return { taken: true, ...out };
-  }
 
-  // The trapped chest: two short elite-heavy waves in the event room.
-  function startAmbush(tick) {
-    const depth = endlessDepth();
-    const level = depth ? endlessLevel(depth) : roomLevel(levelFor(act));
-    const n = roomIndex;
-    const base = beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), challenge) : difficulty(act, Math.min(6, n), challenge);
-    const A = EVENT_RULES.ambush;
-    let diff = { ...base, budget: r2(base.budget * A.budgetMul), eliteChance: r2(Math.min(0.9, (base.eliteChance ?? 0) + A.eliteAdd)) };
-    for (const m of relics.majorCurses()) diff = cursedDiff(diff, m, relics.majorScale());
-    diff = vowedDiff(diff);
-    encounters.finish('ambush');
-    waves.planRoom('kill_all', { act, room: n, challenge, level, diff, waves: A.waves, campaignKinds: objectivesOn() });
-    const ring = layout ? LAYOUTS[layout.layoutId]?.spawns : null;
-    if (ring) waves.relocateSpawns(ring);
-    phase = 'combat';
-    waves.beginRoom();
-    events.emit(tick, 'event_ambush', { room: n, encounter: 'trapped_chest' });
-  }
 
-  function ambushCleared(tick) {
-    sweepPlayerTransients(tick, 'room_clear');
-    skillSys.clearOverride();
-    events.emit(tick, 'heal_override', { index: null });
-    roomsDone = Math.max(roomsDone, roomIndex);
-    const R = EVENT_RULES;
-    gainGlint(R.chestGlint, 'event_chest');
-    relics.owe(roomIndex, 'chest');
-    encounters.finish('done', { took: true, glint: R.chestGlint });
-    events.emit(tick, 'event_chest', { room: roomIndex, glint: R.chestGlint });
-    afterReward(null);
-  }
 
   // §13/§16 transition fade (<= 300 ms) between the meta screens and the next
   // room's first tick.
   function beginFade(next) {
-    pendingRoom = next;
-    fadeUntilTick = getTick() + RUN.fadeTicks;
-    phase = 'fade';
-    events.emit(getTick(), 'room_transition', { from: roomIndex, to: next, ticks: RUN.fadeTicks });
+    rs.pendingRoom = next;
+    rs.fadeUntilTick = getTick() + RUN.fadeTicks;
+    rs.phase = 'fade';
+    events.emit(getTick(), 'room_transition', { from: rs.roomIndex, to: next, ticks: RUN.fadeTicks });
   }
 
-  // ------------------------------------------------ level director (§12) --
-  // The level-clear trigger. Reached ONLY from onRoomCleared in the boss room,
-  // which itself acts only while phase === 'combat' and changes the phase in
-  // this same call; the per-level latch below makes a second call a no-op
-  // whatever path reaches it (a replayed clear, a cmd, a same-tick double).
-  function onLevelCleared(tick) {
-    const c = campaign;
-    if (c && c.clearedAt === c.index) return;
-    const level = act;
-    const next = nextOf(c, level);
-    const levelTicks = c ? tick - c.levelStartTick : tick - startTick;
-    if (c) {
-      c.clearedAt = c.index;
-      const rec = c.levels[c.levels.length - 1];
-      if (rec) {
-        rec.rooms = roomsDone;
-        rec.cleared = true;
-        rec.ticks = levelTicks;
-        // THIRD BOSSES: the boss this level met (unlock facts read it).
-        // Always kept: a Daily reseeds each level, so the summary's one seed
-        // cannot re-roll the earlier levels' bosses.
-        rec.boss = currentBoss().kind ?? 'stag';
-      }
-      // ENDLESS: the final level's first clear wins the campaign; the
-      // descent goes on.
-      if (c.endless && !c.won && nextLevel(level) === null) {
-        c.won = true;
-        events.emit(tick, 'campaign_won', { level, depth: c.index, endless: true });
-      }
-    }
-    events.emit(tick, 'level_clear', {
-      level,
-      name: levelFor(level).name,
-      next,
-      final: next === null,
-      index: c ? c.index : 1,
-      campaign: !!(c && c.mode === 'campaign'),
-      ticks: levelTicks,
-      rooms: roomsDone,
-      ...(c && c.endless ? { depth: c.index } : {}),
-      ...(c && c.rush ? { fight: c.index } : {}),
-    });
-    if (next === null) {
-      endRun('victory');
-      // CAMPAIGN COMPLETE: the card returns to camp by itself (sim time, so a
-      // pause holds it and a network guest follows the host).
-      if (c && c.mode === 'campaign') autoReturnTick = tick + TRANSIT.victoryReturnTicks;
-      return;
-    }
-    beginTransit('clear', level, next, tick);
-  }
 
-  // RESET — every level-bound thing the sim owns goes (PLAN §12.3). The
-  // presentation half (decals, particles, numerals, telegraph rigs, voices,
-  // dressing) follows the `level_transit` event (src/campaign/manager.js).
-  function resetLevel(tick, cause) {
-    if (CARRY_RULES.resetShop) shop = null;
-    // PARTY: the party page, the four shelves and every deadline are level-bound.
-    if (pages) pages.reset();
-    relics.levelReset(); // RELICS: the relics ride on; curse / pick do not
-    encounters.levelReset(); // EVENT ROOMS: two "?" doors a level
-    vaults.levelReset(act); // KEYS AND VAULTS: a key lasts its level
-    secrets.levelReset(); // SECRET ROOMS: one wall a level
-    shrineLevelReset(); // SHRINES: one shrine a level
-    if (party && CARRY_RULES.resetEntities) party.resetLevelState();
-    reward = null;
-    path = null;
-    pendingRoom = 0;
-    if (CARRY_RULES.resetDirector) {
-      waves.stop(cause);
-      boss.despawn();
-    }
-    if (CARRY_RULES.resetEntities) {
-      enemies.reset();
-      sweepPlayerTransients(tick, cause);
-      exitRoom(tick); // room hooks: hazards + interactables despawn
-      allySys.cmd('mark', [null]);
-      allySys.cmd('roomBoundary'); // ally zones + ally bolts, revive channels
-      // Pending Echo recasts are in-flight casts of the level that ended.
-      const bs = cloneData(buildSys.saveState());
-      if (bs && Array.isArray(bs.echoQueue) && bs.echoQueue.length) {
-        bs.echoQueue = [];
-        buildSys.loadState(bs);
-      }
-      // Anything level-owned a system missed (belt and braces): only the
-      // party may ride into the next level. Counted so a leak stays visible
-      // (campaign().card.leftovers — the GC.5 probe expects []).
-      const leftovers = [];
-      for (const e of registry.all()) {
-        if (e.partyIndex !== undefined || e.kind === 'player' || e.kind === 'ally') continue;
-        leftovers.push(e.kind);
-        registry.despawn(e.id);
-      }
-      return leftovers;
-    }
-    return [];
-  }
 
-  // RESTORE + the non-default CARRY switches (PLAN §12.3).
-  function restoreParty(tick) {
-    for (const e of registry.all()) {
-      if (e.partyIndex === undefined) continue;
-      if (CARRY_RULES.reviveDowned && (e.downed || e.hp <= 0)) {
-        e.downed = false;
-        e.downedTick = -1;
-        if (e.hp <= 0) e.hp = e.maxHp;
-      }
-      if (CARRY_RULES.restoreHp) e.hp = e.maxHp;
-      if (CARRY_RULES.clearStatuses && e.status) e.status = {};
-      // PARTY: no parry window, dash / vault or pending cast rides across.
-      if (e.kind === 'ally') {
-        if (e.guard && e.guard.parry) e.guard = null;
-        e.skillDash = null;
-        e.pendingCast = null;
-      }
-      if (CARRY_RULES.resetCooldowns) {
-        if (Array.isArray(e.cds)) e.cds = e.cds.map(() => tick);
-        if (e.kind === 'ally' && Number.isFinite(e.dodgeReadyTick)) e.dodgeReadyTick = tick;
-      }
-    }
-    if (CARRY_RULES.resetCooldowns) {
-      const s = skillSys.serialize();
-      s.slots = s.slots.map((x) => (x ? { ...x, remaining: 0 } : null));
-      skillSys.restore(s);
-      player.dodgeReadyTick = tick;
-      player.nextBasicTick = tick;
-      player.dashTicksLeft = 0;
-    }
-    applyCarrySwitches(tick);
-  }
 
-  function applyCarrySwitches(tick) {
-    const R = CARRY_RULES;
-    if (!R.carrySkills || !R.carrySockets || !R.carryBench) {
-      const bs = cloneData(buildSys.saveState());
-      const keep = R.carrySkills ? null : new Set(STARTING_SKILLS);
-      const freed = [];
-      const rows = [];
-      for (const [id, row] of bs.assignments ?? []) {
-        if ((keep && !keep.has(id)) || !R.carrySockets) {
-          for (const r of row) if (r) freed.push({ ...r });
-          continue;
-        }
-        rows.push([id, row]);
-      }
-      bs.assignments = rows;
-      bs.bench = R.carryBench ? [...(bs.bench ?? []), ...freed] : [];
-      buildSys.loadState(bs);
-      if (keep) {
-        const s = skillSys.serialize();
-        const kit = new Array(SKILL_SLOTS).fill(null);
-        STARTING_SKILLS.forEach((id, i) => {
-          kit[i] = { id, remaining: 0 };
-        });
-        skillSys.restore({ slots: kit, override: s.override, auras: s.auras });
-      }
-    }
-    if (!R.carryGlint) wallet = 0;
-    if (!R.carryHealOverride) {
-      skillSys.clearOverride();
-      events.emit(tick, 'heal_override', { index: null });
-    }
-    if (!R.carrySeedStream && typeof rng.reseed === 'function') rng.reseed(Math.floor(rng.float() * 0x100000000) >>> 0);
-    if (!R.carryRecords && campaign) campaign.levels = campaign.levels.slice(-1);
-  }
 
-  // What the card shows about the build that rides into the next level.
-  function carriedSummary() {
-    const b = buildSys.view();
-    const owned = skillSys.slotsView().filter(Boolean).map((s) => s.id);
-    return {
-      skills: owned,
-      socketed: b.skills.reduce((n, s) => n + s.filled, 0),
-      sockets: b.skills.length * (b.socketCount ?? 8),
-      bench: b.bench.length,
-      wallet,
-      grant: campaign && campaign.grant ? cloneData(campaign.grant) : null,
-      // PARTY: the four builds that ride on (the card's compact lines).
-      ...(party ? { builds: partyBuilds() } : {}),
-    };
-  }
 
-  // PARTY: [{ seat, classId, skills, filled, sockets, bench, purse }] ×4.
-  function partyBuilds() {
-    const b = buildSys.view();
-    const out = [
-      {
-        seat: 0,
-        classId: 'healer',
-        skills: skillSys.slotsView().map((s) => (s ? s.id : null)),
-        filled: b.skills.reduce((n, s) => n + s.filled, 0),
-        sockets: 32,
-        bench: b.bench.length,
-        purse: wallet,
-      },
-    ];
-    for (const i of [1, 2, 3]) {
-      const v = party.view(i);
-      out.push({ seat: i, classId: v.classId, skills: [...v.slots], filled: v.filled, sockets: 32, bench: v.bench.length, purse: v.purse });
-    }
-    return out;
-  }
 
-  // Phase 'transit' — the level-clear card (kind 'clear') or the setting-out
-  // card of a Level-N start (kind 'depart'). The card is sim-timed.
-  function beginTransit(kind, from, to, tick) {
-    let leftovers = [];
-    if (kind === 'clear') {
-      leftovers = resetLevel(tick, 'level_clear');
-      restoreParty(tick);
-    }
-    const min = kind === 'clear' ? TRANSIT.clearTicks : to !== FIRST_LEVEL ? TRANSIT.departTicks : 0;
-    // THE LEVEL V FORK: the Level IV clear card waits for the party's road
-    // (pickRoad); until then it leads to the Spire, which it takes if nobody
-    // picks.
-    const roads = kind === 'clear' ? forkRoads(campaign, from) : null;
-    const wait = roads ? Math.max(min, TRANSIT.forkTicks) : min;
-    campaign.card = {
-      kind,
-      from,
-      to,
-      startTick: tick,
-      untilTick: tick + wait,
-      minSkipTick: tick + Math.min(min, TRANSIT.minSkipTicks),
-      hardUntilTick: tick + wait - min + TRANSIT.hardTicks,
-      summary: carriedSummary(),
-      leftovers,
-      // THE LEVEL V FORK: present only on the Level IV clear card of a
-      // campaign that has two roads ahead (`pick`: the party's, else null).
-      ...(roads ? { fork: { roads, pick: null } } : {}),
-      // ENDLESS: the depth the card leads to (present only then).
-      ...(campaign.endless ? { depth: campaign.index + (kind === 'clear' ? 1 : 0) } : {}),
-      // BOSS RUSH: the fight the card leads to (present only then).
-      ...(campaign.rush ? { fight: campaign.index + (kind === 'clear' ? 1 : 0), fights: campaign.rush.fights } : {}),
-    };
-    campaign.transitions += 1;
-    phase = 'transit';
-    events.emit(tick, 'level_transit', {
-      kind,
-      from,
-      to,
-      name: levelFor(to).name,
-      index: campaign.index + (kind === 'clear' ? 1 : 0),
-      untilTick: campaign.card.untilTick,
-      minSkipTick: campaign.card.minSkipTick,
-      hardUntilTick: campaign.card.hardUntilTick,
-      ...(campaign.endless ? { depth: campaign.card.depth } : {}),
-      ...(roads ? { fork: roads.slice() } : {}),
-    });
-  }
 
-  // THE LEVEL V FORK: the party picks its road on the Level IV clear card
-  // (the host in co-op). The card then leads to that road's Level V and
-  // sets out shortly after. -> { ok, road, to } | { refused }
-  function pickRoad(road, reason = 'pick') {
-    const c = campaign;
-    if (!active || phase !== 'transit' || !c || !c.card || !c.card.fork) return { refused: 'no_fork' };
-    const card = c.card;
-    if (card.fork.pick) return { refused: 'picked', road: card.fork.pick };
-    if (!card.fork.roads.includes(road) || !ROADS[road]) return { refused: 'road' };
-    const tick = getTick();
-    c.road = road;
-    card.fork.pick = road;
-    card.to = ROADS[road];
-    card.untilTick = Math.max(card.minSkipTick, tick + TRANSIT.forkSettleTicks);
-    card.hardUntilTick = tick + TRANSIT.hardTicks;
-    events.emit(tick, 'road_pick', { road, to: card.to, name: levelFor(card.to).name, from: card.from, reason });
-    return { ok: true, road, to: card.to };
-  }
 
-  // The card's Enter / the presentation's "ready" advance / the autopilot.
-  function campaignAdvance(reason = 'skip') {
-    if (!active || phase !== 'transit' || !campaign || !campaign.card) return null;
-    const tick = getTick();
-    if (tick < campaign.card.minSkipTick) return { refused: 'settle', inTicks: campaign.card.minSkipTick - tick };
-    return advanceLevel(typeof reason === 'string' ? reason : 'skip');
-  }
 
-  // Build the next level and walk into its room 1.
-  function advanceLevel(reason) {
-    const tick = getTick();
-    // A fork nobody picked takes the Spire's road.
-    if (campaign.card && campaign.card.fork && !campaign.card.fork.pick) pickRoad(DEFAULT_ROAD, 'default');
-    const card = campaign.card;
-    const to = card.to;
-    exitRoom(tick);
-    if (card.kind === 'clear') {
-      // A NEW level: its own run frame, rolled from the CARRIED run stream (no
-      // reseed), and fresh per-level counters. (A 'depart' card's level was
-      // opened — frame rolled, grant applied — before the card.)
-      act = to;
-      // DAILY: every level of the day's run rolls from the day, not from
-      // what the party drew in the level before.
-      if (campaign.daily) reseedTo(dailyLevelSeed(campaign.daily.seed, campaign.index + 1));
-      frame = rollFrame();
-      roomIndex = 0;
-      clearedRooms = 0;
-      roomsDone = 0;
-      rewardFor = { 1: 'skill' };
-      reward = null;
-      path = null;
-      shop = null;
-      spoils = null;
-      pendingRoom = 0;
-      fadeUntilTick = 0;
-      lastCombatLayout = null;
-      roomPlanView = null;
-      campaign.index += 1;
-      if (campaign.rush) rewardFor[RUN.bossRoom] = rushReward(campaign.index);
-      if (objectivesOn()) assignObjectives(frame.modes, frame.seed, campaign.index);
-      campaign.levels.push({ level: to, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
-    } else {
-      const rec = campaign.levels[campaign.levels.length - 1];
-      if (rec) rec.startTick = tick;
-    }
-    campaign.level = to;
-    campaign.levelStartTick = tick;
-    campaign.card = null;
-    events.emit(tick, 'level_start', {
-      level: to,
-      name: levelFor(to).name,
-      index: campaign.index,
-      from: card.kind === 'clear' ? card.from : null,
-      campaign: campaign.mode === 'campaign',
-      reason,
-      seed: frame.seed,
-      modes: [...frame.modes],
-      ...(campaign.endless ? { depth: campaign.index } : {}),
-      ...(campaign.rush ? { fight: campaign.index } : {}),
-    });
-    enterRoom(firstRoom());
-    return view();
-  }
 
   // ------------------------------------------------ tutorial (TUTORIAL.md) --
   // The guided first room: Level 1 room 1 at tutorialDiff, the waves held
@@ -2629,13 +1189,13 @@ export function createRunSystem({
   // as run_end { result: 'tutorial' } (the profile records nothing) and goes
   // straight home: return_to_camp { reason: 'tutorial' }.
   function tutorialOn() {
-    return !!(active && campaign && campaign.tutorial);
+    return !!(rs.active && rs.campaign && rs.campaign.tutorial);
   }
   function tutorialRelease() {
-    if (!tutorialOn() || !campaign.tutorial.hold) return null;
-    campaign.tutorial.hold = false;
-    if (phase === 'combat' && roomIndex === 1) waves.beginRoom();
-    events.emit(getTick(), 'tutorial_release', { room: roomIndex });
+    if (!tutorialOn() || !rs.campaign.tutorial.hold) return null;
+    rs.campaign.tutorial.hold = false;
+    if (rs.phase === 'combat' && rs.roomIndex === 1) waves.beginRoom();
+    events.emit(getTick(), 'tutorial_release', { room: rs.roomIndex });
     return { released: true };
   }
   function endTutorial(reason = 'done') {
@@ -2643,8 +1203,8 @@ export function createRunSystem({
     const tick = getTick();
     events.emit(tick, 'tutorial_end', { reason });
     endRun('tutorial');
-    phase = 'idle';
-    autoReturnTick = null;
+    rs.phase = 'idle';
+    rs.autoReturnTick = null;
     const leaked = registry.all().filter((e) => e.faction === 'hostile').length;
     waves.stop('return_to_camp');
     boss.despawn();
@@ -2656,13 +1216,13 @@ export function createRunSystem({
   // Quit to Lobby (pause menu, confirmed): the campaign is abandoned — the
   // records count it — and the world returns to camp with no end card.
   function abandonRun(reason = 'quit') {
-    if (!active) return null;
+    if (!rs.active) return null;
     // TUTORIAL: leaving the guided room is never a counted run.
     if (tutorialOn()) return endTutorial(typeof reason === 'string' ? reason : 'quit');
     const tick = getTick();
     const s = endRun('abandoned');
-    phase = 'idle';
-    autoReturnTick = null;
+    rs.phase = 'idle';
+    rs.autoReturnTick = null;
     const leaked = registry.all().filter((e) => e.faction === 'hostile').length;
     waves.stop('return_to_camp');
     boss.despawn();
@@ -2671,45 +1231,6 @@ export function createRunSystem({
     return { abandoned: true, summary: s };
   }
 
-  function campaignView() {
-    const c = campaign;
-    const tick = getTick();
-    if (!c) return { active: false, mode: null, autoReturnTick, autoReturnInTicks: autoReturnTick !== null ? Math.max(0, autoReturnTick - tick) : null };
-    const card = c.card
-      ? {
-          ...cloneData(c.card),
-          name: levelFor(c.card.to).name,
-          fromName: c.card.from !== null ? levelFor(c.card.from).name : null,
-          elapsedTicks: tick - c.card.startTick,
-          canSkip: tick >= c.card.minSkipTick,
-          due: tick >= c.card.untilTick,
-        }
-      : null;
-    return {
-      active,
-      mode: c.mode,
-      harness: c.harness,
-      startLevel: c.startLevel,
-      level: c.level,
-      name: levelFor(c.level).name,
-      index: c.index,
-      next: nextOf(c, c.level),
-      ...(c.road ? { road: c.road } : {}),
-      ...(c.endless ? { endless: true, depth: c.index, won: !!c.won } : {}),
-      ...(c.rush ? { rush: { fight: c.index, fights: c.rush.fights, line: cloneData(c.rush.line) } } : {}),
-      ...(c.tutorial ? { tutorial: { hold: !!c.tutorial.hold } } : {}),
-      levels: cloneData(c.levels),
-      levelsCleared: c.levels.filter((l) => l.cleared).length,
-      clearedAt: c.clearedAt,
-      card,
-      grant: cloneData(c.grant),
-      transitions: c.transitions,
-      startTick: c.startTick,
-      levelStartTick: c.levelStartTick,
-      autoReturnTick,
-      autoReturnInTicks: autoReturnTick !== null ? Math.max(0, autoReturnTick - tick) : null,
-    };
-  }
 
   // fix-M4a-r4: `{ upgrade: { skill, slot, replaces, why } }` when `nodeId`
   // would UPGRADE the build (no vacant usable socket, outranks a socketed
@@ -2720,223 +1241,19 @@ export function createRunSystem({
     return up ? { upgrade: up } : {};
   }
 
-  // ------------------------------------------------------------------ shop --
-  function openShop() {
-    // RELICS (Peddler's Seal): the Healer's shelf prices (identity when off).
-    const stock = draft.shopStock().map((s) => ({ ...s, price: relics.shopPrice(s.price), sold: false }));
-    shop = { stock, visited: true };
-    // TONICS AND BOMBS: the Peddler's tonic stand sells one kind a visit (a
-    // hash of the level and the room); each hero may buy one into an empty
-    // slot, from its own purse.
-    if (tonics.enabled() && frame && campaign) {
-      const item = standKind(frame.seed, campaign.index, roomIndex);
-      shop.stand = { item, price: relics.shopPrice(CONSUMABLES[item].price), bought: [false, false, false, false] };
-    }
-    events.emit(getTick(), 'shop_open', {
-      room: roomIndex,
-      wallet,
-      stock: stock.map((s) => ({ node: s.node, rarity: s.rarity, price: s.price })),
-      affordableAny2: stock.length >= 2,
-    });
-    // RELICS: the relic shelf (relic stream; null when relics are off).
-    relics.openShelf();
-    // Small fixes: an AI-held seat with the Glint takes a relic first (bought
-    // now under Auto, on Advance under Suggested), so its cards below are
-    // picked from what is left.
-    const reserve = planAiRelics();
-    // PARTY: each ally's own 4-card class shelf (party stream, seats 1 → 3).
-    if (allyOn()) pages.openShop(roomIndex, reserve);
-    // v0.5.237 (Kesh: "shouldn't be able to control the Healer's shop ... it
-    // should be done by AI"): a Healer the player does not control (class
-    // select, or an AI seat in co-op) shops like the other AI seats — its
-    // picks marked under Suggested (bought on Advance), bought now under Auto.
-    if (healerAiShops()) {
-      const picks = suggestShelf(shop.stock, wallet - reserve[0]);
-      if (party.mode() === 'suggest') {
-        shop.marked = shop.stock.map((_, k) => picks.includes(k));
-        shop.touched = false;
-      } else if (party.mode() === 'auto') {
-        for (const k of picks) {
-          const r = buy(k, { by: 'ai' });
-          if (!r || r.denied) break;
-        }
-      }
-    }
-  }
-
-  // Small fixes: AI-held seats (Healer first, then seats 1 → 3; none under
-  // Ally builds Manual) each take at most one relic off the shelf: its own
-  // class relic, else one for no class, when its purse covers the price.
-  // Another class's relic stays for that seat. Under Auto the relic is bought
-  // at once; under Suggested it is held (shop.relicPlan) and bought first on
-  // Advance. Returns each seat's held Glint. Nothing when relics are off.
-  function planAiRelics() {
-    const reserve = [0, 0, 0, 0];
-    if (!allyOn() || !party || party.mode() === 'manual') return reserve;
-    const shelf = relics.view().shelf;
-    if (!shelf) return reserve;
-    const c = controllers();
-    const plan = {};
-    const taken = new Set();
-    for (const seat of [0, 1, 2, 3]) {
-      if (c[seat] === 'human') continue;
-      const purse = seat === 0 ? wallet : party.purse(seat);
-      const cls = seat === 0 ? 'healer' : party.lineup()[seat];
-      const fits = (k) => !taken.has(k) && relics.shelfItem(k) && shelf[k].price <= purse;
-      const own = shelf.findIndex((r, k) => r.cls === cls && fits(k));
-      const k = own >= 0 ? own : shelf.findIndex((r, k2) => !r.cls && fits(k2));
-      if (k < 0) continue;
-      taken.add(k);
-      if (party.mode() === 'auto') buyRelic(seat, k);
-      else {
-        plan[seat] = k;
-        reserve[seat] = shelf[k].price;
-      }
-    }
-    if (Object.keys(plan).length) shop.relicPlan = plan;
-    return reserve;
-  }
-  // Suggested: the held relics, bought as the party leaves (a seat a human
-  // took over since, or a relic gone or now too dear, is skipped).
-  function buyPlannedRelics() {
-    if (!shop || !shop.relicPlan) return;
-    const c = controllers();
-    for (const [seat, k] of Object.entries(shop.relicPlan)) if (c[seat] !== 'human') buyRelic(Number(seat), k);
-    delete shop.relicPlan;
-  }
 
 
-  // RELICS: buy relic `index` off the relic shelf from `seat`'s purse (the
-  // Healer's is the run wallet). The relic is the whole party's.
-  function buyRelic(seat, index) {
-    if (phase !== 'shop' || !shop) return null;
-    const s = Number(seat) | 0;
-    const i = Number(index) | 0;
-    const item = relics.shelfItem(i);
-    if (!item) return null;
-    if (s !== 0 && !(allyOn() && party && party.purse(s) !== null)) return null;
-    const purse = s === 0 ? wallet : party.purse(s);
-    const tick = getTick();
-    if (purse < item.price) {
-      events.emit(tick, 'relic_denied', { seat: s, relic: item.id, price: item.price, wallet: purse, index: i });
-      return { denied: 'insufficient_funds', price: item.price, purse };
-    }
-    if (s === 0) wallet -= item.price;
-    else party.spend(s, item.price);
-    const left = s === 0 ? wallet : party.purse(s);
-    const id = relics.sellShelf(i, s, left);
-    return { relic: id, price: item.price, purse: left, seat: s };
-  }
 
-  // PARTY: a purchase for an ally, from ITS purse (`partyBuy`); seat 0 is
-  // the Healer's buy() above.
-  function partyBuy(seat, index) {
-    if (phase !== 'shop') return null;
-    if (Number(seat) === 0) return buy(index);
-    if (!pages || !pages.shopOpen()) return null;
-    return pages.buy(Number(seat), index, { by: 'human' });
-  }
-  function partyShopMark(seat, index, on) {
-    if (phase !== 'shop' || !pages || !pages.shopOpen()) return null;
-    if (Number(seat) === 0) {
-      // The AI-held Healer's Suggested marks live on the run's own shelf.
-      if (!shop || !shop.marked || !shop.stock[index]) return null;
-      const v = on === undefined ? !shop.marked[index] : !!on;
-      shop.marked[index] = v;
-      events.emit(getTick(), 'party_shop_mark', { seat: 0, index, on: v });
-      return v;
-    }
-    return pages.mark(Number(seat), index, on);
-  }
-  function partyShopDone(seat) {
-    if (phase !== 'shop' || !pages || !pages.shopOpen()) return null;
-    pages.done(Number(seat));
-    // The host's Advance countdown is running and this was the last human
-    // it waited on: leave at once.
-    const v = pages.shopView();
-    if (v && v.leaveTick !== null && pages.humansNotDone(v.leaveBy ?? hostSeat()).length === 0) advanceFromShop({ force: true });
-    return true;
-  }
-  // The seat whose Advance is the host's (the Healer; a migrated host's
-  // session passes its own seat as `by`).
-  const hostSeat = () => 0;
-  // PARTY: a socket screen opened / closed (network sessions only).
-  function partyScreen(seat, open) {
-    if (!pages) return null;
-    return pages.setScreen(seat, open);
-  }
 
-  // §14: integer wallet, atomic spend; insufficient funds => `currency_denied`
-  // no-op — the item is NEVER hidden or greyed for price (§16: plaque emphasis
-  // + one ~300 ms shake, item stays).
-  // An AI-held Healer (controllers()[0] is not 'human') in a party run.
-  const healerAiShops = () => allyOn() && !!party && controllers()[0] !== 'human';
-  const seatPursesOn = () => allyOn() && !!party && controllers().some((c, i) => (i === 0 ? c !== 'human' : c === 'human'));
-  function buy(index, { by = 'human' } = {}) {
-    if (phase !== 'shop' || !shop) return null;
-    const card = shop.stock[index];
-    if (!card || card.sold) return null;
-    const tick = getTick();
-    if (wallet < card.price) {
-      events.emit(tick, 'currency_denied', {
-        node: card.node,
-        price: card.price,
-        wallet,
-        index,
-      });
-      return { denied: 'insufficient_funds', price: card.price, wallet };
-    }
-    wallet -= card.price;
-    buildSys.grantNode(card.node, 'purchased'); // card departs to the bench
-    card.sold = true;
-    // The player bought for an AI-held Healer (Manual): its marks are void.
-    if (by === 'human' && shop.marked) {
-      shop.touched = true;
-      shop.marked = shop.marked.map(() => false);
-    }
-    const owned = draft.ownedCount(card.node);
-    events.emit(tick, 'shop_purchase', {
-      node: card.node,
-      price: card.price,
-      wallet,
-      owned,
-      index,
-    });
-    return { node: card.node, price: card.price, wallet, owned };
-  }
 
-  // TONICS AND BOMBS: `seat` buys the stand's tonic into its empty slot,
-  // from its own purse (the Healer's is the run wallet).
-  function buyTonic(seat, { by = 'human' } = {}) {
-    if (phase !== 'shop' || !shop || !shop.stand || !tonics.enabled()) return null;
-    const s = Number(seat) | 0;
-    if (!(s >= 0 && s <= 3)) return null;
-    if (s !== 0 && !(allyOn() && party && party.purse(s) !== null)) return null;
-    const st = shop.stand;
-    const tick = getTick();
-    const purse = s === 0 ? wallet : party.purse(s);
-    const deny = (reason) => {
-      events.emit(tick, 'tonic_denied', { seat: s, reason, item: st.item, price: st.price, wallet: purse });
-      return { denied: reason, price: st.price, purse };
-    };
-    if (st.bought[s]) return deny('bought');
-    if (tonics.slot(s) !== null) return deny('full');
-    if (purse < st.price) return deny('insufficient_funds');
-    if (s === 0) wallet -= st.price;
-    else party.spend(s, st.price);
-    st.bought[s] = true;
-    const left = s === 0 ? wallet : party.purse(s);
-    tonics.grant(st.item, 'shop', s);
-    events.emit(tick, 'tonic_buy', { seat: s, item: st.item, price: st.price, purse: left, by });
-    return { item: st.item, price: st.price, purse: left, seat: s };
-  }
+
   // TONICS AND BOMBS: this tick's slot presses (the world calls it after the
   // content pass): `list` = [{ seat, aim }] from the Healer's own snapshot and
   // the human seats' input frames, resolved in seat order; then the AI-held
   // seats (and the Healer under the autopilot) look at theirs.
   function useTonics(list) {
-    if (!active || !tonics.enabled()) return;
-    const live = phase === 'combat';
+    if (!rs.active || !tonics.enabled()) return;
+    const live = rs.phase === 'combat';
     for (const u of [...list].sort((a, b) => a.seat - b.seat)) tonics.use(u.seat, u.aim ?? null, live);
     const c = controllers();
     // SECRET ROOMS: the autopilot's Healer throws a bomb it holds at a cracked
@@ -2951,124 +1268,41 @@ export function createRunSystem({
     tonics.aiStep(ai, live);
   }
 
-  // SHOP REFRESH (v0.5.248): the price `seat`'s next refresh costs this
-  // visit (the Peddler's Seal discount applies, like the cards).
-  function refreshCost(seat) {
-    const s = Number(seat) | 0;
-    const n = s === 0 ? (shop && shop.refreshes) || 0 : pages ? pages.refreshes(s) : 0;
-    return relics.shopPrice(refreshPrice(n));
-  }
-  // A press on the shelf's Refresh: `seat` pays from its own purse (the
-  // Healer's is the run wallet) and its whole node shelf is redrawn from its
-  // class pool under the same stratified draw as the open (the Healer's from
-  // the run's seeded stream, an ally's from the party stream). The relic
-  // shelf is the whole party's and stays. AI seats never refresh, so a run
-  // with no press draws exactly as before.
-  function refreshShop(seat = 0) {
-    if (phase !== 'shop' || !shop) return null;
-    const s = Number(seat) | 0;
-    const price = refreshCost(s);
-    if (s !== 0) {
-      if (!allyOn() || !pages || !pages.shopOpen() || party.purse(s) === null) return null;
-      return pages.refresh(s, price);
-    }
-    const tick = getTick();
-    const n = shop.refreshes || 0;
-    if (wallet < price) {
-      events.emit(tick, 'refresh_denied', { seat: 0, price, wallet });
-      return { denied: 'insufficient_funds', price, wallet };
-    }
-    wallet -= price;
-    shop.stock = draft.shopStock().map((c) => ({ ...c, price: relics.shopPrice(c.price), sold: false }));
-    shop.refreshes = n + 1;
-    // The player chose for an AI-held Healer's shelf (Manual): marks void.
-    if (shop.marked) {
-      shop.touched = true;
-      shop.marked = shop.stock.map(() => false);
-    }
-    events.emit(tick, 'shop_refresh', { seat: 0, price, wallet, n: n + 1, stock: shop.stock.map((c) => ({ node: c.node, rarity: c.rarity, price: c.price })) });
-    return { seat: 0, price, wallet, refreshes: n + 1 };
-  }
 
-  function advanceFromShop({ force = false, by = null } = {}) {
-    if (phase !== 'shop') return null;
-    // PARTY (BUILD_BRIEF §25.7): with >= 2 humans the Advance leaves at once
-    // only when every OTHER human pressed Done; else a 15 s countdown (shown
-    // to all) — the countdown or the shop's own 90 s deadline then force it.
-    if (!force && pages && pages.shopOpen() && pages.humans() >= 2) {
-      const waiting = pages.humansNotDone(by ?? hostSeat());
-      if (waiting.length > 0) {
-        const v = pages.shopView();
-        const leaveTick = v && v.leaveTick !== null ? v.leaveTick : pages.startAdvanceCountdown(getTick(), by ?? hostSeat());
-        return { countdown: true, leaveTick, waiting };
-      }
-    }
-    // PARTY: every AI-held shelf's still-marked buys (Suggested), benches
-    // auto-filled, then the shelves close. Held relics go first: the marks
-    // were picked from what they leave.
-    buyPlannedRelics();
-    if (shop && shop.marked && !shop.touched && healerAiShops() && party.mode() === 'suggest') {
-      shop.marked.forEach((m, k) => {
-        if (m && !shop.stock[k].sold && wallet >= shop.stock[k].price) buy(k, { by: 'ai' });
-      });
-      shop.marked = shop.marked.map(() => false);
-    }
-    if (healerAiShops() && party.mode() !== 'manual') buildSys.autoFill();
-    if (pages && pages.shopOpen()) pages.closeShop();
-    // TONICS AND BOMBS: an AI-held hero with an empty slot buys at the stand
-    // with what its purse has left (none under Ally builds Manual).
-    if (shop && shop.stand && (!party || party.mode() !== 'manual')) {
-      const c = controllers();
-      for (const s of [0, 1, 2, 3]) {
-        if (s === 0 ? !healerAiShops() : c[s] === 'human' || !allyOn()) continue;
-        if (tonics.slot(s) === null && !shop.stand.bought[s] && (s === 0 ? wallet : party.purse(s) ?? 0) >= shop.stand.price) buyTonic(s, { by: 'ai' });
-      }
-    }
-    // The shop room is a room the player leaves behind, so it counts toward
-    // the §18 summary row (it pays no stipend — `clearedRooms` is untouched).
-    roomsDone = Math.max(roomsDone, RUN.shopRoom);
-    events.emit(getTick(), 'shop_close', {
-      wallet,
-      sold: shop.stock.filter((s) => s.sold).length,
-      roomsDone,
-    });
-    beginFade(RUN.bossRoom); // one-way (§16)
-    return { nextRoom: RUN.bossRoom };
-  }
 
   // ------------------------------------------------------------- run end --
   function buildSummary(result) {
     // CAMPAIGN: the level being played when the run ended records its rooms.
-    if (campaign) {
-      const rec = campaign.levels[campaign.levels.length - 1];
+    if (rs.campaign) {
+      const rec = rs.campaign.levels[rs.campaign.levels.length - 1];
       if (rec && !rec.cleared) {
-        rec.rooms = roomsDone;
-        rec.ticks = getTick() - campaign.levelStartTick;
+        rec.rooms = rs.roomsDone;
+        rec.ticks = getTick() - rs.campaign.levelStartTick;
       }
     }
     const b = buildSys.view();
     return {
       result,
       victory: result === 'victory',
-      act,
-      actName: levelFor(act).name,
-      challenge,
-      rooms: roomsDone, // §18 "ROOMS CLEARED n / 8" — every room left behind
-      combatRooms: clearedRooms, // the §14 stipend counter (max 7)
-      lastRoom: roomIndex,
-      glint: wallet,
-      seed: frame ? frame.seed : null,
-      ticks: getTick() - startTick,
+      act: rs.act,
+      actName: levelFor(rs.act).name,
+      challenge: rs.challenge,
+      rooms: rs.roomsDone, // §18 "ROOMS CLEARED n / 8" — every room left behind
+      combatRooms: rs.clearedRooms, // the §14 stipend counter (max 7)
+      lastRoom: rs.roomIndex,
+      glint: rs.wallet,
+      seed: rs.frame ? rs.frame.seed : null,
+      ticks: getTick() - rs.startTick,
       skills: skillSys
         .slotsView()
         .filter(Boolean)
         .map((s) => s.id),
-      ...(party ? { builds: partyBuilds() } : {}),
+      ...(party ? { builds: RF.partyBuilds() } : {}),
       ...(relics.enabled() ? { relics: relics.owned(), curses: relics.view().cursesTaken } : {}),
       // SECRET ROOMS: the walls found of the walls seen (present only once one showed).
       ...(secrets.enabled() && secrets.summary().seen > 0 ? { secrets: secrets.summary() } : {}),
       // UNLOCKS: what the run was started with (present only when something was).
-      ...(campaign && campaign.boons ? { boons: cloneData(campaign.boons) } : {}),
+      ...(rs.campaign && rs.campaign.boons ? { boons: cloneData(rs.campaign.boons) } : {}),
       nodes: {
         bench: b.bench.map((x) => x.node),
         socketed: b.skills.flatMap((sk) =>
@@ -3080,41 +1314,41 @@ export function createRunSystem({
         .filter((e) => e.partyIndex !== undefined)
         .map((e) => ({ index: e.partyIndex, hp: r2(e.hp), maxHp: e.maxHp })),
       // PLAN §12.8: the campaign this run was (levels played, cleared, time).
-      campaign: campaign
+      campaign: rs.campaign
         ? {
-            mode: campaign.mode,
-            harness: campaign.harness,
-            startLevel: campaign.startLevel,
-            level: campaign.level,
-            index: campaign.index,
-            levels: cloneData(campaign.levels),
-            levelsCleared: campaign.levels.filter((l) => l.cleared).length,
-            complete: campaign.mode === 'campaign' && !campaign.rush && (result === 'victory' || !!campaign.won),
-            grant: cloneData(campaign.grant),
+            mode: rs.campaign.mode,
+            harness: rs.campaign.harness,
+            startLevel: rs.campaign.startLevel,
+            level: rs.campaign.level,
+            index: rs.campaign.index,
+            levels: cloneData(rs.campaign.levels),
+            levelsCleared: rs.campaign.levels.filter((l) => l.cleared).length,
+            complete: rs.campaign.mode === 'campaign' && !rs.campaign.rush && (result === 'victory' || !!rs.campaign.won),
+            grant: cloneData(rs.campaign.grant),
             // ENDLESS: how deep the descent went (present only on one).
-            ...(campaign.endless ? { endless: true, depth: campaign.index, depthsCleared: campaign.levels.filter((l) => l.cleared).length, won: !!campaign.won } : {}),
+            ...(rs.campaign.endless ? { endless: true, depth: rs.campaign.index, depthsCleared: rs.campaign.levels.filter((l) => l.cleared).length, won: !!rs.campaign.won } : {}),
             // BOSS RUSH: how many bosses fell, of how many, and the line.
-            ...(campaign.rush
+            ...(rs.campaign.rush
               ? {
                   rush: {
-                    felled: campaign.levels.filter((l) => l.cleared).length,
-                    fights: campaign.rush.fights,
+                    felled: rs.campaign.levels.filter((l) => l.cleared).length,
+                    fights: rs.campaign.rush.fights,
                     won: result === 'victory',
-                    line: cloneData(campaign.rush.line),
+                    line: cloneData(rs.campaign.rush.line),
                   },
                 }
               : {}),
             // DAILY: the day and how deep the run got (rooms across levels).
-            ...(campaign.daily
+            ...(rs.campaign.daily
               ? {
                   daily: {
-                    key: campaign.daily.key,
-                    relic: campaign.daily.relic,
-                    curse: campaign.daily.curse,
-                    depth: dailyDepth({ index: campaign.index, rooms: roomsDone, won: result === 'victory', levels: campaign.index }),
+                    key: rs.campaign.daily.key,
+                    relic: rs.campaign.daily.relic,
+                    curse: rs.campaign.daily.curse,
+                    depth: dailyDepth({ index: rs.campaign.index, rooms: rs.roomsDone, won: result === 'victory', levels: rs.campaign.index }),
                     won: result === 'victory',
-                    seed: campaign.daily.seed,
-                    ...(campaign.daily.practice ? { practice: true } : {}),
+                    seed: rs.campaign.daily.seed,
+                    ...(rs.campaign.daily.practice ? { practice: true } : {}),
                   },
                 }
               : {}),
@@ -3124,20 +1358,20 @@ export function createRunSystem({
   }
 
   function endRun(result) {
-    if (!active) return null;
+    if (!rs.active) return null;
     const tick = getTick();
-    summary = buildSummary(result);
+    rs.summary = buildSummary(result);
     tonics.clearRoom();
     events.emit(tick, 'run_end', {
       result,
-      rooms: summary.rooms,
-      glint: summary.glint,
-      skills: [...summary.skills],
-      nodes: summary.nodes.bench.length + summary.nodes.socketed.length,
-      ticks: summary.ticks,
-      act,
-      challenge,
-      campaign: summary.campaign ? cloneData(summary.campaign) : null,
+      rooms: rs.summary.rooms,
+      glint: rs.summary.glint,
+      skills: [...rs.summary.skills],
+      nodes: rs.summary.nodes.bench.length + rs.summary.nodes.socketed.length,
+      ticks: rs.summary.ticks,
+      act: rs.act,
+      challenge: rs.challenge,
+      campaign: rs.summary.campaign ? cloneData(rs.summary.campaign) : null,
     });
     // §2/§13: ALL run state is wiped at run end (the end screen renders from
     // the frozen summary above, never from live state). Gauntlet r6 (journey
@@ -3150,8 +1384,8 @@ export function createRunSystem({
     // to Lobby has no card and resets at once.
     if (result === 'abandoned' || result === 'tutorial') wipeState({ silent: false });
     else endWorld();
-    phase = result; // 'victory' | 'defeat'
-    return summary;
+    rs.phase = result; // 'victory' | 'defeat'
+    return rs.summary;
   }
 
   // Everything the run owns goes back to boot condition (§13 "Wiped at run
@@ -3168,22 +1402,22 @@ export function createRunSystem({
   function endWorld() {
     const tick = getTick();
     exitRoom(tick);
-    lastCombatLayout = null;
-    roomPlanView = null;
-    campaign = null; // (endRun froze it into the summary first)
-    active = false;
-    roomIndex = 0;
-    reward = null;
-    path = null;
-    shop = null;
-    frame = null;
-    rewardFor = {};
-    pendingRoom = 0;
-    roomsDone = 0;
-    clearedRooms = 0;
-    spoils = null;
-    spoilsTotal = 0;
-    phase = 'idle';
+    rs.lastCombatLayout = null;
+    rs.roomPlanView = null;
+    rs.campaign = null; // (endRun froze it into the summary first)
+    rs.active = false;
+    rs.roomIndex = 0;
+    rs.reward = null;
+    rs.path = null;
+    rs.shop = null;
+    rs.frame = null;
+    rs.rewardFor = {};
+    rs.pendingRoom = 0;
+    rs.roomsDone = 0;
+    rs.clearedRooms = 0;
+    rs.spoils = null;
+    rs.spoilsTotal = 0;
+    rs.phase = 'idle';
     // The encounter director stops dead (schedule + spawn telegraphs +
     // Waystone), then the boss + adds, every hostile body and shot, and every
     // zone go. From here combatAllowed() is false, so enemies.spawn is a hard
@@ -3202,7 +1436,7 @@ export function createRunSystem({
     // (the boundary's free revive stands a fallen party up — at the return,
     // never under the defeat card)
     allySys.cmd('roomBoundary');
-    wallet = RUN.startingGlint;
+    rs.wallet = RUN.startingGlint;
     const kit = new Array(SKILL_SLOTS).fill(null);
     STARTING_SKILLS.forEach((id, i) => {
       kit[i] = { id, remaining: 0 };
@@ -3222,15 +1456,15 @@ export function createRunSystem({
     player.dodgeReadyTick = tick;
     player.nextBasicTick = tick;
     player.dashTicksLeft = 0;
-    if (!silent) events.emit(tick, 'run_wiped', { wallet, skills: STARTING_SKILLS.length });
+    if (!silent) events.emit(tick, 'run_wiped', { wallet: rs.wallet, skills: STARTING_SKILLS.length });
   }
 
   function returnToCamp() {
     // The camp hub scene lands with its own block; the run's world went at
     // run end, so this dismisses the end screen and resets the loadout.
-    if (phase !== 'victory' && phase !== 'defeat') return null;
-    phase = 'idle';
-    autoReturnTick = null;
+    if (rs.phase !== 'victory' && rs.phase !== 'defeat') return null;
+    rs.phase = 'idle';
+    rs.autoReturnTick = null;
     // Debug assertion for §18: nothing hostile may ride into the hub. The
     // count is taken BEFORE the belt-and-braces sweep so a leak is visible in
     // the event payload even though the sweep removes it.
@@ -3242,52 +1476,52 @@ export function createRunSystem({
     // so a card restored from a save resets too).
     resetLoadout({ silent: false });
     events.emit(getTick(), 'return_to_camp', { enemies: leaked });
-    return { phase, enemies: leaked };
+    return { phase: rs.phase, enemies: leaked };
   }
 
   // -------------------------------------------------------------- ticking --
   function continuous() {
-    if (active && roomIndex === RUN.bossRoom && phase === 'combat') boss.continuous();
+    if (rs.active && rs.roomIndex === RUN.bossRoom && rs.phase === 'combat') boss.continuous();
   }
 
   function discrete() {
-    if (active && roomIndex === RUN.bossRoom && phase === 'combat') boss.resolve();
+    if (rs.active && rs.roomIndex === RUN.bossRoom && rs.phase === 'combat') boss.resolve();
   }
 
   function endOfTick() {
     // RELICS: this tick's procs (Thorn Mail, Leech Fang) land first.
-    if (active) relics.endOfTick();
+    if (rs.active) relics.endOfTick();
     // KEYS AND VAULTS: a fallen key lands; a hero walking over one takes it;
     // in the vault, over a pile or the platter.
     // TONICS AND BOMBS: drops land, heroes walk over them, bombs land, fire
     // burns.
-    if (active && tonics.enabled()) tonics.step(controllers());
-    if (active && vaults.enabled()) {
+    if (rs.active && tonics.enabled()) tonics.step(controllers());
+    if (rs.active && vaults.enabled()) {
       vaults.step();
-      if (phase === 'vault') stepVault();
+      if (rs.phase === 'vault') RF.stepVault();
     }
-    if (active && phase === 'secret') stepSecret();
-    if (active && roomIndex === RUN.bossRoom && phase === 'combat') boss.endOfTick();
+    if (rs.active && rs.phase === 'secret') RF.stepSecret();
+    if (rs.active && rs.roomIndex === RUN.bossRoom && rs.phase === 'combat') boss.endOfTick();
     // Status bookkeeping for the tick that just resolved (announce + prune),
     // before a fade can walk into the next room.
     statusTracker.endOfTick();
     // PARTY: network deadlines (armed live; nothing in single-player).
-    if (pages && (phase === 'reward' || phase === 'path' || phase === 'shop')) partyDeadlines();
+    if (pages && (rs.phase === 'reward' || rs.phase === 'path' || rs.phase === 'shop')) partyDeadlines();
     // PARTY: a held door leaves when every human socket screen closed or the
     // hold ran out (the screens close and bank a node in hand).
-    if (phase === 'path' && path && path.hold && (getTick() >= path.hold.untilTick || !pages || !pages.humanScreenOpen())) {
-      const side = path.hold.side;
-      const timedOut = getTick() >= path.hold.untilTick;
-      path.hold = null;
+    if (rs.phase === 'path' && rs.path && rs.path.hold && (getTick() >= rs.path.hold.untilTick || !pages || !pages.humanScreenOpen())) {
+      const side = rs.path.hold.side;
+      const timedOut = getTick() >= rs.path.hold.untilTick;
+      rs.path.hold = null;
       if (timedOut) events.emit(getTick(), 'party_socket_close', { reason: 'door' });
-      choosePath(side, { hold: false });
+      RF.choosePath(side, { hold: false });
     }
-    if (phase === 'fade' && getTick() >= fadeUntilTick) enterRoom(pendingRoom);
+    if (rs.phase === 'fade' && getTick() >= rs.fadeUntilTick) enterRoom(rs.pendingRoom);
     // PLAN §12.2: the card's own hard bound — the sim advances whatever the
     // presentation does (hidden host tab, no UI, a stuck preload).
-    if (phase === 'transit' && campaign && campaign.card && getTick() >= campaign.card.hardUntilTick) advanceLevel('timeout');
+    if (rs.phase === 'transit' && rs.campaign && rs.campaign.card && getTick() >= rs.campaign.card.hardUntilTick) RF.advanceLevel('timeout');
     // CAMPAIGN COMPLETE -> camp, in sim time (pause holds it; guests follow).
-    if (phase === 'victory' && autoReturnTick !== null && getTick() >= autoReturnTick) returnToCamp();
+    if (rs.phase === 'victory' && rs.autoReturnTick !== null && getTick() >= rs.autoReturnTick) returnToCamp();
   }
 
   // PARTY (PLAN §16.3 / §16.5): arm / fire the network deadlines.
@@ -3296,30 +1530,30 @@ export function createRunSystem({
     pages.syncDeadlines(tick);
     const due = pages.due(tick);
     if (!due) return;
-    if (due === 'page' && phase === 'reward') {
+    if (due === 'page' && rs.phase === 'reward') {
       pages.timeoutPage();
       const c0 = pages.card(0);
       if (c0 && !c0.decided) {
         // The Healer's own card (a human host that never chose): the §25.8 rule.
-        const choice = reward && reward.type ? (reward.swap ? reward.suggest : 'take') : 'leave';
-        pages.pick(0, choice, reward && reward.swap ? reward.replace : null, { by: 'timeout' });
-        events.emit(tick, 'party_autopick', { seat: 0, reason: 'timeout', choice, id: reward ? reward.id : null });
+        const choice = rs.reward && rs.reward.type ? (rs.reward.swap ? rs.reward.suggest : 'take') : 'leave';
+        pages.pick(0, choice, rs.reward && rs.reward.swap ? rs.reward.replace : null, { by: 'timeout' });
+        events.emit(tick, 'party_autopick', { seat: 0, reason: 'timeout', choice, id: rs.reward ? rs.reward.id : null });
       }
-      commitPage('timeout');
-    } else if (due === 'door' && phase === 'path') {
+      RF.commitPage('timeout');
+    } else if (due === 'door' && rs.phase === 'path') {
       // KEYS AND VAULTS: the AI takes the vault door when it holds a key.
-      const vs = path && path.options[1] && path.options[1].vault ? 1 : 0;
+      const vs = rs.path && rs.path.options[1] && rs.path.options[1].vault ? 1 : 0;
       events.emit(tick, 'party_autopick', { seat: 0, reason: 'door_timeout', choice: vs ? 'right' : 'left' });
-      choosePath(vs);
-    } else if (due === 'shop' && phase === 'shop') {
-      advanceFromShop({ force: true });
+      RF.choosePath(vs);
+    } else if (due === 'shop' && rs.phase === 'shop') {
+      RF.advanceFromShop({ force: true });
     }
   }
 
   // §2: defeat = all 4 party members Downed simultaneously (the ONLY defeat
   // rule). The ally block owns the predicate and emits `defeat`.
   function onDefeat() {
-    if (!active) return;
+    if (!rs.active) return;
     // TUTORIAL: a fallen party just goes home (no defeat card, no record).
     if (tutorialOn()) {
       endTutorial('defeat');
@@ -3329,790 +1563,53 @@ export function createRunSystem({
   }
 
   // ----------------------------------------------------------------- view --
-  const combatActive = () => active && phase === 'combat';
+  const combatActive = () => rs.active && rs.phase === 'combat';
 
-  function view() {
-    return {
-      active,
-      phase,
-      combatActive: combatActive(),
-      room: roomIndex,
-      rooms: RUN.rooms,
-      act,
-      actName: levelFor(act).name,
-      challenge,
-      // Slice 2: the boss this run meets, from room 6 on (the shop's Advance
-      // label, the boss banner); absent earlier so the hashed view of the
-      // certified early rooms is unchanged.
-      // THIRD BOSSES: present only when a gated boss can join (hash-stable view).
-      ...(thirdOpen.length ? { thirdBosses: thirdOpen.slice() } : {}),
-      ...(active && roomIndex >= 6 ? { actBoss: { kind: currentBoss().kind, name: currentBoss().name } } : {}),
-      // ENDLESS: present only on an endless descent (hash-stable view).
-      ...(endlessDepth() ? { endless: { depth: endlessDepth(), won: !!campaign.won } } : {}),
-      // DAILY: present only on the day's run (hash-stable view).
-      ...(active && campaign && campaign.daily ? { daily: { key: campaign.daily.key, ...(campaign.daily.practice ? { practice: true } : {}) } } : {}),
-      // BOSS RUSH: present only on a rush (hash-stable view).
-      ...(active && campaign && campaign.rush ? { rush: { fight: campaign.index, fights: campaign.rush.fights } } : {}),
-      // TUTORIAL: present only in the guided first room (hash-stable view).
-      ...(tutorialOn() ? { tutorial: { hold: !!campaign.tutorial.hold } } : {}),
-      layout: layout ? { ...layout } : null,
-      mode: frame && roomIndex ? frame.modes[roomIndex - 1] : null,
-      wallet,
-      // Small fixes: every seat's Glint ([Healer wallet, seat 1-3 purses]) so
-      // the HUD counter reads the viewer's own; present only when a seat
-      // other than the Healer is played (class select, co-op), so a solo
-      // Healer run hashes as before.
-      ...(seatPursesOn() ? { purses: [wallet, party.purse(1), party.purse(2), party.purse(3)] } : {}),
-      clearedRooms,
-      roomsDone,
-      freeSkillSlots: draft.freeSkillSlots(),
-      frame: frame
-        ? { seed: frame.seed, modes: [...frame.modes], defendAt: [...frame.defendAt], sides: [...frame.sides] }
-        : null,
-      rewardFor: { ...rewardFor },
-      // fix-M4a-r4: `upgrades` (the drops that upgrade a full build) is
-      // present only when non-empty — the view is part of snapshotState(), so
-      // a fill-only run hashes exactly as it did before the fix.
-      spoils: spoils
-        ? spoils.upgrades && spoils.upgrades.length
-          ? { room: spoils.room, nodes: [...spoils.nodes], upgrades: [...spoils.upgrades] }
-          : { room: spoils.room, nodes: [...spoils.nodes] }
-        : null,
-      spoilsTotal,
-      reward: reward
-        ? {
-            type: reward.type,
-            id: reward.id,
-            promised: reward.promised,
-            substituted: reward.substituted,
-            line: reward.line,
-            freeSkillSlots: reward.freeSkillSlots,
-            // fix-M4a-r4: `pool: 'upgrade'` when drawn from the upgrade
-            // layer, `upgrade` = the swap target read LIVE (the player may
-            // re-socket while the page is up; absent once the node would fill
-            // a vacant socket), `reason` = why an empty offer is empty. Each
-            // key is present only when set (hash-stable view, see spoils).
-            ...(reward.pool ? { pool: reward.pool } : {}),
-            ...upgradeKey(reward.type === 'node' ? reward.id : null),
-            ...(reward.reason ? { reason: reward.reason } : {}),
-            // Ruling A17: a swap offer's pending Replaces slot + the AI's
-            // suggestion (present only on a swap — hash-stable view).
-            ...(reward.swap ? { swap: true, replace: reward.replace, suggest: reward.suggest } : {}),
-          }
-        : null,
-      path: path
-        ? {
-            nextRoom: path.nextRoom,
-            focus: path.focus,
-            freeSkillSlots: path.freeSkillSlots,
-            options: path.options.map((o) => ({ ...o })),
-            // PARTY socket hold (present only while held — hash-stable).
-            ...(path.hold ? { hold: { side: path.hold.side, untilTick: path.hold.untilTick, inTicks: Math.max(0, path.hold.untilTick - getTick()) } } : {}),
-          }
-        : null,
-      shop: shop
-        ? {
-            wallet,
-            stock: shop.stock.map((s) => ({
-              node: s.node,
-              rarity: s.rarity,
-              price: s.price,
-              sold: s.sold,
-              owned: draft.ownedCount(s.node),
-              // fix-M4a-r4: the swap target when this card UPGRADES a full
-              // build — present only then (hash-stable view).
-              ...upgradeKey(s.sold ? null : s.node),
-              affordable: wallet >= s.price,
-              // An AI-held Healer's Suggested pick (key present only then).
-              ...(shop.marked ? { marked: !!shop.marked[shop.stock.indexOf(s)] } : {}),
-            })),
-            // The AI-held Healer's shelf: the player bought on it (Manual).
-            ...(shop.marked ? { touched: !!shop.touched } : {}),
-            // SHOP REFRESH: how often the Healer's shelf was redrawn this
-            // visit (present only after one — hash-stable).
-            ...(shop.refreshes ? { refreshes: shop.refreshes } : {}),
-            // TONICS AND BOMBS: the tonic stand (present only with tonics on).
-            ...(shop.stand ? { stand: { item: shop.stand.item, price: shop.stand.price, bought: [...shop.stand.bought] } } : {}),
-          }
-        : null,
-      boss: active && roomIndex === RUN.bossRoom ? boss.view() : null,
-      // PARTY: the party page / shelves (keys present only while open, so a
-      // v0.5.150 view hashes exactly as before when none is up).
-      ...(pages && pages.isOpen() ? { party: pages.pageView() } : {}),
-      ...(pages && pages.shopOpen() ? { partyShop: pages.shopView() } : {}),
-      // PARTY: which socket screens are open (network only; present only then).
-      ...(pages && pages.screensAny() ? { socketScreens: pages.screens() } : {}),
-      // RELICS: present only while a run with relics is live (hash-stable).
-      ...(active && relics.enabled() ? { relics: relics.view() } : {}),
-      // EVENT ROOMS: present only while an encounter is live (hash-stable).
-      ...(active && encounters.view(encCtx()) ? { encounter: encounters.view(encCtx()) } : {}),
-      // KEYS AND VAULTS: present only in a run with keys (hash-stable).
-      ...(active && vaults.enabled() ? { vaults: vaults.view() } : {}),
-      // TONICS AND BOMBS: present only in a run with tonics (hash-stable).
-      ...(active && tonics.enabled() ? { tonics: tonics.view() } : {}),
-      // SECRET ROOMS: present only in a run with secrets (hash-stable).
-      ...(active && secrets.enabled() ? { secrets: secrets.view() } : {}),
-      // SHRINES: present only in a run with shrines.
-      ...(active && shrine ? { shrine: shrineView() } : {}),
-      // UNLOCKS: the run's boons (present only when the player picked some).
-      ...(active && campaign && campaign.boons ? { boons: cloneData(campaign.boons) } : {}),
-      summary,
-      fadeTicksLeft: phase === 'fade' ? Math.max(0, fadeUntilTick - getTick()) : 0,
-    };
-  }
 
-  // ----------------------------------------------- debug cmds (TESTING.md) --
-  function cmd(name, args) {
-    switch (name) {
-      case 'startRun':
-        // ('startRun', { act, challenge }) — PLAN §6.4; bypasses act locks.
-        return startRun(args[0] && typeof args[0] === 'object' ? args[0] : { act: args[0], challenge: args[1] });
-      // ------------------------------------------ CAMPAIGN (PLAN §12.11) --
-      case 'startCampaign': {
-        // ('startCampaign', { level, challenge, depart }) — a developer path:
-        // bypasses the unlock chain and marks the run harness.
-        const o = args[0] && typeof args[0] === 'object' ? args[0] : { level: args[0], challenge: args[1] };
-        return startCampaign({ harness: true, ...o });
-      }
-      case 'campaignAdvance':
-        return campaignAdvance(args[0] ?? 'skip');
-      case 'pickRoad':
-        // ('pickRoad', 'spire' | 'kiln') — the Level IV clear card's fork.
-        return pickRoad(String(args[0] ?? ''), 'pick');
-      case 'abandonRun':
-        return abandonRun(args[0] ?? 'quit');
-      case 'tutorialRelease':
-        return tutorialRelease();
-      case 'endTutorial':
-        return endTutorial(args[0] ?? 'skip');
-      case 'campaignState':
-        return campaignView();
-      case 'campaignRules':
-        return campaignRules();
-      case 'endlessRules':
-        return endlessRules();
-      case 'rushRules':
-        return rushRules();
-      case 'rushJump': {
-        // ('rushJump', fight) — probes: a live rush clears the fight it is in
-        // AS fight - 1 and opens the card to `fight` (marks the campaign
-        // harness). Never outside a rush.
-        if (!active || !campaign || !campaign.rush || phase === 'transit') return null;
-        const d = Math.min(RUSH_RULES.fights, Math.max(campaign.index + 1, Number(args[0]) | 0));
-        const tick = getTick();
-        campaign.harness = true;
-        campaign.index = d - 1;
-        act = rushAct(d - 1);
-        campaign.level = act;
-        campaign.levels.push({ level: act, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
-        onLevelCleared(tick);
-        return campaignView();
-      }
-      case 'endlessJump': {
-        // ('endlessJump', depth) — probes: a live endless descent clears the
-        // level it is in AS depth - 1 and opens the card to `depth` (marks
-        // the campaign harness). Never in a plain campaign.
-        if (!active || !campaign || !campaign.endless || phase === 'transit') return null;
-        const d = Math.max(campaign.index + 1, Number(args[0]) | 0);
-        const tick = getTick();
-        campaign.harness = true;
-        campaign.index = d - 1;
-        act = levelOfDepth(d - 1);
-        campaign.level = act;
-        if (d - 1 > ACT_IDS.length) campaign.won = true;
-        campaign.levels.push({ level: act, index: campaign.index, startTick: tick, rooms: 0, cleared: false, ticks: 0 });
-        onLevelCleared(tick);
-        return campaignView();
-      }
-      // ------------------------------------------ Gauntlet M4a probe cmds --
-      case 'setStatus': {
-        // ('setStatus', id, kind, mag, ticks) -> the stored record | refusal
-        const [id, kind, mag = 0.5, ticks = 120] = args;
-        const e = registry.byId(id);
-        if (!e) return { error: 'no_entity' };
-        const why = combat.status.refusal(e, kind, getTick());
-        if (why) return { refused: why };
-        const rec = combat.status.apply(e, kind, mag, ticks, getTick(), player.id);
-        return rec ? { ...rec } : { refused: 'non_positive' };
-      }
-      case 'clearStatus': {
-        const [id, kind] = args;
-        const e = registry.byId(id);
-        if (!e) return { error: 'no_entity' };
-        return combat.status.clear(e, kind ?? null);
-      }
-      case 'statusOf': {
-        const [id] = args;
-        const e = registry.byId(id);
-        return e ? combat.status.view(e, getTick()) : null;
-      }
-      case 'autopilot':
-        return autopilot.configure(args[0] === undefined ? true : args[0]);
-      case 'echoArm':
-        return buildSys.echoArm(args[0]);
-      case 'resonance':
-        return buildSys.setResonance(args[0], args[1]);
-      case 'roomPlan':
-        return roomPlanFull();
-      case 'difficultyTable':
-        return null; // served by the content service (data/difficulty.js)
-      case 'keenProbe': {
-        // ('keenProbe', id, critBonus) — one real damage instance (power 1,
-        // no knockback) through the §9 pipeline with a crit bonus: the probe
-        // that measures Keen's roll (G4a.3). Draws exactly one crit roll.
-        const [id, bonus = 0] = args;
-        const t = registry.byId(id);
-        if (!t) return null;
-        return combat.applyDamage(t, 1, { delivery: 'skill', shape: 'debug', attacker: null, source: 'keen_probe', critBonus: bonus });
-      }
-      case 'runState':
-        return view();
-      case 'draftTake':
-        // ('draftTake'[, slot]) — ruling A17: the slot a swap replaces.
-        return takeReward(Number.isInteger(args[0]) ? args[0] : undefined);
-      case 'draftReplace':
-        return setRewardReplace(args[0]);
-      // ------------------------------------------- PARTY (PLAN §16.11) --
-      case 'partyPick':
-        return partyPick(args[0], args[1], Number.isInteger(args[2]) ? args[2] : null, { by: 'human' });
-      case 'partyReplace':
-        // ('partyReplace', seat, slot) — move a swap card's Replaces mark.
-        if (Number(args[0]) === 0) return setRewardReplace(args[1]);
-        return pages && pages.isOpen() ? pages.setReplace(Number(args[0]), args[1]) : null;
-      case 'partyCommit':
-        return phase === 'reward' && pages && pages.isOpen() ? commitPage('commit') : null;
-      case 'partyPage':
-        return pages ? pages.pageView() : null;
-      case 'partyShop':
-        return pages ? pages.shopView() : null;
-      case 'partyBuy':
-        return partyBuy(args[0], args[1] ?? 0);
-      case 'partyShopMark':
-        return partyShopMark(args[0], args[1], args[2]);
-      case 'partyShopDone':
-        return partyShopDone(args[0]);
-      case 'difficultyLegacy':
-        // ('difficultyLegacy', on) — Node-only determinism proof (PLAN §16.9):
-        // the v0.5.150 difficulty constants back in force. Never set by the game.
-        return setDifficultyLegacy(args[0] !== false);
-      case 'partyScreen':
-        // ('partyScreen', seat, open) — a socket screen open / closed (the
-        // network socket hold, BUILD_BRIEF §25.7).
-        return partyScreen(args[0], args[1]);
-      case 'partySupply':
-        // Node determinism proof only (PLAN §16.9): the ally supply off.
-        if (args[0] !== undefined) supplyOn = !!args[0] && !!pages;
-        return supplyOn;
-      case 'partyGrant': {
-        // ('partyGrant', level | 'max') — now, between rooms (probes).
-        if (!party) return null;
-        if (args[0] === 'max') {
-          stressHealer();
-          return party.stress();
-        }
-        const gr = grantFor(Number(args[0]));
-        return gr && gr.allies ? party.applyGrant(gr.allies, 'grant') : null;
-      }
-      case 'partyHarnessGrant':
-        // ('partyHarnessGrant', N | 'max' | null) — applied at the next run start.
-        harnessGrant = args[0] === undefined ? null : args[0];
-        return harnessGrant;
-      case 'draftDecline':
-        return declineReward();
-      // ------------------------------------------------------ RELICS --
-      case 'relicChoose':
-        return chooseRelic(args[0]);
-      case 'relicFocus':
-        return focusRelic(args[0] ?? 0);
-      case 'relics':
-        // ('relics'[, on]) — turn relics on / off for the live run (probes;
-        // a single-level startRun() has them off).
-        if (args[0] !== undefined) {
-          if (args[0] && !relics.enabled()) relics.reset(frame ? frame.seed : rng.seed, true);
-          else if (!args[0]) relics.reset(0, false);
-        }
-        return relics.enabled() ? relics.view() : null;
-      case 'relicsDefault':
-        // ('relicsDefault', on) — whether the NEXT campaign rolls relics.
-        if (args[0] !== undefined) relicsDefault = !!args[0];
-        return relicsDefault;
-      case 'relicGrant':
-        return relics.grant(args[0]);
-      case 'relicDemo':
-        // VFX lab: ('relicDemo', relicId) — a batch-4 room relic's beat here.
-        return relics.demo(args[0]);
-      case 'relicBuy':
-        // ('relicBuy', index[, seat]) — buy off the shop's relic shelf.
-        return buyRelic(args[1] ?? 0, args[0] ?? 0);
-      case 'relicPool':
-        // Batch 3: the relic ids a pick could offer now (class relics only
-        // while their class stands in the party).
-        return relics.enabled() ? relics.pool() : null;
-      case 'relicHit': {
-        // Batch 3 probe: ('relicHit', targetId, attackerId|null, power, crit)
-        // — one real party hit through the §9 pipeline.
-        const [id, by = null, power = 10, crit = false] = args;
-        const t = registry.byId(id);
-        if (!t) return null;
-        return combat.applyDamage(t, power, { delivery: 'basic', shape: 'debug', attacker: by, source: 'relic_probe', forceCrit: !!crit, kbDist: 0 });
-      }
-      case 'relicStatus': {
-        // Batch 3 probe / VFX lab: ('relicStatus', id, kind, mag, ticks,
-        // seat|null) — a real status from a party seat (a Tank taunt, an
-        // exposure), announced like any other at the end of the tick.
-        const [id, kind, mag = 1, ticks = 120, seat = null] = args;
-        const t = registry.byId(id);
-        const src = Number.isInteger(seat) ? registry.all().find((e) => e.partyIndex === seat) : null;
-        if (!t) return null;
-        return !!combat.status.apply(t, kind, mag, ticks, getTick(), src ? src.id : null);
-      }
-      case 'relicRoomEnter':
-        // VFX lab: ('relicRoomEnter', mode) — replay the relics' room-entry
-        // procs as if this room were a `mode` room (Huntsman's Horn,
-        // Pilgrim's Lamp).
-        if (!relics.enabled() || !active) return null;
-        relics.onRoomEnter(roomIndex, args[0]);
-        return true;
-      case 'relicHeal': {
-        // Batch 3 probe: ('relicHeal', targetId, healerId|null, amount).
-        const [id, by = null, amount = 10] = args;
-        const t = registry.byId(id);
-        if (!t) return null;
-        return combat.applyHeal(t, amount, { healer: by, source: 'relic_probe' });
-      }
-      case 'relicDropNext':
-        // Probe / VFX lab: the next elite the party kills drops a relic.
-        return relics.dropNext();
-      case 'relicCurseHere':
-        // Probe / VFX lab: ('relicCurseHere', curseId) curses the live room now
-        // (its telegraph and healing rules; its wave numbers are already rolled).
-        if (!relics.enabled() || phase !== 'combat') return null;
-        relics.takeCurse(args[0], roomIndex);
-        relics.onRoomEnter(roomIndex, frame ? frame.modes[roomIndex - 1] : 'kill_all');
-        return relics.view().curse;
-      // ----------------------------------------------- ROOM OBJECTIVES --
-      case 'objectiveRoom': {
-        // ('objectiveRoom', 'hunt'|'purge'|'escort'|'hold'|'kill_all', room) — a later combat
-        // room of this level becomes that room (probes, screenshots).
-        const m = args[0];
-        const n = Number(args[1]);
-        if (!active || !frame || !(isObjectiveMode(m) || m === 'kill_all')) return null;
-        if (!(Number.isInteger(n) && n > roomIndex && n >= 2 && n <= 6) || frame.modes[n - 1] === 'defend') return null;
-        frame.modes[n - 1] = m;
-        return [...frame.modes];
-      }
-      case 'objectiveDebug':
-        // ESCORT AND HOLD: ('objectiveDebug', 'road', 0.9) puts the pilgrim
-        // 90% along its road; ('objectiveDebug', 'clock', 600) leaves the
-        // hold 10 s (probes, screenshots).
-        return active ? waves.debugObjective(args[0], args[1]) : null;
-      // ------------------------------------------------- CHAMPION ROOMS --
-      case 'championRoom': {
-        // ('championRoom', room) — a later combat room of this level becomes
-        // the champion's room (probes, screenshots, the VFX lab).
-        const n = Number(args[0]);
-        if (!active || !frame || !championsOn()) return null;
-        if (!(Number.isInteger(n) && n > roomIndex && n >= 2 && n <= 6)) return null;
-        frame.modes[n - 1] = 'champion';
-        frame.defendAt = frame.defendAt.filter((r) => r !== n);
-        return [...frame.modes];
-      }
-      case 'crownDoor':
-        // ('crownDoor'[, side]) — the next path screen carries the crown door.
-        if (!active || !championsOn()) return null;
-        forcedCrown = { room: roomIndex + 1, side: args[0] === 1 ? 1 : 0 };
-        return { ...forcedCrown };
-      case 'championPick': {
-        // ('championPick'[, id]) — this level's champion (by seed); with an
-        // id of the act's own, force it for the rest of the level.
-        if (!active || !frame || !championsOn()) return null;
-        if (args.length && args[0] != null) {
-          const c = championById(String(args[0]));
-          if (!c) return null;
-          forcedChampion = { index: campaign.index, id: c.id };
-        }
-        return levelChampion();
-      }
-      case 'crownOf':
-        // The crown this level rolled: { room, side }.
-        return active && frame && championsOn() ? crownFor(frame.seed, campaign.index) : null;
-      // ------------------------------------------------ KEYS AND VAULTS --
-      case 'tonicGive': {
-        // ('tonicGive', seat, id) — fill a hero's slot (probes, screenshots).
-        if (!active || !tonics.enabled()) return null;
-        tonics.setSlot(Number(args[0] ?? 0), args.length > 1 ? args[1] : 'mend_tonic');
-        return tonics.view();
-      }
-      case 'tonicDrop': {
-        // ('tonicDrop', id[, x, z]) — one falls in the live room.
-        if (!active || !tonics.enabled()) return null;
-        return tonics.drop(args[0] ?? 'mend_tonic', 'probe', Number(args[1] ?? 0), Number(args[2] ?? -2));
-      }
-      case 'tonicUse': {
-        // ('tonicUse', seat[, x, z]) — the seat presses its slot now.
-        if (!active || !tonics.enabled()) return null;
-        return tonics.use(Number(args[0] ?? 0), args[1] !== undefined ? { x: Number(args[1]), z: Number(args[2] ?? 0) } : null, phase === 'combat');
-      }
-      // ------------------------------------------------- SHRINES --
-      case 'shrineState':
-        return shrine ? shrineView() : null;
-      case 'shrineHere': {
-        // ('shrineHere'[, biome[, x, z]]) — a shrine stands in the live
-        // combat room now (probes, screenshots, the lab).
-        if (!active || !shrine || phase !== 'combat') return null;
-        const id = SHRINES[args[0]] ? args[0] : levelFor(act)?.biome;
-        shrine.used = false;
-        shrine.room = roomIndex;
-        shrine.id = id;
-        for (const e of registry.all()) if (e.kind === 'shrine') registry.despawn(e.id);
-        const at = args[1] !== undefined ? [Number(args[1]), Number(args[2] ?? 0)] : shrineSpot(roomIndex);
-        return spawnShrine(id, at[0], at[1], getTick());
-      }
-      case 'shrineRoom': {
-        // ('shrineRoom', n) — this level's shrine aims at room n.
-        if (!active || !shrine) return null;
-        shrine.aim = Number(args[0]);
-        shrine.room = null;
-        return shrine.aim;
-      }
-      case 'shrineUse':
-        // ('shrineUse'[, seat]) — the seat offers at the live shrine now.
-        return useShrine(Number(args[0] ?? 0));
-      case 'tonicState':
-        return tonics.enabled() ? { ...tonics.view(), stand: shop && shop.stand ? { ...shop.stand, bought: [...shop.stand.bought] } : null } : null;
-      case 'keyGive': {
-        // The party holds a key (probes, screenshots).
-        if (!active || !vaults.enabled()) return null;
-        if (!vaults.held()) vaults.loadState({ ...vaults.saveState(), key: { from: args[0] === 'elite' ? 'elite' : 'champion', room: roomIndex, kind: 'probe' } });
-        return vaults.view();
-      }
-      case 'keyDrop': {
-        // ('keyDrop'[, x, z]) — a key falls in the live room.
-        if (!active || !vaults.enabled()) return null;
-        return vaults.drop('elite', 'probe', Number(args[0] ?? 0), Number(args[1] ?? -2), roomIndex);
-      }
-      case 'vaultDoor':
-        // ('vaultDoor', side) — the next path screen's vault door prefers this side.
-        if (!active || !vaults.enabled()) return null;
-        forcedVault = args[0] === 1 ? 1 : 0;
-        return forcedVault;
-      case 'vaultRoom': {
-        // ('vaultRoom', n) — a later room of this level becomes the vault.
-        const n = Number(args[0]);
-        if (!active || !frame || !vaults.enabled()) return null;
-        if (!(Number.isInteger(n) && n > roomIndex && n >= 2 && n <= 6)) return null;
-        frame.modes[n - 1] = 'vault';
-        frame.defendAt = frame.defendAt.filter((r) => r !== n);
-        return [...frame.modes];
-      }
-      case 'vaultOpen':
-        return openVault();
-      // SECRET ROOMS probes.
-      case 'secretWall':
-        // ('secretWall', n?, holds?) — room n of this level (default: the
-        // live room, placed now) hides a wall; `holds` forces its content.
-        if (!active || !frame || !secrets.enabled()) return null;
-        if (args[1] !== undefined) forcedHolds = String(args[1]);
-        if (args[0] === undefined || Number(args[0]) === roomIndex) {
-          if (phase !== 'combat' || !secrets.canPlace()) return null;
-          const e = placeWall(roomIndex, frame.modes[roomIndex - 1], getTick());
-          return e ? secrets.view().wall : null;
-        }
-        forcedWall = Number(args[0]);
-        return forcedWall;
-      case 'secretOpen':
-        // ('secretOpen') — the live room's wall breaks open now.
-        return active && secrets.shut() ? openWall('probe', 0) : null;
-      case 'secretTake':
-        return openSecret();
-      case 'relicSealKnock':
-        // RELICS batch 6 (probe / VFX lab): a breaking blow on a Sealed
-        // Door's wall, turned by the seal.
-        if (!active || !secrets.shut() || !relics.wallSealed()) return null;
-        sealedKnock(0);
-        return true;
-      case 'secretState':
-        return secrets.enabled() ? secrets.view() : null;
-      case 'vaultState':
-        return vaults.enabled() ? vaults.view() : null;
-      case 'relicDoor':
-        // ('relicDoor', curseId[, side]) — the next path screen's cursed door.
-        return relics.forceDoor(args[0], args[1] ?? 0);
-      // ----------------------------------------------- ELITE AFFIXES --
-      case 'affixRule':
-        // The live room's roll rule ({ count, salt } | null).
-        return affixRule();
-      case 'affixes':
-        // Every live affixed elite: { id, etype, affixes, ward, blink }.
-        return registry
-          .all()
-          .filter((e) => Array.isArray(e.affixes) && e.state === 'active')
-          .map((e) => ({ id: e.id, etype: e.kind, affixes: [...e.affixes], hp: Math.round(e.hp * 100) / 100, maxHp: e.maxHp, ward: e.affixWard ?? null, blink: e.blink ? { ...e.blink } : null, x: Math.round(e.x * 100) / 100, z: Math.round(e.z * 100) / 100 }));
-      case 'affixData':
-        return { ids: Object.keys(AFFIXES), rules: AFFIX_RULES };
-      // ------------------------------------------------- EVENT ROOMS --
-      case 'eventDoor':
-        // ('eventDoor', encounterId[, side]) — the next path screen's "?" door.
-        return encounters.force(args[0], args[1] ?? 0);
-      case 'eventMajor':
-        // ('eventMajor', curseId) — probe / lab: bind a major curse now (the
-        // Heart Crystal feeds on them).
-        return relics.takeMajor(args[0], roomIndex);
-      case 'eventLand':
-        // The land the door roll reads ('wood' | 'mill' | 'barrow' | 'heart').
-        return encCtx().land;
-      case 'eventOpen':
-        return openEncounter();
-      case 'eventFocus':
-        return focusEncounter(args[0] ?? 0);
-      case 'eventChoose':
-        return chooseEncounter(args[0]);
-      case 'eventState':
-        return encounters.view(encCtx());
-      case 'pathFocus':
-        return focusPath(args[0] ?? 0);
-      case 'pathChoose':
-        return choosePath(args[0] ?? 0);
-      case 'shopBuy':
-        return buy(args[0] ?? 0);
-      case 'shopRefresh':
-        // ('shopRefresh'[, seat]) — redraw that seat's shelf for Glint.
-        return refreshShop(args[0] ?? 0);
-      case 'shopRefreshCost':
-        return phase === 'shop' ? refreshCost(args[0] ?? 0) : null;
-      case 'shopAdvance':
-        return advanceFromShop();
-      case 'returnToCamp':
-        return returnToCamp();
-      case 'endRun':
-        return endRun(args[0] === 'defeat' ? 'defeat' : 'victory');
-      case 'skipToRoom': {
-        // Jump the run frame forward for scripted probes: clears the live room
-        // and walks straight into room n (rewards/paths for the skipped rooms
-        // are not presented; the stipends they would have paid ARE, so the
-        // §14 wallet arithmetic still holds at the shop).
-        // ('skipToRoom', n[, { act, challenge }]) — a live run keeps its act;
-        // with no run live, the options start one in that act.
-        const n = Math.max(1, Math.min(RUN.rooms, args[0] ?? 1));
-        if (!active) startRun(args[1] && typeof args[1] === 'object' ? args[1] : {});
-        // A level-transition card is between two levels: advance it first
-        // (the skip then lands in the NEW level), never skip inside the old one.
-        if (phase === 'transit' && campaign && campaign.card) advanceLevel('skip_room');
-        phase = 'skip'; // suppresses the boundary sequence on the forced clear
-        waves.forceClear();
-        boss.despawn();
-        enemies.reset();
-        sweepPlayerTransients(getTick(), 'skip');
-        // §14: the stipend is +12 per COMBAT-room clear. The shop room pays
-        // nothing, so skipping past it must not mint 12 Glint out of thin air
-        // — walking to room 7 or room 8 both land on the deterministic 72.
-        const combatBefore = frame.modes
-          .slice(0, n - 1)
-          .filter((m) => m === 'kill_all' || m === 'defend' || m === 'boss' || m === 'champion' || isObjectiveMode(m)).length;
-        while (clearedRooms < combatBefore) {
-          clearedRooms += 1;
-          gainGlint(RUN.stipend, 'skip_stipend');
-          if (allyOn()) pages.stipend('skip_stipend'); // PARTY: every purse keeps the §14 arithmetic
-        }
-        roomsDone = Math.max(roomsDone, n - 1); // every room before n is behind us
-        enterRoom(n);
-        return view();
-      }
-      case 'bossHp':
-        // ('bossHp', pct[, skipPhases]) — skipPhases marks the add waves at or
-        // above pct as already played, so no adds spawn for them.
-        return boss.setHpPct(args[0] ?? 0.5, args[1] === true);
-      case 'bossPick':
-        // ('bossPick', kind | null) — probes and benches: the boss room meets
-        // this boss when it belongs to the level (data/levels.js bossFor).
-        bossPick = typeof args[0] === 'string' ? args[0] : null;
-        return bossPick;
-      case 'killBoss': {
-        const b = boss.entity();
-        if (!b) return null;
-        combat.kill(b);
-        return true;
-      }
-      case 'wallet': {
-        if (args[0] !== undefined) {
-          wallet = Math.max(0, Math.round(args[0]));
-          events.emit(getTick(), 'glint_set', { wallet });
-        }
-        return wallet;
-      }
-      case 'draftPools':
-        return {
-          skill: draft.skillPool(),
-          node: draft.nodePool(),
-          upgrade: draft.upgradePool(), // fix-M4a-r4: the layer a full build draws from
-          free: draft.freeSkillSlots(),
-        };
-      case 'autoFill':
-        // The socket screen's Auto-fill (M4c D7) — the same policy the
-        // autopilot uses; refused while combat is live.
-        return buildSys.autoFill();
-      default:
-        return undefined;
-    }
-  }
 
   // The live room's plan: difficulty numbers + the rolled waves (wave rooms).
   function roomPlanFull() {
-    if (!roomPlanView) return null;
+    if (!rs.roomPlanView) return null;
     const w = typeof waves.planView === 'function' ? waves.planView() : null;
-    return { ...roomPlanView, waves: w ? w.waves : [], roster: w ? w.roster : [], legacy: w ? w.legacy : null };
+    return { ...rs.roomPlanView, waves: w ? w.waves : [], roster: w ? w.roster : [], legacy: w ? w.legacy : null };
   }
 
   // PLAN §3.6 (a): M4b's content systems register here; enter() is called
   // synchronously at the room-enter point (same tick, before room_enter),
   // exit() when the room is left and at run end.
   function setRoomHooks(h = {}) {
-    roomHooks = {
+    rs.roomHooks = {
       enter: typeof h.enter === 'function' ? h.enter : null,
       exit: typeof h.exit === 'function' ? h.exit : null,
     };
     return true;
   }
 
-  // Persistence (PLAN §3.4) for the Gauntlet additions (the v0.4.63 run frame
-  // members are captured by M2's world-level capture).
-  const expeditionState = () => ({
-    act,
-    challenge,
-    layout: layout ? { ...layout } : null,
-    lastCombatLayout,
-    roomPlan: roomPlanView ? { ...roomPlanView } : null,
-    autopilot: autopilot.serialize(),
-  });
-  function restoreExpedition(d) {
-    if (!d) return;
-    act = ACT_IDS.includes(d.act) ? d.act : 1;
-    challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
-    layout = d.layout ? { ...d.layout } : null;
-    lastCombatLayout = d.lastCombatLayout ?? null;
-    roomPlanView = d.roomPlan ? { ...d.roomPlan } : null;
-    autopilot.restore(d.autopilot);
-  }
 
-  // Save system (docs/gauntlet/PLAN.md §3.4, M2): the COMPLETE run frame —
-  // the v0.4.63 members plus the expedition state and the autopilot (the
-  // draft and status tracker are stateless; roomHooks are wiring, not state).
-  function saveState() {
-    return {
-      active,
-      roomIndex,
-      phase,
-      wallet,
-      frame,
-      reward,
-      path,
-      shop,
-      summary,
-      pendingRoom,
-      fadeUntilTick,
-      rewardFor,
-      clearedRooms,
-      roomsDone,
-      startTick,
-      everStarted,
-      act,
-      challenge,
-      layout,
-      lastCombatLayout,
-      roomPlan: roomPlanView,
-      autopilot: autopilot.serialize(),
-      spoils,
-      spoilsTotal,
-      // CAMPAIGN (schema 3): the level director's whole state, the card included.
-      campaign: cloneData(campaign),
-      autoReturnTick,
-      // PARTY (schema 4, PLAN §16.6): the party page, the shelves, the door
-      // deadline — present only when something is open.
-      ...(pages && (pages.isOpen() || pages.shopOpen() || pages.doorDeadline() !== null || pages.screensAny()) ? { partyPages: pages.saveState() } : {}),
-      // RELICS: present only when the run rolls relics.
-      ...(active && relics.enabled() ? { relics: relics.saveState() } : {}),
-      // EVENT ROOMS: present only when the run rolls "?" doors.
-      ...(active && encounters.enabled() ? { encounters: encounters.saveState() } : {}),
-      // KEYS AND VAULTS: present only in a run with keys.
-      ...(active && vaults.enabled() ? { vaults: vaults.saveState() } : {}),
-      ...(active && tonics.enabled() ? { tonics: tonics.saveState() } : {}),
-      ...(active && secrets.enabled() ? { secrets: secrets.saveState() } : {}),
-      ...(active && shrine ? { shrine: cloneData(shrine) } : {}),
-      ...(bossPick ? { bossPick } : {}),
-      ...(thirdOpen.length ? { thirdBosses: thirdOpen.slice() } : {}),
-    };
-  }
-  function loadState(d) {
-    if (!d || typeof d.phase !== 'string') throw new TypeError('run.loadState: missing phase');
-    active = !!d.active;
-    roomIndex = d.roomIndex ?? 0;
-    phase = d.phase;
-    wallet = d.wallet ?? RUN.startingGlint;
-    frame = d.frame ?? null;
-    reward = d.reward ?? null;
-    path = d.path ?? null;
-    shop = d.shop ?? null;
-    summary = d.summary ?? null;
-    pendingRoom = d.pendingRoom ?? 0;
-    fadeUntilTick = d.fadeUntilTick ?? 0;
-    rewardFor = d.rewardFor ?? {};
-    clearedRooms = d.clearedRooms ?? 0;
-    roomsDone = d.roomsDone ?? 0;
-    startTick = d.startTick ?? 0;
-    everStarted = !!d.everStarted;
-    act = ACT_IDS.includes(d.act) ? d.act : 1;
-    challenge = CHALLENGE[d.challenge] ? d.challenge : 'standard';
-    bossPick = typeof d.bossPick === 'string' ? d.bossPick : null;
-    thirdOpen = Array.isArray(d.thirdBosses) ? d.thirdBosses.filter((a) => ACT_IDS.includes(a)) : [];
-    layout = d.layout ?? null;
-    lastCombatLayout = d.lastCombatLayout ?? null;
-    roomPlanView = d.roomPlan ?? null;
-    autopilot.restore(d.autopilot ?? null);
-    // M4c additions — absent in a tree migrated from schema 1.
-    spoils = d.spoils ?? null;
-    spoilsTotal = Number.isFinite(d.spoilsTotal) ? d.spoilsTotal : 0;
-    // CAMPAIGN additions (schema 3; save/codec.js MIGRATIONS[2] fills them
-    // for an older act run). A live run with no campaign record is treated as
-    // a campaign from its act, so an in-memory older payload still advances.
-    campaign = d.campaign ? cloneData(d.campaign) : null;
-    if (!campaign && active) {
-      campaign = {
-        mode: 'campaign',
-        harness: false,
-        startLevel: act,
-        level: act,
-        index: 1,
-        levels: [{ level: act, index: 1, startTick, rooms: roomsDone, cleared: false, ticks: 0 }],
-        startTick,
-        levelStartTick: startTick,
-        clearedAt: 0,
-        card: null,
-        grant: null,
-        transitions: 0,
-      };
-    }
-    autoReturnTick = Number.isFinite(d.autoReturnTick) ? d.autoReturnTick : null;
-    if (pages) pages.loadState(d.partyPages ?? null);
-    relics.loadState(d.relics ?? null);
-    encounters.loadState(d.encounters ?? null);
-    vaults.loadState(d.vaults ?? null);
-    tonics.loadState(d.tonics ?? null);
-    secrets.loadState(d.secrets ?? null);
-    shrine = d.shrine ? cloneData(d.shrine) : null;
-  }
 
+  Object.assign(RF, { abandonRun, affixRule, beginFade, endRun, endTutorial, enterRoom, exitRoom, gainGlint, positionParty, reseedTo, returnToCamp, rollFrame, roomPlanFull, sealedKnock, startCampaign, startRun, stressHealer, sweepPlayerTransients, tutorialOn, tutorialRelease, upgradeKey, vowedDiff }); // the closure's own functions the parts call
+  Object.assign(RF, createRunShop({ rs, RF, allyOn, buildSys, controllers, draft, events, getTick, pages, party, relics, tonics }));
+  Object.assign(RF, createRunShrines({ rs, RF, championsOn, events, getTick, party, player, registry, relics, tonics, vaults }));
+  Object.assign(RF, createVaultRoom({ rs, RF, allyOn, combat, events, getTick, party, registry, relics, tonics, vaults }));
+  Object.assign(RF, createSecretRoom({ rs, RF, allyOn, encCtx, encounters, events, getTick, party, player, registry, relics, secrets, tonics }));
+  Object.assign(RF, createEventRoom({ rs, RF, allyOn, combat, encCtx, encounterBody, encounters, endlessDepth, events, getTick, objectivesOn, party, player, registry, relics, roomLevel, skillSys, waves }));
+  Object.assign(RF, createRunCommands({ rs, RF, allyOn, autopilot, boss, buildSys, championsOn, combat, draft, encCtx, encounters, enemies, events, getTick, levelChampion, pages, party, player, registry, relics, rng, secrets, tonics, vaults, waves }));
+  Object.assign(RF, createRunSave({ rs, autopilot, encounters, pages, relics, secrets, tonics, vaults }));
+  Object.assign(RF, createRunView({ rs, RF, boss, combatActive, currentBoss, draft, encCtx, encounters, endlessDepth, getTick, nextOf, pages, party, relics, secrets, tonics, vaults }));
+  Object.assign(RF, createRunLevels({ rs, RF, allySys, boss, buildSys, currentBoss, encounters, enemies, events, firstRoom, forkRoads, getTick, nextOf, objectivesOn, pages, party, player, registry, relics, rng, secrets, skillSys, vaults, waves }));
+  Object.assign(RF, createRunReward({ rs, RF, allyOn, buildSys, championsOn, controllers, draft, encCtx, encounters, events, getTick, levelChampion, pages, party, relics, rushFight, secrets, skillSys, vaults }));
   const api = {
-    saveState,
-    loadState,
+    saveState: RF.saveState,
+    loadState: RF.loadState,
     startRun,
     // Linear campaign (PLAN §12.2).
     startCampaign,
-    campaignAdvance,
-    pickRoad,
+    campaignAdvance: RF.campaignAdvance,
+    pickRoad: RF.pickRoad,
     abandonRun,
     tutorialRelease,
     endTutorial,
-    campaign: campaignView,
+    campaign: RF.campaignView,
     campaignRules,
     endRun,
     onRoomCleared,
@@ -4120,34 +1617,34 @@ export function createRunSystem({
     continuous,
     discrete,
     endOfTick,
-    view,
-    cmd,
+    view: RF.view,
+    cmd: RF.cmd,
     setRoomHooks,
     autopilot,
     roomPlan: roomPlanFull,
-    layout: () => (layout ? { ...layout } : null),
-    act: () => act,
-    challenge: () => challenge,
-    expeditionState,
-    restoreExpedition,
+    layout: () => (rs.layout ? { ...rs.layout } : null),
+    act: () => rs.act,
+    challenge: () => rs.challenge,
+    expeditionState: RF.expeditionState,
+    restoreExpedition: RF.restoreExpedition,
     statusKinds: () => [...STATUS_KINDS],
     skillIds: () => Object.keys(SKILLS),
-    isActive: () => active,
+    isActive: () => rs.active,
     // The spawn-gate predicate the HUD mirrors for the ?room= harness boot.
     combatAllowed,
     combatActive,
     combatAllowed,
     // UI entry points (src/ui/run/**) — the same paths __echoes.cmd drives.
-    takeReward,
-    declineReward,
-    setRewardReplace,
+    takeReward: RF.takeReward,
+    declineReward: RF.declineReward,
+    setRewardReplace: RF.setRewardReplace,
     // PARTY (PLAN §16.3): the party page / shelves entry points.
-    partyPick,
-    partyCommit: () => (phase === 'reward' && pages && pages.isOpen() ? commitPage('commit') : null),
-    partyReplace: (seat, slot) => (Number(seat) === 0 ? setRewardReplace(slot) : pages && pages.isOpen() ? pages.setReplace(Number(seat), slot) : null),
-    partyBuy,
-    partyShopMark,
-    partyShopDone,
+    partyPick: RF.partyPick,
+    partyCommit: () => (rs.phase === 'reward' && pages && pages.isOpen() ? RF.commitPage('commit') : null),
+    partyReplace: (seat, slot) => (Number(seat) === 0 ? RF.setRewardReplace(slot) : pages && pages.isOpen() ? pages.setReplace(Number(seat), slot) : null),
+    partyBuy: RF.partyBuy,
+    partyShopMark: RF.partyShopMark,
+    partyShopDone: RF.partyShopDone,
     partyPages: () => pages,
     // PARTY (§25.1): reorder a character's 4 skills between rooms.
     reorderLoadout(seat, from, to) {
@@ -4165,35 +1662,35 @@ export function createRunSystem({
       if (party) for (const s of [1, 2, 3]) if (want(s)) out.push({ seat: s, ...party.autoFill(s) });
       return out;
     },
-    partyScreen,
+    partyScreen: RF.partyScreen,
     setHarnessGrant: (g) => {
-      harnessGrant = g ?? null;
-      return harnessGrant;
+      rs.harnessGrant = g ?? null;
+      return rs.harnessGrant;
     },
-    focusPath,
-    choosePath,
+    focusPath: RF.focusPath,
+    choosePath: RF.choosePath,
     // RELICS: the relic page's entry points.
-    focusRelic,
-    chooseRelic,
-    buyRelic,
+    focusRelic: RF.focusRelic,
+    chooseRelic: RF.chooseRelic,
+    buyRelic: RF.buyRelic,
     // EVENT ROOMS: the encounter card's entry points.
-    openEncounter,
-    focusEncounter,
-    chooseEncounter,
+    openEncounter: RF.openEncounter,
+    focusEncounter: RF.focusEncounter,
+    chooseEncounter: RF.chooseEncounter,
     // KEYS AND VAULTS: the chest (E does the same through the interactables).
-    openVault,
-    openSecret,
+    openVault: RF.openVault,
+    openSecret: RF.openSecret,
     // TONICS AND BOMBS: the stand, the slot presses and the system (probes).
-    buyTonic,
+    buyTonic: RF.buyTonic,
     useTonics,
     tonics: () => (tonics.enabled() ? tonics.view() : null),
     relics: () => (relics.enabled() ? relics.view() : null),
-    buy,
-    refreshShop,
-    refreshCost,
-    advanceFromShop,
+    buy: RF.buy,
+    refreshShop: RF.refreshShop,
+    refreshCost: RF.refreshCost,
+    advanceFromShop: RF.advanceFromShop,
     returnToCamp,
-    wallet: () => wallet,
+    wallet: () => rs.wallet,
   };
   return api;
 }

@@ -5,7 +5,8 @@
 // (target-based), a human seat's press (aim-based, lag-compensated
 // selection), an Echo recast (the recorded delivery, never a cast) and the
 // Riposte / Parry counter — so the four characters share the Healer's build
-// model:
+// model. Its `deliver` is also the Healer's (sim/skills.js hands it her kit
+// context: AUDIT D2, docs/CODE_HEALTH.md "One cast path"):
 //   1. def = seatBuild.resolveDef(baseDef)  (the §15.4 pipeline; an EMPTY
 //      build returns baseDef itself, so an unbuilt ally casts exactly as the
 //      v0.5.150 kit did: same events, same RNG draws — the ?room= goldens);
@@ -19,21 +20,21 @@
 //      it exactly like a dodge (seatDisplacement(), shared with
 //      net/predict.js);
 //   4. the §6 delivery with `source: def.id` on every instance;
-//   5. `ally_cast` — byte-identical to v0.5.150 for an empty build; new keys
+//   5. `skill_cast` (with its classId) — byte-identical to v0.5.150 for an empty build; new keys
 //      only when set (echo, resonance, combo, dash, vault, parry).
 //
 // Sim discipline: no DOM, no render imports, no wall clock; the only RNG is
 // the combat pipeline's own crit roll per instance, in resolution order.
 import { TICK_HZ, KNOCKBACK } from '../core/constants.js';
-import { clampPlacement, countFinal, fanDirections, selectDirect, createSkillBolts } from './shapes.js';
+import { clampPlacement, countFinal, fanDirections, selectDirect, selectNova, selectArc, selectAreaDamage, isHealable, createSkillBolts } from './shapes.js';
 import { sweptStep } from './movement.js';
 import { CLASS_TECH, AI_ENGAGE } from '../data/classes.js';
 import { isBlinded } from './status.js';
+import { ZONE_CADENCE_TICKS } from './zones.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
 export const CD_FLOOR_TICKS = secTicks(0.5); // §6 cooldown floor
-const ZONE_CADENCE_TICKS = secTicks(1.0); // §6 zone cadence 1.0 s, first tick at 1.0 s
 const BOLT_RADIUS = 0.05;
 const DASH_STOP_FRAC = 0.8; // a dash stops with its target inside 0.8 × the delivery's reach
 
@@ -106,6 +107,12 @@ export function seatDisplacement(body, def, techs, aim, phase = 'pre') {
 // technique module), build(seat) (the seat build system).
 export function createAllyCaster(ctx) {
   const { registry, events, combat, getTick, bolts, enemiesInArc, enemiesInNova, face, hostiles, party, rewound, compensatedAim, isIframed } = ctx;
+  // Heal recipients: the seats, then the escort's pilgrim.
+  const healables = () =>
+    registry
+      .all()
+      .filter(isHealable)
+      .sort((p, q) => (p.partyIndex ?? 9) - (q.partyIndex ?? 9));
   const tech = () => (typeof ctx.tech === 'function' ? ctx.tech() : null);
   const buildOf = (seat) => (typeof ctx.build === 'function' ? ctx.build(seat) : null);
   let castSeq = 0; // per-cast id (Heartseeker's first instance per target, Flow once per cast)
@@ -570,7 +577,7 @@ export function createAllyCaster(ctx) {
   // whatever stands in it (no damage), like the Dive puddle.
   function spawnPuddle(x, z, sourceId, tick) {
     const zone = registry.spawn({
-      kind: 'azone',
+      kind: 'zone',
       skill: 'deluge',
       classId: 'tidecaller',
       x,
@@ -587,7 +594,7 @@ export function createAllyCaster(ctx) {
       untilTick: tick + CLASS_TECH.delugeTicks,
       nextTickTick: tick,
     });
-    events.emit(tick, 'azone_spawn', { id: zone.id, skill: 'deluge', classId: 'tidecaller', x: r2(x), z: r2(z), radius: zone.radius, totalTicks: 1, puddle: true });
+    events.emit(tick, 'zone_spawn', { id: zone.id, skill: 'deluge', classId: 'tidecaller', x: r2(x), z: r2(z), radius: zone.radius, totalTicks: 1, puddle: true });
   }
   // Bubble Ward (her guard): a bubble bursts when its shield is spent, when
   // it runs out, or when its bearer goes down, soaking the enemies near it.
@@ -625,12 +632,12 @@ export function createAllyCaster(ctx) {
   }
 
   // THE BELLWRIGHT (docs/BELLWRIGHT.md): the bells a Bellwright has hung
-  // (her azones flagged `bell`), oldest first; the bell whose ring holds an
+  // (her zones flagged `bell`), oldest first; the bell whose ring holds an
   // enemy (the nearest, when rings overlap); and the cap, which retires her
   // oldest bells past CLASS_TECH.bellCap.
   function bellsOf(sourceId) {
     const out = [];
-    for (const z of registry.all()) if (z.kind === 'azone' && z.bell && z.sourceId === sourceId) out.push(z);
+    for (const z of registry.all()) if (z.kind === 'zone' && z.bell && z.sourceId === sourceId) out.push(z);
     return out.sort((p, q) => p.id - q.id);
   }
   function ringOf(sourceId, t) {
@@ -648,7 +655,7 @@ export function createAllyCaster(ctx) {
   function capBells(sourceId, tick, cap = CLASS_TECH.bellCap) {
     const bells = bellsOf(sourceId);
     for (let i = 0; i < bells.length - cap; i++) {
-      events.emit(tick, 'azone_expire', { id: bells[i].id, skill: bells[i].skill, replaced: true });
+      events.emit(tick, 'zone_expire', { id: bells[i].id, skill: bells[i].skill, replaced: true, classId: bells[i].classId });
       registry.despawn(bells[i].id);
     }
   }
@@ -737,43 +744,94 @@ export function createAllyCaster(ctx) {
     }
   }
 
-  // deliver(a, def, power, c) — the §6 delivery of one cast. c = { slot,
-  // tick, human, target, f, tag, d, echo (the recorded cast | null), castId,
-  // M, extra }. Returns the emitted cast payload.
+  // deliver(a, def, power, c) — the §6 delivery of one cast, for EVERY kit
+  // (AUDIT D2): the hero kits' casts, their Echo recasts and the Healer's
+  // (sim/skills.js fire / echo). c = { slot, tick, human, target, f, tag, d,
+  // echo (the recorded cast | null), castId, M, extra }, and for the Healer's
+  // kit c.healer = { record, bolts, override, isIframed } (her cast record
+  // layout, her bolt subsystem, her heal-target override, her i-frame rule).
+  // Returns the cast record; it is emitted as `skill_cast` unless
+  // c.emit === false (the Healer's Echo replays emit `echo_recast` instead).
+  //
+  // One rule set, by what the skill is: heals (direct, nova, arc, bolt, zone)
+  // reach the healables (the seats and the escort's pilgrim); guards shield
+  // the seats; damage strikes through hitList. Two kit rules stay, because
+  // they decide who gets hit: a hero's damage arc and nova pick live
+  // hostiles by centre (enemiesInArc / enemiesInNova), the Healer's damage
+  // nova strikes every damageable body its reach touches (breakables too,
+  // shapes.selectAreaDamage); and each kit keeps its own cast record layout.
   function deliver(a, def0, power, c) {
     const { tick, human, target, f, tag, echo, castId, M, extra } = c;
+    const H = c.healer ?? null;
     const def = duskDef(a, bellDef(a, tideDef(a, def0)));
     let d = c.d;
     const T = tech();
-    face(a, d.x, d.z);
-    a.castLeftTicks = Math.max(a.castLeftTicks ?? 0, 24);
-    const cast = {
-      id: a.id,
-      partyIndex: a.partyIndex,
-      classId: a.classId,
-      skill: def.id,
-      slot: c.slot,
-      shape: def.shape,
-      power: power === def.power ? def.power : r2(power),
-      cd: def.cd,
-      target: target ? target.id : null,
-      x: r2(a.x),
-      z: r2(a.z),
-      dx: r2(d.x),
-      dz: r2(d.z),
-      ...(tag || {}),
+    const heal = def.archetype === 'heal';
+    const iframed = H ? H.isIframed : isIframed;
+    const st = def.status ?? null;
+    if (!H) {
+      face(a, d.x, d.z);
+      a.castLeftTicks = Math.max(a.castLeftTicks ?? 0, 24);
+    }
+    const cast = H
+      ? H.record
+      : {
+          id: a.id,
+          partyIndex: a.partyIndex,
+          classId: a.classId,
+          skill: def.id,
+          slot: c.slot,
+          shape: def.shape,
+          power: power === def.power ? def.power : r2(power),
+          cd: def.cd,
+          target: target ? target.id : null,
+          x: r2(a.x),
+          z: r2(a.z),
+          dx: r2(d.x),
+          dz: r2(d.z),
+          ...(tag || {}),
+        };
+    // The record goes out before the cast's effects land (its extra keys,
+    // then `more`, last).
+    const emit = (more = null) => {
+      Object.assign(cast, extra);
+      if (more) more();
+      if (c.emit !== false) events.emit(tick, 'skill_cast', cast);
     };
     const sel = (fn) => (human && f && typeof rewound === 'function' ? rewound(f, fn) : fn());
+    // A heal lands on each target, then the skill's status on each (Quiet
+    // Hearth's ward, Swift Mend's haste ...).
+    const mend = (targets) => {
+      const critBonus = def.critBonus ?? 0;
+      for (const t of targets) combat.applyHeal(t, power, { healer: a.id, source: def.id, critBonus });
+      if (st && combat.status) for (const t of targets) if (t.hp > 0) combat.status.apply(t, st.kind, st.mag, st.ticks, tick, a.id);
+    };
+    const recorded = () => (echo && Array.isArray(echo.targets) ? echo.targets.map((id) => registry.byId(id)).filter((m) => m && m.hp > 0) : null);
+
+    // --- heal, direct (Swift Mend, Lantern Ward): the neediest healables in
+    // range, or the Healer's override target.
+    if (def.shape === 'direct' && heal) {
+      let targets;
+      let overrideMode = null;
+      if (echo) targets = (echo.targets ?? []).map((id) => registry.byId(id)).filter((t) => t && t.hp > 0);
+      else {
+        const r = selectDirect({ caster: a, party: healables(), range: def.range, count: def.count, override: H ? H.override : null, isIframed: iframed });
+        targets = r.targets;
+        overrideMode = r.overrideMode;
+      }
+      cast.targets = targets.map((t) => t.id);
+      if (H && !echo) cast.override = overrideMode;
+      emit();
+      mend(targets);
+      return cast;
+    }
 
     // --- guard (Shield Wall): shields on the neediest party members.
     if (def.archetype === 'guard') {
-      let recips;
-      if (echo && Array.isArray(echo.targets)) recips = echo.targets.map((id) => registry.byId(id)).filter((m) => m && m.hp > 0);
-      else if (def.pick === 'threat') recips = threatened(a, def.range, def.count);
-      else recips = selectDirect({ caster: a, party: party(), range: def.range, count: def.count, isIframed }).targets;
+      let recips = recorded();
+      if (!recips) recips = def.pick === 'threat' ? threatened(a, def.range, def.count) : selectDirect({ caster: a, party: party(), range: def.range, count: def.count, isIframed }).targets;
       cast.targets = recips.map((m) => m.id);
-      Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      emit();
       const S = combat.status;
       const ticks = def.status ? def.status.ticks : 240;
       for (const m of recips) {
@@ -791,18 +849,37 @@ export function createAllyCaster(ctx) {
       return cast;
     }
 
+    // --- heal, arc (Restorative Wave): the healables in the wedge.
+    if (def.shape === 'melee_arc' && heal) {
+      const targets = selectArc({ caster: a, party: healables(), aimX: d.x, aimZ: d.z, reach: def.range, halfAngleDeg: def.area, count: def.count, isIframed: iframed });
+      cast.targets = targets.map((t) => t.id);
+      cast.dx = r2(d.x);
+      cast.dz = r2(d.z);
+      emit();
+      mend(targets);
+      return cast;
+    }
+
     if (def.shape === 'melee_arc') {
       const targets = sel(() => enemiesInArc(a, d.x, d.z, def.range, def.area, def.count));
       cast.reach = def.range;
       cast.halfAngle = def.area;
       cast.targets = targets.map((t) => t.id);
-      Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      emit();
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
       // SECRET ROOMS: a guest's swing that reaches a shut cracked wall
       // strikes it too (the run decides whether the blow opens it).
       const wall = human ? wallInArc(a, d.x, d.z, def.range, def.area) : null;
       if (wall) combat.applyDamage(wall, power, { delivery: 'skill', shape: def.shape, dirX: d.x, dirZ: d.z, attacker: a.id, source: def.id });
+      return cast;
+    }
+
+    // --- heal, nova (Healing Nova and kin): the healables round the caster.
+    if (def.shape === 'nova' && heal) {
+      const targets = selectNova({ caster: a, party: healables(), radius: def.area, count: def.count, isIframed: iframed });
+      cast.targets = targets.map((t) => t.id);
+      emit();
+      mend(targets);
       return cast;
     }
 
@@ -832,7 +909,7 @@ export function createAllyCaster(ctx) {
         cz = echo.zz;
       }
       const spec = {
-        kind: 'azone',
+        kind: 'zone',
         skill: def.id,
         classId: a.classId,
         x: cx,
@@ -860,9 +937,8 @@ export function createAllyCaster(ctx) {
       cast.zone = zone.id;
       cast.zx = r2(cx);
       cast.zz = r2(cz);
-      Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
-      events.emit(tick, 'azone_spawn', { id: zone.id, skill: def.id, classId: a.classId, x: r2(cx), z: r2(cz), radius: def.area, totalTicks: 1, burst: true, delayTicks, ...(tag || {}) });
+      emit();
+      events.emit(tick, 'zone_spawn', { id: zone.id, skill: def.id, classId: a.classId, x: r2(cx), z: r2(cz), radius: def.area, totalTicks: 1, burst: true, delayTicks, ...(tag || {}) });
       return cast;
     }
 
@@ -891,8 +967,7 @@ export function createAllyCaster(ctx) {
       cast.radius = def.area;
       cast.bells = centres.map((c) => ({ id: c.id, x: r2(c.x), z: r2(c.z) }));
       cast.targets = targets.map((t) => t.id);
-      Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      emit();
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
       // The Carillon rings every bell back to its full length; Aftertone
       // gives each bell rung two more tolls.
@@ -908,11 +983,19 @@ export function createAllyCaster(ctx) {
     }
 
     if (def.shape === 'nova') {
-      const targets = sel(() => enemiesInNova(a, def.area, def.count));
-      cast.radius = def.area;
-      cast.targets = targets.map((t) => t.id);
-      Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      // (the kit rule above: the Healer's nova strikes by body reach,
+      // breakables too; a hero's live hostiles by centre)
+      const targets = H
+        ? selectAreaDamage({ entities: registry.all(), x: a.x, z: a.z, radius: def.area, count: def.count, isIframed: iframed })
+        : sel(() => enemiesInNova(a, def.area, def.count));
+      if (H) {
+        cast.targets = targets.map((t) => t.id);
+        cast.area = def.area;
+      } else {
+        cast.radius = def.area;
+        cast.targets = targets.map((t) => t.id);
+      }
+      emit();
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
       return cast;
     }
@@ -923,10 +1006,13 @@ export function createAllyCaster(ctx) {
         cast.dx = r2(d.x);
         cast.dz = r2(d.z);
       }
-      cast.count = countFinal(def.count);
-      Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
-      const mods = boltMods(def, M, castId, !!echo);
+      if (H) {
+        cast.dx = r2(d.x);
+        cast.dz = r2(d.z);
+      } else cast.count = countFinal(def.count);
+      emit();
+      const mods = H ? null : boltMods(def, M, castId, !!echo);
+      const boltSys = H ? H.bolts : bolts;
       for (const fd of fanDirections(d.x, d.z, def.count)) {
         const spec = {
           x: a.x,
@@ -938,22 +1024,26 @@ export function createAllyCaster(ctx) {
           radius: BOLT_RADIUS,
           power,
           skill: def.id,
-          heal: false,
+          heal,
           sourceId: a.id,
+          critBonus: def.critBonus ?? 0,
         };
         const pierce = (def.pierce ?? 1) + (M && M.pierceAdd ? M.pierceAdd : 0);
         if (pierce > 1) spec.hits = pierce;
         if (mods) spec.mods = mods;
-        bolts.spawn(tick, spec);
+        boltSys.spawn(tick, spec);
       }
       return cast;
     }
 
-    // ground_aoe — AI: at the target; human: at the aim point; echo: the
-    // recorded placement. Clamped to the (resolved) placement range.
+    // ground_aoe — AI: at the target; human (and the Healer): at the aim
+    // point; echo: the recorded placement. Clamped to the (resolved)
+    // placement range.
     let pos;
-    if (echo && Number.isFinite(echo.zx)) pos = { x: echo.zx, z: echo.zz };
+    if (echo && H) pos = { x: echo.x, z: echo.z };
+    else if (echo && Number.isFinite(echo.zx)) pos = { x: echo.zx, z: echo.zz };
     else if (def.atOrigin && c.origin) pos = { x: c.origin.x, z: c.origin.z };
+    else if (H) pos = clampPlacement(a, a.aim, def.range);
     else if (human) pos = clampPlacement(a, f && f.aim ? { x: f.aim.x, z: f.aim.z } : { x: a.x + d.x, z: a.z + d.z }, def.range);
     else if (target) pos = clampPlacement(a, { x: target.x, z: target.z }, def.range);
     else pos = clampPlacement(a, { x: a.x + d.x * def.range, z: a.z + d.z * def.range }, def.range);
@@ -963,9 +1053,9 @@ export function createAllyCaster(ctx) {
     const zones = [];
     for (const s of spots) {
       const spec = {
-        kind: 'azone',
+        kind: 'zone',
         skill: def.id,
-        classId: a.classId,
+        ...(H ? {} : { classId: a.classId }),
         x: s.x,
         z: s.z,
         px: s.x,
@@ -977,9 +1067,13 @@ export function createAllyCaster(ctx) {
         totalTicks,
         nextTickTick: tick + ZONE_CADENCE_TICKS, // §6: first tick 1.0 s after placement
       };
-      const zm = boltMods(def, M, castId, !!echo);
+      // The Healer's damage zone (Rootsnare, Dawn Brand) strikes by body reach
+      // (sim/zones.js); its status and crit bonus ride along.
+      if (H && !heal) spec.damage = true;
+      const zm = H ? null : boltMods(def, M, castId, !!echo);
       if (zm) spec.mods = zm;
       if (def.status) spec.applies = { kind: def.status.kind, mag: def.status.mag, ticks: def.status.ticks, ...(def.status.drench ? { drench: true } : {}) };
+      if (H && def.critBonus > 0) spec.critBonus = def.critBonus;
       // THE TIDECALLER: Undertow and Whirlpool pull their occupants in
       // (Undercurrent: 40% farther); Whirlpool and Rain Squall also slow.
       if (def.drag) spec.drag = def.drag * (M && M.dragMul ? M.dragMul : 1);
@@ -997,14 +1091,26 @@ export function createAllyCaster(ctx) {
     }
     const z0 = zones[0];
     cast.zone = z0.id;
-    cast.zx = r2(pos.x);
-    cast.zz = r2(pos.z);
-    cast.radius = def.area;
-    Object.assign(cast, extra);
-    if (zones.length > 1) cast.zones = zones.map((z) => z.id);
-    events.emit(tick, 'ally_cast', cast);
+    if (H) {
+      cast.x = r2(pos.x);
+      cast.z = r2(pos.z);
+    } else {
+      cast.zx = r2(pos.x);
+      cast.zz = r2(pos.z);
+      cast.radius = def.area;
+    }
+    emit(() => {
+      if (zones.length > 1) cast.zones = zones.map((z) => z.id);
+    });
     for (const z of zones) {
-      events.emit(tick, 'azone_spawn', {
+      if (H) {
+        const ev = { id: z.id, skill: def.id, x: r2(z.x), z: r2(z.z), radius: def.area };
+        if (!heal) ev.damage = true;
+        if (echo) ev.echo = true;
+        events.emit(tick, 'zone_spawn', ev);
+        continue;
+      }
+      events.emit(tick, 'zone_spawn', {
         id: z.id,
         skill: def.id,
         classId: a.classId,
@@ -1143,7 +1249,7 @@ export function createAllyCaster(ctx) {
     events.emit(tick, 'scatter_burst', { seat: src ? src.partyIndex : null, skill: bolt.skill, shards, x: r2(bolt.x), z: r2(bolt.z) });
   }
 
-  // Ally zone tick instance with modifiers (sim/allies.js zonePhase).
+  // Ally zone tick instance with modifiers (sim/zones.js).
   function zoneHit(z, t, opts) {
     const m = z.mods || {};
     if (m.critBonus) opts.critBonus = m.critBonus;

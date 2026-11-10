@@ -172,7 +172,7 @@ function park(W, x, z) {
   r.cds = [0, 0, 0, 0];
   return r;
 }
-const clearDummies = (W) => W.registry.all().filter((e) => e.kind === 'dummy' || (e.kind === 'azone' && e.classId === 'duskwing')).forEach((e) => W.registry.despawn(e.id));
+const clearDummies = (W) => W.registry.all().filter((e) => e.kind === 'dummy' || (e.kind === 'zone' && e.classId === 'duskwing')).forEach((e) => W.registry.despawn(e.id));
 
 // ---------------------------------------------------------- 1. data / gate --
 {
@@ -265,7 +265,7 @@ const sipsOf = (from) => since(from, 'heal', (e) => e.source === 'night_hunger')
   const from = W.log.length;
   castK(0, 1.0, 0);
   steps(W, 1, { hurt: 40 });
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'bat_swarm')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'bat_swarm')[0];
   check(!!sp && sp.radius === 1.3 && sp.totalTicks === 4, `a swarm of bats at the target (ring ${sp && sp.radius}, ${sp && sp.totalTicks} beats)`);
   steps(W, 62, { hurt: 40 });
   const hits = since(from, 'hit', (e) => e.source === 'bat_swarm');
@@ -298,7 +298,7 @@ const sipsOf = (from) => since(from, 'heal', (e) => e.source === 'night_hunger')
   castK(0, 1, 0);
   const dash = since(from, 'ally_dash', (e) => e.skill === 'flit')[0];
   steps(W, 20);
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'flit')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'flit')[0];
   check(!!dash && dash.cause === 'vault' && near(Math.hypot(dash.x1 - dash.x0, dash.z1 - dash.z0), 2.8, 0.05) && sable.x < -2.4, `he flits 2.8 u away from the aim (to x ${sable.x.toFixed(2)})`);
   check(!!sp && Math.hypot(sp.x, sp.z) < 0.05, `the dark is left where he was (${sp && `${sp.x},${sp.z}`})`);
   steps(W, 60);
@@ -465,7 +465,7 @@ function nodeRoom(seed, ids, nodes) {
       else s.hp = s.maxHp;
       if (W2.run.view().phase !== 'combat') break;
     }
-    for (const e of W2.log.slice(from)) if (e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
+    for (const e of W2.log.slice(from)) if (e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
   }
   const actives = ALL.filter((id) => !PASSIVES.includes(id));
   const missing = actives.filter((id) => !castBy.has(id));
@@ -519,7 +519,7 @@ function nodeRoom(seed, ids, nodes) {
   for (const [dx, dz] of [[1.5, 1], [2, 0], [1.6, -1], [-1.5, 1.2]]) cmd(W3, 'spawn', 'boar', h.x + dx, h.z + dz, { hpMul: 6 });
   for (let i = 0; i < 300; i++) W3.step();
   const sable = ally(W3, 3);
-  check(W3.log.some((e) => e.type === 'ally_cast' && e.partyIndex === 3), `the save is taken mid-fight with his nodes socketed (${sable.hp.toFixed(0)} HP)`);
+  check(W3.log.some((e) => e.type === 'skill_cast' && e.partyIndex === 3), `the save is taken mid-fight with his nodes socketed (${sable.hp.toFixed(0)} HP)`);
   const snap = clonePlain(W3.io.capture());
   for (let i = 0; i < 400; i++) W3.step();
   const h1 = hashState(W3.io.capture());

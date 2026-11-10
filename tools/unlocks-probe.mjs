@@ -130,7 +130,7 @@ const { createSaveStorage } = await import(u('src/save/storage.js'));
 const { createProfileStore } = await import(u('src/save/profile.js'));
 const U = await import(u('src/data/unlocks.js'));
 const { difficulty } = await import(u('src/data/difficulty.js'));
-const { RUN } = await import(u('src/sim/run.js'));
+const { RUN } = await import(u('src/sim/run/rules.js'));
 
 function memStorage() {
   const m = new Map();
@@ -263,7 +263,7 @@ check(JSON.stringify(U.loadoutTints(m2)) === JSON.stringify({ tank: U.UNLOCKS.ti
   let firstRoom = true;
   W.bus.on('room_clear', () => (firstRoom = false));
   W.bus.on('reward_offer', () => (firstRoom = false));
-  for (const t of ['skill_cast', 'cast', 'ally_cast']) W.bus.on(t, (e) => e && e.skill && firstRoom && casts.add(e.skill));
+  for (const t of ['skill_cast', 'cast']) W.bus.on(t, (e) => e && e.skill && firstRoom && casts.add(e.skill));
   let s = null;
   for (let i = 0; i < 40000 && !s; i++) {
     W.step(ap);

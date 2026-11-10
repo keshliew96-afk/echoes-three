@@ -170,8 +170,8 @@ function park(W, x, z) {
   r.cds = [0, 0, 0, 0];
   return r;
 }
-const bellsOf = (W, id) => W.registry.all().filter((z) => z.kind === 'azone' && z.bell && z.sourceId === id);
-const unbell = (W) => W.registry.all().filter((z) => z.kind === 'azone' && z.bell).forEach((z) => W.registry.despawn(z.id));
+const bellsOf = (W, id) => W.registry.all().filter((z) => z.kind === 'zone' && z.bell && z.sourceId === id);
+const unbell = (W) => W.registry.all().filter((z) => z.kind === 'zone' && z.bell).forEach((z) => W.registry.despawn(z.id));
 
 // ---------------------------------------------------------- 1. data / gate --
 {
@@ -234,7 +234,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   const from = W.log.length;
   castK(0, 1.0, 0);
   steps(W, 1);
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'great_bell')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'great_bell')[0];
   check(!!sp && sp.bell === true && sp.radius === 1.9 && sp.bellSize === 1.4 && sp.totalTicks === 6, `a great bell is hung (ring ${sp && sp.radius}, size ${sp && sp.bellSize}, ${sp && sp.totalTicks} tolls)`);
   steps(W, 62);
   const hits = since(from, 'hit', (e) => e.source === 'great_bell' && !e.crit);
@@ -287,7 +287,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   const from = W.log.length;
   castK(0, 1, 0);
   steps(W, 20);
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'wing_hop')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'wing_hop')[0];
   check(tolly.x < -2.0, `she hops away from the aim (to x ${tolly.x.toFixed(2)})`);
   check(!!sp && sp.bell === true && Math.hypot(sp.x, sp.z) < 0.05 && sp.bellSize === 0.7, `a handbell where she stood (${sp && `${sp.x},${sp.z}`})`);
   steps(W, 70);
@@ -312,7 +312,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   ds[2].targetId = tank.id;
   const from = W.log.length;
   castK(0, 0, 0);
-  const c = since(from, 'ally_cast', (e) => e.skill === 'vesper_chime')[0];
+  const c = since(from, 'skill_cast', (e) => e.skill === 'vesper_chime')[0];
   check(!!c && c.targets.length === 2 && c.targets[0] === sw.id && !c.targets.includes(tank.id), `two shields, the hunted first and the Tank last (${c && c.targets.join(',')})`);
   check(near(live(sw, 'shield'), 12, 1e-6), `a 12 shield (${live(sw, 'shield')})`);
   void tolly;
@@ -330,7 +330,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   tank.z = tank.pz = 0.5;
   const from = W.log.length;
   castK(0, 0, 0);
-  const c = since(from, 'ally_cast', (e) => e.skill === 'tuning_fork')[0];
+  const c = since(from, 'skill_cast', (e) => e.skill === 'tuning_fork')[0];
   check(!!c && c.targets.includes(sw.id) && c.targets.includes(tank.id), `the members in reach (${c && c.targets.length})`);
   check(near(live(sw, 'shield'), 6, 1e-6) && near(live(tank, 'haste'), 0.25, 1e-6), `a 6 shield and 25% haste (${live(sw, 'shield')}, ${live(tank, 'haste')})`);
 }
@@ -351,7 +351,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   const from = W.log.length;
   tolly.cds = [0, 0, 0, 0];
   castK(0, 0, 0);
-  const c = since(from, 'ally_cast', (e) => e.skill === 'carillon')[0];
+  const c = since(from, 'skill_cast', (e) => e.skill === 'carillon')[0];
   const hits = since(from, 'hit', (e) => e.source === 'carillon' && !e.crit);
   check(!!c && c.bells.length === 2 && hits.length === 2 && hits.every((h) => near(h.amount, 24, 1.2)), `it rings both bells: 24 to each enemy (${hits.map((h) => h.amount).join(',')})`);
   check(ds.every((d) => STATUS.isStunned(d, T())) && ds.every((d) => d.status.stun.untilTick - T() === 36), 'a 0.6 s daze');
@@ -373,7 +373,7 @@ function nodeRoom(seed, ids, nodes) {
   park(W, -2, 0);
   const from = W.log.length;
   castK(0, 0, 0);
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'hang_bell')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'hang_bell')[0];
   check(!!sp && sp.totalTicks === 12, `Bronze x2: twelve tolls (${sp && sp.totalTicks})`);
 }
 {
@@ -425,7 +425,7 @@ function nodeRoom(seed, ids, nodes) {
   castK(0, 0.5, 0);
   steps(W, 30);
   const sym = since(from, 'bell_sympathy');
-  const tolls = since(from, 'azone_tick', (e) => e.id === bell.id);
+  const tolls = since(from, 'zone_tick', (e) => e.id === bell.id);
   check(sym.length === 1 && tolls.length === 1 && tolls[0].tick === sym[0].tick + 1, `Sympathy: the bell tolls at once (${tolls.map((t) => t.tick - from).length} toll the tick after the hit)`);
   check(bell.totalTicks === 9, `an extra toll, not a stolen one (${bell.totalTicks})`);
   tolly.cds = [0, 0, 0, 0];
@@ -517,7 +517,7 @@ function nodeRoom(seed, ids, nodes) {
       mend(W2);
       if (W2.run.view().phase !== 'combat') break;
     }
-    for (const e of W2.log.slice(from)) if (e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
+    for (const e of W2.log.slice(from)) if (e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
   }
   const actives = ALL.filter((id) => SKILLS[id].shape !== 'aura');
   const missing = actives.filter((id) => !castBy.has(id));

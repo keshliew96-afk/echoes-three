@@ -60,7 +60,8 @@ const { Scene, PerspectiveCamera, Group, Vector3 } = await import('three');
 const { createEventBus } = await import('../src/core/events.js');
 const { createCosmeticRng } = await import('../src/core/rng.js');
 const { PALETTE } = await import('../src/data/palette.js');
-const { createSignatureFx, ELEMENT_AIR } = await import('../src/render/vfx/signature.js');
+const { createSignatureFx } = await import('../src/render/vfx/signature.js');
+const { ELEMENT_AIR } = await import('../src/render/vfx/sig/common.js');
 const { setImpactFx } = await import('../src/render/vfx/hub.js');
 const { STUCK } = await import('../src/render/vfx/boltfx.js');
 const { TRACE, TPL_CAPS, createTemplateKit } = await import('../src/render/vfx/tplkit.js');
@@ -213,7 +214,7 @@ function fight(cls, { register = true } = {}) {
     const ev = { tick: F.world.tick, id: 3, classId: 'swordsman', skill: 'flurry', shape: 'melee_arc', x: -2, z: 0, dx: 1, dz: 0, reach: 1.0, halfAngle: 50 };
     F.rig.cue('skill', ev);
     F.rig.cue('basic', ev); // a swing either way
-    F.bus.emit(F.world.tick, 'ally_cast', ev);
+    F.bus.emit(F.world.tick, 'skill_cast', ev);
     check('T1: a three-stroke skill traces its first stroke and keeps the two procedural strokes after it', F.rec('blade_trace') === 1 && F.rec('blade_skill') === 1 && F.counts().tpl.traces === 3 && F.counts().tpl.blazes >= 5, F.counts().tpl);
     unregisterHeroRig('swordsman');
   }

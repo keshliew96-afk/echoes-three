@@ -231,7 +231,7 @@ colour rule still applies: a healing zone keeps Bright Heal in its circle (`heal
 D2, D5, D6 and D7 change structure the goldens or co-op depend on; they need Kesh's call before
 anyone touches them.
 
-## 11. Cleanup status (branch `claude/project-thread-zd4d09`, PR #136)
+## 11. Cleanup status (branch `claude/project-thread-zd4d09`, PRs #136 and #137)
 
 | Id | Status | Commit |
 |---|---|---|
@@ -244,8 +244,10 @@ anyone touches them.
 | D4 | Done: one mote, flash and ring pool, `src/render/fxpool.js`. | c6286e2 |
 | N3 | Done for colours written as JS values (they read `PALETTE`). Hexes inside CSS strings were left. | ce2afc5 |
 | N1, N2 | Not moved. Gameplay tuning already sits in frozen tables (palette.js, core/constants.js, each system's table); moving tens of thousands of render literals is not a small change. | none |
-| Split | `main.js`: the debug API moved to `src/app/debugapi.js`. `run.js` and `signature.js` not split: each is one closure sharing many mutable locals. | 68dbb58 |
+| Split | `main.js`: the debug API moved to `src/app/debugapi.js` (PR #136). PR #137: `run.js` split into a 1,696-line core and 11 parts under `src/sim/run/`; `signature.js` into a 697-line director and 13 parts under `src/render/vfx/sig/` (docs/CODE_HEALTH.md). | 68dbb58; e8e3413 to 0a9f258; 4f9ebec to 4db6d84 |
 | D1 | Done for every model with a faceted rig: classic heroes, bosses, champions and Level I to IV foes deleted, the lab's Classic beside, `render/facet/flags.js` and `?facet=` gone. | 097e6fd to beb1868 |
 | Dead code | Done: two never-called ally cast paths in `sim/allies.js` (about 220 lines) and unused locals in 14 files. | d26b1c3 |
-| D2, D5, D6, D7 | Not touched: they change structure the goldens or co-op depend on (Kesh's call). | none |
+| D2 | PR #137: one zone system (`src/sim/zones.js`, kind `zone` for every kit) and one cast event (`skill_cast`, a hero kit's with its `classId`); net protocol v5; goldens re-recorded (state hash of all nine, event hash of run-1 to run-3, every event otherwise identical). Then one delivery (`allycast.js` `deliver`) for every kit's casts and Echoes; only the event hash of run-1 to run-3 moved (the Healer's cast now goes out before its effects). | 0b9f4af, c722d5c, 6f4b8b6 |
+| D5 | PR #137: one VFX director: every layer registers on the director's dispatch, one bus subscription per event, handlers in the bus's own order. | cc698cc |
+| D6, D7 | Not touched: they change structure the goldens or co-op depend on (Kesh's call). | none |
 | U3 | Not touched: retiring probes waits on Kesh's list. The `tools/model-standard-*-shots.mjs` tools still ask for `?facet=0` or the lab's classic twin and now shoot the faceted rig in both places. | none |

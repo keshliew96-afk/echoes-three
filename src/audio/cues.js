@@ -948,10 +948,10 @@ export const DEFAULT_EVENT_CUES = {
     const c = ev.skill === 'iron_stance' ? 'tank_stance' : ev.skill === 'razor_wake' || ev.skill === 'crimson_edge' ? 'sword_wake' : 'archer_kestrel';
     return one(c, at(ev, h));
   },
-  zone_tick: (ev, h) => one('zone_pulse', at(ev, h, ev.id)),
-  azone_tick: (ev, h) => one('azone_pulse', at(ev, h, ev.id)),
-  skill_cast: (ev, h) => one(skillFamily(ev), at({}, h)),
-  ally_cast: (ev, h) => {
+  // An ally kit's zone (it carries a classId) pulses in its own voice.
+  zone_tick: (ev, h) => one(ev.classId ? 'azone_pulse' : 'zone_pulse', at(ev, h, ev.id)),
+  skill_cast: (ev, h) => {
+    if (!ev.classId) return one(skillFamily(ev), at({}, h)); // the Healer's own kit
     // PARTY: a new class skill's own cue (Crescent Finisher +3 semitones per
     // combo stack); the starting kit keeps its class family.
     const own = CLASS_SKILL_CUE[ev.skill];
@@ -964,8 +964,7 @@ export const DEFAULT_EVENT_CUES = {
   ally_dash: (ev, h) => one('whoosh', { x: ev.x0, z: ev.z0 }, { pitch: ev.cause === 'dash' ? 0.9 : 1.1 }),
   parry_counter: (ev, h) => one('sword_parry', at(ev, h, ev.id), { pitch: 1.25 }),
   skill_bolt_spawn: (ev, h) => one('bolt', at(ev, h, ev.id)),
-  zone_spawn: (ev, h) => one('zone_spawn', at(ev, h, ev.id)),
-  azone_spawn: (ev, h) => one('azone_spawn', at(ev, h, ev.id)),
+  zone_spawn: (ev, h) => one(ev.classId ? 'azone_spawn' : 'zone_spawn', at(ev, h, ev.id)),
   echo_recast: (ev, h) => one('echo', at(ev, h)),
   echo_armed: (ev, h) => one('echo_tick', at({}, h)),
   bounce_hop: (ev, h) => one('bounce', at(ev, h, ev.target), { pitch: 1 + Math.min(6, ev.hop || 1) * 0.12 }),

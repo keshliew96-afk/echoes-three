@@ -11,6 +11,7 @@ export function registerContentCues(audio, world = null) {
   // New skills keep their own cast family (the engine's fallback maps by
   // shape; the two damage bolts need 'cast_damage', the toll a heavier nova).
   audio.registerEventCue('skill_cast', (ev) => {
+    if (ev.classId) return null; // the Healer's own kit
     if (ev.skill === 'lantern_flurry') return [{ cue: 'cast_damage', ...player(), pitch: 1.12 }];
     if (ev.skill === 'pale_lance') return [{ cue: 'cast_damage', ...player(), pitch: 0.86 }];
     if (ev.skill === 'bell_toll')
