@@ -43,24 +43,12 @@
 // via the combat pipeline's own crit rolls.
 import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
-import {
-  fanDirections,
-  selectDirect,
-  selectNova,
-  selectArc,
-  selectAreaDamage,
-  isAreaDamageable,
-  clampPlacement,
-  createSkillBolts,
-  isHealable,
-} from './shapes.js';
-import { ZONE_CADENCE_TICKS } from './zones.js';
+import { createSkillBolts, isHealable } from './shapes.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
 const CD_FLOOR_TICKS = secTicks(0.5); // §6: cd_final = max(0.5 s, cd)
 const AURA_CADENCE_TICKS = secTicks(1.0); // §7 / §23.3: passive auras pulse every 1.0 s
-const BOLT_RADIUS = 0.05; // same swept-vs-wall scaffold radius as the basic bolt
 
 // §7 Healer skills — 2 starting + 6 draftable, table rows verbatim; §23.3
 // adds nine more (the draftable pool grows 6 → 15).
@@ -729,156 +717,39 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
   }
 
   function fire(def, slot, tick, mods = null) {
-    const cast = { slot, skill: def.id, shape: def.shape };
     const powerMul = mods && mods.powerMul ? mods.powerMul : 1;
-    deliver(def, def.power * powerMul, cast, { tick });
-    if (mods && mods.resonance) cast.resonance = true;
-    events.emit(tick, 'skill_cast', cast);
+    deliver(def, def.power * powerMul, { slot, skill: def.id, shape: def.shape }, { tick, emit: true, extra: mods && mods.resonance ? { resonance: true } : null });
   }
 
   // One delivery of a skill (a primary cast, or an Echo recast when `echo`
-  // carries the original cast record: same aim / targets / placement). Fills
-  // `out` with the §6 cast payload in the v0.4.63 key order.
+  // carries the original cast record: same aim / targets / placement),
+  // through the one cast delivery every kit shares (sim/allycast.js deliver,
+  // attached by the world: AUDIT D2). This kit hands it her cast record
+  // (`out`, filled in the v0.4.63 key order), her bolt subsystem, her
+  // heal-target override and her i-frame rule. `emit`: a primary cast goes
+  // out as `skill_cast`; an Echo replay emits `echo_recast` itself (nodes.js).
   //   boltSys: the bolt subsystem the projectiles ride (echo recasts use the
   //            build block's own instance, see nodes.js).
-  function deliver(def, power, out, { tick = getTick(), boltSys = bolts, echo = null } = {}) {
-    const heal = def.archetype === 'heal';
-    const critBonus = def.critBonus ?? 0;
-    const st = def.status ?? null;
-    if (def.shape === 'projectile') {
-      const dir = echo ? { x: echo.dx, z: echo.dz } : aimDir();
-      for (const d of fanDirections(dir.x, dir.z, def.count)) {
-        boltSys.spawn(tick, {
-          x: player.x,
-          z: player.z,
-          dirX: d.x,
-          dirZ: d.z,
-          speed: def.speed,
-          range: def.range,
-          radius: BOLT_RADIUS,
-          power,
-          skill: def.id,
-          heal,
-          sourceId: player.id,
-          critBonus,
-          hits: def.pierce ?? 1,
-        });
-      }
-      out.dx = r2(dir.x);
-      out.dz = r2(dir.z);
-    } else if (def.shape === 'direct') {
-      let targets;
-      let overrideMode = null;
-      if (echo) {
-        targets = (echo.targets ?? []).map((id) => registry.byId(id)).filter((t) => t && t.hp > 0);
-      } else {
-        const r = selectDirect({
-          caster: player,
-          party: party(),
-          range: def.range,
-          count: def.count,
-          override,
-          isIframed,
-        });
-        targets = r.targets;
-        overrideMode = r.overrideMode;
-      }
-      for (const t of targets) combat.applyHeal(t, power, { healer: player.id, source: def.id, critBonus });
-      if (st) for (const t of targets) applyStatus(t, st, tick);
-      out.targets = targets.map((t) => t.id);
-      if (!echo) out.override = overrideMode;
-    } else if (def.shape === 'nova') {
-      if (heal) {
-        const targets = selectNova({
-          caster: player,
-          party: party(),
-          radius: def.area,
-          count: def.count,
-          isIframed,
-        });
-        for (const t of targets) combat.applyHeal(t, power, { healer: player.id, source: def.id, critBonus });
-        if (st) for (const t of targets) applyStatus(t, st, tick);
-        out.targets = targets.map((t) => t.id);
-      } else {
-        const targets = selectAreaDamage({
-          entities: registry.all(),
-          x: player.x,
-          z: player.z,
-          radius: def.area,
-          count: def.count,
-          isIframed,
-        });
-        for (const t of targets) {
-          const len = Math.hypot(t.x - player.x, t.z - player.z);
-          combat.applyDamage(t, power, {
-            delivery: 'skill',
-            shape: 'nova',
-            dirX: len > 1e-6 ? (t.x - player.x) / len : 0,
-            dirZ: len > 1e-6 ? (t.z - player.z) / len : 0,
-            attacker: player.id,
-            source: def.id,
-            critBonus,
-          });
-        }
-        if (st) for (const t of targets) if (t.faction === 'hostile') applyStatus(t, st, tick);
-        out.targets = targets.map((t) => t.id);
-        out.area = def.area;
-      }
-    } else if (def.shape === 'melee_arc') {
-      const dir = echo ? { x: echo.dx, z: echo.dz } : aimDir();
-      const targets = selectArc({
-        caster: player,
-        party: heal ? party() : registry.all().filter(isAreaDamageable),
-        aimX: dir.x,
-        aimZ: dir.z,
-        reach: def.range,
-        halfAngleDeg: def.area,
-        count: def.count,
-        isIframed,
-      });
-      if (heal) for (const t of targets) combat.applyHeal(t, power, { healer: player.id, source: def.id, critBonus });
-      else
-        for (const t of targets)
-          combat.applyDamage(t, power, { delivery: 'skill', shape: 'melee_arc', dirX: dir.x, dirZ: dir.z, attacker: player.id, source: def.id, critBonus });
-      if (st) for (const t of targets) applyStatus(t, st, tick);
-      out.targets = targets.map((t) => t.id);
-      out.dx = r2(dir.x);
-      out.dz = r2(dir.z);
-    } else if (def.shape === 'ground_aoe') {
-      const pos = echo ? { x: echo.x, z: echo.z } : clampPlacement(player, player.aim, def.range);
-      const spec = {
-        kind: 'zone',
-        skill: def.id,
-        x: pos.x,
-        z: pos.z,
-        px: pos.x,
-        pz: pos.z,
-        radius: def.area,
-        power,
-        sourceId: player.id,
-        ticksDone: 0,
-        totalTicks: Math.round(secTicks(def.durationSec) / ZONE_CADENCE_TICKS), // 4 s / 1 s = 4
-        nextTickTick: tick + ZONE_CADENCE_TICKS, // first tick 1.0 s after placement (§6)
-      };
-      if (!heal) spec.damage = true;
-      if (st) spec.applies = { kind: st.kind, mag: st.mag, ticks: st.ticks }; // (not `status`: that key is a body's own status map)
-      if (critBonus > 0) spec.critBonus = critBonus;
-      const zone = registry.spawn(spec);
-      const ev = {
-        id: zone.id,
-        skill: def.id,
-        x: r2(pos.x),
-        z: r2(pos.z),
-        radius: def.area,
-      };
-      if (!heal) ev.damage = true;
-      if (echo) ev.echo = true;
-      events.emit(tick, 'zone_spawn', ev);
-      out.zone = zone.id;
-      out.x = r2(pos.x);
-      out.z = r2(pos.z);
-    }
-    return out;
+  let delivery = null;
+  function deliver(def, power, out, { tick = getTick(), boltSys = bolts, echo = null, emit = false, extra = null } = {}) {
+    // §6: only an aimed shape reads (and so refreshes) her aim.
+    const aimed = def.shape === 'projectile' || def.shape === 'melee_arc';
+    const d = aimed ? (echo ? { x: echo.dx, z: echo.dz } : aimDir()) : null;
+    return delivery(player, def, power, {
+      slot: out.slot,
+      tick,
+      human: false,
+      target: null,
+      f: null,
+      tag: null,
+      d,
+      echo,
+      castId: null,
+      M: null,
+      extra,
+      emit,
+      healer: { record: out, bolts: boltSys, override, isIframed },
+    });
   }
 
   // ----------------------------------------------------- continuous phase --
@@ -1035,6 +906,11 @@ export function createSkillSystem({ player, registry, events, combat, getTick, i
     auraPhase,
     pulseAura,
     deliver,
+    // The world attaches the one cast delivery (sim/allycast.js) once the
+    // party system exists.
+    attachDelivery: (fn) => {
+      delivery = fn;
+    },
     toggleOverride,
     clearOverride,
     getOverride: () => override,

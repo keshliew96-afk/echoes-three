@@ -173,7 +173,7 @@ docs/           one doc per system (see the list in the file names); TESTING.md,
   `src/render/vfx/`, `src/render/numbers.js`.
 - **Skills and nodes:** `src/data/classes.js`, `src/sim/skills.js`, `nodes.js`, `draft.js`;
   hero class kits in `src/sim/party*.js`, `allycast.js`, `duskwing.js`; every kit's zones in
-  `src/sim/zones.js`; every cast is one `skill_cast` event (a hero kit's carries its `classId`,
+  `src/sim/zones.js`; every kit's casts land through one `deliver` in `src/sim/allycast.js`; every cast is one `skill_cast` event (a hero kit's carries its `classId`,
   docs/CODE_HEALTH.md "One cast path"); casts drawn by `src/render/skillfx/` and `src/render/vfx/`
   (one director, `signature.js`, with one bus subscription per event: "One VFX director").
 - **Heroes and AI seats:** `src/app/playclass.js`, `src/data/lineup.js`, `src/sim/allies.js`, `partyai.js`,

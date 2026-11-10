@@ -241,6 +241,9 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
     zones: zoneSys,
   });
   zoneSys.setAllyHit(allySys.zoneHit);
+  // One cast delivery for every kit (AUDIT D2): the Healer's casts and her
+  // Echo replays deliver through the party's caster too.
+  skillSys.attachDelivery((a, def, power, c) => allySys.caster().deliver(a, def, power, c));
   events.on('room_cleared', () => allySys.onRoomBoundary('room_clear'));
   events.on('room_start', () => allySys.onRoomBoundary('room_start'));
   events.on('hit', (ev) => allySys.onHit(ev));

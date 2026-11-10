@@ -14,6 +14,9 @@
 //   3. One cast event: the legacy run's casts are all `skill_cast`; the ally
 //      seats' carry their classId and seat, the Healer's carry none.
 //   4. The view lists every zone once, under `zones`.
+//   5. One delivery: the Healer's kit (sim/skills.js) selects, heals, strikes
+//      and spawns nothing itself; her casts and Echo replays go through the
+//      one deliver in sim/allycast.js, which the world attaches.
 // Exit code 1 on any failure.
 import { pathToFileURL, fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -146,6 +149,17 @@ function makeWorld(seed, room = null, harness = true) {
   check(!W.log.some((e) => e.type === 'ally_cast' || /^azone_/.test(e.type)), 'the run emits no ally_cast and no azone event');
   check(healC.length > 0 && healC.every((e) => !('partyIndex' in e)), `the Healer's casts carry no classId (${healC.length})`);
   check(allyC.length > 0 && allyC.every((e) => Number.isInteger(e.partyIndex) && e.partyIndex > 0), `the ally seats' casts carry their classId and seat (${allyC.length})`);
+}
+
+// 5. One delivery
+{
+  const kit = readFileSync(join(here, 'src/sim/skills.js'), 'utf8');
+  const cast = readFileSync(join(here, 'src/sim/allycast.js'), 'utf8');
+  const world = readFileSync(join(here, 'src/sim/world.js'), 'utf8');
+  const own = ['selectDirect(', 'selectNova(', 'selectArc(', 'selectAreaDamage(', 'clampPlacement(', 'fanDirections(', '.spawn(tick', "'zone_spawn'"].filter((s) => kit.includes(s));
+  check(own.length === 0, `the Healer's kit delivers nothing itself (${own.join(', ') || 'none'})`);
+  check((cast.match(/function deliver\(/g) || []).length === 1 && /c\.healer/.test(cast), 'sim/allycast.js holds the one deliver, with the Healer kit context');
+  check(/skillSys\.attachDelivery\(/.test(world), 'the world attaches it to the Healer kit');
 }
 
 console.log(`\n${pass}/${pass + fail} checks passed`);

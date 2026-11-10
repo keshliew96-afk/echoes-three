@@ -108,8 +108,8 @@ Probes that read the director's source read `signature.js` plus `sig/*.js` (`sig
 ## One cast path (AUDIT D2, PR #137)
 
 The Healer's kit (`sim/skills.js`, `sim/nodes.js`) and the hero kits (`sim/allycast.js`,
-`party.js`, `partytech.js`) still pick their own targets, but what they put into the world is one
-thing:
+`party.js`, `partytech.js`) still own their loadouts and techniques, but how a cast lands and what
+it puts into the world is one thing:
 
 - **One zone system**, `src/sim/zones.js`. Every lasting `ground_aoe` zone is a body of kind `zone`;
   a hero kit's zone carries its `classId`, the Healer's none. All zones tick in one phase at world
@@ -128,8 +128,24 @@ run-2's Healer zone row gained `totalTicks`); step 2 moved only the event hash o
 run-3 (3, 5 and 6 ally casts renamed `skill_cast`). Every event, the RNG draws and every other hash
 are unchanged. Probe: `node tools/one-cast-path-probe.mjs` (in `npm test`).
 
-Still two: the delivery code itself (the Healer's heal targeting and override in `skills.js`
-`deliver`, the hero kits' AI targets, techniques and class twists in `allycast.js` `deliver`).
+- **One delivery**, `deliver` in `src/sim/allycast.js`. A hero kit's cast, its Echo, the
+  Healer's cast and her Echo replay all go through it; the world attaches it to the Healer's kit
+  (`skillSys.attachDelivery`), whose `deliver` only reads her aim and hands over her kit context
+  (`c.healer`: her cast record, her bolt subsystem, her heal-target override, her i-frame rule).
+  One rule set by what the skill is: heals reach the healables (the seats and the escort's
+  pilgrim), guards shield the seats, damage strikes through `hitList`. Two kit rules stay because
+  they decide who is hit: a hero's damage arc and nova pick live hostiles by centre, the Healer's
+  damage nova strikes every damageable body its reach touches, breakables too; and each kit keeps
+  its cast record layout (a hero's carries its seat, power and placement as `zx`/`zz`, the
+  Healer's the v0.4.63 keys). A hero kit still decides when and at whom to cast (`allies.js`,
+  `partyai.js`), the Healer's player or autopilot.
+
+Goldens for the one delivery: only the event hash of run-1, run-2 and run-3 moved. The Healer's
+`skill_cast` now goes out before its own effects, as a hero's always did (11, 11 and 8 casts move
+ahead of their bolt spawns, zone spawns and heals). The events as a set, every payload, the state
+hash and the RNG draws are unchanged; every Healer skill (plain, with Echo, and with three node
+sets) and six autopilot campaigns over all seven heroes gave the same events per tick and the same
+state every second before and after.
 
 ## One VFX director (AUDIT D5, PR #137)
 
