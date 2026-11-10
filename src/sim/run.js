@@ -125,6 +125,7 @@ import {
 } from '../data/campaign.js';
 
 import { cloneData, r2, TUTORIAL_LAYOUT, tutorialDiff, RUN } from './run/rules.js';
+import { createRunView } from './run/view.js';
 import { createRunSave } from './run/save.js';
 import { createRunCommands } from './run/cmds.js';
 import { createEventRoom } from './run/eventroom.js';
@@ -474,7 +475,7 @@ export function createRunSystem({
     openRun({ act: o.act, challenge: o.challenge, mode: 'single', harness: true });
     if (typeof o.boss === 'string') rs.bossPick = o.boss;
     enterRoom(1);
-    return view();
+    return RF.view();
   }
 
   // startCampaign({ level, challenge, depart, harness }) — a CAMPAIGN from
@@ -519,7 +520,7 @@ export function createRunSystem({
     if (o.harness && typeof o.boss === 'string') rs.bossPick = o.boss;
     if (o.depart) beginTransit('depart', null, rs.act, getTick());
     else enterRoom(firstRoom());
-    return view();
+    return RF.view();
   }
 
   function openRun({ act: a, challenge: c, mode, harness, endless = false, boons: rawBoons = null, tutorial = false, daily = null, rush = false, lineup = null, thirdBosses = null }) {
@@ -1821,7 +1822,7 @@ export function createRunSystem({
       ...(rs.campaign.rush ? { fight: rs.campaign.index } : {}),
     });
     enterRoom(firstRoom());
-    return view();
+    return RF.view();
   }
 
   // ------------------------------------------------ tutorial (TUTORIAL.md) --
@@ -1872,45 +1873,6 @@ export function createRunSystem({
     return { abandoned: true, summary: s };
   }
 
-  function campaignView() {
-    const c = rs.campaign;
-    const tick = getTick();
-    if (!c) return { active: false, mode: null, autoReturnTick: rs.autoReturnTick, autoReturnInTicks: rs.autoReturnTick !== null ? Math.max(0, rs.autoReturnTick - tick) : null };
-    const card = c.card
-      ? {
-          ...cloneData(c.card),
-          name: levelFor(c.card.to).name,
-          fromName: c.card.from !== null ? levelFor(c.card.from).name : null,
-          elapsedTicks: tick - c.card.startTick,
-          canSkip: tick >= c.card.minSkipTick,
-          due: tick >= c.card.untilTick,
-        }
-      : null;
-    return {
-      active: rs.active,
-      mode: c.mode,
-      harness: c.harness,
-      startLevel: c.startLevel,
-      level: c.level,
-      name: levelFor(c.level).name,
-      index: c.index,
-      next: nextOf(c, c.level),
-      ...(c.road ? { road: c.road } : {}),
-      ...(c.endless ? { endless: true, depth: c.index, won: !!c.won } : {}),
-      ...(c.rush ? { rush: { fight: c.index, fights: c.rush.fights, line: cloneData(c.rush.line) } } : {}),
-      ...(c.tutorial ? { tutorial: { hold: !!c.tutorial.hold } } : {}),
-      levels: cloneData(c.levels),
-      levelsCleared: c.levels.filter((l) => l.cleared).length,
-      clearedAt: c.clearedAt,
-      card,
-      grant: cloneData(c.grant),
-      transitions: c.transitions,
-      startTick: c.startTick,
-      levelStartTick: c.levelStartTick,
-      autoReturnTick: rs.autoReturnTick,
-      autoReturnInTicks: rs.autoReturnTick !== null ? Math.max(0, rs.autoReturnTick - tick) : null,
-    };
-  }
 
   // fix-M4a-r4: `{ upgrade: { skill, slot, replaces, why } }` when `nodeId`
   // would UPGRADE the build (no vacant usable socket, outranks a socketed
@@ -2245,135 +2207,6 @@ export function createRunSystem({
   // ----------------------------------------------------------------- view --
   const combatActive = () => rs.active && rs.phase === 'combat';
 
-  function view() {
-    return {
-      active: rs.active,
-      phase: rs.phase,
-      combatActive: combatActive(),
-      room: rs.roomIndex,
-      rooms: RUN.rooms,
-      act: rs.act,
-      actName: levelFor(rs.act).name,
-      challenge: rs.challenge,
-      // Slice 2: the boss this run meets, from room 6 on (the shop's Advance
-      // label, the boss banner); absent earlier so the hashed view of the
-      // certified early rooms is unchanged.
-      // THIRD BOSSES: present only when a gated boss can join (hash-stable view).
-      ...(rs.thirdOpen.length ? { thirdBosses: rs.thirdOpen.slice() } : {}),
-      ...(rs.active && rs.roomIndex >= 6 ? { actBoss: { kind: currentBoss().kind, name: currentBoss().name } } : {}),
-      // ENDLESS: present only on an endless descent (hash-stable view).
-      ...(endlessDepth() ? { endless: { depth: endlessDepth(), won: !!rs.campaign.won } } : {}),
-      // DAILY: present only on the day's run (hash-stable view).
-      ...(rs.active && rs.campaign && rs.campaign.daily ? { daily: { key: rs.campaign.daily.key, ...(rs.campaign.daily.practice ? { practice: true } : {}) } } : {}),
-      // BOSS RUSH: present only on a rush (hash-stable view).
-      ...(rs.active && rs.campaign && rs.campaign.rush ? { rush: { fight: rs.campaign.index, fights: rs.campaign.rush.fights } } : {}),
-      // TUTORIAL: present only in the guided first room (hash-stable view).
-      ...(tutorialOn() ? { tutorial: { hold: !!rs.campaign.tutorial.hold } } : {}),
-      layout: rs.layout ? { ...rs.layout } : null,
-      mode: rs.frame && rs.roomIndex ? rs.frame.modes[rs.roomIndex - 1] : null,
-      wallet: rs.wallet,
-      // Small fixes: every seat's Glint ([Healer wallet, seat 1-3 purses]) so
-      // the HUD counter reads the viewer's own; present only when a seat
-      // other than the Healer is played (class select, co-op), so a solo
-      // Healer run hashes as before.
-      ...(RF.seatPursesOn() ? { purses: [rs.wallet, party.purse(1), party.purse(2), party.purse(3)] } : {}),
-      clearedRooms: rs.clearedRooms,
-      roomsDone: rs.roomsDone,
-      freeSkillSlots: draft.freeSkillSlots(),
-      frame: rs.frame
-        ? { seed: rs.frame.seed, modes: [...rs.frame.modes], defendAt: [...rs.frame.defendAt], sides: [...rs.frame.sides] }
-        : null,
-      rewardFor: { ...rs.rewardFor },
-      // fix-M4a-r4: `upgrades` (the drops that upgrade a full build) is
-      // present only when non-empty — the view is part of snapshotState(), so
-      // a fill-only run hashes exactly as it did before the fix.
-      spoils: rs.spoils
-        ? rs.spoils.upgrades && rs.spoils.upgrades.length
-          ? { room: rs.spoils.room, nodes: [...rs.spoils.nodes], upgrades: [...rs.spoils.upgrades] }
-          : { room: rs.spoils.room, nodes: [...rs.spoils.nodes] }
-        : null,
-      spoilsTotal: rs.spoilsTotal,
-      reward: rs.reward
-        ? {
-            type: rs.reward.type,
-            id: rs.reward.id,
-            promised: rs.reward.promised,
-            substituted: rs.reward.substituted,
-            line: rs.reward.line,
-            freeSkillSlots: rs.reward.freeSkillSlots,
-            // fix-M4a-r4: `pool: 'upgrade'` when drawn from the upgrade
-            // layer, `upgrade` = the swap target read LIVE (the player may
-            // re-socket while the page is up; absent once the node would fill
-            // a vacant socket), `reason` = why an empty offer is empty. Each
-            // key is present only when set (hash-stable view, see spoils).
-            ...(rs.reward.pool ? { pool: rs.reward.pool } : {}),
-            ...upgradeKey(rs.reward.type === 'node' ? rs.reward.id : null),
-            ...(rs.reward.reason ? { reason: rs.reward.reason } : {}),
-            // Ruling A17: a swap offer's pending Replaces slot + the AI's
-            // suggestion (present only on a swap — hash-stable view).
-            ...(rs.reward.swap ? { swap: true, replace: rs.reward.replace, suggest: rs.reward.suggest } : {}),
-          }
-        : null,
-      path: rs.path
-        ? {
-            nextRoom: rs.path.nextRoom,
-            focus: rs.path.focus,
-            freeSkillSlots: rs.path.freeSkillSlots,
-            options: rs.path.options.map((o) => ({ ...o })),
-            // PARTY socket hold (present only while held — hash-stable).
-            ...(rs.path.hold ? { hold: { side: rs.path.hold.side, untilTick: rs.path.hold.untilTick, inTicks: Math.max(0, rs.path.hold.untilTick - getTick()) } } : {}),
-          }
-        : null,
-      shop: rs.shop
-        ? {
-            wallet: rs.wallet,
-            stock: rs.shop.stock.map((s) => ({
-              node: s.node,
-              rarity: s.rarity,
-              price: s.price,
-              sold: s.sold,
-              owned: draft.ownedCount(s.node),
-              // fix-M4a-r4: the swap target when this card UPGRADES a full
-              // build — present only then (hash-stable view).
-              ...upgradeKey(s.sold ? null : s.node),
-              affordable: rs.wallet >= s.price,
-              // An AI-held Healer's Suggested pick (key present only then).
-              ...(rs.shop.marked ? { marked: !!rs.shop.marked[rs.shop.stock.indexOf(s)] } : {}),
-            })),
-            // The AI-held Healer's shelf: the player bought on it (Manual).
-            ...(rs.shop.marked ? { touched: !!rs.shop.touched } : {}),
-            // SHOP REFRESH: how often the Healer's shelf was redrawn this
-            // visit (present only after one — hash-stable).
-            ...(rs.shop.refreshes ? { refreshes: rs.shop.refreshes } : {}),
-            // TONICS AND BOMBS: the tonic stand (present only with tonics on).
-            ...(rs.shop.stand ? { stand: { item: rs.shop.stand.item, price: rs.shop.stand.price, bought: [...rs.shop.stand.bought] } } : {}),
-          }
-        : null,
-      boss: rs.active && rs.roomIndex === RUN.bossRoom ? boss.view() : null,
-      // PARTY: the party page / shelves (keys present only while open, so a
-      // v0.5.150 view hashes exactly as before when none is up).
-      ...(pages && pages.isOpen() ? { party: pages.pageView() } : {}),
-      ...(pages && pages.shopOpen() ? { partyShop: pages.shopView() } : {}),
-      // PARTY: which socket screens are open (network only; present only then).
-      ...(pages && pages.screensAny() ? { socketScreens: pages.screens() } : {}),
-      // RELICS: present only while a run with relics is live (hash-stable).
-      ...(rs.active && relics.enabled() ? { relics: relics.view() } : {}),
-      // EVENT ROOMS: present only while an encounter is live (hash-stable).
-      ...(rs.active && encounters.view(encCtx()) ? { encounter: encounters.view(encCtx()) } : {}),
-      // KEYS AND VAULTS: present only in a run with keys (hash-stable).
-      ...(rs.active && vaults.enabled() ? { vaults: vaults.view() } : {}),
-      // TONICS AND BOMBS: present only in a run with tonics (hash-stable).
-      ...(rs.active && tonics.enabled() ? { tonics: tonics.view() } : {}),
-      // SECRET ROOMS: present only in a run with secrets (hash-stable).
-      ...(rs.active && secrets.enabled() ? { secrets: secrets.view() } : {}),
-      // SHRINES: present only in a run with shrines.
-      ...(rs.active && rs.shrine ? { shrine: RF.shrineView() } : {}),
-      // UNLOCKS: the run's boons (present only when the player picked some).
-      ...(rs.active && rs.campaign && rs.campaign.boons ? { boons: cloneData(rs.campaign.boons) } : {}),
-      summary: rs.summary,
-      fadeTicksLeft: rs.phase === 'fade' ? Math.max(0, rs.fadeUntilTick - getTick()) : 0,
-    };
-  }
 
 
   // The live room's plan: difficulty numbers + the rolled waves (wave rooms).
@@ -2396,7 +2229,7 @@ export function createRunSystem({
 
 
 
-  Object.assign(RF, { abandonRun, advanceLevel, affixRule, afterRelic, afterReward, beginFade, campaignAdvance, campaignView, choosePath, chooseRelic, commitPage, declineReward, endRun, endTutorial, enterRoom, focusPath, focusRelic, gainGlint, onLevelCleared, partyPick, pickRoad, positionParty, presentReward, returnToCamp, roomPlanFull, sealedKnock, setRewardReplace, startCampaign, startRun, stressHealer, sweepPlayerTransients, takeReward, tutorialRelease, view, vowedDiff }); // the closure's own functions the parts call
+  Object.assign(RF, { abandonRun, advanceLevel, affixRule, afterRelic, afterReward, beginFade, campaignAdvance, choosePath, chooseRelic, commitPage, declineReward, endRun, endTutorial, enterRoom, focusPath, focusRelic, gainGlint, onLevelCleared, partyPick, pickRoad, positionParty, presentReward, returnToCamp, roomPlanFull, sealedKnock, setRewardReplace, startCampaign, startRun, stressHealer, sweepPlayerTransients, takeReward, tutorialOn, tutorialRelease, upgradeKey, vowedDiff }); // the closure's own functions the parts call
   Object.assign(RF, createRunShop({ rs, RF, allyOn, buildSys, controllers, draft, events, getTick, pages, party, relics, tonics }));
   Object.assign(RF, createRunShrines({ rs, RF, championsOn, events, getTick, party, player, registry, relics, tonics, vaults }));
   Object.assign(RF, createVaultRoom({ rs, RF, allyOn, combat, events, getTick, party, registry, relics, tonics, vaults }));
@@ -2404,6 +2237,7 @@ export function createRunSystem({
   Object.assign(RF, createEventRoom({ rs, RF, allyOn, combat, encCtx, encounterBody, encounters, endlessDepth, events, getTick, objectivesOn, party, player, registry, relics, roomLevel, skillSys, waves }));
   Object.assign(RF, createRunCommands({ rs, RF, allyOn, autopilot, boss, buildSys, championsOn, combat, draft, encCtx, encounters, enemies, events, getTick, levelChampion, pages, party, player, registry, relics, rng, secrets, tonics, vaults, waves }));
   Object.assign(RF, createRunSave({ rs, autopilot, encounters, pages, relics, secrets, tonics, vaults }));
+  Object.assign(RF, createRunView({ rs, RF, boss, combatActive, currentBoss, draft, encCtx, encounters, endlessDepth, getTick, nextOf, pages, party, relics, secrets, tonics, vaults }));
   const api = {
     saveState: RF.saveState,
     loadState: RF.loadState,
@@ -2415,7 +2249,7 @@ export function createRunSystem({
     abandonRun,
     tutorialRelease,
     endTutorial,
-    campaign: campaignView,
+    campaign: RF.campaignView,
     campaignRules,
     endRun,
     onRoomCleared,
@@ -2423,7 +2257,7 @@ export function createRunSystem({
     continuous,
     discrete,
     endOfTick,
-    view,
+    view: RF.view,
     cmd: RF.cmd,
     setRoomHooks,
     autopilot,
