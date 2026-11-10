@@ -4,9 +4,12 @@
 // Level I foes (render/enemies/facet/), then the Briar Knight and the
 // Moss Hart (render/enemies/champfacet/); the Level II slices add the Drowned
 // Heron, the Millwheel and the Mire King, then the Sluice Warden and the
-// Lockkeeper; the Level III slice adds the Lich Ram and the Ash Raven (the
-// Barrow Wyrm is the pilot's) and the Level III foes slice the Barrow's eight
-// (nine with the broodling); the Level IV foes slice adds the six Heart foes;
+// Lockkeeper; the Level III slices add the Lich Ram and the Ash Raven (the
+// Barrow Wyrm is the pilot's), then the Bone Reeve and the Gravebell Ringer,
+// and the Level III foes slice the Barrow's eight
+// (nine with the broodling); the Level IV slice adds the Hollow Cantor, the
+// Geode Colossus and the Vein Weaver, its foes slice the six Heart foes and
+// its champions slice the Hollow Choir and the Vein Matron;
 // the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
@@ -77,6 +80,16 @@ export const MODEL_STANDARD = Object.freeze({
   // The Level II champions.
   sluice_warden: true,
   lockkeeper: true,
+  // The Level IV bosses.
+  cantor: true,
+  colossus: true,
+  veinweaver: true,
+  // The Level III champions.
+  bone_reeve: true,
+  gravebell_ringer: true,
+  // The Level IV champions.
+  hollow_choir: true,
+  vein_matron: true,
 });
 
 export function facetOn(kind, query = pageQuery()) {

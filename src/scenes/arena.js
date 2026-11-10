@@ -55,6 +55,7 @@ import {
 } from 'three';
 import { ARENA, CAMERA, DODGE, DUMMY, TICK_HZ } from '../core/constants.js';
 import { createCritter, setInkViewport } from '../render/critters/index.js';
+import { registerHeroRig } from '../render/critters/rigs.js';
 import { PALETTE } from '../data/palette.js';
 import { LAYOUTS } from '../data/layouts.js';
 import { ACT_IDS } from '../data/levels.js';
@@ -571,6 +572,7 @@ export function createArenaScene(stage, toggles, ctx) {
   // graybox sim (position/aim/dash/hp are read-only; clips are render state).
   const healerRig = createCritter('healer', { cosmetic });
   root.add(healerRig.group);
+  registerHeroRig('healer', healerRig);
 
   // Bolts leave the staff-gem tip (§19.2: the gem brightens on cast) — hand
   // the graybox bolt renderer the gem's world position as its muzzle: where
@@ -625,6 +627,7 @@ export function createArenaScene(stage, toggles, ctx) {
     c.setYaw(Math.atan2(-ax, -az));
     c.setAnim('idle');
     root.add(c.group);
+    registerHeroRig(classId, c);
     return c;
   });
 

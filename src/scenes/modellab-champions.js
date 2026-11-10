@@ -1,14 +1,17 @@
-// MODEL LAB ENTRIES for the Level I and Level II champions
-// (docs/MODEL_STANDARD.md "Level I champions", "Level II champions"): the
-// Briar Knight, the Moss Hart, the Sluice Warden and the Lockkeeper, each
-// beside its classic twin. The entry shape is scenes/modellab-bosses.js's.
+// MODEL LAB ENTRIES for the Level I, II and III champions
+// (docs/MODEL_STANDARD.md "Level I champions", "Level II champions", "Level
+// III champions"): the Briar Knight, the Moss Hart, the Sluice Warden, the
+// Lockkeeper, the Bone Reeve and the Gravebell Ringer, each beside its
+// classic twin. The entry shape is scenes/modellab-bosses.js's.
 import { PALETTE } from '../data/palette.js';
-import { buildBriarKnight, buildSluiceWarden } from '../render/enemies/champions.js';
-import { buildLockkeeper, buildMossHart } from '../render/enemies/champions2.js';
+import { buildBoneReeve, buildBriarKnight, buildSluiceWarden } from '../render/enemies/champions.js';
+import { buildGravebellRinger, buildLockkeeper, buildMossHart } from '../render/enemies/champions2.js';
 import { buildBriarKnightFacet, KNIGHT_ABILITIES, KNIGHT_CHARGE, KNIGHT_WALK } from '../render/enemies/champfacet/briarknight.js';
 import { buildMossHartFacet, HART_ABILITIES, HART_WALK } from '../render/enemies/champfacet/mosshart.js';
 import { buildSluiceWardenFacet, WARDEN_ABILITIES, WARDEN_WALK } from '../render/enemies/champfacet/sluicewarden.js';
 import { buildLockkeeperFacet, KEEPER_ABILITIES, KEEPER_WALK, LAB_HOOK } from '../render/enemies/champfacet/lockkeeper.js';
+import { buildBoneReeveFacet, REEVE_ABILITIES, REEVE_WALK } from '../render/enemies/champfacet/bonereeve.js';
+import { buildGravebellRingerFacet, RINGER_ABILITIES, RINGER_WALK } from '../render/enemies/champfacet/gravebellringer.js';
 import { abilityOn, follow, loopPath, pending, replant } from './modellab-bosses.js';
 
 // The Briar Knight. The Bramble Charge crosses the frame at the sim's 9 u/s,
@@ -377,4 +380,175 @@ const keeperEntry = {
   },
 };
 
-export const LAB_ENTRIES = [knightEntry, hartEntry, wardenEntry, keeperEntry];
+// The Bone Reeve (Level III). The classic twin is fed the same warning and
+// the strike's tick.
+const reeveEntry = {
+  id: 'bone_reeve',
+  label: 'Bone Reeve',
+  abilities: [
+    ['sweep', 'Reaping Sweep'],
+    ['lance', 'Grave Lance'],
+    ['spawn', 'Spawn in'],
+  ],
+  frame: { y: 1.5, z: 0, dist: 8.2, speed: REEVE_WALK, loop: 3.0, side: 2.6 },
+  build({ cosmetic, vfx, play }) {
+    const rig = buildBoneReeveFacet();
+    const classic = buildBoneReeve(cosmetic);
+    let tel = 0;
+    let walk = 0;
+    let idle = 0;
+    let yaw = 0;
+    let moveTick = 0;
+    let lastPh = null;
+    const stand = { id: 5, telegraph: null, lastMove: null, moveTick: -1, rage: false };
+    const MOVE = { sweep: 'reaping_sweep', lance: 'grave_lance' };
+    return {
+      group: rig.group,
+      classic: classic.group,
+      rig,
+      get yaw() {
+        return yaw;
+      },
+      timeline: (id) => REEVE_ABILITIES[id] || REEVE_ABILITIES.sweep,
+      cues: (id) => (REEVE_ABILITIES[id] || REEVE_ABILITIES.sweep).cues || [],
+      reset() {
+        rig.group.position.set(0, 0, 0);
+        classic.group.position.set(0, 0, 0);
+        rig.setYaw(0);
+        classic.setYaw(0);
+        pending.add(rig);
+      },
+      update(state, dt, abT) {
+        const F = reeveEntry.frame;
+        const moving = state.mode === 'move';
+        const on = abilityOn(state);
+        const ability = on ? state.ability : null;
+        const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
+        const side = state.classic ? F.side : 0;
+        yaw = p.yaw;
+        rig.group.position.set(p.x + side, 0, p.z);
+        rig.setYaw(yaw);
+        rig.group.updateMatrixWorld(true);
+        replant(rig, state, on, abT);
+        rig.lab.pose({ dt, ability, abT });
+        idle += dt;
+        const s = ability && ability !== 'spawn' ? REEVE_ABILITIES[ability].sample(abT) : null;
+        const ph = s ? s.id : null;
+        const warn = ph === 'draw' || ph === 'raise';
+        tel = warn ? s.k : follow(tel, 0, dt, 12);
+        stand.telegraph = warn ? { move: MOVE[ability] } : null;
+        if ((ph === 'swing' || ph === 'drive') && lastPh !== ph) {
+          stand.lastMove = MOVE[ability];
+          stand.moveTick = ++moveTick;
+        }
+        lastPh = ph;
+        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
+        classic.group.position.set(p.x - side, 0, p.z);
+        classic.setYaw(yaw);
+        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
+        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, e: stand });
+      },
+      onCue(id, at) {
+        const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
+        if (id === 'reaping_sweep') {
+          play('ch_reaping_sweep');
+          const c = fx(1.2);
+          vfx.ring({ x: c.x, z: c.z, r0: 0.4, r1: 2.7, width: 0.3, life: 0.45, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'grave_lance') {
+          play('ch_grave_lance');
+          const c = fx(1.6);
+          vfx.crack({ x: c.x, z: c.z, radius: 1.1, glow: PALETTE.godstuffViolet });
+          vfx.ring({ x: c.x, z: c.z, r0: 0.3, r1: 1.6, width: 0.25, life: 0.4, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        }
+      },
+      debug: () => ({ feet: rig.lab.feet(), grow: rig.lab.grow(), channels: rig.lab.channels() }),
+    };
+  },
+};
+
+// The Gravebell Ringer (Level III). The classic twin reads its warning's
+// progress from a tick, so it is fed a 100-tick warning and the lab's tell.
+const ringerEntry = {
+  id: 'gravebell_ringer',
+  label: 'Gravebell Ringer',
+  abilities: [
+    ['knell', 'Death Knell'],
+    ['call', 'Grave Call'],
+    ['spawn', 'Spawn in'],
+  ],
+  frame: { y: 2.1, z: 0, dist: 10.4, speed: RINGER_WALK, loop: 3.0, side: 2.8 },
+  build({ cosmetic, vfx, play }) {
+    const rig = buildGravebellRingerFacet();
+    const classic = buildGravebellRinger(cosmetic);
+    let tel = 0;
+    let walk = 0;
+    let idle = 0;
+    let yaw = 0;
+    let moveTick = 0;
+    let lastPh = null;
+    const stand = { id: 6, telegraph: null, lastMove: null, moveTick: -1, rage: false };
+    const MOVE = { knell: 'death_knell', call: 'grave_call' };
+    return {
+      group: rig.group,
+      classic: classic.group,
+      rig,
+      get yaw() {
+        return yaw;
+      },
+      timeline: (id) => RINGER_ABILITIES[id] || RINGER_ABILITIES.knell,
+      cues: (id) => (RINGER_ABILITIES[id] || RINGER_ABILITIES.knell).cues || [],
+      reset() {
+        rig.group.position.set(0, 0, 0);
+        classic.group.position.set(0, 0, 0);
+        rig.setYaw(0);
+        classic.setYaw(0);
+        pending.add(rig);
+      },
+      update(state, dt, abT) {
+        const F = ringerEntry.frame;
+        const moving = state.mode === 'move';
+        const on = abilityOn(state);
+        const ability = on ? state.ability : null;
+        const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
+        const side = state.classic ? F.side : 0;
+        yaw = p.yaw;
+        rig.group.position.set(p.x + side, 0, p.z);
+        rig.setYaw(yaw);
+        rig.group.updateMatrixWorld(true);
+        replant(rig, state, on, abT);
+        rig.lab.pose({ dt, ability, abT });
+        idle += dt;
+        const s = ability && ability !== 'spawn' ? RINGER_ABILITIES[ability].sample(abT) : null;
+        const ph = s ? s.id : null;
+        const warn = ph === 'heave' || ph === 'lift';
+        tel = warn ? s.k : follow(tel, 0, dt, 12);
+        stand.telegraph = warn ? { move: MOVE[ability], startTick: 0, resolveTick: 100 } : null;
+        if ((ph === 'toll' || ph === 'slam') && lastPh !== ph) {
+          stand.lastMove = MOVE[ability];
+          stand.moveTick = ++moveTick;
+        }
+        lastPh = ph;
+        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
+        classic.group.position.set(p.x - side, 0, p.z);
+        classic.setYaw(yaw);
+        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
+        classic.pose({ t: idle, tick: Math.round(tel * 100), walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, e: stand });
+      },
+      onCue(id, at) {
+        const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
+        if (id === 'death_knell') {
+          play('ch_death_knell');
+          vfx.ring({ x: at.x, z: at.z, r0: 0.5, r1: 3.6, width: 0.35, life: 0.6, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        } else if (id === 'grave_call') {
+          play('ch_grave_call');
+          const c = fx(2.2);
+          vfx.crack({ x: c.x, z: c.z, radius: 1.5, glow: PALETTE.godstuffViolet });
+          vfx.ring({ x: c.x, z: c.z, r0: 0.4, r1: 1.8, width: 0.3, life: 0.5, core: PALETTE.parchment, glow: PALETTE.godstuffViolet });
+        }
+      },
+      debug: () => ({ feet: rig.lab.feet(), grow: rig.lab.grow(), channels: rig.lab.channels(), swing: rig.lab.swing() }),
+    };
+  },
+};
+
+export const LAB_ENTRIES = [knightEntry, hartEntry, wardenEntry, keeperEntry, reeveEntry, ringerEntry];
