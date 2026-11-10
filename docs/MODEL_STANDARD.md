@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349; Level IV foes v0.5.350)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349; Level IV foes v0.5.350; Level III champions v0.5.351)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -14,7 +14,9 @@ champions"). The Level II slice (v0.5.344) rebuilt the Sunken Mill's three bosse
 **Drowned Heron**, the **Millwheel** and the **Mire King** ("The Level II bosses"), and its
 second part (v0.5.347) the Mill's two champions, the **Sluice Warden** and the
 **Lockkeeper** ("The Level II champions"). The Level III slice (v0.5.348) rebuilt the Ashen
-Barrow's two bosses, the **Lich Ram** and the **Ash Raven** ("The Level III bosses").
+Barrow's two bosses, the **Lich Ram** and the **Ash Raven** ("The Level III bosses"), and its
+second part (v0.5.351) the Barrow's two champions, the **Bone Reeve** and the **Gravebell
+Ringer** ("The Level III champions").
 
 His ruling for the pilot: the detail goes **on top of** the chibi ink-outline style
 (BUILD_BRIEF §19.2), it does not replace it, and the facets must read clearly.
@@ -721,6 +723,66 @@ on a slow frame the strike runs no further than its contact while the warning is
 new champion spawns in; a jump in place re-plants the feet; a dying champion is never posed
 again.
 
+## The Level III champions (v0.5.351)
+
+The Ashen Barrow's two champions, on the Level II champions' terms: each keeps its classic
+rig's silhouette, colours (the classic's own constants and value steps of them) and its ONE
+indigo tell, adds the standard's detail on top, walks on **locked feet** under its robe (the
+classic Reeve glided on a cone; the Ringer shuffled), and keeps the classic beside it
+(`?facet=0`), the champion table's soft flash and the presence layer's crown, sigil and
+chest. Draw calls count every mesh, ink hull and sprite; instances are the parts in the
+instanced rows.
+
+| Champion | File | Draw calls (classic) | Instances |
+|---|---|---|---|
+| Bone Reeve | `render/enemies/champfacet/bonereeve.js` | 100 (33) | 210 |
+| Gravebell Ringer | `render/enemies/champfacet/gravebellringer.js` | 106 (50) | 202 |
+
+- **Bone Reeve.** The barrow's bailiff: a faceted robe to the floor with nine torn rags
+  round the hem swinging with the stride and seven fold wedges up the cloth, the belt and
+  a pelvis over it; a spine of seven vertebrae with neural blades, five ribs a side in
+  three faceted segments curving round to a lit sternum, a clavicle bar and two scapulae,
+  lit cowl over the shoulders; a boxed skull with a lit crown, a hinged jaw and a row of
+  six teeth under a faceted hood, the two indigo slit eyes and their glow; the bone lantern
+  at the belt, a faceted cage of four bars round an indigo flame that gutters; the grave
+  scythe, a ferruled pole with five bone knuckles up its length and a blade of eight
+  faceted segments curving out to the tip with a lit edge, carried diagonally in both
+  hands. It is a biped on `createLegs` under the robe (two bone feet show at the hem) and
+  both arms reach their grips on the pole by two-bone IK, so both fists sit on the pole in
+  every pose. *Reaping Sweep*: draw (the 54-tick cone warning less one strike: the scythe
+  drawn back across the body to the right, the body twisted into it, the weight on the back
+  foot), swing (2.5 frames, on the cone's tick: the blade carried flat across the front on
+  a lead step, the body twisted the other way), held, recoil, settle. *Grave Lance*: raise
+  (the 66-tick lane warning less one strike: the scythe raised high overhead, the body
+  back), drive (2.5 frames, on the lane's tick: the blade driven down into the floor ahead
+  on a long lead step, the knees deep), held, recoil, settle.
+- **Gravebell Ringer.** The barrow's bell-ringer: a faceted shroud to the floor with nine
+  rags and seven folds, the belt and a pelvis; the chest hunched forward from the hips
+  (the classic's bow) carrying a spine of six vertebrae, four ribs a side in three
+  segments, a faceted mantle with eight lit plates over the shoulders, a boxed skull with
+  dark sockets under a faceted hood; the yoke on its back, a beam with four pegs, two
+  posts each banded three times in iron, two braces, a crossbeam and a gable of two
+  faceted slopes; the bell hung from the crossbeam on a pivot kept plumb against the
+  hunch, a faceted bronze cup with a lit crown, a lip of ten plates, a crack of ink and six
+  indigo runes, the indigo tongue (the tell) with its glow; the rope laid from the left
+  fist up to the crossbeam's hitch each frame, the bone mallet in the right hand with a
+  ferruled haft and a lit head that burns ember through the call. It is a biped on
+  `createLegs` under the shroud, both arms on the same IK. The bell is a **damped
+  pendulum** driven by the pose: the knell's heave rocks the body and swings it wide, the
+  toll kicks it over, the walk sways it, and it stills again. *Death Knell*: heave (the
+  78-tick ring warning less one strike: it hauls on the rope, the body rocking with the
+  bell, the weight back), toll (2.5 frames, on the ring's tick: the rope yanked down, the
+  bell crashed over, the body thrown forward), held, recoil, settle. *Grave Call*: lift
+  (the 64-tick ring warning less one strike: the mallet raised high behind, the body
+  back), slam (2.5 frames, on the ring's tick: the mallet struck into the floor ahead on a
+  long lead step, its head at the floor), held, recoil, settle.
+
+Both wind up the way the Level II champions do: a warning is known by its move and start
+tick, the wind-up is stretched to the sim's ticks so the strike lands on the resolve, and
+on a slow frame the strike runs no further than its contact while the warning is live. A
+new champion spawns in; a jump in place re-plants the feet; a dying champion is never posed
+again.
+
 ## The Level III bosses (v0.5.348)
 
 The Ashen Barrow's two bosses, on the same terms as Levels I and II: each keeps its classic
@@ -970,7 +1032,7 @@ Every attack already had a cue in the game (`audio/heartcues.js`: `hx_surge`, `h
   jump in place (a new room, a hitch mid-charge) only re-plants the feet. A dying rig (posed
   with no entity) collapses in the pose it died in: no wind-up runs on into its strike.
 - `render/enemies/champions.js` builds `buildBriarKnightFacet`, `buildMossHartFacet`,
-  `buildSluiceWardenFacet` and `buildLockkeeperFacet` in the champion table when their flag is on, so the enemy layer, the prewarm and the Journal
+  `buildSluiceWardenFacet`, `buildLockkeeperFacet`, `buildBoneReeveFacet` and `buildGravebellRingerFacet` in the champion table when their flag is on, so the enemy layer, the prewarm and the Journal
   viewer all take them; the enemy layer wraps the rig's first child in its hit-react node
   and lifts the hit flash on its `mats` as for any champion.
 - The boss prewarm (`render/warmup.js`) parks each rig unculled for a few frames, then gives
@@ -1048,7 +1110,10 @@ the Briar Knight (Bramble Charge, which crosses the frame at the sim's 9 u/s, Th
 and the Moss Hart (Antler Toss, Hart's Leap, which bounds across the frame), each with a
 Spawn in tab and its classic twin beside. The Level II champions follow in the same file:
 the Sluice Warden (Floodgate, Undertow) and the Lockkeeper (Chain Hook, whose key flies
-down a lab lane of `LAB_HOOK` 5 u and reels back, Lock Turn).
+down a lab lane of `LAB_HOOK` 5 u and reels back, Lock Turn), then the Level III champions:
+the Bone Reeve (Reaping Sweep, Grave Lance) and the Gravebell Ringer (Death Knell, Grave
+Call), shot by `tools/model-standard-level3-champions-shots.mjs` in the lab and in their
+Barrow crown rooms.
 The Level I foes bring their own tabs (`scenes/modellab-foes.js`, entries the lab sets
 before the Effect kit): each foe's framing, its game speed on the Move loop (forward for
 half a lap, then a sidestep and a backpedal facing the middle), its abilities on their
@@ -1113,8 +1178,19 @@ on the hit; the swallow's gape and snap; the rage), the strikes on the sim's hit
 guest's fresh copies, a boss killed in its wind-up, a hitch; the spawn-in, the pooled rig,
 the turntable; the lab entries.
 
+`node tools/model-standard-level3-champions-probe.mjs` (in `npm test`) holds the Level III
+champions to the same rules (the flags, the Level IV champions still classic; the rig, the
+colours with the amber family banned, the beats, the locked feet under the robes, the
+spawn-in, the rage, the lab), and to their own moves: the Reaping Sweep's draw through its
+warning and its swing across the front on the resolve; the Grave Lance's raise overhead and
+its drive into the floor; the Death Knell's heave with the bell swinging wide, its toll on
+the resolve with the bell crashed over and the bell stilling again; the Grave Call's lift
+and its slam with the mallet's head at the floor; a fresh copy of a warning every tick never
+restarting a wind-up; a slow frame holding the swing and the slam at their contacts; both
+fists on the scythe's pole, the rope from the left fist to the yoke's hitch, in every pose.
+
 `node tools/model-standard-level2-champions-probe.mjs` (in `npm test`) holds the Level II
-champions to the same rules as the Level I pair below (the flags, the Level III champions
+champions to the same rules as the Level I pair below (the flags, the Level IV champions
 still classic; the rig, the beats, the locked feet, the spawn-in, the rage, the lab), and
 to their own moves: the Floodgate's heave through its warning and its slam on the resolve;
 the Undertow's raise and smash; the Chain Hook's whirl, its throw on the resolve with the
