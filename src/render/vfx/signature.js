@@ -51,68 +51,28 @@ import { CHEST_BEAT } from '../interactables/chestbeat.js';
 import { SKILLS } from '../../sim/skills.js';
 import { isOwnBody } from './hitfeedback.js';
 
-const EMBER = PALETTE.emberDanger;
-const PARCH = PALETTE.parchment;
-const BONE = PALETTE.bone;
-const HEAL = PALETTE.brightHeal;
-const INK = PALETTE.voidCharcoal;
-const TAU = Math.PI * 2;
-const BOLT_Y = 0.55;
-const ESHOT_Y = 0.5;
-
-// Families whose bodies kick dust while they move fast (chargers, brutes) and
-// the flyer's scale-dust wake. Speed in u/tick of sim travel.
-const TRAIL_SPEED = 0.045;
-
-// Enemy shots with their own trail shape (kind -> trail spec); the rest use
-// the mantis's sickle. Every glow is the shooter's template hue, set per
-// shot (vfxFoeShotColor). The Barrow Crow's darts: thin, bone-cored, short.
-const ENEMY_SHOT_TRAIL = Object.freeze({
-  crow: Object.freeze({ y: ESHOT_Y, len: 0.55, width: 0.07, core: BONE, tailW: 0.05 }),
-  // The Millwheel's cog shards: a hot iron splinter, short and bright.
-  millwheel: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.09, core: PARCH, tailW: 0.1 }),
-  // Act IV: the Cantor's echo and the Colossus' burst throw crystal shards.
-  cantor: Object.freeze({ y: ESHOT_Y, len: 0.7, width: 0.1, core: PARCH, tailW: 0.1 }),
-  colossus: Object.freeze({ y: ESHOT_Y, len: 0.6, width: 0.1, core: '#DCD6F2', tailW: 0.1 }),
-  // Act V: the Vane Cock's gust darts — long thin streaks of cold air.
-  vane: Object.freeze({ y: ESHOT_Y, len: 0.95, width: 0.07, core: '#DCE6EE', tailW: 0.04 }),
-});
-
-// THE HIT AND THE KILL (docs/HIT_FEEDBACK.md, VFX_HIT_RULES P3, L5, K1, K2,
-// P1). The contact: a near-white bloom about 2 body widths across (P3) and the
-// class flare and flash held at full strength 100 ms (L5), the bloom dimmed in
-// a crowd and under Effects: Reduced. The kill: the bone flare held 117 ms
-// (5 frames with the kill freeze the render hold adds), a white bloom twice
-// a hit's area (K1: 1.41 x its width), the ground ring gone within 0.22 s and drawn under
-// any Ember ring, and the debris burst waiting for the body's swell (K2),
-// leaning slightly along the killing hit (P1).
-const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.4, bloomSkill: 1.7, bloomCrit: 1.2, bloomOpacity: 0.3, bloomGrow: 0.1, crowd: 0.12 });
-const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.0, bloomOpacity: 0.35, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
-
-// D3: the air an element leaves (§6.2 m).
-// size: a twinkle's size range (u); the extras (v0.5.348) made them bigger,
-// Kesh's open choice from Part 2 (were 0.05 to 0.09).
-export const ELEMENT_AIR = Object.freeze({ twinkles: 100, sec: [1.0, 1.9], mist: 3, mistOpacity: 0.16, size: [0.09, 0.16] });
+import { EMBER, PARCH, BONE, HEAL, INK, TAU, BOLT_Y, ESHOT_Y, TRAIL_SPEED, ENEMY_SHOT_TRAIL, CONTACT_FX, KILL_FX, ELEMENT_AIR, HEAL_SKILLS, SKILL_AREA } from './sig/common.js';
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
+  const sv = {}; // the director's mutable state (one object, shared with its parts under vfx/sig/)
   const kit = createVfxKit({ stage, cosmetic });
   // Kesh's VFX templates (design-VFX.md §11): their own primitives.
   const tk = createTemplateKit({ stage, cosmetic });
   const rnd = (a, b) => cosmetic.range(a, b);
 
   // ------------------------------------------------------------ settings --
-  let intensity = VFX_INTENSITY.full;
+  sv.intensity = VFX_INTENSITY.full;
   const readSettings = () => {
     const v = settings?.get?.('gameplay.effects');
-    intensity = VFX_INTENSITY[v] ?? VFX_INTENSITY.full;
-    kit.setIntensity(intensity);
-    tk.setIntensity(intensity);
+    sv.intensity = VFX_INTENSITY[v] ?? VFX_INTENSITY.full;
+    kit.setIntensity(sv.intensity);
+    tk.setIntensity(sv.intensity);
   };
   readSettings();
   settings?.subscribe?.('gameplay.effects', readSettings);
   const shakeGain = () => {
     const s = settings?.get?.('gameplay.screenshake');
-    return (typeof s === 'number' ? s : 1) * intensity.camera;
+    return (typeof s === 'number' ? s : 1) * sv.intensity.camera;
   };
   const camfx = createCameraFx({ camera: stage.camera, gain: shakeGain });
   // §6.2 k and o (VFX_HIT_RULES): the local anime frame and the camera punch.
@@ -125,7 +85,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const FINISHERS = new Set(Object.values(SKILLS).filter((d) => d.combo).map((d) => d.id));
   const CAM_PUNCH = Object.freeze({ bigKill: 0.06, chest: 0.02, sec: 0.12, shotKick: 0.015 });
   const NO_SHOT_KICK = new Set(['archer', 'healer']);
-  const N = (k) => (k > 0 ? Math.max(1, Math.round(k * intensity.particles)) : 0);
+  const N = (k) => (k > 0 ? Math.max(1, Math.round(k * sv.intensity.particles)) : 0);
   // Recipe counters for probes (__echoes.content.vfx().recipes): how many
   // times each creature-specific recipe has played this session.
   const fired = {};
@@ -143,12 +103,12 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   };
 
   // ------------------------------------------------------------ biome --
-  let biomeAct = 1;
-  let biomeClock = 0;
+  sv.biomeAct = 1;
+  sv.biomeClock = 0;
   const readBiome = () => {
     try {
       const a = world.runSystem?.()?.view?.()?.act;
-      if (a) biomeAct = a;
+      if (a) sv.biomeAct = a;
     } catch {
       /* the run system is optional (harness scenes) */
     }
@@ -157,7 +117,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const _ca = new Color();
   const _cb = new Color();
   function biomeTint(hex, k) {
-    const air = VFX_BIOME[biomeAct] ?? VFX_BIOME[1];
+    const air = VFX_BIOME[sv.biomeAct] ?? VFX_BIOME[1];
     const key = `${hex}|${air}|${k}`;
     let v = tintCache.get(key);
     if (v === undefined) {
@@ -217,7 +177,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // where many glows already stack and under Effects: Reduced.
   function bloom(x, z, size, { hold, life, opacity, grow = CONTACT_FX.bloomGrow, y = 0.5 }) {
     const crowd = Math.max(0.35, 1 / (1 + CONTACT_FX.crowd * kit.liveNear(x, z, 2)));
-    kit.flash({ x, y, z, color: PARCH, size, life, hold, grow, opacity: opacity * crowd * (intensity.light ?? 1) });
+    kit.flash({ x, y, z, color: PARCH, size, life, hold, grow, opacity: opacity * crowd * (sv.intensity.light ?? 1) });
   }
   function embersUp(x, z, color, n, { radius = 0.5, life = [1.0, 1.7], y = 0.3 } = {}) {
     spray('spark', x, y, z, n, { color, speed: [0.05, 0.35], up: [0.5, 1.2], size: [0.04, 0.08], life, gravity: -0.35, drag: 1.5, jitter: radius, opacity: 0.85 });
@@ -233,17 +193,17 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   }
 
   // ------------------------------------------------------------ entities --
-  let cacheTick = -1;
-  let rebuilds = 0;
+  sv.cacheTick = -1;
+  sv.rebuilds = 0;
   const byIdMap = new Map();
   function byId(id) {
     if (id == null) return null;
-    const fresh = world.tick !== cacheTick;
+    const fresh = world.tick !== sv.cacheTick;
     // Rebuilt once per tick, and again (a few times at most) when an id
     // spawned after this tick's build.
-    if (fresh || (!byIdMap.has(id) && rebuilds < 4)) {
-      rebuilds = fresh ? 0 : rebuilds + 1;
-      cacheTick = world.tick;
+    if (fresh || (!byIdMap.has(id) && sv.rebuilds < 4)) {
+      sv.rebuilds = fresh ? 0 : sv.rebuilds + 1;
+      sv.cacheTick = world.tick;
       byIdMap.clear();
       for (const e of world.entities()) byIdMap.set(e.id, e);
     }
@@ -1094,7 +1054,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     const cls = classOf(atk) ?? vfxSkillClass(ev.source) ?? 'healer';
     lastClassHit.set(ev.target, cls);
     // k: a combo finisher's contact plays the local anime frame (one a cast).
-    if (FINISHERS.has(ev.source) && animeTick.get(ev.attacker) !== ev.tick && intensity.camera > 0) {
+    if (FINISHERS.has(ev.source) && animeTick.get(ev.attacker) !== ev.tick && sv.intensity.camera > 0) {
       animeTick.set(ev.attacker, ev.tick);
       animeFx.play(ev.x, ev.z);
     }
@@ -1112,7 +1072,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   const SPATTER = Object.freeze({ drops: [8, 14], splash: 0.34, life: 3.5, every: 0.45, behind: 0.35 });
   const spatterAt = new Map(); // body id -> the time of its last splash
   const SPATTER_SOFT = new Set(['aura', 'burn', 'molten', 'thorns', 'kindle', 'sear', 'hazard']); // ticks, not blows
-  let fxClock = 0; // s since boot (update)
+  sv.fxClock = 0; // s since boot (update)
   function spatter(ev, atk) {
     if (SPATTER_SOFT.has(ev.shape) || !(ev.amount > 0)) return;
     let dx = ev.dirX || 0;
@@ -1126,7 +1086,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     dx /= l;
     dz /= l;
     const matter = vfxMatterColor(vfxEnemyStyle(ev.kind).matter);
-    const now = fxClock;
+    const now = sv.fxClock;
     if (now - (spatterAt.get(ev.target) ?? -9) >= SPATTER.every) {
       spatterAt.set(ev.target, now);
       if (spatterAt.size > 128) spatterAt.clear();
@@ -1142,7 +1102,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     // k and o: an elite, champion or boss kill plays the local anime frame
     // and punches the camera in up to 6% (C2), sprung back in 4 frames.
     const dead = byId(ev.id);
-    if (dead && (dead.elite || dead.champion || ev.kind === 'stag' || isVfxBoss(ev.kind)) && intensity.camera > 0) {
+    if (dead && (dead.elite || dead.champion || ev.kind === 'stag' || isVfxBoss(ev.kind)) && sv.intensity.camera > 0) {
       animeFx.play(ev.x, ev.z);
       camfx.punch(CAM_PUNCH.bigKill, CAM_PUNCH.sec);
     }
@@ -1960,19 +1920,19 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // tick, so this stays tiny per body (a vein flash at the chest and a scuff
   // of dust behind the feet) and drops the flash past the first few husks of
   // a beat: the rigs' own vein flare carries the rest.
-  let surgeTick = -1;
-  let surgeCount = 0;
+  sv.surgeTick = -1;
+  sv.surgeCount = 0;
   bus.on('husk_surge', (ev) => {
     mark('husk_surge');
-    if (ev.tick !== surgeTick) {
-      surgeTick = ev.tick;
-      surgeCount = 0;
+    if (ev.tick !== sv.surgeTick) {
+      sv.surgeTick = ev.tick;
+      sv.surgeCount = 0;
     }
-    surgeCount += 1;
+    sv.surgeCount += 1;
     const h = byId(ev.id);
     const d = faceOf(h);
-    if (surgeCount <= 4) kit.flash({ x: ev.x + d.x * 0.15, y: 0.75, z: ev.z + d.z * 0.15, color: HV, size: 0.55, life: 0.18, opacity: 0.8 });
-    if (surgeCount <= 8) spray('smoke', ev.x - d.x * 0.2, 0.1, ev.z - d.z * 0.2, 1, { color: HFLESH, speed: [0.3, 0.6], up: [0.1, 0.3], size: [0.22, 0.32], grow: 1.1, life: [0.35, 0.55], opacity: 0.28, gravity: -0.1, drag: 2.6, dir: { x: -d.x, z: -d.z }, dirBias: 0.7 });
+    if (sv.surgeCount <= 4) kit.flash({ x: ev.x + d.x * 0.15, y: 0.75, z: ev.z + d.z * 0.15, color: HV, size: 0.55, life: 0.18, opacity: 0.8 });
+    if (sv.surgeCount <= 8) spray('smoke', ev.x - d.x * 0.2, 0.1, ev.z - d.z * 0.2, 1, { color: HFLESH, speed: [0.3, 0.6], up: [0.1, 0.3], size: [0.22, 0.32], grow: 1.1, life: [0.35, 0.55], opacity: 0.28, gravity: -0.1, drag: 2.6, dir: { x: -d.x, z: -d.z }, dirBias: 0.7 });
     spray('spark', ev.x, 0.7, ev.z, 1, { color: HV, speed: [0.1, 0.3], up: [0.4, 0.8], size: [0.04, 0.07], life: [0.3, 0.5], gravity: -0.2, drag: 1.5, jitter: 0.15, opacity: 0.9 });
   });
 
@@ -6463,8 +6423,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     }
     return null;
   };
-  let last = null;
-  let updateMs = 0; // EMA of this director's own per-frame CPU cost (probes)
+  sv.last = null;
+  sv.updateMs = 0; // EMA of this director's own per-frame CPU cost (probes)
 
   // ------------------------------------------------------- ELITE AFFIXES --
   // docs/ELITE_AFFIXES.md. The bursts and beats of the eight powers (the
@@ -6684,11 +6644,11 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   function update(tSec) {
     const t0 = performance.now();
     updateBody(tSec);
-    updateMs += (performance.now() - t0 - updateMs) * 0.1;
+    sv.updateMs += (performance.now() - t0 - sv.updateMs) * 0.1;
   }
   function updateBody(tSec) {
-    const dt = last === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - last));
-    last = tSec;
+    const dt = sv.last === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - sv.last));
+    sv.last = tSec;
     const rdt = renderHold.rigDt(dt);
     for (let i = timers.length - 1; i >= 0; i--) {
       const tm = timers[i];
@@ -6698,8 +6658,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
         tm.fn();
       }
     }
-    if ((biomeClock -= dt) <= 0) {
-      biomeClock = 1;
+    if ((sv.biomeClock -= dt) <= 0) {
+      sv.biomeClock = 1;
       readBiome();
     }
     const seen = new Set();
@@ -6779,7 +6739,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     tk.update(dt, renderHold);
     animeFx.update(dt);
     flipbook.update(dt);
-    fxClock += dt;
+    sv.fxClock += dt;
   }
 
   // C1: a small kick against the fire direction on your own seat's shots
@@ -7705,7 +7665,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     trails.clear();
     wakeClock.clear();
     timers.length = 0;
-    biomeClock = 0;
+    sv.biomeClock = 0;
     globKind.clear();
     shotKind.clear();
     bossMode.clear();
@@ -7734,17 +7694,8 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   }
 
   function debugCounts() {
-    return { ...kit.counts(), tpl: tk.counts(), zoneCircles: tplFx.zoneCircles().length, zoneCircleList: tplFx.zoneCircles(), foe: foeFx.counts(), bolt: boltFx.counts(), recipes: { ...fired }, updateMs: Math.round(updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
+    return { ...kit.counts(), tpl: tk.counts(), zoneCircles: tplFx.zoneCircles().length, zoneCircleList: tplFx.zoneCircles(), foe: foeFx.counts(), bolt: boltFx.counts(), recipes: { ...fired }, updateMs: Math.round(sv.updateMs * 1000) / 1000, trails: trails.size, tempered: shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
   }
 
   return { update, applyCamera, prewarm, debugCounts, kit, camfx, showcase: (id, at) => tplFx.showcase(id, at), foeShowcase: (kind, at) => foeFx.showcase(kind, at), boltShowcase: (names, at) => boltFx.showcase(names, at) };
-}
-
-// Healer skills that restore (their casts get petals + light, never damage FX).
-const HEAL_SKILLS = new Set(['mending_bolt', 'swift_mend', 'nova_bloom', 'sanctuary', 'guardian_bond', 'restorative_wave', 'dewfall', 'kindred_shield', 'mending_tide', 'hearthsong']);
-// Nova radii by skill for skill_cast (the Healer's cast payload carries no
-// radius); filled from sim/skills.js at module load by the main wiring.
-const SKILL_AREA = new Map();
-export function registerSkillAreas(skills) {
-  for (const id of Object.keys(skills)) if (skills[id].shape === 'nova') SKILL_AREA.set(id, skills[id].area);
 }
