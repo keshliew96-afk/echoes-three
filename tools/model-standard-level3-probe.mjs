@@ -4,7 +4,7 @@
 // standard (docs/MODEL_STANDARD.md) against the [M] checklist
 // (VFX_HIT_RULES §6.1); the Barrow Wyrm is the pilot's. Visual only. Checks:
 //   1. the flags: both play faceted by default, `?facet=` turns them classic
-//      or picks them, the Level IV bosses stay classic, the classics build;
+//      or picks them, the Level V bosses stay classic, the classics build;
 //   2. every rig: the classic interface plus lab, points and react; the root
 //      holds the moving body in its first child and only floor pieces beside
 //      it; every instanced part inked; every vertex-coloured material on
@@ -67,7 +67,7 @@ const BOSSES = [
   check('the Level III bosses play the model standard by default', kinds.every((k) => MODEL_STANDARD[k] === true && facetOn(k, q(''))) && facetOn('wyrm', q('')));
   check('?facet=0 turns them classic', kinds.every((k) => !facetOn(k, q('facet=0'))));
   check('?facet=lichram keeps only the Lich Ram faceted', facetOn('lichram', q('facet=lichram')) && !facetOn('ashraven', q('facet=lichram')));
-  check('the Level IV bosses stay classic', !facetOn('cantor', q('')) && !facetOn('colossus', q('')) && !facetOn('veinweaver', q('')));
+  check('the Level V bosses stay classic', !facetOn('hush', q('')) && !facetOn('skyhorn', q('')) && !facetOn('hourwarden', q('')));
   const classics = BOSSES.map((B) => B.classic()).filter((r) => r && r.group && typeof r.pose === 'function' && !r.group.userData.modelStandard);
   check('the classic rigs still build beside the faceted ones', classics.length === BOSSES.length);
 }

@@ -7,7 +7,8 @@
 // Lockkeeper; the Level III slices add the Lich Ram and the Ash Raven (the
 // Barrow Wyrm is the pilot's), then the Bone Reeve and the Gravebell Ringer,
 // and the Level III foes slice the Barrow's eight
-// (nine with the broodling); the Level IV foes slice adds the six Heart foes;
+// (nine with the broodling); the Level IV slice adds the Hollow Cantor, the
+// Geode Colossus and the Vein Weaver, and its foes slice the six Heart foes;
 // the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
@@ -78,6 +79,10 @@ export const MODEL_STANDARD = Object.freeze({
   // The Level II champions.
   sluice_warden: true,
   lockkeeper: true,
+  // The Level IV bosses.
+  cantor: true,
+  colossus: true,
+  veinweaver: true,
   // The Level III champions.
   bone_reeve: true,
   gravebell_ringer: true,
