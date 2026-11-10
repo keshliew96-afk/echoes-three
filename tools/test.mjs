@@ -57,6 +57,7 @@ export const SUITE = [
   { file: 'tools/vfx-extras-probe.mjs', args: [], what: 'the traced blade slash, the bigger stuck arrows and frost twinkles' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
   { file: 'tools/one-cast-path-probe.mjs', args: [], what: 'one cast path: one zone system, one cast event (AUDIT D2)' },
+  { file: 'tools/one-vfx-director-probe.mjs', args: [], what: 'one VFX director: one bus subscription per event (AUDIT D5)' },
   { file: 'tools/champions-probe.mjs', args: [], what: 'champion rooms' },
   { file: 'tools/vaults-probe.mjs', args: [], what: 'keys and vaults' },
   { file: 'tools/hazards-shrines-probe.mjs', args: [], what: 'hazards and shrines' },

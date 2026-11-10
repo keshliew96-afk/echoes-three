@@ -54,3 +54,25 @@ export const SKILL_AREA = new Map();
 export function registerSkillAreas(skills) {
   for (const id of Object.keys(skills)) if (skills[id].shape === 'nova') SKILL_AREA.set(id, skills[id].area);
 }
+
+// THE ONE VFX DIRECTOR (AUDIT D5): the class layer (signature.js and its
+// parts) and the template layer (templates.js) used to subscribe to the sim
+// bus each on their own, so one cast reached two directors. Now every VFX
+// handler registers here, and the director holds ONE bus subscription per
+// event type that runs that type's handlers in registration order (the
+// order the bus itself kept, so what plays and in what order is unchanged).
+export function createVfxDispatch(eventBus) {
+  const lists = new Map(); // event type -> handlers, in registration order
+  function on(type, fn) {
+    let list = lists.get(type);
+    if (!list) {
+      list = [];
+      lists.set(type, list);
+      eventBus.on(type, (ev) => {
+        for (const h of list) h(ev);
+      });
+    }
+    list.push(fn);
+  }
+  return { on, types: () => lists.size, handlers: () => [...lists.values()].reduce((n, l) => n + l.length, 0) };
+}

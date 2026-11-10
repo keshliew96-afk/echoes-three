@@ -29,7 +29,7 @@ import { createFlipbook } from './flipbook.js';
 import { SKILLS } from '../../sim/skills.js';
 import { isOwnBody } from './hitfeedback.js';
 
-import { EMBER, PARCH, BONE, HEAL, INK, TAU, BOLT_Y, ESHOT_Y, TRAIL_SPEED, ENEMY_SHOT_TRAIL, CONTACT_FX, KILL_FX } from './sig/common.js';
+import { EMBER, PARCH, BONE, HEAL, INK, TAU, BOLT_Y, ESHOT_Y, TRAIL_SPEED, ENEMY_SHOT_TRAIL, CONTACT_FX, KILL_FX, createVfxDispatch } from './sig/common.js';
 import { createSigRelics } from './sig/relics.js';
 import { createSigAffixes } from './sig/affixes.js';
 import { createSigLateBosses } from './sig/latebosses.js';
@@ -44,7 +44,11 @@ import { createSigFirstBosses } from './sig/firstbosses.js';
 import { createSigFoes } from './sig/foes.js';
 import { createSigParty } from './sig/party.js';
 
-export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
+export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, settings = null }) {
+  // One VFX director (AUDIT D5): the class layer and the template layer
+  // register their handlers on `bus`, the director's dispatch, which holds
+  // one sim-bus subscription per event type (sig/common.js).
+  const bus = createVfxDispatch(eventBus);
   const sv = {}; // the director's mutable state (one object, shared with its parts under vfx/sig/)
   const SF = {}; // the director's functions, shared with its parts (filled below)
   Object.assign(SF, { anticipate, byId, classImpact, classMark, classOf, embersUp, enemyDeath, enemyImpact, flare, healBloom, nova, release, shock, swing }); // the director's own functions its parts call
@@ -686,7 +690,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   }
 
   function debugCounts() {
-    return { ...kit.counts(), tpl: tk.counts(), zoneCircles: SF.tplFx.zoneCircles().length, zoneCircleList: SF.tplFx.zoneCircles(), foe: SF.foeFx.counts(), bolt: SF.boltFx.counts(), recipes: { ...fired }, updateMs: Math.round(sv.updateMs * 1000) / 1000, trails: trails.size, tempered: SF.shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
+    return { ...kit.counts(), tpl: tk.counts(), dispatch: { types: bus.types(), handlers: bus.handlers() }, zoneCircles: SF.tplFx.zoneCircles().length, zoneCircleList: SF.tplFx.zoneCircles(), foe: SF.foeFx.counts(), bolt: SF.boltFx.counts(), recipes: { ...fired }, updateMs: Math.round(sv.updateMs * 1000) / 1000, trails: trails.size, tempered: SF.shrineFx.debug(), camera: camfx.offset(), cameraLive: camfx.live(), effects: settings?.get?.('gameplay.effects') ?? 'full' };
   }
 
   return { update, applyCamera, prewarm, debugCounts, kit, camfx, showcase: (id, at) => SF.tplFx.showcase(id, at), foeShowcase: (kind, at) => SF.foeFx.showcase(kind, at), boltShowcase: (names, at) => SF.boltFx.showcase(names, at) };
