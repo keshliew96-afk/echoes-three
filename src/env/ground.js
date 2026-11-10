@@ -154,9 +154,6 @@ function* grainSteps(ctx, W, H, amp, cosmetic, step = 4, bandRows = 96) {
   }
   ctx.putImageData(img, 0, 0);
 }
-function grain(ctx, W, H, amp, cosmetic, step = 4) {
-  for (const _ of grainSteps(ctx, W, H, amp, cosmetic, step, H + step)) void _;
-}
 // Drain a generator synchronously.
 // A 2D canvas on the main thread, an OffscreenCanvas inside the dressing
 // paint worker (env/biomes/paint-worker.js) — same painter, same draw order.

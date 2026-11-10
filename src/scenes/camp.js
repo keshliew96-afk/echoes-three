@@ -43,7 +43,7 @@
 // never mutates sim state except through the same `cmd`/run entry points a
 // player press drives.
 import { Color, Group, Mesh, MeshBasicMaterial, RingGeometry, Vector3 } from 'three';
-import { ARENA, CAMERA, TICK_HZ } from '../core/constants.js';
+import { CAMERA, TICK_HZ } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
 import { t } from '../i18n/index.js';
 import { createArenaScene } from './arena.js';

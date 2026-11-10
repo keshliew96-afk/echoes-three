@@ -270,7 +270,7 @@ function isEquipped(id, meta) {
 
 export function createUnlocksScreen(ctx) {
   installStyle();
-  const { manager, app } = ctx;
+  const { manager } = ctx;
   const el = document.createElement('div');
   el.className = 'ul-unlocks';
   el.setAttribute('role', 'dialog');

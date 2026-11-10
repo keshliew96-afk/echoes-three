@@ -323,7 +323,6 @@ export function createAllyCaster(ctx) {
   }
 
   function deliverPrimary(a, baseDef, def, slot, tick, how, dispCause) {
-    const seat = a.partyIndex;
     const T = tech();
     const castId = (castSeq += 1);
     const human = how.mode === 'human';
@@ -745,7 +744,6 @@ export function createAllyCaster(ctx) {
     const { tick, human, target, f, tag, echo, castId, M, extra } = c;
     const def = duskDef(a, bellDef(a, tideDef(a, def0)));
     let d = c.d;
-    const seat = a.partyIndex;
     const T = tech();
     face(a, d.x, d.z);
     a.castLeftTicks = Math.max(a.castLeftTicks ?? 0, 24);

@@ -122,7 +122,6 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
     batchGaps: 0,
   };
   const lastRender = new Map(); // party body id -> { x, z } (jump metric)
-  let lastBatch = 0;
   const replayedKeys = []; // ring of recently replayed event identities (exactly-once audit)
   const replayLedger = new Map(); // `${tick}|${type}|${ordinalInTick}` -> count (G5b.14 audit, bounded)
 
@@ -160,7 +159,6 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
   // pushEvents(batch) — a decoded EVENTS batch (reliable, in order).
   function pushEvents(b) {
     stats.batchesIn += 1;
-    lastBatch = b.batchSeq;
     for (let i = 0; i < b.events.length; i++) {
       const ev = b.events[i];
       const key = `${b.batchSeq}:${i}`;
@@ -482,7 +480,6 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
     eventQ.length = 0;
     leads.clear();
     lastRender.clear();
-    lastBatch = 0;
     lastScene = { mode: null, layout: '' };
   }
 
@@ -495,7 +492,6 @@ export function createReplica({ world, registry, bus, scene, restoreShapes, rest
     appliedTick = -1;
     eventQ.length = 0;
     lastRender.clear();
-    lastBatch = 0;
   }
 
   return {

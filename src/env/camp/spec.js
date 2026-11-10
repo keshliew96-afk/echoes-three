@@ -24,7 +24,6 @@
 // occupies the ~16x12 core the brief asks for, and the surrounding band is
 // perimeter scrub, fence runs and boundary torches — so the rect the player
 // can reach and the rect the camp occupies are the same rect. Deviation logged.
-import { ARENA } from '../../core/constants.js';
 
 // The camp's single warm centre. Everything else is placed relative to it.
 export const HEARTH = Object.freeze({ x: 0, z: -0.2 });

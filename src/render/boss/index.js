@@ -18,7 +18,7 @@
 //
 // Render-only: reads sim state read-only, never mutates it.
 import { Group, Vector3 } from 'three';
-import { HITFLASH, TICK_HZ } from '../../core/constants.js';
+import { TICK_HZ } from '../../core/constants.js';
 
 // Boss-specific hit-flash envelope (see the 'hit' handler below). `peak` sits
 // under HITFLASH.intensity because the emissive area here is ~5x a chibi's;

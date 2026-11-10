@@ -240,7 +240,6 @@ export function buildBoneReeveFacet() {
   const cowlDark = track(flashable(COWL_DARK));
   const cowlLit = track(flashable(COWL_LIT));
   const iron = track(flashable(IRON));
-  const inkMat = new MeshBasicMaterial({ color: new Color(PALETTE.voidCharcoal), toneMapped: false });
   const tellMat = new MeshBasicMaterial({ color: TELL_INDIGO, toneMapped: false });
   const mesh = (g, mat, parent, ink = true) => {
     const m = new Mesh(g, mat);
@@ -355,7 +354,7 @@ export function buildBoneReeveFacet() {
   const lantern = new Group();
   lantern.position.set(-0.38, 1.36, 0.14);
   body.add(lantern);
-  const cage = mesh(G.cage(), bone, lantern);
+  mesh(G.cage(), bone, lantern);
   const bars = placeRow(wedge, dark, 4, (i, m) => {
     const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
     lay(m, Math.sin(a) * 0.1, -0.02, Math.cos(a) * 0.1, 0, 1, 0, 0.025, 0.26, 0.03, a);

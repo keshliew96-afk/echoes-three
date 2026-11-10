@@ -45,7 +45,7 @@ import { CAMERA, ARENA } from '../../core/constants.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../../render/glow.js';
 import { makeFlameSprite, createEmberField } from '../flame.js';
-import { EMBER_GLOW, mix } from '../colors.js';
+import { mix } from '../colors.js';
 
 // Camp pool/halo tint. The Act-1 EMBER_GLOW shares (0.26 pool / 0.20 parchment)
 // were solved against a LIT GREEN floor; over the camp's indigo night ground
