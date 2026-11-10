@@ -51,8 +51,8 @@ export function telegraphCovers(registry, x, z, tick) {
 // THE TIDECALLER: a live soak on an enemy (sim/status.js).
 const CHAMPIONS = new Set(CHAMPION_IDS);
 const soakedNow = (e, tick) => !!(e && e.status && e.status.soaked && e.status.soaked.untilTick > tick);
-// THE BELLWRIGHT: the bells a seat has hung (its azones flagged `bell`).
-const bellsOf = (registry, id) => registry.all().filter((z) => z.kind === 'azone' && z.bell && z.sourceId === id);
+// THE BELLWRIGHT: the bells a seat has hung (its zones flagged `bell`).
+const bellsOf = (registry, id) => registry.all().filter((z) => z.kind === 'zone' && z.bell && z.sourceId === id);
 // THE DUSKWING: a live blind, and the enemies a cone from (x, z) along u holds.
 const blindNow = (e, tick) => !!(e && e.status && e.status.blind && e.status.blind.untilTick > tick);
 const isBig = (e) => e.elite || CHAMPIONS.has(e.kind) || e.champion || e.boss === true || e.kind === 'stag';

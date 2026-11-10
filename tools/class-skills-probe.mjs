@@ -364,7 +364,7 @@ function castAt(W, seat, x, z) {
     e.z = 0;
     if (st(e, 'stun', W)) stunned = true;
   });
-  check(evs(W, 'azone_spawn').some((z) => z.skill === 'barbed_trap'), 'Barbed Trap is placed');
+  check(evs(W, 'zone_spawn').some((z) => z.skill === 'barbed_trap'), 'Barbed Trap is placed');
   check(stunned && evs(W, 'hit').some((h) => h.source === 'barbed_trap'), 'it snaps shut on the enemy: a hit and a stun');
 }
 // Archer: Feather Fan (five arrows, then the hare runs).

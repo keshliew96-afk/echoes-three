@@ -359,7 +359,7 @@ let flaskSave = null;
     if (i % 90 === 0) boar(t, tolly.x + 2, tolly.z - 1.5, 3000);
     for (const e of heroes(t)) e.hp = e.maxHp;
     t.step();
-    bell = t.registry.all().find((e) => e.kind === 'azone' && e.bell && e.sourceId === tolly.id);
+    bell = t.registry.all().find((e) => e.kind === 'zone' && e.bell && e.sourceId === tolly.id);
   }
   t.cmd('killAllEnemies');
   steps(t, 20);

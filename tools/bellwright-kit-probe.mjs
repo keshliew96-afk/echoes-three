@@ -170,8 +170,8 @@ function park(W, x, z) {
   r.cds = [0, 0, 0, 0];
   return r;
 }
-const bellsOf = (W, id) => W.registry.all().filter((z) => z.kind === 'azone' && z.bell && z.sourceId === id);
-const unbell = (W) => W.registry.all().filter((z) => z.kind === 'azone' && z.bell).forEach((z) => W.registry.despawn(z.id));
+const bellsOf = (W, id) => W.registry.all().filter((z) => z.kind === 'zone' && z.bell && z.sourceId === id);
+const unbell = (W) => W.registry.all().filter((z) => z.kind === 'zone' && z.bell).forEach((z) => W.registry.despawn(z.id));
 
 // ---------------------------------------------------------- 1. data / gate --
 {
@@ -234,7 +234,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   const from = W.log.length;
   castK(0, 1.0, 0);
   steps(W, 1);
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'great_bell')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'great_bell')[0];
   check(!!sp && sp.bell === true && sp.radius === 1.9 && sp.bellSize === 1.4 && sp.totalTicks === 6, `a great bell is hung (ring ${sp && sp.radius}, size ${sp && sp.bellSize}, ${sp && sp.totalTicks} tolls)`);
   steps(W, 62);
   const hits = since(from, 'hit', (e) => e.source === 'great_bell' && !e.crit);
@@ -287,7 +287,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   const from = W.log.length;
   castK(0, 1, 0);
   steps(W, 20);
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'wing_hop')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'wing_hop')[0];
   check(tolly.x < -2.0, `she hops away from the aim (to x ${tolly.x.toFixed(2)})`);
   check(!!sp && sp.bell === true && Math.hypot(sp.x, sp.z) < 0.05 && sp.bellSize === 0.7, `a handbell where she stood (${sp && `${sp.x},${sp.z}`})`);
   steps(W, 70);
@@ -373,7 +373,7 @@ function nodeRoom(seed, ids, nodes) {
   park(W, -2, 0);
   const from = W.log.length;
   castK(0, 0, 0);
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'hang_bell')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'hang_bell')[0];
   check(!!sp && sp.totalTicks === 12, `Bronze x2: twelve tolls (${sp && sp.totalTicks})`);
 }
 {
@@ -425,7 +425,7 @@ function nodeRoom(seed, ids, nodes) {
   castK(0, 0.5, 0);
   steps(W, 30);
   const sym = since(from, 'bell_sympathy');
-  const tolls = since(from, 'azone_tick', (e) => e.id === bell.id);
+  const tolls = since(from, 'zone_tick', (e) => e.id === bell.id);
   check(sym.length === 1 && tolls.length === 1 && tolls[0].tick === sym[0].tick + 1, `Sympathy: the bell tolls at once (${tolls.map((t) => t.tick - from).length} toll the tick after the hit)`);
   check(bell.totalTicks === 9, `an extra toll, not a stolen one (${bell.totalTicks})`);
   tolly.cds = [0, 0, 0, 0];

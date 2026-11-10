@@ -170,7 +170,7 @@ export function createTideEventCues() {
     },
     crash: (ev) => [{ cue: 'td_crash', x: ev.x, z: ev.z, pitch: ev.stun ? 0.9 : 1 }],
     bubble_burst: (ev, h) => one('td_pop', at(ev, h, ev.id)),
-    azone_spawn: (ev, h) => {
+    zone_spawn: (ev, h) => {
       if (ev.classId !== 'tidecaller') return null;
       if (ev.burst) {
         burstZones.set(ev.id, { x: ev.x, z: ev.z });
@@ -180,7 +180,7 @@ export function createTideEventCues() {
       if (ev.puddle) return one('td_puddle', at(ev, h));
       return []; // her placements' voice is their cast's
     },
-    azone_tick: (ev, h) => {
+    zone_tick: (ev, h) => {
       const where = burstZones.get(ev.id);
       if (!where) return null;
       burstZones.delete(ev.id);

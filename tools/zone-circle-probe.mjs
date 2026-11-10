@@ -8,7 +8,7 @@
 //
 // Two Level I sessions: one where the Healer is given Sanctuary and casts it
 // with the real key, one with every seat's build granted (?partygrant=max) so
-// the heroes' kits lay their own zones. Each samples every zone entity (`zone` from the skill bar, `azone` from the heroes' kits) against
+// the heroes' kits lay their own zones. Each samples every zone entity (kind `zone`, from the skill bar or the heroes' kits) against
 // __echoes.content.vfx().zoneCircleList on each sample until the zones are
 // gone. Screenshots: zone-open.png (a fresh zone), zone-late.png (the same
 // zone near its end).
@@ -36,7 +36,7 @@ const samplesOf = async (page, untilTick) => {
   for (;;) {
     const s = await page.evaluate(() => {
       const st = window.__echoes.state();
-      const zones = [...(st.zones || []).map((z) => ({ ...z, kind: 'zone' })), ...(st.azones || []).map((z) => ({ ...z, kind: 'azone' }))];
+      const zones = (st.zones || []).map((z) => ({ ...z, kind: 'zone' }));
       return { tick: window.__echoes.tick, zones: zones.map((z) => ({ id: z.id, kind: z.kind, skill: z.skill, radius: z.radius })), circles: window.__echoes.content.vfx().zoneCircleList };
     });
     out.push(s);

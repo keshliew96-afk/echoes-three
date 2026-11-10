@@ -254,7 +254,7 @@ export function createDuskFx({ kit, bus, byId, spray, flare, shock, after, camfx
   });
 
   // -------------------------------------------- his clouds: swarm and puff --
-  bus.on('azone_spawn', (ev) => {
+  bus.on('zone_spawn', (ev) => {
     if (ev.classId !== 'duskwing' || ev.x == null) return;
     if (ev.skill !== 'bat_swarm' && ev.skill !== 'flit') return;
     const swarm = ev.skill === 'bat_swarm';
@@ -272,7 +272,7 @@ export function createDuskFx({ kit, bus, byId, spray, flare, shock, after, camfx
       ink(ev.x, 0.5, ev.z, N(8), { speed: [0.3, 0.9], size: [0.5, 0.8], life: [1.0, 1.5], opacity: 0.6 });
     }
   });
-  bus.on('azone_tick', (ev) => {
+  bus.on('zone_tick', (ev) => {
     const c = clouds.get(ev.id);
     if (!c) return;
     for (const id of ev.hit || []) {
@@ -286,7 +286,7 @@ export function createDuskFx({ kit, bus, byId, spray, flare, shock, after, camfx
       }
     }
   });
-  bus.on('azone_expire', (ev) => {
+  bus.on('zone_expire', (ev) => {
     const c = clouds.get(ev.id);
     if (!c) return;
     clouds.delete(ev.id);

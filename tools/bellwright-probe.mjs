@@ -154,7 +154,7 @@ let saved = null;
   let maxBells = 0;
   for (let i = 0; i < 3600; i++) {
     W.step();
-    maxBells = Math.max(maxBells, W.registry.all().filter((z) => z.kind === 'azone' && z.bell && z.sourceId === tolly.id).length);
+    maxBells = Math.max(maxBells, W.registry.all().filter((z) => z.kind === 'zone' && z.bell && z.sourceId === tolly.id).length);
     mend(W);
     if (W.run.view().phase !== 'combat') break;
   }
@@ -163,10 +163,10 @@ let saved = null;
   const castSet = [...new Set(mine.map((e) => e.skill))].sort();
   check(mine.length > 0 && mine.every((e) => e.classId === 'bellwright' && KIT.includes(e.skill)), `the AI casts her skills (${mine.length}: ${castSet.join(',')})`);
   check(castSet.includes('hang_bell') && castSet.includes('peal') && castSet.includes('clapper'), 'Hang Bell, Peal and the Clapper all cast');
-  const hangs = evs.filter((e) => e.type === 'azone_spawn' && e.skill === 'hang_bell');
+  const hangs = evs.filter((e) => e.type === 'zone_spawn' && e.skill === 'hang_bell');
   check(hangs.length > 0 && hangs.every((e) => e.bell === true), `bells are hung (${hangs.length})`);
   check(maxBells >= 2 && maxBells <= 3, `never more than three bells at once (up to ${maxBells})`);
-  const tolls = evs.filter((e) => e.type === 'azone_tick' && e.skill === 'hang_bell');
+  const tolls = evs.filter((e) => e.type === 'zone_tick' && e.skill === 'hang_bell');
   const tollHits = evs.filter((e) => e.type === 'hit' && e.source === 'hang_bell');
   check(tolls.length > 0 && tollHits.length > 0, `the bells toll on the beat and strike (${tolls.length} tolls, ${tollHits.length} hits)`);
   const gaps = [];
@@ -205,14 +205,14 @@ let saved = null;
   secondRoom(W, { 3: KIT });
   const tolly = ally(W, 3);
   const ids = [];
-  W.bus.on('azone_spawn', (e) => e.skill === 'hang_bell' && ids.push(e.id));
+  W.bus.on('zone_spawn', (e) => e.skill === 'hang_bell' && ids.push(e.id));
   const replaced = [];
-  W.bus.on('azone_expire', (e) => e.replaced && replaced.push(e.id));
+  W.bus.on('zone_expire', (e) => e.replaced && replaced.push(e.id));
   for (let k = 0; k < 4; k++) {
     cmd(W, 'partyCast', 3, 0, { x: tolly.x + (k - 1.5) * 1.2, z: tolly.z - 2 });
     W.step();
   }
-  const live = W.registry.all().filter((z) => z.kind === 'azone' && z.bell && z.sourceId === tolly.id).map((z) => z.id);
+  const live = W.registry.all().filter((z) => z.kind === 'zone' && z.bell && z.sourceId === tolly.id).map((z) => z.id);
   check(ids.length === 4 && live.length === 3 && same(replaced, [ids[0]]) && same(live.sort((a, b) => a - b), ids.slice(1)), `a fourth bell takes the oldest one's place (live ${live.join(',')}, replaced ${replaced.join(',')})`);
   // The Peal with no enemies near still rings each bell, round herself when none hang.
   const from = W.log.length;
@@ -223,7 +223,7 @@ let saved = null;
   for (let i = 0; i < 600; i++) W.step();
   check(!W.registry.all().some((z) => live.includes(z.id)), 'the bells fall silent after 8 s');
   // Her AI may have hung new ones meanwhile: take them down for the next check.
-  for (const z of W.registry.all().filter((z) => z.kind === 'azone' && z.bell)) W.registry.despawn(z.id);
+  for (const z of W.registry.all().filter((z) => z.kind === 'zone' && z.bell)) W.registry.despawn(z.id);
   const f2 = W.log.length;
   cmd(W, 'partyCast', 3, 1, { x: tolly.x, z: tolly.z });
   W.step();
@@ -240,7 +240,7 @@ let saved = null;
   // A human press on key 1 hangs a bell where she aims.
   W.stepSeat(3, { ...emptySnapshot(), aim: { x: tolly.x + 1.5, z: tolly.z - 1.5 }, presses: [{ kind: 'skill_1' }] });
   for (let i = 0; i < 3; i++) W.stepSeat(3, emptySnapshot());
-  const hang = W.log.slice(from).find((e) => e.type === 'azone_spawn' && e.skill === 'hang_bell');
+  const hang = W.log.slice(from).find((e) => e.type === 'zone_spawn' && e.skill === 'hang_bell');
   check(!!hang && hang.bell === true, `a human Bellwright hangs a bell where she aims (${hang ? `${hang.x},${hang.z}` : 'none'})`);
 }
 
@@ -266,7 +266,7 @@ let saved = null;
     mend(W3);
   }
   const snap = clonePlain(W3.io.capture());
-  const bellsAtSave = W3.registry.all().filter((z) => z.kind === 'azone' && z.bell).length;
+  const bellsAtSave = W3.registry.all().filter((z) => z.kind === 'zone' && z.bell).length;
   for (let i = 0; i < 400; i++) {
     W3.step();
     mend(W3);

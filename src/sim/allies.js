@@ -61,7 +61,6 @@ import { castChoice } from './partyai.js';
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
-const ZONE_CADENCE_TICKS = secTicks(1.0); // §6: zone cadence 1.0 s, first tick at 1.0 s
 
 // §12 leash: radius 3.4 u, re-engage only once inside 0.8 x radius.
 export const LEASH = Object.freeze({ radius: 3.4, reengageFactor: 0.8 });
@@ -233,6 +232,7 @@ export function createAllySystem({
   getTick,
   getRoomState = () => null,
   party: partyRef = () => null, // PARTY: the party system (loadouts, seat builds)
+  zones, // every lasting zone (sim/zones.js): the boundary ends the allies' own
 }) {
   // --- party command state (§8, party-shared)
   let mark = null; // enemy spawn ordinal, or null
@@ -606,9 +606,8 @@ export function createAllySystem({
     // §13 step 2: every live combat entity ends at the boundary — no ally zone
     // tick and no ally bolt may land after the clear tick.
     for (const e of registry.all()) {
-      if (e.kind === 'azone') {
-        events.emit(tick, 'azone_expire', { id: e.id, skill: e.skill, cause: reason });
-        registry.despawn(e.id);
+      if (e.kind === 'zone' && e.classId) {
+        zones.expire(tick, e, { cause: reason });
       } else if (e.kind === 'skillbolt' && e.boltOwner === 'ally_kits') {
         events.emit(tick, 'skill_bolt_despawn', {
           id: e.id,
@@ -2007,7 +2006,7 @@ export function createAllySystem({
   // she went under for 1 s; it soaks every enemy standing in it (no damage).
   function divePuddle(a, tick) {
     const z = registry.spawn({
-      kind: 'azone',
+      kind: 'zone',
       skill: 'dive',
       classId: a.classId,
       x: a.x,
@@ -2023,70 +2022,13 @@ export function createAllySystem({
       untilTick: tick + CLASS_TECH.diveSoakTicks,
       nextTickTick: tick,
     });
-    events.emit(tick, 'azone_spawn', { id: z.id, skill: 'dive', classId: a.classId, x: r2(z.x), z: r2(z.z), radius: z.radius, totalTicks: 1, puddle: true });
+    events.emit(tick, 'zone_spawn', { id: z.id, skill: 'dive', classId: a.classId, x: r2(z.x), z: r2(z.z), radius: z.radius, totalTicks: 1, puddle: true });
   }
-  function puddleTick(z, tick) {
-    const S = combat.status;
-    // A Deluge puddle checks every `every` ticks (the Dive puddle every tick).
-    if (S && !(z.every > 1 && (tick - z.nextTickTick) % z.every !== 0)) {
-      for (const e of hostiles()) {
-        if (dist2(e.x, e.z, z.x, z.z) <= z.radius * z.radius) S.apply(e, 'soaked', CLASS_TECH.soakMag, CLASS_TECH.soakTicks, tick, z.sourceId);
-      }
-    }
-    if (tick >= z.untilTick) {
-      events.emit(tick, 'azone_expire', { id: z.id, skill: z.skill });
-      registry.despawn(z.id);
-    }
-  }
-
-  function zonePhase(tick) {
-    for (const z of registry.all()) {
-      if (z.kind !== 'azone' || tick < z.nextTickTick) continue;
-      if (z.puddle) {
-        puddleTick(z, tick);
-        continue;
-      }
-      z.ticksDone += 1;
-      z.nextTickTick += ZONE_CADENCE_TICKS;
-      let occupants = hostiles().filter(
-        (e) => dist2(e.x, e.z, z.x, z.z) <= z.radius * z.radius
-      );
-      sortNearFar(occupants, z.x, z.z);
-      // THE TIDECALLER: the Maelstrom's burst hits its nearest `count`.
-      if (z.count > 0) occupants = occupants.slice(0, z.count);
-      const hitIds = [];
-      for (const t of occupants) {
-        const tl = Math.hypot(t.x - z.x, t.z - z.z) || 1;
-        const opts = {
-          delivery: 'skill',
-          shape: 'ground_aoe',
-          dirX: (t.x - z.x) / tl,
-          dirZ: (t.z - z.z) / tl,
-          attacker: z.sourceId,
-          source: z.skill,
-        };
-        // THE TIDECALLER: Undertow drags its occupants toward the centre (a
-        // pull no farther than the centre itself; never a boss).
-        if (z.drag) opts.kbDist = t.boss === true || t.kind === 'stag' ? 0 : -Math.min(z.drag, Math.hypot(t.x - z.x, t.z - z.z));
-        // PARTY: a built ally's zone (mods / a status) resolves through the
-        // cast pipeline; a plain zone keeps this path.
-        const r = z.mods || z.applies || z.crash ? caster.zoneHit(z, t, opts) : combat.applyDamage(t, z.power, opts);
-        if (r && !r.immune) hitIds.push(t.id);
-      }
-      events.emit(tick, 'azone_tick', { id: z.id, skill: z.skill, n: z.ticksDone, hit: hitIds });
-      if (z.ticksDone >= z.totalTicks) {
-        events.emit(tick, 'azone_expire', { id: z.id, skill: z.skill });
-        registry.despawn(z.id);
-      }
-    }
-  }
-
-  // End-of-tick: ally zones tick in the §4 ④ slot, then the §2 defeat rule is
+  // End-of-tick (after every zone ticked, sim/zones.js): the §2 defeat rule is
   // evaluated on live HP so a cmd-driven or pipeline-driven fourth down lands
   // its `defeat` event on the exact tick the party is fully down.
   function endOfTick() {
     const tick = getTick();
-    zonePhase(tick);
     caster.bubbleStep(tick); // THE TIDECALLER: Bubble Ward's bubbles that ended burst
     const p = party();
     const allDown = p.length >= 4 && p.every((m) => m.hp <= 0);
@@ -2278,6 +2220,8 @@ export function createAllySystem({
     continuous,
     resolveAll,
     endOfTick,
+    // the ally cast pipeline's zone instance (sim/zones.js calls it)
+    zoneHit: (z, t, opts) => caster.zoneHit(z, t, opts),
     cycleMark,
     rally,
     onRoomBoundary,

@@ -138,6 +138,7 @@ export function createRunSystem({
   skillSys,
   buildSys,
   allySys,
+  zones, // every lasting zone (sim/zones.js)
   combat,
   party = null, // PARTY: the party system (sim/party.js)
 }) {
@@ -1093,8 +1094,7 @@ export function createRunSystem({
         });
         registry.despawn(e.id);
       } else if (e.kind === 'zone') {
-        events.emit(tick, 'zone_expire', { id: e.id, skill: e.skill, cause });
-        registry.despawn(e.id);
+        zones.expire(tick, e, { cause }); // every kit's zones (an ally's carries its classId)
       }
     }
   }

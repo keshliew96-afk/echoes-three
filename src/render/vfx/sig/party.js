@@ -105,7 +105,8 @@ export function createSigParty(ctx) {
   }
 
   // Ally zone ticks: each class pulses its zone its own way.
-  bus.on('azone_tick', (ev) => {
+  bus.on('zone_tick', (ev) => {
+    if (!ev.classId) return; // a hero kit's zone (the Healer's carries no classId)
     const zEnt = SF.byId(ev.id);
     if (!zEnt) return;
     const st = vfxClassStyle(zEnt.classId ?? vfxSkillClass(ev.skill));
@@ -448,14 +449,14 @@ export function createSigParty(ctx) {
     mark(`skill:${ev.skill}`);
     fn(vfxClassStyle(ev.classId), ev);
   });
-  bus.on('azone_spawn', (ev) => {
-    const fn = ZONE_SIG[ev.skill];
+  bus.on('zone_spawn', (ev) => {
+    const fn = ev.classId ? ZONE_SIG[ev.skill] : null; // a hero kit's zone
     if (!fn) return;
     mark(`zone:${ev.skill}`);
     const st = vfxClassStyle(ev.classId ?? vfxSkillClass(ev.skill));
     after(ANTICIP, () => fn(st, ev.x, ev.z, ev.radius ?? 0.75));
   });
-  bus.on('azone_tick', (ev) => {
+  bus.on('zone_tick', (ev) => {
     if (ev.skill !== 'barbed_trap') return;
     const zEnt = SF.byId(ev.id);
     if (!zEnt) return;

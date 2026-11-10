@@ -436,8 +436,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   // first frame the tip sweeps faster than TRACE_FX.strikeSpeed is the
   // strike frame, where the glint and the shards fire at the tip.
   // ------------------------------------------------------- zone circles --
-  // Every lasting area skill (a sim `zone` from the skill bar, an `azone` from
-  // a hero's kit) shows its template's circle as its AOE indicator: it opens
+  // Every lasting area skill (a sim `zone`, from the Healer's skill bar or a
+  // hero's kit) shows its template's circle as its AOE indicator: it opens
   // when the zone spawns, sits exactly on the zone's radius for the zone's
   // whole life, flares on each zone tick, and fades when the zone is gone.
   // Arcane runes for magic, the flame ring for blades, the hexagon for sci-fi;
@@ -458,7 +458,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   function zoneFrame(dt, entities) {
     const seen = new Set();
     for (const e of entities) {
-      if ((e.kind !== 'zone' && e.kind !== 'azone') || !(e.radius > 0)) continue;
+      if (e.kind !== 'zone' || !(e.radius > 0)) continue;
       seen.add(e.id);
       let z = zoneCircles.get(e.id);
       if (!z || !tk.moveCircle(z.s, z.tok, e.x, e.z, e.radius)) {
@@ -650,12 +650,13 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     after(0.06, () => bladeBlast(tp, x, z, 0.9, { dir: { x: ev.dx ?? 0, z: ev.dz ?? 0 } }));
   });
 
-  // Zone pulses: the template's breath on every tick, once in a while.
+  // An ally kit's zone pulses (its circle flares in zoneTick above): the
+  // template's breath on every tick, once in a while.
   const tickClock = new Map();
-  bus.on('azone_tick', (ev) => {
+  bus.on('zone_tick', (ev) => {
+    if (!ev.classId) return;
     const zEnt = byId(ev.id);
     if (!zEnt) return;
-    zoneTick(ev.id);
     const now = (tickClock.get(ev.id) ?? 0) + 1;
     tickClock.set(ev.id, now);
     if (now % 2 === 0) return; // every other tick: a zone stays readable
@@ -665,7 +666,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     if (tp.id === 'blade') bladeTick(tp, zEnt.x, zEnt.z, r);
     else magicTick(tp, zEnt.x, zEnt.z, r);
   });
-  bus.on('azone_expire', (ev) => tickClock.delete(ev.id));
+  bus.on('zone_expire', (ev) => tickClock.delete(ev.id));
 
   // Passives that pulse on the enemies they touch.
   bus.on('aura_pulse', (ev) => {

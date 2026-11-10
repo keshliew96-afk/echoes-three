@@ -106,7 +106,7 @@ export function createBellFx({ kit, bus, byId, spray, flare, shock, after, antic
   const root = new Group();
   root.name = 'bellfx';
   if (stage && stage.scene) stage.scene.add(root);
-  const bells = new Map(); // azone id -> { x, z, r, size, g, swing, tongue, t, swingV, drop, leave }
+  const bells = new Map(); // zone id -> { x, z, r, size, g, swing, tongue, t, swingV, drop, leave }
   // Bells that only live for a beat: Bell Swing's swung bell and the chime
   // bells over Vesper Chime's wards ({ g, swing, t, life, step(o, k) }).
   const flying = [];
@@ -131,7 +131,7 @@ export function createBellFx({ kit, bus, byId, spray, flare, shock, after, antic
   }
 
   // ------------------------------------------------------------ bells --
-  bus.on('azone_spawn', (ev) => {
+  bus.on('zone_spawn', (ev) => {
     if (!ev.bell || ev.x == null) return;
     mark('bell:hang');
     if (bells.size >= MAX_BELLS) drop(bells.keys().next().value, false);
@@ -165,7 +165,7 @@ export function createBellFx({ kit, bus, byId, spray, flare, shock, after, antic
       }
     });
   });
-  bus.on('azone_tick', (ev) => {
+  bus.on('zone_tick', (ev) => {
     const b = bells.get(ev.id);
     if (!b) return;
     mark('bell:toll');
@@ -180,7 +180,7 @@ export function createBellFx({ kit, bus, byId, spray, flare, shock, after, antic
       if (t) flare(t.x, 0.55, t.z, BRASS, 0.45, { kind: 'star', life: 0.16, core: VERDI });
     }
   });
-  bus.on('azone_expire', (ev) => {
+  bus.on('zone_expire', (ev) => {
     if (bells.has(ev.id)) drop(ev.id, !ev.replaced);
   });
   function drop(id, chime) {

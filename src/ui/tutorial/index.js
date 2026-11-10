@@ -533,7 +533,7 @@ export function createTutorial({ app, world, bus, scene: campScene = null, param
   bus.on('status_apply', (ev) => {
     if (ev && ev.status === 'blind') blindSeen = true;
   });
-  bus.on('azone_spawn', (ev) => {
+  bus.on('zone_spawn', (ev) => {
     if (ev && ev.bell && ev.classId === 'bellwright') bellSeen = true;
   });
   bus.on('interact', (ev) => {

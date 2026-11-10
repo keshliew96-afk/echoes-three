@@ -193,8 +193,8 @@ export function createTideFx({ kit, bus, byId, spray, flare, shock, after, antic
   });
 
   // ------------------------------------------------------------ zones --
-  const zoneAt = new Map(); // azone id -> { x, z, r, skill, burst } (a burst zone ends on its tick)
-  bus.on('azone_spawn', (ev) => {
+  const zoneAt = new Map(); // zone id -> { x, z, r, skill, burst } (a burst zone ends on its tick)
+  bus.on('zone_spawn', (ev) => {
     if (ev.classId !== 'tidecaller') return;
     zoneAt.set(ev.id, { x: ev.x, z: ev.z, r: ev.radius ?? 1, skill: ev.skill, burst: !!ev.burst });
     if (zoneAt.size > 64) zoneAt.delete(zoneAt.keys().next().value);
@@ -231,7 +231,7 @@ export function createTideFx({ kit, bus, byId, spray, flare, shock, after, antic
       wet(x, z, r * 1.4, { life: 4, opacity: 0.4 });
     }
   });
-  bus.on('azone_tick', (ev) => {
+  bus.on('zone_tick', (ev) => {
     const at = zoneAt.get(ev.id);
     if (!at) return;
     const { x, z, r } = at;
@@ -270,7 +270,7 @@ export function createTideFx({ kit, bus, byId, spray, flare, shock, after, antic
       }
     }
   });
-  bus.on('azone_expire', (ev) => {
+  bus.on('zone_expire', (ev) => {
     if (!zoneAt.has(ev.id)) return;
     const at = zoneAt.get(ev.id);
     zoneAt.delete(ev.id);
@@ -391,14 +391,14 @@ export function createTideFx({ kit, bus, byId, spray, flare, shock, after, antic
 
   const funnels = []; // live Maelstrom funnels
   const bubbles = new Map(); // bearer id -> { g, clock }
-  const zoneClock = new Map(); // azone id -> s since the last swirl
+  const zoneClock = new Map(); // zone id -> s since the last swirl
   let frameNo = 0;
   function frame(dt, entities) {
     frameNo++;
     for (const [id, s] of twist) if (s.seen < frameNo - 1) twist.delete(id);
     const seenBubble = new Set();
     for (const e of entities) {
-      if (e.kind === 'azone' && e.classId === 'tidecaller') {
+      if (e.kind === 'zone' && e.classId === 'tidecaller') {
         const c = (zoneClock.get(e.id) ?? 0) + dt;
         if (SPIRAL_ZONES.has(e.skill) && c >= (e.skill === 'whirlpool' ? 0.08 : 0.12)) {
           zoneClock.set(e.id, 0);

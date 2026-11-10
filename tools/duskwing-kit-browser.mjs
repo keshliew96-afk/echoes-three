@@ -49,7 +49,7 @@ await settle(1500);
 await page.evaluate(() => {
   window.__kitSeen = { casts: {}, swarm: 0, pulses: 0 };
   window.__echoes.on('ally_cast', (e) => e && e.classId === 'duskwing' && (window.__kitSeen.casts[e.skill] = (window.__kitSeen.casts[e.skill] || 0) + 1));
-  window.__echoes.on('azone_tick', (e) => e && e.skill === 'bat_swarm' && window.__kitSeen.swarm++);
+  window.__echoes.on('zone_tick', (e) => e && e.skill === 'bat_swarm' && window.__kitSeen.swarm++);
   window.__echoes.on('aura_pulse', (e) => e && e.skill === 'blood_scent' && window.__kitSeen.pulses++);
 });
 await cmd('startCampaign', { level: 1, lineup: ['healer', 'tank', 'swordsman', 'duskwing'] });

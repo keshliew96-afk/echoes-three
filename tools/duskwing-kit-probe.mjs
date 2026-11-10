@@ -172,7 +172,7 @@ function park(W, x, z) {
   r.cds = [0, 0, 0, 0];
   return r;
 }
-const clearDummies = (W) => W.registry.all().filter((e) => e.kind === 'dummy' || (e.kind === 'azone' && e.classId === 'duskwing')).forEach((e) => W.registry.despawn(e.id));
+const clearDummies = (W) => W.registry.all().filter((e) => e.kind === 'dummy' || (e.kind === 'zone' && e.classId === 'duskwing')).forEach((e) => W.registry.despawn(e.id));
 
 // ---------------------------------------------------------- 1. data / gate --
 {
@@ -265,7 +265,7 @@ const sipsOf = (from) => since(from, 'heal', (e) => e.source === 'night_hunger')
   const from = W.log.length;
   castK(0, 1.0, 0);
   steps(W, 1, { hurt: 40 });
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'bat_swarm')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'bat_swarm')[0];
   check(!!sp && sp.radius === 1.3 && sp.totalTicks === 4, `a swarm of bats at the target (ring ${sp && sp.radius}, ${sp && sp.totalTicks} beats)`);
   steps(W, 62, { hurt: 40 });
   const hits = since(from, 'hit', (e) => e.source === 'bat_swarm');
@@ -298,7 +298,7 @@ const sipsOf = (from) => since(from, 'heal', (e) => e.source === 'night_hunger')
   castK(0, 1, 0);
   const dash = since(from, 'ally_dash', (e) => e.skill === 'flit')[0];
   steps(W, 20);
-  const sp = since(from, 'azone_spawn', (e) => e.skill === 'flit')[0];
+  const sp = since(from, 'zone_spawn', (e) => e.skill === 'flit')[0];
   check(!!dash && dash.cause === 'vault' && near(Math.hypot(dash.x1 - dash.x0, dash.z1 - dash.z0), 2.8, 0.05) && sable.x < -2.4, `he flits 2.8 u away from the aim (to x ${sable.x.toFixed(2)})`);
   check(!!sp && Math.hypot(sp.x, sp.z) < 0.05, `the dark is left where he was (${sp && `${sp.x},${sp.z}`})`);
   steps(W, 60);

@@ -59,8 +59,8 @@ await page.evaluate(() => {
   const live = (ev) => window.__bolts.get(ev.id);
   window.__echoes.on('*', (ev) => {
     if (ev.type === 'projectile_spawn' || ev.type === 'skill_bolt_spawn') window.__bolts.set(ev.id, { id: ev.id, type: ev.type, tick: ev.tick, gone: null });
-    else if (ev.type === 'azone_spawn') window.__bolts.set(ev.id, { id: ev.id, type: ev.type, zone: true, tick: ev.tick, gone: null });
-    else if (ev.type === 'projectile_despawn' || ev.type === 'skill_bolt_despawn' || ev.type === 'azone_expire') {
+    else if (ev.type === 'zone_spawn') window.__bolts.set(ev.id, { id: ev.id, type: ev.type, zone: true, tick: ev.tick, gone: null });
+    else if (ev.type === 'projectile_despawn' || ev.type === 'skill_bolt_despawn' || ev.type === 'zone_expire') {
       const b = live(ev);
       if (b) b.gone = { tick: ev.tick, traveled: ev.traveled ?? null, cause: ev.cause ?? null };
     } else if (ev.type === 'ally_cast' || ev.type === 'ally_basic' || ev.type === 'basic_fire' || ev.type === 'skill_cast') window.__acts = (window.__acts || 0) + 1;

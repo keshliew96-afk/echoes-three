@@ -152,13 +152,13 @@ export function createDuskEventCues() {
   return {
     ally_basic: (ev, h) => (ev.classId === 'duskwing' ? one('dk_nip', at(ev, h, ev.id), { pitch: 0.94 + 0.12 * ((ev.id ?? 0) % 2) }) : null),
     ally_dash: (ev, h) => (ev.skill === 'dusk_dive' ? one('dk_dive', at({ x: ev.x0, z: ev.z0 }, h, ev.id)) : ev.skill === 'flit' ? one('dk_flit', at({ x: ev.x0, z: ev.z0 }, h, ev.id)) : null),
-    azone_spawn: (ev, h) => {
+    zone_spawn: (ev, h) => {
       if (ev.skill !== 'bat_swarm') return null;
       swarmZones.add(ev.id);
       return one('dk_swarm', at(ev, h, null));
     },
-    azone_tick: (ev, h) => (swarmZones.has(ev.id) && ev.hit && ev.hit.length ? one('dk_nibble', at({}, h, ev.hit[0])) : null),
-    azone_expire: (ev) => {
+    zone_tick: (ev, h) => (swarmZones.has(ev.id) && ev.hit && ev.hit.length ? one('dk_nibble', at({}, h, ev.hit[0])) : null),
+    zone_expire: (ev) => {
       swarmZones.delete(ev.id);
       return null;
     },

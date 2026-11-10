@@ -264,7 +264,7 @@ const freed = (prof) => U.bellwrightFreed(prof.get().meta, prof.get().records);
   const ropeHeals = evs.filter((e) => e.type === 'heal' && e.source === 'bell_rope');
   check(peals.length > 0 && ropes.length === peals.length && ropes.every((p, i) => p.target === tolly.id && p.bells === rung(peals[i])), `Bell-Rope: one heal per Peal that rang bells, sized by its bells (${ropes.length} / ${peals.length} peals)`);
   check(ropeHeals.length > 0 && ropeHeals.every((e) => e.amount <= 3 * 4 + 1e-6 || e.crit) && ropeHeals.some((e) => e.amount >= 3 - 1e-6), `... 3 HP per bell (${ropeHeals.map((e) => e.amount).join(',')})`);
-  const striking = evs.filter((e) => e.type === 'azone_tick' && Array.isArray(e.hit) && e.hit.length > 0 && W.log.some((s) => s.type === 'azone_spawn' && s.id === e.id && s.bell));
+  const striking = evs.filter((e) => e.type === 'zone_tick' && Array.isArray(e.hit) && e.hit.length > 0 && W.log.some((s) => s.type === 'zone_spawn' && s.id === e.id && s.bell));
   const claps = evs.filter((e) => e.type === 'relic_proc' && e.relic === 'verdigris_clapper');
   check(claps.length > 0 && claps.length === Math.floor(striking.length / 4), `Verdigris Clapper: every fourth striking toll rings again (${claps.length} for ${striking.length} tolls)`);
   const clapHits = evs.filter((e) => e.type === 'hit' && e.source === 'verdigris_clapper');

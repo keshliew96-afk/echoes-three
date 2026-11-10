@@ -29,11 +29,11 @@ import { clampPlacement, countFinal, fanDirections, selectDirect, createSkillBol
 import { sweptStep } from './movement.js';
 import { CLASS_TECH, AI_ENGAGE } from '../data/classes.js';
 import { isBlinded } from './status.js';
+import { ZONE_CADENCE_TICKS } from './zones.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
 export const CD_FLOOR_TICKS = secTicks(0.5); // §6 cooldown floor
-const ZONE_CADENCE_TICKS = secTicks(1.0); // §6 zone cadence 1.0 s, first tick at 1.0 s
 const BOLT_RADIUS = 0.05;
 const DASH_STOP_FRAC = 0.8; // a dash stops with its target inside 0.8 × the delivery's reach
 
@@ -570,7 +570,7 @@ export function createAllyCaster(ctx) {
   // whatever stands in it (no damage), like the Dive puddle.
   function spawnPuddle(x, z, sourceId, tick) {
     const zone = registry.spawn({
-      kind: 'azone',
+      kind: 'zone',
       skill: 'deluge',
       classId: 'tidecaller',
       x,
@@ -587,7 +587,7 @@ export function createAllyCaster(ctx) {
       untilTick: tick + CLASS_TECH.delugeTicks,
       nextTickTick: tick,
     });
-    events.emit(tick, 'azone_spawn', { id: zone.id, skill: 'deluge', classId: 'tidecaller', x: r2(x), z: r2(z), radius: zone.radius, totalTicks: 1, puddle: true });
+    events.emit(tick, 'zone_spawn', { id: zone.id, skill: 'deluge', classId: 'tidecaller', x: r2(x), z: r2(z), radius: zone.radius, totalTicks: 1, puddle: true });
   }
   // Bubble Ward (her guard): a bubble bursts when its shield is spent, when
   // it runs out, or when its bearer goes down, soaking the enemies near it.
@@ -625,12 +625,12 @@ export function createAllyCaster(ctx) {
   }
 
   // THE BELLWRIGHT (docs/BELLWRIGHT.md): the bells a Bellwright has hung
-  // (her azones flagged `bell`), oldest first; the bell whose ring holds an
+  // (her zones flagged `bell`), oldest first; the bell whose ring holds an
   // enemy (the nearest, when rings overlap); and the cap, which retires her
   // oldest bells past CLASS_TECH.bellCap.
   function bellsOf(sourceId) {
     const out = [];
-    for (const z of registry.all()) if (z.kind === 'azone' && z.bell && z.sourceId === sourceId) out.push(z);
+    for (const z of registry.all()) if (z.kind === 'zone' && z.bell && z.sourceId === sourceId) out.push(z);
     return out.sort((p, q) => p.id - q.id);
   }
   function ringOf(sourceId, t) {
@@ -648,7 +648,7 @@ export function createAllyCaster(ctx) {
   function capBells(sourceId, tick, cap = CLASS_TECH.bellCap) {
     const bells = bellsOf(sourceId);
     for (let i = 0; i < bells.length - cap; i++) {
-      events.emit(tick, 'azone_expire', { id: bells[i].id, skill: bells[i].skill, replaced: true });
+      events.emit(tick, 'zone_expire', { id: bells[i].id, skill: bells[i].skill, replaced: true, classId: bells[i].classId });
       registry.despawn(bells[i].id);
     }
   }
@@ -832,7 +832,7 @@ export function createAllyCaster(ctx) {
         cz = echo.zz;
       }
       const spec = {
-        kind: 'azone',
+        kind: 'zone',
         skill: def.id,
         classId: a.classId,
         x: cx,
@@ -862,7 +862,7 @@ export function createAllyCaster(ctx) {
       cast.zz = r2(cz);
       Object.assign(cast, extra);
       events.emit(tick, 'ally_cast', cast);
-      events.emit(tick, 'azone_spawn', { id: zone.id, skill: def.id, classId: a.classId, x: r2(cx), z: r2(cz), radius: def.area, totalTicks: 1, burst: true, delayTicks, ...(tag || {}) });
+      events.emit(tick, 'zone_spawn', { id: zone.id, skill: def.id, classId: a.classId, x: r2(cx), z: r2(cz), radius: def.area, totalTicks: 1, burst: true, delayTicks, ...(tag || {}) });
       return cast;
     }
 
@@ -963,7 +963,7 @@ export function createAllyCaster(ctx) {
     const zones = [];
     for (const s of spots) {
       const spec = {
-        kind: 'azone',
+        kind: 'zone',
         skill: def.id,
         classId: a.classId,
         x: s.x,
@@ -1004,7 +1004,7 @@ export function createAllyCaster(ctx) {
     if (zones.length > 1) cast.zones = zones.map((z) => z.id);
     events.emit(tick, 'ally_cast', cast);
     for (const z of zones) {
-      events.emit(tick, 'azone_spawn', {
+      events.emit(tick, 'zone_spawn', {
         id: z.id,
         skill: def.id,
         classId: a.classId,
@@ -1143,7 +1143,7 @@ export function createAllyCaster(ctx) {
     events.emit(tick, 'scatter_burst', { seat: src ? src.partyIndex : null, skill: bolt.skill, shards, x: r2(bolt.x), z: r2(bolt.z) });
   }
 
-  // Ally zone tick instance with modifiers (sim/allies.js zonePhase).
+  // Ally zone tick instance with modifiers (sim/zones.js).
   function zoneHit(z, t, opts) {
     const m = z.mods || {};
     if (m.critBonus) opts.critBonus = m.critBonus;

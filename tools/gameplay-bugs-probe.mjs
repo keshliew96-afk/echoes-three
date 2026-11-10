@@ -120,7 +120,7 @@ function wonRun(seed, opts) {
 }
 
 // 2 --------------------------------------------------- room leftovers --
-const LEFT = new Set(['pilgrim', 'waystone', 'nest', 'eshot', 'eglob', 'slick', 'affix_core', 'zone', 'azone', 'bolt', 'skillbolt']);
+const LEFT = new Set(['pilgrim', 'waystone', 'nest', 'eshot', 'eglob', 'slick', 'affix_core', 'zone', 'bolt', 'skillbolt']);
 {
   const seen = { kinds: new Set(), modes: new Set(), retreaters: 0 };
   for (const seed of [4, 6]) {
@@ -171,7 +171,7 @@ const LEFT = new Set(['pilgrim', 'waystone', 'nest', 'eshot', 'eglob', 'slick', 
   for (let i = 0; i < 400 && W.run.view().phase !== 'shop'; i++) W.step();
   const h = heroes(W)[0];
   const zone = W.registry.spawn({ kind: 'zone', skill: 'probe', x: 1, z: 1, radius: 2 });
-  const azone = W.registry.spawn({ kind: 'azone', skill: 'probe', x: 1, z: 1, radius: 2 });
+  const azone = W.registry.spawn({ kind: 'zone', classId: 'tank', skill: 'probe', x: 1, z: 1, radius: 2 });
   const bolt = W.registry.spawn({ kind: 'bolt', x: 0, z: 0, vx: 1, vz: 0, owner: h.id });
   const way = W.registry.spawn({ kind: 'waystone', faction: 'hostile', x: 3, z: 3, hp: 50, maxHp: 50 });
   const ids = [zone.id, azone.id, bolt.id, way.id];

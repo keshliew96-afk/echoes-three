@@ -577,7 +577,7 @@ export function createRelicSystem({ registry, events, getTick, combat, skillSys,
     if (ev.targets.length > 0 && registry.byId(ev.id)) pending.push({ kind: 'fig', target: ev.id, struck: ev.targets.length });
   });
   // ... and Verdigris Clapper: a toll of one of her bells that struck someone.
-  events.on('azone_tick', (ev) => {
+  events.on('zone_tick', (ev) => {
     if (!on || !live() || !has('verdigris_clapper') || !Array.isArray(ev.hit) || ev.hit.length === 0) return;
     const z = registry.byId(ev.id);
     if (!z || !z.bell || bodyCls(z.sourceId) !== 'bellwright') return;
