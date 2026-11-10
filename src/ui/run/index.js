@@ -68,6 +68,7 @@ import { SHRINES, BLESSINGS } from '../../sim/shrines.js';
 import { createSelectionSound } from '../../audio/uiselect.js';
 import { t } from '../../i18n/index.js';
 import { bindings } from '../../core/bindings.js';
+import { PALETTE } from '../../data/palette.js';
 
 // phase -> screen name. Anything absent means "no meta screen".
 const SCREEN_FOR = {
@@ -488,7 +489,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
       svg.style.cssText = `position:fixed;left:3px;top:${(row * 100).toFixed(0)}%;width:6px;height:6px;pointer-events:none;opacity:0.002`;
       const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
       path.setAttribute('d', 'M0 0 L6 3 L0 6 Z');
-      path.setAttribute('fill', '#F4EFE6');
+      path.setAttribute('fill', PALETTE.parchment);
       svg.appendChild(path);
       rootEl.appendChild(svg);
       prepaintSeeds.push(svg);
@@ -1070,8 +1071,8 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   guestNote.className = 'nt-guest-note';
   guestNote.style.cssText =
     'position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:70;padding:8px 18px;border-radius:12px;' +
-    `background:${'#221F1B'}EE;color:#F4EFE6;font:700 18px/1.2 "Nunito","Trebuchet MS",system-ui,var(--i18n-font, sans-serif);` +
-    'border:1px solid #9C918688;pointer-events:none;display:none;';
+    `background:${PALETTE.voidCharcoal}EE;color:${PALETTE.parchment};font:700 18px/1.2 "Nunito","Trebuchet MS",system-ui,var(--i18n-font, sans-serif);` +
+    `border:1px solid ${PALETTE.warmGrey}88;pointer-events:none;display:none;`;
   document.body.appendChild(guestNote);
   const pingCss = document.createElement('style');
   pingCss.textContent = '.nt-pinged { outline: 3px solid #E8A23D !important; outline-offset: 4px; transition: outline-color 0.2s; }';
