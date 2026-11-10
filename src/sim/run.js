@@ -83,7 +83,7 @@ import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 // RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
-import { createRelicSystem, cursedDiff, dailyOmen, RELICS, RELIC_RULES, CURSES } from './relics.js';
+import { createRelicSystem, cursedDiff, dailyOmen, CURSES } from './relics.js';
 // DAILY DESCENT (docs/DAILY.md): the shared run of the UTC day.
 import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
 // BOSS RUSH (docs/BOSS_RUSH.md): the bosses back to back.
@@ -101,10 +101,9 @@ import { createSecretSystem, wallRolls, SECRET_RULES } from './secrets.js';
 import { refreshBlockers } from './interactables.js';
 import { SHRINES } from './shrines.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
-import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
+import { createEncounterSystem } from './encounters.js';
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): how many powers an elite carries.
 import { affixCountFor, AFFIX_RULES, AFFIXES, LATE_AFFIX_ROOM } from './affixes.js';
-import { encounterSpec } from './interactables.js';
 // CROSS-RUN UNLOCKS (docs/UNLOCKS.md): the boons a campaign is started with.
 import { sanitizeBoons } from '../data/unlocks.js';
 import { VOW_RANKS, rankIn, rankValue, vowScale, vowFuseRule, vowLevelOf } from '../data/vows.js';
@@ -127,6 +126,7 @@ import {
 } from '../data/campaign.js';
 
 import { cloneData, r2, TUTORIAL_LAYOUT, tutorialDiff, RUN } from './run/rules.js';
+import { createEventRoom } from './run/eventroom.js';
 import { createSecretRoom } from './run/secretroom.js';
 import { createVaultRoom } from './run/vaultroom.js';
 import { createRunShrines } from './run/shrines.js';
@@ -204,7 +204,7 @@ export function createRunSystem({
   // EVENT ROOMS: on with the relics (campaigns only, never the tutorial).
   const encounters = createEncounterSystem({ events, getTick });
   const encCtx = () => ({ wallet: rs.wallet, relics: relics.owned().length, freeMajors: relics.freeMajors().length, majors: relics.majorCurses().length, land: levelFor(rs.act)?.biome ?? null });
-  events.on('event_touch', () => openEncounter());
+  events.on('event_touch', () => RF.openEncounter());
   const autopilot = createAutopilot({
     registry,
     player,
@@ -913,7 +913,7 @@ export function createRunSystem({
       rs.phase = 'shop';
       RF.openShop();
     } else if (mode === 'event') {
-      enterEvent(n, tick);
+      RF.enterEvent(n, tick);
     } else if (mode === 'vault') {
       RF.enterVault(n, tick);
     } else if (mode === 'boss') {
@@ -952,7 +952,7 @@ export function createRunSystem({
     // EVENT ROOMS: the trapped chest's ambush is won — the chest pays.
     const enc = encounters.live();
     if (enc && enc.state === 'ambush' && enc.room === rs.roomIndex) {
-      ambushCleared(tick);
+      RF.ambushCleared(tick);
       return;
     }
     // 2. every live combat entity ends — the player-side half (enemy shots and
@@ -1458,263 +1458,12 @@ export function createRunSystem({
     return { nextRoom: next, reward: opt.reward, win: opt.win, ...(opt.curse ? { curse: opt.curse } : {}), ...(opt.major ? { major: true } : {}), ...(opt.event ? { event: true } : {}), ...(opt.champion ? { champion: opt.champion } : {}), ...(opt.vault ? { vault: true } : {}) };
   }
 
-  // ------------------------------------------------------- event rooms --
-  // EVENT ROOMS (docs/EVENT_ROOMS.md). Phase 'event': the party walks in
-  // with the encounter standing ahead (E · Inspect). Phase 'encounter': its
-  // card (Take or Leave). Take pays the cost, then the reward: a relic page,
-  // a Skill draft, Glint, a heal, or (the trapped chest) a short fight first.
-  // Then the doors, as after any room.
-  function enterEvent(n, tick) {
-    rs.phase = 'event';
-    const enc = encounters.enter(n);
-    relics.onRoomEnter(n, 'event');
-    if (!enc) {
-      afterRelic(); // defensive: a "?" room with nothing armed walks on
-      return;
-    }
-    const e = registry.spawn(encounterSpec(enc.id, EVENT_RULES.spot.x, EVENT_RULES.spot.z, EVENT_RULES.bodyRadius));
-    events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'encounter', x: r2(e.x), z: r2(e.z) });
-  }
 
   const encounterBody = () => registry.all().find((e) => e.itype === 'encounter');
 
-  function openEncounter() {
-    if (rs.phase !== 'event' || !encounters.open(encCtx())) return null;
-    const body = encounterBody();
-    if (body && body.uses > 0) body.uses = 0;
-    rs.phase = 'encounter';
-    return encounters.view(encCtx());
-  }
 
-  function focusEncounter(i) {
-    if (rs.phase !== 'encounter') return null;
-    return encounters.focus(i);
-  }
 
-  function spend(amount, reason) {
-    rs.wallet = Math.max(0, rs.wallet - amount);
-    events.emit(getTick(), 'glint_spend', { amount, wallet: rs.wallet, reason, room: rs.roomIndex });
-  }
 
-  // choice: 'take' | 'leave' (default: the card's focus).
-  function chooseEncounter(choice) {
-    if (rs.phase !== 'encounter') return null;
-    const enc = encounters.live();
-    if (!enc) return null;
-    const pick = choice === 'take' || choice === 'leave' ? choice : enc.focus === 1 ? 'leave' : 'take';
-    const tick = getTick();
-    const room = rs.roomIndex;
-    if (pick === 'take') {
-      const why = encounters.refusal(encCtx());
-      if (why) {
-        events.emit(tick, 'event_denied', { room, encounter: enc.id, reason: why });
-        return { denied: why };
-      }
-    }
-    rs.roomsDone = Math.max(rs.roomsDone, room);
-    if (pick === 'leave') {
-      encounters.finish('done', { left: true });
-      events.emit(tick, 'event_leave', { room, encounter: enc.id });
-      afterRelic();
-      return { left: true, encounter: enc.id };
-    }
-    const E = ENCOUNTERS[enc.id];
-    const R = EVENT_RULES;
-    const result = { took: true };
-    const bodies = registry.all().filter((e) => e.partyIndex !== undefined && e.hp > 0);
-    switch (enc.id) {
-      case 'blood_shrine': {
-        let paid = 0;
-        for (const e of bodies) {
-          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.hpCost));
-          e.hp = r2(e.hp - loss);
-          paid += loss;
-        }
-        result.hp = r2(paid);
-        relics.owe(room, 'shrine');
-        break;
-      }
-      case 'wishing_well': {
-        spend(E.price, 'event_well');
-        const relic = encounters.coin() ? relics.grantRandom('well', encounterBody() ?? player) : null;
-        if (relic) result.relic = relic;
-        else {
-          gainGlint(R.wellGlint, 'event_well');
-          result.glint = R.wellGlint;
-        }
-        break;
-      }
-      case 'trapped_chest':
-        startAmbush(tick);
-        events.emit(tick, 'event_take', { room, encounter: enc.id, ambush: true });
-        return { ambush: true, encounter: enc.id };
-      case 'lost_pilgrim':
-        spend(E.price, 'event_pilgrim');
-        result.draft = 'skill';
-        break;
-      case 'corrupted_altar': {
-        const id = encounters.pick(relics.freeMajors());
-        relics.takeMajor(id, room);
-        relics.owe(room, 'altar', { curse: id });
-        result.curse = id;
-        break;
-      }
-      case 'wandering_spirit': {
-        const lost = relics.loseNewest('spirit');
-        relics.owe(room, 'spirit', { not: lost ? [lost] : null });
-        result.lost = lost;
-        break;
-      }
-      case 'forgotten_cache':
-        gainGlint(R.cacheGlint, 'event_cache');
-        if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, R.cachePurse, 'event_cache');
-        result.glint = R.cacheGlint;
-        break;
-      // MORE EVENT ROOMS (slice 6).
-      case 'fey_ring': {
-        const paid = rs.wallet;
-        spend(paid, 'event_fey');
-        relics.owe(room, 'fey');
-        result.paid = paid;
-        break;
-      }
-      case 'sluice_gate': {
-        if (encounters.coin()) {
-          const relic = relics.grantRandom('sluice', encounterBody() ?? player);
-          if (relic) result.relic = relic;
-          gainGlint(R.sluiceGlint, 'event_sluice');
-          result.glint = R.sluiceGlint;
-        } else {
-          let lost = 0;
-          for (const e of bodies) {
-            const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.sluiceFlood));
-            e.hp = r2(e.hp - loss);
-            lost += loss;
-          }
-          result.flood = true;
-          result.hp = r2(lost);
-        }
-        break;
-      }
-      case 'barrow_ossuary': {
-        let paid = 0;
-        for (const e of bodies) {
-          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.ossuaryCost));
-          e.hp = r2(e.hp - loss);
-          paid += loss;
-        }
-        result.hp = r2(paid);
-        result.draft = 'node';
-        break;
-      }
-      case 'heart_crystal': {
-        const grown = [];
-        const n = relics.majorCurses().length;
-        for (let k = 0; k < n; k++) {
-          const relic = relics.grantRandom('crystal', encounterBody() ?? player);
-          if (!relic) break;
-          grown.push(relic);
-        }
-        result.relics = grown;
-        if (grown.length < n) {
-          gainGlint(RELIC_RULES.emptyPoolGlint * (n - grown.length), 'relic_pool_empty');
-          result.glint = RELIC_RULES.emptyPoolGlint * (n - grown.length);
-        }
-        break;
-      }
-      // THE STILL SPIRE (plan 4 slice 7).
-      case 'gods_seat': {
-        const lost = [];
-        for (let k = 0; k < R.seatRelics; k++) {
-          const id = relics.loseNewest('seat');
-          if (id) lost.push(id);
-        }
-        relics.owe(room, 'seat', { not: lost });
-        result.lost = lost;
-        break;
-      }
-      case 'silent_bell': {
-        let paid = 0;
-        for (const e of bodies) {
-          const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * R.bellCost));
-          e.hp = r2(e.hp - loss);
-          paid += loss;
-        }
-        result.hp = r2(paid);
-        const lifted = relics.liftMajor('bell');
-        if (lifted) result.lifted = lifted;
-        break;
-      }
-      // THE EMBER KILN (content plan 5 slice 9): Glint poured into the
-      // mould, 40 for each relic, up to three; the rest stays in the purse.
-      case 'molten_bell': {
-        const n = Math.min(R.pourMax, Math.floor(rs.wallet / R.pourStep));
-        spend(n * R.pourStep, 'event_bell');
-        const rung = [];
-        for (let k = 0; k < n; k++) {
-          const relic = relics.grantRandom('molten', encounterBody() ?? player);
-          if (!relic) break;
-          rung.push(relic);
-        }
-        result.paid = n * R.pourStep;
-        result.relics = rung;
-        if (rung.length < n) {
-          gainGlint(RELIC_RULES.emptyPoolGlint * (n - rung.length), 'relic_pool_empty');
-          result.glint = RELIC_RULES.emptyPoolGlint * (n - rung.length);
-        }
-        break;
-      }
-      case 'traveling_smith': {
-        spend(E.price, 'event_smith');
-        const lost = relics.loseNewest('smith');
-        const was = lost ? RELICS[lost].rarity : 'common';
-        const tiers = was === 'common' ? [['rare'], ['legendary']] : [['legendary']];
-        const relic = relics.grantTier('smith', tiers, lost ? [lost] : null, encounterBody() ?? player);
-        result.lost = lost;
-        if (relic) result.relic = relic;
-        break;
-      }
-      case 'gamblers_dice': {
-        spend(E.price, 'event_dice');
-        const dice = encounters.dice();
-        result.dice = dice;
-        if (dice[0] === dice[1]) {
-          const relic = relics.grantTier('dice', [['rare', 'legendary']], null, encounterBody() ?? player);
-          if (relic) result.relic = relic;
-          else {
-            gainGlint(R.diceGlint, 'event_dice');
-            result.glint = R.diceGlint;
-          }
-        } else if (dice[0] + dice[1] >= R.diceHigh) {
-          gainGlint(R.diceGlint, 'event_dice');
-          result.glint = R.diceGlint;
-        }
-        break;
-      }
-      case 'healing_spring': {
-        let healed = 0;
-        for (const e of bodies) {
-          if (e.hp >= e.maxHp) continue;
-          combat.applyHeal(e, e.maxHp - e.hp, { source: 'healing_spring' });
-          e.hp = e.maxHp; // full, whatever the curses and relics say
-          healed += 1;
-        }
-        result.healed = healed;
-        break;
-      }
-      default:
-        break;
-    }
-    encounters.finish('done', result);
-    events.emit(tick, 'event_take', { room, encounter: enc.id, ...result });
-    if (result.draft) {
-      rs.rewardFor[room] = result.draft;
-      presentReward(null);
-      return { took: true, encounter: enc.id, ...result };
-    }
-    afterReward(null);
-    return { took: true, encounter: enc.id, ...result };
-  }
 
   // ------------------------------------------------------------ shrines --
   // SHRINES (docs/SHRINES.md, sim/shrines.js). One a level, on the champions'
@@ -1729,37 +1478,7 @@ export function createRunSystem({
 
 
 
-  // The trapped chest: two short elite-heavy waves in the event room.
-  function startAmbush(tick) {
-    const depth = endlessDepth();
-    const level = depth ? endlessLevel(depth) : roomLevel(levelFor(rs.act));
-    const n = rs.roomIndex;
-    const base = beyondCampaign(depth) ? endlessDifficulty(depth, Math.min(6, n), rs.challenge) : difficulty(rs.act, Math.min(6, n), rs.challenge);
-    const A = EVENT_RULES.ambush;
-    let diff = { ...base, budget: r2(base.budget * A.budgetMul), eliteChance: r2(Math.min(0.9, (base.eliteChance ?? 0) + A.eliteAdd)) };
-    for (const m of relics.majorCurses()) diff = cursedDiff(diff, m, relics.majorScale());
-    diff = vowedDiff(diff);
-    encounters.finish('ambush');
-    waves.planRoom('kill_all', { act: rs.act, room: n, challenge: rs.challenge, level, diff, waves: A.waves, campaignKinds: objectivesOn() });
-    const ring = rs.layout ? LAYOUTS[rs.layout.layoutId]?.spawns : null;
-    if (ring) waves.relocateSpawns(ring);
-    rs.phase = 'combat';
-    waves.beginRoom();
-    events.emit(tick, 'event_ambush', { room: n, encounter: 'trapped_chest' });
-  }
 
-  function ambushCleared(tick) {
-    sweepPlayerTransients(tick, 'room_clear');
-    skillSys.clearOverride();
-    events.emit(tick, 'heal_override', { index: null });
-    rs.roomsDone = Math.max(rs.roomsDone, rs.roomIndex);
-    const R = EVENT_RULES;
-    gainGlint(R.chestGlint, 'event_chest');
-    relics.owe(rs.roomIndex, 'chest');
-    encounters.finish('done', { took: true, glint: R.chestGlint });
-    events.emit(tick, 'event_chest', { room: rs.roomIndex, glint: R.chestGlint });
-    afterReward(null);
-  }
 
   // §13/§16 transition fade (<= 300 ms) between the meta screens and the next
   // room's first tick.
@@ -3056,11 +2775,11 @@ export function createRunSystem({
         // The land the door roll reads ('wood' | 'mill' | 'barrow' | 'heart').
         return encCtx().land;
       case 'eventOpen':
-        return openEncounter();
+        return RF.openEncounter();
       case 'eventFocus':
-        return focusEncounter(args[0] ?? 0);
+        return RF.focusEncounter(args[0] ?? 0);
       case 'eventChoose':
-        return chooseEncounter(args[0]);
+        return RF.chooseEncounter(args[0]);
       case 'eventState':
         return encounters.view(encCtx());
       case 'pathFocus':
@@ -3295,11 +3014,12 @@ export function createRunSystem({
     rs.shrine = d.shrine ? cloneData(d.shrine) : null;
   }
 
-  Object.assign(RF, { afterRelic, beginFade, gainGlint, positionParty, presentReward, spend }); // the closure's own functions the parts call
+  Object.assign(RF, { afterRelic, afterReward, beginFade, gainGlint, positionParty, presentReward, sweepPlayerTransients, vowedDiff }); // the closure's own functions the parts call
   Object.assign(RF, createRunShop({ rs, RF, allyOn, buildSys, controllers, draft, events, getTick, pages, party, relics, tonics }));
   Object.assign(RF, createRunShrines({ rs, RF, championsOn, events, getTick, party, player, registry, relics, tonics, vaults }));
   Object.assign(RF, createVaultRoom({ rs, RF, allyOn, combat, events, getTick, party, registry, relics, tonics, vaults }));
   Object.assign(RF, createSecretRoom({ rs, RF, allyOn, encCtx, encounters, events, getTick, party, player, registry, relics, secrets, tonics }));
+  Object.assign(RF, createEventRoom({ rs, RF, allyOn, combat, encCtx, encounterBody, encounters, endlessDepth, events, getTick, objectivesOn, party, player, registry, relics, roomLevel, skillSys, waves }));
   const api = {
     saveState,
     loadState,
@@ -3376,9 +3096,9 @@ export function createRunSystem({
     chooseRelic,
     buyRelic: RF.buyRelic,
     // EVENT ROOMS: the encounter card's entry points.
-    openEncounter,
-    focusEncounter,
-    chooseEncounter,
+    openEncounter: RF.openEncounter,
+    focusEncounter: RF.focusEncounter,
+    chooseEncounter: RF.chooseEncounter,
     // KEYS AND VAULTS: the chest (E does the same through the interactables).
     openVault: RF.openVault,
     openSecret: RF.openSecret,
