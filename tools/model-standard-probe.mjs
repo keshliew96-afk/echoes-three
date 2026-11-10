@@ -434,9 +434,6 @@ function tankRig(facet = true) {
   check('the pilot plays the Wyrm and the Tank by default', MODEL_STANDARD.wyrm === true && MODEL_STANDARD.tank === true && facetOn('wyrm', q('')) && facetOn('tank', q('')) && !facetOn('hush', q('')));
   check('?facet=0 turns every model classic', !facetOn('wyrm', q('facet=0')) && !facetOn('tank', q('facet=0')));
   check('?facet=wyrm keeps only the Wyrm faceted', facetOn('wyrm', q('facet=wyrm')) && !facetOn('tank', q('facet=wyrm')));
-  const classic = createCritter('tank', { facet: false });
-  const faceted = createCritter('tank', { facet: true });
-  check('the classic Tank still builds beside the faceted one', classic.modelStandard === false && classic.lab === null && faceted.modelStandard === true);
 }
 
 // --- 6. colour -------------------------------------------------------------------
@@ -466,7 +463,7 @@ function tankRig(facet = true) {
     return hsl.h * 360 >= 30 && hsl.h * 360 <= 50 && sat > 0.35 && hsl.l > 0.4;
   };
   const wyrm = buildWyrmFacet();
-  const tank = createCritter('tank', { facet: true });
+  const tank = createCritter('tank');
   const all = [...mats(wyrm.group).map((m) => ['wyrm', m]), ...mats(tank.group).map((m) => ['tank', m])];
   const reserved = all.filter(([, m]) => close(m.color.getHex(), RESERVED.ember) || close(m.color.getHex(), RESERVED.heal)).map(([w, m]) => `${w} #${m.color.getHexString()}`);
   check('no Ember or Bright Heal on either model', reserved.length === 0, reserved);

@@ -22,7 +22,7 @@ All numbers are first guesses, in the units of the skill table
   his sides like a cloak, half open and beating as he hops along, and flare
   wide with one hard beat on every cast.
 - Silhouette: the only hero with wings, and the only one whose outline
-  changes width when he strikes (rig `src/render/critters/duskwing.js`).
+  changes width when he strikes (rig `src/render/critters/duskwingfacet.js`).
 - Colours: class accent Dusk Plum `#55304F` (rings, HP bars, trim); VFX
   signature Dusk Rose `#E0509E` glow, Pale Moon `#F2D9E6` second, Wing
   Leather `#7A4E66` debris, with a dark ink smoke for the night itself. Clear

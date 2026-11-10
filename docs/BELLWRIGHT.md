@@ -21,7 +21,7 @@ All numbers are first guesses, in the units of the skill table
   carries a short bell mallet and a tuning fork at her belt. The bell is the story's own symbol (the Healer is the
   bell-carrier), and no other class plays like a zone caster.
 - Silhouette: the only hero whose prop rides **above** her head, and the only
-  one with feelers (rig `src/render/critters/bellwright.js`).
+  one with feelers (rig `src/render/critters/bellwrightfacet.js`).
 - Colours: class accent Bell Bronze `#7A5530` (rings, HP bars, trim); VFX
   signature Bell Brass `#F5D06B` glow, Verdigris `#86D3B4` second, Old Bronze
   `#8A6A3E` debris. Clear of the reserved hues (Ember, Bright Heal, Violet);
