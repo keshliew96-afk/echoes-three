@@ -55,7 +55,16 @@ import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 import { HOLD_CAP } from '../hold.js';
 
-export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400, head: 64 }); // PR 2 raised them for the foes; PR 3 added heads
+export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400, head: 64, trace: 16 }); // PR 2 raised them for the foes; PR 3 added heads; the extras added traces
+// T1 (VFX_HIT_RULES, docs/HIT_FEEDBACK.md j): a blade slash traced from the
+// rig's weapon. cols: ribbon columns, spread evenly over `sec` of the
+// swing's clock; a column whose moment the tip has not reached yet sits on
+// the tip's latest point. band: the ribbon's least width over the tip's
+// radius (T2: the inner edge at about 0.3 of it), so a short grip (the
+// Tank's shield) still draws a band. minPath: a tip that travels less than
+// this (u) over the record draws nothing worth the slot, and the caller's
+// procedural arc should play instead.
+export const TRACE = Object.freeze({ cols: 48, sec: 0.25, band: 0.68, minPath: 0.35 });
 
 const colorCache = new Map();
 function col(hex) {
@@ -397,6 +406,17 @@ void main() {
     float a = along * ( rim + inner ) * shimmer * uOpacity;
     gl_FragColor = vec4( c, clamp( a, 0.0, 1.0 ) );
   }
+}
+`;
+
+// ---------------------------------------------------------------- trace --
+// The traced ribbon's columns are world points (fed per frame); the blaze
+// fragment draws it, so a trace is a blaze whose shape is the rig's own.
+const TRACE_VERT = /* glsl */ `
+varying vec2 vUv;
+void main() {
+  vUv = uv;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
 }
 `;
 
@@ -896,6 +916,182 @@ export function createTemplateKit({ stage, cosmetic }) {
     u.uOpacity.value = s.op * (t < s.sweep ? 1 : Math.pow(1 - k, 1.1));
   }
 
+  // ---------------------------------------------------------------- trace --
+  // T1: a slash traced from the rig's weapon. The ribbon's outer edge is
+  // the tip's own path through the swing, its inner edge the hand's (pushed
+  // in to the band's least width). The caller feeds a hand and tip pair
+  // every frame (feedTrace); the columns are spread evenly over TRACE.sec of
+  // the trace's own clock and interpolated (Catmull-Rom) through the
+  // samples, so a 30 fps swing of 5 samples still draws a smooth arc. The
+  // window (uHead) follows the clock, as a blaze's sweep does, then runs on
+  // with the tail so the trail dies tail-first. Held through the hitstop
+  // like a blaze (the rig holds too, so a held frame feeds no new point).
+  const traces = makePool(TPL_CAPS.trace, () => {
+    const u = {
+      uCore: { value: new Color() },
+      uA: { value: new Color() },
+      uB: { value: new Color() },
+      uOpacity: { value: 0 },
+      uHead: { value: 0 },
+      uTail: { value: 1 },
+      uTime: { value: 0 },
+      uSeed: { value: 0 },
+      uMode: { value: 0 },
+      uGain: { value: 1.2 },
+      uSwipe: { value: 1 },
+    };
+    const N = TRACE.cols;
+    const geo = new BufferGeometry();
+    const pos = new Float32Array(N * 2 * 3);
+    const uv = new Float32Array(N * 2 * 2);
+    const idx = [];
+    for (let i = 0; i < N; i++) {
+      uv[(i * 2) * 2] = i / (N - 1);
+      uv[(i * 2) * 2 + 1] = 0;
+      uv[(i * 2 + 1) * 2] = i / (N - 1);
+      uv[(i * 2 + 1) * 2 + 1] = 1;
+      if (i < N - 1) idx.push(i * 2, i * 2 + 1, i * 2 + 2, i * 2 + 1, i * 2 + 3, i * 2 + 2);
+    }
+    geo.setAttribute('position', new BufferAttribute(pos, 3));
+    geo.setAttribute('uv', new BufferAttribute(uv, 2));
+    geo.setIndex(idx);
+    const mat = new ShaderMaterial({ uniforms: u, vertexShader: TRACE_VERT, fragmentShader: BLAZE_FRAG, transparent: true, depthWrite: false, blending: AdditiveBlending, side: DoubleSide });
+    const mesh = new Mesh(geo, mat);
+    mesh.frustumCulled = false;
+    mesh.renderOrder = 7;
+    return { obj: mesh, u, pos, pts: [], tok: 0, rt: 0 };
+  });
+  let traceTok = 0;
+  // opts: x, z (the swing's centre, for the crowd dimming), radius (the
+  // reach the outer edge is pushed out to; the band is TRACE.band of it), sec (the record,
+  // TRACE.sec), life, lag (s: the window runs this far behind the clock, a
+  // motion-blur afterimage), tail, mode, core / a / b, opacity, gain,
+  // swipe (default on), delay. Returns the slot; feed it with feedTrace.
+  function trace(o) {
+    const s = traces.take();
+    start(s, o, o.life ?? 0.36);
+    const u = s.u;
+    s.tok = ++traceTok;
+    s.pts.length = 0;
+    s.rt = 0;
+    s.sec = o.sec ?? TRACE.sec;
+    s.lag = o.lag ?? 0;
+    s.reach = o.radius ?? 1;
+    s.band = s.reach * TRACE.band * (o.band ?? 1);
+    s.op = (o.opacity ?? 1) * crowd(o.x, o.z);
+    s.tail = o.tail ?? 0.9;
+    s.path = 0;
+    s.lx = s.ly = s.lz = 0;
+    s.dirty = false;
+    s.obj.position.set(0, 0, 0);
+    s.pos.fill(0);
+    s.obj.geometry.attributes.position.needsUpdate = true;
+    u.uCore.value.copy(col(o.core ?? '#FFF3C4'));
+    u.uA.value.copy(col(o.a ?? '#FFB43C'));
+    u.uB.value.copy(col(o.b ?? '#F5952E'));
+    u.uMode.value = o.mode === 'wave' ? 1 : 0;
+    u.uSwipe.value = o.swipe === false ? 0 : 1;
+    u.uGain.value = o.gain ?? 1.25;
+    u.uSeed.value = rnd(0, 60);
+    u.uHead.value = 0;
+    u.uTail.value = s.tail;
+    u.uOpacity.value = 0;
+    return s;
+  }
+  // One frame's centre (the hero's feet), hand and tip (world Vector3s) for
+  // a live trace slot; the token guards a slot the pool has since given
+  // away. The outer edge is the tip's own path: its heading and height are
+  // the rig's, and a tip inside the swing's reach is pushed out to it, so
+  // the slash reaches the target's near surface (T1) where a short weapon
+  // (the Tank's shield, the Bellwright's mallet) would stay inside the
+  // body from the top-down camera. The inner edge sits the band in toward
+  // the centre, at the hand's height (T2). Writes the outer point back into
+  // `tip` (the glint sits on the ribbon). Returns the path the tip has
+  // travelled so far (u), -1 for a dead slot.
+  function feedTrace(s, tok, center, hand, tip) {
+    if (!s || s.tok !== tok || !s.live) return -1;
+    if (s.rt > s.sec) return s.path;
+    const last = s.pts[s.pts.length - 1];
+    if (last && last.t === s.rt) return s.path; // a held frame: no new point
+    const p = { t: s.rt, tx: tip.x, ty: tip.y, tz: tip.z, hy: hand.y, cx: center.x, cz: center.z };
+    s.pts.push(p);
+    s.dirty = true;
+    reachOut(s, p, traceOut);
+    if (last) s.path += Math.hypot(traceOut[0] - s.lx, traceOut[1] - s.ly, traceOut[2] - s.lz);
+    s.lx = traceOut[0];
+    s.ly = traceOut[1];
+    s.lz = traceOut[2];
+    tip.set(s.lx, s.ly, s.lz);
+    return s.path;
+  }
+  // A sample (or an interpolated one) to its ribbon column: the outer point
+  // pushed out to the reach (never in), the inner point the band in toward
+  // the centre at the hand's height, both above the floor. out: tip xyz,
+  // inner xyz.
+  function reachOut(s, p, out) {
+    let vx = p.tx - p.cx;
+    let vz = p.tz - p.cz;
+    const r = Math.hypot(vx, vz) || 0.001;
+    const k = r < s.reach ? s.reach / r : 1;
+    vx *= k;
+    vz *= k;
+    const R = r * k;
+    out[0] = p.cx + vx;
+    out[1] = Math.max(0.12, p.ty);
+    out[2] = p.cz + vz;
+    out[3] = out[0] - (vx / R) * s.band;
+    out[4] = Math.max(0.1, p.hy);
+    out[5] = out[2] - (vz / R) * s.band;
+  }
+  // Catmull-Rom through the samples at clock time t, into out (a sample).
+  const CR = (p0, p1, p2, p3, k) => 0.5 * (2 * p1 + (-p0 + p2) * k + (2 * p0 - 5 * p1 + 4 * p2 - p3) * k * k + (-p0 + 3 * p1 - 3 * p2 + p3) * k * k * k);
+  const FIELDS = ['tx', 'ty', 'tz', 'hy', 'cx', 'cz'];
+  const traceMid = { tx: 0, ty: 0, tz: 0, hy: 0, cx: 0, cz: 0 };
+  function traceAt(pts, t, out) {
+    const n = pts.length;
+    if (t >= pts[n - 1].t) {
+      const p = pts[n - 1];
+      for (const f of FIELDS) out[f] = p[f];
+      return out;
+    }
+    let i = 0;
+    while (i < n - 2 && pts[i + 1].t <= t) i++;
+    const a = pts[i];
+    const b = pts[i + 1];
+    const k = (t - a.t) / Math.max(1e-6, b.t - a.t);
+    const p0 = pts[Math.max(0, i - 1)];
+    const p3 = pts[Math.min(n - 1, i + 2)];
+    for (const f of FIELDS) out[f] = CR(p0[f], a[f], b[f], p3[f], k);
+    return out;
+  }
+  const traceOut = new Array(6).fill(0);
+  function stepTrace(s, t, d) {
+    const u = s.u;
+    s.rt += d;
+    u.uTime.value = time;
+    const k = Math.min(1, t / s.life);
+    if (s.dirty && s.pts.length) {
+      const N = TRACE.cols;
+      const pos = s.pos;
+      for (let i = 0; i < N; i++) {
+        reachOut(s, traceAt(s.pts, (i / (N - 1)) * s.sec, traceMid), traceOut);
+        pos[(i * 2) * 3] = traceOut[3];
+        pos[(i * 2) * 3 + 1] = traceOut[4];
+        pos[(i * 2) * 3 + 2] = traceOut[5];
+        pos[(i * 2 + 1) * 3] = traceOut[0];
+        pos[(i * 2 + 1) * 3 + 1] = traceOut[1];
+        pos[(i * 2 + 1) * 3 + 2] = traceOut[2];
+      }
+      s.obj.geometry.attributes.position.needsUpdate = true;
+      s.dirty = false;
+    }
+    // the window follows the clock (minus the lag), then runs on with the
+    // tail once the record is full, as a blaze's sweep does
+    const h = Math.max(0, s.rt - s.lag) / s.sec;
+    u.uHead.value = Math.min(1, h) + (h > 1 ? (h - 1) * s.tail * 1.1 : 0);
+    u.uOpacity.value = s.pts.length < 2 ? 0 : s.op * (h < 1 ? 1 : Math.pow(1 - k, 1.1));
+  }
+
   // ---------------------------------------------------------------- blast --
   const blasts = makePool(TPL_CAPS.blast, () => {
     const u = {
@@ -918,7 +1114,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     return { obj: mesh, u };
   });
   const BLAST_MODE = { fire: 0, celestial: 1, holo: 2 };
-  crowdPools = [circles, beams, blazes, blasts];
+  crowdPools = [circles, beams, blazes, blasts, traces];
 
   // ----------------------------------------------------------------- head --
   const heads = makePool(TPL_CAPS.head, () => {
@@ -1330,6 +1526,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     [blazes, stepBlaze],
     [blasts, stepBlast],
     [heads, stepHead],
+    [traces, stepTrace],
   ];
   const liveCount = { dust: 0, bits: 0, sparks: 0, held: 0 };
   // Render hold on hitstop (render/hold.js, VFX_HIT_RULES F1): a blade
@@ -1337,7 +1534,7 @@ export function createTemplateKit({ stage, cosmetic }) {
   // shader time (the flame licks, the glitch) keeps running, so a held trail
   // still flickers. Rings, circles, beams, heads and the particle clouds run
   // on. A blast finishes its pop (0.05 s) before it may pause. -1: never held.
-  const holdFloor = (pool, s) => (pool === blazes ? (s.ring ? -1 : 0) : pool === blasts ? 0.05 : -1);
+  const holdFloor = (pool, s) => (pool === blazes ? (s.ring ? -1 : 0) : pool === traces ? 0 : pool === blasts ? 0.05 : -1);
   // hold: the render hold (renderHold), or null (the model lab, harness
   // scenes).
   function update(dt, hold = null) {
@@ -1395,7 +1592,7 @@ export function createTemplateKit({ stage, cosmetic }) {
     return n;
   }
   function counts() {
-    return { circles: circles.live(), beams: beams.live(), blazes: blazes.live(), blasts: blasts.live(), heads: heads.live(), dust: liveCount.dust, bits: liveCount.bits, sparks: liveCount.sparks, held: liveCount.held };
+    return { circles: circles.live(), beams: beams.live(), blazes: blazes.live(), blasts: blasts.live(), heads: heads.live(), traces: traces.live(), dust: liveCount.dust, bits: liveCount.bits, sparks: liveCount.sparks, held: liveCount.held };
   }
   // Camp warm-up: one slot of each pool drawn for a few frames, and one
   // particle of each cloud parked out of sight, so no program compiles in
@@ -1419,5 +1616,5 @@ export function createTemplateKit({ stage, cosmetic }) {
     lightGain = l;
     particleGain = p;
   }
-  return { root, circle, beam, blaze, blast, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity };
+  return { root, circle, beam, blaze, blast, trace, feedTrace, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity };
 }

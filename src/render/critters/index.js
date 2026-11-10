@@ -282,6 +282,14 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
       p.getWorldPosition(out);
       return out;
     },
+    // Whether a move is live and before its contact hold (a swing just
+    // cued, a cast on its way to release): a trace fed from the tip will
+    // have a path to draw (VFX_HIT_RULES T1). False on a classic rig.
+    moveLive: () => {
+      let live = false;
+      if (built.atContact) built.atContact((a) => void (live = a));
+      return live;
+    },
     // The model lab's handle on a model-standard rig (null on the classic).
     lab: built.lab || null,
     modelStandard: !!built.lab,
