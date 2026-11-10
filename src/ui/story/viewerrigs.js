@@ -1,10 +1,8 @@
 // The Journal model viewer's rig builders (ui/story/viewer.js): every enemy
 // and boss rig by kind. Its own module so viewer.js can load it with import()
 // and the rigs stay in the combat art chunk, out of the boot.
-import { buildBoar } from '../../render/enemies/boar.js';
-import { buildMantis } from '../../render/enemies/mantis.js';
 import { ARCH_BUILDERS } from '../../render/enemies/archetypes.js';
-import { facetFoeBuilders } from '../../render/enemies/facet/index.js';
+import { FACET_FOES } from '../../render/enemies/facet/index.js';
 import { buildWyrmFacet } from '../../render/boss/wyrmfacet.js';
 import { buildStagFacet } from '../../render/boss/stagfacet.js';
 import { buildThornmotherFacet } from '../../render/boss/thornmotherfacet.js';
@@ -21,10 +19,8 @@ import { buildHush, buildSkyhorn, buildHourwarden } from '../../render/boss/spir
 import { buildFounder, buildCinderback } from '../../render/boss/kiln.js';
 
 export const BUILDERS = {
-  boar: buildBoar,
-  mantis: buildMantis,
   ...ARCH_BUILDERS,
-  ...facetFoeBuilders(), // the model standard's Level I foes (docs/MODEL_STANDARD.md)
+  ...FACET_FOES, // the model standard's foes (docs/MODEL_STANDARD.md)
   stag: buildStagFacet,
   heron: buildHeronFacet,
   wyrm: buildWyrmFacet,
