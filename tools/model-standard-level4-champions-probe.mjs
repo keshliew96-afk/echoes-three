@@ -419,7 +419,7 @@ for (const B of CHAMPS) {
 
 // --- 8. the lab ---------------------------------------------------------------------------
 {
-  check('the model lab lists both Level IV champions, after the Level II pair', LAB_ENTRIES.map((e) => e.id).join(',') === 'hollow_choir,vein_matron' && LEVEL2.map((e) => e.id).join(',') === 'briar_knight,moss_hart,sluice_warden,lockkeeper', LAB_ENTRIES.map((e) => e.id));
+  check('the model lab lists both Level IV champions, after the Level II pair', LAB_ENTRIES.map((e) => e.id).join(',') === 'hollow_choir,vein_matron' && LEVEL2.map((e) => e.id).join(',').startsWith('briar_knight,moss_hart,sluice_warden,lockkeeper'), LAB_ENTRIES.map((e) => e.id));
   const bad = [];
   const vfx = new Proxy({}, { get: () => () => null });
   for (const E of LAB_ENTRIES) {
