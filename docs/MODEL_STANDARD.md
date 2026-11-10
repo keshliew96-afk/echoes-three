@@ -1,5 +1,15 @@
 # Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349; Level IV foes v0.5.350; Level III champions v0.5.351; Level IV bosses v0.5.353; Level IV champions v0.5.354)
 
+> **Freeze cleanup (2026-11-10, AUDIT.md D1).** Every model that had a faceted rig now plays
+> only that rig. The classic rigs (`render/critters/{healer,tank,...}.js`,
+> `render/boss/{stag,heron,wyrm,slice2,third,heart}.js`, the classic champion builders, and
+> `render/enemies/{boar,mantis,slice2,heart,woodmill,barrowheart}.js`), the model lab's
+> "Classic beside" toggle, `render/facet/flags.js` and the `?facet=` param are gone. The
+> slice sections below are the record of how each model was built: where they say "the
+> classic kept beside it" or "`?facet=0`", that no longer exists. The foe probes hold each
+> faceted foe to its retired classic's draw calls, kept in `tools/classic-foe-calls.json`.
+> Level V, Spire and Kiln creatures were never faceted and keep their first rigs.
+
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
 planes, detail by repeating small parts, and abilities as named, rewindable timelines. He
@@ -36,7 +46,6 @@ Duskwing in v0.5.345 (their sections below): all seven heroes now play the stand
 | `material.js` | `facetize(geo, {jitter, seed})`: non-indexed geometry with flat normals and a per-plane value step in a `color` attribute (hashed from the face normal, so a plane keeps its tone as the model moves). `facetMaterial(color)`: the house toon material with vertex colours. Every faceted part keeps the 3-step toon ramp, so the light still bands like the rest of the game, and the facet step rides on top. |
 | `kit.js` | The parts kit on `InstancedMesh`, so hundreds of plates cost two draw calls (the part and its ink hull): `createSpine(n)` (a Catmull-Rom spine with a stable frame), `createPlateTube` (ridged scales laid in a brick pattern round a moving spine, sized by the local arc length so a bend never opens a gap, with metal bands every few rings), `createSpineRow` (wedge spikes along the spine, with tinted tips), `placeRow` (any fixed row: teeth, rivets, crest fans, mail), `mottle` (per-instance tone), `wedgeGeometry`, `plateGeometry`. Part ink is `PART_INK_PX` (1.35 px), thinner than the silhouette's `INK_PX`. |
 | `timeline.js` | `createTimeline(id, label, phases, {cues})`: pure in t (`sample(t)`, `startOf(phase)`, `readout(t)` for "1.2s · Ash Breath: strike"). `createPlayhead`: rate 1 plays, 0 holds, -1 rewinds; cues fire only on a forward crossing, so a rewind and replay re-fires each once. `ease`. |
-| `flags.js` | `MODEL_STANDARD = {wyrm, tank, healer, swordsman, archer, tidecaller, bellwright, stag, thornmother, gloamwolf, heron, millwheel, mireking, lichram, ashraven, cantor, colossus, veinweaver, the Level I, II, III and IV foes, the Level I to IV champions}` and `facetOn(kind)`. A harness build reads `?facet=0` (every model classic) or `?facet=wyrm,stag` (only those); a player build never sees the param. |
 | `hero.js` | The hero core (below). |
 | `heroes.js` | `FACET_HEROES`: the registry of model-standard heroes. The critter factory, the model lab and the heroes probe read it, so a hero listed here is built, shown and checked. |
 | `beats.js` | The [M] beats as small pure curves (below): `STRIKE_SEC` (2.5 frames), `HOLD_SEC` (3), `GATHER_SEC` (1.5), `SPAWN_SEC` (7), `kick`, `settle`, `recoil`, `spawnGrow`, `lunge`, `makePoints`, `createSpawnClock`, `SPAWN_TIMELINE`. A "frame" is a frame of the source videos, 1/30 s. |

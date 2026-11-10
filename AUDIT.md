@@ -230,3 +230,22 @@ colour rule still applies: a healing zone keeps Bright Heal in its circle (`heal
 
 D2, D5, D6 and D7 change structure the goldens or co-op depend on; they need Kesh's call before
 anyone touches them.
+
+## 11. Cleanup status (branch `claude/project-thread-zd4d09`, PR #136)
+
+| Id | Status | Commit |
+|---|---|---|
+| X1 | Done: the template circle is the AOE indicator for every zone, sized to the zone radius, for the zone's whole life; the plain zone discs are deleted. | b7265aa |
+| D8 | Resolved by X1: one zone renderer draws every zone kind. | b7265aa |
+| C1 | Done: the play check starts the session server, so the dev proxy no longer logs a 502. | 8f485ff |
+| C3 | Wrong in the audit: the `console.log` in `src/env/camp/colliders.js` is inside a comment. Nothing to remove. | none |
+| D3 | Done: `ALLY_KITS_V150` deleted. | 89012df |
+| U1 | Done: unused exports, imports and top-level locals deleted. | cb890a0 |
+| D4 | Done: one mote, flash and ring pool, `src/render/fxpool.js`. | c6286e2 |
+| N3 | Done for colours written as JS values (they read `PALETTE`). Hexes inside CSS strings were left. | ce2afc5 |
+| N1, N2 | Not moved. Gameplay tuning already sits in frozen tables (palette.js, core/constants.js, each system's table); moving tens of thousands of render literals is not a small change. | none |
+| Split | `main.js`: the debug API moved to `src/app/debugapi.js`. `run.js` and `signature.js` not split: each is one closure sharing many mutable locals. | 68dbb58 |
+| D1 | Done for every model with a faceted rig: classic heroes, bosses, champions and Level I to IV foes deleted, the lab's Classic beside, `render/facet/flags.js` and `?facet=` gone. | 097e6fd to beb1868 |
+| Dead code | Done: two never-called ally cast paths in `sim/allies.js` (about 220 lines) and unused locals in 14 files. | d26b1c3 |
+| D2, D5, D6, D7 | Not touched: they change structure the goldens or co-op depend on (Kesh's call). | none |
+| U3 | Not touched: retiring probes waits on Kesh's list. The `tools/model-standard-*-shots.mjs` tools still ask for `?facet=0` or the lab's classic twin and now shoot the faceted rig in both places. | none |

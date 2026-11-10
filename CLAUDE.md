@@ -92,6 +92,9 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
 
 - Distances read "u" in every language. Long one-word names get a `NAME_BREAKS` entry in
   `src/ui/run/classpick.js` (`docs/I18N.md`).
+- Config: colours read `PALETTE` (`src/data/palette.js`) rather than a hex written in JS; shared sim
+  numbers live in `src/core/constants.js` and each system's tuning in the frozen table at the top of
+  its own module (AUDIT.md N1, N3).
 - The sim never translates and never reads wall-clock time; randomness that affects play uses the
   seeded stream (`docs/BUILD_BRIEF.md` §1, §4).
 
@@ -129,9 +132,10 @@ npm run serve          # build, then serve dist/ and the session server together
 
 ```
 index.html, vite.config.js   page shell, boot splash; dev port 5199, proxies to the session server, bundle split
-src/main.js                  boot: stage, sim core, scenes, fixed-tick loop, window.__echoes debug API
+src/main.js                  boot: stage, sim core, scenes, fixed-tick loop; window.__echoes
 src/version.js               the one version string
-src/app/        app shell and screen state machine, frame loop, settings, display, gamepad, nav, harness gating
+src/app/        app shell and screen state machine, frame loop, settings, display, gamepad, nav, harness gating,
+                the harness debug API (debugapi.js, window.__echoes in a harness build)
 src/core/       sim core: 60 Hz clock, seeded RNG streams, entity registry, event bus, input -> intents, hashing
 src/sim/        the simulation (no DOM, no wall clock): world, run and campaign flow, combat, skills, nodes,
                 party and AI seats, enemies/ and bosses/, affixes, hazards, shrines, vaults, relics, events
@@ -140,8 +144,10 @@ src/data/       content tables: classes, levels and rosters, layouts, lineup, un
 src/campaign/   level manager (transitions between levels) and the camp map table
 src/scenes/     camp hub, arena (the dressed rooms), model labs, test scenes (graybox, simtest, rendertest, chartest)
 src/env/        room dressings: biomes/ per land, camp/ props
-src/render/     three.js views of sim state: stage and post, critters/ (heroes), facet/ (model standard kit),
-                enemies/, boss/, allies/, npcs/, hazards/, interactables/, skillfx/, techfx/, vfx/, numbers
+src/render/     three.js views of sim state: stage and post, critters/ (hero rigs, *facet.js), facet/ (the
+                model standard kit), enemies/ (facet/ for Level I to IV foes, champfacet/, spire.js and kiln.js),
+                boss/ (*facet.js for Level I to IV), allies/, npcs/, hazards/, interactables/, skillfx/,
+                techfx/, vfx/, numbers; fxpool.js is the one mote, flash and ring pool the skill layers share
 src/ui/         DOM UI: hud/, menu/ (title, settings, pause), run/ (class pick, draft, shop, cards), socket/,
                 story/ (journal, prologue), tutorial/, net/, interact/, bookends/, vfxlab, modellab, debug
 src/audio/      Web Audio engine, mixer, synthesized sfx and music
@@ -167,7 +173,8 @@ docs/           one doc per system (see the list in the file names); TESTING.md,
   hero class kits in `src/sim/party*.js`, `allycast.js`, `duskwing.js`; casts drawn by `src/render/skillfx/`
   and `src/render/vfx/`.
 - **Heroes and AI seats:** `src/app/playclass.js`, `src/data/lineup.js`, `src/sim/allies.js`, `partyai.js`,
-  `autopilot.js`; rigs in `src/render/critters/` and `src/render/facet/`.
+  `autopilot.js`; rigs in `src/render/critters/` (one faceted rig per hero, `*facet.js`) on the
+  kit in `src/render/facet/`. Every model with a faceted rig has only that rig (AUDIT.md D1).
 - **Enemies, champions, bosses:** `src/sim/enemies/`, `champions.js`, `src/sim/bosses/`, `boss.js`;
   rigs in `src/render/enemies/`, `src/render/boss/`.
 - **Rooms and runs:** `src/sim/run.js` (rooms, rewards, campaign, Endless, Daily, Boss Rush),
