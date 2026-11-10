@@ -248,6 +248,6 @@ anyone touches them.
 | D1 | Done for every model with a faceted rig: classic heroes, bosses, champions and Level I to IV foes deleted, the lab's Classic beside, `render/facet/flags.js` and `?facet=` gone. | 097e6fd to beb1868 |
 | Dead code | Done: two never-called ally cast paths in `sim/allies.js` (about 220 lines) and unused locals in 14 files. | d26b1c3 |
 | D2 | PR #137: one zone system (`src/sim/zones.js`, kind `zone` for every kit) and one cast event (`skill_cast`, a hero kit's with its `classId`); net protocol v5; goldens re-recorded (state hash of all nine, event hash of run-1 to run-3, every event otherwise identical). The two delivery functions stay (docs/CODE_HEALTH.md). | 0b9f4af, c722d5c |
-| D5 | PR #137: one VFX director: every layer registers on the director's dispatch, one bus subscription per event, handlers in the bus's own order. | see PR #137 |
+| D5 | PR #137: one VFX director: every layer registers on the director's dispatch, one bus subscription per event, handlers in the bus's own order. | cc698cc |
 | D6, D7 | Not touched: they change structure the goldens or co-op depend on (Kesh's call). | none |
 | U3 | Not touched: retiring probes waits on Kesh's list. The `tools/model-standard-*-shots.mjs` tools still ask for `?facet=0` or the lab's classic twin and now shoot the faceted rig in both places. | none |
