@@ -17,7 +17,6 @@ import { SHARD_TILE } from './particles.js';
 
 const COBALT = VFX_SIGNATURE.tidecaller.glow;
 const FOAM = VFX_SIGNATURE.tidecaller.second;
-const PEBBLE = VFX_SIGNATURE.tidecaller.debris;
 const PARCH = PALETTE.parchment;
 const INK = PALETTE.voidCharcoal;
 const DEEP = '#1C3F7A'; // the cobalt in shadow (vortex eyes, squall clouds)

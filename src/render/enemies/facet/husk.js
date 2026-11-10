@@ -87,8 +87,6 @@ const HITS = [
   { label: 'the double rake', from: A3, pull: P1, strike: S3, over: O3, next: A1 },
 ].map((h) => Object.freeze(h));
 const HIT_TL = hitTimelines(HITS, BITE_WINDOW, createTimeline);
-export const HUSK_REST = REST;
-export const HUSK_HITS = Object.freeze(HITS.map((h, i) => Object.freeze({ ...h, timeline: HIT_TL[i] })));
 // Pure: bite hit n at t (the probe and the lab).
 export function huskHitPose(n, t, from, fresh, pull, out = { ...REST }) {
   return hitPose(HITS, HIT_TL, REST, n, t, from, fresh, pull, out, ease);

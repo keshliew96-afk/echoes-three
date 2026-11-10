@@ -120,8 +120,6 @@ const SHRIEK = K({ lift: 0.08, push: 0.06, pitch: 0.32, sx: 1.19, sy: 0.91, sz: 
 // The recoil: kicked back on a braking upstroke, stretched a touch tall.
 const RECOIL = K({ lift: 0.13, push: -0.07, pitch: -0.14, sx: 0.95, sy: 1.06, sz: 1, hz: -0.02, hp: -0.1, disc: 1.15, beak: 0.35, flap: 0.45, sweep: 0.1, fold: 0.3, twist: 0.2, amp: 0, tread: 0.6, talon: 0.1, tail: 0.5, tailP: -0.1, pupil: 1.2, glow: 0.3 });
 const FIELDS = Object.keys(REST);
-export const OWL_REST = REST;
-export const OWL_KEYS = Object.freeze({ HANG, COIL, SHRIEK, RECOIL });
 
 // Pure: the gather at tt ticks into a telegraph of span ticks (the rise from
 // `from`, then the gather, then the strike). Returns the phase id.

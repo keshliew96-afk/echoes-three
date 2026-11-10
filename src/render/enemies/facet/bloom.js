@@ -34,7 +34,15 @@
 // Faces +Z. Same contract as buildBloom (group, mats, setYaw, pose) plus
 // lab, react, death, points. Render only: the sim, its timing and damage
 // untouched.
-import { ConeGeometry, CylinderGeometry, IcosahedronGeometry, Matrix4, Mesh, Quaternion, TorusGeometry, Vector3 } from 'three';
+import {
+  ConeGeometry,
+  CylinderGeometry,
+  IcosahedronGeometry,
+  Matrix4,
+  Quaternion,
+  TorusGeometry,
+  Vector3,
+} from 'three';
 import { groundShadow } from '../../critters/common.js';
 import { markShared } from '../../geocache.js';
 import { facetize } from '../../facet/material.js';
@@ -82,8 +90,6 @@ const PULSES = [
   { label: 'splayed to its right', coil: C2, strike: S2, over: O2 },
   { label: 'the full bloom', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const BLOOM_REST = REST;
-export const BLOOM_PULSES = Object.freeze(PULSES);
 
 const PULSE_TL = strikeTimeline('pulse', 'Pulse', {
   tel: PULSE_TEL_SEC,

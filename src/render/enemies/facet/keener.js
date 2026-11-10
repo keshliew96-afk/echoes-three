@@ -95,8 +95,6 @@ const WAILS = [
   { label: 'the lament from its left', coil: C2, strike: S2, over: O2 },
   { label: 'the dirge', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const KEENER_REST = REST;
-export const KEENER_WAILS = Object.freeze(WAILS);
 const WAIL_TL = strikeTimeline('wail', 'Wail', {
   tel: WAIL_TEL_SEC,
   labels: { coil: 'coil (the keen, the cone telegraph)', strike: 'the wail', hold: 'contact: the wail held', snap: 'snap back', settle: 'settle' },

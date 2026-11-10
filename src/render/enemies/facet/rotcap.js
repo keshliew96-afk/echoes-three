@@ -124,8 +124,6 @@ const HITS = [
   { label: 'cap slam', from: A3, pull: P1, strike: S3, over: O3, next: A1 },
 ].map((h) => Object.freeze(h));
 const HIT_TL = hitTimelines(HITS, CHOMP_WINDOW, createTimeline);
-export const ROTCAP_REST = REST;
-export const ROTCAP_HITS = Object.freeze(HITS.map((h, i) => Object.freeze({ ...h, timeline: HIT_TL[i] })));
 // Pure: combo hit n at t (the probe and the lab).
 export function rotcapHitPose(n, t, from, fresh, pull, out = { ...REST }) {
   return hitPose(HITS, HIT_TL, REST, n, t, from, fresh, pull, out, ease);

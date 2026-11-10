@@ -85,8 +85,6 @@ const HITS = [
   { label: 'toss', from: A3, pull: P1, strike: S3, over: O3, next: A1 },
 ].map((h) => Object.freeze(h));
 const HIT_TL = hitTimelines(HITS, GORE_WINDOW, createTimeline);
-export const BOAR_REST = REST;
-export const BOAR_HITS = Object.freeze(HITS.map((h, i) => Object.freeze({ ...h, timeline: HIT_TL[i] })));
 // Pure: gore hit n at t (the probe and the lab).
 export function boarHitPose(n, t, from, fresh, pull, out = { ...REST }) {
   return hitPose(HITS, HIT_TL, REST, n, t, from, fresh, pull, out, ease);

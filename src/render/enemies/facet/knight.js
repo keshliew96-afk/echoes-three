@@ -53,7 +53,13 @@ import { facetize } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry } from '../../facet/kit.js';
 import { ease } from '../../facet/timeline.js';
 import { SPAWN_SEC, bakeParts, createAttackWatch, createFoeClock, createFoeFrame, foeMaterial, foePart, namedPoint, spawnScale } from '../../facet/foe.js';
-import { HOLD_SEC, STRIKE_SEC, createStrikeClip, strikeAbility, strikePoseAt, strikeTimeline } from '../../facet/foestrike.js';
+import {
+  HOLD_SEC,
+  createStrikeClip,
+  strikeAbility,
+  strikePoseAt,
+  strikeTimeline,
+} from '../../facet/foestrike.js';
 import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '../../facet/foelegs.js';
 
 // The sim's knight (sim/enemies/knight.js S): 0.95 u/s, the slam's ring
@@ -104,8 +110,6 @@ const SLAMS = [
   { label: 'the cross cut', coil: C2, strike: S2, over: O2 },
   { label: 'the two-handed drive', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const KNIGHT_REST = REST;
-export const KNIGHT_SLAMS = Object.freeze(SLAMS);
 // The slam on the kit's strike timeline: the 66-tick coil, the strike, the
 // contact held, the snap back, the settle; the guard stays down through the
 // settle and a long rest (the sim's 50 ticks).

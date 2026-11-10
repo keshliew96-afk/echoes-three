@@ -42,7 +42,7 @@
 // `lab`, `points`, `react`. Faces +Z. Render only: it reads the sim entity
 // (mode, telegraph, the dash's velocity) and never writes it.
 import { CircleGeometry, Color, CylinderGeometry, Group, IcosahedronGeometry, Matrix4, Mesh, MeshBasicMaterial, RingGeometry, Vector3 } from 'three';
-import { addInk, groundShadow, INK_PX } from '../critters/common.js';
+import { addInk, groundShadow } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { sharedGeo } from '../geocache.js';
@@ -244,7 +244,6 @@ const G = {
 };
 
 const _m = new Matrix4();
-const _a = new Vector3();
 const _p = [new Vector3(), new Vector3(), new Vector3(), new Vector3()];
 // a heron's leg folds back at its visible joint
 const POLE = new Vector3(0, 0.05, -1);

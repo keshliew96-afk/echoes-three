@@ -154,8 +154,6 @@ const STRIKE = K({ push: 0.06, pitch: 0.27, hp: 0.48, ab: -0.12, pump: -0.4, ac:
 // the tail kicking up), then one overshoot back into the guard (B5).
 const OVER = K({ push: 0.02, pitch: 0.1, hp: -0.12, ab: 0.09, pump: 0.15, ac: 0.72, af: 2.3, at: 0.12, asp: 0.36, aln: 0.22, wing: 0.1, jaw: 0.3, glint: 0.3 });
 const FIELDS = Object.keys(REST);
-export const MANTIS_REST = REST;
-export const MANTIS_KEYS = Object.freeze({ rear: REAR, coil: COIL, strike: STRIKE, over: OVER });
 
 const SPIT_TL = createTimeline(
   'spit',

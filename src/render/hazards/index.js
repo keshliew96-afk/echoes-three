@@ -84,7 +84,7 @@ import { PALETTE, VFX_BIOME, VFX_MATTER } from '../../data/palette.js';
 import { CAMERA } from '../../core/constants.js';
 import { toonMaterial } from '../toon.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
-import { sharedGeo, markShared, releaseTree } from '../geocache.js';
+import { sharedGeo, releaseTree } from '../geocache.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { impactFx } from '../vfx/hub.js';
 import { createTelegraphShapes } from '../enemies/shapes.js';

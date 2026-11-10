@@ -99,8 +99,6 @@ const LURCH = K({ push: 0.06, lift: -0.01, tilt: 0.32, sx: 1.07, sy: 0.93, sz: 0
 const THUD = K({ push: 0.05, tilt: 0.06, sx: 1.16, sy: 1.1, sz: 0.78, tuck: 1, crest: 1.25, bristle: 1.3, legs: 0, glow: 0.9 });
 const RECOIL = K({ push: -0.08, lift: 0.06, tilt: -0.22, pitch: -0.35, sx: 0.96, sy: 1.06, sz: 1.05, tuck: 0.85, crest: 0.5, bristle: 0.6, legs: 0.6, glow: 0.6 });
 const DAZE = K({ push: -0.02, lift: -0.025, tilt: -0.06, pitch: -0.12, sx: 1.06, sy: 0.93, tuck: 0.45, crest: -0.65, bristle: 0, legs: 1, glow: 0.15, wob: 1 });
-export const QUILLBACK_REST = REST;
-export const QUILLBACK_POSES = Object.freeze({ COIL_IN, COIL_END, LAUNCH, ROLL, LURCH, THUD, RECOIL, DAZE });
 
 // Phase times (s).
 const HOLD = 2 * FRAME; // the launch's contact hold
@@ -369,10 +367,6 @@ function dropTopCap(g) {
 }
 // The coat's quill placements (the roots check reads them; built with SET).
 const LAYOUT = [];
-export function quillbackCoatLayout() {
-  geos();
-  return LAYOUT;
-}
 
 // The spine crest (the instanced, moving quills): angle from the top toward
 // the snout (+) or the rump (-), a hair off the midline, length, root radius.

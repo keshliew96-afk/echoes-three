@@ -88,8 +88,6 @@ const LASHES = [
   { label: 'from its right', coil: C2, strike: S2, over: O2 },
   { label: 'the plunge', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const SIPHON_REST = REST;
-export const SIPHON_LASHES = Object.freeze(LASHES);
 
 const LASH_TL = strikeTimeline('lash', 'Tendril lash', {
   tel: LASH_TEL_SEC,

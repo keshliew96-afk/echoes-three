@@ -91,8 +91,6 @@ const CHOPS = [
   { label: 'the chop from its left', raise: R2, drive: D2 },
   { label: 'the stamp', raise: R3, drive: D3 },
 ].map((v) => Object.freeze(v));
-export const SEXTON_REST = REST;
-export const SEXTON_CHOPS = Object.freeze(CHOPS);
 // The dig: 36 ticks from the knee to the bury (the sim's), then the rise.
 const CHOP_SEC = (DIG_SEC - 0.12) / 3;
 const DIG_TL = createTimeline('dig', 'Dig a snare', [

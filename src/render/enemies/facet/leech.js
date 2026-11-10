@@ -88,8 +88,6 @@ const LEAPS = [
   { label: 'reared to its right', coil: C2, strike: S2, over: O2 },
   { label: 'the high leap', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const LEECH_REST = REST;
-export const LEECH_LEAPS = Object.freeze(LEAPS);
 // Latched: stood up against the host, the sucker pressed in.
 const LATCH = K({ push: 0.06, rear: 0.24, pitch: 0.5, bunch: 0.4, stretch: 0.9, gape: 0.5 });
 

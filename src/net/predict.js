@@ -55,7 +55,7 @@
 import { ALLY_KITS, ALLY_CLASSES } from '../sim/allies.js';
 import { fanDirections, countFinal, clampPlacement } from '../sim/shapes.js';
 import { aimDir } from '../sim/remote.js';
-import { TICK_HZ, DODGE } from '../core/constants.js';
+import { DODGE } from '../core/constants.js';
 import { classOfSeat } from '../data/lineup.js';
 import { pct } from './protocol/snapshot.js';
 

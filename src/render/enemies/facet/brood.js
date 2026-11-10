@@ -87,8 +87,6 @@ const HITS = [
   { label: 'the pounce', from: A3, pull: P1, strike: S3, over: O3, next: A1 },
 ].map((h) => Object.freeze(h));
 const HIT_TL = hitTimelines(HITS, CHAIN_WINDOW, createTimeline);
-export const BROOD_REST = REST;
-export const BROOD_HITS = Object.freeze(HITS.map((h, i) => Object.freeze({ ...h, timeline: HIT_TL[i] })));
 export function broodHitPose(n, t, from, fresh, pull, out = { ...REST }) {
   return hitPose(HITS, HIT_TL, REST, n, t, from, fresh, pull, out, ease);
 }

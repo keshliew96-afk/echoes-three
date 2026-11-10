@@ -18,7 +18,7 @@
 //
 // Render-only: reads sim state read-only, never mutates it.
 import { Group, Vector3 } from 'three';
-import { HITFLASH, TICK_HZ, CAMERA } from '../../core/constants.js';
+import { HITFLASH, TICK_HZ } from '../../core/constants.js';
 
 // Boss-specific hit-flash envelope (see the 'hit' handler below). `peak` sits
 // under HITFLASH.intensity because the emissive area here is ~5x a chibi's;
@@ -27,9 +27,7 @@ import { HITFLASH, TICK_HZ, CAMERA } from '../../core/constants.js';
 // self-lit now (render/boss/stag.js), so the old peak lerped an already-lifted
 // body most of the way to white and the whole silhouette blew out again.
 const BOSS_FLASH = Object.freeze({ ticks: 5, peak: 0.28, refractoryTicks: 8 });
-import { PALETTE } from '../../data/palette.js';
 import { vfxSpellHit } from '../../data/vfx.js';
-import { makeGlowSprite } from '../glow.js';
 import { buildStag } from './stag.js';
 import { buildHeron } from './heron.js';
 import { buildWyrm } from './wyrm.js';
@@ -101,7 +99,6 @@ const BOSS_CAM = {
   clampZmin: -4.0,
   clampZmax: 5.0,
 };
-const CAM_OFF_Z = CAMERA.distance * Math.cos((CAMERA.elevationDeg * Math.PI) / 180);
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
 export function createBossLayer({ stage, world, bus, cosmetic }) {

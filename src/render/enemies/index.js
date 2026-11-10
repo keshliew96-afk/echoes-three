@@ -32,7 +32,7 @@ import { buildBoar } from './boar.js';
 import { buildMantis } from './mantis.js';
 import { buildWaystone } from './waystone.js';
 import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
-import { SHOT_CORE, HIDE } from './style.js';
+import { SHOT_CORE } from './style.js';
 import { vfxFoeShotColor, vfxSpellHit, spellFlashLevel, vfxTemplateFor } from '../../data/vfx.js';
 import { addRim, rimLevel, setRim } from '../rim.js';
 

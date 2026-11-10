@@ -158,8 +158,6 @@ const HITS = [
   { label: 'backhand', gather: C2, coil: D2, strike: S2, haul: H2, slack: slack(H2), over: O2 },
   { label: 'overhead slam', gather: C3, coil: D3, strike: S3, haul: H3, slack: slack(H3), over: O3 },
 ].map((h) => Object.freeze(h));
-export const LASHER_REST = REST;
-export const LASHER_HITS = HITS;
 
 // The strike's fields ease apart, the way a whip throws (Kesh's rule 3: the
 // hips drive the swing): the pod's twist, shove, lean and lift kick first on

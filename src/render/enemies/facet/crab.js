@@ -41,7 +41,7 @@ import { BoxGeometry, Color, CylinderGeometry, Matrix4, MeshBasicMaterial, Quate
 import { PALETTE } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { markShared } from '../../geocache.js';
-import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM } from '../style.js';
+import { TELL_INDIGO, TELL_INDIGO_DIM } from '../style.js';
 import { facetize } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { ease } from '../../facet/timeline.js';
@@ -60,7 +60,6 @@ export const SNAP_TEL_SEC = 42 / TICK_HZ;
 const slate = (h, l) => new Color().setHSL(0.6, h, l);
 const SHELL = slate(0.32, 0.36).lerp(new Color(PALETTE.bruiseUmber), 0.3);
 const DARK = slate(0.36, 0.18);
-const BONE = HIDE.bone.clone().multiplyScalar(0.92);
 
 // --- Key poses. push (u, +z), lift (u), pitch (front down +), roll (+ toward
 // its right, -x), twist (+ toward its left), sx / sy (squash); per claw (r the
@@ -91,8 +90,6 @@ const SNAPS = [
   { label: 'the small claw jabs', coil: C2, strike: S2, over: O2 },
   { label: 'scissor slam', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const CRAB_REST = REST;
-export const CRAB_SNAPS = Object.freeze(SNAPS);
 // The guard down (after a snap): both claws lowered to the floor in front.
 const GUARD_DOWN = { rRaise: -0.62, lRaise: -0.62, rReach: 0.2, lReach: 0.2, rOpen: 0.2, lOpen: 0.2 };
 

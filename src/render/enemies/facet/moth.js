@@ -83,8 +83,6 @@ const SWOOPS = [
   { label: 'banked in from its right', coil: C2, strike: S2, over: O2 },
   { label: 'the plunge', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const MOTH_REST = REST;
-export const MOTH_SWOOPS = Object.freeze(SWOOPS);
 
 // The dive's own motion while the contact holds: the wings flutter flat.
 function heldMotion(V, age, out) {

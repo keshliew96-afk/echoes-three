@@ -29,7 +29,20 @@
 // Same contract as buildArcher (apply, torso, head, basePitch, metrics),
 // plus `cue(kind, ev)`, `hold(dt)`, `comboHitOf(ev)`, `points` and `lab`.
 // Render only: attack timing, damage and the sim are untouched.
-import { BufferGeometry, CapsuleGeometry, CylinderGeometry, Euler, Float32BufferAttribute, Group, LatheGeometry, Mesh, OctahedronGeometry, Quaternion, SphereGeometry, TorusGeometry, Vector2, Vector3 } from 'three';
+import {
+  CapsuleGeometry,
+  CylinderGeometry,
+  Euler,
+  Group,
+  LatheGeometry,
+  Mesh,
+  OctahedronGeometry,
+  Quaternion,
+  SphereGeometry,
+  TorusGeometry,
+  Vector2,
+  Vector3,
+} from 'three';
 import { CLASS_ACCENTS, PALETTE } from '../../data/palette.js';
 import { exactHex, faceDecal, faceMarkings, mix } from './common.js';
 import { sharedGeo } from '../geocache.js';
@@ -153,7 +166,6 @@ const HITS = createCombo(
   ],
   { window: COMBO_WINDOW, timing: TIMING, recoil: false }
 );
-export const ARCHER_HITS = HITS;
 
 // --- Abilities. In game a skill enters its timeline one frame before its
 // release (the press is instant, BUILD_BRIEF §6); the lab plays the whole
@@ -305,7 +317,6 @@ export const ARCHER_SKILL_ABILITY = Object.freeze({
 });
 const SHAPE_ABILITY = Object.freeze({ projectile: 'power', direct: 'power', melee_arc: 'fan', nova: 'sky', ground_aoe: 'trap', aura: 'watch' });
 const skillAbility = (ev) => (ev && (ARCHER_SKILL_ABILITY[ev.skill] || SHAPE_ABILITY[ev.shape])) || 'power';
-export const ARCHER_REST = REST;
 
 // ---------------------------------------------------------------------------
 // The rig

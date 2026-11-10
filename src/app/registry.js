@@ -48,9 +48,6 @@ export function whenService(name) {
   });
 }
 
-export function serviceNames() {
-  return [...services.keys()];
-}
 
 // ------------------------------------------------------- settings tabs --
 // def: {

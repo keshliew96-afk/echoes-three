@@ -56,7 +56,6 @@ import { clampReach, createLegs, liftToReach, segmentMatrix, solveKnee } from '.
 // the roots let go (e.mode 'root' until e.rootUntil, then e.plantTick).
 // Read from its stats, so the root's length is the sim's own.
 const ROOT_TICKS = THORNLING_SIM.stats.rootTicks;
-const PLANT_EVERY = THORNLING_SIM.stats.plantEvery;
 export const ROOT_SEC = ROOT_TICKS / 60;
 const MOVE_SPEED = THORNLING_SIM.stats.moveSpeed;
 // The stamp: 2.5 frames from the end of the gather to the contact (§6.1 B2).

@@ -38,7 +38,15 @@
 //
 // Faces +Z. Same contract as buildCrow (group, mats, setYaw, pose) plus lab,
 // react, death, points. Render only: the sim, its timing and shots untouched.
-import { BoxGeometry, ConeGeometry, IcosahedronGeometry, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three';
+import {
+  BoxGeometry,
+  ConeGeometry,
+  IcosahedronGeometry,
+  Matrix4,
+  MeshBasicMaterial,
+  Quaternion,
+  Vector3,
+} from 'three';
 import { PALETTE } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { markShared } from '../../geocache.js';
@@ -85,8 +93,6 @@ const CAWS = [
   { label: 'cocked from its right', coil: C2, strike: S2, over: O2 },
   { label: 'the full fan', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const CROW_REST = REST;
-export const CROW_CAWS = Object.freeze(CAWS);
 
 // The shooter's squash (B3) on top of the held contact, with its shove.
 function heldMotion(V, age, out) {

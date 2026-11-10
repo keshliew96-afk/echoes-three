@@ -18,14 +18,11 @@
 // at ~334 it lands back in the wine/plum band the accent specifies.
 import {
   BoxGeometry,
-  CapsuleGeometry,
   CatmullRomCurve3,
   ConeGeometry,
   CylinderGeometry,
   Group,
-  Mesh,
   SphereGeometry,
-  TubeGeometry,
   Vector3,
 } from 'three';
 import { CLASS_ACCENTS, PALETTE } from '../../data/palette.js';

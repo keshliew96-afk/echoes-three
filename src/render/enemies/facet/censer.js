@@ -68,7 +68,6 @@ const GATHER = Object.freeze({
   strike: K({ coal: 1, halo: 1.85, haloA: 1, spin: 4.0, amp: 0.6, drop: 0.07, sx: 1.14, sy: 0.9 }),
   over: K({ coal: 0.55, halo: 1.25, haloA: 0.15, spin: 2.0, amp: 0.45, drop: -0.02, sx: 0.98, sy: 1.03 }),
 });
-export const CENSER_REST = REST;
 const GATHER_TL = strikeTimeline('gather', 'Gather and mend', {
   tel: GATHER_SEC,
   snap: SNAP,

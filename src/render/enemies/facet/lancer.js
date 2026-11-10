@@ -89,8 +89,6 @@ const THROWS = [
   { label: 'side-arm', coil: C2, strike: S2, over: O2 },
   { label: 'the plunge', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const LANCER_REST = REST;
-export const LANCER_THROWS = Object.freeze(THROWS);
 
 const LANCE_TL = strikeTimeline('lance', 'Lance', {
   tel: LANCE_TEL_SEC,

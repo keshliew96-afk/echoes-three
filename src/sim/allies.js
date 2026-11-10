@@ -61,7 +61,6 @@ import { castChoice } from './partyai.js';
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
-const CD_FLOOR_TICKS = secTicks(0.5); // §6 cooldown floor, shared with the healer kit
 const ZONE_CADENCE_TICKS = secTicks(1.0); // §6: zone cadence 1.0 s, first tick at 1.0 s
 
 // §12 leash: radius 3.4 u, re-engage only once inside 0.8 x radius.
@@ -217,12 +216,6 @@ export const ALLY_KITS = Object.freeze({
   duskwing: Object.freeze(CLASS_BASE_KIT.duskwing.map((id) => SKILLS[id])),
 });
 
-// Range test per delivery shape (§7: "AI casts a kit skill when: target in
-// shape range AND off cooldown").
-function shapeRange(def) {
-  if (def.shape === 'nova') return def.area; // burst radius
-  return def.range; // arc reach / projectile travel / placement range
-}
 
 const dist2 = (ax, az, bx, bz) => {
   const dx = ax - bx;

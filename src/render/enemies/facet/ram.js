@@ -85,8 +85,6 @@ const SLAMS = [
   { label: 'the reverse hook', coil: C2, strike: S2, over: O2 },
   { label: 'the heave', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const RAM_REST = REST;
-export const RAM_SLAMS = Object.freeze(SLAMS);
 
 // The B3 recoil after the held contact: 0.1 u back along the facing.
 const RECOIL_U = 0.1;

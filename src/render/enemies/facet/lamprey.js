@@ -88,8 +88,6 @@ const LUNGES = [
   { label: 'coiled to its right', coil: C2, strike: S2, over: O2 },
   { label: 'the strike from on high', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const LAMPREY_REST = REST;
-export const LAMPREY_LUNGES = Object.freeze(LUNGES);
 
 // The lunge's own motion while it holds: a fast tail beat drives it.
 function heldMotion(V, age, out) {

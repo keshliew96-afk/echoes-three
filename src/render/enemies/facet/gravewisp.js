@@ -41,7 +41,6 @@ import { FRAME, SPAWN_SEC, bakeParts, createFoeClock, createFoeFrame, foeMateria
 const TICK_HZ = 60;
 const SPEED = 2.3;
 const HOVER_Y = 1.0;
-const WARD_TICKS = 240;
 // the classic's slate (enemies/slice2.js C.wisp) and a darker fold of it
 const WISP = new Color().setHSL(0.6, 0.25, 0.7).multiplyScalar(0.82); // toned a step: it blew out white in the lab's light
 const WISP_DARK = new Color().setHSL(0.6, 0.2, 0.3);

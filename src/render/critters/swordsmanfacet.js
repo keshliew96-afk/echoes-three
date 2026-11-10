@@ -59,7 +59,14 @@ import {
 } from 'three';
 import { CLASS_ACCENTS, PALETTE, VFX_SIGNATURE } from '../../data/palette.js';
 import { CAMERA } from '../../core/constants.js';
-import { addInk, brushProfile, exactHex, faceDecal, faceMarkings, makeSwingSmear, mix } from './common.js';
+import {
+  brushProfile,
+  exactHex,
+  faceDecal,
+  faceMarkings,
+  makeSwingSmear,
+  mix,
+} from './common.js';
 import { sharedGeo } from '../geocache.js';
 import { facetize, facetMaterial, hash01 } from '../facet/material.js';
 import { placeRow, plateGeometry, setTRS, wedgeGeometry } from '../facet/kit.js';
@@ -215,8 +222,6 @@ const HITS = createCombo(
   ],
   { window: COMBO_WINDOW, timing: T_CUT }
 );
-// (for the probes: the chain and its timelines)
-export const SWORDSMAN_HITS = HITS;
 
 // --- The abilities. In game a skill enters its timeline 0.08 s before its
 // entry phase (the press is instant, BUILD_BRIEF §6), so the blow lands with
@@ -414,7 +419,6 @@ export function hitPose(n, t, capture, fresh, out = PACK.make()) {
 export function abilityPose(id, t, out = PACK.make()) {
   return MOVES[id].pose(t, REST, out, 0);
 }
-export const SWORDSMAN_REST = REST;
 
 // ---------------------------------------------------------------------------
 // Geometry

@@ -203,7 +203,6 @@ export function hitPose(n, t, capture, fresh, out = PACK.make()) {
 export function abilityPose(id, t, out = PACK.make()) {
   return TANK_MOVES[id].pose(t, REST, out, 0);
 }
-export const TANK_REST = REST;
 
 export function buildTankFacet(rig, trackAccent) {
   const accent = CLASS_ACCENTS.tank;

@@ -83,8 +83,6 @@ const BURSTS = [
   { label: 'the right claw rakes up', coil: UNDER, strike: S2, over: O2 },
   { label: 'both claws, a leap', coil: UNDER, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const MOLE_REST = REST;
-export const MOLE_BURSTS = Object.freeze(BURSTS);
 
 const BURST_TL = strikeTimeline('emerge', 'Emergence', {
   tel: EMERGE_TEL_SEC,

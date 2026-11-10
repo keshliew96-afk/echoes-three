@@ -181,10 +181,6 @@ export function fmtDateTime(d, opts) {
   }
 }
 
-export function languageName(code = lang) {
-  const l = LANGUAGES.find((x) => x.code === code);
-  return l ? l.name : code;
-}
 
 // A key may carry a disambiguating context after '@@' ('Mouse@@input device'
 // vs the critter 'Mouse'); English shows the text before it.

@@ -41,7 +41,7 @@
 // transition itself is 150 ms — the fade completes inside the stall instead
 // of starting after it.
 import { PALETTE } from '../../data/palette.js';
-import { CHROME, mix } from './style.js';
+import { mix } from './style.js';
 import { TICK_HZ } from '../../core/constants.js';
 import { iconEl } from './icons.js';
 import { t, tn } from '../../i18n/index.js';

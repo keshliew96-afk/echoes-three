@@ -55,7 +55,7 @@ import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { sharedGeo } from '../geocache.js';
 import { HEART } from '../enemies/style.js';
-import { facetize, facetMaterial, hash01 } from '../facet/material.js';
+import { facetize, facetMaterial } from '../facet/material.js';
 import { PART_INK_PX, createPlateTube, createSpine, instancedPart, placeRow, wedgeGeometry } from '../facet/kit.js';
 import { createTimeline, ease } from '../facet/timeline.js';
 import { lay } from '../facet/shapes.js';

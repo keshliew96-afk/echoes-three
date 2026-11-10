@@ -39,7 +39,6 @@ import {
   createComboLab,
   createFootLock,
   createMove,
-  FALL_ANGLE,
   facetArm,
   fpart,
   FRAME,
@@ -139,7 +138,6 @@ const HITS = createCombo(
   ],
   { window: COMBO_WINDOW, timing: TIMING, recoil: false }
 );
-export const TIDECALLER_HITS = HITS;
 
 // --- Abilities. In game a skill enters its timeline one frame before its
 // release (the press is instant, BUILD_BRIEF §6); the lab plays the whole
@@ -321,7 +319,6 @@ export const TIDECALLER_SKILL_ABILITY = Object.freeze({
 });
 const SHAPE_ABILITY = Object.freeze({ projectile: 'bolt', direct: 'ward', melee_arc: 'breaker', nova: 'breaker', ground_aoe: 'swirl', aura: 'pool' });
 const skillAbility = (ev) => (ev && (TIDECALLER_SKILL_ABILITY[ev.skill] || SHAPE_ABILITY[ev.shape])) || 'bolt';
-export const TIDECALLER_REST = REST;
 
 // ---------------------------------------------------------------------------
 // The rig

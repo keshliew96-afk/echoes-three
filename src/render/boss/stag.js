@@ -31,7 +31,7 @@ import {
   SRGBColorSpace,
 } from 'three';
 import { toonMaterial } from '../toon.js';
-import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
+import { addInk, exactColor } from '../critters/common.js';
 import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { sharedGeo, markShared } from '../geocache.js';

@@ -82,8 +82,6 @@ const SLAMS = [
   { label: 'the right fist', coil: C2, strike: S2, over: O2 },
   { label: 'both fists', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const GEODE_REST = REST;
-export const GEODE_SLAMS = Object.freeze(SLAMS);
 
 const SLAM_TL = strikeTimeline('slam', 'Crystal slam', {
   tel: SLAM_TEL_SEC,

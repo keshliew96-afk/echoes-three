@@ -103,9 +103,6 @@ export function setStaticColliders(list, state = null) {
   return S.statics.length;
 }
 
-export function staticColliders() {
-  return S.statics;
-}
 
 // --- Dynamic (entity-owned) colliders --------------------------------------
 

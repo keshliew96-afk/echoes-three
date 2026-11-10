@@ -39,7 +39,6 @@ import { SPAWN_TIMELINE as HERO_SPAWN_TIMELINE } from '../render/facet/hero.js';
 import { createVfxKit } from '../render/vfx/kit.js';
 import { createSpine, createPlateTube, createSpineRow, placeRow, plateGeometry, setTRS, wedgeGeometry } from '../render/facet/kit.js';
 import { facetize, facetMaterial } from '../render/facet/material.js';
-import { createPlayhead } from '../render/facet/timeline.js';
 import { SPAWN_TIMELINE } from '../render/facet/beats.js';
 import { service } from '../app/registry.js';
 import { pageQuery } from '../app/harness.js';

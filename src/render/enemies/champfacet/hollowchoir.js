@@ -42,7 +42,7 @@ import { addInk, groundShadow } from '../../critters/common.js';
 import { PALETTE } from '../../../data/palette.js';
 import { makeGlowSprite } from '../../glow.js';
 import { sharedGeo } from '../../geocache.js';
-import { TELL_INDIGO, TELL_INDIGO_GLOW } from '../style.js';
+import { TELL_INDIGO_GLOW } from '../style.js';
 import { facetize, facetMaterial, hash01 } from '../../facet/material.js';
 import { PART_INK_PX, instancedPart, placeRow, wedgeGeometry } from '../../facet/kit.js';
 import { lay, limbBox, taperBox } from '../../facet/shapes.js';

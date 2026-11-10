@@ -134,8 +134,6 @@ const DARTS = [
   { label: 'corkscrew from its left', coil: C2, strike: S2, over: O2 },
   { label: 'plunge', coil: C3, strike: S3, over: O3 },
 ].map((d) => Object.freeze(d));
-export const WASP_REST = REST;
-export const WASP_DARTS = Object.freeze(DARTS);
 
 // Live variety: each live dart's coil and stab are its authored ones with the body's
 // throw (lift, push, pitch, roll, twist) and the abdomen's swing (curl, hook)

@@ -46,7 +46,7 @@ import {
   RingGeometry,
 } from 'three';
 import { PALETTE } from '../../data/palette.js';
-import { HITFLASH, TICK_HZ } from '../../core/constants.js';
+import { HITFLASH } from '../../core/constants.js';
 import { makeGlowSprite, getRadialTexture } from '../glow.js';
 import { sharedGeo, releaseTree } from '../geocache.js';
 import { addInk, groundShadow, mix } from '../critters/common.js';

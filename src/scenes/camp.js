@@ -56,7 +56,6 @@ import { buildWalls } from '../env/walls.js';
 import { buildFoliage } from '../env/foliage.js';
 import { variantLayoutRng } from '../env/layout.js';
 import { installBandGuard, bandGuardInfo } from '../env/bandguard.js';
-import { COOL, mix } from '../env/colors.js';
 import { CAMP_SPEC, CAMP_SPOTS, HEARTH, PORTAL } from '../env/camp/spec.js';
 import { buildCampGround } from '../env/camp/ground.js';
 import { buildCampProps, RUNE_VIOLET } from '../env/camp/props.js';

@@ -84,8 +84,6 @@ const MENDS = [
   { label: 'the lantern to its right', coil: C2, strike: S2, over: O2 },
   { label: 'rear-up', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const SNAIL_REST = REST;
-export const SNAIL_MENDS = Object.freeze(MENDS);
 
 const MEND_TL = strikeTimeline('mend', 'Mend', {
   tel: MEND_WIND_SEC,
@@ -104,7 +102,6 @@ export const SNAIL_ABILITIES = Object.freeze({ mend: SNAIL_MEND, mends: SNAIL_ME
 // --- Geometry (built once for the session, shared by every snail) ----------
 const fz = (g, jitter, seed) => facetize(g, { jitter, seed });
 const M = (x, y, z, sx = 1, sy = 1, sz = 1, q = new Quaternion()) => new Matrix4().compose(new Vector3(x, y, z), q, new Vector3(sx, sy, sz));
-const qx = (a) => new Quaternion().setFromAxisAngle(new Vector3(1, 0, 0), a);
 // The shell's coil: centred over the foot, its plane across the back (axis
 // z, the classic's), the outer whorl at the bottom resting on the mantle.
 const SHELL_C = new Vector3(0, 0.43, -0.1);

@@ -47,7 +47,7 @@
 // at all — its amount is flat-stage only, immune to %/× nodes, crit, clamps.
 import { TICK_HZ, KNOCKBACK, SOCKETS_PER_SKILL } from '../core/constants.js';
 import { SKILLS } from './skills.js';
-import { fanDirections, createSkillBolts, selectAreaDamage } from './shapes.js';
+import { createSkillBolts, selectAreaDamage } from './shapes.js';
 import * as STATUS from './status.js';
 
 const r2 = (v) => Math.round(v * 100) / 100;

@@ -28,7 +28,15 @@
 //
 // Faces +Z. Same contract as buildToad (group, mats, setYaw, pose) plus lab,
 // react, death, points. Render only: the sim and its timing untouched.
-import { BoxGeometry, Color, IcosahedronGeometry, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three';
+import {
+  BoxGeometry,
+  IcosahedronGeometry,
+  Matrix4,
+  MeshBasicMaterial,
+  Quaternion,
+  SphereGeometry,
+  Vector3,
+} from 'three';
 import { PALETTE } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { markShared } from '../../geocache.js';
@@ -77,8 +85,6 @@ const LOBS = [
   { label: 'flung from its right', coil: C2, strike: S2, over: O2 },
   { label: 'the heave', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const TOAD_REST = REST;
-export const TOAD_LOBS = Object.freeze(LOBS);
 
 // The B3 shooter recoil after the held contact: 0.07 u back.
 const RECOIL_U = 0.07;

@@ -36,7 +36,7 @@
 // `points`, `react`. Faces +Z. Render only: it reads the sim entity and never
 // writes it; every clip runs off pose's t.
 import { Color, CylinderGeometry, Group, IcosahedronGeometry, Matrix4, Mesh, MeshBasicMaterial, Vector3 } from 'three';
-import { addInk, exactColor, groundShadow } from '../../critters/common.js';
+import { addInk, groundShadow } from '../../critters/common.js';
 import { PALETTE } from '../../../data/palette.js';
 import { makeGlowSprite } from '../../glow.js';
 import { sharedGeo } from '../../geocache.js';

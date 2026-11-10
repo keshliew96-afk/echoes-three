@@ -108,8 +108,6 @@ const SWEEPS = [
   { label: 'the reverse, low', coil: C2, strike: S2, over: O2, az: W2 },
   { label: 'the overhead slam', coil: C3, strike: S3, over: O3, az: W3 },
 ].map((v) => Object.freeze(v));
-export const MILLER_REST = REST;
-export const MILLER_SWEEPS = Object.freeze(SWEEPS);
 
 // The stone's azimuth round him (+ to its left, 0 ahead) through a sweep:
 // it spins up through whole turns over the coil (accelerating), sweeps on
