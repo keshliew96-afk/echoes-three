@@ -4,8 +4,12 @@
 // Level I foes (render/enemies/facet/), then the Briar Knight and the
 // Moss Hart (render/enemies/champfacet/); the Level II slices add the Drowned
 // Heron, the Millwheel and the Mire King, then the Sluice Warden and the
-// Lockkeeper; the Level IV slice adds the Hollow Cantor, the Geode Colossus
-// and the Vein Weaver; the heroes slice adds the Healer,
+// Lockkeeper; the Level III slices add the Lich Ram and the Ash Raven (the
+// Barrow Wyrm is the pilot's), then the Bone Reeve and the Gravebell Ringer,
+// and the Level III foes slice the Barrow's eight
+// (nine with the broodling); the Level IV slice adds the Hollow Cantor, the
+// Geode Colossus and the Vein Weaver, and its foes slice the six Heart foes;
+// the heroes slice adds the Healer,
 // the Swordsman, the Archer, the Tidecaller, the Bellwright and the Duskwing.
 // The classic rigs stay in the code beside them.
 //
@@ -32,6 +36,9 @@ export const MODEL_STANDARD = Object.freeze({
   heron: true,
   millwheel: true,
   mireking: true,
+  // The Level III bosses (the Wyrm is the pilot's).
+  lichram: true,
+  ashraven: true,
   // The Level I foes (data/levels.js row 1: its roster and campaign roster).
   boar: true,
   mantis: true,
@@ -49,6 +56,23 @@ export const MODEL_STANDARD = Object.freeze({
   lamprey: true,
   leech: true,
   miller: true,
+  // The Level III foes (data/levels.js row 3: the kinds Levels I and II have not built).
+  ram: true,
+  mole: true,
+  crow: true,
+  brood: true,
+  broodling: true,
+  gravewisp: true,
+  knight: true,
+  keener: true,
+  sexton: true,
+  // The Level IV foes (data/levels.js row 4: the Hollow Heart's own kinds).
+  husk: true,
+  lancer: true,
+  geode: true,
+  censer: true,
+  bloom: true,
+  siphon: true,
   // The Level I champions.
   briar_knight: true,
   moss_hart: true,
@@ -59,6 +83,9 @@ export const MODEL_STANDARD = Object.freeze({
   cantor: true,
   colossus: true,
   veinweaver: true,
+  // The Level III champions.
+  bone_reeve: true,
+  gravebell_ringer: true,
 });
 
 export function facetOn(kind, query = pageQuery()) {

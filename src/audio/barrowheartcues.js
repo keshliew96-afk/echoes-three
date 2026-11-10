@@ -15,6 +15,11 @@
 //   bh_latch    a tendril taking hold: a sucking pop
 //   bh_drink    a drink: a low gulp (one voice, paced)
 //   bh_unlatch  the tether snapping: a wet snap
+// The Level III foes on the model standard (docs/MODEL_STANDARD.md "The
+// Level III foes") gave the three Barrow beats that had no voice their own:
+//   bh_slam     the Bone Knight's overhead slam landing: iron on grave earth
+//   bh_ward     the Grave Wisp's tether taking: a thin rising hum and a chime
+//   bh_split    a Brood Spider bursting into broodlings: a wet pop, a chitter
 const P = (p, f) => f * (p && p.pitch ? p.pitch : 1);
 
 // Measured design peaks (dBFS at unity gain, max of 3 takes) so each cue
@@ -33,6 +38,9 @@ export const BH_CUE_CAL = {
   bh_latch: -1.4,
   bh_drink: -0.9,
   bh_unlatch: -4.4,
+  bh_slam: 4.2,
+  bh_ward: -2.3,
+  bh_split: -0.4,
   // @cal end
 };
 
@@ -96,6 +104,28 @@ const CUES = {
     Math.max(k.tone(d, t, { f0: P(p, 190), f1: P(p, 110), a: 0.02, d: 0.16, gain: 0.8 }), k.noise(d, t, { src: 'pink', type: 'lowpass', f0: 600, f1: 300, q: 1.5, a: 0.02, d: 0.18, gain: 0.4 })) },
   bh_unlatch: { levelDb: -13, priority: 3, maxVoices: 2, cooldownMs: 120, fn: (k, t, d, p) =>
     Math.max(k.noise(d, t, { f0: P(p, 2600), f1: P(p, 900), q: 2, d: 0.1, gain: 0.8 }), k.tone(d, t, { f0: P(p, 500), f1: P(p, 160), d: 0.1, gain: 0.45 })) },
+  // the Level III foes' own beats (model standard)
+  bh_slam: { levelDb: -8, priority: 4, maxVoices: 2, cooldownMs: 150, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 95), f1: P(p, 38), d: 0.42, gain: 1 }),
+      k.noise(d, t, { src: 'brown', type: 'lowpass', f0: 900, f1: 180, q: 0.9, d: 0.35, gain: 0.9 }),
+      k.tone(d, t + 0.005, { type: 'square', f0: P(p, 310), f1: P(p, 140), d: 0.1, gain: 0.3, filter: { f0: 1800, q: 3 } }),
+      k.noise(d, t + 0.02, { src: 'crackle', type: 'bandpass', f0: P(p, 2200), q: 1.2, d: 0.28, gain: 0.4 })
+    ) },
+  bh_ward: { levelDb: -15, priority: 3, maxVoices: 2, cooldownMs: 200, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { type: 'triangle', f0: P(p, 330), f1: P(p, 990), a: 0.12, hold: 0.1, d: 0.45, gain: 0.45, detune: 12 }),
+      k.noise(d, t, { type: 'bandpass', f0: P(p, 2400), f1: P(p, 5200), q: 9, a: 0.15, d: 0.5, gain: 0.3 }),
+      k.bell(d, t + 0.18, { f: P(p, 1980), ratio: 3.01, index: 1.1, d: 0.6, gain: 0.3 })
+    ) },
+  bh_split: { levelDb: -11, priority: 3, maxVoices: 2, cooldownMs: 120, fn: (k, t, d, p) =>
+    Math.max(
+      k.tone(d, t, { f0: P(p, 260), f1: P(p, 70), d: 0.14, gain: 0.8 }),
+      k.noise(d, t, { src: 'pink', type: 'lowpass', f0: P(p, 1600), f1: 400, q: 1.2, d: 0.2, gain: 0.7 }),
+      k.noise(d, t + 0.04, { src: 'crackle', type: 'bandpass', f0: P(p, 3400), f1: P(p, 5200), q: 2, d: 0.3, gain: 0.5 }),
+      k.pluck(d, t + 0.08, { f: P(p, 1480), d: 0.12, gain: 0.25 }),
+      k.pluck(d, t + 0.15, { f: P(p, 1760), d: 0.12, gain: 0.25 })
+    ) },
 };
 
 export const BH_CUE_IDS = Object.freeze(Object.keys(CUES));
@@ -121,6 +151,10 @@ export function createBarrowHeartEventCues() {
     siphon_latch: (ev, h) => one('bh_latch', at(ev, h, ev.target)),
     siphon_drink: (ev, h) => one('bh_drink', at(ev, h, ev.id)),
     siphon_unlatch: (ev, h) => one('bh_unlatch', at({}, h, ev.id)),
+    // the Level III foes' own beats (model standard)
+    knight_slam: (ev, h) => one('bh_slam', at(ev, h, ev.id)),
+    wisp_tether: (ev, h) => one('bh_ward', at({}, h, ev.id)),
+    brood_split: (ev, h) => one('bh_split', at(ev, h, ev.id)),
   };
 }
 
