@@ -375,7 +375,7 @@ function castAt(W, seat, x, z) {
   steps(W, 1);
   castAt(W, 3, 1.5, 0);
   steps(W, 1);
-  const c = evs(W, 'ally_cast').find((x) => x.skill === 'feather_fan');
+  const c = evs(W, 'skill_cast').find((x) => x.skill === 'feather_fan');
   check(!!c && c.count === 5, `Feather Fan looses five arrows (${c?.count})`);
   check(!!st(ally(W, 3), 'haste', W), 'and hastes the hare');
 }

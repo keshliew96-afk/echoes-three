@@ -152,7 +152,7 @@ const burstZones = new Map(); // Maelstrom burst zones: id -> where, until they 
 export function createTideEventCues() {
   return {
     ally_basic: (ev, h) => (ev.classId === 'tidecaller' ? one('td_spit', at(ev, h, ev.id)) : null),
-    ally_cast: (ev, h) => {
+    skill_cast: (ev, h) => {
       if (ev.classId !== 'tidecaller') return null;
       if (ev.skill === 'ripple_step') return []; // the vault speaks for it
       const c = CAST_CUE[ev.skill];

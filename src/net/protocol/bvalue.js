@@ -123,7 +123,7 @@ export const STR_DICT = Object.freeze([
   'projectile', 'hit', 'slow', 'bolt', 'party', 'swift_mend', 'mending_bolt', 'volley', 'skill',
   'melee_arc', 'spirit_bolt', 'full_heal', 'skill_bolt_despawn', 'skill_bolt_spawn', 'archer',
   'hostile', 'ally_basic', 'impact', 'active', 'stag', 'piercing_shot', 'ring', 'neutral', 'mantis',
-  'toad', 'expired', 'quillback', 'idle', 'swordsman', 'mole', 'ally_cast', 'hitstop',
+  'toad', 'expired', 'quillback', 'idle', 'swordsman', 'mole', 'hitstop',
   'detonating_charge', 'telegraph', 'boar', 'moth', 'caltrops', 'bell_toll', 'player',
   'projectile_despawn', 'basic_fire', 'projectile_spawn', 'haste', 'dewfall:detonate',
   'eglob', 'tank', 'ground_crack', 'detonate', 'healer_kit', 'ground_aoe', 'skill_cast', 'inspired',

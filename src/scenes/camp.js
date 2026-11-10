@@ -465,7 +465,6 @@ export function createCampScene(stage, toggles, ctx) {
     firedFlag = true;
     healerRig.cue('basic', ev); // a model-standard rig's combo (docs/MODEL_STANDARD.md)
   });
-  bus.on('skill_cast', (ev) => healerRig.cue('skill', ev));
   // A player-held ally seat (a co-op guest, a host or solo player on a
   // class other than the Healer) casts at camp too: its rig takes the same
   // cast hold the Healer's does.
@@ -477,7 +476,7 @@ export function createCampScene(stage, toggles, ctx) {
     }
   };
   bus.on('ally_basic', (ev) => onSeatCast(ev, 'basic'));
-  bus.on('ally_cast', (ev) => onSeatCast(ev, 'skill'));
+  bus.on('skill_cast', (ev) => (ev.classId ? onSeatCast(ev, 'skill') : healerRig.cue('skill', ev)));
 
   function applyCampLighting() {
     if (keyLight) {

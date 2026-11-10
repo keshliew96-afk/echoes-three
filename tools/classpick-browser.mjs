@@ -119,7 +119,7 @@ check(bar.length >= 4, `the command bar shows the ${CLS}'s kit (${JSON.stringify
 const evs = [];
 await page.exposeFunction('__classEv', (e) => evs.push(e));
 await page.evaluate(() => {
-  for (const t of ['ally_cast', 'ally_basic', 'ally_dash', 'seat_denied', 'basic_fire', 'skill_cast', 'heal']) window.__echoes.on(t, (ev) => window.__classEv({ type: t, seat: ev.seat ?? null, by: ev.casterId ?? ev.id ?? null }));
+  for (const t of ['ally_basic', 'ally_dash', 'seat_denied', 'basic_fire', 'skill_cast', 'heal']) window.__echoes.on(t, (ev) => window.__classEv({ type: t, seat: ev.seat ?? null, by: ev.casterId ?? ev.id ?? null }));
 });
 b0 = await bodies();
 await holdFor('KeyA', 50);

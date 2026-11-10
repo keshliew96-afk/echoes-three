@@ -12,7 +12,9 @@
 // bvalue.js) — existing indices unchanged, a v3 peer is refused as before.
 // v5 (AUDIT D2, one cast path): the ally kits' `azone` bodies and events
 // became `zone` ones with a classId; their shapes renamed in place, the
-// `azone` strings and the `azones` view key left the dictionaries.
+// `azone` strings and the `azones` view key left the dictionaries; the ally
+// kits' `ally_cast` became `skill_cast` with its classId (shapes renamed in
+// place, the string left the dictionary).
 export const PROTOCOL_VERSION = 5;
 export const WS_PATH = '/echoes';
 export const DEFAULT_PORT = 7800; // player default; agents use their own ports (PLAN §6.3)

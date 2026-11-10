@@ -326,7 +326,8 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
   });
 
   // ------------------------------------------------------------ bus wiring --
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
     switch (ev.skill) {
       // taunting_roar: the roar's shockwave is the Tank's nova recipe in
       // render/vfx/signature.js (VFX redesign); the taunt plates stay here.

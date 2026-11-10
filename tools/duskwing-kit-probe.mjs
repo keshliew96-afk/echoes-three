@@ -465,7 +465,7 @@ function nodeRoom(seed, ids, nodes) {
       else s.hp = s.maxHp;
       if (W2.run.view().phase !== 'combat') break;
     }
-    for (const e of W2.log.slice(from)) if (e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
+    for (const e of W2.log.slice(from)) if (e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
   }
   const actives = ALL.filter((id) => !PASSIVES.includes(id));
   const missing = actives.filter((id) => !castBy.has(id));
@@ -519,7 +519,7 @@ function nodeRoom(seed, ids, nodes) {
   for (const [dx, dz] of [[1.5, 1], [2, 0], [1.6, -1], [-1.5, 1.2]]) cmd(W3, 'spawn', 'boar', h.x + dx, h.z + dz, { hpMul: 6 });
   for (let i = 0; i < 300; i++) W3.step();
   const sable = ally(W3, 3);
-  check(W3.log.some((e) => e.type === 'ally_cast' && e.partyIndex === 3), `the save is taken mid-fight with his nodes socketed (${sable.hp.toFixed(0)} HP)`);
+  check(W3.log.some((e) => e.type === 'skill_cast' && e.partyIndex === 3), `the save is taken mid-fight with his nodes socketed (${sable.hp.toFixed(0)} HP)`);
   const snap = clonePlain(W3.io.capture());
   for (let i = 0; i < 400; i++) W3.step();
   const h1 = hashState(W3.io.capture());

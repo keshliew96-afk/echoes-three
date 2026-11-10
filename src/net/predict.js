@@ -177,7 +177,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
     const prev = readyAt[slot];
     readyAt[slot] = ctx.seq + ent.cdTicks;
     const p = record(kind, slot, ctx.seq, ctx.keyAt, prev);
-    const cast = { tick: ctx.tick, type: 'ally_cast', id: ctx.entityId, partyIndex: seat, classId, skill: ent.id, slot, shape: def.shape, power: def.power, cd: def.cd, target: null, x: r2(b.x), z: r2(b.z), dx: r2(d.x), dz: r2(d.z), targets: [], predicted: true, predId: p.predId, seat };
+    const cast = { tick: ctx.tick, type: 'skill_cast', id: ctx.entityId, partyIndex: seat, classId, skill: ent.id, slot, shape: def.shape, power: def.power, cd: def.cd, target: null, x: r2(b.x), z: r2(b.z), dx: r2(d.x), dz: r2(d.z), targets: [], predicted: true, predId: p.predId, seat };
     if (def.parry) cast.parry = def.parry.windowTicks;
     if (def.shape === 'melee_arc') {
       cast.reach = def.range;
@@ -323,7 +323,7 @@ export function createActionShadow({ bus, seat, cosmetics = null, now = () => pe
   const kindOf = (ev) => {
     if (ev.type === 'ally_basic') return 'basic';
     if (ev.type === 'ally_dodge') return 'dodge';
-    if (ev.type === 'ally_cast') return `skill_${(ev.slot ?? -1) + 1}`;
+    if (ev.type === 'skill_cast' && ev.classId) return `skill_${(ev.slot ?? -1) + 1}`;
     if (ev.type === 'seat_denied') return ev.kind === 'basic_attack' ? 'basic' : ev.kind;
     if (ev.type === 'interact' || ev.type === 'interact_denied') return 'interact';
     return null;

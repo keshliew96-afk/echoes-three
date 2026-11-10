@@ -19,7 +19,7 @@
 //      it exactly like a dodge (seatDisplacement(), shared with
 //      net/predict.js);
 //   4. the §6 delivery with `source: def.id` on every instance;
-//   5. `ally_cast` — byte-identical to v0.5.150 for an empty build; new keys
+//   5. `skill_cast` (with its classId) — byte-identical to v0.5.150 for an empty build; new keys
 //      only when set (echo, resonance, combo, dash, vault, parry).
 //
 // Sim discipline: no DOM, no render imports, no wall clock; the only RNG is
@@ -773,7 +773,7 @@ export function createAllyCaster(ctx) {
       else recips = selectDirect({ caster: a, party: party(), range: def.range, count: def.count, isIframed }).targets;
       cast.targets = recips.map((m) => m.id);
       Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      events.emit(tick, 'skill_cast', cast);
       const S = combat.status;
       const ticks = def.status ? def.status.ticks : 240;
       for (const m of recips) {
@@ -797,7 +797,7 @@ export function createAllyCaster(ctx) {
       cast.halfAngle = def.area;
       cast.targets = targets.map((t) => t.id);
       Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      events.emit(tick, 'skill_cast', cast);
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
       // SECRET ROOMS: a guest's swing that reaches a shut cracked wall
       // strikes it too (the run decides whether the blow opens it).
@@ -861,7 +861,7 @@ export function createAllyCaster(ctx) {
       cast.zx = r2(cx);
       cast.zz = r2(cz);
       Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      events.emit(tick, 'skill_cast', cast);
       events.emit(tick, 'zone_spawn', { id: zone.id, skill: def.id, classId: a.classId, x: r2(cx), z: r2(cz), radius: def.area, totalTicks: 1, burst: true, delayTicks, ...(tag || {}) });
       return cast;
     }
@@ -892,7 +892,7 @@ export function createAllyCaster(ctx) {
       cast.bells = centres.map((c) => ({ id: c.id, x: r2(c.x), z: r2(c.z) }));
       cast.targets = targets.map((t) => t.id);
       Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      events.emit(tick, 'skill_cast', cast);
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
       // The Carillon rings every bell back to its full length; Aftertone
       // gives each bell rung two more tolls.
@@ -912,7 +912,7 @@ export function createAllyCaster(ctx) {
       cast.radius = def.area;
       cast.targets = targets.map((t) => t.id);
       Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      events.emit(tick, 'skill_cast', cast);
       hitList(a, def, power, targets, def.shape, M, castId, !!echo);
       return cast;
     }
@@ -925,7 +925,7 @@ export function createAllyCaster(ctx) {
       }
       cast.count = countFinal(def.count);
       Object.assign(cast, extra);
-      events.emit(tick, 'ally_cast', cast);
+      events.emit(tick, 'skill_cast', cast);
       const mods = boltMods(def, M, castId, !!echo);
       for (const fd of fanDirections(d.x, d.z, def.count)) {
         const spec = {
@@ -1002,7 +1002,7 @@ export function createAllyCaster(ctx) {
     cast.radius = def.area;
     Object.assign(cast, extra);
     if (zones.length > 1) cast.zones = zones.map((z) => z.id);
-    events.emit(tick, 'ally_cast', cast);
+    events.emit(tick, 'skill_cast', cast);
     for (const z of zones) {
       events.emit(tick, 'zone_spawn', {
         id: z.id,

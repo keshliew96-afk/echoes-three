@@ -159,7 +159,7 @@ function secondRoom(W, kit) {
   secondRoom(W, { 1: ['piercing_shot'], 2: ['taunting_roar', 'heavy_slam'], 3: ['flurry'] });
   const from = W.log.length;
   steps(W, 1500, () => mend(W));
-  const casts = W.log.slice(from).filter((e) => e.type === 'ally_cast' && !e.echo);
+  const casts = W.log.slice(from).filter((e) => e.type === 'skill_cast' && e.classId && !e.echo);
   const bySeat = (i) => casts.filter((e) => e.partyIndex === i);
   for (const i of [1, 2, 3]) {
     const mine = bySeat(i);

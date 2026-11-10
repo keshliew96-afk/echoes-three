@@ -238,7 +238,7 @@ export function createBellFx({ kit, bus, byId, spray, flare, shock, after, antic
   });
 
   // ------------------------------------------------------------ casts --
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
     if (ev.classId !== 'bellwright' || ev.x == null) return;
     if (ev.skill === 'peal' || ev.skill === 'carillon') {
       mark(`bell:${ev.skill}`);

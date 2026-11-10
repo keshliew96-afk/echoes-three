@@ -950,8 +950,8 @@ export const DEFAULT_EVENT_CUES = {
   },
   // An ally kit's zone (it carries a classId) pulses in its own voice.
   zone_tick: (ev, h) => one(ev.classId ? 'azone_pulse' : 'zone_pulse', at(ev, h, ev.id)),
-  skill_cast: (ev, h) => one(skillFamily(ev), at({}, h)),
-  ally_cast: (ev, h) => {
+  skill_cast: (ev, h) => {
+    if (!ev.classId) return one(skillFamily(ev), at({}, h)); // the Healer's own kit
     // PARTY: a new class skill's own cue (Crescent Finisher +3 semitones per
     // combo stack); the starting kit keeps its class family.
     const own = CLASS_SKILL_CUE[ev.skill];

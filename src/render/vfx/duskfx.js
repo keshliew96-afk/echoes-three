@@ -84,7 +84,7 @@ export function createDuskFx({ kit, bus, byId, spray, flare, shock, after, camfx
   });
 
   // ------------------------------------------------------------- casts --
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
     if (ev.classId !== 'duskwing' || ev.x == null) return;
     const dx = ev.dx ?? 0;
     const dz = ev.dz ?? 1;

@@ -312,7 +312,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   ds[2].targetId = tank.id;
   const from = W.log.length;
   castK(0, 0, 0);
-  const c = since(from, 'ally_cast', (e) => e.skill === 'vesper_chime')[0];
+  const c = since(from, 'skill_cast', (e) => e.skill === 'vesper_chime')[0];
   check(!!c && c.targets.length === 2 && c.targets[0] === sw.id && !c.targets.includes(tank.id), `two shields, the hunted first and the Tank last (${c && c.targets.join(',')})`);
   check(near(live(sw, 'shield'), 12, 1e-6), `a 12 shield (${live(sw, 'shield')})`);
   void tolly;
@@ -330,7 +330,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   tank.z = tank.pz = 0.5;
   const from = W.log.length;
   castK(0, 0, 0);
-  const c = since(from, 'ally_cast', (e) => e.skill === 'tuning_fork')[0];
+  const c = since(from, 'skill_cast', (e) => e.skill === 'tuning_fork')[0];
   check(!!c && c.targets.includes(sw.id) && c.targets.includes(tank.id), `the members in reach (${c && c.targets.length})`);
   check(near(live(sw, 'shield'), 6, 1e-6) && near(live(tank, 'haste'), 0.25, 1e-6), `a 6 shield and 25% haste (${live(sw, 'shield')}, ${live(tank, 'haste')})`);
 }
@@ -351,7 +351,7 @@ const avg = (a) => a.reduce((s, x) => s + x.amount, 0) / Math.max(1, a.length);
   const from = W.log.length;
   tolly.cds = [0, 0, 0, 0];
   castK(0, 0, 0);
-  const c = since(from, 'ally_cast', (e) => e.skill === 'carillon')[0];
+  const c = since(from, 'skill_cast', (e) => e.skill === 'carillon')[0];
   const hits = since(from, 'hit', (e) => e.source === 'carillon' && !e.crit);
   check(!!c && c.bells.length === 2 && hits.length === 2 && hits.every((h) => near(h.amount, 24, 1.2)), `it rings both bells: 24 to each enemy (${hits.map((h) => h.amount).join(',')})`);
   check(ds.every((d) => STATUS.isStunned(d, T())) && ds.every((d) => d.status.stun.untilTick - T() === 36), 'a 0.6 s daze');
@@ -517,7 +517,7 @@ function nodeRoom(seed, ids, nodes) {
       mend(W2);
       if (W2.run.view().phase !== 'combat') break;
     }
-    for (const e of W2.log.slice(from)) if (e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
+    for (const e of W2.log.slice(from)) if (e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
   }
   const actives = ALL.filter((id) => SKILLS[id].shape !== 'aura');
   const missing = actives.filter((id) => !castBy.has(id));

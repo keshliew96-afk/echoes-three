@@ -159,7 +159,7 @@ let saved = null;
     if (W.run.view().phase !== 'combat') break;
   }
   const evs = W.log.slice(from);
-  const mine = evs.filter((e) => e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo);
+  const mine = evs.filter((e) => e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo);
   const castSet = [...new Set(mine.map((e) => e.skill))].sort();
   check(mine.length > 0 && mine.every((e) => e.classId === 'bellwright' && KIT.includes(e.skill)), `the AI casts her skills (${mine.length}: ${castSet.join(',')})`);
   check(castSet.includes('hang_bell') && castSet.includes('peal') && castSet.includes('clapper'), 'Hang Bell, Peal and the Clapper all cast');
@@ -218,7 +218,7 @@ let saved = null;
   const from = W.log.length;
   cmd(W, 'partyCast', 3, 1, { x: tolly.x, z: tolly.z });
   W.step();
-  const pc = W.log.slice(from).find((e) => e.type === 'ally_cast' && e.skill === 'peal');
+  const pc = W.log.slice(from).find((e) => e.type === 'skill_cast' && e.skill === 'peal');
   check(pc && pc.bells.length === 3 && pc.bells.every((b) => live.includes(b.id)), 'the Peal rings all three bells');
   for (let i = 0; i < 600; i++) W.step();
   check(!W.registry.all().some((z) => live.includes(z.id)), 'the bells fall silent after 8 s');
@@ -227,7 +227,7 @@ let saved = null;
   const f2 = W.log.length;
   cmd(W, 'partyCast', 3, 1, { x: tolly.x, z: tolly.z });
   W.step();
-  const pc2 = W.log.slice(f2).find((e) => e.type === 'ally_cast' && e.skill === 'peal');
+  const pc2 = W.log.slice(f2).find((e) => e.type === 'skill_cast' && e.skill === 'peal');
   check(pc2 && pc2.bells.length === 1 && pc2.bells[0].id === null, 'with no bell hung the Peal rings round her');
 }
 

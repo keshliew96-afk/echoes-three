@@ -214,7 +214,7 @@ function fight(cls, { register = true } = {}) {
     const ev = { tick: F.world.tick, id: 3, classId: 'swordsman', skill: 'flurry', shape: 'melee_arc', x: -2, z: 0, dx: 1, dz: 0, reach: 1.0, halfAngle: 50 };
     F.rig.cue('skill', ev);
     F.rig.cue('basic', ev); // a swing either way
-    F.bus.emit(F.world.tick, 'ally_cast', ev);
+    F.bus.emit(F.world.tick, 'skill_cast', ev);
     check('T1: a three-stroke skill traces its first stroke and keeps the two procedural strokes after it', F.rec('blade_trace') === 1 && F.rec('blade_skill') === 1 && F.counts().tpl.traces === 3 && F.counts().tpl.blazes >= 5, F.counts().tpl);
     unregisterHeroRig('swordsman');
   }

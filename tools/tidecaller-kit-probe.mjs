@@ -297,7 +297,7 @@ W = campaign(5);
   sword.hp = sword.maxHp * 0.4;
   let from = W.log.length;
   cast0(0, 1);
-  let cast = since(from, 'ally_cast', (e) => e.skill === 'bubble_ward')[0];
+  let cast = since(from, 'skill_cast', (e) => e.skill === 'bubble_ward')[0];
   check(!!cast && same(cast.targets, [sword.id]), `the bubble goes to the most hurt, the Tank last (${cast && cast.targets})`);
   check(!!sword.bubble && !!sword.status.shield && sword.status.shield.skill === 'bubble_ward' && near(sword.status.shield.mag, 14), 'a 14 shield and a bubble on its bearer');
   // Pop it: a dummy beside the bearer is soaked when the shield is spent.
@@ -316,7 +316,7 @@ W = campaign(5);
   r.cds = [0, 0, 0, 0];
   from = W.log.length;
   cast0(0, 1);
-  cast = since(from, 'ally_cast', (e) => e.skill === 'bubble_ward')[0];
+  cast = since(from, 'skill_cast', (e) => e.skill === 'bubble_ward')[0];
   check(!!cast && same(cast.targets, [W.world.player.id]), `the member an enemy is after gets the bubble (${cast && cast.targets})`);
   // Running out also bursts it.
   clearDummies(W);
@@ -334,7 +334,7 @@ W = campaign(5);
   soak(W, ds[0]);
   const from = W.log.length;
   cast0(1, 0);
-  const cast = since(from, 'ally_cast', (e) => e.skill === 'crashing_wave')[0];
+  const cast = since(from, 'skill_cast', (e) => e.skill === 'crashing_wave')[0];
   const hits = since(from, 'hit', (e) => e.source === 'crashing_wave');
   check(!!cast && cast.targets.length === 3 && near(cast.reach, 2.2) && cast.halfAngle === 50, `the wave reaches all three (${cast && cast.targets.length})`);
   check(since(from, 'crash', (e) => e.skill === 'crashing_wave').length === 1, 'and crashes the soaked one');
@@ -350,7 +350,7 @@ W = campaign(5);
   const before = ds.map((d) => Math.hypot(d.x, d.z));
   const from = W.log.length;
   cast0(1, 0);
-  const cast = since(from, 'ally_cast', (e) => e.skill === 'maelstrom')[0];
+  const cast = since(from, 'skill_cast', (e) => e.skill === 'maelstrom')[0];
   check(!!cast && cast.drawn.length === 4 && cast.delayTicks === 60, `the Maelstrom draws all four in (${cast && cast.drawn.length})`);
   ally(W, 3).x = ally(W, 3).px = -3; // she may walk off: the burst stays where she cast it
   steps(W, 30);
@@ -417,7 +417,7 @@ function nodeRoom(seed, ids, nodes) {
   ds.forEach((d) => soak(W, d));
   const from = W.log.length;
   cast0(0.5, 0);
-  const cast = since(from, 'ally_cast', (e) => e.skill === 'torrent')[0];
+  const cast = since(from, 'skill_cast', (e) => e.skill === 'torrent')[0];
   check(!!cast && near(cast.power, 18 * 1.45, 0.05), `Current: three soaked near the landing, +45% (${cast && cast.power})`);
 }
 {
@@ -495,7 +495,7 @@ function nodeRoom(seed, ids, nodes) {
       mend(W2);
       if (W2.run.view().phase !== 'combat') break;
     }
-    for (const e of W2.log.slice(from)) if (e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
+    for (const e of W2.log.slice(from)) if (e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo) castBy.add(e.skill);
   }
   const actives = ALL.filter((id) => SKILLS[id].shape !== 'aura');
   const missing = actives.filter((id) => !castBy.has(id));

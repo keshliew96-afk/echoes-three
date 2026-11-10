@@ -48,7 +48,7 @@ await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60,
 await settle(1500);
 await page.evaluate(() => {
   window.__kitSeen = { casts: {}, rehang: 0, ring: 0 };
-  window.__echoes.on('ally_cast', (e) => e && e.classId === 'bellwright' && (window.__kitSeen.casts[e.skill] = (window.__kitSeen.casts[e.skill] || 0) + 1));
+  window.__echoes.on('skill_cast', (e) => e && e.classId === 'bellwright' && (window.__kitSeen.casts[e.skill] = (window.__kitSeen.casts[e.skill] || 0) + 1));
   window.__echoes.on('bell_rehang', () => window.__kitSeen.rehang++);
   window.__echoes.on('bell_ring_hit', () => window.__kitSeen.ring++);
 });

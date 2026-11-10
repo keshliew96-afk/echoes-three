@@ -153,7 +153,7 @@ const CAST_CUE = { hang_bell: 'bw_hang', great_bell: 'bw_great', clapper: 'bw_cl
 export function createBellEventCues() {
   return {
     ally_basic: (ev, h) => (ev.classId === 'bellwright' ? one('bw_ding', at(ev, h, ev.id)) : null),
-    ally_cast: (ev, h) => {
+    skill_cast: (ev, h) => {
       if (ev.classId !== 'bellwright') return null;
       if (ev.skill === 'peal') return one('bw_peal', at(ev, h, ev.id));
       if (ev.skill === 'carillon') return one('bw_carillon', at(ev, h, ev.id));

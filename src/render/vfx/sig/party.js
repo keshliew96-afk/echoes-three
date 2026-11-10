@@ -34,7 +34,8 @@ export function createSigParty(ctx) {
     else SF.release(st, x, z, ev.dx ?? 0, ev.dz ?? 1);
   });
 
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
     const st = vfxClassStyle(ev.classId);
     const x = ev.x;
     const z = ev.z;
@@ -236,6 +237,7 @@ export function createSigParty(ctx) {
   // The Healer (seat 0) casts through skill_cast; its own heal grammar stays
   // in skillfx / content — this adds the lantern light and the petals.
   bus.on('skill_cast', (ev) => {
+    if (ev.classId) return; // the Healer's own kit (a hero kit's cast carries its classId)
     const p = player();
     if (!p) return;
     const st = vfxClassStyle(SF.classOf(p));
@@ -443,7 +445,8 @@ export function createSigParty(ctx) {
   const foeFx = createFoeFx({ kit, tk, bus, byId: SF.byId, spray, after, camfx, rnd, mark, ink: INK, player });
   // Every projectile in flight, party and foe, in its template (boltfx.js).
   const boltFx = createBoltFx({ kit, tk, bus, byId: SF.byId, after, rnd, mark, world, player, heroTone: tplFx.boltTone });
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
     const fn = SKILL_SIG[ev.skill];
     if (!fn || ev.x == null) return;
     mark(`skill:${ev.skill}`);
@@ -505,6 +508,7 @@ export function createSigParty(ctx) {
   // The Healer's two: Lantern Ward lights a lantern over each ward; Dawn
   // Brand burns a sun sigil into the floor that flares on every tick.
   bus.on('skill_cast', (ev) => {
+    if (ev.classId) return; // the Healer's own kit (a hero kit's cast carries its classId)
     if (ev.skill === 'lantern_ward' && Array.isArray(ev.targets)) {
       const st = vfxClassStyle('healer');
       mark('skill:lantern_ward');

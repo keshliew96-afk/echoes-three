@@ -936,6 +936,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     spawnRing(world.player.x, world.player.z, { color: HEAL, from: 0.25, to: AURA.area, life: 0.4, opacity: 0.55 });
   });
   bus.on('skill_cast', (ev) => {
+    if (ev.classId) return; // the Healer's own kit (a hero kit's cast carries its classId)
     const p = world.player;
     if (CONTENT_CAST_SKILLS.has(ev.skill)) return;
     if (ev.shape === 'nova') {

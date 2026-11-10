@@ -185,7 +185,8 @@ export function createTideFx({ kit, bus, byId, spray, flare, shock, after, antic
     });
   }
 
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
     const fn = CAST[ev.skill];
     if (!fn || ev.x == null) return;
     mark(`tide:${ev.skill}`);

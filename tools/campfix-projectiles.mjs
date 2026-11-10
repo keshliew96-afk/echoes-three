@@ -63,7 +63,7 @@ await page.evaluate(() => {
     else if (ev.type === 'projectile_despawn' || ev.type === 'skill_bolt_despawn' || ev.type === 'zone_expire') {
       const b = live(ev);
       if (b) b.gone = { tick: ev.tick, traveled: ev.traveled ?? null, cause: ev.cause ?? null };
-    } else if (ev.type === 'ally_cast' || ev.type === 'ally_basic' || ev.type === 'basic_fire' || ev.type === 'skill_cast') window.__acts = (window.__acts || 0) + 1;
+    } else if (ev.type === 'ally_basic' || ev.type === 'basic_fire' || ev.type === 'skill_cast') window.__acts = (window.__acts || 0) + 1;
   });
 });
 

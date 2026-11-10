@@ -560,7 +560,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     else playRelease(tp, x, z, ev.dx ?? 0, ev.dz ?? 1);
   });
 
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
     const x = ev.x;
     const z = ev.z;
     if (x == null) return;
@@ -589,6 +590,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
 
   // The Healer's own casts (and any seat that casts through the skill bar).
   bus.on('skill_cast', (ev) => {
+    if (ev.classId) return; // the Healer's own kit (a hero kit's cast carries its classId)
     const p = player();
     if (!p || ev.skill == null) return;
     const cls = classOf(p) ?? vfxSkillClass(ev.skill);

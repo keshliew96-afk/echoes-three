@@ -351,7 +351,8 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     if (impactFx.directed) return;
     if (ev.shape === 'melee_arc') spawnWedge(ev, ev.reach, ev.halfAngle, 0.28);
   });
-  bus.on('ally_cast', (ev) => {
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
     const st = rigState.get(ev.classId);
     if (st) st.castLeft = CAST_HOLD;
     critters.get(ev.classId)?.cue('skill', ev);

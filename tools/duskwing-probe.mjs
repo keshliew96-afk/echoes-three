@@ -179,7 +179,7 @@ let saved = null;
     if (W.run.view().phase !== 'combat') break;
   }
   const evs = W.log.slice(from);
-  const mine = evs.filter((e) => e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo);
+  const mine = evs.filter((e) => e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo);
   const castSet = [...new Set(mine.map((e) => e.skill))].sort();
   check(mine.length > 0 && mine.every((e) => e.classId === 'duskwing' && KIT.includes(e.skill)), `the AI casts his skills (${mine.length}: ${castSet.join(',')})`);
   check(['dusk_dive', 'blood_bite', 'nightfall'].every((s) => castSet.includes(s)), 'Dusk Dive, Bloodbite and Nightfall all cast');
@@ -258,12 +258,12 @@ let saved = null;
   let iframed = true;
   for (let i = 0; i < 30; i++) {
     W.stepSeat(3, emptySnapshot());
-    const dashNow = W.log.slice(from).some((e) => e.type === 'ally_dash') && !W.log.slice(from).some((e) => e.type === 'ally_cast' && e.skill === 'dusk_dive');
+    const dashNow = W.log.slice(from).some((e) => e.type === 'ally_dash') && !W.log.slice(from).some((e) => e.type === 'skill_cast' && e.skill === 'dusk_dive');
     if (dashNow && !(sable.iframeUntilTick >= (W.world.tick ?? 0))) iframed = false;
   }
   const evs = W.log.slice(from);
   const dash = evs.find((e) => e.type === 'ally_dash' && e.skill === 'dusk_dive');
-  const land = evs.find((e) => e.type === 'ally_cast' && e.skill === 'dusk_dive');
+  const land = evs.find((e) => e.type === 'skill_cast' && e.skill === 'dusk_dive');
   check(!!dash && dash.cause === 'dash' && Math.hypot(dash.x1 - dash.x0, dash.z1 - dash.z0) > 1, `a human Duskwing dives at his aim (${dash ? `${dash.x0},${dash.z0} -> ${dash.x1},${dash.z1}` : 'none'})`);
   check(!!land && land.tick > dash.tick && Math.hypot(land.x - aim.x, land.z - aim.z) < 1.2, `the burst lands where the dive ends (${land ? `${land.x},${land.z}` : 'none'})`);
   check(iframed, 'untouchable through the dive');

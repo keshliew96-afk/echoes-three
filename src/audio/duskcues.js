@@ -164,7 +164,7 @@ export function createDuskEventCues() {
     },
     dusk_eclipse: (ev, h) => one('dk_eclipse', at(ev, h, null)),
     dusk_frenzy: (ev, h) => one('dk_frenzy', at(ev, h, ev.id)),
-    ally_cast: (ev, h) => {
+    skill_cast: (ev, h) => {
       if (ev.classId !== 'duskwing') return null;
       const cue = CAST_CUE[ev.skill];
       return cue ? one(cue, at(ev, h, ev.id)) : null;

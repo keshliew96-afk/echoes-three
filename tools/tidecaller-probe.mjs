@@ -173,7 +173,7 @@ let saved = null;
     if (W.run.view().phase !== 'combat') break;
   }
   const evs = W.log.slice(from);
-  const mine = evs.filter((e) => e.type === 'ally_cast' && e.partyIndex === 3 && !e.echo);
+  const mine = evs.filter((e) => e.type === 'skill_cast' && e.partyIndex === 3 && !e.echo);
   const castSet = [...new Set(mine.map((e) => e.skill))].sort();
   check(mine.length > 0 && mine.every((e) => e.classId === 'tidecaller' && KIT.includes(e.skill)), `the AI casts her skills (${mine.length}: ${castSet.join(',')})`);
   check(castSet.includes('riverbolt') && castSet.includes('undertow'), 'Riverbolt and Undertow both cast');

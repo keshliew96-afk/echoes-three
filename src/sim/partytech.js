@@ -234,7 +234,7 @@ export function createPartyTech(ctx) {
       if (st.recentCasts.length > 8) st.recentCasts.splice(0, st.recentCasts.length - 8);
     }
     if (techs.length === 0) return;
-    // Echo arms on the real cast (ally_cast): the recorded delivery.
+    // Echo arms on the real cast (skill_cast): the recorded delivery.
     if (has('echo') && b) {
       const c = info.cast || {};
       b.tech.armEcho(baseDef.id, { slot: c.slot, dx: c.dx, dz: c.dz, targets: c.targets ? [...c.targets] : null, target: c.target ?? null, zx: c.zx, zz: c.zz }, tick + TECH.echoDelayTicks);
@@ -297,7 +297,7 @@ export function createPartyTech(ctx) {
     events.emit(tick, 'parry_open', { seat, id: a.id, skill: def.id, untilTick: tick + ticks, node: !!o.node, ...(o.tag || {}) });
     if (o.cast) {
       // Riposte's cast record (the cooldown is spent whether a hit comes or not).
-      events.emit(tick, 'ally_cast', {
+      events.emit(tick, 'skill_cast', {
         id: a.id,
         partyIndex: a.partyIndex,
         classId: a.classId,
