@@ -17,7 +17,7 @@
 //
 // Showcase frames the model close on a turntable; Play zoom is the game's
 // own camera (fov 45, 12 u, 52°), so a look can be judged at the size the
-// player sees it. Classic beside puts the classic model next to the new one.
+// player sees it.
 // Rewind plays the ability backward to its start (the video's "Time Stop:
 // rewind"); the scrub bar holds any moment Still. A cue (the breath, the
 // slam's impact, each combo strike, the finisher bigger) fires the game's own
@@ -32,14 +32,12 @@ import { CAMERA } from '../core/constants.js';
 import { PALETTE, VFX_SIGNATURE } from '../data/palette.js';
 import { toonMaterial } from '../render/toon.js';
 import { createCritter, setInkViewport } from '../render/critters/index.js';
-import { buildWyrm } from '../render/boss/wyrm.js';
 import { buildWyrmFacet, WYRM_ABILITIES } from '../render/boss/wyrmfacet.js';
 import { FACET_HEROES } from '../render/facet/heroes.js';
 import { SPAWN_TIMELINE as HERO_SPAWN_TIMELINE } from '../render/facet/hero.js';
 import { createVfxKit } from '../render/vfx/kit.js';
 import { createSpine, createPlateTube, createSpineRow, placeRow, plateGeometry, setTRS, wedgeGeometry } from '../render/facet/kit.js';
 import { facetize, facetMaterial } from '../render/facet/material.js';
-import { createPlayhead } from '../render/facet/timeline.js';
 import { SPAWN_TIMELINE } from '../render/facet/beats.js';
 import { service } from '../app/registry.js';
 import { pageQuery } from '../app/harness.js';
@@ -52,7 +50,7 @@ import { LAB_ENTRIES as LEVEL4_CHAMPION_ENTRIES } from './modellab-champions-lev
 import { LAB_ENTRIES as FOE_ENTRIES } from './modellab-foes.js';
 
 // Model tabs from entry files (scenes/modellab-bosses.js documents the shape):
-// each builds its model and classic twin on first view and drives both.
+// each builds its model on first view and drives it.
 const ENTRIES = [...BOSS_ENTRIES, ...LEVEL4_ENTRIES, ...CHAMPION_ENTRIES, ...LEVEL4_CHAMPION_ENTRIES, ...FOE_ENTRIES];
 const entryOf = (id) => ENTRIES.find((e) => e.id === id) || null;
 
@@ -76,9 +74,9 @@ const ABILITIES = {
 const REST_GAP = 0.7; // s of rest between ability loops
 // Each model's showcase framing: look-at height, distance, and its game speed.
 const FRAME = {
-  wyrm: { y: 0.55, z: -1.2, dist: 8.6, speed: 1.5, loop: 3.4, side: 3.6 },
+  wyrm: { y: 0.55, z: -1.2, dist: 8.6, speed: 1.5, loop: 3.4 },
   ...Object.fromEntries(FACET_HEROES.map((h) => [h.id, h.lab.frame])),
-  kit: { y: 0.6, z: 0, dist: 7.5, speed: 0, loop: 0, side: 0 },
+  kit: { y: 0.6, z: 0, dist: 7.5, speed: 0, loop: 0 },
   ...Object.fromEntries(ENTRIES.map((e) => [e.id, e.frame])),
 };
 const SHOW_FOV = 30;
@@ -111,16 +109,10 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
 
   // --- The models (built once; the tabs show one at a time).
   const wyrm = buildWyrmFacet();
-  const wyrmClassic = buildWyrm();
-  // each model-standard hero, faceted, and its classic twin
-  const heroes = Object.fromEntries(
-    FACET_HEROES.map((spec) => [
-      spec.id,
-      { spec, rig: createCritter(spec.id, { cosmetic, facet: true }), classic: createCritter(spec.id, { cosmetic, facet: false }) },
-    ])
-  );
+  // each model-standard hero
+  const heroes = Object.fromEntries(FACET_HEROES.map((spec) => [spec.id, { spec, rig: createCritter(spec.id, { cosmetic }) }]));
   const HEROES = Object.values(heroes);
-  const movers = [wyrm.group, wyrmClassic.group, ...HEROES.flatMap((h) => [h.rig.group, h.classic.group])];
+  const movers = [wyrm.group, ...HEROES.map((h) => h.rig.group)];
   for (const g of movers) root.add(g);
   const kit = buildKitShowcase();
   root.add(kit.group);
@@ -141,7 +133,6 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     if (!ent) return null;
     const b = ent.build({ cosmetic, vfx, play });
     root.add(b.group);
-    if (b.classic) root.add(b.classic);
     built[id] = b;
     return b;
   }
@@ -192,7 +183,6 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     rate: 1,
     view: params.get('view') === 'play' ? 'play' : 'showcase',
     turntable: params.get('turn') !== '0',
-    classic: params.get('classic') === '1',
     duration: 0,
     readout: '',
     azimuth: 0.6,
@@ -236,7 +226,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       resetModels();
     }
     const wasMode = state.mode;
-    for (const k of ['mode', 'ability', 'view', 'turntable', 'classic', 'rate', 'azimuth', 'movePhase', 'fixedDt']) if (k in patch) state[k] = patch[k];
+    for (const k of ['mode', 'ability', 'view', 'turntable', 'rate', 'azimuth', 'movePhase', 'fixedDt']) if (k in patch) state[k] = patch[k];
     state.ability = validAbility(state.model, state.ability);
     if ('t' in patch) state.t = Math.max(0, patch.t);
     if (patch.ability) state.t = patch.t ?? 0;
@@ -249,18 +239,11 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   function resetModels() {
     for (const g of movers) g.position.set(0, 0, 0);
     wyrm.setYaw(0);
-    wyrmClassic.setYaw(0);
-    for (const h of HEROES) {
-      h.rig.setYaw(0);
-      h.classic.setYaw(0);
-    }
+    for (const h of HEROES) h.rig.setYaw(0);
     wyrm.lab.reset();
     for (const b of Object.values(built)) {
       if (b.reset) b.reset();
-      else {
-        b.group.position.set(0, 0, 0);
-        if (b.classic) b.classic.position.set(0, 0, 0);
-      }
+      else b.group.position.set(0, 0, 0);
     }
   }
 
@@ -270,7 +253,6 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
   const tmp = new Vector3();
   let lastElapsed = null;
   let idleT = 0;
-  let classicTel = 0;
 
   function update(elapsedSec) {
     const rawDt = state.fixedDt > 0 ? state.fixedDt : lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, elapsedSec - lastElapsed));
@@ -300,22 +282,14 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     const moving = state.mode === 'move';
     if (moving) state.movePhase += (dt * F.speed) / Math.max(0.1, F.loop);
 
-    // Show the current model (and its classic twin beside it).
+    // Show the current model.
     const showW = state.model === 'wyrm';
     const H = heroes[state.model] || null;
     wyrm.group.visible = showW;
-    wyrmClassic.group.visible = showW && state.classic;
-    for (const h of HEROES) {
-      h.rig.group.visible = h === H;
-      h.classic.group.visible = h === H && state.classic;
-    }
+    for (const h of HEROES) h.rig.group.visible = h === H;
     kit.group.visible = state.model === 'kit';
-    const sideX = state.classic ? F.side : 0;
     const entry = entryOf(state.model) ? entryModel(state.model) : null;
-    for (const [id, b] of Object.entries(built)) {
-      b.group.visible = id === state.model;
-      if (b.classic) b.classic.visible = id === state.model && state.classic;
-    }
+    for (const [id, b] of Object.entries(built)) b.group.visible = id === state.model;
     if (entry) {
       root.updateMatrixWorld(true);
       entry.update(state, dt, abT);
@@ -331,24 +305,14 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
         z = -Math.cos(a) * F.loop + F.loop * 0.4;
         yaw = Math.atan2(Math.cos(a), Math.sin(a));
       }
-      wyrm.group.position.set(x + sideX, 0, z);
+      wyrm.group.position.set(x, 0, z);
       wyrm.setYaw(yaw);
       root.updateMatrixWorld(true);
       wyrm.lab.pose({ dt, ability: state.mode === 'ability' || (still && state.t > 0) ? state.ability : null, abT, moveK: moving ? 1 : 0, rigid: !moving });
-      // classic twin: the old rig, fed a stand-in entity
-      wyrmClassic.group.position.set(-sideX + x, 0, z);
-      wyrmClassic.setYaw(yaw);
-      const s = state.mode === 'ability' ? tl.sample(abT) : null;
-      const ab = state.ability;
-      const tel = s && ((ab === 'breath' && s.id === 'draw') || (ab === 'burrow' && s.id === 'rise')) ? { attack: ab === 'breath' ? 'breath' : 'emerge' } : null;
-      classicTel += ((tel ? 1 : 0) - classicTel) * (1 - Math.exp(-12 * dt));
-      const burrowed = !!(s && ab === 'burrow' && ['dive', 'tunnel', 'rise'].includes(s.id) && (s.id !== 'dive' || s.k > 0.6));
-      wyrmClassic.pose({ t: idleT, walkPhase: 0, moveK: moving ? 1 : 0, telegraphK: classicTel, hpFrac: 1, e: { telegraph: tel, burrowed, enraged: false } });
     }
 
     if (H) {
       const hero = H.rig;
-      const twin = H.classic;
       let x = 0;
       let z = 0;
       let yaw = 0;
@@ -365,10 +329,8 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
         yaw = lap < 0.5 ? travel : toMid + (lap < 0.75 ? 0 : Math.PI / 2);
         clip = 'walk';
       }
-      hero.group.position.set(x + sideX, 0, z);
+      hero.group.position.set(x, 0, z);
       hero.setYaw(yaw);
-      twin.group.position.set(x - sideX, 0, z);
-      twin.setYaw(yaw);
       if (state.mode === 'ability' || (still && state.t > 0)) {
         if (state.ability === 'combo') {
           const h = H.spec.comboLab.at(abT);
@@ -381,10 +343,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
         }
       } else hero.lab.override = null;
       hero.setAnim(clip);
-      // classic twin: its single cast pose, re-triggered on each strike
-      twin.setAnim(clip);
       hero.update(dt);
-      twin.update(dt);
     }
 
     if (state.model === 'kit') kit.update(idleT);
@@ -424,8 +383,8 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       cam.fov = CAMERA.fov;
       cam.updateProjectionMatrix();
       const e = (CAMERA.elevationDeg * Math.PI) / 180;
-      const fx = state.classic ? 0 : g.position.x;
-      const fz = state.classic ? 0 : g.position.z;
+      const fx = g.position.x;
+      const fz = g.position.z;
       cam.position.set(fx, CAMERA.distance * Math.sin(e), fz + CAMERA.distance * Math.cos(e));
       cam.lookAt(fx, 0, fz);
       return;
@@ -433,9 +392,9 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     if (state.turntable && state.mode !== 'still') state.azimuth += dt * 0.22;
     cam.fov = SHOW_FOV;
     cam.updateProjectionMatrix();
-    const dist = F.dist * (state.classic ? 1.75 : 1) + (state.mode === 'move' ? F.loop * 1.6 : 0);
-    const cx = state.classic || state.mode === 'move' ? 0 : g.position.x;
-    const cz = (state.classic || state.mode === 'move' ? 0 : g.position.z) + F.z;
+    const dist = F.dist + (state.mode === 'move' ? F.loop * 1.6 : 0);
+    const cx = state.mode === 'move' ? 0 : g.position.x;
+    const cz = (state.mode === 'move' ? 0 : g.position.z) + F.z;
     // An entry that leaves the floor (the Hart's Leap) lends its height, so the
     // camera rises with the bound and the head stays in frame.
     const entry = entryOf(state.model) ? entryModel(state.model) : null;
@@ -459,7 +418,6 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
       t: Math.round(state.t * 1000) / 1000,
       rate: state.rate,
       view: state.view,
-      classic: state.classic,
       readout: state.readout,
       duration: state.duration,
       phases: (timelineFor(state.model, state.ability).phases || []).map((ph) => [ph.id, ph.dur]),

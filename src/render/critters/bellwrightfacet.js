@@ -26,7 +26,18 @@
 // Same contract as buildBellwright (apply, torso, head, basePitch, metrics),
 // plus `cue(kind, ev)`, `hold(dt)`, `comboHitOf(ev)`, `points` and `lab`.
 // Render only: attack timing, damage and the sim are untouched.
-import { CapsuleGeometry, CylinderGeometry, Euler, Group, LatheGeometry, Mesh, Quaternion, SphereGeometry, TorusGeometry, Vector2, Vector3 } from 'three';
+import {
+  CapsuleGeometry,
+  CylinderGeometry,
+  Euler,
+  Group,
+  LatheGeometry,
+  Mesh,
+  Quaternion,
+  SphereGeometry,
+  Vector2,
+  Vector3,
+} from 'three';
 import { CLASS_ACCENTS, PALETTE } from '../../data/palette.js';
 import { faceDecal, mix } from './common.js';
 import { sharedGeo } from '../geocache.js';
@@ -136,7 +147,6 @@ const HITS = createCombo(
   ],
   { window: COMBO_WINDOW, timing: TIMING, recoil: false }
 );
-export const BELLWRIGHT_HITS = HITS;
 
 // --- Abilities. In game a skill enters its timeline one frame before its
 // release (the press is instant, BUILD_BRIEF §6); the lab plays the whole
@@ -283,7 +293,6 @@ export const BELLWRIGHT_SKILL_ABILITY = Object.freeze({
 });
 const SHAPE_ABILITY = Object.freeze({ projectile: 'clap', direct: 'chime', melee_arc: 'swing', nova: 'peal', ground_aoe: 'hang', aura: 'hum' });
 const skillAbility = (ev) => (ev && (BELLWRIGHT_SKILL_ABILITY[ev.skill] || SHAPE_ABILITY[ev.shape])) || 'clap';
-export const BELLWRIGHT_REST = REST;
 
 // ---------------------------------------------------------------------------
 // The rig
@@ -768,7 +777,7 @@ export const BELLWRIGHT_SPEC = Object.freeze({
       ['chime', 'Chime'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.6, z: 0, dist: 3.6, speed: 2.35, loop: 2.2, side: 1.3 },
+    frame: { y: 0.6, z: 0, dist: 3.6, speed: 2.35, loop: 2.2 },
     cues: {
       strike: { sound: 'bw_ding', pitch: 1, fx: 'flash' },
       finisher: { sound: 'bw_toll', pitch: 0.9, fx: ['flash', 'star'], size: 1.5 },

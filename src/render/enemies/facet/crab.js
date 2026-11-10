@@ -41,7 +41,7 @@ import { BoxGeometry, Color, CylinderGeometry, Matrix4, MeshBasicMaterial, Quate
 import { PALETTE } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { markShared } from '../../geocache.js';
-import { HIDE, TELL_INDIGO, TELL_INDIGO_DIM } from '../style.js';
+import { TELL_INDIGO, TELL_INDIGO_DIM } from '../style.js';
 import { facetize } from '../../facet/material.js';
 import { instancedPart, setTRS, wedgeGeometry, PART_INK_PX } from '../../facet/kit.js';
 import { ease } from '../../facet/timeline.js';
@@ -60,7 +60,6 @@ export const SNAP_TEL_SEC = 42 / TICK_HZ;
 const slate = (h, l) => new Color().setHSL(0.6, h, l);
 const SHELL = slate(0.32, 0.36).lerp(new Color(PALETTE.bruiseUmber), 0.3);
 const DARK = slate(0.36, 0.18);
-const BONE = HIDE.bone.clone().multiplyScalar(0.92);
 
 // --- Key poses. push (u, +z), lift (u), pitch (front down +), roll (+ toward
 // its right, -x), twist (+ toward its left), sx / sy (squash); per claw (r the
@@ -91,8 +90,6 @@ const SNAPS = [
   { label: 'the small claw jabs', coil: C2, strike: S2, over: O2 },
   { label: 'scissor slam', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const CRAB_REST = REST;
-export const CRAB_SNAPS = Object.freeze(SNAPS);
 // The guard down (after a snap): both claws lowered to the floor in front.
 const GUARD_DOWN = { rRaise: -0.62, lRaise: -0.62, rReach: 0.2, lReach: 0.2, rOpen: 0.2, lOpen: 0.2 };
 
@@ -108,7 +105,6 @@ const SNAP_TL = strikeTimeline('snap', 'Snap', {
   rest: GUARD_OPEN_SEC,
   labels: { coil: 'coil (the cone telegraph)', strike: 'snap', hold: 'contact: claws shut', snap: 'snap back', settle: 'settle, guard down' },
 });
-const CONTACT_AT = SNAP_TL.startOf('hold');
 function heldMotion(V, age, out) {
   // B3: a rig-only shove back off the hit, 2 frames out and ~8 back
   out.push -= RECOIL_U * recoil(age - HOLD_T);
@@ -116,9 +112,8 @@ function heldMotion(V, age, out) {
 export function crabSnapPose(v, t, out = { ...REST }) {
   return strikePoseAt(SNAP_TL, SNAPS[v] || SNAPS[0], REST, FIELDS, t, out, heldMotion);
 }
-const classicSnap = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { snapTick: tt >= CONTACT_AT ? 1 : -1, guard: { active: tt < SNAP_TL.startOf('strike') } } });
-export const CRAB_SNAP = strikeAbility({ id: 'snap', label: 'Snap', tl: SNAP_TL, variants: SNAPS, classic: classicSnap });
-export const CRAB_SNAPS_STRING = strikeAbility({ id: 'snaps', label: 'Snap string', tl: SNAP_TL, variants: SNAPS, n: 3, gap: SNAP_TL.duration - 0.2, classic: classicSnap });
+export const CRAB_SNAP = strikeAbility({ id: 'snap', label: 'Snap', tl: SNAP_TL, variants: SNAPS });
+export const CRAB_SNAPS_STRING = strikeAbility({ id: 'snaps', label: 'Snap string', tl: SNAP_TL, variants: SNAPS, n: 3, gap: SNAP_TL.duration - 0.2 });
 export const CRAB_ABILITIES = Object.freeze({ snap: CRAB_SNAP, snaps: CRAB_SNAPS_STRING });
 // The lab's guard: down from the snap back to the end of its 45 ticks, eased
 // in and out (pure in t).

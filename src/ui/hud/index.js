@@ -26,7 +26,7 @@ import { iconEl } from './icons.js';
 import { t } from '../../i18n/index.js';
 import { viewerSeat } from '../../app/viewerseat.js';
 import { BLESSINGS } from '../../sim/shrines.js';
-import { BLESSING_COLORS } from '../../data/palette.js';
+import { BLESSING_COLORS, PALETTE } from '../../data/palette.js';
 
 const BAR_EDGE_PX = 16; // real px from the window bottom to the command bar
 const BANNER_EDGE_PX = 14; // real px from the window top to the banner
@@ -396,7 +396,7 @@ export function createHud({ bus, world, stage, cosmetic = null, scene = null }) 
       blessPlate.classList.toggle('hud-bless-under', held);
       if (B) {
         const c = BLESSING_COLORS[B.id];
-        blessPlate.style.setProperty('--bless', c ? c.glow : '#D9B872');
+        blessPlate.style.setProperty('--bless', c ? c.glow : PALETTE.paleGold);
         blessName.textContent = t(B.name).toUpperCase();
         blessSub.textContent = t('{text} · {secs} s', { text: t(B.text), secs: Math.ceil(bl.ticksLeft / 60) });
         if (fresh) {

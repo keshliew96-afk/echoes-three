@@ -55,6 +55,15 @@ import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 import { HOLD_CAP } from '../hold.js';
 
+// A held (zone) circle: its bold outer ring is drawn at 0.94 of the texture's
+// half width (getCircleTexture), so the circle is scaled up by that much to
+// put the ring on the AOE's edge; it flares on each zone tick and fades over
+// a quarter second when the zone ends.
+const CIRCLE_RIM = 0.94;
+const CIRCLE_END_SEC = 0.25;
+const CIRCLE_FLARE_SEC = 0.35;
+const CIRCLE_FLARE_GAIN = 0.6;
+
 export const TPL_CAPS = Object.freeze({ circle: 28, beam: 18, blaze: 48, blast: 40, dust: 420, bits: 160, sparks: 400, head: 64, trace: 16 }); // PR 2 raised them for the foes; PR 3 added heads; the extras added traces
 // T1 (VFX_HIT_RULES, docs/HIT_FEEDBACK.md j): a blade slash traced from the
 // rig's weapon. cols: ribbon columns, spread evenly over `sec` of the
@@ -701,9 +710,10 @@ export function createTemplateKit({ stage, cosmetic }) {
             return s;
           }
         }
-        let oldest = slots[0];
-        for (const s of slots) if (s.age - s.delay > oldest.age - oldest.delay) oldest = s;
-        return oldest;
+        // A held piece (a zone's circle) is never taken from its owner.
+        let oldest = null;
+        for (const s of slots) if (!s.held && (!oldest || s.age - s.delay > oldest.age - oldest.delay)) oldest = s;
+        return oldest ?? slots[0];
       },
       live: () => slots.reduce((n, s) => n + (s.live ? 1 : 0), 0),
     };
@@ -748,9 +758,17 @@ export function createTemplateKit({ stage, cosmetic }) {
   // opts: x, y, z, radius, face ('arcane' | 'sun' | 'hex'), outer, inner
   // (hex), life, spin (rad/s), opacity, delay, stand (rad: stand it up facing
   // that XZ heading, at the caster's hand), grow (radius gain over life).
+  // hold: true makes it a zone's AOE circle: it stays at full strength, its
+  // bold outer ring exactly on `radius`, until endCircle(); moveCircle() and
+  // pulseCircle() steer it meanwhile. Each call bumps s.tok, so an owner
+  // that kept (s, tok) can tell when the slot was cleared and reused.
   function circle(o) {
     const s = circles.take();
-    start(s, o, o.life ?? 0.9);
+    s.tok = (s.tok ?? 0) + 1;
+    s.held = !!o.hold;
+    s.endAt = null;
+    s.flare = 0;
+    start(s, o, s.held ? Infinity : o.life ?? 0.9);
     const face = o.face ?? 'arcane';
     s.outer.map = getCircleTexture(face, 'outer');
     s.inner.map = getCircleTexture(face, 'inner');
@@ -770,16 +788,42 @@ export function createTemplateKit({ stage, cosmetic }) {
     return s;
   }
   function stepCircle(s, t, dt) {
-    const k = t / s.life;
+    const k = s.held ? 0 : t / s.life;
     const pop = Math.min(1, t / 0.14);
     const back = 1 + 0.12 * Math.sin(pop * Math.PI); // a little overshoot
-    const sc = s.r * 2 * (0.55 + 0.45 * pop) * back * (1 + s.grow * k);
+    const sc = (s.held ? s.r * 2 / CIRCLE_RIM : s.r * 2) * (0.55 + 0.45 * pop) * back * (1 + s.grow * k);
     s.obj.scale.set(sc, sc, sc);
     s.a.rotation.z += s.spin * dt;
     s.b.rotation.z -= s.spin * 1.5 * dt;
-    const f = (t < 0.06 ? t / 0.06 : 1) * (k < 0.55 ? 1 : Math.pow(1 - (k - 0.55) / 0.45, 1.5));
+    let f = (t < 0.06 ? t / 0.06 : 1) * (k < 0.55 ? 1 : Math.pow(1 - (k - 0.55) / 0.45, 1.5));
+    if (s.held) {
+      if (s.endAt !== null) f *= Math.max(0, 1 - (t - s.endAt) / CIRCLE_END_SEC);
+      s.flare = Math.max(0, s.flare - dt / CIRCLE_FLARE_SEC);
+      f *= 1 + CIRCLE_FLARE_GAIN * s.flare;
+    }
     s.outer.opacity = s.op * f;
     s.inner.opacity = s.op * f * (0.85 + 0.15 * Math.sin(t * 18));
+  }
+  const owns = (s, tok) => !!s && s.live && s.held && s.tok === tok;
+  // A held circle follows its zone, flares on the zone's tick, and fades
+  // out over CIRCLE_END_SEC once the zone ends.
+  function moveCircle(s, tok, x, z, radius) {
+    if (!owns(s, tok)) return false;
+    s.cx = x;
+    s.cz = z;
+    s.obj.position.x = x;
+    s.obj.position.z = z;
+    if (radius !== undefined) s.r = radius;
+    return true;
+  }
+  function pulseCircle(s, tok) {
+    if (owns(s, tok)) s.flare = 1;
+  }
+  function endCircle(s, tok) {
+    if (!owns(s, tok) || s.endAt !== null) return;
+    const t = Math.max(0, s.age - s.delay);
+    s.endAt = t;
+    s.life = t + CIRCLE_END_SEC;
   }
 
   // ----------------------------------------------------------------- beam --
@@ -1582,6 +1626,7 @@ export function createTemplateKit({ stage, cosmetic }) {
       for (const s of pool.slots) {
         if (s.live) n += 1;
         s.live = false;
+        s.held = false;
         s.owe = 0;
         s.obj.visible = false;
       }
@@ -1616,5 +1661,5 @@ export function createTemplateKit({ stage, cosmetic }) {
     lightGain = l;
     particleGain = p;
   }
-  return { root, circle, beam, blaze, blast, trace, feedTrace, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity };
+  return { root, circle, moveCircle, pulseCircle, endCircle, beam, blaze, blast, trace, feedTrace, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity };
 }

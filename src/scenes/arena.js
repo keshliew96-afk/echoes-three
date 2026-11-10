@@ -74,7 +74,6 @@ import {
   makeShadowMaterial,
   setPropInkViewport,
   ORDER,
-  VEIN_VIOLET,
 } from '../env/props.js';
 import { makeFlameSprite, createEmberField } from '../env/flame.js';
 import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
@@ -648,12 +647,8 @@ export function createArenaScene(stage, toggles, ctx) {
     if (ev.attacker === world.player.id) healerRig.cue('connect', ev);
   });
   // The world froze (the ally layer tells the party's own rigs).
-  bus.on('hitstop', (ev) => {
-    if (healerRig.modelStandard) healerRig.cue('hitstop', ev);
-  });
-  bus.on('room_enter', () => {
-    if (healerRig.modelStandard) healerRig.cue('spawn');
-  });
+  bus.on('hitstop', (ev) => healerRig.cue('hitstop', ev));
+  bus.on('room_enter', () => healerRig.cue('spawn'));
 
   // --- Entity contact shadows: same treatment for every sim body in the arena
   // (training dummies today, enemies when they land), so nothing ever floats.
@@ -1705,11 +1700,11 @@ export function createArenaScene(stage, toggles, ctx) {
     else if (castLeft > 0) healerRig.setAnim('cast');
     else healerRig.setAnim(moving ? 'walk' : 'idle');
 
-    // A model-standard hero holds itself on the hitstop cue (the attacker at
-    // its own contact, B2), so it takes the raw dt: the render hold on top
-    // would freeze it at the press and hold it twice.
-    healerRig.update(healerRig.modelStandard ? dt : rdt);
-    for (const a of allies) a.update(a.modelStandard ? dt : rdt);
+    // A hero holds itself on the hitstop cue (the attacker at its own
+    // contact, B2), so it takes the raw dt: the render hold on top would
+    // freeze it at the press and hold it twice.
+    healerRig.update(dt);
+    for (const a of allies) a.update(dt);
 
     // Dash afterimages: one ghost per SMEAR_TICK_OFFSETS entry of dash travel
     // (staggered silhouettes, not a per-frame slab); hard-clear at dash

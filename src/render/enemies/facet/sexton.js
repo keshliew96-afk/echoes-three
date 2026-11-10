@@ -91,8 +91,6 @@ const CHOPS = [
   { label: 'the chop from its left', raise: R2, drive: D2 },
   { label: 'the stamp', raise: R3, drive: D3 },
 ].map((v) => Object.freeze(v));
-export const SEXTON_REST = REST;
-export const SEXTON_CHOPS = Object.freeze(CHOPS);
 // The dig: 36 ticks from the knee to the bury (the sim's), then the rise.
 const CHOP_SEC = (DIG_SEC - 0.12) / 3;
 const DIG_TL = createTimeline('dig', 'Dig a snare', [
@@ -141,7 +139,6 @@ export const SEXTON_DIG = Object.freeze({
     { at: 0, id: 'dig' },
     { at: BURY_AT, id: 'bury' },
   ],
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: t < BURY_AT ? 'dig' : 'skulk', digTick: t >= BURY_AT ? 1 : -1 } }),
 });
 const GAP = DIG_TL.duration + 0.4;
 export const SEXTON_DIGS = Object.freeze({
@@ -159,10 +156,6 @@ export const SEXTON_DIGS = Object.freeze({
     { at: g, id: 'dig' },
     { at: g + BURY_AT, id: 'bury' },
   ]),
-  classicAt: (t) => {
-    const tt = t - Math.max(0, Math.min(2, Math.floor(t / GAP))) * GAP;
-    return { telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: tt < BURY_AT ? 'dig' : 'skulk', digTick: tt >= BURY_AT ? 1 : -1 } };
-  },
 });
 export const SEXTON_ABILITIES = Object.freeze({ dig: SEXTON_DIG, digs: SEXTON_DIGS });
 

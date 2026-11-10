@@ -312,46 +312,6 @@ export function settle(k) {
   return a * a * (1 - 2.6 * k);
 }
 
-// B9 lunge into contact (melee). Phases over the strike: pull back, lunge,
-// contact squash, snap back (2 to 3 frames), settle. Returns the body's
-// forward shove (u), lean toward the target (rad) and squash (sx wide, sy tall)
-// for a phase id and its 0..1 progress. `reach` caps the shove at a lunge
-// step that passes the root-motion check (the feet step it in; the body never
-// moves). The squash and the lean keep their full size (§6.1 item 2).
-export function lungePose(phase, k, { reach = 0.16, pull = 0.07, lean = 0.4 } = {}) {
-  const out = { push: 0, lean: 0, sx: 1, sy: 1 };
-  if (phase === 'pull') {
-    const e = 1 - (1 - k) * (1 - k);
-    out.push = -pull * e;
-    out.lean = -0.08 * e;
-    out.sx = 1 - 0.04 * e;
-    out.sy = 1 + 0.05 * e;
-  } else if (phase === 'strike') {
-    const e = k * k;
-    out.push = -pull + (reach + pull) * e;
-    out.lean = -0.08 + (lean + 0.08) * e;
-    out.sx = 0.96 + (1.19 - 0.96) * e;
-    out.sy = 1.05 + (0.91 - 1.05) * e;
-  } else if (phase === 'contact') {
-    out.push = reach;
-    out.lean = lean;
-    out.sx = 1.19;
-    out.sy = 0.91;
-  } else if (phase === 'snap') {
-    const e = 1 - (1 - k) * (1 - k);
-    out.push = reach * (1 - 0.35 * e);
-    out.lean = lean * (1 - 0.5 * e);
-    out.sx = 1.19 + (0.97 - 1.19) * e; // the snap overshoots a touch tall
-    out.sy = 0.91 + (1.04 - 0.91) * e;
-  } else if (phase === 'settle') {
-    const s = settle(k);
-    out.push = reach * 0.65 * s;
-    out.lean = lean * 0.5 * s;
-    out.sx = 1 - 0.03 * s;
-    out.sy = 1 + 0.04 * s;
-  }
-  return out;
-}
 
 // B3 a shot squashes its shooter: about 20% wider on the shot, back in about
 // 3 frames with a small stretch overshoot (about 4% taller) 4 to 5 frames

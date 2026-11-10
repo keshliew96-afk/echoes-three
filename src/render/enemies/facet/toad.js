@@ -28,7 +28,15 @@
 //
 // Faces +Z. Same contract as buildToad (group, mats, setYaw, pose) plus lab,
 // react, death, points. Render only: the sim and its timing untouched.
-import { BoxGeometry, Color, IcosahedronGeometry, Matrix4, MeshBasicMaterial, Quaternion, SphereGeometry, Vector3 } from 'three';
+import {
+  BoxGeometry,
+  IcosahedronGeometry,
+  Matrix4,
+  MeshBasicMaterial,
+  Quaternion,
+  SphereGeometry,
+  Vector3,
+} from 'three';
 import { PALETTE } from '../../../data/palette.js';
 import { exactColor, groundShadow } from '../../critters/common.js';
 import { markShared } from '../../geocache.js';
@@ -77,8 +85,6 @@ const LOBS = [
   { label: 'flung from its right', coil: C2, strike: S2, over: O2 },
   { label: 'the heave', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const TOAD_REST = REST;
-export const TOAD_LOBS = Object.freeze(LOBS);
 
 // The B3 shooter recoil after the held contact: 0.07 u back.
 const RECOIL_U = 0.07;
@@ -87,16 +93,14 @@ const LOB_TL = strikeTimeline('lob', 'Lob', {
   rest: 0.3,
   labels: { coil: 'gather: crouched, the sac fills (read ahead from its cooldown)', strike: 'the fling', hold: 'contact: the glob away, the squash held', snap: 'snap back', settle: 'settle' },
 });
-const CONTACT_AT = LOB_TL.startOf('hold');
 function heldMotion(V, age, out) {
   out.push -= RECOIL_U * recoil(age);
 }
 export function toadLobPose(v, t, out = { ...REST }) {
   return strikePoseAt(LOB_TL, LOBS[v] || LOBS[0], REST, FIELDS, t, out, heldMotion);
 }
-const classicLob = (tt) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { throwTick: tt >= CONTACT_AT ? 1 : -1 } });
-export const TOAD_LOB = strikeAbility({ id: 'lob', label: 'Lob', tl: LOB_TL, variants: LOBS, classic: classicLob });
-export const TOAD_LOBS_STRING = strikeAbility({ id: 'lobs', label: 'Lob string', tl: LOB_TL, variants: LOBS, n: 3, gap: LOB_TL.duration, classic: classicLob });
+export const TOAD_LOB = strikeAbility({ id: 'lob', label: 'Lob', tl: LOB_TL, variants: LOBS });
+export const TOAD_LOBS_STRING = strikeAbility({ id: 'lobs', label: 'Lob string', tl: LOB_TL, variants: LOBS, n: 3, gap: LOB_TL.duration });
 export const TOAD_ABILITIES = Object.freeze({ lob: TOAD_LOB, lobs: TOAD_LOBS_STRING });
 
 // --- Geometry (built once for the session, shared by every toad) ------------

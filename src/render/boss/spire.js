@@ -29,7 +29,6 @@ import {
   ConeGeometry,
   CylinderGeometry,
   Group,
-  IcosahedronGeometry,
   LatheGeometry,
   Mesh,
   MeshBasicMaterial,

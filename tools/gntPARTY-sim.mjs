@@ -26,7 +26,6 @@ const { createWorld } = await import(u('src/sim/world.js'));
 const { emptySnapshot } = await import(u('src/core/intents.js'));
 const { SKILLS } = await import(u('src/sim/skills.js'));
 const { NODES } = await import(u('src/sim/nodes.js'));
-const { ALLY_KITS, ALLY_KITS_V150 } = await import(u('src/sim/allies.js'));
 const C = await import(u('src/data/classes.js'));
 const C_KITS = { 1: ['heavy_slam', 'brutal_cleave', 'ground_crack', 'whirling_guard'], 2: ['flurry', 'lunge_strike', 'blade_storm', 'caltrops'], 3: ['piercing_shot', 'volley', 'detonating_charge', 'sundering_nova'] };
 const oracle = JSON.parse(readFileSync(join(here, 'docs/gauntlet/party-oracle.json'), 'utf8'));
@@ -81,12 +80,6 @@ if (want('pools')) {
       if (row.cls !== c) bad.push(`${s.id}.cls`);
     }
     check('pools', `${c} every skill row equals the §25.2 numbers`, bad.length === 0, bad.slice(0, 6));
-    const kitBad = [];
-    ALLY_KITS[c].forEach((d, i) => {
-      const v = ALLY_KITS_V150[c][i];
-      for (const k of Object.keys(v)) if (JSON.stringify(v[k]) !== JSON.stringify(d[k])) kitBad.push(`${v.id}.${k}`);
-    });
-    check('pools', `${c} starting rows = v0.5.150 ALLY_KITS field for field`, kitBad.length === 0, kitBad);
     check('pools', `${c} starting loadout = the §7 kit order`, JSON.stringify(W.cmd('partyView', C.SEAT_OF_CLASS[c]).slots) === JSON.stringify(C.STARTING_LOADOUT[c]));
     const cn = Object.keys(NODES).filter((id) => NODES[id].cls === c);
     check('pools', `${c} 6 class nodes`, cn.length === 6 && JSON.stringify(cn.sort()) === JSON.stringify([...C.CLASS_NODES[c]].sort()), cn);

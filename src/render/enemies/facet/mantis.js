@@ -154,8 +154,6 @@ const STRIKE = K({ push: 0.06, pitch: 0.27, hp: 0.48, ab: -0.12, pump: -0.4, ac:
 // the tail kicking up), then one overshoot back into the guard (B5).
 const OVER = K({ push: 0.02, pitch: 0.1, hp: -0.12, ab: 0.09, pump: 0.15, ac: 0.72, af: 2.3, at: 0.12, asp: 0.36, aln: 0.22, wing: 0.1, jaw: 0.3, glint: 0.3 });
 const FIELDS = Object.keys(REST);
-export const MANTIS_REST = REST;
-export const MANTIS_KEYS = Object.freeze({ rear: REAR, coil: COIL, strike: STRIKE, over: OVER });
 
 const SPIT_TL = createTimeline(
   'spit',
@@ -233,16 +231,6 @@ export function mantisSpitPose(ts, out = { ...REST }, variant = 0) {
   return out;
 }
 
-// The classic twin's inputs at the same moment (the enemy layer's own
-// curves: telegraphK eases in at 14/s, fireK is the 0.2 s hump after the shot).
-function classicAt(t) {
-  const tc = SPIT_CONTACT;
-  const telegraphK = t < tc ? 1 - Math.exp(-14 * Math.max(0, t)) : (1 - Math.exp(-14 * tc)) * Math.exp(-14 * (t - tc));
-  const f = t - tc;
-  const fireK = f >= 0 && f < 0.2 ? Math.sin(5 * Math.PI * f) : 0;
-  return { telegraphK, lungeK: 0, fireK, e: null };
-}
-
 // The model lab's spit at the default 42-tick telegraph (pure in t, so it
 // rewinds); in game the same poses ride the live telegraph.
 function spitAbility(variant) {
@@ -261,7 +249,6 @@ function spitAbility(variant) {
     // seconds into the spit where the contact lands (the lab's cue: 'spit')
     strikes: [SPIT_CONTACT],
     cues: SPIT_TL.cues,
-    classicAt,
   });
 }
 export const MANTIS_SPIT = spitAbility(0);

@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // HEALER RESTORE probe (v0.5.331) — headless Node, reads the code; no browser.
 // Kesh asked for the original healer back and the Blender mouse model removed:
-//   1. critters/index.js builds the Healer from the procedural rig (healer.js)
-//      through the plain BUILDERS table, with no model switch.
+//   1. critters/index.js builds the Healer from the procedural rig (since the
+//      freeze cleanup, AUDIT.md D1, its faceted rig healerfacet.js, the only
+//      one) through the plain BUILDERS table, with no model switch.
 //   2. The mouse model's files are gone: its rig code, its .glb, its probes,
 //      its Blender script and its doc; nothing under src/ or tools/ imports it.
 //   3. The game no longer waits on a model load before the first scene.
@@ -23,7 +24,7 @@ const read = (p) => readFileSync(join(here, p), 'utf8');
 
 // --- 1. the builder
 const idx = read('src/render/critters/index.js');
-check('the Healer is built by the procedural rig', /healer:\s*buildHealer/.test(idx) && /const build = BUILDERS\[classId\]/.test(idx));
+check('the Healer is built by the procedural rig', /BUILDERS = Object\.fromEntries\(Object\.values\(FACET_HERO\)/.test(idx) && /const build = BUILDERS\[classId\]/.test(idx) && /HEALER_SPEC/.test(read('src/render/facet/heroes.js')));
 check('no model switch is left in the critter factory', !/clipDriven|healerBuilder|HEALER_MODEL/.test(idx));
 
 // --- 2. the files

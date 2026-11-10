@@ -53,7 +53,6 @@ export const SECRET_KINDS = Object.freeze(['secret_wall', 'secret_chamber', 'sec
 
 const GLOW = SECRET_COLORS.glow;
 const CORE = SECRET_COLORS.core;
-const DEEP = SECRET_COLORS.deep;
 const PARCH = PALETTE.parchment;
 const AMBER = PALETTE.hearthAmber;
 const DUST = '#BDB6C8';

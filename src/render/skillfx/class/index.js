@@ -47,6 +47,7 @@ import {
 import { PALETTE } from '../../../data/palette.js';
 import { vfxClassStyle } from '../../../data/vfx.js';
 import { makeGlowSprite } from '../../glow.js';
+import { createFxPool } from '../../fxpool.js';
 import { warmPark } from '../../warmup.js';
 
 const AMBER = PALETTE.hearthAmber;
@@ -255,24 +256,14 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
     root.add(obj);
     live.push({ obj, age: 0, life, step });
   }
-  const motes = [];
-  const motePool = [];
-  function spawnMotes(x, z, { color = PARCH, count = 6, y = 0.3, spread = 0.35, vy = [0.4, 1.1], life = [0.35, 0.7], size = [0.05, 0.12], dir = null } = {}) {
-    for (let i = 0; i < count; i++) {
-      if (motes.length >= MOTE_CAP) break;
-      const s = motePool.pop() ?? makeGlowSprite({ color, size: 1, opacity: 0.9 });
-      s.material.color.set(color);
-      s.material.opacity = 0.9;
-      const sz = cosmetic.range(size[0], size[1]);
-      s.scale.set(sz, sz, 1);
-      const a = cosmetic.range(0, Math.PI * 2);
-      const r = cosmetic.range(0, spread);
-      s.position.set(x + Math.cos(a) * r, y + cosmetic.range(0, 0.15), z + Math.sin(a) * r);
-      root.add(s);
-      const d = dir ?? { x: cosmetic.range(-0.2, 0.2), z: cosmetic.range(-0.2, 0.2) };
-      motes.push({ s, age: 0, life: cosmetic.range(life[0], life[1]), vy: cosmetic.range(vy[0], vy[1]), vx: d.x, vz: d.z, sz });
-    }
-  }
+  // Motes: the shared pool (src/render/fxpool.js) with this layer's look.
+  const fx = createFxPool({
+    root,
+    cosmetic,
+    caps: { motes: MOTE_CAP },
+    defaults: { motes: { color: PARCH, count: 6, y: 0.3, yJitter: 0.15, spread: 0.35, vy: [0.4, 1.1], life: [0.35, 0.7], size: [0.05, 0.12], drift: 0.2 } },
+  });
+  const spawnMotes = fx.motes;
   function glyphPop(id, x, y, z, { size = 0.5, life = 0.5, rise = 0.25 } = {}) {
     const s = glyphSprite(id, size);
     s.position.set(x, y, z);
@@ -436,21 +427,7 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
         live.splice(i, 1);
       }
     }
-    for (let i = motes.length - 1; i >= 0; i--) {
-      const m = motes[i];
-      m.age += dt;
-      const k = m.age / m.life;
-      if (k >= 1) {
-        root.remove(m.s);
-        motePool.push(m.s);
-        motes.splice(i, 1);
-        continue;
-      }
-      m.s.position.x += m.vx * dt;
-      m.s.position.z += m.vz * dt;
-      m.s.position.y += m.vy * dt;
-      m.s.material.opacity = 0.9 * (1 - k);
-    }
+    fx.update(dt);
     // Taunt plates follow every live taunt.
     const seen = new Set();
     const tick = world.tick;
@@ -554,7 +531,7 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
   warmPark(root, new Mesh(new PlaneGeometry(1, 1), add(PARCH, 0.5)));
 
   function debugCounts() {
-    return { live: live.length, motes: motes.length, taunts: tauntPlates.size, stance: stance.visible, wake: glints[0].visible, kestrel: kestrel.visible, parry: blades.visible };
+    return { live: live.length, motes: fx.counts().motes, taunts: tauntPlates.size, stance: stance.visible, wake: glints[0].visible, kestrel: kestrel.visible, parry: blades.visible };
   }
   return { update, debugCounts };
 }

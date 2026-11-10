@@ -2,12 +2,8 @@
 // creature Level I rolls (data/levels.js row 1: the roster's boar, mantis,
 // quillback, rotcap, wasp and thornling, the campaign roster's owl and
 // lasher), rebuilt on the faceted look, the crowd-cheap parts kit and
-// ability timelines, with their classic rigs kept beside them.
-//
-// The enemy layer and the Journal viewer take `facetFoeBuilders()` over their
-// classic builders: a kind is faceted when its MODEL_STANDARD flag is on and
-// the harness's `?facet=` allows it (render/facet/flags.js).
-import { facetOn } from '../../facet/flags.js';
+// ability timelines. The enemy layer and the Journal viewer build every kind
+// listed in FACET_FOES from here.
 import { buildBoarFacet, BOAR_ABILITIES } from './boar.js';
 import { buildMantisFacet, MANTIS_ABILITIES } from './mantis.js';
 import { buildQuillbackFacet, QUILLBACK_ABILITIES } from './quillback.js';
@@ -106,9 +102,3 @@ export const FOE_ABILITIES = Object.freeze({
   bloom: BLOOM_ABILITIES,
   siphon: SIPHON_ABILITIES,
 });
-
-export function facetFoeBuilders(query) {
-  const out = {};
-  for (const [kind, build] of Object.entries(FACET_FOES)) if (query ? facetOn(kind, query) : facetOn(kind)) out[kind] = build;
-  return out;
-}

@@ -18,7 +18,7 @@
 //
 // Render-only: reads sim state read-only, never mutates it.
 import { Group, Vector3 } from 'three';
-import { HITFLASH, TICK_HZ, CAMERA } from '../../core/constants.js';
+import { TICK_HZ } from '../../core/constants.js';
 
 // Boss-specific hit-flash envelope (see the 'hit' handler below). `peak` sits
 // under HITFLASH.intensity because the emissive area here is ~5x a chibi's;
@@ -27,12 +27,7 @@ import { HITFLASH, TICK_HZ, CAMERA } from '../../core/constants.js';
 // self-lit now (render/boss/stag.js), so the old peak lerped an already-lifted
 // body most of the way to white and the whole silhouette blew out again.
 const BOSS_FLASH = Object.freeze({ ticks: 5, peak: 0.28, refractoryTicks: 8 });
-import { PALETTE } from '../../data/palette.js';
 import { vfxSpellHit } from '../../data/vfx.js';
-import { makeGlowSprite } from '../glow.js';
-import { buildStag } from './stag.js';
-import { buildHeron } from './heron.js';
-import { buildWyrm } from './wyrm.js';
 import { buildWyrmFacet } from './wyrmfacet.js';
 import { buildStagFacet } from './stagfacet.js';
 import { buildThornmotherFacet } from './thornmotherfacet.js';
@@ -45,12 +40,8 @@ import { buildAshRavenFacet } from './ashravenfacet.js';
 import { buildCantorFacet } from './cantorfacet.js';
 import { buildColossusFacet } from './colossusfacet.js';
 import { buildVeinWeaverFacet } from './veinweaverfacet.js';
-import { facetOn } from '../facet/flags.js';
-import { buildThornmother, buildMillwheel, buildLichram } from './slice2.js';
-import { buildCantor, buildColossus } from './heart.js';
 import { buildHush, buildSkyhorn, buildHourwarden } from './spire.js';
 import { buildFounder, buildCinderback } from './kiln.js';
-import { buildGloamWolf, buildMireKing, buildAshRaven, buildVeinWeaver } from './third.js';
 import { createTelegraphShapes } from '../enemies/shapes.js';
 import { makeQuakeRing, makeQuakeBurst } from './quake.js';
 import { releaseTree } from '../geocache.js';
@@ -62,10 +53,8 @@ import { hitNode, resetNode, measureBody, createReaction, armReaction, evalReact
 
 // One rig builder per boss kind (docs/CONTENT_PLAN.md §2). Every rig shares
 // the Stag's interface: { group, setYaw, setFlash, pose }.
-// The Barrow Wyrm and the Level I bosses play the model standard
-// (docs/MODEL_STANDARD.md) unless `?facet=` (harness only) or MODEL_STANDARD
-// asks for the classic rig.
-const BUILDERS = { stag: facetOn('stag') ? buildStagFacet : buildStag, heron: facetOn('heron') ? buildHeronFacet : buildHeron, wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother, millwheel: facetOn('millwheel') ? buildMillwheelFacet : buildMillwheel, lichram: facetOn('lichram') ? buildLichramFacet : buildLichram, cantor: facetOn('cantor') ? buildCantorFacet : buildCantor, colossus: facetOn('colossus') ? buildColossusFacet : buildColossus, gloamwolf: facetOn('gloamwolf') ? buildGloamWolfFacet : buildGloamWolf, mireking: facetOn('mireking') ? buildMireKingFacet : buildMireKing, ashraven: facetOn('ashraven') ? buildAshRavenFacet : buildAshRaven, veinweaver: facetOn('veinweaver') ? buildVeinWeaverFacet : buildVeinWeaver, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
+// The bosses of Levels I to IV play the model standard (docs/MODEL_STANDARD.md).
+const BUILDERS = { stag: buildStagFacet, heron: buildHeronFacet, wyrm: buildWyrmFacet, thornmother: buildThornmotherFacet, millwheel: buildMillwheelFacet, lichram: buildLichramFacet, cantor: buildCantorFacet, colossus: buildColossusFacet, gloamwolf: buildGloamWolfFacet, mireking: buildMireKingFacet, ashraven: buildAshRavenFacet, veinweaver: buildVeinWeaverFacet, hush: buildHush, skyhorn: buildSkyhorn, hourwarden: buildHourwarden, founder: buildFounder, cinderback: buildCinderback };
 const isBossBody = (e) => e.kind === 'stag' || e.boss === true;
 const YAW_RATE = 7;
 const WALK_HZ = 2.2;
@@ -101,7 +90,6 @@ const BOSS_CAM = {
   clampZmin: -4.0,
   clampZmax: 5.0,
 };
-const CAM_OFF_Z = CAMERA.distance * Math.cos((CAMERA.elevationDeg * Math.PI) / 180);
 const clamp = (v, lo, hi) => (v < lo ? lo : v > hi ? hi : v);
 
 export function createBossLayer({ stage, world, bus, cosmetic }) {

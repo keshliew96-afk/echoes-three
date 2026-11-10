@@ -37,7 +37,6 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 
 const { Box3, Color, Group, Matrix4, Vector3 } = await import('three');
 const { FACET_HEROES } = await import('../src/render/facet/heroes.js');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FRAME, LUNGE_PITCH_MAX, leanOf, RECOIL, SHOT, SPAWN, SPAWN_SEC, LEAD, LAG, shotAt } = await import('../src/render/facet/hero.js');
 const { createCritter } = await import('../src/render/critters/index.js');
 const { ALLY_CLASSES } = await import('../src/sim/allies.js');
@@ -58,8 +57,8 @@ const check = (label, ok, info = '') => {
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const DT = 1 / 60;
 
-function rigOf(id, facet = true) {
-  const c = createCritter(id, { facet });
+function rigOf(id) {
+  const c = createCritter(id);
   const world = new Group();
   world.add(c.group);
   return { c, world, rig: c.lab ? c.lab.parts.torso.parent : null };
@@ -165,8 +164,6 @@ for (const H of FACET_HEROES) {
     run(R, Math.round((H.hits[0].move.duration + 0.2) / DT));
     const afterLapse = R.c.comboHitOf({ k: 2 });
     check('comboHitOf counts 1-2-3 then over, once per event; a skill or a lapse restarts it', seq.join('') === '11223311' && afterSkill === 1 && afterLapse === 1, { seq: seq.join(''), afterSkill, afterLapse });
-    const classic = createCritter(H.id, { facet: false });
-    check('comboHitOf is 0 on the classic rig', classic.comboHitOf({}) === 0);
   }
 
   // --- 3. the blow -----------------------------------------------------------
@@ -761,14 +758,6 @@ for (const H of FACET_HEROES) {
     check('no Ember or Violet on the rig', ember.length === 0 && violet.length === 0, { ember, violet });
     check(H.id === 'healer' ? 'Bright Heal only on her gem (it heals)' : 'no Bright Heal on the rig', heal.length === 0, heal);
     check('no body material in the amber family', amb.length === 0, amb);
-  }
-  {
-    const q = (s) => new URLSearchParams(s);
-    check('the model standard plays this hero by default', MODEL_STANDARD[H.id] === true && facetOn(H.id, q('')));
-    check('?facet=0 turns it classic, ?facet=<other> leaves it classic', !facetOn(H.id, q('facet=0')) && !facetOn(H.id, q('facet=wyrm')) && facetOn(H.id, q(`facet=${H.id}`)));
-    const classic = createCritter(H.id, { facet: false });
-    const faceted = createCritter(H.id, { facet: true });
-    check('the classic rig still builds beside the faceted one', classic.modelStandard === false && classic.lab === null && faceted.modelStandard === true);
   }
 }
 

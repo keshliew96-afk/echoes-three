@@ -17,10 +17,8 @@
 //     instrument is drawn by InkOverlayPass below, AFTER UnrealBloomPass, so
 //     the band lands on the exact §19.1 Parchment hex instead of clipping to
 //     white and blooming the downed body out.
-//   - ally kit ground_aoe zones (Ground Crack / Caltrops / Detonating Charge)
-//     as layered discs + rim + motes, in the party's Parchment/Hearth Amber
-//     damage family (§19.4 — never Ember, which is enemy-only, and never
-//     Bright Heal, which is heal-only)
+//   - (ally kit zones: the template layer's held circle,
+//     render/vfx/templates.js "zone circles")
 //   - melee-arc swipe wedges and nova rings for ally attacks, so every ally
 //     hit is a >=3-layer event (core + glow + particles) like the player's
 //
@@ -46,14 +44,13 @@ import { Pass } from 'three/addons/postprocessing/Pass.js';
 import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 import { PALETTE } from '../../data/palette.js';
 import { TICK_HZ } from '../../core/constants.js';
-import { makeGlowSprite } from '../glow.js';
-import { sharedGeo, releaseTree } from '../geocache.js';
+import { createFxPool } from '../fxpool.js';
+import { sharedGeo } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { createCritter, FALL_ANGLE } from '../critters/index.js';
 import { registerHeroRig } from '../critters/rigs.js';
 import { exactColor, exactHex, makeSwingSmear } from '../critters/common.js';
-import { ALLY_CLASSES, ALLY_KITS, REVIVE } from '../../sim/allies.js';
-import { vfxClassStyle } from '../../data/vfx.js';
+import { ALLY_CLASSES, REVIVE } from '../../sim/allies.js';
 import { impactFx } from '../vfx/hub.js';
 import { renderHold } from '../hold.js';
 import { cap, onHintsChange } from '../../app/controls.js';
@@ -378,15 +375,15 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     const by = ev.attacker != null ? byId(ev.attacker) : null;
     if (by && by.kind === 'ally') critters.get(by.classId)?.cue('connect', ev);
   });
-  // The sim froze the world: every model-standard hero holds (its attacker
-  // holds at its own contact instead). The classic rigs never listen.
+  // The sim froze the world: every hero holds (its attacker holds at its
+  // own contact instead).
   bus.on('hitstop', (ev) => {
-    for (const c of critters.values()) if (c.modelStandard) c.cue('hitstop', ev);
+    for (const c of critters.values()) c.cue('hitstop', ev);
   });
-  // A room entry: each model-standard hero grows in (B7) on the run's first
-  // room only (the rig ignores the rest until a new run resets it).
+  // A room entry: each hero grows in (B7) on the run's first room only (the
+  // rig ignores the rest until a new run resets it).
   bus.on('room_enter', () => {
-    for (const c of critters.values()) if (c.modelStandard) c.cue('spawn');
+    for (const c of critters.values()) c.cue('spawn');
   });
   // §17 "interrupt = reverse drain at 2x speed". The SIM's drain record is the
   // only arc when nothing restarts (a reviver forced to walk away), but a
@@ -406,19 +403,6 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     if (pct > 0) drains.set(ev.target, Math.max(drains.get(ev.target) ?? 0, pct));
   });
   bus.on('revive', (ev) => drains.delete(ev.target));
-  bus.on('azone_tick', (ev) => {
-    const rig = zoneRigs.get(ev.id);
-    if (!rig) return;
-    rig.pulseT = 0.35;
-    spawnRing(rig.g.position.x, rig.g.position.z, {
-      from: 0.25,
-      to: rig.radius,
-      life: 0.3,
-      opacity: 0.6,
-      color: rig.glow,
-    });
-    spawnMotes(rig.g.position.x, rig.g.position.z, { count: 5, spread: rig.radius * 0.8, color: rig.glow });
-  });
   bus.on('revive', (ev) => {
     const m = byId(ev.target);
     if (!m) return;
@@ -601,99 +585,30 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     return g;
   }
 
-  // ----------------------------------------------------------- ally zones --
-  // §19.4 AoE grammar: layered translucent discs + rim + particles. Party
-  // damage family = Parchment core over a Hearth Amber glow.
-  const zoneRigs = new Map(); // azone id -> { g, radius, pulseT, moteClock }
-  // VFX redesign: a zone wears its caster's class signature (Tank Forge
-  // Steel, Swordsman Fox Crimson, Archer Wind Jade) instead of the shared
-  // Hearth Amber, so whose ground it is reads at a glance.
-  function makeZoneRig(radius, classId = null) {
-    const vs = vfxClassStyle(classId);
-    const AMBER = vs.glow;
-    const PARCH = vs.id === 'swordsman' ? vs.second : vs.core;
-    const g = new Group();
-    // Shared per radius (F1): an ally AoE rig is built per sim zone and dropped
-    // when it expires, so these three discs used to leak on every kit cast.
-    // fix-CAMPAIGN-r6 (GC.6): UNIT discs scaled to the radius (a radius-keyed
-    // cache minted 3 GL geometries for every new radius a build reached).
-    const fill = new Mesh(sharedGeo('ally-zone-fill:unit', () => new CircleGeometry(1, 36)), flatMat(AMBER, 0.14, true));
-    fill.scale.set(radius, radius, 1);
-    fill.rotation.x = -Math.PI / 2;
-    fill.renderOrder = -6;
-    g.add(fill);
-    const inner = new Mesh(sharedGeo('ally-zone-inner:unit', () => new CircleGeometry(1, 28)), flatMat(PARCH, 0.16, true));
-    inner.scale.set(radius * 0.5, radius * 0.5, 1);
-    inner.rotation.x = -Math.PI / 2;
-    inner.position.y = 0.004;
-    inner.renderOrder = -6;
-    g.add(inner);
-    const rim = new Mesh(sharedGeo('ally-zone-rim:unit', () => new RingGeometry(0.9, 1, 40)), flatMat(AMBER, 0.6, true));
-    rim.scale.set(radius, radius, 1);
-    rim.rotation.x = -Math.PI / 2;
-    rim.position.y = 0.006;
-    rim.renderOrder = -5;
-    rim.name = 'rim';
-    g.add(rim);
-    const halo = makeGlowSprite({ color: AMBER, size: radius * 2.2, opacity: 0.22 });
-    halo.position.y = 0.22;
-    g.add(halo);
-    return g;
-  }
-
   // -------------------------------------------------------------- FX pools --
-  const flashes = [];
-  const flashPool = [];
-  function spawnFlash(x, y, z, { color = PARCH, size = 0.4, opacity = 0.9, life = 0.24, grow = 0.4 } = {}) {
-    const s = flashPool.pop() ?? makeGlowSprite({ color, size: 1, opacity });
-    s.material.color.set(color);
-    s.material.opacity = opacity;
-    s.scale.set(size, size, 1);
-    s.position.set(x, y, z);
-    root.add(s);
-    flashes.push({ s, age: 0, life, size, grow, opacity });
-  }
-
-  const motes = [];
-  const motePool = [];
-  function spawnMotes(x, z, { color = AMBER, count = 6, spread = 0.35, y = 0.3 } = {}) {
-    for (let i = 0; i < count; i++) {
-      const s = motePool.pop() ?? makeGlowSprite({ color, size: 0.16, opacity: 0.9 });
-      s.material.color.set(color);
-      s.material.opacity = 0.9;
-      s.scale.set(0.16, 0.16, 1);
-      const a = cosmetic.range(0, Math.PI * 2);
-      const r = cosmetic.range(0, spread);
-      s.position.set(x + Math.cos(a) * r, y, z + Math.sin(a) * r);
-      root.add(s);
-      motes.push({
-        s,
-        age: 0,
-        life: cosmetic.range(0.28, 0.6),
-        vy: cosmetic.range(0.4, 0.95),
-        vx: cosmetic.range(-0.2, 0.2),
-        vz: cosmetic.range(-0.2, 0.2),
-      });
-    }
-  }
-
-  const rings = [];
-  const ringPool = [];
-  function spawnRing(x, z, { from = 0.25, to = 1.2, life = 0.34, opacity = 0.75, color = AMBER } = {}) {
-    const m = ringPool.pop() ?? (() => {
-      // fix-CAMPAIGN-r6 (GC.6): one shared unit ring — a pooled record adds no GL geometry
-      const mm = new Mesh(sharedGeo('ally-ring-unit', () => new RingGeometry(0.87, 1.0, 40)), flatMat(AMBER, opacity, true));
-      mm.rotation.x = -Math.PI / 2;
-      mm.renderOrder = -4;
-      return mm;
-    })();
-    m.material.color.set(color);
-    m.material.opacity = opacity;
-    m.position.set(x, 0.032, z);
-    m.scale.set(from, from, 1);
-    root.add(m);
-    rings.push({ m, age: 0, life, from, to, opacity });
-  }
+  // Flashes, motes and ground rings: the shared pool (src/render/fxpool.js)
+  // with this layer's look (square flash fade, linear ring growth).
+  const fx = createFxPool({
+    root,
+    cosmetic,
+    flashFade: 2,
+    ringEase: 'linear',
+    defaults: {
+      flash: { color: PARCH, size: 0.4, opacity: 0.9, life: 0.24, grow: 0.4 },
+      motes: { color: AMBER, count: 6, spread: 0.35, y: 0.3, size: [0.16, 0.16], life: [0.28, 0.6], vy: [0.4, 0.95], drift: 0.2 },
+      ring: { color: AMBER, from: 0.25, to: 1.2, life: 0.34, opacity: 0.75, width: 0.13, y: 0.032 },
+    },
+    // fix-CAMPAIGN-r6 (GC.6): one shared unit ring; a pooled record adds no GL geometry
+    ringMesh: (width, color, opacity) => {
+      const m = new Mesh(sharedGeo('ally-ring-unit', () => new RingGeometry(0.87, 1.0, 40)), flatMat(color, opacity, true));
+      m.rotation.x = -Math.PI / 2;
+      m.renderOrder = -4;
+      return m;
+    },
+  });
+  const spawnFlash = fx.flash;
+  const spawnMotes = fx.motes;
+  const spawnRing = fx.ring;
 
   // Melee-arc swipe: a wedge sized from the EVENT's reach/half-angle (the sim
   // sends the §7 table row, so nothing is re-typed here), plus a core flash
@@ -775,13 +690,6 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
   let inkWarmFrames = 0;
   function prewarm() {
     warmed = true;
-    // One zone per kit ground_aoe radius: the discs are shared per radius, so
-    // this also uploads each radius' geometry once.
-    const zoneRadii = new Set();
-    for (const kit of Object.values(ALLY_KITS))
-      for (const s of kit) if (s.shape === 'ground_aoe' && s.area) zoneRadii.add(s.area);
-    if (zoneRadii.size === 0) zoneRadii.add(0.7);
-    for (const r of zoneRadii) warmPark(root, makeZoneRig(r));
     const smear = makeSwingSmear();
     smear.visible = true; // uOpacity stays 0: drawn, never seen
     warmPark(root, smear);
@@ -846,8 +754,8 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       else if (st.castLeft > 0) c.setAnim('cast', st.castLeft > CAST_HOLD - Math.max(rdt, 1e-6) * 2 ? CAST_PHASE : undefined);
       else c.setAnim(simSpeed > MOVE_EPS ? 'walk' : 'idle');
 
-      // a model-standard hero holds itself on the hitstop cue (see arena.js)
-      if (!adopted) c.update(c.modelStandard ? dt : rdt);
+      // a hero holds itself on the hitstop cue (see arena.js)
+      if (!adopted) c.update(dt);
     }
     if (seen.size) for (const [cls, c] of critters) if (!seen.has(cls) && c.group.visible) c.group.visible = false;
 
@@ -933,79 +841,8 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
     // ink-scene programs at boot instead of on the first downed body.
     if (inkPass) inkPass.enabled = reviveRigs.size > 0 || inkWarmFrames > 0;
 
-    // --- ally kit zones synced to sim `azone` entities.
-    const seenZones = new Set();
-    for (const e of world.entities()) {
-      if (e.kind !== 'azone') continue;
-      seenZones.add(e.id);
-      let rig = zoneRigs.get(e.id);
-      if (!rig) {
-        rig = { g: makeZoneRig(e.radius, e.classId), radius: e.radius, pulseT: 0, moteClock: 0, glow: vfxClassStyle(e.classId).glow };
-        rig.g.position.set(e.x, 0.012, e.z);
-        root.add(rig.g);
-        zoneRigs.set(e.id, rig);
-      }
-      rig.pulseT = Math.max(0, rig.pulseT - dt);
-      const flare = rig.pulseT / 0.35;
-      const rim = rig.g.getObjectByName('rim');
-      rim.material.opacity = 0.45 + 0.4 * flare + 0.08 * Math.sin(tSec * 3.1);
-      rig.moteClock += dt;
-      if (rig.moteClock > 0.35) {
-        rig.moteClock = 0;
-        spawnMotes(e.x, e.z, { count: 2, spread: rig.radius * 0.85, color: rig.glow });
-      }
-    }
-    for (const [id, rig] of zoneRigs) {
-      if (!seenZones.has(id)) {
-        root.remove(rig.g);
-        releaseTree(rig.g); // discs are shared; the three materials are this zone's
-        zoneRigs.delete(id);
-      }
-    }
-
     // --- pools tick down.
-    for (let i = flashes.length - 1; i >= 0; i--) {
-      const f = flashes[i];
-      f.age += dt;
-      const k = f.age / f.life;
-      if (k >= 1) {
-        root.remove(f.s);
-        flashPool.push(f.s);
-        flashes.splice(i, 1);
-        continue;
-      }
-      const s = f.size * (1 + f.grow * k);
-      f.s.scale.set(s, s, 1);
-      f.s.material.opacity = f.opacity * (1 - k * k);
-    }
-    for (let i = motes.length - 1; i >= 0; i--) {
-      const m = motes[i];
-      m.age += dt;
-      if (m.age >= m.life) {
-        root.remove(m.s);
-        motePool.push(m.s);
-        motes.splice(i, 1);
-        continue;
-      }
-      m.s.position.x += m.vx * dt;
-      m.s.position.y += m.vy * dt;
-      m.s.position.z += m.vz * dt;
-      m.s.material.opacity = 0.9 * (1 - m.age / m.life);
-    }
-    for (let i = rings.length - 1; i >= 0; i--) {
-      const r = rings[i];
-      r.age += dt;
-      const k = r.age / r.life;
-      if (k >= 1) {
-        root.remove(r.m);
-        ringPool.push(r.m);
-        rings.splice(i, 1);
-        continue;
-      }
-      const s = r.from + (r.to - r.from) * k;
-      r.m.scale.set(s, s, 1);
-      r.m.material.opacity = r.opacity * (1 - k);
-    }
+    fx.update(dt);
     for (let i = wedges.length - 1; i >= 0; i--) {
       const w = wedges[i];
       w.age += dt;
@@ -1155,25 +992,18 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       inkPass: inkPass ? stage.composer.passes.indexOf(inkPass) : -1,
       inkPassEnabled: inkPass ? inkPass.enabled : false,
       inkPasses: stage.composer?.passes?.map((p) => p.constructor.name) ?? [],
-      zones: zoneRigs.size,
       wedges: wedges.length,
-      motes: motes.length,
+      motes: fx.counts().motes,
       adopted,
       rigs: [...critters.keys()],
       anims: [...critters.entries()].map(([k, c]) => `${k}:${c.getAnim()}`),
     };
   }
 
-  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the sim: kit zones are
-  // keyed by entity id (drop them silently, update() rebuilds), the revive
+  // @gnt:M2 RESTORE-RESYNC begin — a load replaces the sim: the revive
   // rings and their reverse-drain memory belong to the moment that left.
   // The four critters are keyed by class and simply follow the new bodies.
   bus.on('state_restored', () => {
-    for (const rig of zoneRigs.values()) {
-      root.remove(rig.g);
-      releaseTree(rig.g);
-    }
-    zoneRigs.clear();
     drains.clear();
     for (const g of reviveRigs.values()) {
       inkRoot.remove(g);
@@ -1204,18 +1034,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
         if (o.geometry && !o.isSprite && !o.geometry.userData?.shared) o.geometry.dispose();
       });
     }
-    for (const f of flashes.splice(0)) {
-      root.remove(f.s);
-      flashPool.push(f.s);
-    }
-    for (const m of motes.splice(0)) {
-      root.remove(m.s);
-      motePool.push(m.s);
-    }
-    for (const r of rings.splice(0)) {
-      root.remove(r.m);
-      ringPool.push(r.m);
-    }
+    fx.clear();
     for (const w of wedges.splice(0)) {
       root.remove(w.g);
       wedgePool.get(w.key).push(w.g);

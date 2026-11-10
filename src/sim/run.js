@@ -423,7 +423,6 @@ export function createRunSystem({
   // (or the autopilot's Healer) breaks it open while the fight is on.
   const secrets = createSecretSystem({ registry, events, getTick });
   const humanSeat = (seat) => seat === 0 || controllers()[seat] === 'human';
-  const wallBody = () => registry.all().find((e) => e.kind === 'secret_wall');
   events.on('wall_blow', (ev) => {
     if (!active || !secrets.shut() || phase !== 'combat') return;
     const by = ev.attacker != null ? registry.byId(ev.attacker) : null;

@@ -28,29 +28,11 @@ import { Color, Group, Vector3 } from 'three';
 import { CLASS_ACCENTS } from '../../data/palette.js';
 import { groundRing, groundShadow, desatTarget, setInkViewport } from './common.js';
 import { createPoseDriver, CLIPS } from './driver.js';
-import { buildHealer } from './healer.js';
-import { buildTank } from './tank.js';
 import { FACET_HERO } from '../facet/heroes.js';
 import { FALL_ANGLE } from '../facet/hero.js';
-import { facetOn } from '../facet/flags.js';
-import { buildSwordsman } from './swordsman.js';
-import { buildArcher } from './archer.js';
-import { buildTidecaller } from './tidecaller.js';
-import { buildBellwright } from './bellwright.js';
-import { buildDuskwing } from './duskwing.js';
 
 export { CLIPS, setInkViewport };
 export const CRITTER_CLASSES = ['healer', 'tank', 'swordsman', 'archer', 'tidecaller', 'bellwright', 'duskwing'];
-
-const BUILDERS = {
-  healer: buildHealer,
-  tank: buildTank,
-  swordsman: buildSwordsman,
-  archer: buildArcher,
-  tidecaller: buildTidecaller,
-  bellwright: buildBellwright,
-  duskwing: buildDuskwing,
-};
 
 // §10 "collapses horizontal" (rad, ~78°). It lives in the hero core so the
 // faceted rigs can read it without importing this factory (which imports them).
@@ -67,15 +49,12 @@ const CHIN_UP = 0.18; // rad (~10.3°) — presents the face to a 52° top-down 
 // Materials already owned by a critter's hit flash (see hitFlash).
 const CLAIMED = new WeakSet();
 
-// The model standard (docs/MODEL_STANDARD.md): the faceted twins of the
-// classic rigs. A twin builds unless `?facet=` (harness only) or
-// MODEL_STANDARD asks for the classic one; `facet` forces either (the lab).
-const FACETED = Object.fromEntries(Object.values(FACET_HERO).map((h) => [h.id, h.build]));
+// Each hero's model-standard rig (docs/MODEL_STANDARD.md, render/facet/heroes.js).
+const BUILDERS = Object.fromEntries(Object.values(FACET_HERO).map((h) => [h.id, h.build]));
 
-export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
+export function createCritter(classId, { cosmetic = null } = {}) {
   const build = BUILDERS[classId];
   if (!build) throw new Error(`unknown critter class: ${classId}`);
-  const twin = FACETED[classId] && (facet ?? facetOn(classId)) ? FACETED[classId] : null;
   const accent = CLASS_ACCENTS[classId];
 
   const group = new Group();
@@ -96,7 +75,7 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
     return mat;
   };
 
-  const built = (twin || build)(rig, trackAccent);
+  const built = build(rig, trackAccent);
   const M = built.metrics;
 
   // Ring sized so its bright band (0.74-0.85 of the radius) clears the widest
@@ -131,10 +110,10 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
   let lastDesat = -1;
 
   function update(dt) {
-    // A model-standard rig holds its whole update through a hitstop (the
-    // sim froze the world; docs/MODEL_STANDARD.md): the clip, the attack
-    // and the feet freeze together. The classic rigs never hold here.
-    if (built.hold) dt = built.hold(dt);
+    // The rig holds its whole update through a hitstop (the sim froze the
+    // world; docs/MODEL_STANDARD.md): the clip, the attack and the feet
+    // freeze together.
+    dt = built.hold(dt);
     t += dt;
     const P = driver.update(dt);
     const c = P.collapse;
@@ -167,8 +146,8 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
     // its prop flat against the ground instead of letting the collapse fling it
     // behind the body (round-3 F8: the healer's staff and the fox's sword both
     // vanished at the exact moment the player needs to identify who went down).
-    // The clip name lets a model-standard rig run its own attack timelines
-    // (docs/MODEL_STANDARD.md); the classic rigs ignore it.
+    // The clip name lets the rig run its own attack timelines
+    // (docs/MODEL_STANDARD.md).
     built.apply(P, t, fallSign, driver.anim);
 
     // Decals: ring grows to fit the collapsed silhouette, shadow stretches
@@ -261,38 +240,35 @@ export function createCritter(classId, { cosmetic = null, facet = null } = {}) {
           return out;
         }
       : null,
-    // Attack events for a model-standard rig (docs/MODEL_STANDARD.md): the
+    // Attack events for the rig (docs/MODEL_STANDARD.md): the
     // integrator reports each basic swing and skill cast ('basic' | 'skill',
     // with the sim event) so the rig can play its combo and ability
     // timelines, each `hit` it struck ('connect'), each `hitstop` ('hitstop':
-    // the rig holds) and each room entry ('spawn': it grows in on the run's first room). A no-op on
-    // the classic rigs.
-    cue: (kind, ev) => {
-      if (built.cue) built.cue(kind, ev);
-    },
+    // the rig holds) and each room entry ('spawn': it grows in on the run's
+    // first room).
+    cue: (kind, ev) => built.cue(kind, ev),
     // The combo hit an `ally_basic` / `basic_fire` event plays: 1, 2 or 3
-    // (3 = the finisher), 0 on a classic rig. Safe in any handler order: it
-    // plays the rig's cue itself if the rig has not heard the event yet.
-    comboHitOf: (ev) => (built.comboHitOf ? built.comboHitOf(ev) : 0),
+    // (3 = the finisher). Safe in any handler order: it plays the rig's cue
+    // itself if the rig has not heard the event yet.
+    comboHitOf: (ev) => built.comboHitOf(ev),
     // A named rig point in world space (B8: 'hand', 'tip'), or null when the
-    // rig has none. The classic Healer's staff gem is its 'tip'.
+    // rig has none.
     pointWorld: (name, out = new Vector3()) => {
-      const p = (built.points && built.points[name]) || (name === 'tip' ? built.tip : null);
+      const p = built.points[name] || (name === 'tip' ? built.tip : null);
       if (!p) return null;
       p.getWorldPosition(out);
       return out;
     },
     // Whether a move is live and before its contact hold (a swing just
     // cued, a cast on its way to release): a trace fed from the tip will
-    // have a path to draw (VFX_HIT_RULES T1). False on a classic rig.
+    // have a path to draw (VFX_HIT_RULES T1).
     moveLive: () => {
       let live = false;
-      if (built.atContact) built.atContact((a) => void (live = a));
+      built.atContact((a) => void (live = a));
       return live;
     },
-    // The model lab's handle on a model-standard rig (null on the classic).
-    lab: built.lab || null,
-    modelStandard: !!built.lab,
+    // The model lab's handle on the rig.
+    lab: built.lab,
     update,
   };
 }

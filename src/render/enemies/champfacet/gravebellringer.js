@@ -389,7 +389,7 @@ export function buildGravebellRingerFacet() {
   bellPivot.add(bellG);
   const bell = mesh(G.bell(), bellM, bellG);
   bell.material.side = DoubleSide;
-  const crown = mesh(G.crown(), bellLit, bellG);
+  mesh(G.crown(), bellLit, bellG);
   const lip = placeRow(G.lipPlate(), bellDark, 10, (i, m) => {
     const a = (i / 10) * Math.PI * 2;
     lay(m, Math.sin(a) * 0.42, -0.72, Math.cos(a) * 0.42, 0, 1, 0, 1, 1, 1, a);

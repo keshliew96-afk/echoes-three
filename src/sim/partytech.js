@@ -64,11 +64,6 @@ export function createPartyTech(ctx) {
   const caster = () => ctx.caster();
   const S = () => combat.status;
   const hostiles = () => registry.all().filter((e) => e.faction === 'hostile' && e.hittable && e.hp > 0);
-  const party = () =>
-    registry
-      .all()
-      .filter((e) => e.partyIndex !== undefined)
-      .sort((a, b) => a.partyIndex - b.partyIndex);
   const seatOfSkill = (id) => {
     const d = SKILLS[id];
     if (!d || !d.cls || d.cls === 'healer') return null;

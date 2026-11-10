@@ -11,9 +11,10 @@
 //      a strike, a short blink re-stands the feet, a foot is never drawn past
 //      its leg's reach;
 //   2. the roster: every kind of Level I's roster and campaign roster has a
-//      faceted rig, a flag, abilities and a model lab tab, and `?facet=0`
-//      hands every one back to its classic rig;
-//   3. the crowd budget: each rig draws no more calls than its classic rig;
+//      faceted rig, abilities and a model lab tab (the classic rigs
+//      and `?facet=0` were retired, AUDIT.md D1);
+//   3. the crowd budget: each rig draws no more calls than its
+//      retired classic rig did (tools/classic-foe-calls.json);
 //      its baked detail rows are shared by every copy (one buffer per kind);
 //      every instanced row carries its ink hull;
 //   4. each rig in live play (a move loop in eight directions, a spin on the
@@ -35,6 +36,8 @@
 // Exit code 1 on any failure.
 
 // The rigs paint a few canvases (glow sprites): a stub is enough.
+import fs from 'node:fs';
+
 const grad = { addColorStop() {} };
 const ctx = new Proxy({}, { get: (_, k) => (k === 'canvas' ? {} : () => grad), set: () => true });
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) };
@@ -43,12 +46,8 @@ const { Color, Vector3 } = await import('three');
 const { createTimeline, ease } = await import('../src/render/facet/timeline.js');
 const { FRAME, SPAWN_SEC, spawnScale, settle, hitTimelines, createChain, createFoeClock, createAttackWatch } = await import('../src/render/facet/foe.js');
 const { createLegs, clampReach } = await import('../src/render/facet/foelegs.js');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
-const { FACET_FOES, FOE_ABILITIES, facetFoeBuilders } = await import('../src/render/enemies/facet/index.js');
+const { FACET_FOES, FOE_ABILITIES } = await import('../src/render/enemies/facet/index.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-foes.js');
-const { buildBoar } = await import('../src/render/enemies/boar.js');
-const { buildMantis } = await import('../src/render/enemies/mantis.js');
-const { ARCH_BUILDERS } = await import('../src/render/enemies/archetypes.js');
 const { LEVELS } = await import('../src/data/levels.js');
 const { PALETTE } = await import('../src/data/palette.js');
 
@@ -59,7 +58,8 @@ const check = (label, ok, info = '') => {
 };
 const r3 = (v) => Math.round(v * 1000) / 1000;
 const DT = 1 / 60;
-const CLASSIC = { boar: buildBoar, mantis: buildMantis, ...ARCH_BUILDERS };
+// The retired classic rigs' draw calls (AUDIT.md D1), the crowd budget.
+const CLASSIC_CALLS = JSON.parse(fs.readFileSync(new URL('./classic-foe-calls.json', import.meta.url), 'utf8'));
 
 // --- 1. the foe kit ---------------------------------------------------------
 {
@@ -198,15 +198,10 @@ const ROSTER = [...Object.keys(level1.roster), ...Object.keys(level1.campaignRos
 {
   check('the Level I roster and campaign roster are the eight foes', ROSTER.length === 8, ROSTER);
   for (const kind of ROSTER) {
-    check(`${kind}: flagged on the model standard`, MODEL_STANDARD[kind] === true && facetOn(kind, new URLSearchParams('')));
     check(`${kind}: a faceted rig and its abilities`, typeof FACET_FOES[kind] === 'function' && FOE_ABILITIES[kind] && Object.keys(FOE_ABILITIES[kind]).length > 0);
     check(`${kind}: a model lab tab with every ability`, !!LAB_ENTRIES.find((e) => e.id === kind && e.abilities.length === Object.keys(FOE_ABILITIES[kind] || {}).length));
-    check(`${kind}: a classic rig kept beside it`, typeof CLASSIC[kind] === 'function');
+    check(`${kind}: a classic draw budget on file`, Number.isInteger(CLASSIC_CALLS[kind]));
   }
-  const off = facetFoeBuilders(new URLSearchParams('facet=0'));
-  check('?facet=0 hands every foe back to its classic rig', Object.keys(off).length === 0);
-  const only = facetFoeBuilders(new URLSearchParams('facet=boar'));
-  check('?facet=boar facets the boar alone', Object.keys(only).join() === 'boar');
 }
 
 // --- helpers ----------------------------------------------------------------
@@ -363,11 +358,10 @@ for (const kind of ROSTER) {
   if (!build) continue;
   const abilities = FOE_ABILITIES[kind];
   const rig = build();
-  const classic = CLASSIC[kind]();
 
   // 3. the crowd budget
   const a = drawCalls(rig.group);
-  const b = drawCalls(classic.group);
+  const b = { calls: CLASSIC_CALLS[kind] };
   check(`${kind}: draws no more calls than its classic rig`, a.calls <= b.calls, { faceted: a, classic: b });
   const twin = build();
   const shared = [];

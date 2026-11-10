@@ -99,11 +99,11 @@ const hueGap = (a, b) => {
 };
 
 // A fight: the healer (you), a blade hero ally with its live rig, a boar.
-function fight(cls, { facet = true, register = true } = {}) {
+function fight(cls, { register = true } = {}) {
   const stage = { scene: new Scene(), camera: new PerspectiveCamera() };
   const bus = createEventBus();
   const cosmetic = createCosmeticRng();
-  const rig = createCritter(cls, { cosmetic, facet });
+  const rig = createCritter(cls, { cosmetic });
   const root = new Group();
   root.add(rig.group);
   stage.scene.add(root);
@@ -149,9 +149,8 @@ function fight(cls, { facet = true, register = true } = {}) {
   for (let i = 0; i < 30; i++) rig.update(DT);
   check('1: ...and at rest again after the swing', heroRigMoving('swordsman') === false);
   check('1: no rig for an unregistered class', heroRig('healer') === null && heroRigPoint('healer', 'tip', v) === null && heroRigMoving('healer') === false);
-  const classic = createCritter('swordsman', { cosmetic: createCosmeticRng(), facet: false });
-  check('1: a classic rig has no named points and no move', classic.pointWorld('hand', v) === null && classic.moveLive() === false);
-  unregisterHeroRig('swordsman', classic);
+  const other = createCritter('swordsman', { cosmetic: createCosmeticRng() });
+  unregisterHeroRig('swordsman', other);
   check('1: unregistering another instance leaves the live rig', heroRig('swordsman') === rig);
   unregisterHeroRig('swordsman');
   check('1: unregistered', heroRig('swordsman') === null);
@@ -195,17 +194,11 @@ function fight(cls, { facet = true, register = true } = {}) {
     check(`T1 ${cls}: the trace is gone within 0.8 s`, F.traces().every((m) => !m.visible), F.counts().tpl.traces);
     unregisterHeroRig(cls);
   }
-  // the fallback: no rig, a classic rig, a rig at rest
+  // the fallback: no rig, a rig at rest
   {
     const F = fight('swordsman', { register: false });
     F.swing();
     check('T1: a swing with no registered rig plays the procedural arc with its glint and afterimages', F.rec('blade_trace') === 0 && F.rec('blade_swing') === 1 && F.counts().tpl.blazes === 3 && F.counts().tpl.traces === 0);
-  }
-  {
-    const F = fight('swordsman', { facet: false });
-    F.swing();
-    check('T1: a classic rig plays the procedural arc', F.rec('blade_trace') === 0 && F.counts().tpl.blazes === 3 && F.counts().tpl.traces === 0);
-    unregisterHeroRig('swordsman');
   }
   {
     const F = fight('swordsman');

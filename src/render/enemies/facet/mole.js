@@ -83,21 +83,17 @@ const BURSTS = [
   { label: 'the right claw rakes up', coil: UNDER, strike: S2, over: O2 },
   { label: 'both claws, a leap', coil: UNDER, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const MOLE_REST = REST;
-export const MOLE_BURSTS = Object.freeze(BURSTS);
 
 const BURST_TL = strikeTimeline('emerge', 'Emergence', {
   tel: EMERGE_TEL_SEC,
   rest: 0.3,
   labels: { coil: 'coil (the ring telegraph): the mound quakes, the mole under', strike: 'the burst', hold: 'contact: up out of the earth, claws spread', snap: 'lands on its feet', settle: 'settle, surfaced' },
 });
-const CONTACT_AT = BURST_TL.startOf('hold');
 export function moleBurstPose(v, t, out = { ...REST }) {
   return strikePoseAt(BURST_TL, BURSTS[v] || BURSTS[0], REST, FIELDS, t, out);
 }
-const classicBurst = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { burrowed: tt < CONTACT_AT, mode: tt < CONTACT_AT ? 'emerging' : 'surfaced' } });
-export const MOLE_EMERGE = strikeAbility({ id: 'emerge', label: 'Emergence', tl: BURST_TL, variants: BURSTS, classic: classicBurst });
-export const MOLE_EMERGES = strikeAbility({ id: 'emerges', label: 'Emergence string', tl: BURST_TL, variants: BURSTS, n: 3, gap: BURST_TL.duration, classic: classicBurst });
+export const MOLE_EMERGE = strikeAbility({ id: 'emerge', label: 'Emergence', tl: BURST_TL, variants: BURSTS });
+export const MOLE_EMERGES = strikeAbility({ id: 'emerges', label: 'Emergence string', tl: BURST_TL, variants: BURSTS, n: 3, gap: BURST_TL.duration });
 // The dig back in: nose down, the claws rake in turn, the body sinks.
 const DIG_TL = createTimeline('dig', 'Dig in', [
   { id: 'nose', label: 'nose down', dur: 0.15 },
@@ -130,7 +126,6 @@ export const MOLE_DIG = Object.freeze({
     return { t: s.t, phase: s.id, label: `Dig in: ${s.label}` };
   },
   cues: [{ at: DIG_TL.startOf('rake'), id: 'dig' }],
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { burrowed: t >= DIG_TL.startOf('sink'), mode: t >= DIG_TL.startOf('sink') ? 'burrowed' : 'surfaced' } }),
 });
 export const MOLE_ABILITIES = Object.freeze({ emerge: MOLE_EMERGE, emerges: MOLE_EMERGES, dig: MOLE_DIG });
 

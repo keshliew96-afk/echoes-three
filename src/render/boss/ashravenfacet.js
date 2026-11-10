@@ -232,7 +232,6 @@ const G = {
 };
 
 const _m = new Matrix4();
-const _a = new Vector3();
 // a bird's leg folds back at its knee
 const POLE = new Vector3(0, 0.05, -1);
 

@@ -19,7 +19,7 @@
 // thing while the store holds another (fix-M1-r5, MENU-R5-F1: the "Socket my
 // new nodes" line stayed at its boot value all session).
 import { settingsRows } from '../../../app/registry.js';
-import { t, LANGUAGES, LANGUAGE_KEY, getLanguage, applyLanguage } from '../../../i18n/index.js';
+import { t, LANGUAGES, getLanguage, applyLanguage } from '../../../i18n/index.js';
 
 export function buildGameplayTab(ctx) {
   const { settings, widgets, app } = ctx;

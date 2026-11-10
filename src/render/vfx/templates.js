@@ -95,12 +95,12 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
       camfx.dolly(x, z, 0.03, 0.25);
     });
   }
-  // A spell placed at a spot: a beam strikes down out of the sky onto a
-  // circle that opens there, a burst and a stardust fountain.
+  // A spell placed at a spot: a beam strikes down out of the sky onto the
+  // zone's circle (drawn by the zone itself, below), a burst and a stardust
+  // fountain.
   function magicZone(tp, x, z, r) {
     fire('magic_zone');
     const R = Math.min(3, Math.max(0.7, r));
-    tk.circle({ x, z, radius: R, face: 'arcane', outer: tp.a, inner: tp.b, life: 1.2, spin: 1.2, opacity: 0.9 });
     magicGather(tp, x, z, R * 0.8);
     tk.beam({ x, z, height: 5.5, width: 0.9 + R * 0.25, core: tp.core, glow: tp.a, life: 0.6 });
     after(0.07, () => {
@@ -184,9 +184,9 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
       tk.dust(x + Math.cos(a) * r, 0.5, z + Math.sin(a) * r, 2, { color: tp.b, color2: tp.a, radius: 0.1, speed: [0.3, 0.8], up: [0.2, 0.7], size: [0.04, 0.09], life: [0.5, 1.0], gravity: -0.1, drag: 1.5, dir: { x: Math.cos(angle), z: Math.sin(angle) }, dirBias: 0.8, delay: (r / reach) * 0.2 });
     }
   }
-  // A zone pulse: the circle breathes and a little stardust lifts off it.
+  // A zone pulse: the zone's circle flares (zoneTick) and a little stardust
+  // lifts off it.
   function magicTick(tp, x, z, r) {
-    tk.circle({ x, z, radius: Math.min(2.6, r), face: 'arcane', outer: tp.a, inner: tp.b, life: 0.55, spin: 1.2, opacity: 0.45, grow: 0.12 });
     tk.dust(x, 0.15, z, 5, { color: tp.b, color2: tp.a, radius: r * 0.7, speed: [0.02, 0.15], up: [0.4, 1.0], size: [0.04, 0.08], life: [0.7, 1.2], gravity: -0.15, drag: 1.2 });
   }
   // A kill by a spell: the light goes up out of it.
@@ -312,7 +312,6 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   // raining): it lands as an explosion with a fire ring.
   function bladeZone(tp, x, z, r, { rain = false } = {}) {
     fire('blade_zone');
-    tk.circle({ x, z, radius: r, face: 'sun', outer: tp.b, inner: tp.core, life: 0.8, spin: 2, opacity: 0.7 });
     after(0.06, () => bladeBlast(tp, x, z, 0.6 + r * 0.35, { kick: 0.02, dir: { x: 0, z: 1 } }));
     tk.blaze({ x, z, ring: true, radius: r, width: 0.36, life: 0.5, mode: 'fire', core: tp.core, a: tp.a, b: tp.deep, y: 0.12, lift: 0.25, delay: 0.06, gain: 1.3 });
     if (rain) {
@@ -418,9 +417,9 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     tk.dust(x, 0.4, z, tp.dust.hit, { tex: 'square', color: tp.a, color2: tp.b, radius: 0.3, speed: [0.05, 0.3], up: [0.4, 1.2], size: [0.05, 0.08], life: [0.5, 1.0], gravity: -0.2, drag: 1.8, twinkle: 40 });
     tk.sparks(x, 0.5, z, 8, { color: tp.a, color2: tp.b, speed: [3, 6], up: [0, 1], life: [0.1, 0.2], gravity: 0, len: 0.03 });
   }
-  function scifiCast(tp, x, z, r) {
+  function scifiCast(tp, x, z, r, { circle = true } = {}) {
     fire('scifi_cast');
-    tk.circle({ x, z, radius: r, face: 'hex', outer: tp.a, inner: tp.b, life: 1.0, spin: 0.9 });
+    if (circle) tk.circle({ x, z, radius: r, face: 'hex', outer: tp.a, inner: tp.b, life: 1.0, spin: 0.9 });
     tk.beam({ x, z, height: 3.6, width: 0.4, core: tp.core, glow: tp.a, life: 0.5 });
     tk.dust(x, 0.2, z, tp.dust.cast, { tex: 'square', color: tp.a, color2: tp.b, radius: r * 0.8, speed: [0, 0.1], up: [0.6, 1.6], size: [0.05, 0.09], life: [0.8, 1.4], gravity: 0, drag: 0.5, twinkle: 40 });
     tk.blast({ x, y: 0.6, z, size: 1.6, mode: 'holo', core: tp.core, a: tp.a, b: tp.b, life: 0.4, delay: 0.05 });
@@ -436,7 +435,62 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   // Per frame (T1): feed every live trace the rig's hand and tip; the
   // first frame the tip sweeps faster than TRACE_FX.strikeSpeed is the
   // strike frame, where the glint and the shards fire at the tip.
-  function frame(dt) {
+  // ------------------------------------------------------- zone circles --
+  // Every lasting area skill (a sim `zone` from the skill bar, an `azone` from
+  // a hero's kit) shows its template's circle as its AOE indicator: it opens
+  // when the zone spawns, sits exactly on the zone's radius for the zone's
+  // whole life, flares on each zone tick, and fades when the zone is gone.
+  // Arcane runes for magic, the flame ring for blades, the hexagon for sci-fi;
+  // a healing zone keeps Bright Heal (toneFor).
+  const ZONE_CIRCLE = Object.freeze({ opacity: 0.6, spin: 0.9, dustSec: 0.3 });
+  const zoneCircles = new Map(); // zone id -> { s, tok, tp, dust }
+  function zoneTone(e) {
+    const cls = e.classId ?? classOf(byId(e.sourceId)) ?? vfxSkillClass(e.skill);
+    return toneFor(cls, e.skill);
+  }
+  function openZoneCircle(e) {
+    const tp = zoneTone(e);
+    const face = tp.id === 'blade' ? 'sun' : tp.id === 'scifi' ? 'hex' : 'arcane';
+    const blade = tp.id === 'blade';
+    const s = tk.circle({ x: e.x, z: e.z, radius: e.radius, face, outer: blade ? tp.b : tp.a, inner: blade ? tp.core : tp.b, spin: ZONE_CIRCLE.spin, opacity: ZONE_CIRCLE.opacity, grow: 0, hold: true });
+    return { s, tok: s.tok, tp, dust: 0 };
+  }
+  function zoneFrame(dt, entities) {
+    const seen = new Set();
+    for (const e of entities) {
+      if ((e.kind !== 'zone' && e.kind !== 'azone') || !(e.radius > 0)) continue;
+      seen.add(e.id);
+      let z = zoneCircles.get(e.id);
+      if (!z || !tk.moveCircle(z.s, z.tok, e.x, e.z, e.radius)) {
+        z = openZoneCircle(e);
+        zoneCircles.set(e.id, z);
+      }
+      z.dust += dt;
+      if (z.dust >= ZONE_CIRCLE.dustSec) {
+        z.dust = 0;
+        const blade = z.tp.id === 'blade';
+        tk.dust(e.x + rnd(-0.7, 0.7) * e.radius, 0.12, e.z + rnd(-0.7, 0.7) * e.radius, 1, { color: blade ? z.tp.a : z.tp.b, color2: blade ? z.tp.core : z.tp.a, radius: 0.05, speed: [0.02, 0.1], up: [0.2, 0.5], size: [0.04, 0.07], life: [0.7, 1.1], gravity: -0.1, drag: 1.2 });
+      }
+    }
+    for (const [id, z] of zoneCircles) {
+      if (seen.has(id)) continue;
+      tk.endCircle(z.s, z.tok);
+      zoneCircles.delete(id);
+    }
+  }
+  function zoneTick(id) {
+    const z = zoneCircles.get(id);
+    if (z) tk.pulseCircle(z.s, z.tok);
+  }
+  bus.on('zone_tick', (ev) => zoneTick(ev.id));
+  // A load replaces the sim: zone ids may now name other entities.
+  bus.on('state_restored', () => {
+    for (const z of zoneCircles.values()) tk.endCircle(z.s, z.tok);
+    zoneCircles.clear();
+  });
+
+  function frame(dt, entities = null) {
+    if (entities) zoneFrame(dt, entities);
     for (let i = traced.length - 1; i >= 0; i--) {
       const r = traced[i];
       r.t += dt;
@@ -477,7 +531,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   }
   function playZone(tp, x, z, r, opts) {
     if (tp.id === 'blade') bladeZone(tp, x, z, r, opts);
-    else if (tp.id === 'scifi') scifiCast(tp, x, z, r);
+    else if (tp.id === 'scifi') scifiCast(tp, x, z, r, { circle: false });
     else magicZone(tp, x, z, r);
   }
   function playImpact(tp, x, z, dx, dz, opts) {
@@ -601,6 +655,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   bus.on('azone_tick', (ev) => {
     const zEnt = byId(ev.id);
     if (!zEnt) return;
+    zoneTick(ev.id);
     const now = (tickClock.get(ev.id) ?? 0) + 1;
     tickClock.set(ev.id, now);
     if (now % 2 === 0) return; // every other tick: a zone stays readable
@@ -664,11 +719,13 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   }
 
   function teardown() {
+    for (const z of zoneCircles.values()) tk.endCircle(z.s, z.tok);
+    zoneCircles.clear();
     side.clear();
     lastHit.clear();
     tickClock.clear();
   }
 
-  return { boltTone, showcase, teardown, frame, traced: () => traced.length, recipes: { magicCast, magicNova, magicZone, bladeSwing, bladeBlast, bladeNova, laser } };
+  return { boltTone, showcase, teardown, frame, traced: () => traced.length, zoneCircles: () => [...zoneCircles].map(([id, z]) => ({ id, radius: z.s.r, live: z.s.live && z.s.tok === z.tok, face: z.tp.id })), recipes: { magicCast, magicNova, magicZone, bladeSwing, bladeBlast, bladeNova, laser } };
 }
 

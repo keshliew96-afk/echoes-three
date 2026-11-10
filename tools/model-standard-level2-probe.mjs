@@ -3,9 +3,8 @@
 // browser. The slice rebuilds the Drowned Heron, the Millwheel and the Mire
 // King to the model standard (docs/MODEL_STANDARD.md) against the [M]
 // checklist (VFX_HIT_RULES §6.1). Visual only. This probe checks:
-//   1. the flags: the three bosses play faceted by default, `?facet=` turns
-//      them classic or picks them, and the classic rigs still build;
-//   2. every rig: the classic interface plus lab, points and react; the root
+//   1. (retired with the classic rigs and the ?facet= flag, AUDIT.md D1);
+//   2. every rig: the rig interface plus lab, points and react; the root
 //      holds the moving body in its first child and only floor pieces beside
 //      it; every instanced part inked; every vertex-coloured material on
 //      faceted geometry; its named points;
@@ -39,14 +38,10 @@ const ctx = new Proxy({}, { get: (_, k) => (k === 'canvas' ? {} : () => grad), s
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) };
 
 const { Color, Group, Vector3 } = await import('three');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FRAME, HOLD_SEC, STRIKE_SEC, SPAWN_SEC } = await import('../src/render/facet/beats.js');
 const heronM = await import('../src/render/boss/heronfacet.js');
 const millM = await import('../src/render/boss/millwheelfacet.js');
 const mireM = await import('../src/render/boss/mirekingfacet.js');
-const { buildHeron } = await import('../src/render/boss/heron.js');
-const { buildMillwheel } = await import('../src/render/boss/slice2.js');
-const { buildMireKing } = await import('../src/render/boss/third.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-bosses.js');
 const { HERON } = await import('../src/sim/bosses/heron.js');
 const { MIREKING } = await import('../src/sim/bosses/mireking.js');
@@ -60,23 +55,12 @@ const DT = 1 / 60;
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
 const BOSSES = [
-  { kind: 'heron', name: 'Drowned Heron', build: heronM.buildHeronFacet, classic: buildHeron, abilities: heronM.HERON_ABILITIES, channels: heronM.abilityChannels, walk: HERON.moveSpeed, points: ['mouth', 'tip', 'chest', 'footL', 'footR'], rest: 'stalk' },
-  { kind: 'millwheel', name: 'Millwheel', build: millM.buildMillwheelFacet, classic: buildMillwheel, abilities: millM.MILL_ABILITIES, channels: millM.abilityChannels, walk: millM.MILL_ROLL, points: ['hub', 'tip', 'chest', 'rim'], rest: 'roll' },
-  { kind: 'mireking', name: 'Mire King', build: mireM.buildMireKingFacet, classic: buildMireKing, abilities: mireM.MIRE_ABILITIES, channels: mireM.abilityChannels, walk: MIREKING.moveSpeed, points: ['mouth', 'tip', 'chest', 'sac', 'footFL', 'footFR', 'footHL', 'footHR'], rest: 'wade' },
+  { kind: 'heron', name: 'Drowned Heron', build: heronM.buildHeronFacet, abilities: heronM.HERON_ABILITIES, channels: heronM.abilityChannels, walk: HERON.moveSpeed, points: ['mouth', 'tip', 'chest', 'footL', 'footR'], rest: 'stalk' },
+  { kind: 'millwheel', name: 'Millwheel', build: millM.buildMillwheelFacet, abilities: millM.MILL_ABILITIES, channels: millM.abilityChannels, walk: millM.MILL_ROLL, points: ['hub', 'tip', 'chest', 'rim'], rest: 'roll' },
+  { kind: 'mireking', name: 'Mire King', build: mireM.buildMireKingFacet, abilities: mireM.MIRE_ABILITIES, channels: mireM.abilityChannels, walk: MIREKING.moveSpeed, points: ['mouth', 'tip', 'chest', 'sac', 'footFL', 'footFR', 'footHL', 'footHR'], rest: 'wade' },
 ];
 const LEGGED = BOSSES.filter((B) => B.kind !== 'millwheel');
 
-// --- 1. flags ----------------------------------------------------------------------
-{
-  const q = (s) => new URLSearchParams(s);
-  const kinds = BOSSES.map((B) => B.kind);
-  check('the Level II bosses play the model standard by default', kinds.every((k) => MODEL_STANDARD[k] === true && facetOn(k, q(''))));
-  check('?facet=0 turns them classic', kinds.every((k) => !facetOn(k, q('facet=0'))));
-  check('?facet=heron keeps only the Heron faceted', facetOn('heron', q('facet=heron')) && !facetOn('millwheel', q('facet=heron')) && !facetOn('mireking', q('facet=heron')));
-  check('the Level V bosses stay classic', !facetOn('hush', q('')) && !facetOn('skyhorn', q('')) && !facetOn('hourwarden', q('')));
-  const classics = BOSSES.map((B) => B.classic()).filter((r) => r && r.group && typeof r.pose === 'function' && !r.group.userData.modelStandard);
-  check('the classic rigs still build beside the faceted ones', classics.length === BOSSES.length);
-}
 
 // --- 2. the rigs -------------------------------------------------------------------
 function inkReport(root) {
@@ -102,7 +86,7 @@ function floorPiece(o) {
 for (const B of BOSSES) {
   const r = B.build();
   const iface = ['group', 'mats', 'setYaw', 'setFlash', 'pose', 'lab', 'points', 'react'].filter((k) => !(k in r));
-  check(`${B.name}: the classic interface plus lab, points and react`, iface.length === 0 && r.group.userData.modelStandard === true, iface);
+  check(`${B.name}: the rig interface plus lab, points and react`, iface.length === 0 && r.group.userData.modelStandard === true, iface);
   const body = r.group.children[0];
   let n = 0;
   body.traverse((x) => x.isMesh && n++);
@@ -611,17 +595,17 @@ for (const B of BOSSES) {
       const b = E.build({ cosmetic: null, vfx, play: () => {} });
       for (const [id] of E.abilities) {
         const tl = b.timeline(id);
-        const state = { mode: 'ability', ability: id, classic: true, movePhase: 0, t: 0 };
+        const state = { mode: 'ability', ability: id, movePhase: 0, t: 0 };
         for (let t = 0; t <= tl.duration + 0.2; t += DT) b.update(state, DT, Math.min(t, tl.duration));
         for (const c of b.cues(id)) b.onCue(c.id, { x: 0, z: 0, yaw: 0 });
       }
-      b.update({ mode: 'move', ability: E.abilities[0][0], classic: false, movePhase: 1, t: 0 }, DT, 0);
+      b.update({ mode: 'move', ability: E.abilities[0][0], movePhase: 1, t: 0 }, DT, 0);
       b.reset();
     } catch (err) {
       errs.push(`${E.id}: ${err.message}`);
     }
   }
-  check('every Level II lab entry plays every ability, with its classic twin beside', errs.length === 0, errs);
+  check('every Level II lab entry plays every ability', errs.length === 0, errs);
 }
 
 console.log(fails.length ? `\n${fails.length} FAIL` : '\nall pass');

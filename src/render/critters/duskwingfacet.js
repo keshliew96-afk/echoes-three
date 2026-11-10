@@ -181,7 +181,6 @@ const HITS = createCombo(
   ],
   { window: COMBO_WINDOW, timing: T_RAKE }
 );
-export const DUSKWING_HITS = HITS;
 
 // --- Abilities. In game a skill enters its timeline 0.08 s before its
 // entry phase (the press is instant, BUILD_BRIEF §6); the lab plays all of
@@ -360,7 +359,6 @@ export const DUSKWING_SKILL_ABILITY = Object.freeze({
 });
 const SHAPE_ABILITY = Object.freeze({ projectile: 'swarm', direct: 'bite', melee_arc: 'rake', nova: 'night', ground_aoe: 'swarm', aura: 'beat' });
 const skillAbility = (ev) => (ev && (DUSKWING_SKILL_ABILITY[ev.skill] || SHAPE_ABILITY[ev.shape])) || 'rake';
-export const DUSKWING_REST = REST;
 
 // ---------------------------------------------------------------------------
 // The rig
@@ -749,7 +747,7 @@ export const DUSKWING_SPEC = Object.freeze({
       ['beat', 'Night Wings'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.5, z: 0, dist: 3.4, speed: 2.9, loop: 2.2, side: 1.3 },
+    frame: { y: 0.5, z: 0, dist: 3.4, speed: 2.9, loop: 2.2 },
     cues: {
       strike: { sound: 'dk_nip', pitch: 1, fx: 'flash' },
       finisher: { sound: 'dk_bite', pitch: 1, fx: ['flash', 'star'], size: 1.5 },

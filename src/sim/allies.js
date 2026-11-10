@@ -1,7 +1,7 @@
 // Ally AI + the party command verbs + the downed/revive contract
 // (BUILD_BRIEF §7 ally kits, §8 mark/rally, §10 downed & revive, §12 ally AI).
 //
-// Every stat in ALLY_CLASSES / ALLY_KITS is the §7 table VERBATIM. The handful
+// Every stat in ALLY_CLASSES is the §7 table VERBATIM (the kits are SKILLS rows). The handful
 // of steering scaffolds (stand-off distance, rally arrival radius, revive
 // approach distance) are DERIVED from brief figures and labelled where they
 // appear — nothing here is invented out of thin air.
@@ -46,7 +46,7 @@
 import { TICK_HZ } from '../core/constants.js';
 import { DENIAL } from '../core/intents.js';
 import { walkStep, slipPatches } from './movement.js';
-import { clampPlacement, countFinal, clampHalfAngle, createSkillBolts, fanDirections } from './shapes.js';
+import { countFinal, clampHalfAngle, createSkillBolts } from './shapes.js';
 // Network play (M5b, docs/gauntlet/PLAN.md §3.7): human-controlled ally seats
 // share one movement / dodge model with the guest's own-seat predictor.
 import { stepHumanMove, dodgeVelocity, aimDir, DOWNED_CRAWL_SPEED, HUMAN_DODGE } from './remote.js';
@@ -61,7 +61,6 @@ import { castChoice } from './partyai.js';
 const TICK_DT = 1 / TICK_HZ;
 const r2 = (v) => Math.round(v * 100) / 100;
 const secTicks = (s) => Math.round(s * TICK_HZ);
-const CD_FLOOR_TICKS = secTicks(0.5); // §6 cooldown floor, shared with the healer kit
 const ZONE_CADENCE_TICKS = secTicks(1.0); // §6: zone cadence 1.0 s, first tick at 1.0 s
 
 // §12 leash: radius 3.4 u, re-engage only once inside 0.8 x radius.
@@ -217,46 +216,6 @@ export const ALLY_KITS = Object.freeze({
   duskwing: Object.freeze(CLASS_BASE_KIT.duskwing.map((id) => SKILLS[id])),
 });
 
-// The v0.5.150 kit table, verbatim (reference only — the SKILLS rows above
-// equal it field for field; gntPARTY-sim GP.1 checks it).
-export const ALLY_KITS_V150 = Object.freeze({
-  // Tank (badger): Heavy Slam (arc 34, 5 s, 1.00/40°, cap 3) · Brutal Cleave
-  // (arc 16/target, 4 s, 0.95/80°, cap 6) · Ground Crack (ground_aoe 10/tick,
-  // 8 s, range 2.6, radius 0.9, 4 s) · Whirling Guard (nova 20/target, 9 s,
-  // 1.3, cap 5).
-  tank: Object.freeze([
-    Object.freeze({ id: 'heavy_slam', name: 'Heavy Slam', abbrev: 'HS', shape: 'melee_arc', power: 34, cd: 5, range: 1.0, area: 40, count: 3 }),
-    Object.freeze({ id: 'brutal_cleave', name: 'Brutal Cleave', abbrev: 'BC', shape: 'melee_arc', power: 16, cd: 4, range: 0.95, area: 80, count: 6 }),
-    Object.freeze({ id: 'ground_crack', name: 'Ground Crack', abbrev: 'GC', shape: 'ground_aoe', power: 10, cd: 8, range: 2.6, area: 0.9, durationSec: 4 }),
-    Object.freeze({ id: 'whirling_guard', name: 'Whirling Guard', abbrev: 'WG', shape: 'nova', power: 20, cd: 9, area: 1.3, count: 5 }),
-  ]),
-  // Swordsman (fox): Flurry (arc 11/hit, 3 s, 0.80/60°, cap 6) · Lunge Strike
-  // (arc 26, 4 s, 1.30/30°, cap 2) · Blade Storm (nova 14/target, 7 s, 1.0,
-  // cap 5) · Caltrops (ground_aoe 8/tick, 6.5 s, range 2.0, radius 0.70, 5 s).
-  swordsman: Object.freeze([
-    Object.freeze({ id: 'flurry', name: 'Flurry', abbrev: 'FL', shape: 'melee_arc', power: 11, cd: 3, range: 0.8, area: 60, count: 6 }),
-    Object.freeze({ id: 'lunge_strike', name: 'Lunge Strike', abbrev: 'LS', shape: 'melee_arc', power: 26, cd: 4, range: 1.3, area: 30, count: 2 }),
-    Object.freeze({ id: 'blade_storm', name: 'Blade Storm', abbrev: 'BS', shape: 'nova', power: 14, cd: 7, area: 1.0, count: 5 }),
-    Object.freeze({ id: 'caltrops', name: 'Caltrops', abbrev: 'CT', shape: 'ground_aoe', power: 8, cd: 6.5, range: 2.0, area: 0.7, durationSec: 5 }),
-  ]),
-  // Archer (hare): Piercing Shot (projectile 30, 3 s, 5.5, speed 6.2) · Volley
-  // (projectile 14/bolt, 4.5 s, 4.8, count 3 fan, speed 5.4) · Detonating
-  // Charge (ground_aoe 12/tick, 7 s, range 4.2, radius 0.85, 3 s) · Sundering
-  // Nova (nova 16/target, 8 s, 1.1, cap 4).
-  archer: Object.freeze([
-    Object.freeze({ id: 'piercing_shot', name: 'Piercing Shot', abbrev: 'PS', shape: 'projectile', power: 30, cd: 3, range: 5.5, speed: 6.2, count: 1 }),
-    Object.freeze({ id: 'volley', name: 'Volley', abbrev: 'VO', shape: 'projectile', power: 14, cd: 4.5, range: 4.8, speed: 5.4, count: 3 }),
-    Object.freeze({ id: 'detonating_charge', name: 'Detonating Charge', abbrev: 'DC', shape: 'ground_aoe', power: 12, cd: 7, range: 4.2, area: 0.85, durationSec: 3 }),
-    Object.freeze({ id: 'sundering_nova', name: 'Sundering Nova', abbrev: 'SN', shape: 'nova', power: 16, cd: 8, area: 1.1, count: 4 }),
-  ]),
-});
-
-// Range test per delivery shape (§7: "AI casts a kit skill when: target in
-// shape range AND off cooldown").
-function shapeRange(def) {
-  if (def.shape === 'nova') return def.area; // burst radius
-  return def.range; // arc reach / projectile travel / placement range
-}
 
 const dist2 = (ax, az, bx, bz) => {
   const dx = ax - bx;
@@ -1707,116 +1666,6 @@ export function createAllySystem({
     caster.cast(a, def, slot, tick, { mode: 'human', f, tag, d });
   }
 
-  // (v0.5.150 human-seat delivery, superseded by the pipeline above; kept
-  // for reference by the determinism proof — never called.)
-  function fireHumanSkillV150(a, def, slot, f, tick, tag) {
-    const d = aimDir(a, f.aim, { x: a.faceX ?? 0, z: a.faceZ ?? 1 });
-    face(a, d.x, d.z);
-    a.castLeftTicks = Math.max(a.castLeftTicks, 24);
-    const cast = {
-      id: a.id,
-      partyIndex: a.partyIndex,
-      classId: a.classId,
-      skill: def.id,
-      slot,
-      shape: def.shape,
-      power: def.power,
-      cd: def.cd,
-      target: null,
-      x: r2(a.x),
-      z: r2(a.z),
-      dx: r2(d.x),
-      dz: r2(d.z),
-      ...tag,
-    };
-    const hitAll = (targets) => {
-      for (const t of targets) {
-        if (!registry.byId(t.id) || !(t.hp > 0)) continue;
-        const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
-        combat.applyDamage(t, def.power, {
-          delivery: 'skill',
-          shape: def.shape,
-          dirX: (t.x - a.x) / tl,
-          dirZ: (t.z - a.z) / tl,
-          attacker: a.id,
-          source: def.id,
-        });
-      }
-    };
-    if (def.shape === 'melee_arc') {
-      const targets = rewound(f, () => enemiesInArc(a, d.x, d.z, def.range, def.area, def.count));
-      cast.reach = def.range;
-      cast.halfAngle = def.area;
-      cast.targets = targets.map((t) => t.id);
-      events.emit(tick, 'ally_cast', cast);
-      hitAll(targets);
-      return;
-    }
-    if (def.shape === 'nova') {
-      const targets = rewound(f, () => enemiesInNova(a, def.area, def.count));
-      cast.radius = def.area;
-      cast.targets = targets.map((t) => t.id);
-      events.emit(tick, 'ally_cast', cast);
-      hitAll(targets);
-      return;
-    }
-    if (def.shape === 'projectile') {
-      const dir = compensatedAim(f, a, d);
-      cast.count = countFinal(def.count);
-      cast.dx = r2(dir.x);
-      cast.dz = r2(dir.z);
-      events.emit(tick, 'ally_cast', cast);
-      for (const fd of fanDirections(dir.x, dir.z, def.count)) {
-        bolts.spawn(tick, {
-          x: a.x,
-          z: a.z,
-          dirX: fd.x,
-          dirZ: fd.z,
-          speed: def.speed,
-          range: def.range,
-          radius: BOLT_RADIUS,
-          power: def.power,
-          skill: def.id,
-          heal: false,
-          sourceId: a.id,
-        });
-      }
-      return;
-    }
-    // ground_aoe at the aim point, clamped to the skill's placement range.
-    const pos = clampPlacement(a, f.aim ? { x: f.aim.x, z: f.aim.z } : { x: a.x + d.x, z: a.z + d.z }, def.range);
-    const zone = registry.spawn({
-      kind: 'azone',
-      skill: def.id,
-      classId: a.classId,
-      x: pos.x,
-      z: pos.z,
-      px: pos.x,
-      pz: pos.z,
-      radius: def.area,
-      power: def.power,
-      sourceId: a.id,
-      ticksDone: 0,
-      totalTicks: Math.round(secTicks(def.durationSec) / ZONE_CADENCE_TICKS),
-      nextTickTick: tick + ZONE_CADENCE_TICKS,
-    });
-    cast.zone = zone.id;
-    cast.zx = r2(pos.x);
-    cast.zz = r2(pos.z);
-    cast.radius = def.area;
-    events.emit(tick, 'ally_cast', cast);
-    events.emit(tick, 'azone_spawn', {
-      id: zone.id,
-      skill: def.id,
-      classId: a.classId,
-      x: r2(pos.x),
-      z: r2(pos.z),
-      radius: def.area,
-      totalTicks: zone.totalTicks,
-      ...tag,
-    });
-  }
-
   // ---------------------------------------------------- continuous phase --
   // Called from the world's continuous phase (§4 phase 1: move/aim/held
   // states, dashes, projectiles, CHANNELS, zone clocks).
@@ -2149,123 +1998,6 @@ export function createAllySystem({
       skill: `${a.classId}_basic`,
       heal: false,
       sourceId: a.id,
-    });
-  }
-
-  function fireAllySkill(a, def, slot, target, tick) {
-    const dirX = target.x - a.x;
-    const dirZ = target.z - a.z;
-    const l = Math.hypot(dirX, dirZ) || 1;
-    const dx = dirX / l;
-    const dz = dirZ / l;
-    face(a, dx, dz);
-    a.castLeftTicks = Math.max(a.castLeftTicks, 24);
-    const cast = {
-      id: a.id,
-      partyIndex: a.partyIndex,
-      classId: a.classId,
-      skill: def.id,
-      slot,
-      shape: def.shape,
-      power: def.power,
-      cd: def.cd,
-      target: target.id,
-      x: r2(a.x),
-      z: r2(a.z),
-      dx: r2(dx),
-      dz: r2(dz),
-    };
-
-    if (def.shape === 'melee_arc') {
-      const targets = enemiesInArc(a, dx, dz, def.range, def.area, def.count);
-      cast.reach = def.range;
-      cast.halfAngle = def.area;
-      cast.targets = targets.map((t) => t.id);
-      events.emit(tick, 'ally_cast', cast);
-      for (const t of targets) {
-        const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
-        combat.applyDamage(t, def.power, {
-          delivery: 'skill',
-          shape: def.shape, // melee_arc casts carry the §9 #4 2-tick pause
-          dirX: (t.x - a.x) / tl,
-          dirZ: (t.z - a.z) / tl,
-          attacker: a.id,
-          source: def.id,
-        });
-      }
-      return;
-    }
-
-    if (def.shape === 'nova') {
-      const targets = enemiesInNova(a, def.area, def.count);
-      cast.radius = def.area;
-      cast.targets = targets.map((t) => t.id);
-      events.emit(tick, 'ally_cast', cast);
-      for (const t of targets) {
-        const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
-        combat.applyDamage(t, def.power, {
-          delivery: 'skill',
-          shape: def.shape, // melee_arc casts carry the §9 #4 2-tick pause
-          dirX: (t.x - a.x) / tl,
-          dirZ: (t.z - a.z) / tl,
-          attacker: a.id,
-          source: def.id,
-        });
-      }
-      return;
-    }
-
-    if (def.shape === 'projectile') {
-      cast.count = countFinal(def.count);
-      events.emit(tick, 'ally_cast', cast);
-      for (const dir of fanDirections(dx, dz, def.count)) {
-        bolts.spawn(tick, {
-          x: a.x,
-          z: a.z,
-          dirX: dir.x,
-          dirZ: dir.z,
-          speed: def.speed,
-          range: def.range,
-          radius: BOLT_RADIUS,
-          power: def.power,
-          skill: def.id,
-          heal: false,
-          sourceId: a.id,
-        });
-      }
-      return;
-    }
-
-    // ground_aoe: placed at the target, clamped to the skill's placement range.
-    const pos = clampPlacement(a, { x: target.x, z: target.z }, def.range);
-    const zone = registry.spawn({
-      kind: 'azone',
-      skill: def.id,
-      classId: a.classId,
-      x: pos.x,
-      z: pos.z,
-      px: pos.x,
-      pz: pos.z,
-      radius: def.area,
-      power: def.power,
-      sourceId: a.id,
-      ticksDone: 0,
-      totalTicks: Math.round(secTicks(def.durationSec) / ZONE_CADENCE_TICKS),
-      nextTickTick: tick + ZONE_CADENCE_TICKS, // §6: first tick 1.0 s after placement
-    });
-    cast.zone = zone.id;
-    cast.zx = r2(pos.x);
-    cast.zz = r2(pos.z);
-    cast.radius = def.area;
-    events.emit(tick, 'ally_cast', cast);
-    events.emit(tick, 'azone_spawn', {
-      id: zone.id,
-      skill: def.id,
-      classId: a.classId,
-      x: r2(pos.x),
-      z: r2(pos.z),
-      radius: def.area,
-      totalTicks: zone.totalTicks,
     });
   }
 

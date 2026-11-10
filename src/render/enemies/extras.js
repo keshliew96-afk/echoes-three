@@ -620,7 +620,7 @@ export function createContentExtras({ root, stage, world, bus, cosmetic, shapes 
         let c = cinders.get(e.id);
         if (!c) {
           const g = new Group();
-          const disc = new Mesh(sharedGeo('ea-cinder-disc', () => new CircleGeometry(1, 24)), new MeshBasicMaterial({ map: getRadialTexture(), color: VFX_MATTER.ash ?? '#221F1B', transparent: true, opacity: 0, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+          const disc = new Mesh(sharedGeo('ea-cinder-disc', () => new CircleGeometry(1, 24)), new MeshBasicMaterial({ map: getRadialTexture(), color: VFX_MATTER.ash ?? PALETTE.voidCharcoal, transparent: true, opacity: 0, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
           disc.rotation.x = -Math.PI / 2;
           disc.position.y = 0.011;
           disc.scale.setScalar(1.35);

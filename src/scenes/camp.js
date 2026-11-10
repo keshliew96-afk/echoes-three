@@ -43,7 +43,7 @@
 // never mutates sim state except through the same `cmd`/run entry points a
 // player press drives.
 import { Color, Group, Mesh, MeshBasicMaterial, RingGeometry, Vector3 } from 'three';
-import { ARENA, CAMERA, TICK_HZ } from '../core/constants.js';
+import { CAMERA, TICK_HZ } from '../core/constants.js';
 import { PALETTE } from '../data/palette.js';
 import { t } from '../i18n/index.js';
 import { createArenaScene } from './arena.js';
@@ -56,7 +56,6 @@ import { buildWalls } from '../env/walls.js';
 import { buildFoliage } from '../env/foliage.js';
 import { variantLayoutRng } from '../env/layout.js';
 import { installBandGuard, bandGuardInfo } from '../env/bandguard.js';
-import { COOL, mix } from '../env/colors.js';
 import { CAMP_SPEC, CAMP_SPOTS, HEARTH, PORTAL } from '../env/camp/spec.js';
 import { buildCampGround } from '../env/camp/ground.js';
 import { buildCampProps, RUNE_VIOLET } from '../env/camp/props.js';

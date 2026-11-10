@@ -139,7 +139,7 @@ Body: 85 HP, move speed 2.5. Numbers are first guesses
 - Sim: `src/sim/allycast.js` (crash, drag), `src/sim/allies.js` (body,
   Dive puddle, drag zones), `src/sim/party.js` (aura status), `src/sim/world.js`
   (`campLineup`).
-- Render: `src/render/critters/tidecaller.js` (otter rig), soaked and crash
+- Render: `src/render/critters/tidecallerfacet.js` (otter rig), soaked and crash
   in `src/render/skillfx/content.js`, palette and `CLASS_VFX.tidecaller`.
 - UI: `src/ui/run/classpick.js` (five cards and the bench view),
   `src/scenes/camp.js` (Lineup chip, camp spot), icons, cards, portraits.

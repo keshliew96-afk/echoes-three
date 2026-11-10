@@ -22,7 +22,6 @@
 import { vfxFoeTone, vfxFoeWeight, FOE_TEMPLATE } from '../../data/vfx.js';
 import { TICK_HZ } from '../../core/constants.js';
 
-const TAU = Math.PI * 2;
 const DEG = Math.PI / 180;
 
 export function createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, ink, player }) {

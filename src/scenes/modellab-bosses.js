@@ -1,28 +1,20 @@
 // MODEL LAB ENTRIES for the Level I bosses (docs/MODEL_STANDARD.md). The lab
 // (scenes/modellab.js) lists every entry as a model tab; an entry builds its
-// faceted model and its classic twin on first view and drives both itself:
+// model on first view and drives it itself:
 //
-//   { id, label, abilities: [[id, label]], frame: { y, z, dist, speed, loop,
-//     side }, build({ cosmetic, vfx, play }) -> { group, classic, update(state,
-//     dt, abT), timeline(ability), cues(ability), onCue(id, at), reset(),
-//     debug() } }
+//   { id, label, abilities: [[id, label]], frame: { y, z, dist, speed, loop },
+//     build({ vfx, play }) -> { group, update(state, dt, abT),
+//     timeline(ability), cues(ability), onCue(id, at), reset(), debug() } }
 //
-// `state` is the lab's (read only): mode, ability, classic, movePhase. dt is
-// 0 while Still; abT is clamped to the timeline. update places the model (and
-// the classic twin at -side when state.classic) and poses both.
+// `state` is the lab's (read only): mode, ability, movePhase. dt is 0 while
+// Still; abT is clamped to the timeline. update places the model and poses it.
 import { PALETTE } from '../data/palette.js';
-import { buildStag } from '../render/boss/stag.js';
 import { buildStagFacet, STAG_ABILITIES, STAG_WALK } from '../render/boss/stagfacet.js';
 import { buildThornmotherFacet, THORN_ABILITIES, THORN_CHARGE, THORN_WALK } from '../render/boss/thornmotherfacet.js';
-import { buildGloamWolf, buildMireKing } from '../render/boss/third.js';
 import { buildGloamWolfFacet, WOLF_ABILITIES, WOLF_WALK } from '../render/boss/gloamwolffacet.js';
-import { buildHeron } from '../render/boss/heron.js';
 import { buildHeronFacet, HERON_ABILITIES, HERON_DASH, HERON_WALK } from '../render/boss/heronfacet.js';
-import { buildMillwheel, buildThornmother } from '../render/boss/slice2.js';
 import { buildMillwheelFacet, MILL_ABILITIES, MILL_CUT, MILL_ROLL } from '../render/boss/millwheelfacet.js';
 import { buildMireKingFacet, MIRE_ABILITIES, MIRE_WALK } from '../render/boss/mirekingfacet.js';
-import { buildLichram } from '../render/boss/slice2.js';
-import { buildAshRaven } from '../render/boss/third.js';
 import { buildLichramFacet, LICHRAM_ABILITIES, LICHRAM_RUSH, LICHRAM_WALK } from '../render/boss/lichramfacet.js';
 import { buildAshRavenFacet, RAVEN_ABILITIES, RAVEN_WALK } from '../render/boss/ashravenfacet.js';
 
@@ -64,18 +56,12 @@ const stagEntry = {
     ['trample', 'Trample'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.3, z: 0, dist: 8.2, speed: STAG_WALK, loop: 3.4, side: 2.8 },
-  build({ cosmetic, vfx, play }) {
+  frame: { y: 1.3, z: 0, dist: 8.2, speed: STAG_WALK, loop: 3.4 },
+  build({ vfx, play }) {
     const rig = buildStagFacet();
-    const classic = buildStag(cosmetic);
-    let tel = 0;
-    let lunge = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -84,9 +70,7 @@ const stagEntry = {
       cues: (id) => (STAG_ABILITIES[id] || STAG_ABILITIES.quake).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -95,24 +79,13 @@ const stagEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'trample' ? trampleTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT, moveK: moving ? 1 : 0 });
-        // the classic twin: its own pose, fed the same beats
-        idle += dt;
-        const s = ability ? STAG_ABILITIES[ability].sample(abT) : null;
-        tel = follow(tel, s && ability === 'quake' && s.id === 'rear' ? 1 : 0, dt, 12);
-        lunge = follow(lunge, s && ability === 'trample' && (s.id === 'charge' || s.id === 'gather') ? 1 : 0, dt, 18);
-        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, lungeK: lunge, hpFrac: 1 });
       },
       onCue(id, at) {
         if (id === 'quake') {
@@ -148,19 +121,12 @@ const thornEntry = {
     ['charge', 'Briar Charge'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 0.9, z: 0, dist: 8.6, speed: THORN_WALK, loop: 3.4, side: 3.0 },
-  build({ cosmetic, vfx, play }) {
+  frame: { y: 0.9, z: 0, dist: 8.6, speed: THORN_WALK, loop: 3.4 },
+  build({ vfx, play }) {
     const rig = buildThornmotherFacet();
-    const classic = buildThornmother(cosmetic);
-    let tel = 0;
-    let skid = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, mode: 'root' };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -169,9 +135,7 @@ const thornEntry = {
       cues: (id) => (THORN_ABILITIES[id] || THORN_ABILITIES.volley).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -180,27 +144,13 @@ const thornEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'charge' ? chargeTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability ? THORN_ABILITIES[ability].sample(abT) : null;
-        const ph = s && ability === 'charge' ? s.id : null;
-        tel = follow(tel, ph === 'paw' ? 1 : 0, dt, 10);
-        skid = follow(skid, ph === 'stop' || ph === 'hold' || ph === 'skid' ? 1 : 0, dt, 10);
-        stand.telegraph = ph === 'paw' ? { attack: 'charge' } : null;
-        stand.mode = ph === 'burst' || ph === 'run' ? 'charge' : skid > 0.5 ? 'skid' : 'root';
-        walk += (moving || stand.mode === 'charge' ? F.speed * (stand.mode === 'charge' ? 4 : 1) : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, lungeK: stand.mode === 'charge' ? 1 : 0, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
@@ -244,18 +194,12 @@ const wolfEntry = {
     ['rage', 'Enraged'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.2, z: 0, dist: 8.4, speed: WOLF_WALK, loop: 3.4, side: 2.8 },
-  build({ cosmetic, vfx, play }) {
+  frame: { y: 1.2, z: 0, dist: 8.4, speed: WOLF_WALK, loop: 3.4 },
+  build({ vfx, play }) {
     const rig = buildGloamWolfFacet();
-    const classic = buildGloamWolf(cosmetic);
-    let tel = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, mode: 'stalk', enraged: false };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -264,9 +208,7 @@ const wolfEntry = {
       cues: (id) => (WOLF_ABILITIES[id] || WOLF_ABILITIES.pounce).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -275,28 +217,13 @@ const wolfEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'pounce' ? pounceTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? WOLF_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = (ability === 'pounce' && ph === 'crouch') || (ability === 'rend' && ph === 'wind') || (ability === 'howl' && ph === 'rise');
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        stand.telegraph = warn ? { attack: ability } : null;
-        stand.mode = ability === 'pounce' ? (ph === 'crouch' ? 'crouch' : ph === 'leap' ? 'leap' : 'stalk') : 'stalk';
-        stand.enraged = ability === 'rage';
-        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
@@ -341,19 +268,12 @@ const heronEntry = {
     ['surface', 'Surface'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.5, z: 0, dist: 8.6, speed: HERON_WALK, loop: 3.4, side: 2.6 },
-  build({ cosmetic, vfx, play }) {
+  frame: { y: 1.5, z: 0, dist: 8.6, speed: HERON_WALK, loop: 3.4 },
+  build({ vfx, play }) {
     const rig = buildHeronFacet();
-    const classic = buildHeron(cosmetic);
-    let tel = 0;
-    let lunge = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, submerged: false };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -362,9 +282,7 @@ const heronEntry = {
       cues: (id) => (HERON_ABILITIES[id] || HERON_ABILITIES.spear).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -373,28 +291,13 @@ const heronEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'spear' ? dashTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? HERON_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = (ability === 'spear' && ph === 'coil') || (ability === 'wingbeat' && ph === 'raise');
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        lunge = follow(lunge, ability === 'spear' && (ph === 'thrust' || ph === 'dash') ? 1 : 0, dt, 18);
-        stand.telegraph = warn ? { attack: ability } : null;
-        stand.submerged = (ability === 'dive' && ph === 'under') || (ability === 'surface' && ph === 'rise');
-        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, lungeK: lunge, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
@@ -442,20 +345,12 @@ const millEntry = {
     ['crosscut', 'Crosscut'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.3, z: 0, dist: 8.2, speed: MILL_ROLL, loop: 3.4, side: 2.6 },
-  build({ cosmetic, vfx, play }) {
+  frame: { y: 1.3, z: 0, dist: 8.2, speed: MILL_ROLL, loop: 3.4 },
+  build({ vfx, play }) {
     const rig = buildMillwheelFacet();
-    const classic = buildMillwheel(cosmetic);
-    let tel = 0;
-    let idle = 0;
     let yaw = 0;
-    let spin = 0;
-    let lastAhead = 0;
-    let lastMove = null;
-    const stand = { telegraph: null, mode: 'roll', spin: 0 };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -464,9 +359,7 @@ const millEntry = {
       cues: (id) => (MILL_ABILITIES[id] || MILL_ABILITIES.shards).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         rig.lab.reset();
       },
       update(state, dt, abT) {
@@ -475,30 +368,12 @@ const millEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'crosscut' ? cutTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity: its roll from the same travel
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? MILL_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = (ability === 'shards' && ph === 'wind') || (ability === 'crosscut' && ph === 'rock');
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        stand.telegraph = warn ? { attack: ability } : null;
-        stand.mode = ph === 'dizzy' ? 'dizzy' : ph === 'cut' || ph === 'burst' ? 'cut' : 'roll';
-        if (moving && lastMove !== null) spin += Math.abs(state.movePhase - lastMove) * F.loop;
-        spin += Math.abs(ahead - lastAhead);
-        lastMove = moving ? state.movePhase : null;
-        lastAhead = ahead;
-        stand.spin = spin;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, telegraphK: tel, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
@@ -542,18 +417,12 @@ const mireEntry = {
     ['rage', 'Enraged'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.0, z: 1.2, dist: 9.6, speed: MIRE_WALK, loop: 3.0, side: 3.0 },
+  frame: { y: 1.0, z: 1.2, dist: 9.6, speed: MIRE_WALK, loop: 3.0 },
   build({ vfx, play }) {
     const rig = buildMireKingFacet();
-    const classic = buildMireKing();
-    let tel = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, mode: 'wade', enraged: false };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -562,9 +431,7 @@ const mireEntry = {
       cues: (id) => (MIRE_ABILITIES[id] || MIRE_ABILITIES.lash).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -573,28 +440,13 @@ const mireEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'flop' ? flopTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? MIRE_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = (ability === 'lash' && ph === 'draw') || (ability === 'flop' && (ph === 'heave' || ph === 'leap' || ph === 'land')) || (ability === 'swallow' && ph === 'gape');
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        stand.telegraph = warn ? { attack: ability } : null;
-        stand.mode = ability === 'flop' ? (ph === 'heave' ? 'heave' : ph === 'leap' || ph === 'land' ? 'flop' : 'wade') : 'wade';
-        stand.enraged = ability === 'rage';
-        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
@@ -639,19 +491,12 @@ const lichramEntry = {
     ['rage', 'Enraged'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.2, z: 0, dist: 8.4, speed: LICHRAM_WALK, loop: 3.4, side: 2.8 },
+  frame: { y: 1.2, z: 0, dist: 8.4, speed: LICHRAM_WALK, loop: 3.4 },
   build({ vfx, play }) {
     const rig = buildLichramFacet();
-    const classic = buildLichram();
-    let tel = 0;
-    let lunge = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, mode: 'stalk', enraged: false };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -660,9 +505,7 @@ const lichramEntry = {
       cues: (id) => (LICHRAM_ABILITIES[id] || LICHRAM_ABILITIES.rush).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -671,29 +514,13 @@ const lichramEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'rush' ? rushTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? LICHRAM_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = ability === 'rush' && ph === 'wind';
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        lunge = follow(lunge, ability === 'rush' && (ph === 'burst' || ph === 'run') ? 1 : 0, dt, 18);
-        stand.telegraph = warn ? { attack: 'rush' } : null;
-        stand.mode = ability === 'rush' ? (ph === 'burst' || ph === 'run' ? 'rush' : ph === 'slam' || ph === 'hold' || ph === 'stuck' ? 'stuck' : 'stalk') : 'stalk';
-        stand.enraged = ability === 'rage';
-        walk += (moving || stand.mode === 'rush' ? F.speed * (stand.mode === 'rush' ? 5 : 1) : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, lungeK: lunge, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
@@ -738,18 +565,12 @@ const ravenEntry = {
     ['rage', 'Enraged'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.9, z: 0, dist: 10.0, speed: RAVEN_WALK, loop: 3.4, side: 3.0 },
+  frame: { y: 1.9, z: 0, dist: 10.0, speed: RAVEN_WALK, loop: 3.4 },
   build({ vfx, play }) {
     const rig = buildAshRavenFacet();
-    const classic = buildAshRaven();
-    let tel = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, mode: 'stalk', enraged: false };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -758,9 +579,7 @@ const ravenEntry = {
       cues: (id) => (RAVEN_ABILITIES[id] || RAVEN_ABILITIES.dive).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -769,28 +588,13 @@ const ravenEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'dive' ? diveTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? RAVEN_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = (ability === 'dive' && (ph === 'rise' || ph === 'stoop' || ph === 'dive')) || (ability === 'gust' && ph === 'mantle') || (ability === 'omen' && ph === 'call');
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        stand.telegraph = warn ? { attack: ability } : null;
-        stand.mode = ability === 'dive' ? (ph === 'rise' ? 'rise' : ph === 'stoop' || ph === 'dive' ? 'dive' : ph === 'strike' || ph === 'hold' || ph === 'preen' ? 'preen' : 'stalk') : ability === 'omen' && ph === 'call' ? 'call' : 'stalk';
-        stand.enraged = ability === 'rage';
-        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });

@@ -41,7 +41,6 @@ import { FRAME, SPAWN_SEC, bakeParts, createFoeClock, createFoeFrame, foeMateria
 const TICK_HZ = 60;
 const SPEED = 2.3;
 const HOVER_Y = 1.0;
-const WARD_TICKS = 240;
 // the classic's slate (enemies/slice2.js C.wisp) and a darker fold of it
 const WISP = new Color().setHSL(0.6, 0.25, 0.7).multiplyScalar(0.82); // toned a step: it blew out white in the lab's light
 const WISP_DARK = new Color().setHSL(0.6, 0.2, 0.3);
@@ -96,7 +95,6 @@ export const WISP_WARD = Object.freeze({
   },
   strikes: [CAST_AT],
   cues: [{ at: CAST_AT, id: 'ward' }],
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: t >= CAST_AT && t < WARD_TL.startOf('fade') ? 'ward' : 'drift', tetherId: t >= CAST_AT && t < WARD_TL.startOf('fade') ? 1 : null } }),
 });
 export const WISP_SNAP = Object.freeze({
   id: 'snap',
@@ -106,7 +104,6 @@ export const WISP_SNAP = Object.freeze({
     const s = SNAP_TL.sample(t);
     return { t: s.t, phase: s.id, label: `Tether snaps: ${s.label}` };
   },
-  classicAt: () => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: 'drift', tetherId: null } }),
 });
 export const GRAVEWISP_ABILITIES = Object.freeze({ ward: WISP_WARD, snap: WISP_SNAP });
 

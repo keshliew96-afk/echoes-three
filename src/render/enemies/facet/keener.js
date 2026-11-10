@@ -95,13 +95,10 @@ const WAILS = [
   { label: 'the lament from its left', coil: C2, strike: S2, over: O2 },
   { label: 'the dirge', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const KEENER_REST = REST;
-export const KEENER_WAILS = Object.freeze(WAILS);
 const WAIL_TL = strikeTimeline('wail', 'Wail', {
   tel: WAIL_TEL_SEC,
   labels: { coil: 'coil (the keen, the cone telegraph)', strike: 'the wail', hold: 'contact: the wail held', snap: 'snap back', settle: 'settle' },
 });
-const CONTACT_AT = WAIL_TL.startOf('hold');
 // The hold: the wail shakes the body.
 function heldMotion(V, age, out) {
   const a = age - HOLD_SEC;
@@ -110,9 +107,8 @@ function heldMotion(V, age, out) {
 export function keenerWailPose(v, t, out = { ...REST }) {
   return strikePoseAt(WAIL_TL, WAILS[v] || WAILS[0], REST, FIELDS, t, out, heldMotion);
 }
-const classicWail = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'coil' || s.id === 'strike' ? 'keen' : 'drift', wailTick: tt >= CONTACT_AT ? 1 : -1 } });
-export const KEENER_WAIL = strikeAbility({ id: 'wail', label: 'Wail', tl: WAIL_TL, variants: WAILS, classic: classicWail });
-export const KEENER_WAILS_STRING = strikeAbility({ id: 'wails', label: 'Wail string', tl: WAIL_TL, variants: WAILS, n: 3, gap: WAIL_TL.duration, classic: classicWail });
+export const KEENER_WAIL = strikeAbility({ id: 'wail', label: 'Wail', tl: WAIL_TL, variants: WAILS });
+export const KEENER_WAILS_STRING = strikeAbility({ id: 'wails', label: 'Wail string', tl: WAIL_TL, variants: WAILS, n: 3, gap: WAIL_TL.duration });
 export const KEENER_ABILITIES = Object.freeze({ wail: KEENER_WAIL, wails: KEENER_WAILS_STRING });
 
 // --- Geometry (built once for the session, shared by every keener) --------

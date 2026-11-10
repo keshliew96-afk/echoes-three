@@ -66,7 +66,6 @@ const BONE = HEART.bone.clone();
 const VIOLET = new Color(PALETTE.godstuffViolet);
 const VIOLET_PEAK = new Color(PALETTE.godstuffVioletPeak);
 const flashable = (c) => facetMaterial(c, { emissive: '#FFFFFF', emissiveIntensity: 0 });
-const lit = (c) => new MeshBasicMaterial({ color: new Color(c), toneMapped: false });
 function glow(color, size, opacity) {
   const g = makeGlowSprite({ color: '#FFFFFF', size, opacity });
   g.material.toneMapped = false;

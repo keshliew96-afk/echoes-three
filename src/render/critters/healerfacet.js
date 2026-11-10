@@ -197,7 +197,6 @@ const HITS = createCombo(
   ],
   { window: COMBO_WINDOW, timing: TIMING }
 );
-export const HEALER_HITS = HITS;
 
 // --- Abilities: every Healer skill shape plays one. In game a skill enters
 // its timeline one frame before its release (the press is instant,
@@ -288,7 +287,6 @@ export const HEALER_MOVES = Object.freeze({
 // Which ability a Healer skill plays, by its shape (all nineteen skills).
 export const HEALER_SKILL_ABILITY = Object.freeze({ projectile: 'point', direct: 'point', nova: 'bloom', aura: 'bloom', ground_aoe: 'plant', melee_arc: 'sweep' });
 const skillAbility = (ev) => HEALER_SKILL_ABILITY[ev && ev.shape] || 'point';
-export const HEALER_REST = REST;
 
 // ---------------------------------------------------------------------------
 // Parts
@@ -994,7 +992,7 @@ export const HEALER_SPEC = Object.freeze({
       ['sweep', 'Wide Sweep'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.6, z: 0, dist: 3.9, speed: 2.4, loop: 2.2, side: 1.5 },
+    frame: { y: 0.6, z: 0, dist: 3.9, speed: 2.4, loop: 2.2 },
     cues: {
       strike: { sound: 'shoot', pitch: 1, fx: 'flash' },
       finisher: { sound: 'cast_damage', pitch: 0.9, fx: ['flash', 'star'], size: 1.5 },

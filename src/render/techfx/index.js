@@ -35,7 +35,7 @@ import {
   TubeGeometry,
   Vector3,
 } from 'three';
-import { makeGlowSprite } from '../glow.js';
+import { createFxPool } from '../fxpool.js';
 import { sharedGeo } from '../geocache.js';
 import { PALETTE } from '../../data/palette.js';
 
@@ -62,11 +62,6 @@ export function createTechFx({ stage, bus, cosmetic }) {
   stage.scene.add(root);
 
   const arcs = []; // { core, glow, age, life }
-  const rings = []; // { mesh, age, life, r0, r1 }
-  const flashes = []; // { s, age, life, size }
-  const motes = [];
-  const flashPool = [];
-  const motePool = [];
 
   // ------------------------------------------------------------- primitives --
   function tubeMat(color, opacity, additive) {
@@ -174,85 +169,32 @@ export function createTechFx({ stage, bus, cosmetic }) {
     arcs.splice(i, 1);
   }
 
-  // Ground shock ring: expands r0 → r1 and fades. The 1.2 u Detonate radius
-  // arrives on the event, so the ring is the real blast footprint.
-  // POOLED per rim thickness for the same reason as the arcs: the ring is a
-  // UNIT ring scaled per frame, so one buffer serves every Detonate and Echo
-  // of that thickness for the whole session.
-  const ringPool = new Map(); // thick key -> [mesh]
-  const ringKey = (t) => t.toFixed(3);
-
-  function spawnRing(x, z, r1, color, { r0 = 0.12, life = RING_LIFE, opacity = 0.85, thick = 0.16 } = {}) {
-    if (rings.length >= RING_CAP) retireRing(rings.length - 1);
-    const key = ringKey(thick);
-    const list = ringPool.get(key);
-    let mesh = list && list.length > 0 ? list.pop() : null;
-    if (!mesh) {
-      mesh = new Mesh(
-        sharedGeo(`techfx-ring:${key}`, () => new RingGeometry(1 - thick, 1, 48)),
-        tubeMat(color, opacity, true)
-      );
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.renderOrder = 5;
-    }
-    mesh.material.color.set(color);
-    mesh.material.opacity = opacity;
-    mesh.position.set(x, 0.045, z);
-    mesh.scale.setScalar(r0);
-    root.add(mesh);
-    rings.push({ mesh, thick, age: 0, life, r0, r1, opacity });
-  }
-
-  function retireRing(i) {
-    const rec = rings[i];
-    if (!rec) return;
-    root.remove(rec.mesh);
-    const key = ringKey(rec.thick);
-    let list = ringPool.get(key);
-    if (!list) ringPool.set(key, (list = []));
-    if (list.length < RING_CAP) list.push(rec.mesh);
-    rings.splice(i, 1);
-  }
-
-  // White-hot core flash (§19.4 layer 1 on every impact).
-  function spawnFlash(x, z, size, color = CORE, y = 0.5) {
-    if (flashes.length >= FLASH_CAP) {
-      const old = flashes.shift();
-      root.remove(old.s);
-      flashPool.push(old.s);
-    }
-    const s = flashPool.pop() ?? makeGlowSprite({ color, size: 1, opacity: 1 });
-    s.material.color.set(color);
-    s.material.opacity = 1;
-    s.scale.set(size, size, 1);
-    s.position.set(x, y, z);
-    root.add(s);
-    flashes.push({ s, age: 0, life: FLASH_LIFE, size });
-  }
-
-  // Particles (§19.4 layer 3).
-  function spawnMotes(x, z, { color = HEAL, count = 8, spread = 0.3, y = 0.3, rise = 1.3, out = 1.1 } = {}) {
-    for (let i = 0; i < count; i++) {
-      if (motes.length >= MOTE_CAP) break;
-      const s = motePool.pop() ?? makeGlowSprite({ color, size: 1, opacity: 0.9 });
-      s.material.color.set(color);
-      s.material.opacity = 0.9;
-      const size = cosmetic.range(0.06, 0.16);
-      s.scale.set(size, size, 1);
-      const a = cosmetic.range(0, Math.PI * 2);
-      const r = cosmetic.range(0, spread);
-      s.position.set(x + Math.cos(a) * r, y + cosmetic.range(0, 0.2), z + Math.sin(a) * r);
-      root.add(s);
-      motes.push({
-        s,
-        age: 0,
-        life: cosmetic.range(0.35, 0.7),
-        vy: cosmetic.range(rise * 0.45, rise),
-        vx: Math.cos(a) * cosmetic.range(0, out),
-        vz: Math.sin(a) * cosmetic.range(0, out),
-      });
-    }
-  }
+  // Ground shock rings (the 1.2 u Detonate radius arrives on the event, so the
+  // ring is the real blast footprint; pooled per rim thickness as unit rings
+  // scaled per frame), white-hot core flashes (§19.4 layer 1 on every impact)
+  // and particles (§19.4 layer 3): the shared pool (src/render/fxpool.js) with
+  // this layer's look (cubic ring growth, square flash fade, motes thrown out
+  // under gravity and drag).
+  const fx = createFxPool({
+    root,
+    cosmetic,
+    caps: { motes: MOTE_CAP, flashes: FLASH_CAP, rings: RING_CAP },
+    ringEase: 'cubic',
+    flashFade: 2,
+    defaults: {
+      ring: { from: 0.12, life: RING_LIFE, opacity: 0.85, width: 0.16, y: 0.045 },
+      flash: { color: CORE, opacity: 1, life: FLASH_LIFE, grow: 0.55, y: 0.5 },
+      motes: { color: HEAL, count: 8, spread: 0.3, y: 0.3, yJitter: 0.2, size: [0.06, 0.16], life: [0.35, 0.7], vy: [1.3 * 0.45, 1.3], out: 1.1, gravity: 1.4, drag: 2.2 },
+    },
+    ringMesh: (width, color, opacity) => {
+      const m = new Mesh(sharedGeo(`techfx-ring:${width.toFixed(3)}`, () => new RingGeometry(1 - width, 1, 48)), tubeMat(color, opacity, true));
+      m.rotation.x = -Math.PI / 2;
+      m.renderOrder = 5;
+      return m;
+    },
+  });
+  // A mote's rise: between 45 % of the top speed and the top speed (u/s).
+  const rise = (top) => [top * 0.45, top];
 
   // ----------------------------------------------------------- subscriptions --
   // Bounce: one arc per hop, drawn from the previous impact point to the new
@@ -265,8 +207,8 @@ export function createTechFx({ stage, bus, cosmetic }) {
       color: glowColor,
       coreColor: heal ? HEAL : CORE,
     });
-    spawnFlash(ev.x, ev.z, heal ? 1.05 : 0.95, heal ? HEAL : CORE, 0.5);
-    spawnMotes(ev.x, ev.z, { color: glowColor, count: 9, spread: 0.24, rise: heal ? 1.5 : 0.9 });
+    fx.flash(ev.x, 0.5, ev.z, { size: heal ? 1.05 : 0.95, color: heal ? HEAL : CORE });
+    fx.motes(ev.x, ev.z, { color: glowColor, count: 9, spread: 0.24, vy: rise(heal ? 1.5 : 0.9) });
   });
 
   // Siphon drain: a low taut tether ally → enemy, then a spark on the enemy.
@@ -278,13 +220,13 @@ export function createTechFx({ stage, bus, cosmetic }) {
       lift: TETHER_Y,
       width: 0.035,
     });
-    spawnFlash(ev.x, ev.z, 0.8, CORE, 0.45);
-    spawnMotes(ev.x, ev.z, { color: AMBER, count: 7, spread: 0.2, rise: 0.8 });
+    fx.flash(ev.x, 0.45, ev.z, { size: 0.8, color: CORE });
+    fx.motes(ev.x, ev.z, { color: AMBER, count: 7, spread: 0.2, vy: rise(0.8) });
   });
 
   bus.on('siphon_selfheal', (ev) => {
     if (ev.x === undefined) return;
-    spawnMotes(ev.x, ev.z, { color: HEAL, count: 8, spread: 0.26, rise: 1.6, out: 0.4 });
+    fx.motes(ev.x, ev.z, { color: HEAL, count: 8, spread: 0.26, vy: rise(1.6), out: 0.4 });
   });
 
   // Detonate: the burst radius rides the event, so the ring is the true 1.2 u
@@ -293,18 +235,20 @@ export function createTechFx({ stage, bus, cosmetic }) {
     const heal = ev.mode === 'heal';
     const r = ev.radius ?? 1.2;
     const glowColor = heal ? HEAL : AMBER;
-    spawnRing(ev.x, ev.z, r, glowColor, { opacity: 0.9 });
-    spawnRing(ev.x, ev.z, r * 0.62, heal ? HEAL : CORE, {
+    fx.ring(ev.x, ev.z, { to: r, color: glowColor, opacity: 0.9 });
+    fx.ring(ev.x, ev.z, {
+      to: r * 0.62,
+      color: heal ? HEAL : CORE,
       life: RING_LIFE * 0.7,
       opacity: 0.55,
-      thick: 0.3,
+      width: 0.3,
     });
-    spawnFlash(ev.x, ev.z, r * 1.7, heal ? HEAL : CORE, 0.45);
-    spawnMotes(ev.x, ev.z, {
+    fx.flash(ev.x, 0.45, ev.z, { size: r * 1.7, color: heal ? HEAL : CORE });
+    fx.motes(ev.x, ev.z, {
       color: glowColor,
       count: 16,
       spread: r * 0.5,
-      rise: heal ? 1.8 : 1.2,
+      vy: rise(heal ? 1.8 : 1.2),
       out: 2.0,
     });
   });
@@ -312,13 +256,15 @@ export function createTechFx({ stage, bus, cosmetic }) {
   // Echo: one ghost ring off the caster when the delayed recast fires.
   bus.on('echo_recast', (ev) => {
     if (ev.x === undefined) return;
-    spawnRing(ev.x, ev.z, 1.15, PALETTE.bone, {
-      r0: 0.2,
+    fx.ring(ev.x, ev.z, {
+      to: 1.15,
+      color: PALETTE.bone,
+      from: 0.2,
       life: 0.55,
       opacity: 0.5,
-      thick: 0.1,
+      width: 0.1,
     });
-    spawnFlash(ev.x, ev.z, 0.9, PALETTE.bone, 0.6);
+    fx.flash(ev.x, 0.6, ev.z, { size: 0.9, color: PALETTE.bone });
   });
 
   // --------------------------------------------------------------- update --
@@ -343,52 +289,7 @@ export function createTechFx({ stage, bus, cosmetic }) {
       a.glow.scale.setScalar(s);
     }
 
-    for (let i = rings.length - 1; i >= 0; i--) {
-      const r = rings[i];
-      r.age += dt;
-      const t = r.age / r.life;
-      if (t >= 1) {
-        retireRing(i);
-        continue;
-      }
-      const ease = 1 - (1 - t) * (1 - t) * (1 - t);
-      r.mesh.scale.setScalar(r.r0 + (r.r1 - r.r0) * ease);
-      r.mesh.material.opacity = r.opacity * (1 - t);
-    }
-
-    for (let i = flashes.length - 1; i >= 0; i--) {
-      const f = flashes[i];
-      f.age += dt;
-      const t = f.age / f.life;
-      if (t >= 1) {
-        root.remove(f.s);
-        flashPool.push(f.s);
-        flashes.splice(i, 1);
-        continue;
-      }
-      f.s.material.opacity = 1 - t * t;
-      const g = f.size * (1 + 0.55 * t);
-      f.s.scale.set(g, g, 1);
-    }
-
-    for (let i = motes.length - 1; i >= 0; i--) {
-      const m = motes[i];
-      m.age += dt;
-      const t = m.age / m.life;
-      if (t >= 1) {
-        root.remove(m.s);
-        motePool.push(m.s);
-        motes.splice(i, 1);
-        continue;
-      }
-      m.s.position.x += m.vx * dt;
-      m.s.position.z += m.vz * dt;
-      m.s.position.y += m.vy * dt;
-      m.vy -= 1.4 * dt;
-      m.vx *= 1 - 2.2 * dt;
-      m.vz *= 1 - 2.2 * dt;
-      m.s.material.opacity = 0.9 * (1 - t);
-    }
+    fx.update(dt);
   }
 
   // @gnt:M2 RESTORE-RESYNC begin — a load cuts away every in-flight
@@ -396,15 +297,7 @@ export function createTechFx({ stage, bus, cosmetic }) {
   // rings go back to their pools, flashes and motes too.
   function returnAll() {
     for (let i = arcs.length - 1; i >= 0; i--) retireArc(i);
-    for (let i = rings.length - 1; i >= 0; i--) retireRing(i);
-    for (const f of flashes.splice(0)) {
-      root.remove(f.s);
-      flashPool.push(f.s);
-    }
-    for (const m of motes.splice(0)) {
-      root.remove(m.s);
-      motePool.push(m.s);
-    }
+    fx.clear();
   }
   bus.on('state_restored', returnAll);
   // @gnt:M2 RESTORE-RESYNC end
@@ -433,9 +326,9 @@ export function createTechFx({ stage, bus, cosmetic }) {
     update,
     debugCounts: () => ({
       arcs: arcs.length,
-      rings: rings.length,
-      flashes: flashes.length,
-      motes: motes.length,
+      rings: fx.counts().rings,
+      flashes: fx.counts().flashes,
+      motes: fx.counts().motes,
       pooledArcs: [...arcPool.values()].reduce((n, l) => n + l.length, 0),
     }),
   };

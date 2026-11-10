@@ -2,11 +2,9 @@
 // MODEL STANDARD, LEVEL III CHAMPIONS (docs/MODEL_STANDARD.md "Level III
 // champions"): the faceted Bone Reeve and Gravebell Ringer, headless.
 //
-//   1. flags: both play the standard by default, `?facet=0` keeps the classic
-//      rigs, the Level V champions stay classic, the champion table builds
-//      the faceted rig with the champions' soft flash, the classic rigs still
-//      build;
-//   2. the rigs: the classic interface plus lab, points and react; the root's
+//   1. the champion table builds the faceted rig with the champions' soft
+//      flash (the classic rigs and the ?facet= flag are gone, AUDIT.md D1);
+//   2. the rigs: the rig interface plus lab, points and react; the root's
 //      first child carries the body (the hit overlay wraps it), the shadow is
 //      a floor piece; every instanced part inked; faceted geometry under every
 //      vertex-coloured material; the hit flash's white emissive on every mat;
@@ -42,12 +40,10 @@ const ctx = new Proxy({}, { get: (_, k) => (k === 'canvas' ? {} : () => grad), s
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) };
 
 const { Color, Group, Vector3 } = await import('three');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FRAME, HOLD_SEC, STRIKE_SEC, SPAWN_SEC } = await import('../src/render/facet/beats.js');
 const reeveM = await import('../src/render/enemies/champfacet/bonereeve.js');
 const ringerM = await import('../src/render/enemies/champfacet/gravebellringer.js');
-const { CHAMPION_BUILDERS, CHAMPION_FLASH, buildBoneReeve } = await import('../src/render/enemies/champions.js');
-const { buildGravebellRinger } = await import('../src/render/enemies/champions2.js');
+const { CHAMPION_BUILDERS, CHAMPION_FLASH } = await import('../src/render/enemies/champions.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-champions.js');
 
 const fails = [];
@@ -60,21 +56,15 @@ const r3 = (v) => Math.round(v * 1000) / 1000;
 const cosmetic = { range: (a, b) => (a + b) / 2, next: () => 0.5, pick: (l) => l[0], int: (a) => a, chance: () => false };
 
 const CHAMPS = [
-  { kind: 'bone_reeve', name: 'Bone Reeve', build: reeveM.buildBoneReeveFacet, classic: buildBoneReeve, abilities: reeveM.REEVE_ABILITIES, channels: reeveM.abilityChannels, walk: reeveM.REEVE_WALK, feet: ['footL', 'footR'], points: ['tip', 'hand', 'lantern', 'eye'], contact: ['sweep', 'lance'] },
-  { kind: 'gravebell_ringer', name: 'Gravebell Ringer', build: ringerM.buildGravebellRingerFacet, classic: buildGravebellRinger, abilities: ringerM.RINGER_ABILITIES, channels: ringerM.abilityChannels, walk: ringerM.RINGER_WALK, feet: ['footL', 'footR'], points: ['bell', 'clapper', 'mallet', 'hand', 'eye'], contact: ['knell', 'call'] },
+  { kind: 'bone_reeve', name: 'Bone Reeve', build: reeveM.buildBoneReeveFacet, abilities: reeveM.REEVE_ABILITIES, channels: reeveM.abilityChannels, walk: reeveM.REEVE_WALK, feet: ['footL', 'footR'], points: ['tip', 'hand', 'lantern', 'eye'], contact: ['sweep', 'lance'] },
+  { kind: 'gravebell_ringer', name: 'Gravebell Ringer', build: ringerM.buildGravebellRingerFacet, abilities: ringerM.RINGER_ABILITIES, channels: ringerM.abilityChannels, walk: ringerM.RINGER_WALK, feet: ['footL', 'footR'], points: ['bell', 'clapper', 'mallet', 'hand', 'eye'], contact: ['knell', 'call'] },
 ];
 
-// --- 1. flags ----------------------------------------------------------------------
+// --- 1. the table ----------------------------------------------------------------------
 {
-  const q = (s) => new URLSearchParams(s);
   const kinds = CHAMPS.map((c) => c.kind);
-  check('the Level III champions play the model standard by default', kinds.every((k) => MODEL_STANDARD[k] === true && facetOn(k, q(''))));
-  check('?facet=0 keeps them classic; ?facet=bone_reeve only the Reeve', kinds.every((k) => !facetOn(k, q('facet=0'))) && facetOn('bone_reeve', q('facet=bone_reeve')) && !facetOn('gravebell_ringer', q('facet=bone_reeve')));
-  check('the Level V champions stay classic', !facetOn('bell_abbess', q('')) && !facetOn('furnace_knight', q('')) && !facetOn('glassblower', q('')));
   const built = kinds.map((k) => CHAMPION_BUILDERS[k](cosmetic));
   check("the champion table builds the faceted rigs with the champions' soft flash", built.every((b) => b.group.userData.modelStandard === true && b.flashScale === CHAMPION_FLASH && typeof b.pose === 'function'), built.map((b) => b.flashScale));
-  const classics = CHAMPS.map((C) => C.classic(cosmetic)).filter((r) => r && r.group && typeof r.pose === 'function' && !r.group.userData.modelStandard);
-  check('the classic rigs still build beside the faceted ones', classics.length === CHAMPS.length);
 }
 
 // --- 2. the rigs -------------------------------------------------------------------
@@ -109,7 +99,7 @@ const amber = (c) => {
 for (const B of CHAMPS) {
   const r = B.build();
   const iface = ['group', 'mats', 'setYaw', 'pose', 'lab', 'points', 'react'].filter((k) => !(k in r));
-  check(`${B.name}: the classic interface plus lab, points and react`, iface.length === 0 && r.group.userData.modelStandard === true, iface);
+  check(`${B.name}: the rig interface plus lab, points and react`, iface.length === 0 && r.group.userData.modelStandard === true, iface);
   const body = r.group.children[0];
   let meshes = 0;
   body.traverse((x) => x.isMesh && meshes++);
@@ -453,21 +443,21 @@ for (const B of CHAMPS) {
     try {
       const ent = E.build({ cosmetic, vfx, play: () => null });
       const world = new Group();
-      world.add(ent.group, ent.classic);
+      world.add(ent.group);
       for (const [id] of E.abilities) {
         const tl = ent.timeline(id);
         ent.reset();
         for (let t = 0; t <= tl.duration; t += 1 / 30) {
-          ent.update({ mode: 'ability', ability: id, classic: true, movePhase: 0, t }, 1 / 30, t);
+          ent.update({ mode: 'ability', ability: id, movePhase: 0, t }, 1 / 30, t);
           for (const c of ent.cues(id)) if (Math.abs(c.at - t) < 1 / 60) ent.onCue(c.id, { x: 0, z: 0 });
         }
       }
-      ent.update({ mode: 'move', ability: null, classic: true, movePhase: 1, t: 0 }, 1 / 30, 0);
+      ent.update({ mode: 'move', ability: null, movePhase: 1, t: 0 }, 1 / 30, 0);
     } catch (err) {
       bad.push(`${E.id}: ${err.message}`);
     }
   }
-  check('every Level III lab entry plays every ability, with its classic twin beside', bad.length === 0, bad);
+  check('every Level III lab entry plays every ability', bad.length === 0, bad);
 }
 
 console.log(fails.length ? `\n${fails.length} failed` : '\nall pass');

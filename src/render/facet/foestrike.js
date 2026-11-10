@@ -244,9 +244,8 @@ export function createStrikeClip({ rest, fields, strikeTicks = STRIKE_TICKS, min
 }
 
 // A lab ability over one strike timeline: `n` blows in turn (variant k of
-// `variants` for blow k), `gap` seconds apart, pure in t. `classic(tt, s)`
-// gives the classic twin's stand-in inputs at tt into the blow.
-export function strikeAbility({ id, label, tl, variants, n = 1, gap = tl.duration, classic = null }) {
+// `variants` for blow k), `gap` seconds apart, pure in t.
+export function strikeAbility({ id, label, tl, variants, n = 1, gap = tl.duration }) {
   const which = (t) => (n <= 1 ? 0 : Math.max(0, Math.min(n - 1, Math.floor(t / gap))));
   return Object.freeze({
     id,
@@ -261,10 +260,5 @@ export function strikeAbility({ id, label, tl, variants, n = 1, gap = tl.duratio
     },
     // the contacts (the lab's cues)
     strikes: Array.from({ length: n }, (_, k) => k * gap + tl.startOf('hold')),
-    classicAt: classic ? (t) => {
-      const k = which(t);
-      const tt = t - k * gap;
-      return classic(tt, tl.sample(tt), k);
-    } : undefined,
   });
 }

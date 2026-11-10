@@ -28,18 +28,16 @@ import { PALETTE, VFX_TEMPLATE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { groundShadow, cachedSphere, exactColor } from '../critters/common.js';
 import { Mesh, MeshBasicMaterial } from 'three';
-import { buildBoar } from './boar.js';
-import { buildMantis } from './mantis.js';
 import { buildWaystone } from './waystone.js';
 import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
-import { SHOT_CORE, HIDE } from './style.js';
+import { SHOT_CORE } from './style.js';
 import { vfxFoeShotColor, vfxSpellHit, spellFlashLevel, vfxTemplateFor } from '../../data/vfx.js';
 import { addRim, rimLevel, setRim } from '../rim.js';
 
 const RIM_GOLD = VFX_TEMPLATE.blade.wave; // D1: the blade template's gold
 import { ARCH_BUILDERS, CROWN_Y, makeEliteMark } from './archetypes.js';
 // MODEL STANDARD (docs/MODEL_STANDARD.md "Foes"): the faceted Level I foes.
-import { facetFoeBuilders } from './facet/index.js';
+import { FACET_FOES } from './facet/index.js';
 import { createTelegraphShapes } from './shapes.js';
 import { createContentExtras } from './extras.js';
 import { createAffixLayer } from './affixes.js';
@@ -76,8 +74,11 @@ const EMBER_HZ = 34; // ember motes/s over a live telegraph (r2: the column has 
 const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
 const WALK_HZ = 2.6; // trot cycle per u of travel feel (phase per u below)
 
-const BUILDERS = { boar: buildBoar, mantis: buildMantis, ...ARCH_BUILDERS, ...facetFoeBuilders() };
+const BUILDERS = { ...ARCH_BUILDERS, ...FACET_FOES };
 const RIG_KINDS = new Set(Object.keys(BUILDERS));
+// Every kind but the boar and the mantis (which carry their own telegraph,
+// telegraphs.js) shows its lane, ring or cone through the shared shapes.
+const SHAPE_KINDS = new Set([...RIG_KINDS].filter((k) => k !== 'boar' && k !== 'mantis'));
 
 export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   const root = new Group();
@@ -307,13 +308,11 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
   let warmed = false;
   function prewarm() {
     warmed = true;
-    warmPark(root, BUILDERS.boar(cosmetic).group);
-    warmPark(root, BUILDERS.mantis(cosmetic).group);
     warmPark(root, buildWaystone().group);
     warmPark(root, makeAttackTelegraph().group);
     warmPark(root, makeSpawnShimmer(cosmetic).group);
     warmPark(root, makeShotRig(vfxFoeShotColor(null)));
-    for (const k of Object.keys(ARCH_BUILDERS)) warmPark(root, BUILDERS[k](cosmetic).group);
+    for (const k of RIG_KINDS) warmPark(root, BUILDERS[k](cosmetic).group);
     warmPark(root, makeEliteMark(1, 0.6).group);
     const back = shapes.prewarm();
     setTimeout(back, 250);
@@ -452,7 +451,7 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
       }
 
       // --- Archetype telegraphs (M4b): lane / ring / cone Ember shapes.
-      if (ARCH_BUILDERS[e.kind]) {
+      if (SHAPE_KINDS.has(e.kind)) {
         if (e.telegraph) {
           // The Sacristan's hush is a ward, not an attack: its own pale ring.
           const shapeKind = e.telegraph.hush ? 'hush' : e.telegraph.kind;

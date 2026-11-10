@@ -9,65 +9,59 @@
 //   Ability   each attack on its timeline (a 3-hit chain plays three
 //             attacks at the sim's own cadence); Rewind, the scrub bar and
 //             Still work as for the pilot's models
-//   Classic beside   the classic rig at the same moment, fed stand-in inputs
 //
 // A cue fires the game's own sound for that attack and a small VFX beat at
 // the foe's position. Entry shape (shared with the other roster slices):
 //   { id, label, abilities: [[id, label]], frame, build(ctx) }, build(ctx)
-//   returning { group, classic, update(state, dt, abT), timeline(ability),
+//   returning { group, update(state, dt, abT), timeline(ability),
 //   cues(ability), onCue(id, at), debug() }.
 import { PALETTE, VFX_FOE } from '../data/palette.js';
-import { buildBoar } from '../render/enemies/boar.js';
-import { buildMantis } from '../render/enemies/mantis.js';
-import { ARCH_BUILDERS } from '../render/enemies/archetypes.js';
 import { FACET_FOES, FOE_ABILITIES } from '../render/enemies/facet/index.js';
 
-const CLASSIC = { boar: buildBoar, mantis: buildMantis, ...ARCH_BUILDERS };
-// Each foe's name, framing (look-at height y and depth z, distance, the
-// classic's side offset), game speed (u/s, the sim's), move loop radius, and
+// Each foe's name, framing (look-at height y and depth z, distance), game speed (u/s, the sim's), move loop radius, and
 // the sound each lab cue plays (the cue the game plays for that event:
 // audio/cues.js, audio/woodmillcues.js, render/hazards/cues.js).
 const FOES = {
-  boar: { label: 'Thorn Boar', y: 0.4, dist: 3.4, side: 1.3, speed: 2.0, loop: 1.8, sound: { strike: 'bite' } },
-  mantis: { label: 'Spitting Mantis', y: 0.6, dist: 3.8, side: 1.3, speed: 1.6, loop: 1.6, sound: { strike: 'spit' } },
-  quillback: { label: 'Quillback', y: 0.38, dist: 3.2, side: 1.3, speed: 1.5, loop: 1.6, sound: { strike: 'm4b_roll', thud: 'm4b_thud' } },
-  rotcap: { label: 'Rotcap', y: 0.32, dist: 3.0, side: 1.2, speed: 1.1, loop: 1.4, sound: { strike: 'bite', burst: 'kill', land: 'telegraph_hit' } },
-  wasp: { label: 'Briar Wasp', y: 0.8, dist: 3.4, side: 1.3, speed: 2.7, loop: 1.8, sound: { strike: 'm4b_swoop' } },
+  boar: { label: 'Thorn Boar', y: 0.4, dist: 3.4, speed: 2.0, loop: 1.8, sound: { strike: 'bite' } },
+  mantis: { label: 'Spitting Mantis', y: 0.6, dist: 3.8, speed: 1.6, loop: 1.6, sound: { strike: 'spit' } },
+  quillback: { label: 'Quillback', y: 0.38, dist: 3.2, speed: 1.5, loop: 1.6, sound: { strike: 'm4b_roll', thud: 'm4b_thud' } },
+  rotcap: { label: 'Rotcap', y: 0.32, dist: 3.0, speed: 1.1, loop: 1.4, sound: { strike: 'bite', burst: 'kill', land: 'telegraph_hit' } },
+  wasp: { label: 'Briar Wasp', y: 0.8, dist: 3.4, speed: 2.7, loop: 1.8, sound: { strike: 'm4b_swoop' } },
   // the game plays no sound for the thornling's root or plant
-  thornling: { label: 'Thornling', y: 0.45, dist: 3.2, side: 1.2, speed: 1.3, loop: 1.6, sound: {} },
-  owl: { label: 'Shriek Owl', y: 1.65, dist: 4.4, side: 1.5, speed: 2.4, loop: 1.6, sound: { strike: 'wm_shriek' } },
+  thornling: { label: 'Thornling', y: 0.45, dist: 3.2, speed: 1.3, loop: 1.6, sound: {} },
+  owl: { label: 'Shriek Owl', y: 1.65, dist: 4.4, speed: 2.4, loop: 1.6, sound: { strike: 'wm_shriek' } },
   // its lash reaches 5.4 u down the lane: the camera looks ahead of it
-  lasher: { label: 'Vine Lasher', y: 0.5, z: 2.6, dist: 9.5, side: 1.4, speed: 0.8, loop: 1.0, sound: { strike: 'wm_lash', yank: 'wm_yank' } },
+  lasher: { label: 'Vine Lasher', y: 0.5, z: 2.6, dist: 9.5, speed: 0.8, loop: 1.0, sound: { strike: 'wm_lash', yank: 'wm_yank' } },
   // The Level II foes (the snail's mend, the crab's snap and the lamprey's
   // lunge have their own cues in audio/woodmillcues.js).
-  snail: { label: 'Lantern Snail', y: 0.4, dist: 3.4, side: 1.3, speed: 0.6, loop: 1.2, sound: { strike: 'wm_mend' } },
-  toad: { label: 'Mire Toad', y: 0.35, dist: 3.2, side: 1.3, speed: 1.0, loop: 1.4, sound: { strike: 'm4b_lob' } },
-  moth: { label: 'Gloam Moth', y: 0.9, dist: 3.8, side: 1.4, speed: 2.4, loop: 1.8, sound: { strike: 'm4b_swoop' } },
+  snail: { label: 'Lantern Snail', y: 0.4, dist: 3.4, speed: 0.6, loop: 1.2, sound: { strike: 'wm_mend' } },
+  toad: { label: 'Mire Toad', y: 0.35, dist: 3.2, speed: 1.0, loop: 1.4, sound: { strike: 'm4b_lob' } },
+  moth: { label: 'Gloam Moth', y: 0.9, dist: 3.8, speed: 2.4, loop: 1.8, sound: { strike: 'm4b_swoop' } },
   // its lunge runs 5 u down the lane: the camera looks ahead of it
-  lamprey: { label: 'Bog Lamprey', y: 0.2, z: 0.8, dist: 4.4, side: 1.2, speed: 1.6, loop: 1.4, sound: { strike: 'wm_lunge' } },
-  leech: { label: 'Mire Leech', y: 0.2, dist: 3.2, side: 1.2, speed: 2.0, loop: 1.6, sound: { strike: 'wm_latch', drain: 'wm_drain' } },
-  miller: { label: 'Drowned Miller', y: 0.9, dist: 4.6, side: 1.5, speed: 1.1, loop: 1.4, sound: { strike: 'wm_sweep', toss: 'wm_toss' } },
-  crab: { label: 'Weir Crab', y: 0.3, dist: 3.4, side: 1.4, speed: 1.9, loop: 1.6, sound: { strike: 'wm_snap' } },
+  lamprey: { label: 'Bog Lamprey', y: 0.2, z: 0.8, dist: 4.4, speed: 1.6, loop: 1.4, sound: { strike: 'wm_lunge' } },
+  leech: { label: 'Mire Leech', y: 0.2, dist: 3.2, speed: 2.0, loop: 1.6, sound: { strike: 'wm_latch', drain: 'wm_drain' } },
+  miller: { label: 'Drowned Miller', y: 0.9, dist: 4.6, speed: 1.1, loop: 1.4, sound: { strike: 'wm_sweep', toss: 'wm_toss' } },
+  crab: { label: 'Weir Crab', y: 0.3, dist: 3.4, speed: 1.9, loop: 1.6, sound: { strike: 'wm_snap' } },
   // Level III, the Ashen Barrow (audio/barrowheartcues.js, render/hazards/cues.js)
-  ram: { label: 'Barrow Ram', y: 0.55, dist: 3.8, side: 1.4, speed: 1.1, loop: 1.6, sound: { strike: 'm4b_thud' } },
-  mole: { label: 'Grave Mole', y: 0.3, dist: 3.2, side: 1.3, speed: 2.2, loop: 1.6, sound: { strike: 'm4b_erupt', dig: 'm4b_dig' } },
-  crow: { label: 'Barrow Crow', y: 0.5, dist: 3.4, side: 1.3, speed: 2.0, loop: 1.6, sound: { strike: 'spit' } },
-  brood: { label: 'Brood Spider', y: 0.4, dist: 3.6, side: 1.4, speed: 1.7, loop: 1.8, sound: { strike: 'bite' } },
-  broodling: { label: 'Broodling', y: 0.2, dist: 2.6, side: 1.0, speed: 2.8, loop: 1.4, sound: { strike: 'bite' } },
-  gravewisp: { label: 'Grave Wisp', y: 1.0, dist: 3.6, side: 1.3, speed: 2.3, loop: 1.6, sound: { ward: 'bh_ward' } },
-  knight: { label: 'Bone Knight', y: 0.8, dist: 4.4, side: 1.5, speed: 0.95, loop: 1.4, sound: { strike: 'bh_slam' } },
-  keener: { label: 'Ash Keener', y: 0.9, dist: 4.4, side: 1.5, speed: 1.45, loop: 1.6, sound: { strike: 'bh_keen' } },
-  sexton: { label: 'Barrow Sexton', y: 0.7, dist: 4.0, side: 1.4, speed: 1.4, loop: 1.6, sound: { dig: 'bh_dig', bury: 'bh_bury' } },
+  ram: { label: 'Barrow Ram', y: 0.55, dist: 3.8, speed: 1.1, loop: 1.6, sound: { strike: 'm4b_thud' } },
+  mole: { label: 'Grave Mole', y: 0.3, dist: 3.2, speed: 2.2, loop: 1.6, sound: { strike: 'm4b_erupt', dig: 'm4b_dig' } },
+  crow: { label: 'Barrow Crow', y: 0.5, dist: 3.4, speed: 2.0, loop: 1.6, sound: { strike: 'spit' } },
+  brood: { label: 'Brood Spider', y: 0.4, dist: 3.6, speed: 1.7, loop: 1.8, sound: { strike: 'bite' } },
+  broodling: { label: 'Broodling', y: 0.2, dist: 2.6, speed: 2.8, loop: 1.4, sound: { strike: 'bite' } },
+  gravewisp: { label: 'Grave Wisp', y: 1.0, dist: 3.6, speed: 2.3, loop: 1.6, sound: { ward: 'bh_ward' } },
+  knight: { label: 'Bone Knight', y: 0.8, dist: 4.4, speed: 0.95, loop: 1.4, sound: { strike: 'bh_slam' } },
+  keener: { label: 'Ash Keener', y: 0.9, dist: 4.4, speed: 1.45, loop: 1.6, sound: { strike: 'bh_keen' } },
+  sexton: { label: 'Barrow Sexton', y: 0.7, dist: 4.0, speed: 1.4, loop: 1.6, sound: { dig: 'bh_dig', bury: 'bh_bury' } },
   // The Level IV foes (their cues in audio/heartcues.js and
   // audio/barrowheartcues.js; the bloom's root plays no sound in the game).
-  husk: { label: 'Hollow Husk', y: 0.6, dist: 3.6, side: 1.3, speed: 1.6, loop: 1.6, sound: { strike: 'bite', surge: 'hx_surge' } },
+  husk: { label: 'Hollow Husk', y: 0.6, dist: 3.6, speed: 1.6, loop: 1.6, sound: { strike: 'bite', surge: 'hx_surge' } },
   // its lance runs 7 u down the lane: the camera looks ahead of it
-  lancer: { label: 'Vein Lancer', y: 0.8, z: 1.6, dist: 6.0, side: 1.5, speed: 1.5, loop: 1.4, sound: { strike: 'hx_lance' } },
-  geode: { label: 'Geode Brute', y: 0.6, dist: 4.4, side: 1.7, speed: 0.9, loop: 1.4, sound: { strike: 'hx_slam' } },
-  censer: { label: 'Heart Censer', y: 1.5, dist: 4.4, side: 1.4, speed: 2.0, loop: 1.6, sound: { strike: 'hx_mend', gather: 'hx_gather', spill: 'hx_spill' } },
-  bloom: { label: 'Heart Bloom', y: 0.5, dist: 3.8, side: 1.5, speed: 0.7, loop: 1.2, sound: { strike: 'bh_pulse', open: 'bh_open', root: null } },
+  lancer: { label: 'Vein Lancer', y: 0.8, z: 1.6, dist: 6.0, speed: 1.5, loop: 1.4, sound: { strike: 'hx_lance' } },
+  geode: { label: 'Geode Brute', y: 0.6, dist: 4.4, speed: 0.9, loop: 1.4, sound: { strike: 'hx_slam' } },
+  censer: { label: 'Heart Censer', y: 1.5, dist: 4.4, speed: 2.0, loop: 1.6, sound: { strike: 'hx_mend', gather: 'hx_gather', spill: 'hx_spill' } },
+  bloom: { label: 'Heart Bloom', y: 0.5, dist: 3.8, speed: 0.7, loop: 1.2, sound: { strike: 'bh_pulse', open: 'bh_open', root: null } },
   // its lash runs 5.4 u down the lane
-  siphon: { label: 'Vein Siphon', y: 0.9, z: 1.2, dist: 5.2, side: 1.4, speed: 1.9, loop: 1.6, sound: { strike: 'bh_lash', drink: 'bh_drink' } },
+  siphon: { label: 'Vein Siphon', y: 0.9, z: 1.2, dist: 5.2, speed: 1.9, loop: 1.6, sound: { strike: 'bh_lash', drink: 'bh_drink' } },
 };
 
 // A combo (an object with `at(t)`) or a plain timeline, read the same way.
@@ -85,63 +79,33 @@ function asTimeline(ab) {
   return { label: ab.label, duration: ab.duration, sample: (t) => ab.sample(t), readout: (t) => ab.readout(t), cues: ab.cues || [] };
 }
 
-// Stand-in pose inputs for the classic twin at a moment of an ability: its
-// wind-up (telegraphK), its strike pulse (lungeK for a bite, fireK for a shot).
-function classicInputs(ab, t) {
-  if (ab && typeof ab.classicAt === 'function') return ab.classicAt(t);
-  const tl = asTimeline(ab);
-  const s = tl.sample(Math.min(t, tl.duration));
-  const strikeAt = (tl.cues[0] && tl.cues[0].at) || 0;
-  const wind = /wind|draw|coil|gather|aim|rear|crouch|charge-up|telegraph/.test(s.id || '');
-  const since = t - strikeAt;
-  const pulse = since >= 0 && since < 0.18 ? Math.sin((since / 0.18) * Math.PI) : 0;
-  return { telegraphK: wind ? 1 : 0, lungeK: pulse, fireK: pulse, e: null };
-}
-
-// The classic rigs key a one-shot clip on a new sim tick field (biteTick,
-// shriekTick, lashTick: enemies/woodmill.js clip()), and a pure ability hands
-// the same field values every lap. Each replay (a loop or a rewind) shifts
-// them to fresh ticks, so 'Classic beside' plays its clip every lap.
-function freshTicks(e, lap) {
-  if (!e || !lap) return e;
-  const out = { ...e };
-  for (const k in out) if (/Tick$/.test(k) && out[k] >= 0) out[k] += lap * 100000;
-  return out;
-}
-
 function standIn(kind, patch) {
   return { id: 1, kind, x: 0, z: 0, px: 0, pz: 0, hp: 10, maxHp: 10, state: 'active', mode: 'idle', telegraph: null, elite: false, faceX: 0, faceZ: 1, cdByTarget: {}, targetId: null, ...patch };
 }
 
 export const LAB_ENTRIES = Object.keys(FACET_FOES).map((kind) => {
-  const F = FOES[kind] || { label: kind, y: 0.5, dist: 3.5, side: 1.3, speed: 1.5, loop: 1.6, sound: {} };
+  const F = FOES[kind] || { label: kind, y: 0.5, dist: 3.5, speed: 1.5, loop: 1.6, sound: {} };
   const abilities = FOE_ABILITIES[kind] || {};
   return {
     id: kind,
     label: F.label,
     abilities: Object.entries(abilities).map(([id, ab]) => [id, ab.label]),
-    frame: { y: F.y, z: F.z || 0, dist: F.dist, speed: F.speed, loop: F.loop, side: F.side },
+    frame: { y: F.y, z: F.z || 0, dist: F.dist, speed: F.speed, loop: F.loop },
     sound: F.sound,
     build(ctx) {
       const rig = FACET_FOES[kind]();
-      const twin = CLASSIC[kind]();
       let clock = 0;
       let walk = 0;
       let lastPos = null;
-      let lap = 0; // replays of the ability (the classic's fresh clip ticks)
-      let lastAb = null;
       function place(r, x, z, yaw) {
         r.group.position.set(x, 0, z);
         r.setYaw(yaw);
       }
       return {
         group: rig.group,
-        classic: twin.group,
         rig,
-        twin,
         update(state, dt, abT) {
           clock += dt;
-          const side = state.classic ? F.side : 0;
           let x = 0;
           let z = 0;
           let yaw = 0;
@@ -162,14 +126,8 @@ export const LAB_ENTRIES = Object.keys(FACET_FOES).map((kind) => {
           const ab = abilities[state.ability];
           const acting = state.mode === 'ability' || (state.mode === 'still' && state.t > 0);
           rig.lab.override = acting && ab ? { id: state.ability, t: abT } : null;
-          place(rig, x + side, z, yaw);
-          rig.pose({ grown: true, t: clock, tick: clock * 60, walkPhase: walk, moveK, lungeK: 0, telegraphK: 0, fireK: 0, e: standIn(kind, { x: x + side, z, px: x + side, pz: z }) });
-          // the classic twin: the same moment, fed stand-in inputs
-          place(twin, x - side, z, yaw);
-          const ci = acting && ab ? classicInputs(ab, abT) : { telegraphK: 0, lungeK: 0, fireK: 0, e: null };
-          if (acting && ab && (!lastAb || lastAb.id !== state.ability || abT < lastAb.t - 1e-6)) lap++;
-          lastAb = acting && ab ? { id: state.ability, t: abT } : null;
-          twin.pose({ t: clock, tick: clock * 60, walkPhase: walk, moveK, lungeK: ci.lungeK, telegraphK: ci.telegraphK, fireK: ci.fireK, e: standIn(kind, freshTicks(ci.e, lap) || {}) });
+          place(rig, x, z, yaw);
+          rig.pose({ grown: true, t: clock, tick: clock * 60, walkPhase: walk, moveK, lungeK: 0, telegraphK: 0, fireK: 0, e: standIn(kind, { x, z, px: x, pz: z }) });
         },
         timeline(ability) {
           return asTimeline(abilities[ability]);

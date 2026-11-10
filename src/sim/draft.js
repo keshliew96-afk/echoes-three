@@ -38,7 +38,7 @@
 // Sim discipline: no DOM, no render imports, no wall clock. Every draw comes
 // from the seeded gameplay stream in a fixed order, so one seed replays one
 // run frame.
-import { SKILLS, STARTING_SKILLS, HEALER_SKILL_IDS } from './skills.js';
+import { STARTING_SKILLS, HEALER_SKILL_IDS } from './skills.js';
 import { NODES, SHARED_NODE_IDS } from './nodes.js';
 
 // §16 "Skill pool = draftable healer skills − owned": every authored healer

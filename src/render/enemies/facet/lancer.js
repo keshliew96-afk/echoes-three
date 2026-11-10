@@ -89,8 +89,6 @@ const THROWS = [
   { label: 'side-arm', coil: C2, strike: S2, over: O2 },
   { label: 'the plunge', coil: C3, strike: S3, over: O3 },
 ].map((v) => Object.freeze(v));
-export const LANCER_REST = REST;
-export const LANCER_THROWS = Object.freeze(THROWS);
 
 const LANCE_TL = strikeTimeline('lance', 'Lance', {
   tel: LANCE_TEL_SEC,
@@ -110,9 +108,8 @@ export function spearReform(sinceContact) {
 export function lancerLancePose(v, t, out = { ...REST }) {
   return strikePoseAt(LANCE_TL, THROWS[v] || THROWS[0], REST, FIELDS, t, out);
 }
-const classicLance = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? Math.min(1, tt / LANCE_TEL_SEC) : 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'coil' || s.id === 'strike' ? 'aim' : 'stalk', lanceTick: tt >= LANCE_CONTACT ? 1 : -1 } });
-export const LANCER_LANCE = strikeAbility({ id: 'lance', label: 'Lance', tl: LANCE_TL, variants: THROWS, classic: classicLance });
-export const LANCER_LANCES = strikeAbility({ id: 'lances', label: 'Lance string', tl: LANCE_TL, variants: THROWS, n: 3, gap: LANCE_TL.duration, classic: classicLance });
+export const LANCER_LANCE = strikeAbility({ id: 'lance', label: 'Lance', tl: LANCE_TL, variants: THROWS });
+export const LANCER_LANCES = strikeAbility({ id: 'lances', label: 'Lance string', tl: LANCE_TL, variants: THROWS, n: 3, gap: LANCE_TL.duration });
 export const LANCER_ABILITIES = Object.freeze({ lance: LANCER_LANCE, lances: LANCER_LANCES });
 
 // --- Geometry (built once for the session, shared by every lancer) ---------

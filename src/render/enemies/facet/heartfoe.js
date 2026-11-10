@@ -10,7 +10,17 @@ import { Color, Matrix4, MeshBasicMaterial, Quaternion, Vector3 } from 'three';
 import { makeGlowSprite } from '../../glow.js';
 import { facetMaterial } from '../../facet/material.js';
 import { HEART } from '../style.js';
-export { heartbeatK } from '../heart.js';
+import { HEARTBEAT, beatPhase } from '../../../sim/enemies/husk.js';
+
+// The shared heartbeat as two envelopes: swell (0..1 over the warn window
+// before a surge) and surge (1 at the surge start, easing to 0).
+export function heartbeatK(tick) {
+  const ph = beatPhase(Math.floor(tick)) + (tick - Math.floor(tick));
+  const warnStart = HEARTBEAT.period - HEARTBEAT.warn;
+  const swell = ph >= warnStart ? smooth((ph - warnStart) / HEARTBEAT.warn) : 0;
+  const surge = ph < HEARTBEAT.surge ? 1 - smooth(ph / HEARTBEAT.surge) * 0.6 : 0;
+  return { swell, surge };
+}
 
 // A vein / coal / crystal-light material: unlit, its colour driven per frame
 // (one per rig: the crowd shares geometry, never a driven colour).

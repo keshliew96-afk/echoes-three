@@ -134,8 +134,6 @@ const DARTS = [
   { label: 'corkscrew from its left', coil: C2, strike: S2, over: O2 },
   { label: 'plunge', coil: C3, strike: S3, over: O3 },
 ].map((d) => Object.freeze(d));
-export const WASP_REST = REST;
-export const WASP_DARTS = Object.freeze(DARTS);
 
 // Live variety: each live dart's coil and stab are its authored ones with the body's
 // throw (lift, push, pitch, roll, twist) and the abdomen's swing (curl, hook)
@@ -211,12 +209,6 @@ export function waspDartPose(v, t, out = { ...REST }) {
   if (s.id === 'settle') return lerpFields(out, D.over, REST, 1 - settle(s.k), FIELDS);
   return Object.assign(out, REST);
 }
-// The classic twin's stand-in inputs at the same moment (the lab).
-function classicDart(t) {
-  const s = DART_TL.sample(t);
-  const tel = s.id === 'coil' || s.id === 'strike';
-  return { telegraphK: tel ? 1 : 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'dive' ? 'dart' : 'buzz' } };
-}
 
 export const WASP_DART = Object.freeze({
   id: 'dart',
@@ -228,7 +220,6 @@ export const WASP_DART = Object.freeze({
   },
   // the contact lands where the telegraph resolves
   strikes: [TELEGRAPH_SEC],
-  classicAt: classicDart,
 });
 // Three darts in turn on one body (in game they are the swarm's three
 // sisters' opening string, or one wasp's next three darts 3.45 s apart),
@@ -246,7 +237,6 @@ export const WASP_STRING = Object.freeze({
     return { v: n, n, t: tt, phase: s.id, label: `Dart ${n + 1}, ${DARTS[n].label}: ${s.label}` };
   },
   strikes: [TELEGRAPH_SEC, STRING_GAP + TELEGRAPH_SEC, 2 * STRING_GAP + TELEGRAPH_SEC],
-  classicAt: (t) => classicDart(t - stringAt(t) * STRING_GAP),
 });
 export const WASP_ABILITIES = Object.freeze({ dart: WASP_DART, string: WASP_STRING });
 

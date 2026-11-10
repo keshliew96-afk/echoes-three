@@ -33,7 +33,7 @@
 // 20 hostiles live per room (a spawn waits in its telegraph while the room is
 // full). The `?room=` harness (no plan) keeps the legacy §11 roll EXACTLY
 // (gate G4a.6).
-import { innerBounds, staticClearance } from './movement.js';
+import { staticClearance } from './movement.js';
 import { refreshBlockers } from './interactables.js';
 import { THREAT, ELITE_COST, WAVE_SIZE_CAP, ROOM_CONCURRENT_CAP } from '../data/difficulty.js';
 // ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): hunt, purge, escort and hold rooms. Their

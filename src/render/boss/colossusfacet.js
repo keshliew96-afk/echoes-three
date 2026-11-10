@@ -44,9 +44,18 @@
 // Same interface as the classic (group, mats, setYaw, setFlash, pose), plus
 // `lab`, `points`, `react`. Faces +Z. Render only: it reads the sim entity
 // (mode, telegraph, enraged, nextRainTick) and never writes it.
-import { BoxGeometry, Color, ConeGeometry, Group, IcosahedronGeometry, Matrix4, Mesh, MeshBasicMaterial, SphereGeometry, Vector3 } from 'three';
+import {
+  BoxGeometry,
+  Color,
+  ConeGeometry,
+  Group,
+  IcosahedronGeometry,
+  Mesh,
+  MeshBasicMaterial,
+  SphereGeometry,
+  Vector3,
+} from 'three';
 import { addInk, groundShadow } from '../critters/common.js';
-import { PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { sharedGeo } from '../geocache.js';
 import { HEART } from '../enemies/style.js';
@@ -64,7 +73,6 @@ const STONE_LIGHT = STONE.clone().multiplyScalar(1.2); // a value step: the sadd
 const GLASS = HEART.crystal.clone().lerp(new Color('#EEF2FF'), 0.55);
 const GLASS_EMIT = HEART.crystal.clone().lerp(new Color('#FFFFFF'), 0.3);
 const flashable = (c) => facetMaterial(c, { emissive: '#FFFFFF', emissiveIntensity: 0 });
-const lit = (c) => new MeshBasicMaterial({ color: new Color(c), toneMapped: false });
 function glow(color, size, opacity) {
   const g = makeGlowSprite({ color: '#FFFFFF', size, opacity });
   g.material.toneMapped = false;
@@ -227,8 +235,6 @@ const G = {
   pad: () => geo('pad', () => new IcosahedronGeometry(0.26, 0), 725, 0.12),
 };
 
-const _a = new Vector3();
-const _m = new Matrix4();
 // elbows bend out and back; the stubby knees forward
 const POLE_AL = new Vector3(-0.8, 0.3, -1);
 const POLE_AR = new Vector3(0.8, 0.3, -1);
