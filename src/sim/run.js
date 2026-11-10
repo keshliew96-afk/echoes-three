@@ -94,9 +94,9 @@ import { assignObjectives, isObjectiveMode, OBJECTIVE_RULES } from './objectives
 import { crownFor, crownSide, championPick, championById, CHAMPION_RULES, isChampionKind } from './champions.js';
 // KEYS AND VAULTS (docs/VAULTS.md): keys from elites and champions, the vault
 // door and its treasure room.
-import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES, VAULT_SPOTS, VAULT_CHEST } from './vaults.js';
+import { createVaultSystem, eliteDropsKey, vaultPref, vaultSide, VAULT_RULES } from './vaults.js';
 import { createConsumableSystem, eliteDropsTonic, chestTonic, CONSUMABLES } from './consumables.js';
-import { staticClearance, blockerClearance } from './movement.js';
+import { blockerClearance } from './movement.js';
 // SECRET ROOMS (docs/SECRET_ROOMS.md): the cracked wall and its hidden chamber.
 import { createSecretSystem, wallRolls, wallPref, chamberContent, chamberPage, chamberEvent, SECRET_RULES, SECRET_BODY } from './secrets.js';
 import { refreshBlockers } from './interactables.js';
@@ -129,6 +129,7 @@ import {
 } from '../data/campaign.js';
 
 import { cloneData, r2, TUTORIAL_LAYOUT, tutorialDiff, RUN } from './run/rules.js';
+import { createVaultRoom } from './run/vaultroom.js';
 import { createRunShrines } from './run/shrines.js';
 import { createRunShop } from './run/shop.js';
 
@@ -379,7 +380,7 @@ export function createRunSystem({
     if (!e || !e.elite || e.faction !== 'hostile' || isChampionKind(e.kind)) return;
     if (eliteDropsKey(rs.frame.seed, rs.campaign.index, rs.roomIndex, e.id)) vaults.drop('elite', e.kind, ev.x, ev.z, rs.roomIndex);
   });
-  events.on('vault_touch', () => openVault());
+  events.on('vault_touch', () => RF.openVault());
   // TONICS AND BOMBS (docs/CONSUMABLES.md): one carry slot per hero, on with
   // the keys (campaign, Endless, the Daily and Boss Rush; never the tutorial
   // or the legacy single-level run, so the goldens never see one). Elites
@@ -915,7 +916,7 @@ export function createRunSystem({
     } else if (mode === 'event') {
       enterEvent(n, tick);
     } else if (mode === 'vault') {
-      enterVault(n, tick);
+      RF.enterVault(n, tick);
     } else if (mode === 'boss') {
       rs.phase = 'combat';
       enemies.reset();
@@ -1724,139 +1725,9 @@ export function createRunSystem({
   rs.shrine = null;
   events.on('shrine_touch', (ev) => RF.useShrine(ev.seat ?? 0));
 
-  // --------------------------------------------------- keys and vaults --
-  // KEYS AND VAULTS (docs/VAULTS.md). Phase 'vault': the party walks into the
-  // treasure room. A hero walking over a Glint pile or the food platter takes
-  // it; E on the chest opens it, gathers whatever is left, then pays the
-  // door's draft and a relic pick. Then the doors, as after any room.
-  const clearSpot = (row, r) => {
-    for (const [x, z] of row) if (staticClearance(x, z, r) >= 0.15) return [x, z];
-    return row[0];
-  };
-  function enterVault(n, tick) {
-    rs.phase = 'vault';
-    const v = vaults.enterRoom(n);
-    relics.onRoomEnter(n, 'vault');
-    const S = VAULT_SPOTS;
-    const [cx, cz] = clearSpot(S.chest, VAULT_RULES.chestRadius + 0.3);
-    const chest = registry.spawn(vaultChestSpec(cx, cz));
-    events.emit(tick, 'interactable_spawn', { id: chest.id, itype: 'vault_chest', x: r2(cx), z: r2(cz) });
-    const piles = S.piles.map((row, i) => {
-      const [x, z] = clearSpot(row, 0.4);
-      const e = registry.spawn({ kind: 'vault_pile', faction: 'neutral', pile: i, x, z, px: x, pz: z, yaw: i * 2.1 });
-      return { id: e.id, x: r2(x), z: r2(z) };
-    });
-    const [px, pz] = clearSpot(S.platter, 0.45);
-    const platter = registry.spawn({ kind: 'vault_platter', faction: 'neutral', x: px, z: pz, px, pz, yaw: 0.4 });
-    events.emit(tick, 'vault_enter', {
-      room: n,
-      chest: { id: chest.id, x: r2(cx), z: r2(cz) },
-      piles,
-      platter: { id: platter.id, x: r2(px), z: r2(pz) },
-      reward: rs.rewardFor[n] ?? null,
-    });
-    return v;
-  }
 
-  function vaultChestSpec(x, z) {
-    return {
-      kind: 'vault_chest',
-      itype: 'vault_chest',
-      faction: 'neutral',
-      x,
-      z,
-      px: x,
-      pz: z,
-      yaw: 0,
-      interactable: true,
-      interactRadius: VAULT_CHEST.interactRadius,
-      radius: VAULT_RULES.chestRadius,
-      verb: VAULT_CHEST.verb,
-      spentLabel: VAULT_CHEST.spentLabel,
-      uses: 1,
-      cooldownUntilTick: 0,
-      activeUntilTick: 0,
-      usedTick: -1,
-      usedBy: null,
-      collider: { r: VAULT_RULES.chestRadius },
-      blocksMovement: true,
-    };
-  }
 
-  // A Glint pile: the Healer's wallet and each ally purse.
-  function takePile(e, by) {
-    const R = VAULT_RULES;
-    // RELICS batch 4: Vault Ledger doubles each pile.
-    const lm = relics.vaultPileMul();
-    const g = Math.round(R.pileGlint * lm);
-    gainGlint(g, 'vault_pile');
-    if (allyOn()) for (const seat of [1, 2, 3]) party.gainPurse(seat, Math.round(R.pilePurse * lm), 'vault_pile');
-    const v = vaults.live();
-    if (v) v.glint += g;
-    events.emit(getTick(), 'vault_pile', { id: e.id, pile: e.pile, by, glint: g, x: r2(e.x), z: r2(e.z) });
-    if (lm !== 1) events.emit(getTick(), 'relic_proc', { relic: 'vault_ledger', pile: e.pile, glint: g, x: r2(e.x), z: r2(e.z) });
-    registry.despawn(e.id);
-  }
-  // The food platter: every living hero heals half their max HP.
-  function takePlatter(e, by) {
-    let healed = 0;
-    for (const h of registry.all()) {
-      if (h.partyIndex === undefined || !(h.hp > 0) || h.hp >= h.maxHp) continue;
-      if (combat.applyHeal(h, h.maxHp * VAULT_RULES.platterHeal, { source: 'vault_platter' })) healed += 1;
-    }
-    const v = vaults.live();
-    if (v) v.healed = healed;
-    events.emit(getTick(), 'vault_platter', { id: e.id, by, healed, x: r2(e.x), z: r2(e.z) });
-    registry.despawn(e.id);
-  }
-  function stepVault() {
-    const v = vaults.live();
-    if (v && v.state === 'open') {
-      if (!v.paid && getTick() >= v.payAt) {
-        v.paid = true;
-        presentReward(null);
-      }
-      return;
-    }
-    for (const e of registry.all()) {
-      if (e.kind !== 'vault_pile' && e.kind !== 'vault_platter') continue;
-      const h = vaults.toucher(e);
-      if (!h) continue;
-      if (e.kind === 'vault_pile') takePile(e, h.id);
-      else takePlatter(e, h.id);
-    }
-  }
 
-  // E on the chest (any hero), the autopilot, or cmd('vaultOpen').
-  function openVault() {
-    if (rs.phase !== 'vault') return null;
-    const v = vaults.live();
-    if (!v || v.state !== 'shut') return null;
-    const tick = getTick();
-    const chest = registry.all().find((e) => e.kind === 'vault_chest');
-    if (chest && chest.uses > 0) chest.uses = 0;
-    // The party gathers the rest of the hoard as the lid comes up.
-    for (const e of registry.all()) {
-      if (e.kind === 'vault_pile') takePile(e, null);
-      else if (e.kind === 'vault_platter') takePlatter(e, null);
-    }
-    vaults.finishRoom();
-    rs.roomsDone = Math.max(rs.roomsDone, rs.roomIndex);
-    // TONICS AND BOMBS: the chest pays one into the first empty slot.
-    if (tonics.enabled() && rs.frame && rs.campaign) tonics.grant(chestTonic(rs.frame.seed, rs.campaign.index, rs.roomIndex, 'vault'), 'vault', null, chest ? chest.x : undefined, chest ? chest.z : undefined);
-    const owed = relics.owe(rs.roomIndex, VAULT_RULES.chestSource);
-    events.emit(tick, 'vault_open', {
-      room: rs.roomIndex,
-      glint: v.glint,
-      healed: v.healed,
-      relic: !!owed,
-      ...(chest ? { x: r2(chest.x), z: r2(chest.z) } : {}),
-    });
-    // The lid comes up and the hoard's light rises for a moment; then the
-    // door's own draft, the relic pick and the doors (stepVault).
-    v.payAt = tick + Math.round(VAULT_RULES.revealSec * TICK_HZ);
-    return { opened: true, room: rs.roomIndex, glint: v.glint, healed: v.healed, relic: !!owed };
-  }
 
   // ---------------------------------------------------- secret rooms --
   // SECRET ROOMS (docs/SECRET_ROOMS.md). The cracked wall stands flush with
@@ -1980,7 +1851,7 @@ export function createRunSystem({
     const bodies = [];
     if (content === 'hoard') {
       S.piles.forEach((row, i) => {
-        const [x, z] = clearSpot(row, 0.4);
+        const [x, z] = RF.clearSpot(row, 0.4);
         const e = registry.spawn({ kind: 'secret_pile', faction: 'neutral', pile: i, x, z, px: x, pz: z, yaw: i * 2.3 });
         bodies.push({ id: e.id, x: r2(x), z: r2(z) });
       });
@@ -1992,7 +1863,7 @@ export function createRunSystem({
       events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'encounter', x: r2(e.x), z: r2(e.z) });
       bodies.push({ id: e.id, x: r2(e.x), z: r2(e.z) });
     } else {
-      const [x, z] = clearSpot(S.body, SECRET_BODY[content].radius + 0.3);
+      const [x, z] = RF.clearSpot(S.body, SECRET_BODY[content].radius + 0.3);
       const e = registry.spawn(secretBodySpec(content, x, z));
       events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'secret_body', x: r2(x), z: r2(z) });
       bodies.push({ id: e.id, x: r2(x), z: r2(z) });
@@ -2811,7 +2682,7 @@ export function createRunSystem({
     if (rs.active && tonics.enabled()) tonics.step(controllers());
     if (rs.active && vaults.enabled()) {
       vaults.step();
-      if (rs.phase === 'vault') stepVault();
+      if (rs.phase === 'vault') RF.stepVault();
     }
     if (rs.active && rs.phase === 'secret') stepSecret();
     if (rs.active && rs.roomIndex === RUN.bossRoom && rs.phase === 'combat') boss.endOfTick();
@@ -3353,7 +3224,7 @@ export function createRunSystem({
         return [...rs.frame.modes];
       }
       case 'vaultOpen':
-        return openVault();
+        return RF.openVault();
       // SECRET ROOMS probes.
       case 'secretWall':
         // ('secretWall', n?, holds?) — room n of this level (default: the
@@ -3648,9 +3519,10 @@ export function createRunSystem({
     rs.shrine = d.shrine ? cloneData(d.shrine) : null;
   }
 
-  Object.assign(RF, { beginFade, spend }); // the closure's own functions the parts call
+  Object.assign(RF, { beginFade, gainGlint, presentReward, spend }); // the closure's own functions the parts call
   Object.assign(RF, createRunShop({ rs, RF, allyOn, buildSys, controllers, draft, events, getTick, pages, party, relics, tonics }));
   Object.assign(RF, createRunShrines({ rs, RF, championsOn, events, getTick, party, player, registry, relics, tonics, vaults }));
+  Object.assign(RF, createVaultRoom({ rs, RF, allyOn, combat, events, getTick, party, registry, relics, tonics, vaults }));
   const api = {
     saveState,
     loadState,
@@ -3731,7 +3603,7 @@ export function createRunSystem({
     focusEncounter,
     chooseEncounter,
     // KEYS AND VAULTS: the chest (E does the same through the interactables).
-    openVault,
+    openVault: RF.openVault,
     openSecret,
     // TONICS AND BOMBS: the stand, the slot presses and the system (probes).
     buyTonic: RF.buyTonic,
