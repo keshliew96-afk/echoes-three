@@ -2,7 +2,7 @@
 // hero rig (the shape is in render/facet/hero.js). The critter factory builds
 // a hero's faceted twin from here, the model lab gives each a tab and the
 // heroes probe runs every check on each. A hero joins by exporting its SPEC
-// and being listed below (and in MODEL_STANDARD, render/facet/flags.js).
+// and being listed below.
 import { TANK_SPEC } from '../critters/tankfacet.js';
 import { HEALER_SPEC } from '../critters/healerfacet.js';
 import { SWORDSMAN_SPEC } from '../critters/swordsmanfacet.js';

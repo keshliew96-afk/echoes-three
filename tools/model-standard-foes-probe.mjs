@@ -11,7 +11,7 @@
 //      a strike, a short blink re-stands the feet, a foot is never drawn past
 //      its leg's reach;
 //   2. the roster: every kind of Level I's roster and campaign roster has a
-//      faceted rig, a flag, abilities and a model lab tab (the classic rigs
+//      faceted rig, abilities and a model lab tab (the classic rigs
 //      and `?facet=0` were retired, AUDIT.md D1);
 //   3. the crowd budget: each rig draws no more calls than its
 //      retired classic rig did (tools/classic-foe-calls.json);
@@ -46,7 +46,6 @@ const { Color, Vector3 } = await import('three');
 const { createTimeline, ease } = await import('../src/render/facet/timeline.js');
 const { FRAME, SPAWN_SEC, spawnScale, settle, hitTimelines, createChain, createFoeClock, createAttackWatch } = await import('../src/render/facet/foe.js');
 const { createLegs, clampReach } = await import('../src/render/facet/foelegs.js');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FACET_FOES, FOE_ABILITIES } = await import('../src/render/enemies/facet/index.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-foes.js');
 const { LEVELS } = await import('../src/data/levels.js');
@@ -199,7 +198,6 @@ const ROSTER = [...Object.keys(level1.roster), ...Object.keys(level1.campaignRos
 {
   check('the Level I roster and campaign roster are the eight foes', ROSTER.length === 8, ROSTER);
   for (const kind of ROSTER) {
-    check(`${kind}: flagged on the model standard`, MODEL_STANDARD[kind] === true && facetOn(kind, new URLSearchParams('')));
     check(`${kind}: a faceted rig and its abilities`, typeof FACET_FOES[kind] === 'function' && FOE_ABILITIES[kind] && Object.keys(FOE_ABILITIES[kind]).length > 0);
     check(`${kind}: a model lab tab with every ability`, !!LAB_ENTRIES.find((e) => e.id === kind && e.abilities.length === Object.keys(FOE_ABILITIES[kind] || {}).length));
     check(`${kind}: a classic draw budget on file`, Number.isInteger(CLASSIC_CALLS[kind]));

@@ -15,7 +15,7 @@
 //      swing cadence, every Tank skill plays an ability, the hips lead the
 //      slab, the feet stay locked while planted and step along the travel,
 //      the walk leans into the travel whatever the aim, the slam lunges;
-//   5. the flag: `?facet=` and the classic rigs beside;
+//   5. (retired with the classic rigs and the `?facet=` flag, AUDIT.md D1);
 //   6. colour: no reserved colour, nothing in the amber family, and the
 //      Tank's Bone stays its brightest value.
 //
@@ -30,7 +30,6 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 const { Color, Group, IcosahedronGeometry, Vector3 } = await import('three');
 const { createTimeline, createPlayhead } = await import('../src/render/facet/timeline.js');
 const { facetize, facetMaterial } = await import('../src/render/facet/material.js');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { buildWyrmFacet, WYRM_ABILITIES } = await import('../src/render/boss/wyrmfacet.js');
 const { TANK_ABILITIES, TANK_HITS, TANK_SKILL_ABILITY, SWING_SEC, COMBO_LAB, WIND, hitPose, abilityPose } = await import('../src/render/critters/tankfacet.js');
 const { createCritter } = await import('../src/render/critters/index.js');
@@ -426,14 +425,6 @@ function tankRig(facet = true) {
   check('downed and revived poses run', ok === true, ok === true ? '' : ok);
   const parts = inkReport(c.group);
   check('the Tank carries instanced parts, inked', parts.length >= 5 && parts.filter((p) => !p.inked).every((p) => /rivet|stud/.test(p.name)), parts.map((p) => `${p.name}:${p.count}${p.inked ? '' : ' (no ink)'}`));
-}
-
-// --- 5. the flag and the classic rigs -------------------------------------------
-{
-  const q = (s) => new URLSearchParams(s);
-  check('the pilot plays the Wyrm and the Tank by default', MODEL_STANDARD.wyrm === true && MODEL_STANDARD.tank === true && facetOn('wyrm', q('')) && facetOn('tank', q('')) && !facetOn('hush', q('')));
-  check('?facet=0 turns every model classic', !facetOn('wyrm', q('facet=0')) && !facetOn('tank', q('facet=0')));
-  check('?facet=wyrm keeps only the Wyrm faceted', facetOn('wyrm', q('facet=wyrm')) && !facetOn('tank', q('facet=wyrm')));
 }
 
 // --- 6. colour -------------------------------------------------------------------

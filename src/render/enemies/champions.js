@@ -58,7 +58,7 @@ import { mergeGeometries as mergeRaw } from 'three/addons/utils/BufferGeometryUt
 import { SECOND_CHAMPION_BUILDERS, SECOND_CHAMPION_CROWN_Y, hartLift, abbessLift } from './champions2.js';
 // MODEL STANDARD (docs/MODEL_STANDARD.md "Level I champions", "Level II
 // champions"): the faceted Briar Knight, Moss Hart, Sluice Warden and
-// Lockkeeper; the classic rigs stay beside them (?facet=0).
+// Lockkeeper (their classic rigs were retired, AUDIT.md D1).
 import { buildBriarKnightFacet } from './champfacet/briarknight.js';
 import { buildMossHartFacet } from './champfacet/mosshart.js';
 import { buildSluiceWardenFacet } from './champfacet/sluicewarden.js';

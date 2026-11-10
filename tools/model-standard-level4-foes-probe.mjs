@@ -6,7 +6,7 @@
 // Level IV foes", render/enemies/facet/). The row's other kinds are Level
 // II's moth (built) and the Barrow's crow, brood, gravewisp and knight (the
 // Level III foes slice's). Visual only. This probe checks:
-//   1. the roster: each of the six has a faceted rig, a flag, abilities and a
+//   1. the roster: each of the six has a faceted rig, abilities and a
 //      model lab tab (the classic rigs and `?facet=0` were retired, AUDIT.md D1);
 //   2. the crowd budget: each rig draws no more calls than its
 //      retired classic rig did (tools/classic-foe-calls.json);
@@ -50,7 +50,6 @@ const ctx = new Proxy({}, { get: (_, k) => (k === 'canvas' ? {} : () => grad), s
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) };
 
 const { Color, Matrix4, Vector3 } = await import('three');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FACET_FOES, FOE_ABILITIES } = await import('../src/render/enemies/facet/index.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-foes.js');
 const { CROWN_Y } = await import('../src/render/enemies/archetypes.js');
@@ -74,7 +73,6 @@ const ROSTER = ['husk', 'lancer', 'geode', 'censer', 'bloom', 'siphon'];
 {
   check('the six Heart foes are Level IV kinds', ROSTER.every((k) => ALL4.includes(k)), ALL4);
   for (const kind of ROSTER) {
-    check(`${kind}: flagged on the model standard`, MODEL_STANDARD[kind] === true && facetOn(kind, new URLSearchParams('')));
     check(`${kind}: a faceted rig and its abilities`, typeof FACET_FOES[kind] === 'function' && FOE_ABILITIES[kind] && Object.keys(FOE_ABILITIES[kind]).length > 0);
     check(`${kind}: a model lab tab with every ability`, !!LAB_ENTRIES.find((e) => e.id === kind && e.abilities.length === Object.keys(FOE_ABILITIES[kind] || {}).length));
     check(`${kind}: a classic draw budget on file`, Number.isInteger(CLASSIC_CALLS[kind]));

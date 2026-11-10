@@ -11,7 +11,7 @@
 //      snaps in within a frame, the contact holds while the sim's strike mode
 //      lasts and 3 frames at least, the settle passes rest once;
 //   2. the roster: every kind of Level II's roster and campaign roster has a
-//      faceted rig (here or in Level I's), a flag, abilities and a model lab
+//      faceted rig (here or in Level I's), abilities and a model lab
 //      tab (the classic rigs and `?facet=0` were retired, AUDIT.md D1);
 //   3. the crowd budget: each rig draws no more calls than its
 //      retired classic rig did (tools/classic-foe-calls.json);
@@ -49,7 +49,6 @@ globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext:
 const { Color, Matrix4, Vector3 } = await import('three');
 const { FRAME, createAttackWatch, settle } = await import('../src/render/facet/foe.js');
 const { createStrikeClip, STRIKE_TICKS } = await import('../src/render/facet/foestrike.js');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FACET_FOES, FOE_ABILITIES } = await import('../src/render/enemies/facet/index.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-foes.js');
 const { CROWN_Y } = await import('../src/render/enemies/archetypes.js');
@@ -142,7 +141,6 @@ const ROSTER = ALL2.filter((k) => !L1.has(k));
 {
   check('the Level II kinds Level I has not built are the seven foes', ROSTER.join() === 'toad,moth,snail,crab,lamprey,leech,miller', ROSTER);
   for (const kind of ALL2) {
-    check(`${kind}: flagged on the model standard`, MODEL_STANDARD[kind] === true && facetOn(kind, new URLSearchParams('')));
     check(`${kind}: a faceted rig and its abilities`, typeof FACET_FOES[kind] === 'function' && FOE_ABILITIES[kind] && Object.keys(FOE_ABILITIES[kind]).length > 0);
     check(`${kind}: a model lab tab with every ability`, !!LAB_ENTRIES.find((e) => e.id === kind && e.abilities.length === Object.keys(FOE_ABILITIES[kind] || {}).length));
     check(`${kind}: a classic draw budget on file`, Number.isInteger(CLASSIC_CALLS[kind]));
