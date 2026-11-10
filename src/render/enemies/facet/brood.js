@@ -111,11 +111,6 @@ function biteChain(kind) {
       return { n, t: tt, fresh: n === 0, pull, from: n === 0 ? REST : HITS[n - 1].pull, phase: s.id, label: `${HIT_TL[n].label}: ${s.label}` };
     },
     strikes: CONTACTS,
-    classicAt: (t) => {
-      const since = CONTACTS.map((c) => t - c).filter((d) => d >= 0 && d < 0.22);
-      const k = since.length ? Math.sin((since[since.length - 1] / 0.22) * Math.PI) : 0;
-      return { telegraphK: 0, lungeK: k, fireK: 0, e: { biteTick: CONTACTS.filter((c) => t >= c).length ? 1 : -1 } };
-    },
   });
 }
 export const BROOD_ABILITIES = Object.freeze({ bites: biteChain('brood') });

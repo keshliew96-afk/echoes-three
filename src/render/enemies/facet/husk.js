@@ -135,7 +135,6 @@ export const HUSK_BEAT = Object.freeze({
   sample: (t) => BEAT_TL.sample(t),
   readout: (t) => BEAT_TL.readout(t),
   cues: BEAT_TL.cues,
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: BEAT_TL.sample(t).id === 'surge' ? 'surge' : 'stalk', biteTick: -1 } }),
 });
 export const HUSK_ABILITIES = Object.freeze({ bites: HUSK_BITES, beat: HUSK_BEAT });
 

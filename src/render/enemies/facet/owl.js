@@ -183,12 +183,6 @@ export const OWL_SHRIEK = Object.freeze({
   },
   // the contact lands where the sim resolves the telegraph (the lab's cue)
   strikes: [GATHER_SEC],
-  // the classic twin's stand-in inputs: hanging through the telegraph, its
-  // shriek clip on the release
-  classicAt(t) {
-    const hang = t < GATHER_SEC;
-    return { telegraphK: hang ? 1 : 0, lungeK: 0, fireK: 0, e: { mode: hang ? 'hang' : 'glide', shriekTick: hang ? -1 : 1 } };
-  },
 });
 export const OWL_ABILITIES = Object.freeze({ shriek: OWL_SHRIEK });
 

@@ -139,7 +139,6 @@ const SWEEP_TL = strikeTimeline('sweep', 'Flail sweep', {
   rest: 0.25,
   labels: { coil: 'coil (the ring telegraph): the stone spun up', strike: 'the sweep', hold: 'contact: the stone through the ring', snap: 'swing on round', settle: 'the stone comes to hang' },
 });
-const SWEEP_CONTACT = SWEEP_TL.startOf('hold');
 function sweepPhase(s, tl) {
   if (s.id === 'coil' || s.id === 'strike') return [s.id, s.k];
   if (s.id === 'hold') return ['hold', s.k];
@@ -149,9 +148,8 @@ function sweepPhase(s, tl) {
 export function millerSweepPose(v, t, out = { ...REST }) {
   return strikePoseAt(SWEEP_TL, SWEEPS[v] || SWEEPS[0], REST, FIELDS, t, out);
 }
-const classicSweep = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? Math.min(1, tt / SWEEP_TEL_SEC) : 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'coil' || s.id === 'strike' ? 'whirl' : 'plod', sweepTick: tt >= SWEEP_CONTACT ? 1 : -1, tossTick: -1 } });
-export const MILLER_SWEEP = strikeAbility({ id: 'sweep', label: 'Flail sweep', tl: SWEEP_TL, variants: SWEEPS, classic: classicSweep });
-export const MILLER_SWEEPS_STRING = strikeAbility({ id: 'sweeps', label: 'Sweep string', tl: SWEEP_TL, variants: SWEEPS, n: 3, gap: SWEEP_TL.duration, classic: classicSweep });
+export const MILLER_SWEEP = strikeAbility({ id: 'sweep', label: 'Flail sweep', tl: SWEEP_TL, variants: SWEEPS });
+export const MILLER_SWEEPS_STRING = strikeAbility({ id: 'sweeps', label: 'Sweep string', tl: SWEEP_TL, variants: SWEEPS, n: 3, gap: SWEEP_TL.duration });
 
 // --- The toss's key poses (yaw space): lx / ly / lz the left hand; tw, ln,
 // cr the torso's twist, lean and the hips' sink added on the sweep's.
@@ -170,13 +168,11 @@ const TOSS_TL = strikeTimeline('toss', 'Sack toss', {
   rest: 0.3,
   labels: { coil: 'gather (unwarned: inside the release)', strike: 'the throw', hold: 'contact: the sack away', snap: 'follow through', settle: 'settle' },
 });
-const TOSS_CONTACT = TOSS_TL.startOf('hold');
 export function millerTossPose(v, t, out = { ...TREST }) {
   return strikePoseAt(TOSS_TL, TOSSES[v] || TOSSES[0], TREST, TFIELDS, t, out);
 }
-const classicToss = (tt) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: 'plod', sweepTick: -1, tossTick: tt >= TOSS_CONTACT ? 1 : -1 } });
-export const MILLER_TOSS = strikeAbility({ id: 'toss', label: 'Sack toss', tl: TOSS_TL, variants: TOSSES, classic: classicToss });
-export const MILLER_TOSSES = strikeAbility({ id: 'tosses', label: 'Toss string', tl: TOSS_TL, variants: TOSSES, n: 3, gap: TOSS_TL.duration, classic: classicToss });
+export const MILLER_TOSS = strikeAbility({ id: 'toss', label: 'Sack toss', tl: TOSS_TL, variants: TOSSES });
+export const MILLER_TOSSES = strikeAbility({ id: 'tosses', label: 'Toss string', tl: TOSS_TL, variants: TOSSES, n: 3, gap: TOSS_TL.duration });
 export const MILLER_ABILITIES = Object.freeze({ sweep: MILLER_SWEEP, sweeps: MILLER_SWEEPS_STRING, toss: MILLER_TOSS, tosses: MILLER_TOSSES });
 
 // --- Geometry (built once for the session, shared by every miller) ---------

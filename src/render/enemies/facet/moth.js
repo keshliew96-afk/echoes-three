@@ -99,9 +99,8 @@ const SWOOP_TL = strikeTimeline('swoop', 'Swoop', {
 export function mothSwoopPose(v, t, out = { ...REST }) {
   return strikePoseAt(SWOOP_TL, SWOOPS[v] || SWOOPS[0], REST, FIELDS, t, out, heldMotion);
 }
-const classicSwoop = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'hold' ? 'swoop' : 'orbit' } });
-export const MOTH_SWOOP = strikeAbility({ id: 'swoop', label: 'Swoop', tl: SWOOP_TL, variants: SWOOPS, classic: classicSwoop });
-export const MOTH_SWOOPS_STRING = strikeAbility({ id: 'swoops', label: 'Swoop string', tl: SWOOP_TL, variants: SWOOPS, n: 3, gap: SWOOP_TL.duration, classic: classicSwoop });
+export const MOTH_SWOOP = strikeAbility({ id: 'swoop', label: 'Swoop', tl: SWOOP_TL, variants: SWOOPS });
+export const MOTH_SWOOPS_STRING = strikeAbility({ id: 'swoops', label: 'Swoop string', tl: SWOOP_TL, variants: SWOOPS, n: 3, gap: SWOOP_TL.duration });
 export const MOTH_ABILITIES = Object.freeze({ swoop: MOTH_SWOOP, swoops: MOTH_SWOOPS_STRING });
 
 // --- Geometry (built once for the session, shared by every moth) -----------

@@ -105,7 +105,6 @@ const SNAP_TL = strikeTimeline('snap', 'Snap', {
   rest: GUARD_OPEN_SEC,
   labels: { coil: 'coil (the cone telegraph)', strike: 'snap', hold: 'contact: claws shut', snap: 'snap back', settle: 'settle, guard down' },
 });
-const CONTACT_AT = SNAP_TL.startOf('hold');
 function heldMotion(V, age, out) {
   // B3: a rig-only shove back off the hit, 2 frames out and ~8 back
   out.push -= RECOIL_U * recoil(age - HOLD_T);
@@ -113,9 +112,8 @@ function heldMotion(V, age, out) {
 export function crabSnapPose(v, t, out = { ...REST }) {
   return strikePoseAt(SNAP_TL, SNAPS[v] || SNAPS[0], REST, FIELDS, t, out, heldMotion);
 }
-const classicSnap = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { snapTick: tt >= CONTACT_AT ? 1 : -1, guard: { active: tt < SNAP_TL.startOf('strike') } } });
-export const CRAB_SNAP = strikeAbility({ id: 'snap', label: 'Snap', tl: SNAP_TL, variants: SNAPS, classic: classicSnap });
-export const CRAB_SNAPS_STRING = strikeAbility({ id: 'snaps', label: 'Snap string', tl: SNAP_TL, variants: SNAPS, n: 3, gap: SNAP_TL.duration - 0.2, classic: classicSnap });
+export const CRAB_SNAP = strikeAbility({ id: 'snap', label: 'Snap', tl: SNAP_TL, variants: SNAPS });
+export const CRAB_SNAPS_STRING = strikeAbility({ id: 'snaps', label: 'Snap string', tl: SNAP_TL, variants: SNAPS, n: 3, gap: SNAP_TL.duration - 0.2 });
 export const CRAB_ABILITIES = Object.freeze({ snap: CRAB_SNAP, snaps: CRAB_SNAPS_STRING });
 // The lab's guard: down from the snap back to the end of its 45 ticks, eased
 // in and out (pure in t).

@@ -275,13 +275,7 @@ function crashAt(t, out) {
   capB.pitch = wrapPi(capB.pitch);
   return returnPose(t - free, capB, RECOVER_SEC, out);
 }
-// The classic twin's stand-in inputs at t (the lab's "Classic beside").
-function classicInputs(t, wall) {
-  const rollEnd = TEL_SEC + (wall ? CRASH_ROLL : CHARGE_SEC);
-  const mode = t >= TEL_SEC && t < rollEnd ? 'charge' : wall && t >= rollEnd && t < rollEnd + STAGGER_SEC ? 'stagger' : 'approach';
-  return { telegraphK: t < TEL_SEC ? 1 : 0, lungeK: 0, fireK: 0, e: { mode } };
-}
-function ability(tl, at, wall) {
+function ability(tl, at) {
   return Object.freeze({
     id: tl.id,
     label: tl.label,
@@ -291,11 +285,10 @@ function ability(tl, at, wall) {
     cues: tl.cues,
     strikes: [TEL_SEC],
     pose: (t, out = { ...REST }) => at(t, out),
-    classicAt: (t) => classicInputs(t, wall),
   });
 }
-export const QUILLBACK_CHARGE = ability(tlCharge, chargeAt, false);
-export const QUILLBACK_CRASH = ability(tlCrash, crashAt, true);
+export const QUILLBACK_CHARGE = ability(tlCharge, chargeAt);
+export const QUILLBACK_CRASH = ability(tlCrash, crashAt);
 export const QUILLBACK_ABILITIES = Object.freeze({ charge: QUILLBACK_CHARGE, crash: QUILLBACK_CRASH });
 
 // --- Geometry (built once for the session, shared by every quillback) -------
@@ -309,7 +302,6 @@ const SINK_N = 0.075; // the main quills (the coat flares to FLARE_MAX)
 const FUR_SINK = 0.06; // the hide's short fur (raked 0.7 rad: its base ring tilts; never flares)
 const CREST_SINK = 0.07; // the crest (it tilts up to about 0.55 rad, never flares)
 const FLARE = 0.065; // the coat's scale per unit of bristle
-const FLARE_MAX = 1 + FLARE * 1.2;
 const HEAD0 = new Vector3(0, -0.04, 0.2); // the head's pivot, ball space
 const FACE = new Vector3(0, -0.13, 1).normalize(); // the bare face, ball space
 const BACK = new Vector3(0, -0.28, -1).normalize(); // the coat's rake: back and down

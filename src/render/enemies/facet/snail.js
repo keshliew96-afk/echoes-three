@@ -94,9 +94,8 @@ const PULSE_AT = MEND_TL.startOf('hold');
 export function snailMendPose(v, t, out = { ...REST }) {
   return strikePoseAt(MEND_TL, MENDS[v] || MENDS[0], REST, FIELDS, t, out);
 }
-const classicMend = (tt, s) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mendStartTick: s.id === 'coil' || s.id === 'strike' ? 1 : -1, mendTick: tt >= PULSE_AT ? 2 : -1 } });
-export const SNAIL_MEND = strikeAbility({ id: 'mend', label: 'Mend', tl: MEND_TL, variants: MENDS, classic: classicMend });
-export const SNAIL_MEND_STRING = strikeAbility({ id: 'mends', label: 'Mend string', tl: MEND_TL, variants: MENDS, n: 3, gap: MEND_TL.duration - 0.25, classic: classicMend });
+export const SNAIL_MEND = strikeAbility({ id: 'mend', label: 'Mend', tl: MEND_TL, variants: MENDS });
+export const SNAIL_MEND_STRING = strikeAbility({ id: 'mends', label: 'Mend string', tl: MEND_TL, variants: MENDS, n: 3, gap: MEND_TL.duration - 0.25 });
 export const SNAIL_ABILITIES = Object.freeze({ mend: SNAIL_MEND, mends: SNAIL_MEND_STRING });
 
 // --- Geometry (built once for the session, shared by every snail) ----------

@@ -93,16 +93,14 @@ const SLAM_TL = strikeTimeline('slam', 'Horn slam', {
   rest: 0.25,
   labels: { coil: 'coil (the cone telegraph): wound back, the head cocked', strike: 'the slam', hold: 'contact: the horns in', snap: 'snap back', settle: 'settle' },
 });
-const CONTACT_AT = SLAM_TL.startOf('hold');
 function heldMotion(V, age, out) {
   out.push -= RECOIL_U * recoil(age - HOLD_SEC);
 }
 export function ramSlamPose(v, t, out = { ...REST }) {
   return strikePoseAt(SLAM_TL, SLAMS[v] || SLAMS[0], REST, FIELDS, t, out, heldMotion);
 }
-const classicSlam = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { mode: 'advance', lastBlockedTick: tt >= CONTACT_AT ? 1 : -1 } });
-export const RAM_SLAM = strikeAbility({ id: 'slam', label: 'Horn slam', tl: SLAM_TL, variants: SLAMS, classic: classicSlam });
-export const RAM_SLAMS_STRING = strikeAbility({ id: 'slams', label: 'Slam string', tl: SLAM_TL, variants: SLAMS, n: 3, gap: SLAM_TL.duration, classic: classicSlam });
+export const RAM_SLAM = strikeAbility({ id: 'slam', label: 'Horn slam', tl: SLAM_TL, variants: SLAMS });
+export const RAM_SLAMS_STRING = strikeAbility({ id: 'slams', label: 'Slam string', tl: SLAM_TL, variants: SLAMS, n: 3, gap: SLAM_TL.duration });
 export const RAM_ABILITIES = Object.freeze({ slam: RAM_SLAM, slams: RAM_SLAMS_STRING });
 
 // --- Geometry (built once for the session, shared by every ram) -------------

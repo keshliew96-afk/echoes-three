@@ -79,8 +79,7 @@ const GATHER_CONTACT = GATHER_TL.startOf('hold');
 export function censerGatherPose(t, out = { ...REST }) {
   return strikePoseAt(GATHER_TL, GATHER, REST, FIELDS, t, out);
 }
-const classicGather = (tt, s) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'coil' || s.id === 'strike' ? 'gather' : 'drift', mendTick: tt >= GATHER_CONTACT ? 1 : -1 } });
-export const CENSER_GATHER = Object.freeze({ ...strikeAbility({ id: 'gather', label: 'Gather and mend', tl: GATHER_TL, variants: [GATHER], classic: classicGather }), cues: [{ at: 0, id: 'gather' }, { at: GATHER_CONTACT, id: 'strike' }] });
+export const CENSER_GATHER = Object.freeze({ ...strikeAbility({ id: 'gather', label: 'Gather and mend', tl: GATHER_TL, variants: [GATHER] }), cues: [{ at: 0, id: 'gather' }, { at: GATHER_CONTACT, id: 'strike' }] });
 // The spill: a gather cut by a stun at 0.4 s, the coals guttering, the pot
 // dropping and swinging, then easing back to rest (pure in t).
 const SPILL_AT = 0.4;
@@ -114,7 +113,6 @@ export const CENSER_SPILL = Object.freeze({
   sample: (t) => SPILL_TL.sample(t),
   readout: (t) => SPILL_TL.readout(t),
   cues: SPILL_TL.cues,
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: t < SPILL_AT ? 'gather' : 'drift', mendTick: -1 } }),
 });
 export const CENSER_ABILITIES = Object.freeze({ gather: CENSER_GATHER, spill: CENSER_SPILL });
 

@@ -139,7 +139,6 @@ export const SEXTON_DIG = Object.freeze({
     { at: 0, id: 'dig' },
     { at: BURY_AT, id: 'bury' },
   ],
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: t < BURY_AT ? 'dig' : 'skulk', digTick: t >= BURY_AT ? 1 : -1 } }),
 });
 const GAP = DIG_TL.duration + 0.4;
 export const SEXTON_DIGS = Object.freeze({
@@ -157,10 +156,6 @@ export const SEXTON_DIGS = Object.freeze({
     { at: g, id: 'dig' },
     { at: g + BURY_AT, id: 'bury' },
   ]),
-  classicAt: (t) => {
-    const tt = t - Math.max(0, Math.min(2, Math.floor(t / GAP))) * GAP;
-    return { telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: tt < BURY_AT ? 'dig' : 'skulk', digTick: tt >= BURY_AT ? 1 : -1 } };
-  },
 });
 export const SEXTON_ABILITIES = Object.freeze({ dig: SEXTON_DIG, digs: SEXTON_DIGS });
 

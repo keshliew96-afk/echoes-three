@@ -106,13 +106,11 @@ const CAW_TL = strikeTimeline('caw', 'Caw', {
   rest: 0.25,
   labels: { coil: 'coil (the cone telegraph): wings fanning, the head drawn back', strike: 'the volley', hold: 'contact: the fan away, the squash held', snap: 'snap back', settle: 'settle' },
 });
-const CONTACT_AT = CAW_TL.startOf('hold');
 export function crowCawPose(v, t, out = { ...REST }) {
   return strikePoseAt(CAW_TL, CAWS[v] || CAWS[0], REST, FIELDS, t, out, heldMotion);
 }
-const classicCaw = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { mode: 'hop', fireTick: tt >= CONTACT_AT ? 1 : -1 } });
-export const CROW_CAW = strikeAbility({ id: 'caw', label: 'Caw', tl: CAW_TL, variants: CAWS, classic: classicCaw });
-export const CROW_CAWS_STRING = strikeAbility({ id: 'caws', label: 'Caw string', tl: CAW_TL, variants: CAWS, n: 3, gap: CAW_TL.duration, classic: classicCaw });
+export const CROW_CAW = strikeAbility({ id: 'caw', label: 'Caw', tl: CAW_TL, variants: CAWS });
+export const CROW_CAWS_STRING = strikeAbility({ id: 'caws', label: 'Caw string', tl: CAW_TL, variants: CAWS, n: 3, gap: CAW_TL.duration });
 export const CROW_ABILITIES = Object.freeze({ caw: CROW_CAW, caws: CROW_CAWS_STRING });
 
 // --- Geometry (built once for the session, shared by every crow) ------------

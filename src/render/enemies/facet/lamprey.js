@@ -105,9 +105,8 @@ const RISE_SEC = 8 / 30;
 export function lampreyLungePose(v, t, out = { ...REST }) {
   return strikePoseAt(LUNGE_TL, LUNGES[v] || LUNGES[0], REST, FIELDS, t, out, heldMotion);
 }
-const classicLunge = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { burrowed: tt < 0.05, mode: s.id === 'hold' ? 'lunge' : 'rise' } });
-export const LAMPREY_LUNGE = strikeAbility({ id: 'lunge', label: 'Lunge', tl: LUNGE_TL, variants: LUNGES, classic: classicLunge });
-export const LAMPREY_LUNGES_STRING = strikeAbility({ id: 'lunges', label: 'Lunge string', tl: LUNGE_TL, variants: LUNGES, n: 3, gap: LUNGE_TL.duration, classic: classicLunge });
+export const LAMPREY_LUNGE = strikeAbility({ id: 'lunge', label: 'Lunge', tl: LUNGE_TL, variants: LUNGES });
+export const LAMPREY_LUNGES_STRING = strikeAbility({ id: 'lunges', label: 'Lunge string', tl: LUNGE_TL, variants: LUNGES, n: 3, gap: LUNGE_TL.duration });
 // Beached: the sim's punish window, one flop loop (pure in t).
 export const LAMPREY_BEACHED = Object.freeze({
   id: 'beached',
@@ -115,7 +114,6 @@ export const LAMPREY_BEACHED = Object.freeze({
   duration: BEACH_SEC,
   at: (t) => ({ v: 0, k: 0, t, phase: 'beached', label: 'beached: on its side, thrashing' }),
   strikes: [],
-  classicAt: () => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: 'beached' } }),
 });
 export const LAMPREY_ABILITIES = Object.freeze({ lunge: LAMPREY_LUNGE, lunges: LAMPREY_LUNGES_STRING, beached: LAMPREY_BEACHED });
 

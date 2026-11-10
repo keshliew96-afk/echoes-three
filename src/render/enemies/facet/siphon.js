@@ -96,13 +96,11 @@ const LASH_TL = strikeTimeline('lash', 'Tendril lash', {
   rest: 0.3,
   labels: { coil: 'coil (the lane telegraph): the tendrils drawn up', strike: 'the whip', hold: 'contact: the tendrils down the lane', snap: 'snap back', settle: 'settle into the hover' },
 });
-const LASH_CONTACT = LASH_TL.startOf('hold');
 export function siphonLashPose(v, t, out = { ...REST }) {
   return strikePoseAt(LASH_TL, LASHES[v] || LASHES[0], REST, FIELDS, t, out);
 }
-const classicLash = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? Math.min(1, tt / LASH_TEL_SEC) : 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'coil' || s.id === 'strike' ? 'cast' : 'drift', castTick: tt >= LASH_CONTACT ? 1 : -1 } });
-export const SIPHON_LASH = strikeAbility({ id: 'lash', label: 'Tendril lash', tl: LASH_TL, variants: LASHES, classic: classicLash });
-export const SIPHON_LASHES_STRING = strikeAbility({ id: 'lashes', label: 'Lash string', tl: LASH_TL, variants: LASHES, n: 3, gap: LASH_TL.duration, classic: classicLash });
+export const SIPHON_LASH = strikeAbility({ id: 'lash', label: 'Tendril lash', tl: LASH_TL, variants: LASHES });
+export const SIPHON_LASHES_STRING = strikeAbility({ id: 'lashes', label: 'Lash string', tl: LASH_TL, variants: LASHES, n: 3, gap: LASH_TL.duration });
 // Drinking: latched, the tendrils reaching, a gulp every half second (the
 // sim's 30-tick drain), pure in t.
 const GULPS = 4;
@@ -129,7 +127,6 @@ export const SIPHON_DRINK = Object.freeze({
   sample: (t) => DRINK_TL.sample(t),
   readout: (t) => DRINK_TL.readout(t),
   cues: DRINK_TL.cues,
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: DRINK_TL.sample(t).id === 'let-go' ? 'drift' : 'drink', castTick: -1 } }),
 });
 export const SIPHON_ABILITIES = Object.freeze({ lash: SIPHON_LASH, lashes: SIPHON_LASHES_STRING, drink: SIPHON_DRINK });
 

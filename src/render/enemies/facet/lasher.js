@@ -306,15 +306,6 @@ export const LASHER_LASH = Object.freeze({
     { at, id: 'strike' },
     { at, id: 'yank' },
   ]),
-  // the classic twin's inputs at t: coiled through each telegraph, its lash
-  // clip restarted on each contact (a fresh lashTick)
-  classicAt(t) {
-    const n = Math.max(0, Math.min(2, Math.floor(t / LAB_PERIOD)));
-    const tau = t - n * LAB_PERIOD;
-    let lashTick = -1;
-    for (let i = 0; i < 3; i++) if (t >= STRIKES[i]) lashTick = 1000 + i;
-    return { telegraphK: tau < COIL_SEC ? 1 : 0, lungeK: 0, fireK: 0, e: { lashTick, mode: tau < COIL_SEC ? 'coil' : 'creep' } };
-  },
 });
 export const LASHER_ABILITIES = Object.freeze({ lash: LASHER_LASH });
 const fromPose = (n) => (n === 0 ? REST : HITS[n].gather);

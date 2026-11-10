@@ -159,13 +159,6 @@ export const ROTCAP_CHOMP = Object.freeze({
   // seconds into the combo where each strike's contact lands (the lab's cues:
   // the game plays 'bite' on each)
   strikes: CONTACTS.slice(),
-  // the classic twin: its bite clip keys on a new biteTick (the sim's bite
-  // events at 0, 1.0 and 2.0 s), plus the layer's lunge pulse
-  classicAt(t) {
-    const ev = t < BITE_SEC ? 0 : t < 2 * BITE_SEC ? 1 : 2;
-    const since = t - ev * BITE_SEC;
-    return { telegraphK: 0, lungeK: since >= 0 && since < 0.18 ? Math.sin((since / 0.18) * Math.PI) : 0, fireK: 0, e: { biteTick: ev * 60 } };
-  },
 });
 
 // The death burst, for the model lab (the rig never sees its own death in
@@ -198,7 +191,6 @@ export const ROTCAP_BURST = Object.freeze({
     if (s.id === 'ring') return `${s.t.toFixed(1)}s · ${BURST_TL.label}: spore ring, lands in ${Math.max(0, Math.ceil((BURST_SEC - s.t) * 60))} ticks`;
     return `${s.t.toFixed(1)}s · ${BURST_TL.label}: ${s.label}`;
   },
-  classicAt: () => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: null }),
 });
 export const ROTCAP_ABILITIES = Object.freeze({ chomp: ROTCAP_CHOMP, burst: ROTCAP_BURST });
 

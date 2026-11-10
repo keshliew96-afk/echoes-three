@@ -102,10 +102,9 @@ const PULSE_CONTACT = PULSE_TL.startOf('hold');
 export function bloomPulsePose(v, t, out = { ...REST }) {
   return strikePoseAt(PULSE_TL, PULSES[v] || PULSES[0], REST, FIELDS, t, out);
 }
-const classicPulse = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? Math.min(1, tt / PULSE_TEL_SEC) : 0, lungeK: 0, fireK: 0, e: { mode: 'rooted', pulseTick: tt >= PULSE_CONTACT ? 1 : -1, rootTick: -1 } });
 const withCues = (ab) => Object.freeze({ ...ab, cues: ab.strikes.flatMap((at) => [{ at: at - PULSE_CONTACT, id: 'open' }, { at, id: 'strike' }]) });
-export const BLOOM_PULSE = withCues(strikeAbility({ id: 'pulse', label: 'Pulse', tl: PULSE_TL, variants: PULSES, classic: classicPulse }));
-export const BLOOM_PULSES_STRING = withCues(strikeAbility({ id: 'pulses', label: 'Pulse string', tl: PULSE_TL, variants: PULSES, n: 3, gap: PULSE_TL.duration, classic: classicPulse }));
+export const BLOOM_PULSE = withCues(strikeAbility({ id: 'pulse', label: 'Pulse', tl: PULSE_TL, variants: PULSES }));
+export const BLOOM_PULSES_STRING = withCues(strikeAbility({ id: 'pulses', label: 'Pulse string', tl: PULSE_TL, variants: PULSES, n: 3, gap: PULSE_TL.duration }));
 // Taking root: creeping, then the roots driven in with a jolt (3 frames)
 // and the knot settling onto them (pure in t).
 const ROOT_AT = 0.4;
@@ -130,7 +129,6 @@ export const BLOOM_ROOT = Object.freeze({
   sample: (t) => ROOT_TL.sample(t),
   readout: (t) => ROOT_TL.readout(t),
   cues: ROOT_TL.cues,
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: t < ROOT_AT ? 'creep' : 'rooted', pulseTick: -1, rootTick: t >= ROOT_AT ? 1 : -1 } }),
 });
 export const BLOOM_ABILITIES = Object.freeze({ pulse: BLOOM_PULSE, pulses: BLOOM_PULSES_STRING, root: BLOOM_ROOT });
 

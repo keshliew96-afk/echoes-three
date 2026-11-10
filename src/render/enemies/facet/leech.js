@@ -100,9 +100,8 @@ const LEAP_TL = strikeTimeline('leap', 'Leap', {
 export function leechLeapPose(v, t, out = { ...REST }) {
   return strikePoseAt(LEAP_TL, LEAPS[v] || LEAPS[0], REST, FIELDS, t, out);
 }
-const classicLeap = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? 1 : 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'hold' ? 'leap' : 'creep' } });
-export const LEECH_LEAP = strikeAbility({ id: 'leap', label: 'Leap', tl: LEAP_TL, variants: LEAPS, classic: classicLeap });
-export const LEECH_LEAPS_STRING = strikeAbility({ id: 'leaps', label: 'Leap string', tl: LEAP_TL, variants: LEAPS, n: 3, gap: LEAP_TL.duration, classic: classicLeap });
+export const LEECH_LEAP = strikeAbility({ id: 'leap', label: 'Leap', tl: LEAP_TL, variants: LEAPS });
+export const LEECH_LEAPS_STRING = strikeAbility({ id: 'leaps', label: 'Leap string', tl: LEAP_TL, variants: LEAPS, n: 3, gap: LEAP_TL.duration });
 // Latched: three drains (a gulp each), pure in t.
 export const LEECH_LATCHED = Object.freeze({
   id: 'latched',
@@ -111,7 +110,6 @@ export const LEECH_LATCHED = Object.freeze({
   at: (t) => ({ v: 0, k: 0, t, phase: 'latched', label: `latched: drain ${Math.min(3, Math.floor(t / DRAIN_SEC) + 1)}, a gulp down the body` }),
   strikes: [0, 1, 2].map((i) => i * DRAIN_SEC + 0.02),
   cues: [0, 1, 2].map((i) => ({ at: i * DRAIN_SEC + 0.02, id: 'drain' })),
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: 'latched', nextDrainTick: Math.floor(t / DRAIN_SEC) } }),
 });
 // Flopped: one writhe loop (pure in t).
 export const LEECH_FLOP = Object.freeze({
@@ -120,7 +118,6 @@ export const LEECH_FLOP = Object.freeze({
   duration: FLOP_SEC * 2,
   at: (t) => ({ v: 0, k: 0, t, phase: 'flop', label: 'flopped: on its side, writhing' }),
   strikes: [],
-  classicAt: () => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: 'flop' } }),
 });
 export const LEECH_ABILITIES = Object.freeze({ leap: LEECH_LEAP, leaps: LEECH_LEAPS_STRING, latched: LEECH_LATCHED, flop: LEECH_FLOP });
 

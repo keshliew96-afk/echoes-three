@@ -231,16 +231,6 @@ export function mantisSpitPose(ts, out = { ...REST }, variant = 0) {
   return out;
 }
 
-// The classic twin's inputs at the same moment (the enemy layer's own
-// curves: telegraphK eases in at 14/s, fireK is the 0.2 s hump after the shot).
-function classicAt(t) {
-  const tc = SPIT_CONTACT;
-  const telegraphK = t < tc ? 1 - Math.exp(-14 * Math.max(0, t)) : (1 - Math.exp(-14 * tc)) * Math.exp(-14 * (t - tc));
-  const f = t - tc;
-  const fireK = f >= 0 && f < 0.2 ? Math.sin(5 * Math.PI * f) : 0;
-  return { telegraphK, lungeK: 0, fireK, e: null };
-}
-
 // The model lab's spit at the default 42-tick telegraph (pure in t, so it
 // rewinds); in game the same poses ride the live telegraph.
 function spitAbility(variant) {
@@ -259,7 +249,6 @@ function spitAbility(variant) {
     // seconds into the spit where the contact lands (the lab's cue: 'spit')
     strikes: [SPIT_CONTACT],
     cues: SPIT_TL.cues,
-    classicAt,
   });
 }
 export const MANTIS_SPIT = spitAbility(0);

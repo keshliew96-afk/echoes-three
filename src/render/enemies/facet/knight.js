@@ -118,7 +118,6 @@ const SLAM_TL = strikeTimeline('slam', 'Overhead slam', {
   rest: OPEN_SEC,
   labels: { coil: 'coil (the ring telegraph)', strike: 'the blow', hold: 'contact: the blade down', snap: 'snap back', settle: 'settle, guard down' },
 });
-const CONTACT_AT = SLAM_TL.startOf('hold');
 // The hold: the blade bites the floor and the body shudders (a ring of dust
 // is the VFX layer's); the recoil is small, it is heavy.
 const RECOIL_U = 0.04;
@@ -132,9 +131,8 @@ export function knightSlamPose(v, t, out = { ...REST }) {
   if (t >= SLAM_TL.startOf('settle')) out.open = Math.max(out.open, 1 - ease.inOut(Math.max(0, (t - SLAM_TL.startOf('rest')) / OPEN_SEC)));
   return out;
 }
-const classicSlam = (tt, s) => ({ telegraphK: s.id === 'coil' || s.id === 'strike' ? Math.min(1, tt / SLAM_TEL_SEC) : 0, lungeK: 0, fireK: 0, e: { mode: s.id === 'coil' || s.id === 'strike' ? 'slam' : 'march', slamTick: tt >= CONTACT_AT ? 1 : -1, guard: { active: tt >= SLAM_TL.duration } } });
-export const KNIGHT_SLAM = strikeAbility({ id: 'slam', label: 'Overhead slam', tl: SLAM_TL, variants: SLAMS, classic: classicSlam });
-export const KNIGHT_SLAMS_STRING = strikeAbility({ id: 'slams', label: 'Slam string', tl: SLAM_TL, variants: SLAMS, n: 3, gap: SLAM_TL.duration, classic: classicSlam });
+export const KNIGHT_SLAM = strikeAbility({ id: 'slam', label: 'Overhead slam', tl: SLAM_TL, variants: SLAMS });
+export const KNIGHT_SLAMS_STRING = strikeAbility({ id: 'slams', label: 'Slam string', tl: SLAM_TL, variants: SLAMS, n: 3, gap: SLAM_TL.duration });
 export const KNIGHT_ABILITIES = Object.freeze({ slam: KNIGHT_SLAM, slams: KNIGHT_SLAMS_STRING });
 
 // --- Geometry (built once for the session, shared by every knight) --------

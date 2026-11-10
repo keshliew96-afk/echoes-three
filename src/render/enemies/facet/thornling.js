@@ -172,8 +172,6 @@ export const THORNLING_PLANT = Object.freeze({
   // plant tick, 30 ticks after the root)
   cues: PLANT_TL.cues,
   strikes: [ROOT_SEC],
-  // the classic twin's stand-in inputs: rooted until the plant
-  classicAt: (t) => ({ telegraphK: 0, lungeK: 0, fireK: 0, e: { mode: t < ROOT_SEC ? 'root' : 'skulk' } }),
 });
 export const THORNLING_ABILITIES = Object.freeze({ plant: THORNLING_PLANT });
 
