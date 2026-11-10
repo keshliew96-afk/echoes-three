@@ -3,9 +3,8 @@
 // browser. The slice rebuilds the Lich Ram and the Ash Raven to the model
 // standard (docs/MODEL_STANDARD.md) against the [M] checklist
 // (VFX_HIT_RULES §6.1); the Barrow Wyrm is the pilot's. Visual only. Checks:
-//   1. the flags: both play faceted by default, `?facet=` turns them classic
-//      or picks them, the Level V bosses stay classic, the classics build;
-//   2. every rig: the classic interface plus lab, points and react; the root
+//   1. (retired with the classic rigs and the ?facet= flag, AUDIT.md D1);
+//   2. every rig: the rig interface plus lab, points and react; the root
 //      holds the moving body in its first child and only floor pieces beside
 //      it; every instanced part inked; every vertex-coloured material on
 //      faceted geometry; its named points;
@@ -37,12 +36,9 @@ const ctx = new Proxy({}, { get: (_, k) => (k === 'canvas' ? {} : () => grad), s
 globalThis.document = { createElement: () => ({ width: 0, height: 0, getContext: () => ctx }) };
 
 const { Color, Group, Vector3 } = await import('three');
-const { MODEL_STANDARD, facetOn } = await import('../src/render/facet/flags.js');
 const { FRAME, HOLD_SEC, STRIKE_SEC, SPAWN_SEC } = await import('../src/render/facet/beats.js');
 const ramM = await import('../src/render/boss/lichramfacet.js');
 const ravenM = await import('../src/render/boss/ashravenfacet.js');
-const { buildLichram } = await import('../src/render/boss/slice2.js');
-const { buildAshRaven } = await import('../src/render/boss/third.js');
 const { LAB_ENTRIES } = await import('../src/scenes/modellab-bosses.js');
 const { LICHRAM } = await import('../src/sim/bosses/lichram.js');
 const { ASHRAVEN } = await import('../src/sim/bosses/ashraven.js');
@@ -56,21 +52,10 @@ const DT = 1 / 60;
 const r3 = (v) => Math.round(v * 1000) / 1000;
 
 const BOSSES = [
-  { kind: 'lichram', name: 'Lich Ram', build: ramM.buildLichramFacet, classic: buildLichram, abilities: ramM.LICHRAM_ABILITIES, channels: ramM.abilityChannels, walk: LICHRAM.moveSpeed, points: ['mouth', 'tip', 'chest', 'hoofFL', 'hoofFR', 'hoofHL', 'hoofHR'], rest: 'stalk' },
-  { kind: 'ashraven', name: 'Ash Raven', build: ravenM.buildAshRavenFacet, classic: buildAshRaven, abilities: ravenM.RAVEN_ABILITIES, channels: ravenM.abilityChannels, walk: ASHRAVEN.moveSpeed, points: ['mouth', 'tip', 'chest', 'wingL', 'wingR', 'footL', 'footR'], rest: 'stalk' },
+  { kind: 'lichram', name: 'Lich Ram', build: ramM.buildLichramFacet, abilities: ramM.LICHRAM_ABILITIES, channels: ramM.abilityChannels, walk: LICHRAM.moveSpeed, points: ['mouth', 'tip', 'chest', 'hoofFL', 'hoofFR', 'hoofHL', 'hoofHR'], rest: 'stalk' },
+  { kind: 'ashraven', name: 'Ash Raven', build: ravenM.buildAshRavenFacet, abilities: ravenM.RAVEN_ABILITIES, channels: ravenM.abilityChannels, walk: ASHRAVEN.moveSpeed, points: ['mouth', 'tip', 'chest', 'wingL', 'wingR', 'footL', 'footR'], rest: 'stalk' },
 ];
 
-// --- 1. flags ----------------------------------------------------------------------
-{
-  const q = (s) => new URLSearchParams(s);
-  const kinds = BOSSES.map((B) => B.kind);
-  check('the Level III bosses play the model standard by default', kinds.every((k) => MODEL_STANDARD[k] === true && facetOn(k, q(''))) && facetOn('wyrm', q('')));
-  check('?facet=0 turns them classic', kinds.every((k) => !facetOn(k, q('facet=0'))));
-  check('?facet=lichram keeps only the Lich Ram faceted', facetOn('lichram', q('facet=lichram')) && !facetOn('ashraven', q('facet=lichram')));
-  check('the Level V bosses stay classic', !facetOn('hush', q('')) && !facetOn('skyhorn', q('')) && !facetOn('hourwarden', q('')));
-  const classics = BOSSES.map((B) => B.classic()).filter((r) => r && r.group && typeof r.pose === 'function' && !r.group.userData.modelStandard);
-  check('the classic rigs still build beside the faceted ones', classics.length === BOSSES.length);
-}
 
 // --- 2. the rigs -------------------------------------------------------------------
 function inkReport(root) {
@@ -96,7 +81,7 @@ function floorPiece(o) {
 for (const B of BOSSES) {
   const r = B.build();
   const iface = ['group', 'mats', 'setYaw', 'setFlash', 'pose', 'lab', 'points', 'react'].filter((k) => !(k in r));
-  check(`${B.name}: the classic interface plus lab, points and react`, iface.length === 0 && r.group.userData.modelStandard === true, iface);
+  check(`${B.name}: the rig interface plus lab, points and react`, iface.length === 0 && r.group.userData.modelStandard === true, iface);
   const body = r.group.children[0];
   let n = 0;
   body.traverse((x) => x.isMesh && n++);
@@ -569,17 +554,17 @@ for (const B of BOSSES) {
       const b = E.build({ cosmetic: null, vfx, play: () => {} });
       for (const [id] of E.abilities) {
         const tl = b.timeline(id);
-        const state = { mode: 'ability', ability: id, classic: true, movePhase: 0, t: 0 };
+        const state = { mode: 'ability', ability: id, movePhase: 0, t: 0 };
         for (let t = 0; t <= tl.duration + 0.2; t += DT) b.update(state, DT, Math.min(t, tl.duration));
         for (const c of b.cues(id)) b.onCue(c.id, { x: 0, z: 0, yaw: 0 });
       }
-      b.update({ mode: 'move', ability: E.abilities[0][0], classic: false, movePhase: 1, t: 0 }, DT, 0);
+      b.update({ mode: 'move', ability: E.abilities[0][0], movePhase: 1, t: 0 }, DT, 0);
       b.reset();
     } catch (err) {
       errs.push(`${E.id}: ${err.message}`);
     }
   }
-  check('every Level III lab entry plays every ability, with its classic twin beside', errs.length === 0, errs);
+  check('every Level III lab entry plays every ability', errs.length === 0, errs);
 }
 
 console.log(fails.length ? `\n${fails.length} FAIL` : '\nall pass');

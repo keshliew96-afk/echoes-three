@@ -5,9 +5,6 @@ import { buildBoar } from '../../render/enemies/boar.js';
 import { buildMantis } from '../../render/enemies/mantis.js';
 import { ARCH_BUILDERS } from '../../render/enemies/archetypes.js';
 import { facetFoeBuilders } from '../../render/enemies/facet/index.js';
-import { buildStag } from '../../render/boss/stag.js';
-import { buildHeron } from '../../render/boss/heron.js';
-import { buildWyrm } from '../../render/boss/wyrm.js';
 import { buildWyrmFacet } from '../../render/boss/wyrmfacet.js';
 import { buildStagFacet } from '../../render/boss/stagfacet.js';
 import { buildThornmotherFacet } from '../../render/boss/thornmotherfacet.js';
@@ -20,10 +17,6 @@ import { buildAshRavenFacet } from '../../render/boss/ashravenfacet.js';
 import { buildCantorFacet } from '../../render/boss/cantorfacet.js';
 import { buildColossusFacet } from '../../render/boss/colossusfacet.js';
 import { buildVeinWeaverFacet } from '../../render/boss/veinweaverfacet.js';
-import { facetOn } from '../../render/facet/flags.js';
-import { buildThornmother, buildMillwheel, buildLichram } from '../../render/boss/slice2.js';
-import { buildCantor, buildColossus } from '../../render/boss/heart.js';
-import { buildGloamWolf, buildMireKing, buildAshRaven, buildVeinWeaver } from '../../render/boss/third.js';
 import { buildHush, buildSkyhorn, buildHourwarden } from '../../render/boss/spire.js';
 import { buildFounder, buildCinderback } from '../../render/boss/kiln.js';
 
@@ -32,18 +25,18 @@ export const BUILDERS = {
   mantis: buildMantis,
   ...ARCH_BUILDERS,
   ...facetFoeBuilders(), // the model standard's Level I foes (docs/MODEL_STANDARD.md)
-  stag: facetOn('stag') ? buildStagFacet : buildStag, // model standard (docs/MODEL_STANDARD.md)
-  heron: facetOn('heron') ? buildHeronFacet : buildHeron,
-  wyrm: facetOn('wyrm') ? buildWyrmFacet : buildWyrm, // the model standard pilot (docs/MODEL_STANDARD.md)
-  thornmother: facetOn('thornmother') ? buildThornmotherFacet : buildThornmother,
-  millwheel: facetOn('millwheel') ? buildMillwheelFacet : buildMillwheel,
-  lichram: facetOn('lichram') ? buildLichramFacet : buildLichram,
-  cantor: facetOn('cantor') ? buildCantorFacet : buildCantor,
-  colossus: facetOn('colossus') ? buildColossusFacet : buildColossus,
-  gloamwolf: facetOn('gloamwolf') ? buildGloamWolfFacet : buildGloamWolf,
-  mireking: facetOn('mireking') ? buildMireKingFacet : buildMireKing,
-  ashraven: facetOn('ashraven') ? buildAshRavenFacet : buildAshRaven,
-  veinweaver: facetOn('veinweaver') ? buildVeinWeaverFacet : buildVeinWeaver,
+  stag: buildStagFacet,
+  heron: buildHeronFacet,
+  wyrm: buildWyrmFacet,
+  thornmother: buildThornmotherFacet,
+  millwheel: buildMillwheelFacet,
+  lichram: buildLichramFacet,
+  cantor: buildCantorFacet,
+  colossus: buildColossusFacet,
+  gloamwolf: buildGloamWolfFacet,
+  mireking: buildMireKingFacet,
+  ashraven: buildAshRavenFacet,
+  veinweaver: buildVeinWeaverFacet,
   hush: buildHush,
   skyhorn: buildSkyhorn,
   hourwarden: buildHourwarden,
