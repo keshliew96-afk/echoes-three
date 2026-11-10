@@ -9,7 +9,7 @@
 import { CURSES } from '../../sim/relics.js';
 import { curseIconHtml } from './relicicons.js';
 import { esc } from './style.js';
-import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run.js';
+import { WIN_GLYPH, REWARD_GLYPH } from '../../sim/run/rules.js';
 import { bossNameOfRun } from '../../data/levels.js';
 import { t } from '../../i18n/index.js';
 import { championById } from '../../sim/champions.js';

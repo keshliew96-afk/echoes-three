@@ -130,7 +130,7 @@ const { createSaveStorage } = await import(u('src/save/storage.js'));
 const { createProfileStore } = await import(u('src/save/profile.js'));
 const U = await import(u('src/data/unlocks.js'));
 const { difficulty } = await import(u('src/data/difficulty.js'));
-const { RUN } = await import(u('src/sim/run.js'));
+const { RUN } = await import(u('src/sim/run/rules.js'));
 
 function memStorage() {
   const m = new Map();
