@@ -33,8 +33,9 @@ opens the title on a wiped profile and presses a key, then plays a few seconds o
 mouse attacks, Space) in camp and in the first room of a Level I run. It saves `title.png`,
 `camp.png`, `room1.png` and `check-report.json` under `captures/check/` (`--out <dir>`), and exits 1
 on any console error, uncaught page error or failed request. Warnings are listed, not failed.
-It opens a browser, so it stays out of `npm test` and CI. Without `npm run net` the title's cloud
-probe logs a 502 through the dev proxy, which the check counts as an error.
+It opens a browser, so it stays out of `npm test` and CI. It also starts `npm run net` (port 7800)
+unless one answers there, because the dev server proxies the title's cloud probe to it; without it
+that request logs a 502.
 
 ### npm test and CI (v0.5.318)
 

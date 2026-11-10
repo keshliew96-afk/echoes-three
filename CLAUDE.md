@@ -111,8 +111,9 @@ npm run serve          # build, then serve dist/ and the session server together
   answers on 5199, opens the title on a wiped profile, presses a key, walks, attacks and dashes in
   camp and in the first room of a Level I run, saves `title.png`, `camp.png`, `room1.png` and
   `check-report.json` to `captures/check/` (`--out <dir>` to change it), and exits 1 on any console
-  error, uncaught page error or failed request. The dev server proxies `/cloud/`, `/daily/` and the
-  co-op socket to `npm run net`; without that server the title's cloud probe logs a 502.
+  error, uncaught page error or failed request. It also starts `npm run net` unless one answers on
+  7800: the dev server proxies `/cloud/`, `/daily/` and the co-op socket to it (without it the
+  title's cloud probe logs a 502).
 - Playwright is pinned to the version whose Chromium the cloud image ships (`/opt/pw-browsers`); on a
   laptop run `npx playwright install chromium` once.
 - `npm run dev` serves on port 5199. Editing `src/` while a probe runs reloads the page and kills the probe.

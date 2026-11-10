@@ -11,6 +11,9 @@
 //   node tools/check.mjs --headful        show the browser window
 //
 // What it does, in order:
+// It also starts the session server (`npm run net`, port 7800) unless one
+// answers there: the dev server proxies cloud saves and the Daily board to it.
+//
 //   1. Title: opens the plain player URL on a wiped profile (?fresh=1), presses a
 //      key on the loading screen, waits for the title, takes title.png.
 //   2. Camp: opens ?fresh=1&menu=0 (straight into camp), walks with W A S D,
@@ -52,23 +55,27 @@ const log = (s) => {
   console.log(`[${phase}] ${s}`);
 };
 
-async function serverUp() {
+const NET_HEALTH = 'http://127.0.0.1:7800/health';
+
+async function answers(url) {
   try {
-    const r = await fetch(BASE, { signal: AbortSignal.timeout(2000) });
+    const r = await fetch(url, { signal: AbortSignal.timeout(2000) });
     return r.ok;
   } catch {
     return false;
   }
 }
 
-async function startServer() {
-  if (await serverUp()) {
-    log(`reusing the dev server already on ${BASE}`);
+// Starts `npm run <script>` unless `url` already answers; returns the child
+// (to stop at the end) or null when a running server was reused.
+async function startServer(script, url) {
+  if (await answers(url)) {
+    log(`reusing the server already answering ${url}`);
     return null;
   }
-  log('starting npm run dev');
+  log(`starting npm run ${script}`);
   const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
-  const child = spawn(npm, ['run', 'dev'], {
+  const child = spawn(npm, ['run', script], {
     cwd: ROOT,
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: process.platform === 'win32',
@@ -79,14 +86,14 @@ async function startServer() {
   child.stderr.on('data', (d) => (out += d));
   const t0 = Date.now();
   while (Date.now() - t0 < 60000) {
-    if (child.exitCode !== null) throw new Error(`npm run dev exited ${child.exitCode}:\n${out}`);
-    if (await serverUp()) {
-      log(`dev server up after ${Date.now() - t0} ms`);
+    if (child.exitCode !== null) throw new Error(`npm run ${script} exited ${child.exitCode}:\n${out}`);
+    if (await answers(url)) {
+      log(`npm run ${script} up after ${Date.now() - t0} ms`);
       return child;
     }
     await new Promise((r) => setTimeout(r, 500));
   }
-  throw new Error(`dev server did not answer on ${BASE} within 60 s:\n${out}`);
+  throw new Error(`npm run ${script} did not answer ${url} within 60 s:\n${out}`);
 }
 
 function stopServer(child) {
@@ -156,7 +163,10 @@ async function playInput(page) {
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
-  const server = await startServer();
+  // The session server first: the dev server proxies /cloud/, /daily/ and
+  // the co-op socket to it, as the deployed build serves them from one process.
+  const net = await startServer('net', NET_HEALTH);
+  const server = await startServer('dev', BASE);
   const extra = (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean);
   const browser = await chromium.launch({
     headless: !HEADFUL,
@@ -220,6 +230,7 @@ async function main() {
   } finally {
     await browser.close().catch(() => {});
     stopServer(server);
+    stopServer(net);
   }
   writeFileSync(join(OUT, 'check-report.json'), JSON.stringify(result, null, 2));
   console.log(`\nscreenshots and report: ${OUT}`);
