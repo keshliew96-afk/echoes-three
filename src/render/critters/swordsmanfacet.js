@@ -1236,7 +1236,7 @@ export const SWORDSMAN_SPEC = Object.freeze({
       ['draw', 'Edge Draw'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.55, z: 0, dist: 3.4, speed: 2.65, loop: 2.2, side: 1.3 },
+    frame: { y: 0.55, z: 0, dist: 3.4, speed: 2.65, loop: 2.2 },
     cues: {
       strike: { sound: 'swing', pitch: 1.2, fx: 'flash' },
       finisher: { sound: 'sword_finisher', pitch: 1, fx: ['star', 'crack'], size: 1.5 },

@@ -18,7 +18,7 @@ const CSS = `
 #modellab button.on{background:${INK};color:${PAPER}}
 #modellab .read{font:500 13px/1.2 ui-monospace,monospace;white-space:nowrap;padding-left:4px;opacity:.85}
 #modellab input[type=range]{width:160px}
-#modellab .tip{font-weight:400;opacity:.6}
+
 `;
 
 // spec: { models: [[id, label]], modes: [[id, label]], abilities(model) ->
@@ -67,11 +67,7 @@ export function mountModelLab(spec) {
   }
   const rewindGroup = group('rewind', [['rewind', 'Rewind']], () => spec.set({ rate: -1, mode: 'ability' }));
   group('view', [['showcase', 'Showcase'], ['play', 'Play zoom']], (id) => spec.set({ view: id }));
-  group('extra', [['turn', 'Turntable'], ['classic', 'Classic beside']], (id) => {
-    const s = spec.get();
-    if (id === 'turn') spec.set({ turntable: !s.turntable });
-    else spec.set({ classic: !s.classic });
-  });
+  group('extra', [['turn', 'Turntable']], () => spec.set({ turntable: !spec.get().turntable }));
   const scrub = document.createElement('input');
   scrub.type = 'range';
   scrub.min = '0';
@@ -86,10 +82,6 @@ export function mountModelLab(spec) {
   const read = document.createElement('span');
   read.className = 'read';
   bar.appendChild(read);
-  const tip = document.createElement('span');
-  tip.className = 'tip';
-  tip.textContent = '?facet=0 shows the classic models in the game';
-  bar.appendChild(tip);
 
   function refresh() {
     const s = spec.get();
@@ -101,7 +93,6 @@ export function mountModelLab(spec) {
     mark('rewind', s.rate < 0 ? 'rewind' : '');
     const ex = groups.extra;
     ex.children[0].classList.toggle('on', !!s.turntable);
-    ex.children[1].classList.toggle('on', !!s.classic);
     if (document.activeElement !== scrub && s.duration > 0) scrub.value = String(Math.round((s.t / s.duration) * 1000));
     read.textContent = s.readout;
   }

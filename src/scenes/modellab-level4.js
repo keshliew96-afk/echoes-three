@@ -1,15 +1,12 @@
 // MODEL LAB ENTRIES for the Level IV bosses (docs/MODEL_STANDARD.md): the
 // Hollow Cantor, the Geode Colossus and the Vein Weaver, in the shape
-// scenes/modellab-bosses.js documents. Each builds its faceted model and its
-// classic twin on first view and drives both; the classic twin is fed a
-// stand-in entity for the same beats.
+// scenes/modellab-bosses.js documents. Each builds its model on first view
+// and drives it.
 import { PALETTE } from '../data/palette.js';
-import { buildCantor, buildColossus } from '../render/boss/heart.js';
-import { buildVeinWeaver } from '../render/boss/third.js';
 import { buildCantorFacet, CANTOR_ABILITIES, CANTOR_WALK } from '../render/boss/cantorfacet.js';
 import { buildColossusFacet, COLOSSUS_ABILITIES, COLOSSUS_WALK } from '../render/boss/colossusfacet.js';
 import { buildVeinWeaverFacet, WEAVER_ABILITIES, WEAVER_WALK } from '../render/boss/veinweaverfacet.js';
-import { abilityOn, follow, loopPath, pending, replant } from './modellab-bosses.js';
+import { abilityOn, loopPath, pending, replant } from './modellab-bosses.js';
 
 // The Hollow Cantor. The Echo Step crosses the frame: it folds away on one
 // side and rises on the other, as the sim moves it between its points.
@@ -30,17 +27,12 @@ const cantorEntry = {
     ['verse', 'Verse'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.6, z: 0, dist: 9.0, speed: CANTOR_WALK, loop: 3.0, side: 2.8 },
+  frame: { y: 1.6, z: 0, dist: 9.0, speed: CANTOR_WALK, loop: 3.0 },
   build({ vfx, play }) {
     const rig = buildCantorFacet();
-    const classic = buildCantor();
-    let tel = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, mode: 'sing', verse: 0 };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -49,9 +41,7 @@ const cantorEntry = {
       cues: (id) => (CANTOR_ABILITIES[id] || CANTOR_ABILITIES.note).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         rig.lab.reset();
       },
       update(state, dt, abT) {
@@ -60,28 +50,14 @@ const cantorEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         const ahead = ability === 'step' ? stepTravel(abT) : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
+        rig.group.position.set(p.x + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         // a verse shown lights a note: the Verse tab shows the first verse taken
         rig.lab.verse(ability === 'verse' ? 1 : 0);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? CANTOR_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = (ability === 'note' && ph === 'draw') || (ability === 'lance' && ph === 'gather') || (ability === 'pulse' && ph === 'swell');
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        stand.telegraph = warn ? { attack: ability } : null;
-        stand.mode = ability === 'step' && (ph === 'fold' || ph === 'gone') ? 'fade' : 'sing';
-        stand.verse = ability === 'verse' ? 1 : 0;
-        classic.group.position.set(p.x - side + Math.sin(yaw) * ahead, 0, p.z + Math.cos(yaw) * ahead);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, moveK: moving ? 1 : 0, telegraphK: tel, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
@@ -119,18 +95,12 @@ const colossusEntry = {
     ['rage', 'Enraged'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.4, z: 0.4, dist: 9.6, speed: COLOSSUS_WALK, loop: 3.0, side: 3.2 },
+  frame: { y: 1.4, z: 0.4, dist: 9.6, speed: COLOSSUS_WALK, loop: 3.0 },
   build({ vfx, play }) {
     const rig = buildColossusFacet();
-    const classic = buildColossus();
-    let tel = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, mode: 'stalk', enraged: false };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -139,9 +109,7 @@ const colossusEntry = {
       cues: (id) => (COLOSSUS_ABILITIES[id] || COLOSSUS_ABILITIES.fissure).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -150,27 +118,12 @@ const colossusEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side, 0, p.z);
+        rig.group.position.set(p.x, 0, p.z);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? COLOSSUS_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = (ability === 'fissure' && ph === 'raise') || (ability === 'burst' && ph === 'swell');
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        stand.telegraph = warn ? { attack: ability } : null;
-        stand.mode = ability === 'burst' && (ph === 'spent' || ph === 'hold') ? 'spent' : 'stalk';
-        stand.enraged = ability === 'rage';
-        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side, 0, p.z);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });
@@ -204,18 +157,12 @@ const weaverEntry = {
     ['rage', 'Enraged'],
     ['spawn', 'Spawn in'],
   ],
-  frame: { y: 1.1, z: 0.6, dist: 10.0, speed: WEAVER_WALK, loop: 3.2, side: 3.6 },
+  frame: { y: 1.1, z: 0.6, dist: 10.0, speed: WEAVER_WALK, loop: 3.2 },
   build({ vfx, play }) {
     const rig = buildVeinWeaverFacet();
-    const classic = buildVeinWeaver();
-    let tel = 0;
-    let walk = 0;
-    let idle = 0;
     let yaw = 0;
-    const stand = { telegraph: null, mode: 'stalk', enraged: false, binds: [] };
     return {
       group: rig.group,
-      classic: classic.group,
       rig,
       get yaw() {
         return yaw;
@@ -224,9 +171,7 @@ const weaverEntry = {
       cues: (id) => (WEAVER_ABILITIES[id] || WEAVER_ABILITIES.bind).cues || [],
       reset() {
         rig.group.position.set(0, 0, 0);
-        classic.group.position.set(0, 0, 0);
         rig.setYaw(0);
-        classic.setYaw(0);
         pending.add(rig);
       },
       update(state, dt, abT) {
@@ -235,27 +180,12 @@ const weaverEntry = {
         const on = abilityOn(state);
         const ability = on ? state.ability : null;
         const p = moving ? loopPath(state.movePhase, F.loop) : { x: 0, z: 0, yaw: 0 };
-        const side = state.classic ? F.side : 0;
         yaw = p.yaw;
-        rig.group.position.set(p.x + side, 0, p.z);
+        rig.group.position.set(p.x, 0, p.z);
         rig.setYaw(yaw);
         rig.group.updateMatrixWorld(true);
         replant(rig, state, on, abT);
         rig.lab.pose({ dt, ability, abT });
-        // the classic twin, fed a stand-in entity for the same beats
-        idle += dt;
-        const s = ability && ability !== 'spawn' ? WEAVER_ABILITIES[ability].sample(abT) : null;
-        const ph = s ? s.id : null;
-        const warn = (ability === 'bind' && ph === 'spin') || (ability === 'slam' && ph === 'rear');
-        tel = warn ? s.k : follow(tel, 0, dt, 12);
-        stand.telegraph = warn ? { attack: ability } : null;
-        stand.mode = ability === 'bind' && ph === 'spin' ? 'spin' : ability === 'slam' && ph === 'rear' ? 'beat' : 'stalk';
-        stand.enraged = ability === 'rage';
-        walk += (moving ? F.speed : 0) * dt * Math.PI * 2.2;
-        classic.group.position.set(p.x - side, 0, p.z);
-        classic.setYaw(yaw);
-        classic.group.scale.setScalar(ability === 'spawn' ? rig.lab.grow() : 1);
-        classic.pose({ t: idle, walkPhase: walk, moveK: moving ? 1 : 0, telegraphK: tel, hpFrac: 1, e: stand });
       },
       onCue(id, at) {
         const fx = (d) => ({ x: at.x + Math.sin(yaw) * d, z: at.z + Math.cos(yaw) * d });

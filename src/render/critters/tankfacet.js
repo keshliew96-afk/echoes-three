@@ -674,7 +674,7 @@ export const TANK_SPEC = Object.freeze({
       ['brace', 'Brace'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.5, z: 0, dist: 3.6, speed: 2.1, loop: 2.2, side: 1.5 },
+    frame: { y: 0.5, z: 0, dist: 3.6, speed: 2.1, loop: 2.2 },
     cues: {
       strike: { sound: 'swing', pitch: 0.8, fx: 'flash' },
       finisher: { sound: 'impact', pitch: 0.7, fx: 'crack' },

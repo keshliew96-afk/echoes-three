@@ -992,7 +992,7 @@ export const HEALER_SPEC = Object.freeze({
       ['sweep', 'Wide Sweep'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.6, z: 0, dist: 3.9, speed: 2.4, loop: 2.2, side: 1.5 },
+    frame: { y: 0.6, z: 0, dist: 3.9, speed: 2.4, loop: 2.2 },
     cues: {
       strike: { sound: 'shoot', pitch: 1, fx: 'flash' },
       finisher: { sound: 'cast_damage', pitch: 0.9, fx: ['flash', 'star'], size: 1.5 },

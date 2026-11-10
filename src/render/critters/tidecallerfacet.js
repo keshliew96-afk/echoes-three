@@ -812,7 +812,7 @@ export const TIDECALLER_SPEC = Object.freeze({
       ['ward', 'Bubble Ward'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.6, z: 0, dist: 3.6, speed: 2.5, loop: 2.2, side: 1.3 },
+    frame: { y: 0.6, z: 0, dist: 3.6, speed: 2.5, loop: 2.2 },
     cues: {
       strike: { sound: 'td_spit', pitch: 1, fx: 'flash' },
       finisher: { sound: 'td_splash', pitch: 0.9, fx: ['flash', 'star'], size: 1.5 },

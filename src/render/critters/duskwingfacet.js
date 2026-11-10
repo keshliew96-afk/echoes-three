@@ -747,7 +747,7 @@ export const DUSKWING_SPEC = Object.freeze({
       ['beat', 'Night Wings'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.5, z: 0, dist: 3.4, speed: 2.9, loop: 2.2, side: 1.3 },
+    frame: { y: 0.5, z: 0, dist: 3.4, speed: 2.9, loop: 2.2 },
     cues: {
       strike: { sound: 'dk_nip', pitch: 1, fx: 'flash' },
       finisher: { sound: 'dk_bite', pitch: 1, fx: ['flash', 'star'], size: 1.5 },

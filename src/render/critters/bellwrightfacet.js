@@ -777,7 +777,7 @@ export const BELLWRIGHT_SPEC = Object.freeze({
       ['chime', 'Chime'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.6, z: 0, dist: 3.6, speed: 2.35, loop: 2.2, side: 1.3 },
+    frame: { y: 0.6, z: 0, dist: 3.6, speed: 2.35, loop: 2.2 },
     cues: {
       strike: { sound: 'bw_ding', pitch: 1, fx: 'flash' },
       finisher: { sound: 'bw_toll', pitch: 0.9, fx: ['flash', 'star'], size: 1.5 },

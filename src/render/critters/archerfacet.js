@@ -867,7 +867,7 @@ export const ARCHER_SPEC = Object.freeze({
       ['watch', 'Kestrel Watch'],
       ['spawn', 'Spawn'],
     ],
-    frame: { y: 0.6, z: 0, dist: 3.6, speed: 2.5, loop: 2.2, side: 1.3 },
+    frame: { y: 0.6, z: 0, dist: 3.6, speed: 2.5, loop: 2.2 },
     cues: {
       strike: { sound: 'bow', pitch: 1.1, fx: 'flash' },
       finisher: { sound: 'bow', pitch: 0.85, fx: ['flash', 'star'], size: 1.5 },
