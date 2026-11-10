@@ -34,6 +34,7 @@ import {
 import { PALETTE, VFX_SIGNATURE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite } from '../glow.js';
+import { createFxPool } from '../fxpool.js';
 import { releaseTree, sharedGeo } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 
@@ -237,56 +238,28 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
   });
 
   // ------------------------------------------------------------- particles --
-  const motes = [];
-  const motePool = [];
-  function spawnMotes(x, z, { color = PARCH, count = 6, y = 0.25, spread = 0.3, vyMin = 0.5, vyMax = 1.2, life = [0.4, 0.8], size = [0.06, 0.14], fall = false } = {}) {
-    for (let i = 0; i < count; i++) {
-      if (motes.length >= MOTE_CAP) break;
-      const s = motePool.pop() ?? makeGlowSprite({ color, size: 1, opacity: 0.9 });
-      s.material.color.set(color);
-      s.material.opacity = 0.9;
-      const sz = cosmetic.range(size[0], size[1]);
-      s.scale.set(sz, sz, 1);
-      const a = cosmetic.range(0, Math.PI * 2);
-      const r = cosmetic.range(0, spread);
-      s.position.set(x + Math.cos(a) * r, y + cosmetic.range(0, 0.2), z + Math.sin(a) * r);
-      root.add(s);
-      const vy = cosmetic.range(vyMin, vyMax);
-      motes.push({ s, age: 0, life: cosmetic.range(life[0], life[1]), vy: fall ? -vy : vy, vx: cosmetic.range(-0.15, 0.15), vz: cosmetic.range(-0.15, 0.15), sz });
-    }
-  }
-  const flashes = [];
-  const flashPool = [];
-  function spawnFlash(x, y, z, { color = PARCH, size = 0.5, opacity = 0.9, life = 0.3, grow = 0.4 } = {}) {
-    const s = flashPool.pop() ?? makeGlowSprite({ color, size: 1, opacity });
-    s.material.color.set(color);
-    s.material.opacity = opacity;
-    s.scale.set(size, size, 1);
-    s.position.set(x, y, z);
-    root.add(s);
-    flashes.push({ s, age: 0, life, size, grow, opacity });
-  }
-  // Expanding ground rings (a core line + an optional wide soft band).
-  const rings = [];
-  const ringPool = new Map(); // key -> [mesh]
-  function spawnRing(x, z, { color = PARCH, from = 0.3, to = 1.4, life = 0.4, opacity = 0.8, width = 0.14, hold = 0.25, y = 0.035 } = {}) {
-    const key = String(width);
-    const pool = ringPool.get(key) ?? [];
-    ringPool.set(key, pool);
-    let m = pool.pop();
-    if (!m) {
-      m = new Mesh(sharedGeo(`cfx-ring:${width}`, () => new RingGeometry(1 - width, 1, 56)), additive(color, opacity));
+  // Motes, flashes and expanding ground rings (a core line or a wide soft
+  // band): the shared pool (src/render/fxpool.js) with this layer's look.
+  const fx = createFxPool({
+    root,
+    cosmetic,
+    caps: { motes: MOTE_CAP },
+    moteFloor: 0.02,
+    defaults: {
+      motes: { color: PARCH, count: 6, y: 0.25, yJitter: 0.2, spread: 0.3, size: [0.06, 0.14], vy: [0.5, 1.2], life: [0.4, 0.8], drift: 0.15 },
+      flash: { color: PARCH },
+      ring: { color: PARCH, life: 0.4, opacity: 0.8, width: 0.14, hold: 0.25, y: 0.035 },
+    },
+    ringMesh: (width, color, opacity) => {
+      const m = new Mesh(sharedGeo(`cfx-ring:${width}`, () => new RingGeometry(1 - width, 1, 56)), additive(color, opacity));
       m.rotation.x = -Math.PI / 2;
       m.renderOrder = -3;
-      m.userData.key = key;
-    }
-    m.material.color.set(color);
-    m.material.opacity = opacity;
-    m.position.set(x, y, z);
-    m.scale.set(from, from, 1);
-    root.add(m);
-    rings.push({ m, age: 0, life, from, to, opacity, hold });
-  }
+      return m;
+    },
+  });
+  const spawnMotes = fx.motes;
+  const spawnFlash = fx.flash;
+  const spawnRing = fx.ring;
   // Rising glyph sprites (resonance, bell, chevrons on application).
   const glyphs = [];
   function spawnGlyph(id, x, z, { size = 0.5, y = 1.3, life = 0.8, rise = 0.5 } = {}) {
@@ -575,7 +548,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       spawnGlyph('bell', p.x, p.z, { size: 0.55, y: 1.45, life: 0.7 });
       for (let i = 0; i < 12; i++) {
         const a = (i / 12) * Math.PI * 2;
-        spawnMotes(p.x + Math.cos(a) * def.area * 0.8, p.z + Math.sin(a) * def.area * 0.8, { color: PARCH, count: 1, spread: 0.05, vyMin: 0.2, vyMax: 0.6 });
+        spawnMotes(p.x + Math.cos(a) * def.area * 0.8, p.z + Math.sin(a) * def.area * 0.8, { color: PARCH, count: 1, spread: 0.05, vy: [0.2, 0.6] });
       }
     } else if (ev.skill === 'mending_tide') {
       spawnTide(p.x, p.z, ev.dx ?? 1, ev.dz ?? 0);
@@ -585,10 +558,10 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       // bursting outward + an amber glow.
       spawnRing(p.x, p.z, { color: AMBER, from: 0.4, to: def.area, life: 0.5, opacity: 0.5, width: 0.08 });
       spawnFlash(p.x, 0.7, p.z, { color: AMBER, size: 0.7, opacity: 0.5, life: 0.3, grow: 0.6 });
-      spawnMotes(p.x, p.z, { color: AMBER, count: 12, spread: def.area * 0.6, vyMin: 0.8, vyMax: 1.6 });
+      spawnMotes(p.x, p.z, { color: AMBER, count: 12, spread: def.area * 0.6, vy: [0.8, 1.6] });
     } else if (ev.skill === 'lantern_flurry') {
       spawnFlash(p.x, 0.55, p.z, { color: AMBER, size: 0.6, opacity: 0.7, life: 0.2, grow: 0.5 });
-      spawnMotes(p.x, p.z, { color: AMBER, count: 6, spread: 0.2, vyMin: 0.4, vyMax: 0.9 });
+      spawnMotes(p.x, p.z, { color: AMBER, count: 6, spread: 0.2, vy: [0.4, 0.9] });
     } else if (ev.skill === 'pale_lance') {
       spawnFlash(p.x, 0.55, p.z, { color: PARCH, size: 0.55, opacity: 0.85, life: 0.18, grow: 0.4 });
     } else if (ev.skill === 'kindred_shield') {
@@ -611,23 +584,23 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     if (!Number.isFinite(ev.x)) return;
     spawnFlash(ev.x, 0.6, ev.z, { color: SOAK.second, size: 0.9, opacity: 0.85, life: 0.22, grow: 0.8 });
     spawnFlash(ev.x, 0.5, ev.z, { color: SOAK.glow, size: 1.3, opacity: 0.4, life: 0.32, grow: 0.6 });
-    spawnMotes(ev.x, ev.z, { color: SOAK.second, count: 7, y: 0.6, spread: 0.3, vyMin: 0.8, vyMax: 1.8, life: [0.35, 0.6], size: [0.05, 0.1] });
+    spawnMotes(ev.x, ev.z, { color: SOAK.second, count: 7, y: 0.6, spread: 0.3, vy: [0.8, 1.8], life: [0.35, 0.6], size: [0.05, 0.1] });
   });
   bus.on('skill_bolt_pierce', (ev) => {
     spawnFlash(ev.x, 0.55, ev.z, { color: PARCH, size: 0.35, opacity: 0.95, life: 0.16, grow: 0.3 });
     spawnFlash(ev.x, 0.55, ev.z, { color: AMBER, size: 0.7, opacity: 0.6, life: 0.26, grow: 0.5 });
-    spawnMotes(ev.x, ev.z, { color: AMBER, count: 5, y: 0.45, vyMin: 0.3, vyMax: 0.7, life: [0.25, 0.45] });
+    spawnMotes(ev.x, ev.z, { color: AMBER, count: 5, y: 0.45, vy: [0.3, 0.7], life: [0.25, 0.45] });
   });
   bus.on('zone_tick', (ev) => {
     const rig = zoneRigs.get(ev.id);
     if (rig) {
-      spawnMotes(rig.g.position.x, rig.g.position.z, { color: AMBER, count: 5, spread: rig.radius * 0.8, vyMin: 0.2, vyMax: 0.5 });
+      spawnMotes(rig.g.position.x, rig.g.position.z, { color: AMBER, count: 5, spread: rig.radius * 0.8, vy: [0.2, 0.5] });
       return;
     }
     if (ev.skill === 'dewfall') {
       // Dewfall's third layer: drops falling INTO the green zone.
       const z = byId(ev.id);
-      if (z) spawnMotes(z.x, z.z, { color: HEAL, count: 10, y: 1.4, spread: z.radius * 0.85, vyMin: 1.2, vyMax: 2.0, fall: true, life: [0.5, 0.7] });
+      if (z) spawnMotes(z.x, z.z, { color: HEAL, count: 10, y: 1.4, spread: z.radius * 0.85, vy: [1.2, 2.0], fall: true, life: [0.5, 0.7] });
     }
   });
   bus.on('aura_pulse', (ev) => {
@@ -639,7 +612,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
   bus.on('split_shard', (ev) => {
     const col = ev.mode === 'heal' ? HEAL : AMBER;
     spawnFlash(ev.x, 0.55, ev.z, { color: col, size: 0.5, opacity: 0.8, life: 0.22, grow: 0.5 });
-    spawnMotes(ev.x, ev.z, { color: col, count: 6, y: 0.45, spread: 0.2, vyMin: 0.3, vyMax: 0.8 });
+    spawnMotes(ev.x, ev.z, { color: col, count: 6, y: 0.45, spread: 0.2, vy: [0.3, 0.8] });
     if (ev.mode === 'heal') {
       for (const id of ev.targets ?? []) {
         const t = byId(id);
@@ -662,7 +635,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     if (ev.status === 'stun') {
       spawnRing(ev.x, ev.z, { color: BONE, from: 0.2, to: 0.7, life: 0.3, opacity: 0.8, width: 0.16 });
     } else if (ev.status === 'haste') {
-      spawnMotes(ev.x, ev.z, { color: AMBER, count: 5, spread: 0.25, vyMin: 0.5, vyMax: 1.0 });
+      spawnMotes(ev.x, ev.z, { color: AMBER, count: 5, spread: 0.25, vy: [0.5, 1.0] });
     } else if (ev.status === 'slow') {
       spawnRing(ev.x, ev.z, { color: BLUE, from: 0.9, to: 0.45, life: 0.3, opacity: 0.7, width: 0.12 });
     }
@@ -758,7 +731,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
         P.soaked.scale.set(r, r, 1);
         P.soakedRim.scale.set(r * 0.92, r * 0.92, 1);
         P.soakedGlow.position.y = 0.55 * scale;
-        if (cosmetic.float() < 0.18) spawnMotes(pos.x, pos.z, { color: SOAK.second, count: 1, y: 0.7 * scale, spread: 0.22 * scale, vyMin: 0.6, vyMax: 1.1, life: [0.3, 0.5], size: [0.04, 0.07], fall: true });
+        if (cosmetic.float() < 0.18) spawnMotes(pos.x, pos.z, { color: SOAK.second, count: 1, y: 0.7 * scale, spread: 0.22 * scale, vy: [0.6, 1.1], life: [0.3, 0.5], size: [0.04, 0.07], fall: true });
       }
       const ward = !!liveStatus(e, 'ward', tick);
       P.ward.visible = P.wardRim.visible = ward;
@@ -772,7 +745,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
         P.haste.rotation.y = Math.atan2(-rig.dirZ, rig.dirX);
         const k = 0.5 + 0.5 * Math.sin(tSec * 14 + e.id);
         for (const st of P.haste.children) st.material.opacity = 0.35 + 0.35 * k;
-        if (rig.moving && cosmetic.float() < 0.25) spawnMotes(pos.x - rig.dirX * 0.3, pos.z - rig.dirZ * 0.3, { color: AMBER, count: 1, spread: 0.1, vyMin: 0.1, vyMax: 0.3, life: [0.2, 0.35] });
+        if (rig.moving && cosmetic.float() < 0.25) spawnMotes(pos.x - rig.dirX * 0.3, pos.z - rig.dirZ * 0.3, { color: AMBER, count: 1, spread: 0.1, vy: [0.1, 0.3], life: [0.2, 0.35] });
       }
     }
     for (const [id, rig] of statusRigs) {
@@ -796,7 +769,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       qhMote += dt;
       if (qhMote > 0.45) {
         qhMote = 0;
-        spawnMotes(pos.x, pos.z, { color: BONE, count: 1, spread: QH.area * 0.8, vyMin: 0.2, vyMax: 0.5 });
+        spawnMotes(pos.x, pos.z, { color: BONE, count: 1, spread: QH.area * 0.8, vy: [0.2, 0.5] });
       }
     }
 
@@ -815,7 +788,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       rig.mote += dt;
       if (rig.mote > 0.3) {
         rig.mote = 0;
-        spawnMotes(e.x + cosmetic.range(-rig.radius * 0.7, rig.radius * 0.7), e.z + cosmetic.range(-rig.radius * 0.7, rig.radius * 0.7), { color: AMBER, count: 1, spread: 0.05, vyMin: 0.15, vyMax: 0.4 });
+        spawnMotes(e.x + cosmetic.range(-rig.radius * 0.7, rig.radius * 0.7), e.z + cosmetic.range(-rig.radius * 0.7, rig.radius * 0.7), { color: AMBER, count: 1, spread: 0.05, vy: [0.15, 0.4] });
       }
     }
     for (const [id, rig] of zoneRigs) {
@@ -850,49 +823,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
     }
 
     // Pools.
-    for (let i = motes.length - 1; i >= 0; i--) {
-      const m = motes[i];
-      m.age += dt;
-      if (m.age >= m.life || m.s.position.y < 0.02) {
-        root.remove(m.s);
-        motePool.push(m.s);
-        motes.splice(i, 1);
-        continue;
-      }
-      m.s.position.x += m.vx * dt;
-      m.s.position.y += m.vy * dt;
-      m.s.position.z += m.vz * dt;
-      m.s.material.opacity = 0.9 * (1 - m.age / m.life);
-    }
-    for (let i = flashes.length - 1; i >= 0; i--) {
-      const f = flashes[i];
-      f.age += dt;
-      if (f.age >= f.life) {
-        root.remove(f.s);
-        flashPool.push(f.s);
-        flashes.splice(i, 1);
-        continue;
-      }
-      const t = f.age / f.life;
-      const sz = f.size * (1 + f.grow * t);
-      f.s.scale.set(sz, sz, 1);
-      f.s.material.opacity = f.opacity * (1 - t);
-    }
-    for (let i = rings.length - 1; i >= 0; i--) {
-      const r = rings[i];
-      r.age += dt;
-      if (r.age >= r.life) {
-        root.remove(r.m);
-        ringPool.get(r.m.userData.key)?.push(r.m);
-        rings.splice(i, 1);
-        continue;
-      }
-      const t = r.age / r.life;
-      const s = r.from + (r.to - r.from) * (1 - (1 - t) * (1 - t));
-      r.m.scale.set(s, s, 1);
-      const tail = t <= r.hold ? 1 : 1 - (t - r.hold) / (1 - r.hold);
-      r.m.material.opacity = r.opacity * tail;
-    }
+    fx.update(dt);
     for (let i = glyphs.length - 1; i >= 0; i--) {
       const g = glyphs[i];
       g.age += dt;
@@ -948,9 +879,9 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
         .map(([k]) => k);
     }
     return {
-      motes: motes.length,
-      flashes: flashes.length,
-      rings: rings.length,
+      motes: fx.counts().motes,
+      flashes: fx.counts().flashes,
+      rings: fx.counts().rings,
       glyphs: glyphs.length,
       absorbNumerals: nums.length,
       wedges: wedges.length,
@@ -960,7 +891,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
       statusRigs: statusRigs.size,
       status,
       // fix-CAMPAIGN-r6: idle pooled objects (bounded) — the GC.6 probe reads them
-      pooled: { statusRigs: rigPool.length, motes: motePool.length, flashes: flashPool.length, numerals: numPool.length, wedges: wedgePool.length },
+      pooled: { statusRigs: rigPool.length, motes: fx.counts().pooled.motes, flashes: fx.counts().pooled.flashes, numerals: numPool.length, wedges: wedgePool.length },
     };
   }
 
@@ -992,18 +923,7 @@ export function createContentFx({ stage, world, bus, cosmetic }) {
   // count at a level's first frame never carries the last level's high-water.
   function levelTeardown() {
     dropEntityRigs();
-    for (const m of motes.splice(0)) {
-      root.remove(m.s);
-      motePool.push(m.s);
-    }
-    for (const f of flashes.splice(0)) {
-      root.remove(f.s);
-      flashPool.push(f.s);
-    }
-    for (const r of rings.splice(0)) {
-      root.remove(r.m);
-      ringPool.get(r.m.userData.key)?.push(r.m);
-    }
+    fx.clear();
     for (const g of glyphs.splice(0)) {
       root.remove(g.s);
       g.s.material.dispose();

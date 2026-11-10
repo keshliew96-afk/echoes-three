@@ -49,6 +49,7 @@ import {
 import { PALETTE } from '../../data/palette.js';
 import { SKILLS } from '../../sim/skills.js';
 import { makeGlowSprite } from '../glow.js';
+import { createFxPool } from '../fxpool.js';
 import { sharedGeo, markShared, releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { impactFx } from '../vfx/hub.js';
@@ -310,46 +311,30 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     return map;
   };
 
-  // ------------------------------------------------------------- mote pool --
-  // Rising particles — the third layer of every effect here.
-  const motes = [];
-  const motePool = [];
-  function spawnMotes(x, z, { color = HEAL, count = 7, y = 0.2, spread = 0.28, riseMin = 0.7, riseMax = 1.5, lifeMin = 0.45, lifeMax = 0.85 } = {}) {
-    for (let i = 0; i < count; i++) {
-      if (motes.length >= MOTE_CAP) break;
-      const s = motePool.pop() ?? makeGlowSprite({ color, size: 1, opacity: 0.9 });
-      s.material.color.set(color);
-      s.material.opacity = 0.9;
-      const size = cosmetic.range(0.06, 0.15);
-      s.scale.set(size, size, 1);
-      const a = cosmetic.range(0, Math.PI * 2);
-      const r = cosmetic.range(0, spread);
-      s.position.set(x + Math.cos(a) * r, y + cosmetic.range(0, 0.25), z + Math.sin(a) * r);
-      root.add(s);
-      motes.push({
-        s,
-        age: 0,
-        life: cosmetic.range(lifeMin, lifeMax),
-        vy: cosmetic.range(riseMin, riseMax),
-        vx: cosmetic.range(-0.12, 0.12),
-        vz: cosmetic.range(-0.12, 0.12),
-      });
-    }
-  }
-
-  // ------------------------------------------------------------ flash pool --
-  // Short-lived sprite flashes (cores, glows, impact pops).
-  const flashes = [];
-  const flashPool = [];
-  function spawnFlash(x, y, z, { color = HEAL, size = 0.5, opacity = 0.9, life = 0.3, grow = 0.4 } = {}) {
-    const s = flashPool.pop() ?? makeGlowSprite({ color, size: 1, opacity });
-    s.material.color.set(color);
-    s.material.opacity = opacity;
-    s.scale.set(size, size, 1);
-    s.position.set(x, y, z);
-    root.add(s);
-    flashes.push({ s, age: 0, life, size, grow, opacity });
-  }
+  // ------------------------------------------------- motes, flashes, rings --
+  // Rising particles (the third layer of every effect here), short-lived
+  // sprite flashes (cores, glows, impact pops) and expanding ground rings:
+  // the shared pool (src/render/fxpool.js) with this layer's look.
+  const fx = createFxPool({
+    root,
+    cosmetic,
+    caps: { motes: MOTE_CAP },
+    defaults: {
+      motes: { color: HEAL, count: 7, y: 0.2, yJitter: 0.25, spread: 0.28, size: [0.06, 0.15], vy: [0.7, 1.5], life: [0.45, 0.85], drift: 0.12 },
+      flash: { color: HEAL },
+      ring: { color: HEAL, life: 0.35, opacity: 0.7, width: 0.14, y: 0.03 },
+    },
+    // fix-CAMPAIGN-r6 (GC.6): one shared unit ring; a pooled record adds no GL geometry
+    ringMesh: (width, color, opacity) => {
+      const m = new Mesh(sharedGeo('sfx-ring-unit', () => new RingGeometry(0.86, 1.0, 44)), groundMat(color, opacity));
+      m.rotation.x = -Math.PI / 2;
+      m.renderOrder = -4;
+      return m;
+    },
+  });
+  const spawnMotes = fx.motes;
+  const spawnFlash = fx.flash;
+  const spawnRing = fx.ring;
 
   // ------------------------------------------------------------ glyph pool --
   const glyphs = [];
@@ -382,27 +367,8 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     spawnFlash(x, 0.5, z, { color: HEAL, size: 0.34, opacity: 0.95, life: 0.36, grow: 0.3 }); // core
     spawnFlash(x, 0.5, z, { color: HEAL, size: 0.52, opacity: 0.85, life: 0.5, grow: 0.45 }); // hold core
     spawnFlash(x, 0.5, z, { color: HEAL, size: 0.95, opacity: 0.55, life: 0.62, grow: 0.7 }); // glow
-    spawnMotes(x, z, { color: HEAL, count: 10, lifeMin: 0.6, lifeMax: 1.05 });
+    spawnMotes(x, z, { color: HEAL, count: 10, life: [0.6, 1.05] });
     spawnGlyph(x, z);
-  }
-
-  // ------------------------------------------------------- expanding rings --
-  const rings = [];
-  const ringPool = [];
-  function spawnRing(x, z, { color = HEAL, from = 0.3, to = 1.4, life = 0.35, opacity = 0.7 } = {}) {
-    let m = ringPool.pop();
-    if (!m) {
-      // fix-CAMPAIGN-r6 (GC.6): one shared unit ring — a pooled record adds no GL geometry
-      m = new Mesh(sharedGeo('sfx-ring-unit', () => new RingGeometry(0.86, 1.0, 44)), groundMat(color, opacity));
-      m.rotation.x = -Math.PI / 2;
-      m.renderOrder = -4;
-    }
-    m.material.color.set(color);
-    m.material.opacity = opacity;
-    m.position.set(x, 0.03, z);
-    m.scale.set(from, from, 1);
-    root.add(m);
-    rings.push({ m, age: 0, life, from, to, opacity });
   }
 
   // ------------------------------------------------------------ link beams --
@@ -636,8 +602,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
         count: 1,
         spread: 0.06,
         y: sh.endY + 4 * (sh.apexY - sh.endY) * t * (1 - t),
-        riseMin: 0.25,
-        riseMax: 0.6,
+        vy: [0.25, 0.6],
       });
     }
   }
@@ -1001,7 +966,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       const glow = vfxClassStyle(vfxSkillClass(ev.skill) ?? 'healer').glow;
       spawnFlash(ev.x, BOLT_Y, ev.z, { color: PARCH, size: 0.28, opacity: 0.95, life: 0.16, grow: 0.3 });
       spawnFlash(ev.x, BOLT_Y, ev.z, { color: glow, size: 0.55, opacity: 0.7, life: 0.25, grow: 0.5 });
-      spawnMotes(ev.x, ev.z, { color: glow, count: 5, y: BOLT_Y - 0.15, riseMin: 0.3, riseMax: 0.8, lifeMin: 0.25, lifeMax: 0.45 });
+      spawnMotes(ev.x, ev.z, { color: glow, count: 5, y: BOLT_Y - 0.15, vy: [0.3, 0.8], life: [0.25, 0.45] });
     }
   });
 
@@ -1105,7 +1070,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       auraMoteClock += dt;
       if (auraMoteClock > 0.5) {
         auraMoteClock = 0;
-        spawnMotes(ix, iz, { color: HEAL, count: 1, spread: AURA.area * 0.8, riseMin: 0.3, riseMax: 0.7 });
+        spawnMotes(ix, iz, { color: HEAL, count: 1, spread: AURA.area * 0.8, vy: [0.3, 0.7] });
       }
     }
 
@@ -1127,34 +1092,7 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
     }
 
     // Pools tick down.
-    for (let i = motes.length - 1; i >= 0; i--) {
-      const m = motes[i];
-      m.age += dt;
-      if (m.age >= m.life) {
-        root.remove(m.s);
-        motePool.push(m.s);
-        motes.splice(i, 1);
-        continue;
-      }
-      m.s.position.x += m.vx * dt;
-      m.s.position.y += m.vy * dt;
-      m.s.position.z += m.vz * dt;
-      m.s.material.opacity = 0.9 * (1 - m.age / m.life);
-    }
-    for (let i = flashes.length - 1; i >= 0; i--) {
-      const f = flashes[i];
-      f.age += dt;
-      if (f.age >= f.life) {
-        root.remove(f.s);
-        flashPool.push(f.s);
-        flashes.splice(i, 1);
-        continue;
-      }
-      const t = f.age / f.life;
-      const sz = f.size * (1 + f.grow * t);
-      f.s.scale.set(sz, sz, 1);
-      f.s.material.opacity = f.opacity * (1 - t);
-    }
+    fx.update(dt);
     for (let i = glyphs.length - 1; i >= 0; i--) {
       const g = glyphs[i];
       g.age += dt;
@@ -1167,20 +1105,6 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
       const t = g.age / g.life;
       g.s.position.y += 0.7 * dt;
       g.s.material.opacity = t < 0.5 ? 1 : 1 - (t - 0.5) / 0.5;
-    }
-    for (let i = rings.length - 1; i >= 0; i--) {
-      const r = rings[i];
-      r.age += dt;
-      if (r.age >= r.life) {
-        root.remove(r.m);
-        ringPool.push(r.m);
-        rings.splice(i, 1);
-        continue;
-      }
-      const t = r.age / r.life;
-      const s = r.from + (r.to - r.from) * (1 - (1 - t) * (1 - t));
-      r.m.scale.set(s, s, 1);
-      r.m.material.opacity = r.opacity * (1 - t);
     }
     for (let i = beams.length - 1; i >= 0; i--) {
       const b = beams[i];
@@ -1243,10 +1167,10 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
   // Live element counts for captures (parallels scene.debugState().vfx).
   function debugCounts() {
     return {
-      motes: motes.length,
-      flashes: flashes.length,
+      motes: fx.counts().motes,
+      flashes: fx.counts().flashes,
       glyphs: glyphs.length,
-      rings: rings.length,
+      rings: fx.counts().rings,
       beams: beams.length,
       wedges: wedges.length,
       boltRigs: boltRigs.size,
@@ -1285,10 +1209,8 @@ export function createSkillFx({ stage, world, bus, cosmetic }) {
         pool.push(o);
       }
     };
-    back(motes, motePool, 's');
-    back(flashes, flashPool, 's');
+    fx.clear();
     back(glyphs, glyphPool, 's');
-    back(rings, ringPool, 'm');
     back(trails, trailPool, 's');
     back(wedges, wedgePool, 'g');
     for (const b of beams.splice(0)) {
