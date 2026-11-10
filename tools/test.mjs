@@ -53,6 +53,7 @@ export const SUITE = [
   { file: 'tools/model-standard-level4-foes-probe.mjs', args: [], what: 'the model standard on the Level IV foes: husk, lancer, geode, censer, bloom, siphon' },
   { file: 'tools/vfx-hit-feedback-probe.mjs', args: [], what: 'the hit and the kill: render hold, hit reaction, kill pop, contact bloom, numbers, kill rumble' },
   { file: 'tools/vfx-hit-feedback2-probe.mjs', args: [], what: 'the cast, the shot, the reward and the aftermath: near light, stuck arrows, crit flipbook, frost air, the chest beat and its sounds' },
+  { file: 'tools/vfx-extras-probe.mjs', args: [], what: 'the traced blade slash, the bigger stuck arrows and frost twinkles' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
   { file: 'tools/champions-probe.mjs', args: [], what: 'champion rooms' },
   { file: 'tools/vaults-probe.mjs', args: [], what: 'keys and vaults' },

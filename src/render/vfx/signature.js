@@ -33,6 +33,7 @@ import { SHARD_TILE } from './particles.js';
 import { createVfxKit } from './kit.js';
 import { createTemplateKit } from './tplkit.js';
 import { createTemplateFx } from './templates.js';
+import { heroRigPoint, heroRigCenter, heroRigMoving } from '../critters/rigs.js';
 import { createFoeFx } from './foefx.js';
 import { createBoltFx } from './boltfx.js';
 import { createCameraFx } from './camerafx.js';
@@ -89,7 +90,9 @@ const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom:
 const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.0, bloomOpacity: 0.35, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
 
 // D3: the air an element leaves (§6.2 m).
-export const ELEMENT_AIR = Object.freeze({ twinkles: 100, sec: [1.0, 1.9], mist: 3, mistOpacity: 0.16 });
+// size: a twinkle's size range (u); the extras (v0.5.348) made them bigger,
+// Kesh's open choice from Part 2 (were 0.05 to 0.09).
+export const ELEMENT_AIR = Object.freeze({ twinkles: 100, sec: [1.0, 1.9], mist: 3, mistOpacity: 0.16, size: [0.09, 0.16] });
 
 export function createSignatureFx({ stage, world, bus, cosmetic, settings = null }) {
   const kit = createVfxKit({ stage, cosmetic });
@@ -918,7 +921,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // tiny twinkles and a faint mist hold the place 1 to 2 s after the Frost
   // Bomb and the Frozen elite's burst, so the cold stays where it landed.
   function elementAir(x, z, radius, color, core, n = ELEMENT_AIR.twinkles) {
-    tk.dust(x, 0.45, z, n, { tex: 'star', color, color2: core, radius, speed: [0, 0.12], up: [0.02, 0.22], size: [0.05, 0.09], life: ELEMENT_AIR.sec, gravity: 0, drag: 1.2, twinkle: 18, stagger: 0.25 });
+    tk.dust(x, 0.45, z, n, { tex: 'star', color, color2: core, radius, speed: [0, 0.12], up: [0.02, 0.22], size: ELEMENT_AIR.size, life: ELEMENT_AIR.sec, gravity: 0, drag: 1.2, twinkle: 18, stagger: 0.25 });
     spray('smoke', x, 0.3, z, N(ELEMENT_AIR.mist), { color: core, speed: [0.02, 0.1], up: [0, 0.06], size: [radius * 0.7, radius * 1.0], grow: 1.25, life: ELEMENT_AIR.sec, opacity: ELEMENT_AIR.mistOpacity, gravity: 0, drag: 2, jitter: radius * 0.4 });
     mark('element_air');
   }
@@ -940,7 +943,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
   // THE VFX TEMPLATES (design-VFX.md §11): magic, blade and sci-fi, played
   // over every hero beat above (registered last, so they draw on top).
   bus.on('champion_chest', () => chestPunch(0));
-  const tplFx = createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area: (id) => SKILL_AREA.get(id) ?? null });
+  const tplFx = createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area: (id) => SKILL_AREA.get(id) ?? null, rigPoint: heroRigPoint, rigCenter: heroRigCenter, rigMoving: heroRigMoving });
   // The same templates on the enemies, champions and bosses (foefx.js).
   const foeFx = createFoeFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, ink: INK, player });
   // Every projectile in flight, party and foe, in its template (boltfx.js).
@@ -6769,6 +6772,7 @@ export function createSignatureFx({ stage, world, bus, cosmetic, settings = null
     shrineFx.frame(dt, world.entities());
     relic6Fx.frame(dt, world.entities());
     boltFx.frame(dt, world.entities());
+    tplFx.frame(dt); // T1: the traced slashes read the rigs' tips
     // The slash sweeps, flashes, stars, blazes and blasts hold through the
     // hitstop (render/hold.js); timers, trails and particles run on.
     kit.update(dt, renderHold);

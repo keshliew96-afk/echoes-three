@@ -50,6 +50,7 @@ import { makeGlowSprite } from '../glow.js';
 import { sharedGeo, releaseTree } from '../geocache.js';
 import { warmPark } from '../warmup.js';
 import { createCritter, FALL_ANGLE } from '../critters/index.js';
+import { registerHeroRig } from '../critters/rigs.js';
 import { exactColor, exactHex, makeSwingSmear } from '../critters/common.js';
 import { ALLY_CLASSES, ALLY_KITS, REVIVE } from '../../sim/allies.js';
 import { vfxClassStyle } from '../../data/vfx.js';
@@ -331,6 +332,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
       const c = createCritter(classId, { cosmetic });
       root.add(c.group);
       critters.set(classId, c);
+      registerHeroRig(classId, c);
     }
   }
   const rigState = new Map(); // classId -> { yaw, castLeft, hurtLeft }
