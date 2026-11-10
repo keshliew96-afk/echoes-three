@@ -1,4 +1,4 @@
-# Code health (v0.5.325)
+# Code health (v0.5.325; split and one-path sections v0.5.356)
 
 The "Code health" slice from the code review (`/mnt/project-files/review/CODE_REVIEW.md`, finding 13,
 "Structure and dead code", and the movement finding in the test safety net notes). No gameplay,
@@ -83,3 +83,59 @@ Probe-only code that ships (`campaign.census()`, `glTrack()`) stays: probes call
 `npm audit fix` moved the two dev-only packages with high alerts: `sharp` 0.35.3 to 0.35.5 (libheif,
 librsvg) and `source-map-js` 1.2.1 to 1.2.2 (via vite's postcss). Neither ships to players or runs
 on the server (`npm audit --omit=dev` was already clean). `npm audit` now reports 0.
+
+## The two biggest files, split (v0.5.356, PR #137)
+
+`src/sim/run.js` (4,199 lines) and `src/render/vfx/signature.js` (7,750) are now a core
+plus parts. Nothing they do changed: the nine goldens matched after every step.
+
+- **Run** (`src/sim/run.js`, about 1,700 lines, plus `src/sim/run/`). The closure's mutable state is
+  one object `rs`; the closure functions the parts call sit on one table `RF`. Each part is a
+  `createX(ctx)` factory installed with `Object.assign(RF, createX({ rs, RF, ... }))`: `rules.js`
+  (the frozen run rules and glyphs), `shop.js`, `shrines.js`, `vaultroom.js`, `secretroom.js`,
+  `eventroom.js`, `cmds.js` (the debug and harness commands), `save.js`, `view.js`, `levels.js`
+  (the level director) and `reward.js` (rewards and the path doors).
+- **Signature director** (`src/render/vfx/signature.js`, about 700 lines, plus
+  `src/render/vfx/sig/`). State object `sv`, function table `SF`, shared values in `sig/common.js`.
+  Each part is a contiguous range moved whole and installed at the same place, so every listener
+  keeps its registration order: `party.js` (hero casts, swings, hits and the template layer),
+  `foes.js`, `foes2.js`, `foes3.js`, `foes4.js` (enemy looks by land), `firstbosses.js`,
+  `bosses.js`, `thirdbosses.js`, `latebosses.js`, `champions.js`, `affixes.js`, `vaults.js`,
+  `relics.js`.
+
+Probes that read the director's source read `signature.js` plus `sig/*.js` (`sigSource()`).
+
+## One cast path (AUDIT D2, PR #137)
+
+The Healer's kit (`sim/skills.js`, `sim/nodes.js`) and the hero kits (`sim/allycast.js`,
+`party.js`, `partytech.js`) still pick their own targets, but what they put into the world is one
+thing:
+
+- **One zone system**, `src/sim/zones.js`. Every lasting `ground_aoe` zone is a body of kind `zone`;
+  a hero kit's zone carries its `classId`, the Healer's none. All zones tick in one phase at world
+  slot 4 (zone spawn order, the 1 s cadence), puddles soak there, and `zones.expire()` and
+  `zones.sweep()` end them (the run's sweep ends every zone, the ally boundary ends the hero kits').
+  Each kit keeps its hit rule: a Healer zone heals the seats inside or hits by body reach; a hero
+  zone hits hostiles by centre, with its count, drag and the cast pipeline's `zoneHit`.
+- **One set of events**: `zone_spawn`, `zone_tick`, `zone_expire` and `skill_cast` for every kit.
+  A hero kit's carry its `classId` (and a cast its seat); listeners tell the kits apart by it.
+  The `azone` kind, the `azone_*` events, `ally_cast` and the view's `azones` list are gone.
+- **Net protocol v5**: the event shapes were renamed in place and the old strings left the
+  dictionaries (`src/net/protocol/constants.js`).
+
+Goldens: step 1 moved only the state hash of all nine (the snapshot lost its empty `azones` list;
+run-2's Healer zone row gained `totalTicks`); step 2 moved only the event hash of run-1, run-2 and
+run-3 (3, 5 and 6 ally casts renamed `skill_cast`). Every event, the RNG draws and every other hash
+are unchanged. Probe: `node tools/one-cast-path-probe.mjs` (in `npm test`).
+
+Still two: the delivery code itself (the Healer's heal targeting and override in `skills.js`
+`deliver`, the hero kits' AI targets, techniques and class twists in `allycast.js` `deliver`).
+
+## One VFX director (AUDIT D5, PR #137)
+
+The class layer (`signature.js` and `sig/`) and the template layer (`templates.js`, with the bell,
+dusk, tide, tonic, shrine, secret, relic, foe and bolt layers) no longer subscribe to the sim bus on
+their own. The director builds one dispatch (`sig/common.js` `createVfxDispatch`) and hands it to
+every layer as `bus`; it holds one bus subscription per event type and runs that type's handlers in
+registration order, the order the bus kept, so every look plays as before. The counts read
+`signaturefx.debugCounts().dispatch`. Probe: `node tools/one-vfx-director-probe.mjs` (in `npm test`).

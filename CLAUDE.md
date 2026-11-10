@@ -137,8 +137,9 @@ src/version.js               the one version string
 src/app/        app shell and screen state machine, frame loop, settings, display, gamepad, nav, harness gating,
                 the harness debug API (debugapi.js, window.__echoes in a harness build)
 src/core/       sim core: 60 Hz clock, seeded RNG streams, entity registry, event bus, input -> intents, hashing
-src/sim/        the simulation (no DOM, no wall clock): world, run and campaign flow, combat, skills, nodes,
-                party and AI seats, enemies/ and bosses/, affixes, hazards, shrines, vaults, relics, events
+src/sim/        the simulation (no DOM, no wall clock): world, run and campaign flow (run.js plus its parts in
+                run/), combat, skills, nodes, zones.js (every kit's lasting zones), party and AI seats,
+                enemies/ and bosses/, affixes, hazards, shrines, vaults, relics, events
 src/data/       content tables: classes, levels and rosters, layouts, lineup, unlocks, journal, vows,
                 endless, daily, rush, story, palette, vfx, difficulty
 src/campaign/   level manager (transitions between levels) and the camp map table
@@ -147,7 +148,8 @@ src/env/        room dressings: biomes/ per land, camp/ props
 src/render/     three.js views of sim state: stage and post, critters/ (hero rigs, *facet.js), facet/ (the
                 model standard kit), enemies/ (facet/ for Level I to IV foes, champfacet/, spire.js and kiln.js),
                 boss/ (*facet.js for Level I to IV), allies/, npcs/, hazards/, interactables/, skillfx/,
-                techfx/, vfx/, numbers; fxpool.js is the one mote, flash and ring pool the skill layers share
+                techfx/, vfx/ (signature.js is the one VFX director, its parts in vfx/sig/; templates.js is
+                its template layer), numbers; fxpool.js is the one mote, flash and ring pool the skill layers share
 src/ui/         DOM UI: hud/, menu/ (title, settings, pause), run/ (class pick, draft, shop, cards), socket/,
                 story/ (journal, prologue), tutorial/, net/, interact/, bookends/, vfxlab, modellab, debug
 src/audio/      Web Audio engine, mixer, synthesized sfx and music
@@ -170,14 +172,17 @@ docs/           one doc per system (see the list in the file names); TESTING.md,
 - **Combat:** `src/sim/combat.js`, `projectiles.js`, `status.js`, `shapes.js`; hit feedback in
   `src/render/vfx/`, `src/render/numbers.js`.
 - **Skills and nodes:** `src/data/classes.js`, `src/sim/skills.js`, `nodes.js`, `draft.js`;
-  hero class kits in `src/sim/party*.js`, `allycast.js`, `duskwing.js`; casts drawn by `src/render/skillfx/`
-  and `src/render/vfx/`.
+  hero class kits in `src/sim/party*.js`, `allycast.js`, `duskwing.js`; every kit's zones in
+  `src/sim/zones.js`; every cast is one `skill_cast` event (a hero kit's carries its `classId`,
+  docs/CODE_HEALTH.md "One cast path"); casts drawn by `src/render/skillfx/` and `src/render/vfx/`
+  (one director, `signature.js`, with one bus subscription per event: "One VFX director").
 - **Heroes and AI seats:** `src/app/playclass.js`, `src/data/lineup.js`, `src/sim/allies.js`, `partyai.js`,
   `autopilot.js`; rigs in `src/render/critters/` (one faceted rig per hero, `*facet.js`) on the
   kit in `src/render/facet/`. Every model with a faceted rig has only that rig (AUDIT.md D1).
 - **Enemies, champions, bosses:** `src/sim/enemies/`, `champions.js`, `src/sim/bosses/`, `boss.js`;
   rigs in `src/render/enemies/`, `src/render/boss/`.
-- **Rooms and runs:** `src/sim/run.js` (rooms, rewards, campaign, Endless, Daily, Boss Rush),
+- **Rooms and runs:** `src/sim/run.js` and its parts in `src/sim/run/` (rooms, rewards, campaign, Endless,
+  Daily, Boss Rush; docs/CODE_HEALTH.md),
   `waves.js`, `objectives.js`, `encounters.js`, `secrets.js`; levels and layouts in `src/data/`;
   dressings in `src/scenes/arena.js` and `src/env/`.
 - **Room extras:** affixes, hazards, shrines, vaults, consumables, relics and interactables, one module
