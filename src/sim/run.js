@@ -71,7 +71,7 @@
 //   - view() keeps its exact shape (the Node golden traces hash it); the
 //     campaign is read through campaign(), and no new event fires before the
 //     first level clear, so the 9 goldens stay bit-identical.
-import { TICK_HZ, SKILL_SLOTS, ARENA } from '../core/constants.js';
+import { TICK_HZ, SKILL_SLOTS } from '../core/constants.js';
 import { PARTY_ALLIES, STARTING_SKILLS, SKILLS, HEALER_SKILL_IDS } from './skills.js';
 import { createDraftSystem } from './draft.js';
 import { NODES } from './nodes.js';
@@ -83,7 +83,7 @@ import { difficulty, CHALLENGE, setDifficultyLegacy, isDifficultyLegacy } from '
 import { createStatusTracker, STATUS_KINDS } from './status.js';
 import { createAutopilot } from './autopilot.js';
 // RELICS (docs/CONTENT_PLAN.md §5): run-long relics + cursed doors.
-import { createRelicSystem, cursedDiff, dailyOmen, RELICS, RELIC_RULES, CURSES, CURSE_IDS } from './relics.js';
+import { createRelicSystem, cursedDiff, dailyOmen, RELICS, RELIC_RULES, CURSES } from './relics.js';
 // DAILY DESCENT (docs/DAILY.md): the shared run of the UTC day.
 import { isDailyKey, dailySeed, dailyLevelSeed, dailyDepth, DAILY_RULES } from '../data/daily.js';
 // BOSS RUSH (docs/BOSS_RUSH.md): the bosses back to back.
@@ -101,7 +101,7 @@ import { staticClearance, blockerClearance } from './movement.js';
 import { createSecretSystem, wallRolls, wallPref, chamberContent, chamberPage, chamberEvent, SECRET_RULES, SECRET_BODY } from './secrets.js';
 import { refreshBlockers } from './interactables.js';
 import { SPAWN_POINTS } from './waves.js';
-import { SHRINES, SHRINE_RULES, shrineOfBiome, shrineRoomFor, shrineSpotStart, shrineCurseFor, shrineSpec, bless } from './shrines.js';
+import { SHRINES } from './shrines.js';
 // EVENT ROOMS (docs/EVENT_ROOMS.md): "?" doors and their encounters.
 import { createEncounterSystem, ENCOUNTERS, EVENT_RULES } from './encounters.js';
 // ELITE AFFIXES (docs/ELITE_AFFIXES.md): how many powers an elite carries.
@@ -129,6 +129,7 @@ import {
 } from '../data/campaign.js';
 
 import { cloneData, r2, TUTORIAL_LAYOUT, tutorialDiff, RUN } from './run/rules.js';
+import { createRunShrines } from './run/shrines.js';
 import { createRunShop } from './run/shop.js';
 
 export function createRunSystem({
@@ -606,7 +607,7 @@ export function createRunSystem({
     vaults.reset(championsOn());
     tonics.reset(championsOn());
     secrets.reset(championsOn());
-    shrineReset();
+    RF.shrineReset();
     if (rs.campaign.daily) relics.grantDaily(rs.campaign.daily.relic, rs.campaign.daily.curse);
     // Payload unchanged since v0.5.x (the goldens hash every event).
     events.emit(getTick(), 'run_start', {
@@ -891,7 +892,7 @@ export function createRunSystem({
     // SHRINES: the level's shrine stands in its first combat room from the
     // hashed room on (never the boss room); the Grave Shrine's curse lands
     // on the next fight.
-    if (combatRoom && shrinesOn() && mode !== 'boss') placeShrine(n, mode, level.biome, tick);
+    if (combatRoom && RF.shrinesOn() && mode !== 'boss') RF.placeShrine(n, mode, level.biome, tick);
     // SECRET ROOMS: from room 4 on, a plain fight may hide a cracked wall.
     if (combatRoom && secrets.canPlace() && rs.frame && rs.campaign && !tutorialOn() && !rushFight() && (rs.forcedWall === n || wallRolls(rs.frame.seed, rs.campaign.index, n, mode))) placeWall(n, mode, tick);
     if (rs.forcedWall === n) rs.forcedWall = null;
@@ -1721,148 +1722,7 @@ export function createRunSystem({
   // single-level run, so the goldens never see one). Boss Rush has none.
   // shrine: { aim, room, id, used, usedBy, pick, curse, offered } | null
   rs.shrine = null;
-  const shrinesOn = () => !!rs.shrine && championsOn() && !(rs.campaign && rs.campaign.rush);
-  function shrineReset() {
-    rs.shrine = championsOn() && !(rs.campaign && rs.campaign.rush) ? { aim: shrineRoomFor(rs.frame.seed, rs.campaign.index), room: null, id: null, used: false, usedBy: null, pick: null, curse: null, offered: 0 } : null;
-    for (const e of registry.all()) if (e.partyIndex !== undefined && e.blessing) delete e.blessing;
-  }
-  function shrineLevelReset() {
-    if (!rs.shrine) return;
-    // The Grave Shrine's curse waits for the next fight, even past a level's end.
-    rs.shrine = { ...rs.shrine, aim: shrineRoomFor(rs.frame.seed, rs.campaign.index), room: null, id: null, used: false, usedBy: null, pick: null };
-  }
-  // A free spot: clear of the clearing's props, the hazards and assets, the
-  // spawn ring and the party's entry.
-  function shrineSpot(n) {
-    const S = SHRINE_RULES.spots;
-    const start = shrineSpotStart(rs.frame.seed, rs.campaign.index, n);
-    const ring = LAYOUTS[rs.layout?.layoutId]?.spawns ?? SPAWN_POINTS;
-    const content = registry.all().filter((e) => e.kind === 'hazard' || e.interactable || e.kind === 'barricade' || e.kind === 'keg');
-    const pts = [];
-    for (const e of content) {
-      if (e.vents) for (const v of e.vents) pts.push([v.x, v.z, 0.7]);
-      else if (e.lane) {
-        const L = e.lane;
-        for (let k = 0; k <= 8; k++) pts.push([L.x0 + ((L.x1 - L.x0) * k) / 8, L.z0 + ((L.z1 - L.z0) * k) / 8, L.w / 2]);
-      } else if (e.htype === 'rockfall' || e.htype === 'spur') continue;
-      else pts.push([e.x, e.z, e.radius ?? 0.5]);
-    }
-    for (let k = 0; k < S.length; k++) {
-      const [x, z] = S[(start + k) % S.length];
-      if (staticClearance(x, z, SHRINE_RULES.radius + 0.3) < 0.15) continue;
-      if (Math.hypot(x, z) < 3 || Math.abs(x) > ARENA.halfW - 1.2 || Math.abs(z) > ARENA.halfD - 1.0) continue;
-      if (ring.some(([sx, sz]) => Math.hypot(sx - x, sz - z) < 1.5)) continue;
-      if (pts.some(([px, pz, pr]) => Math.hypot(px - x, pz - z) < pr + SHRINE_RULES.radius + 0.9)) continue;
-      return [x, z];
-    }
-    return null;
-  }
-  function spawnShrine(id, x, z, tick) {
-    const e = registry.spawn(shrineSpec(id, x, z));
-    events.emit(tick, 'interactable_spawn', { id: e.id, itype: 'shrine', x: r2(x), z: r2(z) });
-    events.emit(tick, 'shrine_spawn', { id: e.id, shrine: id, room: rs.roomIndex, x: r2(x), z: r2(z) });
-    return e.id;
-  }
-  function placeShrine(n, mode, biome, tick) {
-    if (rs.shrine.room !== null || n < rs.shrine.aim) return;
-    const id = shrineOfBiome(biome) ? biome : null;
-    if (!id) return;
-    const at = shrineSpot(n);
-    if (!at) return; // a crowded room: the next combat room tries
-    rs.shrine.room = n;
-    rs.shrine.id = id;
-    spawnShrine(id, at[0], at[1], tick);
-    void mode;
-  }
-  // Pay the Tithe Shrine from the offering seat's own Glint.
-  function seatGlint(seat) {
-    return seat !== 0 && RF.seatPursesOn() ? party.purse(seat) : rs.wallet;
-  }
-  function payGlint(seat, n) {
-    if (seat !== 0 && RF.seatPursesOn()) party.gainPurse(seat, -n, 'shrine_tithe');
-    else spend(n, 'shrine_tithe');
-  }
-  // E at the shrine (any human seat), or cmd('shrineUse'). The price, then
-  // the blessing; a price the party cannot pay gives the use back.
-  function useShrine(seat = 0) {
-    const body = registry.all().find((e) => e.kind === 'shrine');
-    if (!rs.active || !rs.shrine || !body || rs.phase !== 'combat') return null;
-    const tick = getTick();
-    const S = SHRINES[body.shrine];
-    const by = registry.all().find((e) => e.partyIndex === seat) ?? player;
-    let why = null;
-    if (rs.shrine.used) why = 'used';
-    else if (S.cost === 'glint' && seatGlint(seat) < SHRINE_RULES.glintCost) why = 'glint';
-    else if (S.cost === 'key' && !vaults.held()) why = 'key';
-    else if (S.cost === 'tonic' && !(tonics.enabled() && tonics.slot(seat))) why = 'tonic';
-    else if (S.cost === 'curse' && !relics.enabled()) why = 'curse';
-    else if (S.cost === 'relic' && !relics.newestOf('common')) why = 'relic';
-    if (why) {
-      if (why !== 'used') {
-        body.uses = 1;
-        body.usedTick = -1;
-        body.usedBy = null;
-      }
-      events.emit(tick, 'shrine_denied', { id: body.id, shrine: S.id, seat, reason: why, x: r2(body.x), z: r2(body.z) });
-      return { denied: why };
-    }
-    body.uses = 0;
-    body.usedTick = tick;
-    body.usedBy = by.id;
-    const bodies = registry.all().filter((e) => e.partyIndex !== undefined);
-    const result = { shrine: S.id, seat };
-    if (S.cost === 'hp') {
-      let paid = 0;
-      for (const e of bodies) {
-        if (!(e.hp > 0)) continue;
-        const loss = Math.max(0, Math.min(e.hp - 1, e.maxHp * SHRINE_RULES.hpCost));
-        e.hp = r2(e.hp - loss);
-        paid += loss;
-      }
-      result.hp = r2(paid);
-    } else if (S.cost === 'glint') {
-      payGlint(seat, SHRINE_RULES.glintCost);
-      result.glint = SHRINE_RULES.glintCost;
-    } else if (S.cost === 'curse') {
-      rs.shrine.curse = shrineCurseFor(rs.frame.seed, rs.campaign.index, rs.roomIndex, CURSE_IDS);
-      result.curse = rs.shrine.curse;
-    } else if (S.cost === 'key') {
-      vaults.surrender('shrine');
-      rs.shrine.pick = rs.roomIndex;
-      result.pick = true;
-    } else if (S.cost === 'tonic') {
-      result.tonic = tonics.slot(seat);
-      tonics.setSlot(seat, null);
-    } else if (S.cost === 'relic') {
-      // THE EMBER KILN's Forge Shrine (content plan 5 slice 9).
-      result.relic = relics.loseNewestOf('forge', 'common');
-    }
-    // RELICS batch 5: Votive Ribbon makes the blessing last longer.
-    const B = S.gift !== 'relic' ? bless(bodies, S.gift, tick, Math.round(SHRINE_RULES.blessTicks * relics.blessMul())) : null;
-    if (B) result.blessing = B.id;
-    rs.shrine.used = true;
-    rs.shrine.usedBy = seat;
-    rs.shrine.offered += 1;
-    events.emit(tick, 'shrine_offer', { id: body.id, by: by.id, x: r2(body.x), z: r2(body.z), ...result, ...(B ? { untilTick: B.untilTick } : {}) });
-    return result;
-  }
-  events.on('shrine_touch', (ev) => useShrine(ev.seat ?? 0));
-  function shrineView() {
-    const tick = getTick();
-    const b = player.blessing && player.blessing.untilTick > tick ? player.blessing : null;
-    const live = registry.all().find((e) => e.kind === 'shrine');
-    return {
-      aim: rs.shrine.aim,
-      room: rs.shrine.room,
-      id: rs.shrine.id,
-      used: rs.shrine.used,
-      offered: rs.shrine.offered,
-      ...(rs.shrine.curse ? { curse: rs.shrine.curse } : {}),
-      ...(rs.shrine.pick !== null ? { pick: rs.shrine.pick } : {}),
-      ...(live ? { body: { id: live.id, x: live.x, z: live.z, shrine: live.shrine } } : {}),
-      ...(b ? { blessing: { id: b.id, ticksLeft: b.untilTick - tick } } : {}),
-    };
-  }
+  events.on('shrine_touch', (ev) => RF.useShrine(ev.seat ?? 0));
 
   // --------------------------------------------------- keys and vaults --
   // KEYS AND VAULTS (docs/VAULTS.md). Phase 'vault': the party walks into the
@@ -2326,7 +2186,7 @@ export function createRunSystem({
     encounters.levelReset(); // EVENT ROOMS: two "?" doors a level
     vaults.levelReset(rs.act); // KEYS AND VAULTS: a key lasts its level
     secrets.levelReset(); // SECRET ROOMS: one wall a level
-    shrineLevelReset(); // SHRINES: one shrine a level
+    RF.shrineLevelReset(); // SHRINES: one shrine a level
     if (party && CARRY_RULES.resetEntities) party.resetLevelState();
     rs.reward = null;
     rs.path = null;
@@ -3140,7 +3000,7 @@ export function createRunSystem({
       // SECRET ROOMS: present only in a run with secrets (hash-stable).
       ...(rs.active && secrets.enabled() ? { secrets: secrets.view() } : {}),
       // SHRINES: present only in a run with shrines.
-      ...(rs.active && rs.shrine ? { shrine: shrineView() } : {}),
+      ...(rs.active && rs.shrine ? { shrine: RF.shrineView() } : {}),
       // UNLOCKS: the run's boons (present only when the player picked some).
       ...(rs.active && rs.campaign && rs.campaign.boons ? { boons: cloneData(rs.campaign.boons) } : {}),
       summary: rs.summary,
@@ -3442,7 +3302,7 @@ export function createRunSystem({
       }
       // ------------------------------------------------- SHRINES --
       case 'shrineState':
-        return rs.shrine ? shrineView() : null;
+        return rs.shrine ? RF.shrineView() : null;
       case 'shrineHere': {
         // ('shrineHere'[, biome[, x, z]]) — a shrine stands in the live
         // combat room now (probes, screenshots, the lab).
@@ -3452,8 +3312,8 @@ export function createRunSystem({
         rs.shrine.room = rs.roomIndex;
         rs.shrine.id = id;
         for (const e of registry.all()) if (e.kind === 'shrine') registry.despawn(e.id);
-        const at = args[1] !== undefined ? [Number(args[1]), Number(args[2] ?? 0)] : shrineSpot(rs.roomIndex);
-        return spawnShrine(id, at[0], at[1], getTick());
+        const at = args[1] !== undefined ? [Number(args[1]), Number(args[2] ?? 0)] : RF.shrineSpot(rs.roomIndex);
+        return RF.spawnShrine(id, at[0], at[1], getTick());
       }
       case 'shrineRoom': {
         // ('shrineRoom', n) — this level's shrine aims at room n.
@@ -3464,7 +3324,7 @@ export function createRunSystem({
       }
       case 'shrineUse':
         // ('shrineUse'[, seat]) — the seat offers at the live shrine now.
-        return useShrine(Number(args[0] ?? 0));
+        return RF.useShrine(Number(args[0] ?? 0));
       case 'tonicState':
         return tonics.enabled() ? { ...tonics.view(), stand: rs.shop && rs.shop.stand ? { ...rs.shop.stand, bought: [...rs.shop.stand.bought] } : null } : null;
       case 'keyGive': {
@@ -3788,8 +3648,9 @@ export function createRunSystem({
     rs.shrine = d.shrine ? cloneData(d.shrine) : null;
   }
 
-  Object.assign(RF, { beginFade }); // the closure's own functions the parts call
+  Object.assign(RF, { beginFade, spend }); // the closure's own functions the parts call
   Object.assign(RF, createRunShop({ rs, RF, allyOn, buildSys, controllers, draft, events, getTick, pages, party, relics, tonics }));
+  Object.assign(RF, createRunShrines({ rs, RF, championsOn, events, getTick, party, player, registry, relics, tonics, vaults }));
   const api = {
     saveState,
     loadState,
