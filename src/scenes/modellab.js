@@ -48,11 +48,12 @@ import { IcosahedronGeometry } from 'three';
 import { LAB_ENTRIES as BOSS_ENTRIES } from './modellab-bosses.js';
 import { LAB_ENTRIES as CHAMPION_ENTRIES } from './modellab-champions.js';
 import { LAB_ENTRIES as LEVEL4_ENTRIES } from './modellab-level4.js';
+import { LAB_ENTRIES as LEVEL4_CHAMPION_ENTRIES } from './modellab-champions-level4.js';
 import { LAB_ENTRIES as FOE_ENTRIES } from './modellab-foes.js';
 
 // Model tabs from entry files (scenes/modellab-bosses.js documents the shape):
 // each builds its model and classic twin on first view and drives both.
-const ENTRIES = [...BOSS_ENTRIES, ...LEVEL4_ENTRIES, ...CHAMPION_ENTRIES, ...FOE_ENTRIES];
+const ENTRIES = [...BOSS_ENTRIES, ...LEVEL4_ENTRIES, ...CHAMPION_ENTRIES, ...LEVEL4_CHAMPION_ENTRIES, ...FOE_ENTRIES];
 const entryOf = (id) => ENTRIES.find((e) => e.id === id) || null;
 
 const MODELS = [['wyrm', 'Barrow Wyrm'], ...FACET_HEROES.map((h) => [h.id, h.label]), ...ENTRIES.map((e) => [e.id, e.label]), ['kit', 'Effect kit']];

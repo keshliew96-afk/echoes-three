@@ -64,7 +64,7 @@ const CHAMPS = [
   const kinds = CHAMPS.map((c) => c.kind);
   check('the Level I champions play the model standard by default', kinds.every((k) => MODEL_STANDARD[k] === true && facetOn(k, q(''))));
   check('?facet=0 keeps them classic; ?facet=moss_hart only the Hart', kinds.every((k) => !facetOn(k, q('facet=0'))) && facetOn('moss_hart', q('facet=moss_hart')) && !facetOn('briar_knight', q('facet=moss_hart')));
-  check('the other champions stay classic', !facetOn('hollow_choir', q('')) && !facetOn('gale_herald', q('')) && !facetOn('vein_matron', q('')));
+  check('the other champions stay classic', !facetOn('gale_herald', q('')) && !facetOn('bell_abbess', q('')) && !facetOn('glassblower', q('')));
   const built = kinds.map((k) => CHAMPION_BUILDERS[k](cosmetic));
   check("the champion table builds the faceted rigs with the champions' soft flash", built.every((b) => b.group.userData.modelStandard === true && b.flashScale === CHAMPION_FLASH && typeof b.pose === 'function'), built.map((b) => b.flashScale));
   const classics = CHAMPS.map((C) => C.classic(cosmetic)).filter((r) => r && r.group && typeof r.pose === 'function' && !r.group.userData.modelStandard);

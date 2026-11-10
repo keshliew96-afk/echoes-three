@@ -77,6 +77,8 @@ import { buildSluiceWardenFacet } from './champfacet/sluicewarden.js';
 import { buildLockkeeperFacet } from './champfacet/lockkeeper.js';
 import { buildBoneReeveFacet } from './champfacet/bonereeve.js';
 import { buildGravebellRingerFacet } from './champfacet/gravebellringer.js';
+import { buildHollowChoirFacet } from './champfacet/hollowchoir.js';
+import { buildVeinMatronFacet } from './champfacet/veinmatron.js';
 import { facetOn } from '../facet/flags.js';
 
 const flashable = (color) => toonMaterial({ color, emissive: '#FFFFFF', emissiveIntensity: 0 });
@@ -1045,13 +1047,14 @@ export const CHAMPION_BUILDERS = Object.freeze(
       briar_knight: facetOn('briar_knight') ? buildBriarKnightFacet : buildBriarKnight,
       sluice_warden: facetOn('sluice_warden') ? buildSluiceWardenFacet : buildSluiceWarden,
       bone_reeve: facetOn('bone_reeve') ? buildBoneReeveFacet : buildBoneReeve,
-      hollow_choir: buildHollowChoir,
+      hollow_choir: facetOn('hollow_choir') ? buildHollowChoirFacet : buildHollowChoir,
       gale_herald: buildGaleHerald,
       // Second champions (plan 4 slice 8): render/enemies/champions2.js.
       ...SECOND_CHAMPION_BUILDERS,
       moss_hart: facetOn('moss_hart') ? buildMossHartFacet : SECOND_CHAMPION_BUILDERS.moss_hart,
       lockkeeper: facetOn('lockkeeper') ? buildLockkeeperFacet : SECOND_CHAMPION_BUILDERS.lockkeeper,
       gravebell_ringer: facetOn('gravebell_ringer') ? buildGravebellRingerFacet : SECOND_CHAMPION_BUILDERS.gravebell_ringer,
+      vein_matron: facetOn('vein_matron') ? buildVeinMatronFacet : SECOND_CHAMPION_BUILDERS.vein_matron,
     }).map(([k, build]) => [k, softFlash(build)])
   )
 );
