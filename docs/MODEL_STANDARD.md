@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349; Level IV foes v0.5.350; Level III champions v0.5.351; Level IV bosses v0.5.352)
+# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349; Level IV foes v0.5.350; Level III champions v0.5.351; Level IV bosses v0.5.353)
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -848,7 +848,7 @@ whose wind-up is read from a cooldown rather than a warning: the boss layer pass
 tick into `pose`, and the rig gathers over the 30 ticks before `nextGraveTick` and stamps
 when that tick moves on (render only; the call fires when the sim says).
 
-## The Level IV bosses (v0.5.352)
+## The Level IV bosses (v0.5.353)
 
 The Heart's three bosses, on the same terms as Level II: each keeps its classic rig's
 silhouette and colours (the classic's own constants and value steps of them), adds the
