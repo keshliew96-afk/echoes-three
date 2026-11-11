@@ -167,7 +167,7 @@ export function vfxSkillClass(skillId) {
 }
 
 // ------------------------------------------------------------- templates --
-// Kesh's three VFX templates (docs/gauntlet/design-VFX.md §11). Every hero
+// Kesh's three VFX templates (docs/VFX_TEMPLATES.md). Every hero
 // effect plays one of them on top of its class look (render/vfx/templates.js):
 //   magic  spells and magical attacks
 //   blade  blades, claws, bites and other melee, and the closest fit for

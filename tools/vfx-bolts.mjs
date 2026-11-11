@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // VFX rework PR 3 probe: every projectile in flight wears its template
-// (render/vfx/boltfx.js, design-VFX.md §11 "Projectiles").
+// (render/vfx/boltfx.js, docs/VFX_TEMPLATES.md "Projectiles").
 //
 //   1. Data (no browser): every hero projectile (the Healer's bolt, the three
 //      shooting basics, every projectile skill) and every foe that shoots or

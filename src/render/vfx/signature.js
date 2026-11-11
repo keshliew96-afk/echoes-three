@@ -77,7 +77,7 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
   // Each event (and each timer it left) is one group for the light budget.
   const lightGroup = () => tk.setGroup(kit.newGroup());
   const kit = createVfxKit({ stage, cosmetic, budgeted: heroLight, neighbours: (x, z, r) => tk.blastsNear(x, z, r) });
-  // Kesh's VFX templates (design-VFX.md §11): their own primitives.
+  // Kesh's VFX templates (docs/VFX_TEMPLATES.md): their own primitives.
   const tk = createTemplateKit({ stage, cosmetic, budgeted: heroLight, neighbours: (x, z, r) => kit.lightNear(x, z, r) });
   const rnd = (a, b) => cosmetic.range(a, b);
 

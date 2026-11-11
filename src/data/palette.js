@@ -88,7 +88,7 @@ export const VFX_SIGNATURE = Object.freeze({
   duskwing: Object.freeze({ glow: '#E0509E', second: '#F2D9E6', debris: '#7A4E66' }), // Dusk Rose / Pale Moon / Wing Leather
 });
 
-// VFX templates (docs/gauntlet/design-VFX.md §11, Kesh's 2026-10-19 VFX
+// VFX templates (docs/VFX_TEMPLATES.md, Kesh's 2026-10-19 VFX
 // direction). Each hero effect plays one of three templates on top of its
 // class look: MAGIC (celestial burst, runes and arcane circles, purple and
 // gold particles, stardust, ethereal beams), BLADE (a blazing fiery trail,

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // vfx-foes — the probe for VFX rework PR 2: Kesh's three templates on the
-// enemies, champions and bosses (docs/gauntlet/design-VFX.md §11, "The foes").
+// enemies, champions and bosses (docs/VFX_TEMPLATES.md, "The foes").
 //
 //   1. Data (no browser): every enemy kind the sim knows (ENEMY_KINDS, the
 //      champions among them) and every boss (BOSS_KINDS) has a template row;

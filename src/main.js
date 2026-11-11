@@ -531,7 +531,7 @@ if (signaturefx) {
   setImpactFxDirected(true);
   signaturefx.prewarm();
   service('content').vfx = () => signaturefx.debugCounts();
-  // The VFX lab's template reels (design-VFX.md §11).
+  // The VFX lab's template reels (docs/VFX_TEMPLATES.md).
   service('content').vfxShowcase = (id, at) => signaturefx.showcase(id, at);
   service('content').vfxFoeShowcase = (kind, at) => signaturefx.foeShowcase(kind, at);
   service('content').vfxBoltShowcase = (names, at) => signaturefx.boltShowcase(names, at);

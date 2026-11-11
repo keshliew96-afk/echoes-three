@@ -1,4 +1,4 @@
-// Foe templates (VFX rework PR 2; docs/gauntlet/design-VFX.md §11): Kesh's
+// Foe templates (VFX rework PR 2; docs/VFX_TEMPLATES.md): Kesh's
 // three templates on the enemies, champions and bosses. Every enemy attack
 // already has its telegraph (the Ember shape on the floor) and its own
 // matter beats in signature.js; this layer adds the template's finish on top
