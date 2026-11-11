@@ -242,7 +242,7 @@ anyone touches them.
 | D3 | Done: `ALLY_KITS_V150` deleted. | 89012df |
 | U1 | Done: unused exports, imports and top-level locals deleted. | cb890a0 |
 | D4 | Done: one mote, flash and ring pool, `src/render/fxpool.js`. | c6286e2 |
-| N3 | Done for colours written as JS values (they read `PALETTE`). Hexes inside CSS strings were left. | ce2afc5 |
+| N3 | Partly done. Only JS colour values that equal a `PALETTE` entry now read it. About 456 other hex colours stay written inline in 118 files outside `src/data/palette.js` (count of v0.5.359, for example 33 in `render/interactables/encounters.js` and 30 in `data/unlocks.js`), as do the hexes inside CSS strings. New code follows the CLAUDE.md rule; the old literals are open. | ce2afc5 |
 | N1, N2 | Not moved. Gameplay tuning already sits in frozen tables (palette.js, core/constants.js, each system's table); moving tens of thousands of render literals is not a small change. | none |
 | Split | `main.js`: the debug API moved to `src/app/debugapi.js` (PR #136). PR #137: `run.js` split into a 1,696-line core and 11 parts under `src/sim/run/`; `signature.js` into a 697-line director and 13 parts under `src/render/vfx/sig/` (docs/CODE_HEALTH.md). | 68dbb58; e8e3413 to 0a9f258; 4f9ebec to 4db6d84 |
 | D1 | Done for every model with a faceted rig: classic heroes, bosses, champions and Level I to IV foes deleted, the lab's Classic beside, `render/facet/flags.js` and `?facet=` gone. | 097e6fd to beb1868 |
@@ -250,4 +250,4 @@ anyone touches them.
 | D2 | PR #137: one zone system (`src/sim/zones.js`, kind `zone` for every kit) and one cast event (`skill_cast`, a hero kit's with its `classId`); net protocol v5; goldens re-recorded (state hash of all nine, event hash of run-1 to run-3, every event otherwise identical). Then one delivery (`allycast.js` `deliver`) for every kit's casts and Echoes; only the event hash of run-1 to run-3 moved (the Healer's cast now goes out before its effects). | 0b9f4af, c722d5c, 6f4b8b6 |
 | D5 | PR #137: one VFX director: every layer registers on the director's dispatch, one bus subscription per event, handlers in the bus's own order. | cc698cc |
 | D6, D7 | Not touched: they change structure the goldens or co-op depend on (Kesh's call). | none |
-| U3 | Not touched: retiring probes waits on Kesh's list. The `tools/model-standard-*-shots.mjs` tools still ask for `?facet=0` or the lab's classic twin and now shoot the faceted rig in both places. | none |
+| U3 | Retiring probes waits on Kesh's list. The `?facet=0` game passes are gone from the 12 `tools/model-standard-*-shots.mjs` tools and `tools/vfx-extras-shots.mjs` (v0.5.360); their lab `classic-beside` beats still ask for the retired classic twin and shoot the faceted rig. | v0.5.360 |

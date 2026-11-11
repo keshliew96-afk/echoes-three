@@ -1,4 +1,4 @@
-// Template kit (docs/gauntlet/design-VFX.md §11) — the pooled primitives
+// Template kit (docs/VFX_TEMPLATES.md) — the pooled primitives
 // Kesh's three VFX templates need on top of the base kit (kit.js):
 //
 //   circle  an arcane circle on the ground (or standing up at a caster's

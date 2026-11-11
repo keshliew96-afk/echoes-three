@@ -1,4 +1,4 @@
-// VFX templates (docs/gauntlet/design-VFX.md §11) — Kesh's 2026-10-19 VFX
+// VFX templates (docs/VFX_TEMPLATES.md) — Kesh's 2026-10-19 VFX
 // direction, played on top of every hero's class look:
 //
 //   MAGIC  "Magical spell VFX, celestial energy burst, glowing runes and

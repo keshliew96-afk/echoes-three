@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // MODEL STANDARD HEROES shots (v0.5.335) — the faceted heroes in a busy fight
-// at the game's own play zoom, and the same fight with ?facet=0 (the classic
-// rigs) for the side by side. Needs a dev server (npm run dev) or a harness
+// at the game's own play zoom (the classic rigs and ?facet=0 were retired,
+// AUDIT.md D1). Needs a dev server (npm run dev) or a harness
 // build; English only.
 //
 //   node tools/model-standard-heroes-shots.mjs [--url http://127.0.0.1:5199/]
@@ -41,7 +41,7 @@ async function fight(facet) {
   const page = await browser.newPage();
   const errors = [];
   page.on('pageerror', (e) => errors.push(String(e && e.message ? e.message : e)));
-  await page.goto(`${URL0}?seed=${SEED}&tips=0&story=0${facet ? '' : '&facet=0'}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+  await page.goto(`${URL0}?seed=${SEED}&tips=0&story=0`, { waitUntil: 'domcontentloaded', timeout: 300000 });
   await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
   const cmd = (name, ...args) => page.evaluate((n, a) => window.__echoes.cmd(n, ...a), name, args);
   const untilRoom = async (n) => {
@@ -83,7 +83,7 @@ async function fight(facet) {
   return errors;
 }
 
-const errs = [...(await fight(true)), ...(await fight(false))];
+const errs = await fight(true);
 console.log(errs.length ? `page errors:\n${errs.join('\n')}` : 'no page errors');
 console.log(`shots in ${SHOTS}`);
 process.exit(errs.length ? 1 : 0);

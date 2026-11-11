@@ -1,4 +1,4 @@
-// Projectile templates (VFX rework PR 3, design-VFX.md §11 "Projectiles"):
+// Projectile templates (VFX rework PR 3, docs/VFX_TEMPLATES.md "Projectiles"):
 // every shot in flight wears Kesh's template as its body, for the heroes,
 // the enemies, the champions and the bosses alike.
 //

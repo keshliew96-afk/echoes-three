@@ -463,7 +463,7 @@ export function mountVfxLab() {
     }
     say(`${cls} reel done`);
   }
-  // Kesh's three VFX templates (design-VFX.md §11): each one's beats in a
+  // Kesh's three VFX templates (docs/VFX_TEMPLATES.md): each one's beats in a
   // row in front of the party, and the purple-clash switch for the magic.
   const tplRow = section('VFX templates');
   for (const [label, id] of [['Magic', 'magic'], ['Blade', 'blade'], ['Sci-fi', 'scifi']]) {

@@ -15,7 +15,7 @@ npx vite build                          # clean apart from the chunk-size warnin
 - `tools/goldens.json` holds the nine expected hashes. Record it (`--record`) only when a
   change is meant to move the legacy single-level run, and say so in the PR.
 - Browser probes need `npm run dev` on 127.0.0.1:5199. In a Linux cloud session, as root:
-  `PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1194/chrome-linux/chrome` and
+  `PUPPETEER_EXECUTABLE_PATH=/opt/pw-browsers/chromium-1243/chrome-linux64/chrome` and
   `ECHOES_CHROME_ARGS="--no-sandbox --use-gl=angle --use-angle=swiftshader --enable-unsafe-swiftshader"`
   (`tools/gnt-arch-browser.mjs` and most newer probes read it). Software GL runs at 1 to 25 fps:
   hold keys for about 250 ms and wait on sim state, not on time.
@@ -39,8 +39,8 @@ that request logs a 502.
 
 ### npm test and CI (v0.5.318)
 
-`npm test` runs `tools/test.mjs`: 25 browser-free probes one after another (about 5 minutes,
-most of it `gameplay-bugs-probe`), exit 1 if any fails. `npm test -- --list` prints the suite,
+`npm test` runs `tools/test.mjs`: the browser-free probes in its `SUITE` one after another (54 at
+v0.5.359, about 3 to 5 minutes; `npm test -- --list` prints them), exit 1 if any fails. `npm test -- --list` prints the suite,
 `npm test -- --only <part of a file name>` runs a few. The suite is the safety net itself
 (`test-safety-net-probe`), the nine goldens, the language check, the data cross-check
 (`data-xcheck-probe`), layout placements, save round trips (`save-determinism-probe`,

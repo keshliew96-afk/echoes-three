@@ -2,7 +2,7 @@
 // shares, lifted out of the Tank pilot so the Healer, the Swordsman and the
 // heroes after them play by the same rules: Kesh's animation templates (the
 // 3-hit combo and the technical self-check) and the [M] rules of the VFX/hit
-// rules doc (/mnt/project-files/plan/VFX_HIT_RULES.md §6.1):
+// rules doc (docs/VFX_HIT_RULES.md §6.1):
 //
 //   posePack(weapon)      a pose is a flat vector of numbers: the body fields
 //                         every hero shares (BODY) plus the rig's own weapon

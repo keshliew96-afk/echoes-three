@@ -5,7 +5,7 @@
 // the first blow and the finisher, its own states, the classic twin beside,
 // play zoom, a walk), then a Level III fight on the Ashen Barrow floor at
 // play zoom with all nine spawned round the party on the autopilot, shot at
-// the same sim ticks faceted and `?facet=0`.
+// the same sim ticks faceted.
 //
 //   node tools/model-standard-level3-foes-shots.mjs [--url http://127.0.0.1:5199/] [--shots dir] [--only ram] [--lab 0|1] [--game 0|1]
 // Linux cloud: PUPPETEER_EXECUTABLE_PATH=.../chrome and
@@ -102,7 +102,7 @@ const LEADER = { seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'a
 async function fight(facet) {
   const page = await browser.newPage();
   page.on('pageerror', (e) => errors.push(`fight${facet ? '' : ' classic'}: ${String(e && e.message ? e.message : e)}`));
-  await page.goto(`${URL0}?seed=7&tips=0&story=0${facet ? '' : '&facet=0'}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+  await page.goto(`${URL0}?seed=7&tips=0&story=0`, { waitUntil: 'domcontentloaded', timeout: 300000 });
   await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
   const cmd = (name, ...args) => page.evaluate((n, a) => window.__echoes.cmd(n, ...a), name, args);
   const run = () => cmd('runState');
@@ -166,7 +166,6 @@ async function fight(facet) {
 if (LAB) for (const model of Object.keys(LAB_SHOTS)) if (!ONLY || ONLY === model) await labShots(model);
 if (GAME) {
   await fight(true);
-  await fight(false);
 }
 await browser.close();
 if (errors.length) {

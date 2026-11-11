@@ -438,7 +438,7 @@ export function createSigParty(ctx) {
   // the dive, the crown, the lens, the veil, the heart, and the three
   // curses (the seal, the dark, the crowns).
   const relic6Fx = createRelic6Fx({ kit, bus, byId: SF.byId, spray, flare: SF.flare, shock: SF.shock, after, anticipate: SF.anticipate, embersUp: SF.embersUp, camfx, N, rnd, mark, player, world, stage });
-  // THE VFX TEMPLATES (design-VFX.md §11): magic, blade and sci-fi, played
+  // THE VFX TEMPLATES (docs/VFX_TEMPLATES.md): magic, blade and sci-fi, played
   // over every hero beat above (registered last, so they draw on top).
   bus.on('champion_chest', () => chestPunch(0));
   const tplFx = createTemplateFx({ kit, tk, bus, byId: SF.byId, spray, after, camfx, rnd, mark, player, classOf: SF.classOf, area: (id) => SKILL_AREA.get(id) ?? null, rigPoint: heroRigPoint, rigCenter: heroRigCenter, rigMoving: heroRigMoving });

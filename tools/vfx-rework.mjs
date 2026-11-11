@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // vfx-rework — the probe for Kesh's three VFX templates on the seven heroes
-// (docs/gauntlet/design-VFX.md §11).
+// (docs/VFX_TEMPLATES.md).
 //
 //   1. Data (no browser): every hero class and every skill in every pool
 //      (the 66 class skills and the Healer's 19) resolves to one of the
