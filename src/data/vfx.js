@@ -246,6 +246,23 @@ export function vfxTemplate(id) {
   }
   return VFX_TEMPLATES[id] ?? VFX_TEMPLATES.magic;
 }
+// A class's own colours on a template (Kesh's VFX sheet for the Healer,
+// 2026-11-11): the Healer's magic plays pale leaf green and gold instead of
+// purple and gold, a softer core and smaller bursts (`hot`), and the plain
+// leaf circle instead of the rune circle (`face`), which reads at play zoom.
+export const CLASS_TONE = Object.freeze({
+  healer: Object.freeze({ magic: Object.freeze({ a: VFX_TEMPLATE.leaf.a, core: VFX_TEMPLATE.leaf.star, deep: VFX_TEMPLATE.leaf.deep, hot: 0.7, face: 'leaf' }) }),
+});
+const classTones = new Map();
+// The template one class plays (its CLASS_TONE over the template's look).
+export function vfxClassTemplate(classId, templateId) {
+  const base = vfxTemplate(templateId);
+  const over = CLASS_TONE[classId] && CLASS_TONE[classId][base.id];
+  if (!over) return base;
+  const key = `${classId}:${base.id}:${base.a}`;
+  if (!classTones.has(key)) classTones.set(key, Object.freeze({ ...base, ...over }));
+  return classTones.get(key);
+}
 // Which template one effect plays: the skill's own row, else its class's
 // default (a basic attack id like 'archer_basic' reads its class).
 export function vfxTemplateFor(classId, skillId = null) {
