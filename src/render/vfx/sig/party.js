@@ -19,6 +19,7 @@ import { createBoltFx } from '../boltfx.js';
 import { isVfxBoss, vfxClassStyle, vfxEnemyStyle, vfxMatterColor, vfxSkillClass } from '../../../data/vfx.js';
 import { SHARD_TILE } from '../particles.js';
 import { CHEST_BEAT } from '../../interactables/chestbeat.js';
+import { eventSeat, isPartySeat } from '../seatfocus.js';
 
 export function createSigParty(ctx) {
   const { sv, SF, ANTICIP, BOSS_HIT, CAM_PUNCH, CRIT_BOOK, FINISHERS, N, after, animeFx, animeTick, bus, camfx, flareKind, flipbook, kit, mark, player, rnd, spray, stage, tk, world } = ctx;
@@ -597,7 +598,7 @@ export function createSigParty(ctx) {
       animeTick.set(ev.attacker, ev.tick);
       animeFx.play(ev.x, ev.z);
     }
-    SF.classImpact(vfxClassStyle(cls), ev.x, ev.z, ev.dirX || 0, ev.dirZ || 0, { crit: !!ev.crit, big: ev.delivery !== 'basic' });
+    SF.classImpact(vfxClassStyle(cls), ev.x, ev.z, ev.dirX || 0, ev.dirZ || 0, { crit: !!ev.crit, big: ev.delivery !== 'basic', party: isPartySeat(eventSeat(ev)) });
     if (ev.crit) flipbook.play(ev.x, 0.8, ev.z, CRIT_BOOK, ev.kind === 'boss' || ev.kind === 'stag' ? 1.4 : 1);
     spatter(ev, atk);
   });

@@ -321,6 +321,19 @@ registerHitCues(service('audio'), { world, settings: app.settings });
 import { registerImpactCues } from './audio/impactcues.js';
 import { DEFAULT_EVENT_CUES } from './audio/cues.js';
 registerImpactCues(service('audio'), { world, defaults: DEFAULT_EVENT_CUES });
+// SEAT FOCUS (docs/HIT_FEEDBACK.md "Your hits stand out"): another hero's
+// hits play quieter, draw smaller contacts, never move your camera, and its
+// kills shake at a third (src/render/vfx/seatfocus.js).
+import { hitGainDb, wireSeatFocus, seatFocusDebug } from './render/vfx/seatfocus.js';
+wireSeatFocus({
+  bus,
+  byId: (id) => {
+    if (id == null) return null;
+    for (const e of world.entities()) if (e.id === id) return e;
+    return null;
+  },
+});
+service('audio').setEventGain?.(hitGainDb);
 // THE CHEST BEAT (docs/HIT_FEEDBACK.md): a sound per layer of a reward
 // chest's opening (src/audio/chestcues.js).
 import { registerChestCues } from './audio/chestcues.js';
@@ -513,6 +526,7 @@ const signaturefx = PLAYABLE ? createSignatureFx({ stage, world, bus, cosmetic, 
 // `hitstop` event holds the rig clips, slash sweeps and flares for its ticks.
 wireRenderHold(bus);
 service('content').renderHold = () => renderHold.debug();
+service('content').seatFocus = () => seatFocusDebug();
 if (signaturefx) {
   setImpactFxDirected(true);
   signaturefx.prewarm();

@@ -875,6 +875,13 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     },
   };
 
+  // setEventGain(fn): fn(ev) -> dB added to every cue an event plays (seat
+  // focus, render/vfx/seatfocus.js: another hero's hits play quieter).
+  let eventGainDb = null;
+  function setEventGain(fn) {
+    eventGainDb = typeof fn === 'function' ? fn : null;
+  }
+
   function onSimEvent(ev) {
     const rec = eventCues.get(ev.type);
     if (!rec) return;
@@ -898,6 +905,15 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
       }
     }
     const live = !!(ctx && graph && ctx.state === 'running');
+    if (reqs && eventGainDb) {
+      let db = 0;
+      try {
+        db = Number(eventGainDb(ev)) || 0;
+      } catch (err) {
+        warnOnce('event gain', err);
+      }
+      if (db) reqs = (Array.isArray(reqs) ? reqs : [reqs]).map((r) => (r && r.cue ? { ...r, gainDb: (Number(r.gainDb) || 0) + db } : r));
+    }
     if (reqs && live) {
       // Voices start in engine.update (the frame budget); the handler ran
       // now, so every position is the event-time one.
@@ -1869,6 +1885,7 @@ export function createAudioEngine({ bus, settings, stage = null, app = null, wor
     registerAmbientBed,
     registerEventCue,
     registerCue,
+    setEventGain,
     testChannel,
     previewChannel,
     level: (ch) => (graph && graph.taps[ch] ? graph.taps[ch].uiLevel : 0),

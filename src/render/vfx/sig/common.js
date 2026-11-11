@@ -61,7 +61,9 @@ export function registerSkillAreas(skills) {
 // handler registers here, and the director holds ONE bus subscription per
 // event type that runs that type's handlers in registration order (the
 // order the bus itself kept, so what plays and in what order is unchanged).
-export function createVfxDispatch(eventBus) {
+// scope (optional): { enter(ev), exit() } around each event's handlers, so
+// the director knows whose event it is drawing (render/vfx/seatfocus.js).
+export function createVfxDispatch(eventBus, scope = null) {
   const lists = new Map(); // event type -> handlers, in registration order
   function on(type, fn) {
     let list = lists.get(type);
@@ -69,7 +71,12 @@ export function createVfxDispatch(eventBus) {
       list = [];
       lists.set(type, list);
       eventBus.on(type, (ev) => {
-        for (const h of list) h(ev);
+        if (scope) scope.enter(ev);
+        try {
+          for (const h of list) h(ev);
+        } finally {
+          if (scope) scope.exit();
+        }
       });
     }
     list.push(fn);

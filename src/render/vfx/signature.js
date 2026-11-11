@@ -23,6 +23,7 @@ import { SHARD_TILE } from './particles.js';
 import { createVfxKit } from './kit.js';
 import { createTemplateKit } from './tplkit.js';
 import { createCameraFx } from './camerafx.js';
+import { SEAT_FOCUS, eventSeat, isPartySeat } from './seatfocus.js';
 import { renderHold } from '../hold.js';
 import { createAnimeFx } from './animefx.js';
 import { createFlipbook } from './flipbook.js';
@@ -48,8 +49,20 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
   // One VFX director (AUDIT D5): the class layer and the template layer
   // register their handlers on `bus`, the director's dispatch, which holds
   // one sim-bus subscription per event type (sig/common.js).
-  const bus = createVfxDispatch(eventBus);
-  const sv = {}; // the director's mutable state (one object, shared with its parts under vfx/sig/)
+  // Seat focus: whose event is being drawn. `sv.camFocus` is 0 while it is
+  // another hero's (no kick, no dolly), 1 otherwise; a timer carries the
+  // focus of the event that scheduled it.
+  const focusStack = [];
+  const bus = createVfxDispatch(eventBus, {
+    enter: (ev) => {
+      focusStack.push(sv.camFocus);
+      sv.camFocus = isPartySeat(eventSeat(ev)) ? SEAT_FOCUS.partyCamera : 1;
+    },
+    exit: () => {
+      sv.camFocus = focusStack.pop() ?? 1;
+    },
+  });
+  const sv = { camFocus: 1 }; // the director's mutable state (one object, shared with its parts under vfx/sig/)
   const SF = {}; // the director's functions, shared with its parts (filled below)
   Object.assign(SF, { anticipate, byId, classImpact, classMark, classOf, embersUp, enemyDeath, enemyImpact, flare, healBloom, nova, release, shock, swing }); // the director's own functions its parts call
   const kit = createVfxKit({ stage, cosmetic });
@@ -71,7 +84,7 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
     const s = settings?.get?.('gameplay.screenshake');
     return (typeof s === 'number' ? s : 1) * sv.intensity.camera;
   };
-  const camfx = createCameraFx({ camera: stage.camera, gain: shakeGain });
+  const camfx = createCameraFx({ camera: stage.camera, gain: shakeGain, focus: () => sv.camFocus });
   // §6.2 k and o (VFX_HIT_RULES): the local anime frame and the camera punch.
   const animeFx = createAnimeFx({ root: kit.root, cosmetic });
   // l (L4): a crit's contact is drawn as a 5-drawing flipbook in pale gold.
@@ -140,13 +153,13 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
   const timers = [];
   const after = (sec, fn) => {
     if (sec <= 0) fn();
-    else timers.push({ t: sec, fn });
+    else timers.push({ t: sec, fn, focus: sv.camFocus });
   };
   // A delay counted in held render time (render/hold.js): it waits out a
   // hitstop with the rigs, so a kill's debris bursts as the body pops.
   const afterHeld = (sec, fn) => {
     if (sec <= 0) fn();
-    else timers.push({ t: sec, fn, held: true });
+    else timers.push({ t: sec, fn, held: true, focus: sv.camFocus });
   };
   const ANTICIP = 0.06; // s — the gather before a big cast lands (~4 frames)
   function anticipate(x, z, radius, color, { y = 0.45, lines = 6, core = PARCH } = {}) {
@@ -381,18 +394,21 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
   }
 
   // A hit landing on a hostile, by the attacker's class.
-  function classImpact(st, x, z, dx, dz, { crit = false, big = false } = {}) {
+  // party: another hero's hit (render/vfx/seatfocus.js): its bloom, flare,
+  // flash and light at SEAT_FOCUS.partyFlare, so your own contacts lead.
+  function classImpact(st, x, z, dx, dz, { crit = false, big = false, party = false } = {}) {
     const dir = Math.hypot(dx, dz) > 1e-4 ? { x: dx, z: dz } : null;
+    const f = party ? SEAT_FOCUS.partyFlare : 1;
     const s = crit ? 1.4 : 1;
     // The contact (P3, L5): a near-white bloom about 2 body widths across,
     // held 100 ms at full strength. White, not the class glow: the Healer's
     // glow is your numbers' Hearth Amber, and a numeral must never sit on a
     // flat amber patch (§4.3).
-    bloom(x, z, (big ? CONTACT_FX.bloomSkill : CONTACT_FX.bloom) * (crit ? CONTACT_FX.bloomCrit : 1), { hold: CONTACT_FX.hold, life: CONTACT_FX.life, opacity: CONTACT_FX.bloomOpacity });
+    bloom(x, z, (big ? CONTACT_FX.bloomSkill : CONTACT_FX.bloom) * (crit ? CONTACT_FX.bloomCrit : 1) * f, { hold: CONTACT_FX.hold, life: CONTACT_FX.life, opacity: CONTACT_FX.bloomOpacity });
     // The landing frame, every hit: a class-coloured flare with a hot core,
     // held 100 ms (L5); a crit adds a shockwave, rising embers and a little
     // camera punch.
-    flare(x, 0.5, z, st.glow, (big ? 0.75 : 0.55) * (crit ? 1.6 : 1), { kind: flareKind(st), life: crit ? CONTACT_FX.critLife : CONTACT_FX.life, core: st.shape === 'sharp' ? st.second : PARCH, hold: CONTACT_FX.hold });
+    flare(x, 0.5, z, st.glow, (big ? 0.75 : 0.55) * (crit ? 1.6 : 1) * f, { kind: flareKind(st), life: crit ? CONTACT_FX.critLife : CONTACT_FX.life, core: st.shape === 'sharp' ? st.second : PARCH, hold: CONTACT_FX.hold });
     if (crit) {
       shock(x, z, 1.0, st.glow, { life: 0.26, width: 0.07 });
       embersUp(x, z, st.glow, 4, { radius: 0.25, life: [0.6, 1.0] });
@@ -402,7 +418,7 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
       spray('spark', x, 0.45, z, Math.round(st.debris.spark * s), { color: st.glow, speed: [1.4, 3.0], up: [0.8, 2.0], size: [0.05, 0.1], life: [0.18, 0.32], dir, dirBias: 0.6 });
       spray('chunk', x, 0.38, z, Math.round((big ? 5 : 3) * s), { color: st.debrisColor, speed: [1.0, 2.4], up: [1.2, 2.6], size: [0.06, 0.12], life: [0.4, 0.7], dir, dirBias: 0.5 });
       spray('smoke', x, 0.3, z, 1, { color: st.second, speed: [0.2, 0.5], up: [0.3, 0.6], size: [0.28, 0.4], grow: 1, life: [0.5, 0.8], opacity: 0.28, gravity: -0.25, drag: 2.4 });
-      kit.flash({ x, y: 0.45, z, color: st.glow, size: 0.3 * s, life: CONTACT_FX.life, hold: CONTACT_FX.hold, opacity: 0.6 });
+      kit.flash({ x, y: 0.45, z, color: st.glow, size: 0.3 * s * f, life: CONTACT_FX.life, hold: CONTACT_FX.hold, opacity: 0.6 });
     } else if (st.shape === 'sharp') {
       spray('spark', x, 0.5, z, Math.round(st.debris.spark * s), { color: st.second, speed: [1.8, 3.4], up: [0.3, 1.2], size: [0.04, 0.08], life: [0.15, 0.28], dir, dirBias: 0.75 });
       if (dir) {
@@ -412,17 +428,17 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
         const L = crit ? 0.42 : 0.3;
         kit.streak({ a: { x: x - px * L - dir.x * 0.1, y: 0.5, z: z - pz * L - dir.z * 0.1 }, b: { x: x + px * L + dir.x * 0.1, y: 0.56, z: z + pz * L + dir.z * 0.1 }, width: 0.06, tailW: 0.1, core: st.second, glow: st.glow, life: 0.16, fall: 0.6 });
       }
-      kit.flash({ x, y: 0.5, z, color: st.glow, size: 0.3 * s, life: CONTACT_FX.life, hold: CONTACT_FX.hold });
+      kit.flash({ x, y: 0.5, z, color: st.glow, size: 0.3 * s * f, life: CONTACT_FX.life, hold: CONTACT_FX.hold });
     } else if (st.shape === 'line') {
-      kit.flash({ x, y: BOLT_Y, z, color: st.glow, size: 0.4 * s, life: CONTACT_FX.life, hold: CONTACT_FX.hold });
+      kit.flash({ x, y: BOLT_Y, z, color: st.glow, size: 0.4 * s * f, life: CONTACT_FX.life, hold: CONTACT_FX.hold });
       if (dir) kit.streak({ a: { x, y: BOLT_Y, z }, b: { x: x + dir.x * 0.6, y: BOLT_Y, z: z + dir.z * 0.6 }, width: 0.05, tailW: 0.3, core: PARCH, glow: st.glow, life: 0.15, fall: 0.5 });
       spray('shard', x, 0.55, z, st.debris.shard, { color: st.debrisColor, tile: SHARD_TILE.feather, speed: [0.5, 1.2], up: [0.6, 1.2], size: [0.1, 0.15], life: [0.7, 1.0], gravity: 1.1, drag: 1.6, spin: [-4, 4], flutter: 0.45, dir, dirBias: 0.4 });
-      kit.light({ x, z, radius: 0.55, color: st.glow, opacity: st.light.opacity, life: st.light.life });
+      kit.light({ x, z, radius: 0.55 * f, color: st.glow, opacity: st.light.opacity, life: st.light.life });
     } else {
-      kit.flash({ x, y: 0.5, z, color: st.glow, size: 0.46 * s, life: CONTACT_FX.life, hold: CONTACT_FX.hold });
+      kit.flash({ x, y: 0.5, z, color: st.glow, size: 0.46 * s * f, life: CONTACT_FX.life, hold: CONTACT_FX.hold });
       spray('spark', x, 0.5, z, st.debris.spark, { color: st.glow, speed: [0.8, 1.8], up: [0.6, 1.4], size: [0.05, 0.1], life: [0.25, 0.45], dir, dirBias: 0.4 });
       spray('shard', x, 0.5, z, 2, { color: st.second, tile: SHARD_TILE.petal, speed: [0.4, 0.9], up: [0.6, 1.1], size: [0.08, 0.12], life: [0.6, 0.9], gravity: 0.4, drag: 1.5, spin: [-3, 3], flutter: 0.3 });
-      kit.light({ x, z, radius: 0.7, color: st.glow, opacity: st.light.opacity * 0.7, life: 0.3 });
+      kit.light({ x, z, radius: 0.7 * f, color: st.glow, opacity: st.light.opacity * 0.7, life: 0.3 });
     }
   }
 
@@ -549,7 +565,13 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
       tm.t -= tm.held ? rdt : dt;
       if (tm.t <= 0) {
         timers.splice(i, 1);
-        tm.fn();
+        const f = sv.camFocus;
+        sv.camFocus = tm.focus;
+        try {
+          tm.fn();
+        } finally {
+          sv.camFocus = f;
+        }
       }
     }
     if ((sv.biomeClock -= dt) <= 0) {

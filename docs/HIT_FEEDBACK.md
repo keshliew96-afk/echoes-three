@@ -422,3 +422,39 @@ for blades, the hexagon for sci-fi; a healing zone keeps Bright Heal in its rune
   kit zone) drew for the zone's life, and their tick rings.
 - Probe: `node tools/zone-circle-probe.mjs` (needs `npm run dev`): every live zone has exactly one live
   circle at its exact radius, none outlives its zone, Sanctuary's lasts its 4 s.
+
+## Your hits stand out (v0.5.357, seat focus)
+
+Game feel audit pick 1 (`/mnt/project-files/game-feel/GAME_FEEL_AUDIT.md`, F1). Three AI heroes land
+most of a room's hits and kills (in Level I runs the AI Archer alone landed 40 to 60% of them), so their
+feedback is turned down beside yours. Render and audio only; the sim and the goldens are untouched.
+
+| What | Your seat | Another hero's seat | No hero (relic, hazard, keg) |
+|---|---|---|---|
+| Hit sounds on a foe (impact families, the snap, its crit) | as before | 4 dB quieter | as before |
+| Contact bloom, class flare, flash and light | as before | 60% of the size | as before |
+| Camera kick and dolly from a swing, cast, zone or delayed beat | as before | none | as before |
+| The kill shake (§9 #7) | full | a third | full |
+| Damage numerals | as before | capped at 22 px (under your smallest, 24 px) | as before |
+| Elite, champion and boss kill punch and anime frame | everyone's | everyone's | everyone's |
+
+Whose event it is: a hit's attacker seat (`hitterSeat`), or a zone's caster for a zone's strike; a kill
+is its foe's last hitter; a cast, basic, dash or pulse carries `partyIndex` or `seat`; the Healer
+kit's own casts are seat 0. "Yours" is `viewerSeat()`, so in co-op each player's own hero leads.
+Sparks, spatter, debris, the kill pop and the hit reaction stay full size for every seat.
+
+Code: `src/render/vfx/seatfocus.js` (the `SEAT_FOCUS` table, `wireSeatFocus` from `main.js`,
+`eventSeat`, `isPartySeat`, `shakeFocus`, `hitGainDb`); the audio engine's `setEventGain`; the VFX
+director's dispatch scope (`createVfxDispatch(bus, scope)`, carried into its timers) feeding the camera
+FX `focus`; `classImpact(..., { party })`; `NUMERAL_WHO.other.maxPx`; the kill shake in `graybox.js`.
+
+## A lighter path for laptops (v0.5.357)
+
+Game feel audit pick 2 (F7). On a screen whose drawing buffer (CSS px x the device pixel ratio, capped at
+2, squared) passes 1.5 Mpx at boot, Settings ▸ Display ▸ Resolution scale DEFAULTS to 85% (`LAPTOP_PATH`
+in `src/app/settings.js`): a 1920x1080 screen at 100%, or 1280x720 at 150%, draws 72% of the pixels.
+Only the default moves. A profile that has saved its settings keeps its stored value, and the slider
+still runs 50% to 150%. Antialiasing is untouched: the game already runs the cheap FXAA path by default
+(`?msaa=0` in `main.js`), so the audit's "4x MSAA" reading was wrong and there was nothing to drop.
+
+Probe: `node tools/seat-focus-probe.mjs` (in `npm test`).
