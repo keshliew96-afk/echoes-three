@@ -1,0 +1,196 @@
+<title>__TITLE__</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Figtree:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a review sheet. Header with the model's numbers, the sign-off list,
+   then one card per move (three clips in a row), then the skill grid. */
+:root {
+  --bg: #f3f2ee; --panel: #fbfaf7; --ink: #23251f; --muted: #6a6d63; --line: #dcdad2;
+  --accent: #3f7a55; --accent-soft: #e2ede4; --warn: #9a5b12; --clip: #1c1d1a;
+  --display: "Fraunces", Georgia, serif; --body: "Figtree", system-ui, sans-serif; --mono: "JetBrains Mono", ui-monospace, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #171815; --panel: #1f201c; --ink: #ecebe4; --muted: #a2a497; --line: #34362f;
+  --accent: #7cc497; --accent-soft: #23342a; --warn: #e2a85a; --clip: #0e0f0d; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #171815; --panel: #1f201c; --ink: #ecebe4; --muted: #a2a497; --line: #34362f;
+  --accent: #7cc497; --accent-soft: #23342a; --warn: #e2a85a; --clip: #0e0f0d; color-scheme: dark }
+body { background: var(--bg); color: var(--ink); font: 15px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 64px; }
+.wrap { max-width: 1240px; margin: 0 auto; display: grid; gap: 36px; }
+h1, h2 { font-family: var(--display); font-weight: 600; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(28px, 4vw, 40px); line-height: 1.1; }
+h2 { font-size: 22px; }
+h3 { font-size: 16px; margin: 0; font-weight: 600; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font: 500 12px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 14px; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px 22px; font: 13px/1.4 var(--mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.meta b { color: var(--ink); font-weight: 500; }
+.pill { display: inline-block; padding: 3px 10px; border-radius: 99px; background: var(--accent-soft); color: var(--accent); font: 500 12px/1.4 var(--mono); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+@media (max-width: 820px) { .two { grid-template-columns: minmax(0, 1fr); } }
+ol.check { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+ol.check li { padding-left: 4px; }
+.steps { display: grid; gap: 8px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 12px; min-width: 0; }
+.clips { display: grid; grid-template-columns: 0.72fr 1fr 1fr; gap: 10px; align-items: start; }
+.clips.pair { grid-template-columns: 1fr 1fr; }
+@media (max-width: 760px) { .clips, .clips.pair { grid-template-columns: minmax(0, 1fr); } }
+figure { margin: 0; display: grid; gap: 4px; min-width: 0; }
+figcaption { font: 12px/1.3 var(--mono); color: var(--muted); }
+video { width: 100%; max-width: 100%; display: block; border-radius: 6px; background: var(--clip); }
+.empty { aspect-ratio: 16 / 10; border-radius: 6px; border: 1px dashed var(--line); display: grid; place-items: center; color: var(--muted); font: 12px var(--mono); padding: 8px; text-align: center; }
+.note { display: grid; gap: 6px; }
+.note label { font: 500 12px/1 var(--mono); color: var(--muted); }
+textarea { width: 100%; box-sizing: border-box; min-height: 54px; resize: vertical; font: 14px/1.45 var(--body); color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px 10px; }
+textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.saved { font: 12px var(--mono); color: var(--accent); min-height: 1em; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 14px; }
+.moves { display: grid; gap: 16px; }
+.round { font: 13px/1.5 var(--mono); color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+button { font: 500 13px var(--body); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
+button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
+.status { font: 12px var(--mono); color: var(--warn); }
+@media (prefers-reduced-motion: reduce) { video { animation: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="eyebrow">Model review · round <span id="round"></span></span>
+    <h1 id="h1"></h1>
+    <p id="lede"></p>
+    <div class="meta" id="meta"></div>
+  </header>
+
+  <section class="two">
+    <div class="card">
+      <h2>How to review</h2>
+      <div class="steps">
+        <p>Each move has three clips. The first is a close-up in the model lab with no effects. The second and third come from a real room at play zoom, cropped round the hero at 1080p, first with every effect hidden and then with the effects on.</p>
+        <p>Write what you want changed in the box under a move, or in the thread. Notes save as you type. Each round brings back the same link with the changes and a line in the round log.</p>
+        <p>When the model is right, tick every line of the sign-off list and write "sign off" in the thread.</p>
+      </div>
+      <div class="controls">
+        <span class="eyebrow">Playback</span>
+        <button type="button" id="speed1" aria-pressed="true">1×</button>
+        <button type="button" id="speed4" aria-pressed="false">¼× slow</button>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Sign-off list</h2>
+      <ol class="check" id="check"></ol>
+    </div>
+  </section>
+
+  <section class="moves">
+    <h2>Every move</h2>
+    <div id="moves" class="moves"></div>
+  </section>
+
+  <section class="moves">
+    <h2>Every skill in game</h2>
+    <p>Each skill plays one of the cast poses above. Left: effects hidden. Right: effects on.</p>
+    <div id="skills" class="grid"></div>
+  </section>
+
+  <section class="card">
+    <h2>Overall notes</h2>
+    <div class="note"><label for="note-overall">Anything about the whole model</label>
+      <textarea id="note-overall" data-note="overall" placeholder="For example: more fur detail on the ears, a bigger gem"></textarea>
+      <span class="saved" data-saved="overall"></span></div>
+    <div class="round" id="log"></div>
+    <span class="status" id="dbstatus"></span>
+  </section>
+</div>
+
+<script>
+const M = /*MANIFEST*/null;
+const $ = (s) => document.querySelector(s);
+const el = (tag, attrs = {}, kids = []) => {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) if (k === 'text') e.textContent = v; else e.setAttribute(k, v);
+  for (const c of kids) e.appendChild(c);
+  return e;
+};
+$('#round').textContent = M.round;
+$('#h1').textContent = M.title;
+$('#lede').textContent = M.lede;
+const meta = $('#meta');
+for (const [k, v] of M.meta) meta.appendChild(el('span', {}, [document.createTextNode(k + ' '), el('b', { text: v })]));
+for (const c of M.checklist) $('#check').appendChild(el('li', { text: c }));
+const clip = (key, cap) => {
+  const f = M.vids[key];
+  if (!f) return el('figure', {}, [el('div', { class: 'empty', text: 'not recorded for this move' }), el('figcaption', { text: cap })]);
+  const v = el('video', { src: f, muted: '', loop: '', playsinline: '', preload: 'metadata', 'aria-label': cap });
+  v.muted = true;
+  return el('figure', {}, [v, el('figcaption', { text: cap })]);
+};
+const noteBox = (id, label) => el('div', { class: 'note' }, [
+  el('label', { for: 'note-' + id, text: label }),
+  el('textarea', { id: 'note-' + id, 'data-note': id, placeholder: 'What should change in this move?' }),
+  el('span', { class: 'saved', 'data-saved': id }),
+]);
+for (const m of M.moves) {
+  const game = m.game ? m.game.replace('skill:', 'skill-') : null;
+  $('#moves').appendChild(el('article', { class: 'card' }, [
+    el('h3', { text: m.label }),
+    el('div', { class: 'clips' }, [
+      clip('lab-off/' + m.id, 'Close-up · no VFX'),
+      clip(game ? 'game-off/' + game : '', 'In game · play zoom · VFX off'),
+      clip(game ? 'game-on/' + game : '', 'In game · play zoom · VFX on'),
+    ]),
+    noteBox(m.id, 'Notes on ' + m.label.toLowerCase()),
+  ]));
+}
+for (const s of M.skills) {
+  $('#skills').appendChild(el('article', { class: 'card' }, [
+    el('h3', { text: s.name + ' · ' + s.pose }),
+    el('div', { class: 'clips pair' }, [clip('game-off/skill-' + s.id, 'VFX off'), clip('game-on/skill-' + s.id, 'VFX on')]),
+    noteBox('skill-' + s.id, 'Notes on ' + s.name),
+  ]));
+}
+$('#log').textContent = M.log.join('\n');
+$('#log').style.whiteSpace = 'pre-line';
+
+// play only what is on screen
+const vids = [...document.querySelectorAll('video')];
+const io = new IntersectionObserver((es) => es.forEach((e) => {
+  if (e.isIntersecting) e.target.play().catch(() => {}); else e.target.pause();
+}), { rootMargin: '120px' });
+vids.forEach((v) => io.observe(v));
+const speed = (r) => { vids.forEach((v) => (v.playbackRate = r)); $('#speed1').setAttribute('aria-pressed', r === 1); $('#speed4').setAttribute('aria-pressed', r !== 1); };
+$('#speed1').onclick = () => speed(1);
+$('#speed4').onclick = () => speed(0.25);
+
+// notes live in the page's shared store, one doc per move: notes/<model>-<id>
+(async () => {
+  const boxes = [...document.querySelectorAll('textarea[data-note]')];
+  let db = null;
+  try { db = window.claude ? await window.claude.use('db') : null; } catch { db = null; }
+  if (!db) { $('#dbstatus').textContent = 'Notes cannot be saved in this view. Write them in the thread instead.'; return; }
+  for (const b of boxes) {
+    const id = b.dataset.note;
+    const ref = db.doc('notes/' + M.model + '-' + id);
+    let timer = null;
+    ref.onSnapshot((snap) => {
+      const d = snap.exists ? snap.data() : null;
+      if (d && document.activeElement !== b) b.value = d.text || '';
+    }, () => {});
+    b.addEventListener('input', () => {
+      clearTimeout(timer);
+      timer = setTimeout(async () => {
+        try {
+          await ref.set({ model: M.model, move: id, round: M.round, text: b.value, at: new Date().toISOString() });
+          document.querySelector('[data-saved="' + id + '"]').textContent = 'Saved';
+        } catch (e) {
+          document.querySelector('[data-saved="' + id + '"]').textContent = 'Not saved: ' + (e && e.message ? e.message : 'write refused') + '. Write it in the thread instead.';
+        }
+      }, 700);
+    });
+  }
+})();
+</script>
