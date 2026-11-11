@@ -1,21 +1,24 @@
 // HEALER, MODEL STANDARD (docs/MODEL_STANDARD.md). The player's hero in the
 // faceted look, laid ON TOP of the chibi mouse of healer.js (BUILD_BRIEF
-// §19.2): the same wide-based CLOSED BELL cloak in Sage, the same round ears,
-// short snout, head proportions and painted face, the same staff held out to
-// the side and forward with the same Bright Heal gem (its exact colour logic
-// and glow sprites; the gem is her healing source, so it alone keeps the
-// reserved hue). What changes:
+// §19.2): the same wide-based CLOSED BELL, the same round ears, short snout,
+// head proportions and painted face, the same staff held out to the side and
+// forward with the same Bright Heal crystal (its exact colour logic and glow
+// sprites; it is her healing source, so it alone keeps the reserved hue).
+// Model review round 2 (2026-11-11) dressed her from Kesh's turnaround sheet:
 //
-//   * every mass is faceted (render/facet/material.js): the cloak is a twelve-
+//   * every mass is faceted (render/facet/material.js): the robe is a twelve-
 //     sided bell, the skull a low-poly ball, the ears, snout, arms and paws
 //     cut flat;
-//   * detail from the parts kit (render/facet/kit.js): a capelet of
-//     overlapping leaves round the shoulders (open at the front over the bone
-//     bib), a scalloped hem of leaves, a folded sash, criss-cross bindings on
-//     the shaft, a bead collar and a pewter claw setting round the gem
-//     (pewter, never gold: amber is reserved);
-//   * two small faceted feet peeking out under the bell's front hem (the
-//     classic has none), on LOCKED FEET (Kesh's self-check): planted feet
+//   * the garb (palette.js HEALER_GARB): a linen robe with a rust hem band
+//     and a rust front edge where it crosses over, a short mantle over the
+//     shoulders with a rust rim, a hood over the crown and the back of the
+//     head with a rust edge round the face (the big ears stand out through
+//     it), linen sleeves, a rope belt knotted at the front with two loose
+//     ends and two leather pouches; a long pink tail, pink ears and nose;
+//   * a gnarled twig staff with a knot and a side stub, its top split in
+//     three prongs cradling a long six-sided crystal;
+//   * two small feet in linen wraps peeking out under the robe's front hem
+//     (the classic has none), on LOCKED FEET (Kesh's self-check): planted feet
 //     stay pinned while they carry weight and step one at a time along the
 //     real travel, so a kiting walk steps backward or sideways;
 //   * a THREE-HIT STAFF COMBO on the basic bolt (Kesh's template): a diagonal
@@ -38,9 +41,12 @@
 // `hold(dt)`, `comboHitOf(ev)`, `points` and `lab`. Render only: attack
 // timing, damage and the sim are untouched.
 import {
+  BoxGeometry,
   BufferGeometry,
+  CatmullRomCurve3,
   Color,
   CylinderGeometry,
+  DoubleSide,
   Euler,
   Float32BufferAttribute,
   Group,
@@ -48,8 +54,6 @@ import {
   LatheGeometry,
   Mesh,
   MeshBasicMaterial,
-  OctahedronGeometry,
-  QuadraticBezierCurve3,
   Quaternion,
   SphereGeometry,
   SRGBColorSpace,
@@ -57,12 +61,11 @@ import {
   Vector2,
   Vector3,
 } from 'three';
-import { CLASS_ACCENTS, PALETTE } from '../../data/palette.js';
+import { HEALER_GARB, PALETTE } from '../../data/palette.js';
 import { makeGlowSprite } from '../glow.js';
 import { exactColor, exactColorNearest, faceDecal, mix } from './common.js';
 import { sharedGeo } from '../geocache.js';
 import { facetize, facetMaterial } from '../facet/material.js';
-import { PART_INK_PX, placeRow, plateGeometry, setTRS, wedgeGeometry } from '../facet/kit.js';
 import {
   aimLimb,
   createAttackClock,
@@ -83,6 +86,7 @@ import {
   walkBody,
 } from '../facet/hero.js';
 import { ease } from '../facet/timeline.js';
+import { placeRow } from '../facet/kit.js';
 
 // The core's phase easings, by name (createMove's `ease`), for the staff's
 // own blend below.
@@ -94,7 +98,10 @@ const HEM = 0.022;
 const HEAD_C = 0.784;
 const HEAD_R = 0.235;
 const SX = 1.02, SY = 0.96, SZ = 0.99;
-const EAR_TOP = 1.1;
+// The ears, a size up on the classic's (Kesh's turnaround sheet: big round
+// mouse ears), and so the top of her a little taller.
+const EAR_SCALE = 1.15;
+const EAR_TOP = 1.13;
 const BELL = [
   [0, HEM],
   [0.21, HEM],
@@ -233,6 +240,7 @@ const breathe = (out, s) => {
     out.glow += 0.15 * b;
   }
 };
+const UP_Y = new Vector3(0, 1, 0);
 const LEAD_IN = 0.033; // a skill enters one frame before its release
 export const HEALER_MOVES = Object.freeze({
   point: createMove(
@@ -291,44 +299,6 @@ const skillAbility = (ev) => HEALER_SKILL_ABILITY[ev && ev.shape] || 'point';
 // ---------------------------------------------------------------------------
 // Parts
 // ---------------------------------------------------------------------------
-// A leaf: a pointed oval folded along its midrib (the rib raised on the face,
-// +Z, so one half catches the light and the other falls dark) over a low
-// back; the stem at y = 0, the tip at y = 1, widest a third of the way up.
-function leafGeometry() {
-  return sharedGeo('facet:healer-leaf', () => {
-    const S = [0, 0, 0];
-    const T = [0, 1, 0];
-    const rim = [
-      [0.3, 0.1, 0],
-      [0.5, 0.36, 0],
-      [0.38, 0.68, 0],
-    ];
-    const mirror = (p) => [-p[0], p[1], p[2]];
-    const F1 = [0, 0.3, 0.13];
-    const F2 = [0, 0.66, 0.1];
-    const B = [0, 0.42, -0.05];
-    const tris = [];
-    for (const side of [1, -1]) {
-      const [a, b, c] = side > 0 ? rim : rim.map(mirror);
-      tris.push([S, a, F1], [a, b, F1], [b, F2, F1], [b, c, F2], [c, T, F2]);
-      tris.push([S, a, B], [a, b, B], [b, c, B], [c, T, B]);
-    }
-    const pos = [];
-    const ctr = [0, 0.42, 0.03]; // inside: wind every face away from it
-    for (const [a, b, d] of tris) {
-      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-      const v = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
-      const n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]];
-      const m = [(a[0] + b[0] + d[0]) / 3 - ctr[0], (a[1] + b[1] + d[1]) / 3 - ctr[1], (a[2] + b[2] + d[2]) / 3 - ctr[2]];
-      const flip = n[0] * m[0] + n[1] * m[1] + n[2] * m[2] < 0;
-      pos.push(...a, ...(flip ? d : b), ...(flip ? b : d));
-    }
-    const g = new BufferGeometry();
-    g.setAttribute('position', new Float32BufferAttribute(pos, 3));
-    return facetize(g, { jitter: 0.1, seed: 101 });
-  });
-}
-
 // The staff's axis (butt to gem) from a pose's tilt: el from upright, az
 // round from the facing (0) toward the staff side (+pi/2).
 function staffDir(p, out) {
@@ -336,77 +306,15 @@ function staffDir(p, out) {
   return out.set(se * Math.sin(p.az), Math.cos(p.el), se * Math.cos(p.az));
 }
 
-const tP = new Vector3();
-const tX = new Vector3();
-const tY = new Vector3();
-const tZ = new Vector3();
-const tN = new Vector3();
-// A part on the bell at angle phi (0 = front) and height y: its local Y runs
-// DOWN the bell's surface (a hanging leaf's length) tipped `tilt` out from
-// it, its local Z faces out, X = Y x Z (a right-handed basis, so the part is
-// never mirrored inside out).
-function onBellHanging(m, phi, y, out, w, len, thick, tilt) {
-  const r = bellR(y) * BELL_GROW * out;
-  const sx = Math.sin(phi);
-  const cz = Math.cos(phi);
-  tP.set(sx * r, y, cz * r);
-  // the slope half way down the leaf, so it lies along a curving bell
-  const s = bellSlope(y - len * 0.4);
-  // down the meridian: dy = -1 moves the radius by -s
-  tY.set(-s * sx, -1, -s * cz).normalize();
-  tN.set(sx, 0, cz).addScaledVector(tY, -(sx * tY.x + cz * tY.z)).normalize(); // outward, off the slope
-  const c = Math.cos(tilt);
-  const sn = Math.sin(tilt);
-  tZ.copy(tN).multiplyScalar(c).addScaledVector(tY, -sn);
-  tY.multiplyScalar(c).addScaledVector(tN, sn);
-  tX.crossVectors(tY, tZ).normalize();
-  setTRS(m, tP, tX, tY, tZ, w, len, thick);
-}
-// A plate on the bell (a sash fold): local Y faces out, X runs round it.
-function onBellPlate(m, phi, y, out, w, h, l) {
-  const r = bellR(y) * BELL_GROW * out;
-  const sx = Math.sin(phi);
-  const cz = Math.cos(phi);
-  tP.set(sx * r, y, cz * r);
-  tY.set(sx, 0.12, cz).normalize();
-  tX.set(cz, 0, -sx).normalize();
-  tZ.crossVectors(tX, tY).normalize();
-  setTRS(m, tP, tX, tY, tZ, w, h, l);
-}
-
 export function buildHealerFacet(rig, trackAccent) {
-  const accent = CLASS_ACCENTS.healer;
-  // §19.1/19.2: Warm Grey is the shared party base; only the garment carries
-  // the class accent (as healer.js).
+  // §19.1/19.2: Warm Grey is the shared party base. The garb follows Kesh's
+  // turnaround sheet (2026-11-11, model review round 2): a linen robe, hood
+  // and mantle with a brick-rust trim, a rope belt with two leather pouches,
+  // linen foot wraps and a twig staff (palette.js HEALER_GARB). The class
+  // accent (Sage) stays on her ring and HP bar.
   const fur = mix(PALETTE.warmGrey, PALETTE.paleGold, 0.14);
   const furHex = fur.getHex();
-  // The feet: the fur a step darker, so they read under the dark hem.
-  const footHex = mix(furHex, PALETTE.bruiseUmber, 0.22).getHex();
-  // The leaves: the Sage cloak lightened in two steps at its own hue (the
-  // capelet lighter than the hem), all accent-derived and so tracked to
-  // charcoal when she goes down. Not mixed toward Bone: that greys them, and
-  // at play zoom, seen from behind, the capelet then reads grey instead of
-  // Sage.
-  const sage = (l, s) => {
-    const c = new Color(accent);
-    const o = {};
-    c.getHSL(o);
-    return c.setHSL(o.h, s, l).getHex();
-  };
-  const leafHex = sage(0.13, 0.4);
-  const hemHex = sage(0.095, 0.43);
-  // The staff wood: the classic's Umber-into-Pale-Gold weathered toward Warm
-  // Grey, so it reads as wood but stays out of the reserved amber family
-  // (the classic's own mix measures inside it).
-  const woodHex = mix(PALETTE.bruiseUmber, PALETTE.paleGold, 0.3).lerp(new Color(PALETTE.warmGrey), 0.3).getHex();
-  const wrapHex = mix(PALETTE.bruiseUmber, PALETTE.voidCharcoal, 0.35).getHex();
-  // Pewter for the claw setting and the beads (the video's gold accents
-  // become pewter: amber is reserved), a cool Bone into charcoal.
-  const pewterHex = mix(PALETTE.bone, PALETTE.voidCharcoal, 0.42).lerp(new Color(PALETTE.signalBlue), 0.06).getHex();
-  // The sash: a Warm Grey cord darkened toward Umber, so it parts the bone
-  // bib from the leaf hem.
-  const sashHex = mix(PALETTE.warmGrey, PALETTE.bruiseUmber, 0.4).getHex();
-
+  const G = HEALER_GARB;
   const torso = new Group();
   torso.position.y = HIP;
   rig.add(torso);
@@ -414,20 +322,23 @@ export function buildHealerFacet(rig, trackAccent) {
   body.position.y = -HIP;
   torso.add(body);
 
-  const cloakMat = trackAccent(facetMaterial(accent));
-  const collarMat = trackAccent(facetMaterial(mix(accent, PALETTE.voidCharcoal, 0.2).getHex()));
-  const leafMat = trackAccent(facetMaterial(leafHex));
-  const hemMat = trackAccent(facetMaterial(hemHex));
+  // Every garment material tracks to charcoal when she goes down.
+  const cloakMat = trackAccent(facetMaterial(G.robe));
+  const shadeMat = trackAccent(facetMaterial(G.robeShade));
+  const trimMat = trackAccent(facetMaterial(G.trim));
+  const hoodMat = trackAccent(facetMaterial(G.robeShade, { side: DoubleSide }));
+  const ropeMat = facetMaterial(G.rope);
+  const leatherMat = facetMaterial(G.leather);
+  const flapMat = facetMaterial(mix(G.leather, PALETTE.voidCharcoal, 0.3).getHex());
   const furMat = facetMaterial(furHex);
-  const footMat = facetMaterial(footHex);
-  const boneMat = facetMaterial(PALETTE.bone);
-  const innerMat = facetMaterial(mix(PALETTE.bone, PALETTE.bruiseUmber, 0.35).getHex());
-  const woodMat = facetMaterial(woodHex);
-  const wrapMat = facetMaterial(wrapHex);
-  const pewterMat = facetMaterial(pewterHex);
-  const sashMat = facetMaterial(sashHex);
+  const footMat = facetMaterial(G.wrap);
+  const wrapBandMat = facetMaterial(G.wrapBand);
+  const boneMat = facetMaterial(mix(furHex, PALETTE.parchment, 0.45).getHex());
+  const pinkMat = facetMaterial(G.pink);
+  const woodMat = facetMaterial(G.wood);
 
-  // --- The closed bell: the base flares far wider than the shoulders.
+  // --- The closed bell: the robe, the base flaring far wider than the
+  // shoulders.
   const bellGeo = sharedGeo('facet:healer-bell', () => {
     const g = new LatheGeometry(BELL.map(([x, y]) => new Vector2(x * BELL_GROW, y)), BELL_SIDES);
     return facetize(g, { jitter: 0.12, seed: 103 });
@@ -435,56 +346,111 @@ export function buildHealerFacet(rig, trackAccent) {
   const cloak = fpart(bellGeo, cloakMat);
   body.add(cloak);
 
-  // Bone bib down the front (storybook trim), faceted.
-  const BIB = [
-    [0.325, 0.16],
+  // The rust hem band round the robe's foot, and the wrap's front edge: a
+  // rust strip down the front, just off the middle (the robe crosses over).
+  const hemGeo = sharedGeo('facet:healer-hemband', () => facetize(new LatheGeometry([[0.29, 0.03], [0.315, 0.06], [0.34, 0.12], [0.342, 0.15]].map(([x, y]) => new Vector2(x * BELL_GROW * 1.025, y)), BELL_SIDES), { jitter: 0.06, seed: 105 }));
+  const hemBand = fpart(hemGeo, trimMat);
+  body.add(hemBand);
+  const EDGE = [
+    [0.342, 0.15],
     [0.33, 0.25],
     [0.3, 0.35],
     [0.255, 0.44],
-    [0.2, 0.5],
   ];
-  const bibGeo = sharedGeo('facet:healer-bib', () => facetize(new LatheGeometry(BIB.map(([x, y]) => new Vector2(x * BELL_GROW * 1.03, y)), 4, -0.58, 1.16), { jitter: 0.06, seed: 105 }));
-  const bib = new Mesh(bibGeo, boneMat);
-  bib.name = 'panel';
-  body.add(bib);
+  const edgeGeo = sharedGeo('facet:healer-edge', () => facetize(new LatheGeometry(EDGE.map(([x, y]) => new Vector2(x * BELL_GROW * 1.022, y)), 2, 0.1, 0.17), { jitter: 0.04, seed: 106 }));
+  const edge = new Mesh(edgeGeo, trimMat);
+  edge.name = 'panel';
+  body.add(edge);
 
-  // Narrow accent collar AT the chin: the silhouette's neck pinch (healer.js).
-  const collarGeo = sharedGeo('facet:healer-collar', () => facetize(new CylinderGeometry(0.115, 0.15, 0.075, 8), { jitter: 0.08, seed: 107 }));
-  const collar = fpart(collarGeo, collarMat);
+  // The mantle: a short shoulder cape over the robe's top, flaring out over
+  // the shoulders (the sleeves come out under it), its rim trimmed in rust.
+  const MANTLE = [
+    [0.15, 0.585],
+    [0.22, 0.565],
+    [0.31, 0.515],
+    [0.37, 0.45],
+    [0.385, 0.415],
+  ];
+  const mantleR = (y) => {
+    if (y > MANTLE[0][1] || y < MANTLE[MANTLE.length - 1][1]) return 0;
+    for (let i = 1; i < MANTLE.length; i++) {
+      const [r0, y0] = MANTLE[i - 1];
+      const [r1, y1] = MANTLE[i];
+      if (y >= y1) return r0 + ((r1 - r0) * (y0 - y)) / Math.max(1e-6, y0 - y1);
+    }
+    return 0;
+  };
+  // (a lathe's faces point out when its profile runs up, so it is laid bottom first)
+  const mantleGeo = sharedGeo('facet:healer-mantle', () => facetize(new LatheGeometry([...MANTLE].reverse().map(([x, y]) => new Vector2(x, y)), BELL_SIDES), { jitter: 0.1, seed: 107 }));
+  const mantle = fpart(mantleGeo, cloakMat);
+  body.add(mantle);
+  // its rim: a row of rust scallops round the mantle's edge (one instanced part)
+  const RIM_N = 24;
+  const rimGeo = sharedGeo('facet:healer-scallop', () => facetize(new SphereGeometry(1, 6, 4), { jitter: 0.06, seed: 108 }));
+  const rq = new Quaternion();
+  const rv = new Vector3();
+  const rs = new Vector3();
+  const mantleRim = placeRow(rimGeo, trimMat, RIM_N, (i, m) => {
+    const a = ((i + 0.5) / RIM_N) * Math.PI * 2;
+    rv.set(Math.sin(a) * 0.384, 0.418, Math.cos(a) * 0.384);
+    rq.setFromAxisAngle(UP_Y, a);
+    m.compose(rv, rq, rs.set(0.058, 0.026, 0.03));
+  }, { name: 'healer-trim', seed: 108 });
+  body.add(mantleRim);
+  // The neck: a rust collar at the chin (the silhouette's neck pinch).
+  const collarGeo = sharedGeo('facet:healer-collar', () => facetize(new CylinderGeometry(0.115, 0.15, 0.075, 8), { jitter: 0.08, seed: 109 }));
+  const collar = fpart(collarGeo, trimMat);
   collar.position.y = 0.565;
   body.add(collar);
 
-  // --- Detail: a capelet of overlapping leaves low on the shoulders (two
-  // brick-laid rows, open at the front over the bib, well below the chin so
-  // the head measurement keeps its neck), a scalloped hem of leaves, and a
-  // folded sash. Each row is one InstancedMesh, inked thin.
-  const leaf = leafGeometry();
-  const CAPE = [
-    { y: 0.535, n: 11, w: 0.16, len: 0.17, tilt: 0.2, open: 0.6 },
-    { y: 0.45, n: 10, w: 0.17, len: 0.16, tilt: 0.16, open: 0.85 },
-  ];
-  const capeCount = CAPE.reduce((s, r) => s + r.n, 0);
-  const cape = placeRow(leaf, leafMat, capeCount, (i, m) => {
-    let k = i;
-    let row = 0;
-    while (k >= CAPE[row].n) k -= CAPE[row++].n;
-    const R = CAPE[row];
-    const span = Math.PI * 2 - 2 * R.open;
-    const phi = R.open + (span * (k + 0.5)) / R.n;
-    onBellHanging(m, phi, R.y, 1.04, R.w, R.len, 0.05, R.tilt);
-  }, { name: 'healer-cape', seed: 109 });
-  body.add(cape);
-  const HEM_N = 18;
-  const hem = placeRow(leaf, hemMat, HEM_N, (i, m) => {
-    const phi = ((i + 0.5) * Math.PI * 2) / HEM_N;
-    onBellHanging(m, phi, 0.165, 1.03, 0.14, 0.13, 0.05, 0.06);
-  }, { name: 'healer-hem', seed: 111 });
-  body.add(hem);
-  const SASH_N = 12;
-  const sash = placeRow(plateGeometry(), sashMat, SASH_N, (i, m) => {
-    onBellPlate(m, (i / SASH_N) * Math.PI * 2, 0.29, 1.02, 0.17, 0.035, 0.055);
-  }, { name: 'healer-sash', seed: 113 });
-  body.add(sash);
+  // --- The rope belt round the waist, knotted at the front with two loose
+  // ends, and two leather pouches hung at the front sides.
+  const BELT_Y = 0.29;
+  const beltR = bellR(BELT_Y) * BELL_GROW + 0.012;
+  const knotGeo = sharedGeo('facet:healer-knot', () => facetize(new IcosahedronGeometry(1, 0), { jitter: 0.12, seed: 112 }));
+  // the rope: a row of twists laid round the waist (one instanced part)
+  const TWISTS = 22;
+  const tq = new Quaternion();
+  const te = new Euler();
+  const tv = new Vector3();
+  const ts = new Vector3();
+  const rope = placeRow(knotGeo, ropeMat, TWISTS, (i, m) => {
+    const a = (i / TWISTS) * Math.PI * 2;
+    tv.set(Math.sin(a) * beltR, BELT_Y, Math.cos(a) * beltR);
+    tq.setFromEuler(te.set(0.5, a, 0.6));
+    m.compose(tv, tq, ts.set(0.034, 0.024, 0.026));
+  }, { name: 'healer-rope', seed: 111 });
+  body.add(rope);
+  const knot = fpart(knotGeo, ropeMat);
+  knot.scale.set(0.036, 0.03, 0.028);
+  knot.position.set(0.04, BELT_Y, beltR + 0.012);
+  body.add(knot);
+  const cordGeo = sharedGeo('facet:healer-cord', () => facetize(new CylinderGeometry(0.011, 0.013, 1, 5), { jitter: 0.08, seed: 113 }));
+  for (const [dx, tilt, len] of [[0.025, 0.12, 0.13], [0.06, -0.1, 0.11]]) {
+    const cord = new Mesh(cordGeo, ropeMat);
+    cord.scale.y = len;
+    cord.rotation.set(-0.2, 0, tilt);
+    cord.position.set(dx, BELT_Y - len / 2 - 0.01, beltR + 0.03);
+    body.add(cord);
+  }
+  const pouchGeo = sharedGeo('facet:healer-pouch', () => facetize(new SphereGeometry(1, 7, 5), { jitter: 0.08, seed: 114 }));
+  const flapGeo = sharedGeo('facet:healer-flap', () => facetize(new BoxGeometry(1, 1, 1), { jitter: 0.06, seed: 115 }));
+  for (const phi of [-0.95, 1.05]) {
+    const y = 0.215;
+    const r = bellR(y) * BELL_GROW + 0.035;
+    const pouch = new Group();
+    pouch.position.set(Math.sin(phi) * r, y, Math.cos(phi) * r);
+    pouch.rotation.y = phi;
+    const bag = fpart(pouchGeo, leatherMat);
+    bag.scale.set(0.058, 0.064, 0.036);
+    pouch.add(bag);
+    const flap = new Mesh(flapGeo, flapMat);
+    flap.scale.set(0.105, 0.04, 0.075);
+    flap.position.y = 0.045;
+    flap.rotation.x = 0.15;
+    pouch.add(flap);
+    body.add(pouch);
+  }
 
   // --- Head: the classic's proportions, a low-poly ball. The painted face
   // rides just outside it (a facet's middle sits inside the true sphere).
@@ -495,105 +461,138 @@ export function buildHealerFacet(rig, trackAccent) {
   const skull = fpart(skullGeo, furMat);
   skull.scale.set(SX, SY, SZ);
   head.add(skull);
-  // Small round mouse ears with the inner blush.
+  // Big round mouse ears with pink insides, standing out through the hood.
   const earGeo = sharedGeo('facet:healer-ear', () => facetize(new SphereGeometry(0.105, 8, 6), { jitter: 0.1, seed: 117 }));
-  const innerGeo = sharedGeo('facet:healer-ear-inner', () => facetize(new SphereGeometry(0.055, 7, 5), { jitter: 0.06, seed: 119 }));
+  const innerGeo = sharedGeo('facet:healer-ear-inner', () => facetize(new SphereGeometry(0.068, 7, 5), { jitter: 0.06, seed: 119 }));
   const ears = [];
   for (const side of [-1, 1]) {
     const pivot = new Group();
     pivot.position.set(side * 0.15, 0.15, -0.025);
+    pivot.scale.setScalar(EAR_SCALE);
     const ear = fpart(earGeo, furMat);
     ear.scale.set(1, 1, 0.42);
     ear.position.y = 0.088;
     pivot.add(ear);
-    const inner = new Mesh(innerGeo, innerMat);
+    const inner = new Mesh(innerGeo, pinkMat);
     inner.scale.set(1, 1, 0.3);
-    inner.position.set(0, 0.075, 0.045);
+    inner.position.set(0, 0.08, 0.045);
     pivot.add(inner);
     pivot.rotation.z = side * -0.26;
     head.add(pivot);
     ears.push(pivot);
   }
-  // Short snout and ink nose.
+  // The hood: a shell over the crown and the back of the head, a size
+  // larger than the skull so it stands off it, with an oval opening round
+  // the face (every face of the shell within HOOD_OPEN of the facing is cut
+  // away), the opening edged in rust.
+  const HOOD_R = HEAD_R * 1.2;
+  const HOOD_OPEN = 0.98; // the opening's half-angle round the face (rad)
+  const HOOD_DOWN = 2.25; // how far down the back it falls (rad from the crown)
+  const HOOD_FACE = new Vector3(0, -0.2, 1).normalize(); // the face looks a little down
+  const hoodGeo = sharedGeo('facet:healer-hood', () => {
+    const g = new SphereGeometry(HOOD_R, 20, 12, 0, Math.PI * 2, 0, HOOD_DOWN).toNonIndexed();
+    const pos = g.attributes.position;
+    const keep = [];
+    const c = new Vector3();
+    const v = new Vector3();
+    const cosOpen = Math.cos(HOOD_OPEN);
+    for (let i = 0; i < pos.count; i += 3) {
+      c.set(0, 0, 0);
+      for (let k = 0; k < 3; k++) c.add(v.fromBufferAttribute(pos, i + k));
+      if (c.normalize().dot(HOOD_FACE) > cosOpen) continue;
+      for (let k = 0; k < 3; k++) keep.push(pos.getX(i + k), pos.getY(i + k), pos.getZ(i + k));
+    }
+    const out = new BufferGeometry();
+    out.setAttribute('position', new Float32BufferAttribute(keep, 3));
+    out.computeVertexNormals();
+    return facetize(out, { jitter: 0.06, seed: 116 });
+  });
+  const hood = fpart(hoodGeo, hoodMat);
+  hood.scale.set(SX, SY, SZ);
+  hood.position.set(0, 0.012, -0.02);
+  head.add(hood);
+  const hoodEdgeGeo = sharedGeo('facet:healer-hood-edge', () => {
+    // the rim of the opening: the circle HOOD_OPEN round the face, where it
+    // runs on the shell (down to the hood's foot)
+    const u = new Vector3(1, 0, 0);
+    const w = new Vector3().crossVectors(HOOD_FACE, u).normalize();
+    const pts = [];
+    const r = HOOD_R * 1.005;
+    for (let i = 0; i < 32; i++) {
+      const t = (i / 32) * Math.PI * 2;
+      const d = new Vector3().copy(HOOD_FACE).multiplyScalar(Math.cos(HOOD_OPEN)).addScaledVector(u, Math.sin(HOOD_OPEN) * Math.cos(t)).addScaledVector(w, Math.sin(HOOD_OPEN) * Math.sin(t));
+      if (Math.acos(Math.min(1, d.y)) <= HOOD_DOWN - 0.05) pts.push(d.multiplyScalar(r));
+    }
+    // the kept points run from one foot of the rim over the brow to the
+    // other; a wrap round t = 0 is put back in order
+    let cut = 0;
+    for (let i = 1; i < pts.length; i++) if (pts[i].distanceTo(pts[i - 1]) > r * 0.5) cut = i;
+    const run = cut ? [...pts.slice(cut), ...pts.slice(0, cut)] : pts;
+    return facetize(new TubeGeometry(new CatmullRomCurve3(run), 28, 0.017, 4), { jitter: 0.05, seed: 118 });
+  });
+  const hoodEdge = fpart(hoodEdgeGeo, trimMat);
+  hoodEdge.scale.copy(hood.scale);
+  hoodEdge.position.copy(hood.position);
+  head.add(hoodEdge);
+  // Short snout and a pink nose.
   const snoutGeo = sharedGeo('facet:healer-snout', () => facetize(new SphereGeometry(0.078, 8, 6), { jitter: 0.08, seed: 121 }));
   const snout = fpart(snoutGeo, boneMat);
   snout.scale.set(0.9, 0.62, 0.95);
   snout.position.set(0, -0.082, SZ * HEAD_R * 0.82);
   head.add(snout);
-  const noseGeo = sharedGeo('facet:healer-nose', () => facetize(new SphereGeometry(0.02, 6, 4), { jitter: 0.05, seed: 123 }));
-  const nose = fpart(noseGeo, facetMaterial(PALETTE.voidCharcoal), false);
+  const noseGeo = sharedGeo('facet:healer-nose', () => facetize(new SphereGeometry(0.022, 6, 4), { jitter: 0.05, seed: 123 }));
+  const nose = fpart(noseGeo, pinkMat, false);
   nose.position.set(0, -0.062, SZ * HEAD_R * 0.82 + 0.062);
   head.add(nose);
   head.add(faceDecal({ R: HEAD_R, sx: SX, sy: SY, sz: SZ, drop: 0.575 }));
 
-  // --- Thin curled mouse tail, faceted.
+  // --- A long pink mouse tail out from under the robe's back, curling up
+  // at its end.
   const tailPivot = new Group();
   tailPivot.position.set(0, 0.2, -0.27);
   const tailGeo = sharedGeo('facet:healer-tail', () => {
-    const curve = new QuadraticBezierCurve3(new Vector3(0, 0, 0), new Vector3(0.1, -0.08, -0.13), new Vector3(0.25, 0.02, -0.2));
-    return facetize(new TubeGeometry(curve, 10, 0.022, 5), { jitter: 0.08, seed: 125 });
+    const curve = new CatmullRomCurve3([new Vector3(0, 0, 0), new Vector3(0.05, -0.1, -0.12), new Vector3(0.17, -0.15, -0.25), new Vector3(0.33, -0.1, -0.31), new Vector3(0.43, 0.02, -0.26)]);
+    return facetize(new TubeGeometry(curve, 14, 0.019, 5), { jitter: 0.08, seed: 125 });
   });
-  const tail = fpart(tailGeo, furMat);
+  const tail = fpart(tailGeo, pinkMat);
   tailPivot.add(tail);
   body.add(tailPivot);
 
-  // --- The staff (butt at its origin, as healer.js): a faceted shaft with
-  // criss-cross bindings under the grip and a band under the head, a bead
-  // collar, and four pewter claws holding the gem.
+  // --- The staff (butt at its origin, as healer.js): a gnarled twig with a
+  // knot and a side stub, its top split into three curling prongs that
+  // cradle the crystal.
   const staff = new Group();
   staff.rotation.order = 'XYZ';
   body.add(staff);
-  const shaftGeo = sharedGeo('facet:healer-shaft', () => facetize(new CylinderGeometry(0.024, 0.029, 0.81, 6), { jitter: 0.1, seed: 127 }));
+  const shaftGeo = sharedGeo('facet:healer-twig', () => {
+    const curve = new CatmullRomCurve3([new Vector3(0, 0.03, 0), new Vector3(0.008, 0.24, -0.006), new Vector3(-0.01, 0.45, 0.005), new Vector3(0.011, 0.66, -0.004), new Vector3(0, 0.85, 0)]);
+    return facetize(new TubeGeometry(curve, 12, 0.026, 6), { jitter: 0.1, seed: 127 });
+  });
   const shaft = fpart(shaftGeo, woodMat);
-  shaft.position.y = 0.455;
   staff.add(shaft);
-  const bandGeo = sharedGeo('facet:healer-band', () => facetize(new CylinderGeometry(1, 1, 1, 6), { jitter: 0.08, seed: 129 }));
-  const BINDS = [
-    [0.3, 0.3],
-    [0.333, -0.3],
-    [0.366, 0.3],
-    [0.399, -0.3],
-    [0.432, 0.3],
-    [0.8, 0],
-    [0.83, 0],
-  ];
-  const bindings = placeRow(bandGeo, wrapMat, BINDS.length, (i, m) => {
-    const [y, tilt] = BINDS[i];
-    tY.set(Math.sin(tilt), Math.cos(tilt), 0);
-    tZ.set(0, 0, 1);
-    tX.crossVectors(tY, tZ).normalize();
-    setTRS(m, tP.set(0, y, 0), tX, tY, tZ, 0.034, 0.02, 0.034);
-  }, { name: 'healer-binding', seed: 131 });
-  staff.add(bindings);
-  const beadGeo = sharedGeo('facet:healer-bead', () => facetize(new IcosahedronGeometry(1, 0), { jitter: 0.1, seed: 133 }));
-  const BEADS = 6;
-  const beads = placeRow(beadGeo, pewterMat, BEADS, (i, m) => {
-    const a = (i / BEADS) * Math.PI * 2;
-    setTRS(m, tP.set(Math.sin(a) * 0.033, 0.858, Math.cos(a) * 0.033), tX.set(1, 0, 0), tY.set(0, 1, 0), tZ.set(0, 0, 1), 0.014, 0.014, 0.014);
-  }, { name: 'healer-beads', ink: false });
-  staff.add(beads);
-  // The lantern cage: four pewter ribs round the gem, each two blades based
-  // at the gem's girth, one tapering down to the collar and one up over the
-  // crown, so every rib bulges out round the gem like a lantern's.
-  const RIBS = 4;
-  const RIB = [
-    [0.07, 0.932, 0.022, 0.862],
-    [0.07, 0.932, 0.016, 1.002],
-  ];
-  const claws = placeRow(wedgeGeometry(), pewterMat, RIBS * 2, (i, m) => {
-    const a = ((Math.floor(i / 2) + 0.5) / RIBS) * Math.PI * 2;
-    const [r0, y0, r1, y1] = RIB[i % 2];
-    const ox = Math.sin(a);
-    const oz = Math.cos(a);
-    tP.set(ox * r0, y0, oz * r0);
-    tY.set(ox * (r1 - r0), y1 - y0, oz * (r1 - r0));
-    const len = tY.length();
-    tY.divideScalar(len);
-    tZ.set(ox, 0, oz).addScaledVector(tY, -(ox * tY.x + oz * tY.z)).normalize(); // its flat faces out
-    tX.crossVectors(tY, tZ).normalize();
-    setTRS(m, tP, tX, tY, tZ, 0.028, len * 1.05, 0.045);
-  }, { name: 'healer-cage', inkPx: PART_INK_PX * 0.75, seed: 135 });
-  staff.add(claws);
+  const twigKnot = new Mesh(knotGeo, woodMat);
+  twigKnot.scale.set(0.034, 0.045, 0.032);
+  twigKnot.position.set(0.012, 0.6, 0.004);
+  staff.add(twigKnot);
+  const stubGeo = sharedGeo('facet:healer-stub', () => facetize(new CylinderGeometry(0.008, 0.014, 1, 5), { jitter: 0.08, seed: 129 }));
+  const stub = new Mesh(stubGeo, woodMat);
+  stub.scale.y = 0.07;
+  stub.rotation.z = -0.9;
+  stub.position.set(0.03, 0.73, 0);
+  staff.add(stub);
+  const PRONGS = 3;
+  const prongGeo = sharedGeo('facet:healer-prong', () => {
+    const curve = new CatmullRomCurve3([new Vector3(0, 0.83, 0), new Vector3(0.03, 0.88, 0), new Vector3(0.052, 0.94, 0), new Vector3(0.03, 1.0, 0)]);
+    return facetize(new TubeGeometry(curve, 6, 0.011, 4), { jitter: 0.08, seed: 131 });
+  });
+  const pq = new Quaternion();
+  const pv = new Vector3();
+  const ps = new Vector3(1, 1, 1);
+  const prongs = placeRow(prongGeo, woodMat, PRONGS, (i, m) => {
+    pq.setFromAxisAngle(UP_Y, (i / PRONGS) * Math.PI * 2 + 0.4);
+    m.compose(pv.set(0, 0, 0), pq, ps);
+  }, { name: 'healer-prongs', seed: 131, mottle: 0 });
+  staff.add(prongs);
 
   // --- THE GEM: healer.js's, unchanged (round-3 F6 and the round-4 ACES hue
   // compensation): unlit, no ink, the whole gem family authored up-hue by
@@ -603,7 +602,9 @@ export function buildHealerFacet(rig, trackAccent) {
   new Color(PALETTE.brightHeal).getHSL(gemHSL, SRGBColorSpace);
   const gemAuthored = new Color().setHSL(gemHSL.h + 18 / 360, gemHSL.s, gemHSL.l, SRGBColorSpace).getHex();
   const gemMat = new MeshBasicMaterial({ color: exactColorNearest(gemAuthored) });
-  const gem = new Mesh(new OctahedronGeometry(0.052), gemMat);
+  // The crystal: a long six-sided point (the sheet's), not a round gem.
+  const gemGeo = sharedGeo('healer-crystal', () => new LatheGeometry([[0, -0.07], [0.036, -0.032], [0.036, 0.034], [0, 0.088]].map(([x, y]) => new Vector2(x, y)), 6));
+  const gem = new Mesh(gemGeo, gemMat);
   gem.name = 'tip';
   gem.position.y = GEM_Y;
   gem.renderOrder = 2;
@@ -633,24 +634,34 @@ export function buildHealerFacet(rig, trackAccent) {
   freePaw.scale.setScalar(0.058);
   freePaw.position.set(REST.fx, REST.fy, REST.fz);
   body.add(freePaw);
-  const armR = facetArm(furMat, 0.056, 0.22, 137);
+  // the arms are her linen sleeves; the paws stay fur
+  const armR = facetArm(cloakMat, 0.058, 0.22, 137);
   armR.position.copy(SHOULDER_R);
   body.add(armR);
-  const armL = facetArm(furMat, 0.056, 0.22, 137);
+  const armL = facetArm(cloakMat, 0.058, 0.22, 137);
   armL.position.copy(SHOULDER_L);
   body.add(armL);
   // The named points (B8): the grip paw and the gem.
   const hand = namedPoint(gripPaw, 'hand', 0, 0, 0);
 
-  // --- Feet: two small faceted feet peeking out under the bell's front hem
-  // (detail added: the classic has none). Children of the rig, so a lean
+  // --- Feet: two small feet in linen wraps peeking out under the robe's
+  // front hem (detail added: the classic has none). Children of the rig, so a lean
   // never lifts them; the foot lock pins them in the world.
   const HOME = [new Vector3(-0.115, 0.03, 0.3), new Vector3(0.115, 0.03, 0.3)];
   const footGeo = sharedGeo('facet:healer-foot', () => facetize(new SphereGeometry(1, 7, 5), { jitter: 0.08, seed: 139 }));
+  const wrapGeo = sharedGeo('facet:healer-footwrap', () => facetize(new CylinderGeometry(1, 1, 1, 7, 1, true), { jitter: 0.05, seed: 141 }));
   const feet = [];
   for (let i = 0; i < 2; i++) {
     const foot = fpart(footGeo, footMat);
     foot.scale.set(0.058, 0.036, 0.088);
+    // two wrap bands round each foot
+    for (const bz of [0.3, -0.25]) {
+      const band = new Mesh(wrapGeo, wrapBandMat);
+      band.rotation.x = Math.PI / 2;
+      band.scale.set(1.04, 0.22, 1.04);
+      band.position.z = bz;
+      foot.add(band);
+    }
     foot.position.copy(HOME[i]);
     rig.add(foot);
     feet.push(foot);
@@ -720,14 +731,24 @@ export function buildHealerFacet(rig, trackAccent) {
     else if (d < REACH_MIN && d > 1e-5) p.copy(shoulder).addScaledVector(off, REACH_MIN / d);
     return p;
   }
-  // How far a body-space point of radius `pad` sits inside the bell (its
-  // leaves included) or the head; `out` gets the way out.
+  // How far a body-space point of radius `pad` sits inside the bell, the
+  // mantle or the head; `out` gets the way out.
   const hd = new Vector3();
   function inside(p, pad, out) {
     let deep = 0;
     if (p.y > 0.02 && p.y < 0.6) {
       const d = Math.hypot(p.x, p.z);
       const need = bellR(p.y) * BELL_GROW * 1.05 + pad;
+      if (need - d > deep) {
+        deep = need - d;
+        if (d > 1e-4) out.set(p.x / d, 0, p.z / d);
+        else out.set(1, 0, 0);
+      }
+    }
+    const mr = mantleR(p.y);
+    if (mr > 0) {
+      const d = Math.hypot(p.x, p.z);
+      const need = mr + 0.02 + pad;
       if (need - d > deep) {
         deep = need - d;
         if (d > 1e-4) out.set(p.x / d, 0, p.z / d);
@@ -920,12 +941,13 @@ export function buildHealerFacet(rig, trackAccent) {
     const flash = attacking ? Math.max(0, Math.min(1, lagged.glow)) : 0;
     const heat = Math.max(P.gem, flash) * (1 - P.desat);
     gemMat.color.copy(gemBase).lerp(gemDown, P.desat);
-    const gs = GLOW_BASE * (1 + 1.15 * heat);
+    // round 2: a softer flare, so a cast held overhead never whites out her face
+    const gs = GLOW_BASE * (1 + 0.8 * heat);
     glow.scale.set(gs, gs, 1);
-    glow.material.opacity = (0.34 + 0.62 * heat) * (1 - P.desat);
+    glow.material.opacity = (0.3 + 0.45 * heat) * (1 - P.desat);
     const fs = GLOW_BASE * 0.32 * (1 + 0.9 * heat);
     flare.scale.set(fs, fs, 1);
-    flare.material.opacity = (0.2 + 0.55 * heat) * (1 - P.desat);
+    flare.material.opacity = (0.2 + 0.4 * heat) * (1 - P.desat);
     gem.scale.setScalar(1 + 0.22 * heat);
     gem.rotation.y = t * 1.1;
 
@@ -995,7 +1017,7 @@ export const HEALER_SPEC = Object.freeze({
     frame: { y: 0.6, z: 0, dist: 3.9, speed: 2.4, loop: 2.2 },
     cues: {
       strike: { sound: 'shoot', pitch: 1, fx: 'flash' },
-      finisher: { sound: 'cast_damage', pitch: 0.9, fx: ['flash', 'star'], size: 1.5 },
+      finisher: { sound: 'cast_damage', pitch: 0.9, fx: ['flash', 'star'], size: 1.1 },
       point: { sound: 'cast_heal', pitch: 1, fx: ['flash', 'star'] },
       bloom: { sound: 'cast_nova', pitch: 1, fx: ['ring', 'star'], size: 1.2 },
       plant: { sound: 'cast_zone', pitch: 1, fx: ['ring', 'pillar'] },

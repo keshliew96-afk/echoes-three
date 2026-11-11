@@ -62,6 +62,24 @@ export const BLESSING_COLORS = Object.freeze({
   tempered: SHRINE_COLORS.kiln,
 });
 
+// THE HEALER'S GARB (model review round 2, from Kesh's 2026-11-11 turnaround
+// sheet): an undyed linen robe and hood with a brick-rust trim, a hemp rope
+// belt, leather pouches, linen foot wraps, a twig staff, pink ears, nose and
+// tail, every tone kept below the amber family's saturation (the model
+// probe's rule). The rust is a dark brick (hue 18, L 44%), well clear of Ember's bright
+// orange-red; the class accent (Sage) stays on her ring and HP bar.
+export const HEALER_GARB = Object.freeze({
+  robe: '#C9AE84',
+  robeShade: '#A28D70',
+  trim: '#9C5A3E',
+  rope: '#B4A07E',
+  leather: '#6E4A33',
+  wrap: '#B5A992',
+  wrapBand: '#867A64',
+  wood: '#6B4A32',
+  pink: '#E2A79C',
+});
+
 // Class accents (BUILD_BRIEF §19.1) — rings, HP bars, cloak trim.
 export const CLASS_ACCENTS = Object.freeze({
   healer: '#33513C',
@@ -100,6 +118,11 @@ export const VFX_SIGNATURE = Object.freeze({
 // `arcaneSafe` is the magenta alternative the VFX lab can switch to).
 export const VFX_TEMPLATE = Object.freeze({
   magic: Object.freeze({ purple: '#A24BFF', gold: '#FFC94A', star: '#FFF4D6', deep: '#5B2BB8', arcaneSafe: '#D84CF0' }),
+  // The Healer's magic (Kesh's VFX sheet, 2026-11-11): a pale spring-leaf
+  // green in the purple's place (hue 95, clear of Bright Heal's 131, which
+  // stays the heal colour), a softer star core so the bright centres don't
+  // blow out.
+  leaf: Object.freeze({ a: '#A9DC7C', star: '#EEF6D4', deep: '#4C7A34' }),
   blade: Object.freeze({ core: '#FFF3C4', fire: '#FFB43C', flame: '#F5952E', wave: '#FFD866', smoke: '#3A2A22' }),
   scifi: Object.freeze({ cyan: '#3DF2FF', magenta: '#FF3DD8', white: '#E8FFFF', grid: '#1E6F86' }),
 });

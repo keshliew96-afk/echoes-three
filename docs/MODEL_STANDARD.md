@@ -119,6 +119,16 @@ bosses; the VFX pass for each hero kit follows its model's sign-off.
 |---|---|---|---|---|
 | (none yet) | | | | |
 
+Rounds in review:
+
+- Healer, round 1 (v0.5.362): the model as it stood.
+- Healer, round 2 (v0.5.363): dressed from Kesh's turnaround and VFX sheets
+  (2026-11-11): linen robe, mantle and hood with a rust trim, rope belt and
+  pouches, linen foot wraps, pink ears, nose and tail, a twig staff with a
+  long crystal; her magic in Leaf Green and gold with softer bursts and the
+  plain leaf circle (`docs/VFX_TEMPLATES.md` "Colours"). Colours in
+  `HEALER_GARB` (`src/data/palette.js`).
+
 ## The kit (`src/render/facet/`)
 
 | File | What it gives |
