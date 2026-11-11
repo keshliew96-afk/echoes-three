@@ -67,11 +67,9 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
    member in the data. The reply names them.
 5. **Old profiles.** Anything counted on a profile says what an old profile shows. Never show a number
    the game did not record.
-6. **Colour.** Ember `#FF5A36` is for enemy threats only, Bright Heal `#5FE873` for healing only, and
-   Violet `#B79CF0` for corruption only (BUILD_BRIEF §19, §23). Land heat colours are not Ember.
-   The VFX bar is Diablo IV or Hades (`?vfxlab=1`).
-   Every VFX build follows Kesh's three templates (magic, knife and sword, sci-fi) and his enhancer
-   words in `docs/gauntlet/design-VFX.md` §11; pick the template per effect from `SKILL_TEMPLATE`.
+6. **Colour and VFX.** The reserved colours and the VFX templates are in `.claude/rules/visuals.md`.
+   It loads by itself when a session works in `src/render/`, `src/ui/`, `src/env/`, `src/scenes/` or the
+   palette and VFX tables; read it before READY on any change a player can see.
 7. **The report.** The READY reply marks every line of the ask, and every Before READY item,
    as built, missing, broken or not assessed. A not assessed line says why (no browser, only seen
    in software GL, needs a laptop, needs a person to play). Name what was guessed. A shot older
@@ -169,6 +167,7 @@ server/         zero-dependency Node session server: WebSocket lobby and relay, 
 tools/          probes (Node and browser), test.mjs (npm test), check.mjs (npm run check), goldens
 docs/           one doc per system (see the list in the file names); TESTING.md, I18N.md, BUILD_BRIEF.md
 .github/        CI: npm test and the player build on every push to gauntlet and every PR
+.claude/        settings.json (the deny list); rules/ (rules that load only for the paths they name)
 ```
 
 ## Current systems
