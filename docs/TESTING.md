@@ -65,6 +65,16 @@ House rules the safety-net probe checks:
 - a probe never pins one exact version: it reads `VERSION` from `src/version.js` and asks
   for "this version or later".
 
+### Shot stamps (v0.5.358)
+
+A READY's screenshots prove the files they were shot from. After shooting, stamp them:
+`node tools/shot-stamp.mjs stamp /mnt/project-files/<slice>/ <each file the slice changed>` writes
+a content hash of each file to `stamp.json` beside the shots. Before READY, and again after any
+fix-first edit, `node tools/shot-stamp.mjs check /mnt/project-files/<slice>/` lists each file as
+`same`, `CHANGED` or `GONE` and exits 1 when any file moved: those shots are older than the code,
+so reshoot them or say in the reply which shots predate which edit. Hashes, not git or mtimes, so an
+uncommitted edit still counts. `tools/shot-stamp-probe.mjs` (in `npm test`) checks the tool.
+
 ### Endless soak (v0.5.358)
 
 `tools/endless-soak-probe.mjs` (in `npm test`, about 30 s) plays Endless descents headless with the

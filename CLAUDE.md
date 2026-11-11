@@ -36,7 +36,8 @@ run checks after every change."
   (`node tools/gntM2-goldens.mjs`, against the committed `tools/goldens.json`). `npx vite build` is clean
   (only the chunk-size warning is expected).
 - Update the system's doc under `docs/`. Screenshots go under `/mnt/project-files/<slice>/` when the
-  project folder exists.
+  project folder exists, stamped with `node tools/shot-stamp.mjs stamp <dir> <changed files>`; run its
+  `check` before READY and after every fix-first edit (`docs/TESTING.md` "Shot stamps").
 - Nothing merges before Kesh's go.
 
 ## Gates that keep the goldens identical
