@@ -48,10 +48,11 @@ import { LAB_ENTRIES as CHAMPION_ENTRIES } from './modellab-champions.js';
 import { LAB_ENTRIES as LEVEL4_ENTRIES } from './modellab-level4.js';
 import { LAB_ENTRIES as LEVEL4_CHAMPION_ENTRIES } from './modellab-champions-level4.js';
 import { LAB_ENTRIES as FOE_ENTRIES } from './modellab-foes.js';
+import { LAB_ENTRIES as STYLE_ENTRIES } from './modellab-styles.js';
 
 // Model tabs from entry files (scenes/modellab-bosses.js documents the shape):
 // each builds its model on first view and drives it.
-const ENTRIES = [...BOSS_ENTRIES, ...LEVEL4_ENTRIES, ...CHAMPION_ENTRIES, ...LEVEL4_CHAMPION_ENTRIES, ...FOE_ENTRIES];
+const ENTRIES = [...BOSS_ENTRIES, ...LEVEL4_ENTRIES, ...CHAMPION_ENTRIES, ...LEVEL4_CHAMPION_ENTRIES, ...FOE_ENTRIES, ...STYLE_ENTRIES];
 const entryOf = (id) => ENTRIES.find((e) => e.id === id) || null;
 
 const MODELS = [['wyrm', 'Barrow Wyrm'], ...FACET_HEROES.map((h) => [h.id, h.label]), ...ENTRIES.map((e) => [e.id, e.label]), ['kit', 'Effect kit']];
@@ -131,7 +132,7 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     if (built[id]) return built[id];
     const ent = entryOf(id);
     if (!ent) return null;
-    const b = ent.build({ cosmetic, vfx, play });
+    const b = ent.build({ cosmetic, vfx, play, stage });
     root.add(b.group);
     built[id] = b;
     return b;
@@ -289,7 +290,10 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     for (const h of HEROES) h.rig.group.visible = h === H;
     kit.group.visible = state.model === 'kit';
     const entry = entryOf(state.model) ? entryModel(state.model) : null;
-    for (const [id, b] of Object.entries(built)) b.group.visible = id === state.model;
+    for (const [id, b] of Object.entries(built)) {
+      b.group.visible = id === state.model;
+      if (!b.group.visible && b.hide) b.hide(); // an entry that changed the stage (the art styles' sun shadow) puts it back
+    }
     if (entry) {
       root.updateMatrixWorld(true);
       entry.update(state, dt, abT);

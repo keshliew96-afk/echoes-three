@@ -1286,6 +1286,26 @@ and Level IV foes add their tabs to the same file (the Level IV six: Hollow Husk
 Lancer, Vein Geode, Bone Censer, Vein Bloom, Vein Siphon), each with the game's own Heart
 cues on its beats.
 
+### Art style study (`scenes/modellab-styles.js`, the Art styles tab)
+
+A comparison tab, not a feature (the freeze holds): five Healers in a row, the game's look
+today beside four candidate styles, for the launch plan's art pick. Left to right:
+
+| Style | What changes on the same rig |
+|---|---|
+| Now: faceted toon | nothing (3-band toon, per-face steps, 2.7 px ink) |
+| 1 Polished faceted | the same facets physically lit (`MeshStandardMaterial`, flat shading; cloth roughness 0.78, pewter metal), a soft room environment light and a real sun shadow from the stage key; ink kept |
+| 2 Smooth toon + ink | the parts welded and smooth-normalled; the same 3-band ramp and ink |
+| 3 Chunky voxel | every part rebuilt from its own surface as cubes of one world size (0.055 u); parts under about two cubes (the nose) stay; flat toon light, no ink |
+| 4 Painted textures | smooth parts, soft Lambert light, a seeded brush-stroke canvas laid triplanar on every part, a painted top light and a cool fall toward the feet; no ink |
+
+Rest and Basic combo play on all five at once. `restyle(group, style)` swaps materials and
+geometry in place and keeps the originals, so `'facet'` restores the rig exactly; the
+tab turns the stage key's shadow on while it shows and off when left. Nothing in the game
+calls it: `tools/art-styles-shots.mjs` reaches a running Level I fight through three's
+devtools hook and dresses the whole party per style for the room shots.
+URL: `?modellab=1&model=styles&turn=0`.
+
 ## Adding a model to the standard
 
 1. Build it with the kit: faceted parts (`facetize` + `facetMaterial`), repeated detail on
