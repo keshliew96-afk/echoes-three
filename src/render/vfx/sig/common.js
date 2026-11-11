@@ -38,7 +38,7 @@ export const ENEMY_SHOT_TRAIL = Object.freeze({
 // a hit's area (K1: 1.41 x its width), the ground ring gone within 0.22 s and drawn under
 // any Ember ring, and the debris burst waiting for the body's swell (K2),
 // leaning slightly along the killing hit (P1).
-export const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.4, bloomSkill: 1.7, bloomCrit: 1.2, bloomOpacity: 0.3, bloomGrow: 0.1, crowd: 0.12 });
+export const CONTACT_FX = Object.freeze({ hold: 0.1, life: 0.22, critLife: 0.26, bloom: 1.4, bloomSkill: 1.7, bloomCrit: 1.2, bloomOpacity: 0.3, bloomGrow: 0.1 });
 export const KILL_FX = Object.freeze({ flareHold: 0.117, flareLife: 0.3, bloom: 2.0, bloomOpacity: 0.35, ringLife: 0.22, ringOrder: 0, burstAt: 0.1, lean: 0.25 });
 
 // D3: the air an element leaves (§6.2 m).

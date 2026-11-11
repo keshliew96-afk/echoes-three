@@ -59,7 +59,10 @@ export const KNOCKBACK = Object.freeze({
 // frames at 60 fps) so the flash freezes with the sim during kill hitstop.
 export const HITFLASH = Object.freeze({
   ticks: 3,
-  intensity: 1.0, // emissiveIntensity while lit
+  // emissiveIntensity while lit. 0.45 (effect brightness, v0.5.359): at 1.0
+  // the lit body crossed the bloom threshold and turned into a white block
+  // under the kill burst; at 0.45 it still pops pale with a hard cut.
+  intensity: 0.45,
 });
 
 // §1 + §17 damage numerals: cap 12 simultaneous (oldest fades early), numeral

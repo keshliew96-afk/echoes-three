@@ -54,6 +54,7 @@ import { markShared } from '../geocache.js';
 import { exactColor, underBloom } from '../critters/common.js';
 import { warmPark } from '../warmup.js';
 import { HOLD_CAP } from '../hold.js';
+import { LIGHT_BUDGET, lightBudget } from './kit.js';
 
 // A held (zone) circle: its bold outer ring is drawn at 0.94 of the texture's
 // half width (getCircleTexture), so the circle is scaled up by that much to
@@ -678,7 +679,9 @@ function getDustTexture(kind) {
 let planeGeo = null;
 let arcGeo = null;
 
-export function createTemplateKit({ stage, cosmetic }) {
+// budgeted() and neighbours(x, z, r): the light budget's scope and the class
+// kit's live flashes and stars within r (render/vfx/kit.js LIGHT_BUDGET).
+export function createTemplateKit({ stage, cosmetic, budgeted = () => false, neighbours = () => 0 }) {
   const root = new Group();
   root.name = 'vfxtplkit';
   stage.scene.add(root);
@@ -1272,9 +1275,25 @@ export function createTemplateKit({ stage, cosmetic }) {
     s.spinRate = o.spin ?? 0.8;
     u.uGain.value = o.gain ?? 1.3;
     u.uK.value = 0;
-    s.op = (o.opacity ?? 1) * crowd(o.x, o.z);
+    // The light budget: a hero's or a kill's blast also gives way to the class
+    // kit's flashes and stars around it (its own kind is counted by crowd()).
+    const shared = budgeted() ? lightBudget(neighbours(o.x, o.z, LIGHT_BUDGET.radius)) : 1;
+    s.op = (o.opacity ?? 1) * crowd(o.x, o.z) * shared;
+    s.group = group;
     u.uOpacity.value = 0;
     return s;
+  }
+  // The class kit's event group (kit.newGroup()), so one event's blast and
+  // flashes never count each other either.
+  let group = 0;
+  const setGroup = (g) => {
+    group = g;
+  };
+  function blastsNear(x, z, r) {
+    let n = 0;
+    const rr = r * r;
+    for (const s of blasts.slots) if (s.live && s.group !== group && s.cx !== undefined && (s.cx - x) ** 2 + (s.cz - z) ** 2 <= rr) n++;
+    return n;
   }
   function stepBlast(s, t, dt) {
     const k = Math.min(1, t / s.life);
@@ -1661,5 +1680,5 @@ export function createTemplateKit({ stage, cosmetic }) {
     lightGain = l;
     particleGain = p;
   }
-  return { root, circle, moveCircle, pulseCircle, endCircle, beam, blaze, blast, trace, feedTrace, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity };
+  return { root, circle, moveCircle, pulseCircle, endCircle, beam, blaze, blast, trace, feedTrace, head, moveHead, endHead, dust, sparks, update, clear, counts, prewarm, setIntensity, blastsNear, setGroup };
 }

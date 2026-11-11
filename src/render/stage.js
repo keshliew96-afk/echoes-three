@@ -55,7 +55,11 @@ export const BLOOM = Object.freeze({
   // three lenses scored this check down on. Only the near-neutral emitter
   // cores clear the threshold (env/flame.js GAIN_MAX), so the extra strength
   // grows a cream halo, not a saturated veil.
-  strength: 1.35,
+  // 0.9 (effect brightness, v0.5.359): at 1.35 the bloom spread four
+  // heroes' stacked hit and kill light into a white disc 2-3 u wide that hid
+  // the foe and the hero under it (13-20% of the fight blown, 2-3% with no
+  // bloom). Kesh's pick C, with the light budget in render/vfx/kit.js.
+  strength: 0.9,
   radius: 0.6,
 });
 // CERTIFICATION FIX ROUND 1 (A-world, check 7): 0.16 measured as NO vignette
