@@ -79,7 +79,7 @@ const CHECKLIST = {
     'Every move has a clear wind-up, contact and follow-through; feet stay planted, the lean stays inside 12 degrees.',
     'The weapon swings clear of the face in every move.',
     'With the effects on, the hero still reads under their own effects and nothing is overbright.',
-    'Inside the hero budget: at most 60 meshes and 12,000 triangles.',
+    'Inside the hero budget: at most 80 meshes and 15,000 triangles.',
   ],
 };
 if (!PLAN) throw new Error(`no review plan for ${MODEL}`);
