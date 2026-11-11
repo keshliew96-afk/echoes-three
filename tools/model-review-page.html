@@ -51,6 +51,8 @@ textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent);
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 380px), 1fr)); gap: 14px; }
 .moves { display: grid; gap: 16px; }
 .round { font: 13px/1.5 var(--mono); color: var(--muted); }
+.refs { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: 12px; }
+.refs img { width: 100%; height: auto; display: block; border-radius: 6px; border: 1px solid var(--line); }
 .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 button { font: 500 13px var(--body); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; }
 button[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--panel); }
@@ -84,6 +86,12 @@ button[aria-pressed="true"] { background: var(--accent); border-color: var(--acc
       <h2>Sign-off list</h2>
       <ol class="check" id="check"></ol>
     </div>
+  </section>
+
+  <section class="card" id="refbox" hidden>
+    <h2>Reference</h2>
+    <p>The sheets this round works from. Our version keeps the game's faceted style and the model budget, so it gets as close as those allow.</p>
+    <div class="refs" id="refs"></div>
   </section>
 
   <section class="moves">
@@ -122,6 +130,10 @@ $('#lede').textContent = M.lede;
 const meta = $('#meta');
 for (const [k, v] of M.meta) meta.appendChild(el('span', {}, [document.createTextNode(k + ' '), el('b', { text: v })]));
 for (const c of M.checklist) $('#check').appendChild(el('li', { text: c }));
+if (M.refs && M.refs.length) {
+  $('#refbox').hidden = false;
+  M.refs.forEach((f, i) => $('#refs').appendChild(el('img', { src: f, alt: 'Reference sheet ' + (i + 1), loading: 'lazy' })));
+}
 const clip = (key, cap) => {
   const f = M.vids[key];
   if (!f) return el('figure', {}, [el('div', { class: 'empty', text: 'not recorded for this move' }), el('figcaption', { text: cap })]);

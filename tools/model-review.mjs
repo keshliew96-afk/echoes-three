@@ -19,13 +19,13 @@
 //   node tools/model-review.mjs shots --part lab|game [--vfx on|off] [--model healer]
 //       [--out captures/model-review] [--only idle,combo]
 //   node tools/model-review.mjs page [--model healer] [--out captures/model-review]
-//       [--dest /mnt/project-files/model-review/healer] [--round 1]
+//       [--dest /mnt/project-files/model-review/healer] [--round 1] [--refs sheet.png,vfx.png]
 //
 // `page` encodes each clip to MP4 (ffmpeg) and writes index.html beside them.
 // Needs `npm run dev` (and `npm run net`, or the title's cloud probe logs a 502).
-import { mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdirSync, writeFileSync, readFileSync, existsSync, readdirSync, rmSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
-import { join } from 'node:path';
+import { extname, join } from 'node:path';
 
 const argv = process.argv.slice(2);
 const opt = (k, d = null) => {
@@ -266,7 +266,8 @@ async function shots() {
           const sw = lab ? canvas.height * 0.94 : Math.min(canvas.width, cw * (canvas.width / innerWidth));
           const sh = lab ? canvas.height * 0.94 : Math.min(canvas.height, ch * (canvas.height / innerHeight));
           const sx = Math.max(0, Math.min(canvas.width - sw, cx - sw / 2));
-          const sy = Math.max(0, Math.min(canvas.height - sh, cy - sh * 0.55));
+          // the hero low in the frame, so what she casts at the dummies ahead shows
+          const sy = Math.max(0, Math.min(canvas.height - sh, cy - sh * (lab ? 0.55 : 0.68)));
           const out = document.createElement('canvas');
           out.width = cw;
           out.height = ch;
@@ -314,7 +315,6 @@ async function shots() {
     }
   } else {
     const games = [...PLAN.moves.map((m) => m.game).filter((g) => g && !g.startsWith('skill:')), ...PLAN.skills.map((s) => `skill:${s}`)];
-    let slot = 0;
     for (const g of games) {
       const id = g.replace('skill:', 'skill-');
       if (!wanted(id) && !wanted(g)) continue;
@@ -348,14 +348,27 @@ async function shots() {
         });
       else {
         const sk = g.slice(6);
-        const k = slot++ % 4;
-        await cmd('partySwap', 0, sk, k);
-        await page.clock.runFor(200);
-        const code = `Digit${k + 1}`;
+        // the skill alone on key 1, ready (an aura pulses a few ticks in)
+        const swap = await cmd('restoreSkillState', { slots: [{ id: sk, remaining: 0 }, null, null, null], override: null, auras: { [sk]: 14 } });
+        await page.clock.runFor(100);
+        const code = 'Digit1';
+        await page.evaluate(() => {
+          if (!window.__mrCasts) {
+            window.__echoes.on('skill_cast', (e) => window.__mrCasts.push(e.skill));
+            window.__echoes.on('aura_pulse', (e) => window.__mrCasts.push(e.skill ?? e.id));
+          }
+          window.__mrCasts = [];
+        });
         await clip(id, 42, async (i) => {
           if (i === 1) await key(code);
           if (i === 4) await unkey(code);
         });
+        // say so when the press cast nothing (a clip that shows no skill)
+        const cast = await page.evaluate((s) => window.__mrCasts.includes(s), sk);
+        if (!cast) {
+          console.log(`NO CAST ${sk}: swap ${JSON.stringify(swap)}`);
+          errors.push(`skill ${sk} did not cast`);
+        }
       }
     }
   }
@@ -418,12 +431,18 @@ async function page() {
   const POSE = { projectile: 'Lantern Point', direct: 'Lantern Point', nova: 'Bloom', aura: 'Bloom', ground_aoe: 'Staff Plant', melee_arc: 'Wide Sweep' };
   const round = Number(opt('round', 1));
   const logFile = join(OUT, 'rounds.json');
+  // the reference sheets the round works from (--refs a.png,b.png), shown at the top
+  const refs = (opt('refs', '') || '').split(',').filter(Boolean).map((src, i) => {
+    const f = `ref-${i + 1}${extname(src) || '.png'}`;
+    copyFileSync(src, join(dest, f));
+    return f;
+  });
   const log = existsSync(logFile) ? JSON.parse(readFileSync(logFile, 'utf8')) : [`Round 1 (v${VERSION}): the model as it ships today, before any detail pass.`];
   const manifest = {
     model: MODEL,
     round,
     title: `${PLAN.name} model review`,
-    lede: `Every move of the ${PLAN.name} as the game plays it today, recorded at 30 frames a second of game time. Round ${round} of the detail pass: notes here or in the thread go into the next round.`,
+    lede: `Every move of the ${PLAN.name} as this build plays it, recorded at 30 frames a second of game time. Round ${round} of the detail pass: notes here or in the thread go into the next round.`,
     meta: [
       ['Build', `v${VERSION}`],
       ...(stats ? [['Parts', `${stats.meshes} meshes (${stats.instanced} instanced, ${stats.instances} copies)`], ['Triangles', stats.triangles.toLocaleString('en')], ['Materials', String(stats.materials)]] : []),
@@ -434,6 +453,7 @@ async function page() {
     skills: PLAN.skills.map((id) => ({ id, name: SKILLS[id] ? SKILLS[id].name : id, pose: POSE[SKILLS[id] && SKILLS[id].shape] || '' })),
     vids,
     log,
+    refs,
   };
   writeFileSync(join(dest, 'manifest.json'), JSON.stringify(manifest, null, 2));
   const tpl = readFileSync(new URL('./model-review-page.html', import.meta.url), 'utf8');
