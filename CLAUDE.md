@@ -69,7 +69,8 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
    the game did not record.
 6. **Colour and VFX.** The reserved colours and the VFX templates are in `.claude/rules/visuals.md`.
    It loads by itself when a session works in `src/render/`, `src/ui/`, `src/env/`, `src/scenes/` or the
-   palette and VFX tables; read it before READY on any change a player can see.
+   palette and VFX tables; read it before READY on any change a player can see. The hit and VFX rules
+   ([V], [M], §6.1 model checklist) are in `docs/VFX_HIT_RULES.md`, the templates in `docs/VFX_TEMPLATES.md`.
 7. **The report.** The READY reply marks every line of the ask, and every Before READY item,
    as built, missing, broken or not assessed. A not assessed line says why (no browser, only seen
    in software GL, needs a laptop, needs a person to play). Name what was guessed. A shot older

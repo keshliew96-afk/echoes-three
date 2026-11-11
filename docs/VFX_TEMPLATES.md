@@ -232,7 +232,7 @@ The per-source tally is `__echoes.content.vfx().bolt`.
 
 ## The hit and the kill (VFX and hit feedback Part 1, 2026-10-26)
 
-Kesh's hit rules (`/mnt/project-files/plan/VFX_HIT_RULES.md`, [V] rules)
+Kesh's hit rules (`docs/VFX_HIT_RULES.md`, [V] rules)
 join the templates: every hit and kill now lands on a held frame. The full
 list is `docs/HIT_FEEDBACK.md` "The hit and the kill"; for a VFX build:
 

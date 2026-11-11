@@ -17,7 +17,7 @@ picked option (d): build that technique into the game's own renderer. This pilot
 two models, the **Barrow Wyrm** and the **Tank**, so he can judge the look before any
 roster slice. Visual only: no sim, timing, damage or golden changes. The Level I slice
 (v0.5.336) then rebuilt the **Hollow Stag**, the **Thornmother** and the **Gloam Wolf** and
-measured the pilot's Wyrm against the [M] checklist of `/mnt/project-files/plan/VFX_HIT_RULES.md`
+measured the pilot's Wyrm against the [M] checklist of `docs/VFX_HIT_RULES.md`
 §6.1 (see "The [M] beats" and "The Level I bosses" below); its second part (v0.5.339) rebuilt
 the Hollow Wood's two champions, the **Briar Knight** and the **Moss Hart** ("The Level I
 champions"). The Level II slice (v0.5.344) rebuilt the Sunken Mill's three bosses, the
@@ -33,7 +33,7 @@ His ruling for the pilot: the detail goes **on top of** the chibi ink-outline st
 
 The heroes slice (v0.5.337, Kesh's pick of 2026-10-26) rolls the standard out to the heroes,
 the Healer and the Swordsman first, and re-measures the pilot Tank against the [M] rules of
-the VFX/hit rules doc (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.1). Everything a hero
+the VFX/hit rules doc (`docs/VFX_HIT_RULES.md` §6.1). Everything a hero
 rig shares now lives in one hero core, so each later hero is its body, its poses and its
 abilities, and the same probe holds every one of them to the same rules. The Archer
 followed in v0.5.339, the Tidecaller in v0.5.342, the Bellwright in v0.5.343 and the

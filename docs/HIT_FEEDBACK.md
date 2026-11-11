@@ -107,7 +107,7 @@ Damage numbers on enemies split by who dealt the hit:
 ## The hit and the kill (v0.5.333)
 
 Kesh (2026-10-26): "Go for 1", the VFX and hit feedback slice from his nine
-reference videos (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.2, Part 1:
+reference videos (`docs/VFX_HIT_RULES.md` §6.2, Part 1:
 items a to e). Render and audio only: no damage, rule, deed or record changes,
 and the nine goldens are untouched. Part 2 (§6.2 f to o: the cast, the shot,
 the reward and the aftermath) is its own PR.
@@ -207,7 +207,7 @@ surfaces: `__echoes.content.enemyfx().react` and `.kills`,
 
 ## The cast, the shot, the reward and the aftermath (v0.5.341)
 
-Part 2 of Kesh's "Go for 1" (`/mnt/project-files/plan/VFX_HIT_RULES.md` §6.2
+Part 2 of Kesh's "Go for 1" (`docs/VFX_HIT_RULES.md` §6.2
 f to o). Render and audio only, like Part 1: no damage, rule, deed or record
 changes, and the nine goldens are untouched.
 
