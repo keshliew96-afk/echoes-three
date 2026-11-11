@@ -72,6 +72,10 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
    The VFX bar is Diablo IV or Hades (`?vfxlab=1`).
    Every VFX build follows Kesh's three templates (magic, knife and sword, sci-fi) and his enhancer
    words in `docs/gauntlet/design-VFX.md` §11; pick the template per effect from `SKILL_TEMPLATE`.
+7. **The report.** The READY reply marks every line of the ask, and every Before READY item,
+   as built, missing, broken or not assessed. A not assessed line says why (no browser, only seen
+   in software GL, needs a laptop, needs a person to play). Name what was guessed. A shot older
+   than an edit it should prove says so (`tools/shot-stamp.mjs check`).
 
 ## Settled decisions (Kesh's picks; do not reopen)
 
