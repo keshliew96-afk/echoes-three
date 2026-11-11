@@ -242,7 +242,7 @@ anyone touches them.
 | D3 | Done: `ALLY_KITS_V150` deleted. | 89012df |
 | U1 | Done: unused exports, imports and top-level locals deleted. | cb890a0 |
 | D4 | Done: one mote, flash and ring pool, `src/render/fxpool.js`. | c6286e2 |
-| N3 | Done for colours written as JS values (they read `PALETTE`). Hexes inside CSS strings were left. | ce2afc5 |
+| N3 | Partly done. Only JS colour values that equal a `PALETTE` entry now read it. About 456 other hex colours stay written inline in 118 files outside `src/data/palette.js` (count of v0.5.359, for example 33 in `render/interactables/encounters.js` and 30 in `data/unlocks.js`), as do the hexes inside CSS strings. New code follows the CLAUDE.md rule; the old literals are open. | ce2afc5 |
 | N1, N2 | Not moved. Gameplay tuning already sits in frozen tables (palette.js, core/constants.js, each system's table); moving tens of thousands of render literals is not a small change. | none |
 | Split | `main.js`: the debug API moved to `src/app/debugapi.js` (PR #136). PR #137: `run.js` split into a 1,696-line core and 11 parts under `src/sim/run/`; `signature.js` into a 697-line director and 13 parts under `src/render/vfx/sig/` (docs/CODE_HEALTH.md). | 68dbb58; e8e3413 to 0a9f258; 4f9ebec to 4db6d84 |
 | D1 | Done for every model with a faceted rig: classic heroes, bosses, champions and Level I to IV foes deleted, the lab's Classic beside, `render/facet/flags.js` and `?facet=` gone. | 097e6fd to beb1868 |
