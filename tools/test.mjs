@@ -68,6 +68,7 @@ export const SUITE = [
   { file: 'tools/kiln-bosses-probe.mjs', args: [], what: "the Kiln's bosses and the Level V fork" },
   // Modes.
   { file: 'tools/endless-probe.mjs', args: [], what: 'Endless' },
+  { file: 'tools/endless-soak-probe.mjs', args: [], what: 'Endless soak: listeners, entities and heap settle over twelve level starts' },
   { file: 'tools/daily-probe.mjs', args: [], what: 'the Daily Descent' },
   { file: 'tools/server-hardening-2-probe.mjs', args: [], what: 'daily tickets and the co-op input cap' },
 ];

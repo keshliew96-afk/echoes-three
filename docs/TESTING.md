@@ -65,6 +65,19 @@ House rules the safety-net probe checks:
 - a probe never pins one exact version: it reads `VERSION` from `src/version.js` and asks
   for "this version or later".
 
+### Endless soak (v0.5.358)
+
+`tools/endless-soak-probe.mjs` (in `npm test`, about 30 s) plays Endless descents headless with the
+autopilot, one after another in the same world (a lost run starts the next, as a player at camp
+would), and samples live entities, bus listeners, the event ring and the heap after a forced GC at
+every level start, twelve in all. It fails when the listener count grows at all, when the live
+entities at a level start climb more than 40 over the second level's count, when the ring passes
+its capacity, or when the heap grows more than 12 MB (seed 7 grows about 5 MB). The first level is
+the warm-up and is not counted. Before it passes it runs four levels with a planted leak (one
+listener added per level) and requires that run to fail. `--seed`, `--levels` and `--json <file>`
+change the run. It soaks the sim only: render-side leaks (geometry, textures, DOM) need a browser
+heap snapshot (the `gntfixCAMPAIGN6-heap*` tools read them).
+
 Known limit: `src/sim/movement.js` keeps its colliders at module level, so two worlds in one
 Node process must run one after the other, never stepped in turn.
 
