@@ -1,4 +1,4 @@
-# Model standard (pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349; Level IV foes v0.5.350; Level III champions v0.5.351; Level IV bosses v0.5.353; Level IV champions v0.5.354)
+# Model standard (detail standard and review loop v0.5.362; pilot v0.5.332; Level I bosses v0.5.336; heroes v0.5.337, Archer v0.5.339, Tidecaller v0.5.342, Bellwright v0.5.343, Duskwing v0.5.345; Level I foes v0.5.338; Level I champions v0.5.340; Level II bosses v0.5.344; Level II foes v0.5.346; Level III bosses v0.5.348; Level III foes v0.5.349; Level IV foes v0.5.350; Level III champions v0.5.351; Level IV bosses v0.5.353; Level IV champions v0.5.354)
 
 > **Freeze cleanup (2026-11-10, AUDIT.md D1).** Every model that had a faceted rig now plays
 > only that rig. The classic rigs (`render/critters/{healer,tank,...}.js`,
@@ -38,6 +38,86 @@ rig shares now lives in one hero core, so each later hero is its body, its poses
 abilities, and the same probe holds every one of them to the same rules. The Archer
 followed in v0.5.339, the Tidecaller in v0.5.342, the Bellwright in v0.5.343 and the
 Duskwing in v0.5.345 (their sections below): all seven heroes now play the standard.
+
+## The detail standard (v0.5.362, Kesh's ask of 2026-11-11)
+
+Kesh kept today's look (the faceted toon with its ink outline, not the art-style variants of
+draft PR #142) and asked for more detail on it, model by model, through a review loop he signs
+off. This section is the bar each model is reviewed against; "The review loop" below is how.
+
+### Tiers and budgets
+
+A draw call is one mesh, one ink hull or one sprite; an `InstancedMesh` is one call however many
+copies it draws. Detail is added as instanced copies (`kit.js`: `placeRow`, `createPlateTube`,
+`mottle`) wherever it can be, because the min spec (GTX 1050 Ti at 1080p, 60 fps in a busy
+four-hero fight, `STEAM_LAUNCH_PLAN.md` D6) runs out of draw calls long before triangles.
+
+| Tier | Members today | Today (meshes / triangles) | Budget (meshes / triangles) |
+|---|---|---|---|
+| Hero | the seven heroes | 47 to 69 / 3,796 to 7,374 | 80 / 15,000 |
+| Boss | the twelve faceted bosses | 29 to 86 / 2,716 to 13,056 | 120 / 30,000 |
+| Champion | the eight faceted champions | 72 to 104 / 2,912 to 4,116 | 110 / 12,000 |
+| Foe | the thirty faceted foes | 6 to 29 / 280 to 3,588 | 30 / 4,000 |
+| Small mob (swarms, splits: brood, broodling, gravewisp) | three | 6 to 11 / 280 to 944 | 12 / 1,500 |
+
+"Today" is measured by `node tools/model-review.mjs stats` (every lab tab against the empty
+Effect kit tab, ink hulls included; `captures/model-review/stats-all.json`). The frame these
+budgets add up to: four heroes (320), a boss (120), two champions (220) and twelve foes (360)
+is about 1,020 calls before the room and the effects, inside a 1,500-call frame. That frame
+figure is a plan, not a measurement: the S9 frame-time probe on a 1050 Ti-class PC sets it.
+Level V, Spire and Kiln creatures were never faceted and get the standard when the freeze lifts.
+
+### What every model must show
+
+1. **Silhouette.** It reads as itself from its outline alone at play zoom (12 u, 52°, 1080p).
+2. **Three levels of detail.** Big forms (body, head, weapon); secondary parts (straps, plates,
+   capelets, bells); small repeated detail (stitches, rivets, fur tufts, leaf veins) that still
+   reads at play zoom and never turns to noise. Each detail round adds to the second or third
+   level and keeps the first.
+3. **Face, hands and weapon** read at play zoom in a busy room.
+4. **Materials.** The facet material with the toon ramp and ink hulls; colours from `PALETTE`
+   only; no textures. The reserved colours hold (`.claude/rules/visuals.md`): no Ember or Violet
+   on a hero, Bright Heal only for healing, Foe Crimson, Violet or magenta for foe fire.
+5. **Moves.** Every move has a wind-up, a contact and a follow-through ([M] beats, §6.1 of
+   `docs/VFX_HIT_RULES.md`); feet stay planted; the hero lean stays inside 12°; weapons swing
+   clear of the face.
+6. **Under its own effects.** With the VFX on, the model still reads and nothing is overbright
+   (the brightness cap, `docs/HIT_FEEDBACK.md` "Effect brightness").
+7. **Budget.** Inside its tier's budget above.
+
+The move list a review shows, per tier: a hero shows idle, walk, dash, the 3-hit combo, each cast
+pose (and every skill in game), a heavy hit and the spawn; a boss or champion shows idle, its
+move loop, every ability, its hit reaction and its spawn; a foe shows idle, move, its attack(s),
+its hit reaction and its death.
+
+## The review loop (`tools/model-review.mjs`, dev-only)
+
+1. **Record.** `node tools/model-review.mjs shots --part lab` records the close-ups in the model
+   lab (VFX off); `--part game --vfx off` and `--part game --vfx on` record the same scripted
+   moves in a live Level I room at play zoom, cropped round the hero from a 1920x1080 frame. The
+   page's fake clock makes every frame exactly 1/30 s of game time however slow the GPU, so the
+   two game runs replay the same moves. VFX off hides at draw time anything that was not on
+   screen when the stage was set and is not part of a hero rig. The AI allies lie downed out of
+   frame, and one foe of the room's last wave sleeps in a far corner so the room stays in combat.
+   Needs `npm run dev` and `npm run net`; about 25 minutes per game run on the cloud's software GL.
+2. **Page.** `node tools/model-review.mjs page --round N` encodes each clip to MP4 and writes the
+   review page (`tools/model-review-page.html`): one card per move with its three clips, the skill
+   grid with VFX off and on, the model's numbers, the sign-off list and a notes box on every card.
+   It is published as a private Artifact; republishing keeps the same link, and the notes live in
+   the page's own store, so they survive each round.
+3. **Feedback.** Kesh writes notes on the page or in the thread. Each round is one commit on that
+   model's draft PR plus a re-recorded page with a line in its round log.
+4. **Sign-off.** When Kesh writes "sign off <model>", the model goes into the register below and
+   stays locked unless he reopens it.
+
+Order: the Healer, then the other six heroes; then land by land, each land's foes, champions and
+bosses; the VFX pass for each hero kit follows its model's sign-off.
+
+### Sign-off register
+
+| Model | Rounds | Signed in | Date | Review page |
+|---|---|---|---|---|
+| (none yet) | | | | |
 
 ## The kit (`src/render/facet/`)
 
