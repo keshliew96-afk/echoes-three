@@ -95,8 +95,7 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
   with the host. The live build exposes only the version; harness flags are dev-only.
 - Famine cuts heals only in its own room; Withering works everywhere; Short Fuse only in its own room.
 - Foe fire uses Foe Crimson `#B8141F`, Violet or magenta; Ember marks floor warnings. The Swordsman keeps
-  Fox Crimson `#E8577A`. (How this reads beside the Ember and Violet lines in `.claude/rules/visuals.md`
-  is Kesh's open fix 1 of the 2026-11-11 consistency review.)
+  Fox Crimson `#E8577A`. The full colour rule is in `.claude/rules/visuals.md`.
 - VFX glows sit about 40% under the Part 2 draft; shapes, rings and warnings stay at full strength.
   Bloom is 0.9 with one light budget per spot (`docs/HIT_FEEDBACK.md` "Effect brightness").
 - Hero rigs: attack lean capped at 12°; the Tank swings overhead with both hands; the Healer's basic
