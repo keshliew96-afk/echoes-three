@@ -16,6 +16,7 @@
 // throws (privacy mode, quota) degrades to an in-memory store — never a page
 // error.
 import { EventEmitterLite } from './emitter.js';
+import { MAX_PIXEL_RATIO } from '../core/constants.js';
 
 export const SETTINGS_STORAGE_KEY = 'echoes.settings';
 export const SETTINGS_VERSION = 1;
@@ -46,10 +47,24 @@ export const V = Object.freeze({
   str: (maxLen = 64) => (v) => (typeof v === 'string' ? v.slice(0, maxLen) : undefined),
 });
 
+// LAPTOP PATH (game feel audit pick 2, docs/HIT_FEEDBACK.md "A lighter
+// path for laptops"): on a screen whose drawing buffer (CSS px x the device
+// pixel ratio, capped at MAX_PIXEL_RATIO) passes bigBufferPx at boot, the Render scale
+// DEFAULT is `scale`, so integrated graphics hold the frame rate in a busy
+// fight. Only the default moves: a profile that has saved its settings keeps
+// its stored value, and the slider still runs 0.5 to 1.5.
+export const LAPTOP_PATH = Object.freeze({ bigBufferPx: 1.5e6, scale: 0.85 });
+export function defaultRenderScale(win = typeof window !== 'undefined' ? window : null) {
+  if (!win) return 1.0;
+  const dpr = Math.min(Number(win.devicePixelRatio) || 1, MAX_PIXEL_RATIO);
+  const px = (Number(win.innerWidth) || 0) * (Number(win.innerHeight) || 0) * dpr * dpr;
+  return px > LAPTOP_PATH.bigBufferPx ? LAPTOP_PATH.scale : 1.0;
+}
+
 // Core keys owned by M1 (display + gameplay). Other modules register theirs
 // with store.register(path, spec) during boot.
 export const CORE_SETTINGS = Object.freeze({
-  'display.renderScale': { default: 1.0, validate: V.num(0.5, 1.5, 0.05) },
+  'display.renderScale': { default: defaultRenderScale(), validate: V.num(0.5, 1.5, 0.05) },
   // NOT persisted (PLAN §5): browsers exit fullscreen on every navigation and
   // requestFullscreen needs a user gesture, so a stored 'true' could never be
   // honoured at boot. The key mirrors document.fullscreenElement live.
