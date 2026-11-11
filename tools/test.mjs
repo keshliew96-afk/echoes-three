@@ -17,6 +17,7 @@ export const SUITE = [
   // The net itself, the goldens, the languages and the data tables.
   { file: 'tools/test-safety-net-probe.mjs', args: [], what: 'the safety net checks itself' },
   { file: 'tools/gntM2-goldens.mjs', args: [], what: 'the nine goldens against tools/goldens.json' },
+  { file: 'tools/shot-stamp-probe.mjs', args: [], what: 'READY shots read stale once a file they prove changes' },
   { file: 'tools/i18n-extract.mjs', args: ['--check'], what: 'every language has every key' },
   { file: 'tools/prune-strings-probe.mjs', args: [], what: 'no unused translations, and the check fails on one' },
   { file: 'tools/data-xcheck-probe.mjs', args: [], what: 'every id a data table names exists' },
@@ -68,6 +69,7 @@ export const SUITE = [
   { file: 'tools/kiln-bosses-probe.mjs', args: [], what: "the Kiln's bosses and the Level V fork" },
   // Modes.
   { file: 'tools/endless-probe.mjs', args: [], what: 'Endless' },
+  { file: 'tools/endless-soak-probe.mjs', args: [], what: 'Endless soak: listeners, entities and heap settle over twelve level starts' },
   { file: 'tools/daily-probe.mjs', args: [], what: 'the Daily Descent' },
   { file: 'tools/server-hardening-2-probe.mjs', args: [], what: 'daily tickets and the co-op input cap' },
 ];

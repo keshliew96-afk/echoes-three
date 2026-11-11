@@ -9,7 +9,10 @@
 //   4. `i18n-extract --check` writes nothing: on a copy of src/ with a stale
 //      catalog it exits 1, says so, and leaves the file byte for byte;
 //   5. no probe pins the game to one exact version (they read src/version.js
-//      and ask for "this version or later").
+//      and ask for "this version or later");
+//   6. .claude/settings.json denies the commands that would wreck gauntlet or
+//      the work tree (force pushes, deleting gauntlet, reset --hard, git clean,
+//      rm -rf), and still lets a claude/ branch take --force-with-lease.
 //
 //   node tools/test-safety-net-probe.mjs
 import { readFileSync, readdirSync, existsSync, statSync, mkdtempSync, cpSync, writeFileSync, rmSync, mkdirSync } from 'node:fs';
@@ -84,6 +87,45 @@ for (const f of scripts) {
   if (/\bVERSION\s*===?\s*['"]\d+\.\d+\.\d+['"]/.test(src)) pins.push(f);
 }
 check(pins.length === 0, 'no probe checks VERSION against one exact number', pins);
+
+// 6. The deny list (CLAUDE.md "Running things"). Matches Claude Code's rule
+// shape: Bash(<prefix>) with * as any run of characters.
+let settings = null;
+try {
+  settings = JSON.parse(readFileSync(join(root, '.claude/settings.json'), 'utf8'));
+} catch (e) {
+  settings = null;
+}
+const deny = (settings && settings.permissions && settings.permissions.deny) || [];
+const rx = deny
+  .map((r) => /^Bash\((.*)\)$/.exec(r))
+  .filter(Boolean)
+  .map((m) => new RegExp(`^${m[1].split('*').map((p) => p.replace(/[.+?^${}()|[\]\\]/g, '\\$&')).join('.*')}$`));
+const denied = (cmd) => rx.some((r) => r.test(cmd));
+const mustDeny = [
+  'git push --force origin gauntlet',
+  'git push origin gauntlet --force',
+  'git push -f origin claude/x',
+  'git push origin +gauntlet',
+  'git push --force-with-lease origin gauntlet',
+  'git push origin :gauntlet',
+  'git push origin --delete gauntlet',
+  'git branch -D gauntlet',
+  'git reset --hard origin/gauntlet',
+  'git clean -fdx',
+  'rm -rf src',
+  'rm -fr /home/user/echoes-three',
+];
+const mustAllow = [
+  'git push -u origin claude/project-thread-x',
+  'git push origin HEAD:gauntlet',
+  'git push --force-with-lease -u origin claude/project-thread-x',
+  'rm -r captures/check',
+  'rm captures/x.png',
+];
+check(settings !== null, '.claude/settings.json parses');
+check(mustDeny.every(denied), 'the deny list blocks force pushes, deleting gauntlet, reset --hard, git clean and rm -rf', mustDeny.filter((c) => !denied(c)));
+check(!mustAllow.some(denied), 'the deny list lets branch pushes, the gauntlet merge push and a lease push to a claude/ branch through', mustAllow.filter(denied));
 
 console.log(fails.length ? `${fails.length} FAIL` : 'safety net holds');
 process.exit(fails.length ? 1 : 0);

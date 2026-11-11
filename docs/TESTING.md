@@ -63,7 +63,33 @@ House rules the safety-net probe checks:
 - `i18n-extract --check` writes nothing; it fails when `src/i18n/catalog.json` is out of date
   (refresh it with `node tools/i18n-extract.mjs`);
 - a probe never pins one exact version: it reads `VERSION` from `src/version.js` and asks
-  for "this version or later".
+  for "this version or later";
+- `.claude/settings.json` denies force pushes, deleting or force-moving `gauntlet`, `git reset --hard`,
+  `git clean` and `rm -rf`, and still lets branch pushes, the merge push to `gauntlet` and a
+  `--force-with-lease` push to a `claude/` branch through (v0.5.358).
+
+### Shot stamps (v0.5.358)
+
+A READY's screenshots prove the files they were shot from. After shooting, stamp them:
+`node tools/shot-stamp.mjs stamp /mnt/project-files/<slice>/ <each file the slice changed>` writes
+a content hash of each file to `stamp.json` beside the shots. Before READY, and again after any
+fix-first edit, `node tools/shot-stamp.mjs check /mnt/project-files/<slice>/` lists each file as
+`same`, `CHANGED` or `GONE` and exits 1 when any file moved: those shots are older than the code,
+so reshoot them or say in the reply which shots predate which edit. Hashes, not git or mtimes, so an
+uncommitted edit still counts. `tools/shot-stamp-probe.mjs` (in `npm test`) checks the tool.
+
+### Endless soak (v0.5.358)
+
+`tools/endless-soak-probe.mjs` (in `npm test`, about 30 s) plays Endless descents headless with the
+autopilot, one after another in the same world (a lost run starts the next, as a player at camp
+would), and samples live entities, bus listeners, the event ring and the heap after a forced GC at
+every level start, twelve in all. It fails when the listener count grows at all, when the live
+entities at a level start climb more than 40 over the second level's count, when the ring passes
+its capacity, or when the heap grows more than 12 MB (seed 7 grows about 5 MB). The first level is
+the warm-up and is not counted. Before it passes it runs four levels with a planted leak (one
+listener added per level) and requires that run to fail. `--seed`, `--levels` and `--json <file>`
+change the run. It soaks the sim only: render-side leaks (geometry, textures, DOM) need a browser
+heap snapshot (the `gntfixCAMPAIGN6-heap*` tools read them).
 
 Known limit: `src/sim/movement.js` keeps its colliders at module level, so two worlds in one
 Node process must run one after the other, never stepped in turn.
