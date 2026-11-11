@@ -34,7 +34,10 @@ const OUTLINE_W = 2; // px (§17: 2 px contrast outline)
 // an own crit's size against its plain hit (N3; others keep DAMAGE_NUMBERS').
 export const NUMERAL_WHO = Object.freeze({
   own: Object.freeze({ color: PALETTE.hearthAmber, outlineW: 3, weight: 900, sizeMul: 1.22, opacity: 1, pop: 0.5, critPop: 0.8, z: 2, flash: PALETTE.parchment, critScale: 1.55, tag: true }),
-  other: Object.freeze({ color: PALETTE.bone, outlineW: 2, weight: 600, sizeMul: 0.7, opacity: 0.45, pop: 0.2, critPop: 0.4, z: 1 }),
+  // maxPx (seat focus, docs/HIT_FEEDBACK.md "Your hits stand out"): another
+  // hero's numeral never grows past 22 px, under your smallest (the 20 px
+  // floor x 1.22 = 24 px), however big the hit or the crit.
+  other: Object.freeze({ color: PALETTE.bone, outlineW: 2, weight: 600, sizeMul: 0.7, opacity: 0.45, pop: 0.2, critPop: 0.4, z: 1, maxPx: 22 }),
 });
 
 // The numeral's flight and settle (N1-N3), render seconds and world units.
@@ -291,6 +294,7 @@ export function createNumberPool({ camera, cosmetic, container = document.body }
     let px = DAMAGE_NUMBERS.minPx + Math.abs(amount) * DAMAGE_NUMBERS.pxPerPoint;
     if (crit) px *= w?.critScale ?? DAMAGE_NUMBERS.critScale;
     if (w) px = Math.max(DAMAGE_NUMBERS.minPx, px * w.sizeMul); // never under the §17 floor
+    if (w && w.maxPx) px = Math.min(px, w.maxPx);
     el.style.fontSize = `${Math.round(px)}px`;
     // Your own pop in their flash colour and settle to their own (N1).
     el.style.color = w ? w.flash ?? w.color : k.color;

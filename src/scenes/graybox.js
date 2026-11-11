@@ -33,6 +33,7 @@ import { toonMaterial, addOutline } from '../render/toon.js';
 import { makeGlowSprite, getRadialTexture } from '../render/glow.js';
 import { createFollowRig } from '../render/camera.js';
 import { createNumberPool, hitterSeat } from '../render/numbers.js';
+import { shakeFocus } from '../render/vfx/seatfocus.js';
 import { viewerSeat } from '../app/viewerseat.js';
 import { createParticlePool } from '../render/vfx/particles.js';
 import { createDecalPool } from '../render/vfx/decals.js';
@@ -312,7 +313,9 @@ export function createGrayboxScene(stage, toggles, { world, cosmetic, bus }) {
     // Read live per shake, so a change in Settings applies to the next one.
     const shakeSetting = service('settings')?.get('gameplay.screenshake');
     const shakeMul = typeof shakeSetting === 'number' ? shakeSetting : 1;
-    const amp = Math.min(SCREENSHAKE.maxAmp, ev.amp ?? SCREENSHAKE.amp) * shakeMul;
+    // Seat focus (render/vfx/seatfocus.js): a kill another hero landed
+    // shakes at a third; yours, and one no hero landed, at full.
+    const amp = Math.min(SCREENSHAKE.maxAmp, ev.amp ?? SCREENSHAKE.amp) * shakeMul * shakeFocus(ev);
     // @gnt:M1 SHAKE-SCALE end
     const dur = Math.min(SCREENSHAKE.maxDurationSec, ev.durationSec ?? SCREENSHAKE.durationSec);
     // A bigger shake always wins; a smaller one never cuts one already running.

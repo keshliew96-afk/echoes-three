@@ -346,7 +346,8 @@ vsync, limit), `displayLog()`, `simPaused()`, `pauseReason()`, `lastSource()`,
 stub for the gesture-hook gate), `freshWorld`, `frameCount`, `prebuildMs`.
 
 **Display facts a probe can rely on.** Render scale = `renderer` pixel ratio
-`min(dpr, 2) × s`, drawing buffer ≤ 3840×2160 (`display().clamped`), applied
+`min(dpr, 2) × s` (its default is 0.85 when the boot window's buffer passes 1.5 Mpx, else 1.0:
+`LAPTOP_PATH` in `src/app/settings.js`; probes at 1280x720 and DPR 1 keep 1.0), drawing buffer ≤ 3840×2160 (`display().clamped`), applied
 synchronously (the next rendered frame). V-Sync off = rAF-anchored uncapped
 loop (extra frames between refreshes, none once refreshes are being missed);
 `displayHz` is the vsync-period estimate (10th-percentile rAF interval) — use it,

@@ -10,6 +10,10 @@
 //                               FOV narrowed by frac (0.06 = 6%) and sprung
 //                               back over dur; its own clamp (MAX_PUNCH)
 //
+// focus() (render/vfx/seatfocus.js) scales kick and dolly only: 0 while the
+// director runs another hero's event, so only your own seat moves your
+// camera. A punch (an elite, champion or boss kill, a chest) is everyone's.
+//
 // The sim's §9 `screenshake` event is untouched; this adds weight without
 // adding shake. Both scale with Settings ▸ Gameplay ▸ Screen shake (Off = no
 // camera FX) and with Effects (Reduced = none). The summed offset is clamped
@@ -26,7 +30,7 @@ const ATTACK = 0.035; // s to full push
 const MAX_PUNCH = 0.06; // C2: at most 6% (about 2.3 deg of the 45 deg FOV)
 const PUNCH_IN = 0.017; // s: a punch lands in about a frame
 
-export function createCameraFx({ camera, gain = () => 1 }) {
+export function createCameraFx({ camera, gain = () => 1, focus = () => 1 }) {
   const kicks = []; // { x, z, amp, dur, t }
   const dollies = []; // { x, z, amp, dur, t }
   const applied = new Vector3();
@@ -41,7 +45,7 @@ export function createCameraFx({ camera, gain = () => 1 }) {
   const env = (t, dur) => (t < ATTACK ? t / ATTACK : Math.pow(Math.max(0, 1 - (t - ATTACK) / Math.max(0.01, dur - ATTACK)), 2));
 
   function kick(dirX, dirZ, amp, dur = 0.12) {
-    const g = gain();
+    const g = gain() * focus();
     if (!(g > 0) || !(amp > 0)) return;
     const l = Math.hypot(dirX, dirZ);
     if (l < 1e-5) return;
@@ -49,7 +53,7 @@ export function createCameraFx({ camera, gain = () => 1 }) {
     kicks.push({ x: dirX / l, z: dirZ / l, amp: amp * g, dur, t: 0 });
   }
   function dolly(x, z, amp, dur = 0.22) {
-    const g = gain();
+    const g = gain() * focus();
     if (!(g > 0) || !(amp > 0)) return;
     if (dollies.length >= 4) dollies.shift();
     dollies.push({ x, z, amp: amp * g, dur, t: 0 });
