@@ -57,6 +57,7 @@ export const SUITE = [
   { file: 'tools/vfx-hit-feedback2-probe.mjs', args: [], what: 'the cast, the shot, the reward and the aftermath: near light, stuck arrows, crit flipbook, frost air, the chest beat and its sounds' },
   { file: 'tools/vfx-extras-probe.mjs', args: [], what: 'the traced blade slash, the bigger stuck arrows and frost twinkles' },
   { file: 'tools/seat-focus-probe.mjs', args: [], what: 'seat focus: your hits stand out (party hits quieter and smaller, no party camera kicks, party kills shake at a third), the laptop render scale' },
+  { file: 'tools/effect-brightness-probe.mjs', args: [], what: 'effect brightness: bloom 0.9, the foe hit flash under the glow limit, one light budget per spot for hero and kill light' },
   { file: 'tools/class-skills-probe.mjs', args: [], what: 'class skills' },
   { file: 'tools/one-cast-path-probe.mjs', args: [], what: 'one cast path: one zone system, one cast event (AUDIT D2)' },
   { file: 'tools/one-vfx-director-probe.mjs', args: [], what: 'one VFX director: one bus subscription per event (AUDIT D5)' },

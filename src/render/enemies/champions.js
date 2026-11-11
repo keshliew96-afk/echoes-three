@@ -47,6 +47,7 @@ import {
   TorusGeometry,
 } from 'three';
 import { toonMaterial } from '../toon.js';
+import { HITFLASH } from '../../core/constants.js';
 import { addInk, groundShadow, exactColor, mix } from '../critters/common.js';
 import { markShared, sharedGeo, releaseTree } from '../geocache.js';
 import { PALETTE, VFX_MATTER } from '../../data/palette.js';
@@ -446,7 +447,7 @@ export function buildGaleHerald() {
     // veiled the pale Spire room in a white haze on every hit (the "haze" in
     // the slice 7 captures). Softer than the other champions' 0.4
     // (CHAMPION_FLASH): at 0.25 it still pops, with no room-wide glare.
-    flashScale: 0.25,
+    flashScale: 0.25 / HITFLASH.intensity, // a lit level of 0.25, as before v0.5.359
     pose({ t, tick = 0, walkPhase = 0, moveK = 0, telegraphK = 0, e }) {
       const dt = lastT === null ? 0 : Math.min(0.1, Math.max(0, t - lastT));
       lastT = t;
@@ -533,7 +534,10 @@ export function buildGaleHerald() {
 // room on every hit; at 0.4 the body still pops white with no veil. A build
 // that sets its own flashScale keeps it (the Gale Herald, pale and
 // wide-winged in the pale Spire, needs 0.25).
-export const CHAMPION_FLASH = 0.4;
+// Written over HITFLASH.intensity (0.45 since v0.5.359, effect brightness) so
+// a champion's lit level stays the 0.4 it was: the common foes came down to
+// meet it, the champions did not move.
+export const CHAMPION_FLASH = 0.4 / HITFLASH.intensity;
 const softFlash = (build) => (...args) => {
   const b = build(...args);
   return b.flashScale == null ? { ...b, flashScale: CHAMPION_FLASH } : b;

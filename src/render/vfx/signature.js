@@ -52,22 +52,33 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
   // Seat focus: whose event is being drawn. `sv.camFocus` is 0 while it is
   // another hero's (no kick, no dolly), 1 otherwise; a timer carries the
   // focus of the event that scheduled it.
+  // The light budget (render/vfx/kit.js LIGHT_BUDGET): `sv.heroLight` is true
+  // while a hero's event (any seat, yours too) or a kill is drawn, so its
+  // flashes and stars share one budget per spot; a foe's tells never do.
   const focusStack = [];
   const bus = createVfxDispatch(eventBus, {
     enter: (ev) => {
-      focusStack.push(sv.camFocus);
-      sv.camFocus = isPartySeat(eventSeat(ev)) ? SEAT_FOCUS.partyCamera : 1;
+      focusStack.push([sv.camFocus, sv.heroLight]);
+      const seat = eventSeat(ev);
+      sv.camFocus = isPartySeat(seat) ? SEAT_FOCUS.partyCamera : 1;
+      sv.heroLight = ev.type === 'death' || Number.isInteger(seat);
+      lightGroup();
     },
     exit: () => {
-      sv.camFocus = focusStack.pop() ?? 1;
+      const [cam, light] = focusStack.pop() ?? [1, false];
+      sv.camFocus = cam;
+      sv.heroLight = light;
     },
   });
-  const sv = { camFocus: 1 }; // the director's mutable state (one object, shared with its parts under vfx/sig/)
+  const sv = { camFocus: 1, heroLight: false }; // the director's mutable state (one object, shared with its parts under vfx/sig/)
   const SF = {}; // the director's functions, shared with its parts (filled below)
   Object.assign(SF, { anticipate, byId, classImpact, classMark, classOf, embersUp, enemyDeath, enemyImpact, flare, healBloom, nova, release, shock, swing }); // the director's own functions its parts call
-  const kit = createVfxKit({ stage, cosmetic });
+  const heroLight = () => sv.heroLight;
+  // Each event (and each timer it left) is one group for the light budget.
+  const lightGroup = () => tk.setGroup(kit.newGroup());
+  const kit = createVfxKit({ stage, cosmetic, budgeted: heroLight, neighbours: (x, z, r) => tk.blastsNear(x, z, r) });
   // Kesh's VFX templates (design-VFX.md §11): their own primitives.
-  const tk = createTemplateKit({ stage, cosmetic });
+  const tk = createTemplateKit({ stage, cosmetic, budgeted: heroLight, neighbours: (x, z, r) => kit.lightNear(x, z, r) });
   const rnd = (a, b) => cosmetic.range(a, b);
 
   // ------------------------------------------------------------ settings --
@@ -153,13 +164,13 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
   const timers = [];
   const after = (sec, fn) => {
     if (sec <= 0) fn();
-    else timers.push({ t: sec, fn, focus: sv.camFocus });
+    else timers.push({ t: sec, fn, focus: sv.camFocus, light: sv.heroLight });
   };
   // A delay counted in held render time (render/hold.js): it waits out a
   // hitstop with the rigs, so a kill's debris bursts as the body pops.
   const afterHeld = (sec, fn) => {
     if (sec <= 0) fn();
-    else timers.push({ t: sec, fn, held: true, focus: sv.camFocus });
+    else timers.push({ t: sec, fn, held: true, focus: sv.camFocus, light: sv.heroLight });
   };
   const ANTICIP = 0.06; // s — the gather before a big cast lands (~4 frames)
   function anticipate(x, z, radius, color, { y = 0.45, lines = 6, core = PARCH } = {}) {
@@ -184,10 +195,10 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
     kit.ring({ x, z, r0: 0.15, r1: radius, width, life, core, glow: color, soft: 0.35, y, delay, jag, thin: 0.6, order });
   }
   // A near-white bloom held at full strength (THE HIT AND THE KILL), fainter
-  // where many glows already stack and under Effects: Reduced.
+  // where other light already stacks (the kit's light budget, always on for
+  // it) and under Effects: Reduced.
   function bloom(x, z, size, { hold, life, opacity, grow = CONTACT_FX.bloomGrow, y = 0.5 }) {
-    const crowd = Math.max(0.35, 1 / (1 + CONTACT_FX.crowd * kit.liveNear(x, z, 2)));
-    kit.flash({ x, y, z, color: PARCH, size, life, hold, grow, opacity: opacity * crowd * (sv.intensity.light ?? 1) });
+    kit.flash({ x, y, z, color: PARCH, size, life, hold, grow, opacity: opacity * (sv.intensity.light ?? 1), budget: true });
   }
   function embersUp(x, z, color, n, { radius = 0.5, life = [1.0, 1.7], y = 0.3 } = {}) {
     spray('spark', x, y, z, n, { color, speed: [0.05, 0.35], up: [0.5, 1.2], size: [0.04, 0.08], life, gravity: -0.35, drag: 1.5, jitter: radius, opacity: 0.85 });
@@ -566,11 +577,15 @@ export function createSignatureFx({ stage, world, bus: eventBus, cosmetic, setti
       if (tm.t <= 0) {
         timers.splice(i, 1);
         const f = sv.camFocus;
+        const l = sv.heroLight;
         sv.camFocus = tm.focus;
+        sv.heroLight = tm.light;
+        lightGroup();
         try {
           tm.fn();
         } finally {
           sv.camFocus = f;
+          sv.heroLight = l;
         }
       }
     }

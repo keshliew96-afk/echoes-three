@@ -458,3 +458,31 @@ still runs 50% to 150%. Antialiasing is untouched: the game already runs the che
 (`?msaa=0` in `main.js`), so the audit's "4x MSAA" reading was wrong and there was nothing to drop.
 
 Probe: `node tools/seat-focus-probe.mjs` (in `npm test`).
+
+## Effect brightness (v0.5.359)
+
+Kesh, 2026-11-11: a white burst in a busy fight was "too bright and blocked whatever it is". The review
+(`/mnt/project-files/effect-brightness/BRIGHTNESS_REVIEW.md`) found it was a kill burst stacked on the
+hits before it and on the foe's white-lit body. Each sprite is under the bloom threshold on its own, but
+additive pieces on one spot add up past it, and the bloom pass spread the sum into a white disc 2 to 3 u
+wide. At bloom 1.35, 13 to 20% of the area round the fight was blown; with bloom off it was 2 to 3%.
+He picked C, which is both of the fixes below.
+
+- **Bloom 1.35 to 0.9** (`BLOOM.strength`, `src/render/stage.js`). The threshold (0.68) and radius
+  (0.6) are unchanged, so every `underBloom()` colour cap stays where it was.
+- **The foe hit flash 1.0 to 0.45** (`HITFLASH.intensity`, `src/core/constants.js`): every foe, dummy,
+  Waystone, pilgrim and objective rig flashes pale with the same hard cut, instead of turning into a
+  white block. The champions already sat under it and keep their lit level: `CHAMPION_FLASH` is written
+  over the new intensity, so a champion still lights at 0.4 and the Gale Herald at 0.25. Bosses keep
+  `BOSS_FLASH` (0.28).
+- **One light budget per spot** (`LIGHT_BUDGET` in `src/render/vfx/kit.js`). While the VFX director draws
+  a hero's event (any seat, yours too) or a kill, every new flash and star counts the live flashes, stars
+  and template blasts within 1.5 u, and draws at `1 / (1 + 0.2 n)` of its strength, never under 35%. The
+  template kit's blasts take the same share from the class kit's flashes and stars, on top of their own
+  `crowd()`. One event's own pieces (one hit's bloom, flare and flash) never count each other, so a lone
+  hit is untouched; a timer the event left (a kill's delayed burst) is a new event. The contact and kill
+  blooms always ask for it (`budget: true`); the old contact-bloom crowd (`CONTACT_FX.crowd`) is gone.
+  A foe's tells, its hits on the party and every warning are drawn outside the scope and keep full
+  strength. Rings, shapes, floor lights and particles never take part.
+
+Probe: `node tools/effect-brightness-probe.mjs` (in `npm test`).

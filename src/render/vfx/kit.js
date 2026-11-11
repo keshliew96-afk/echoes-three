@@ -59,6 +59,19 @@ import { HOLD_CAP } from '../hold.js';
 // tell flash it would not have stolen before.
 export const KIT_CAPS = Object.freeze({ arc: 40, light: 16, flash: 64, streak: 64, cracks: 12, pillar: 8, star: 64, mark: 24, glow: 32 });
 export const GLARE = Object.freeze({ light: 0.65, flash: 0.6, pillar: 0.65 });
+// THE LIGHT BUDGET (effect brightness, v0.5.359, Kesh's pick C). Each flash
+// and star sits under the bloom threshold on its own (soft() below), but they
+// add: four heroes' contacts, a kill burst and their stars on one spot summed
+// into a white disc that hid the foe and the hero under it. Every flash and
+// star the heroes' hits, kills, casts and heals draw now shares one budget per
+// spot: n live flashes, stars and template blasts within `radius` u scale the
+// new one by 1 / (1 + per * n), never under `floor`. The pieces of one event
+// (one hit's bloom, flare and flash) never count each other (newGroup()), so a
+// lone hit is untouched.
+// Foe tells and warnings are drawn outside that scope and keep full strength;
+// rings (arcs), shapes and floor warnings never take part.
+export const LIGHT_BUDGET = Object.freeze({ radius: 1.5, per: 0.2, floor: 0.35 });
+export const lightBudget = (n) => Math.max(LIGHT_BUDGET.floor, 1 / (1 + LIGHT_BUDGET.per * Math.max(0, n)));
 const FLASH_HOLD = 0.066; // s — 4 frames at 60 fps at full strength
 const STAR_HOLD = 0.05; // s — a star's default full-strength beat after its pop
 const STAR_POP = 0.035; // s — a star's pop-in
@@ -387,7 +400,10 @@ let discGeo = null;
 let quadGeo = null;
 let tubeGeo = null;
 
-export function createVfxKit({ stage, cosmetic }) {
+// budgeted(): true while the director draws a hero's or a kill's light (the
+// light budget's scope); neighbours(x, z, r): how many template blasts are live
+// within r (the template kit's share of the same budget).
+export function createVfxKit({ stage, cosmetic, budgeted = () => false, neighbours = () => 0 }) {
   const root = new Group();
   root.name = 'vfxkit';
   stage.scene.add(root);
@@ -655,6 +671,7 @@ export function createVfxKit({ stage, cosmetic }) {
   });
   // opts: x, y, z, color, size, life, grow, opacity, hold (s at full strength).
   function flash(o) {
+    const k = budgetAt(o);
     const s = flashes.take();
     s.live = true;
     s.age = 0;
@@ -663,7 +680,8 @@ export function createVfxKit({ stage, cosmetic }) {
     s.holdT = Math.min(s.life * 0.6, o.hold ?? FLASH_HOLD);
     s.size = o.size ?? 0.5;
     s.grow = o.grow ?? 0.4;
-    s.op = (o.opacity ?? 0.75) * 0.8 * GLARE.flash;
+    s.op = (o.opacity ?? 0.75) * 0.8 * GLARE.flash * k;
+    s.group = group;
     s.mat.color.copy(soft(o.color ?? PALETTE.parchment));
     s.obj.position.set(o.x, o.y ?? 0.45, o.z);
     s.obj.scale.set(s.size, s.size, 1);
@@ -879,6 +897,7 @@ export function createVfxKit({ stage, cosmetic }) {
   // opacity, delay, hold (s at full strength after the pop; default 0.05).
   // Pops in over ~2 frames, holds ~3, then shrinks while the rays stretch out.
   function star(o) {
+    const k = budgetAt(o);
     const s = stars.take();
     s.live = true;
     s.age = 0;
@@ -888,7 +907,8 @@ export function createVfxKit({ stage, cosmetic }) {
     // keeps a fade of at least 40% of the life after it.
     s.holdT = o.hold != null ? Math.max(STAR_HOLD, Math.min(o.hold, s.life * 0.6)) : STAR_HOLD;
     s.size = o.size ?? 0.8;
-    s.op = (o.opacity ?? 1) * 0.9;
+    s.op = (o.opacity ?? 1) * 0.9 * k;
+    s.group = group;
     s.spin = o.spin ?? 0;
     s.mat.map = getStarTexture(o.kind ?? 'star');
     s.mat.rotation = o.angle ?? rnd(0, Math.PI);
@@ -1088,6 +1108,36 @@ export function createVfxKit({ stage, cosmetic }) {
     return n;
   }
 
+  // The light budget's scale for a new flash or star at o: 1 outside the scope
+  // (o.budget forces it on or off), else lightBudget(the live flashes, stars
+  // and template blasts within LIGHT_BUDGET.radius). Counted before the new
+  // one takes its slot, so it never counts itself.
+  let group = 0;
+  // A new event's pieces start a new group: they count every earlier piece,
+  // never each other.
+  function newGroup() {
+    group += 1;
+    return group;
+  }
+  function lightNear(x, z, r, skip = group) {
+    let n = 0;
+    const rr = r * r;
+    for (const p of [flashes, stars]) {
+      for (const s of p.slots) {
+        if (!s.live || s.group === skip) continue;
+        const dx = s.obj.position.x - x;
+        const dz = s.obj.position.z - z;
+        if (dx * dx + dz * dz <= rr) n += 1;
+      }
+    }
+    return n;
+  }
+  function budgetAt(o) {
+    if (!(o.budget ?? budgeted())) return 1;
+    const r = LIGHT_BUDGET.radius;
+    return lightBudget(lightNear(o.x, o.z, r) + neighbours(o.x, o.z, r));
+  }
+
   // How many live arcs, flashes and stars sit within r of (x, z): the Tempered
   // look's crowd read (shrinefx.js, Small fixes 9), so a fight off screen
   // never counts.
@@ -1138,5 +1188,5 @@ export function createVfxKit({ stage, cosmetic }) {
     lightGain = l;
   }
 
-  return { root, slash, ring, light, moveLight, endLight, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, prewarm, setIntensity };
+  return { root, slash, ring, light, moveLight, endLight, flash, streak, setStreak, release, crack, pillar, star, mark, glow, setGlow, update, clear, counts, liveNear, lightNear, newGroup, prewarm, setIntensity };
 }
