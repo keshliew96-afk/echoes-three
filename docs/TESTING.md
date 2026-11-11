@@ -63,7 +63,10 @@ House rules the safety-net probe checks:
 - `i18n-extract --check` writes nothing; it fails when `src/i18n/catalog.json` is out of date
   (refresh it with `node tools/i18n-extract.mjs`);
 - a probe never pins one exact version: it reads `VERSION` from `src/version.js` and asks
-  for "this version or later".
+  for "this version or later";
+- `.claude/settings.json` denies force pushes, deleting or force-moving `gauntlet`, `git reset --hard`,
+  `git clean` and `rm -rf`, and still lets branch pushes, the merge push to `gauntlet` and a
+  `--force-with-lease` push to a `claude/` branch through (v0.5.358).
 
 ### Shot stamps (v0.5.358)
 

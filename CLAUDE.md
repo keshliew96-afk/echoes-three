@@ -132,6 +132,9 @@ npm run serve          # build, then serve dist/ and the session server together
   hold keys for about 250 ms and wait on sim state, not on time. Use `--wait domcontentloaded`, since
   `networkidle2` never settles. `captures/` is gitignored.
 - Some old `*-r6` probes import libraries that were never committed; skip them.
+- `.claude/settings.json` denies force pushes, deleting or force-moving `gauntlet`, `git reset --hard`,
+  `git clean` and `rm -rf`. A `claude/` branch may still take `--force-with-lease`; clear scratch with
+  `rm -r`. The safety-net probe checks the list.
 
 ## File structure
 
