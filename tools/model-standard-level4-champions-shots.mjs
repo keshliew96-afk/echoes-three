@@ -4,7 +4,7 @@
 // the Vein Matron in the model lab (showcase, each ability's key phases held
 // Still, the classic twin beside, play zoom, a walk), then each in its own
 // crown room on the Hollow Heart floor at play zoom in a busy fight, faceted
-// and `?facet=0`. The sim stays frozen between beats (a thaw on a 1 fps
+// The sim stays frozen between beats (a thaw on a 1 fps
 // machine replays the wall-clock as ticks).
 //
 //   node tools/model-standard-level4-champions-shots.mjs [--url http://127.0.0.1:5199/] [--shots dir] [--only vein_matron] [--lab 0|1] [--game 0|1]
@@ -116,7 +116,7 @@ async function labShots(model) {
 
 // --- In the game: each champion in its own crown room (Level IV), the party
 // on the autopilot so the fight is busy, shot as each move fires; the same
-// fight again with `?facet=0` for the classic twin.
+// (The classic twin and `?facet=0` were retired, AUDIT.md D1.)
 const LEADER = { seat: 0, drafts: 'take', doors: 0, shop: 'cheapest', socket: 'auto', pages: false, leader: true };
 // [name, predicate on the champion view `b` (and the tick before, `p`),
 // rendered frames to wait once it holds, the party's distance before it]. The
@@ -138,7 +138,7 @@ const GAME_SHOTS = {
 async function gameShots(kind, facet) {
   const page = await browser.newPage();
   page.on('pageerror', (e) => errors.push(`${kind}${facet ? '' : ' classic'}: ${String(e && e.message ? e.message : e)}`));
-  await page.goto(`${URL0}?seed=5&tips=0&story=0${facet ? '' : '&facet=0'}`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+  await page.goto(`${URL0}?seed=5&tips=0&story=0`, { waitUntil: 'domcontentloaded', timeout: 300000 });
   await page.waitForFunction(() => !!window.__echoes && window.__echoes.tick > 60, { timeout: 300000, polling: 500 });
   const cmd = (name, ...args) => page.evaluate((n, a) => window.__echoes.cmd(n, ...a), name, args);
   const run = () => cmd('runState');
@@ -269,7 +269,6 @@ if (GAME)
   for (const kind of Object.keys(GAME_SHOTS))
     if (!ONLY || ONLY === kind) {
       await gameShots(kind, true);
-      await gameShots(kind, false);
     }
 await browser.close();
 if (errors.length) {

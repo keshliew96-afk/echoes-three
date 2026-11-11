@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 // VFX EXTRAS shots (v0.5.348): the traced blade slashes (T1) in a busy Level
-// I fight at play zoom, the same fight on the classic rigs (?facet=0: the
-// procedural arcs, as before), the bigger stuck arrows, the bigger frost
+// I fight at play zoom (the classic-rig pass and ?facet=0 were retired,
+// AUDIT.md D1), the bigger stuck arrows, the bigger frost
 // twinkles and the vault's stars after its snap. Needs a dev server
 // (npm run dev, port 5199). A virtual clock drives the page at 30 fps, so
 // software GL's 1 fps still shoots every frame of a 0.36 s trail.
 //
 //   node tools/vfx-extras-shots.mjs [--url http://127.0.0.1:5199/]
-//     [--shots captures/vfx-extras] [--only fight|classic|arrows|frost|vault]
+//     [--shots captures/vfx-extras] [--only fight|arrows|frost|vault]
 //     [--seed 5] [--frames 90]
 //
 // A Linux cloud session as root also needs PUPPETEER_EXECUTABLE_PATH and
@@ -154,12 +154,6 @@ if (want('fight')) {
   const page = await open();
   await startFight(page, ['healer', 'tank', 'swordsman', 'duskwing']);
   await reel(page, 'fight-traced', (c) => c.traces > 0);
-  await page.close();
-}
-if (want('classic')) {
-  const page = await open('&facet=0');
-  await startFight(page, ['healer', 'tank', 'swordsman', 'duskwing']);
-  await reel(page, 'fight-classic', (c) => c.blazes > 0);
   await page.close();
 }
 if (want('arrows')) {
