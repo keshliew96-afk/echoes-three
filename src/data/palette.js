@@ -82,7 +82,7 @@ export const HEALER_GARB = Object.freeze({
   lining: '#725555', //   #8F5046
   cloakLining: '#805D58', // the cloak's lining, facing in (the mid step): #8C5248
   rope: '#786559', //     #AA846A
-  leather: '#866D60', //  #93654E
+  leather: '#6D5349', //  #93654E
   flap: '#796053', //     #9F7259
   strap: '#9A8678', //    #C29C7E
   fur: '#948A83', //      #C6A692
@@ -96,12 +96,19 @@ export const HEALER_GARB = Object.freeze({
   wrapShade: '#897E85', // the wrap's top, in the robe's shade: #B1948C
   leg: '#7A7174', //      #846A69
   throat: '#72696E', //   her neck in the V under her chin, in shade: #917170
-  wood: '#655651', //     #885D4D
+  wood: '#6F5B4F', //     #8B604E
   eye: '#3F2C1E',
   iris: '#7F5D4E',
   brow: '#B89B88',
   mouth: '#553823',
   glint: '#FFFFFF', // painted as it is (the solved near-white clips to a mint)
+  // the crystal's facets, the sheet's pale greens as they show (it is unlit):
+  // its deep side, its body, its light side, its pale shoulder and its top
+  crystalDeep: '#BDE7B8',
+  crystal: '#C6F1B6',
+  crystalLight: '#D8F8C5',
+  crystalPale: '#E6FACB',
+  crystalTop: '#F2FBE2',
 });
 
 // Class accents (BUILD_BRIEF §19.1) — rings, HP bars, cloak trim.

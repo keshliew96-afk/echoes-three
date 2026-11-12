@@ -161,7 +161,7 @@ const HOOD_DZ = 0.04;
 const hoodZ = (y) => HOOD_Z + HOOD_DZ * smooth01((y - 0.66) / 0.11);
 // The face opening (the rim's inner edge), [body y, half-width], from the
 // brow round the cheeks and down into the V at the chest.
-const OPENING = [[0.98, 0], [0.975, 0.04], [0.965, 0.06], [0.95, 0.08], [0.925, 0.103], [0.9, 0.12], [0.875, 0.134], [0.85, 0.147], [0.825, 0.156], [0.8, 0.165], [0.775, 0.168], [0.75, 0.151], [0.725, 0.127], [0.7, 0.083], [0.69, 0.056], [0.675, 0.036], [0.659, 0.016], [0.652, 0]];
+const OPENING = [[0.98, 0], [0.975, 0.04], [0.965, 0.06], [0.95, 0.08], [0.925, 0.103], [0.9, 0.12], [0.875, 0.134], [0.85, 0.147], [0.825, 0.156], [0.8, 0.165], [0.775, 0.168], [0.75, 0.151], [0.725, 0.127], [0.7, 0.081], [0.69, 0.056], [0.675, 0.037], [0.66, 0.022], [0.648, 0.008], [0.64, 0]];
 // a smooth step from 0 to 1 over t 0..1
 const smooth01 = (t) => {
   const k = Math.max(0, Math.min(1, t));
@@ -250,9 +250,9 @@ function robeR(y) {
 }
 // the cloth's folds: a soft flute round the skirt, deepest at the hem
 const fold = (a, y) => 1 + 0.032 * Math.sin(7 * a + 0.4) * Math.max(0, Math.min(1, (0.4 - y) / 0.26));
-// the skirt's foot rides a little higher behind than in front (the sheet's
-// side view: the hem band slopes down toward her toes)
-const hemRise = (a, y) => (0.007 - 0.009 * Math.cos(a)) * smooth01((0.27 - y) / 0.07);
+// the skirt's foot hangs lowest at her front and rides highest at her sides
+// (the sheet's three views: the hem band curves down to her toes)
+const hemRise = (a, y) => (0.006 - 0.012 * Math.cos(2 * a) - 0.004 * Math.cos(a)) * smooth01((0.27 - y) / 0.07);
 // a point on the robe's surface at angle a (0 her facing, +pi/2 her staff
 // side), lifted `lift` off it
 function robeAt(a, y, lift = 0, out = new Vector3()) {
@@ -265,12 +265,25 @@ function robeAt(a, y, lift = 0, out = new Vector3()) {
 // behind); it slopes from under the cowl out over the shoulders and lies
 // close over the chest and the back. CAPE_FOOT is its lowest foot in front.
 const CAPE_TOP = Object.freeze({ y: 0.665, r: 0.152 });
-const CAPE_FOOT = 0.555;
+const CAPE_FOOT = 0.556;
+// (its foot by the angle round from her facing, [angle, y]: high where the
+// two panels meet at the clasp, lowest a hand's width either side of it,
+// rising a little round to her sides)
+const CAPE_FOOT_AT = [[0, 0.595], [0.115, 0.583], [0.231, 0.566], [0.351, 0.556], [0.476, 0.556], [0.611, 0.558], [0.759, 0.5625], [0.932, 0.567], [1.162, 0.571], [1.6, 0.572]];
 const capeFootY = (a) => {
   const b = Math.abs(a);
-  return 0.575 + 0.025 * Math.pow(Math.max(0, 1 - b / 0.3), 1.5) - 0.02 * Math.exp(-(((b - 0.5) / 0.3) ** 2)) - 0.1 * Math.pow(Math.max(0, -Math.cos(a)), 1.2);
+  let y = CAPE_FOOT_AT[CAPE_FOOT_AT.length - 1][1];
+  for (let i = 1; i < CAPE_FOOT_AT.length; i++) {
+    if (b <= CAPE_FOOT_AT[i][0]) {
+      const [b0, y0] = CAPE_FOOT_AT[i - 1];
+      const [b1, y1] = CAPE_FOOT_AT[i];
+      y = y0 + ((y1 - y0) * (b - b0)) / (b1 - b0);
+      break;
+    }
+  }
+  return y - 0.1 * Math.pow(Math.max(0, -Math.cos(a)), 1.2);
 };
-const CAPE_R = 0.238;
+const CAPE_R = 0.222;
 const CAPE_ZS = 0.62;
 // its radius t of the way down from the top to the foot
 const capeR = (t) => CAPE_TOP.r + (CAPE_R - CAPE_TOP.r) * t;
@@ -744,9 +757,9 @@ export function buildHealerFacet(rig, trackAccent) {
     robeN(onRobe(x - n.x * lift, y, out), n);
     return out.addScaledVector(n, lift);
   };
-  // its two front edges meet under the hood's V, at the clasp, and part a
-  // little below it
-  const capeOpen = (t) => 0.02 + 0.16 * Math.max(0, t - 0.55) / 0.45;
+  // its two front edges meet under the hood's V, all the way down to the
+  // clasp (the sheet's)
+  const capeOpen = () => 0.012;
   const cloakBack = new Vector3();
   const cloakAt = (t, a, lift, out) => {
     const y = CLOAK.top + (CLOAK.foot - CLOAK.top) * t;
@@ -838,7 +851,7 @@ export function buildHealerFacet(rig, trackAccent) {
   // in rust like the hood; on the body, flush inside the hood's foot.
   const COWL_Y = COWL_RINGS.map(([y]) => y);
   // (its foot curves up at the sides, the sheet's fold over the shoulders)
-  const cowlFold = (k, a) => 0.03 * Math.abs(Math.sin(a)) ** 1.5 * Math.max(0, (k - (COWL_Y.length - 4)) / 3);
+  const cowlFold = (k, a) => 0.022 * Math.abs(Math.sin(a)) ** 1.5 * Math.max(0, (k - (COWL_Y.length - 4)) / 3);
   const cowlAt = (k, a, lift, out) => {
     hoodAt(a, COWL_Y[k], lift, out);
     out.y += cowlFold(k, a);
@@ -871,9 +884,9 @@ export function buildHealerFacet(rig, trackAccent) {
   // tucked in at its inner edge, lying on the hood (the head's part, above
   // the chin) and on down the cowl into the V (the body's part).
   const RIM = [[-0.002, -0.0015], [0.002, 0.0045], [0.014, 0.008], [0.026, 0.002]]; // [out from the edge, lift]
-  // (its roll widens round the cheeks and down the V, where it runs out to
-  // the hood's edge)
-  const rimWide = (y) => 1.15 + 0.15 * smooth01((0.84 - y) / 0.06) + 0.15 * smooth01((y - 0.94) / 0.03);
+  // (its roll widens round the cheeks, where it runs out to the hood's edge,
+  // and narrows again down the V's arms)
+  const rimWide = (y) => (1.15 + 0.15 * smooth01((0.84 - y) / 0.06)) * (1 - 0.33 * smooth01((0.745 - y) / 0.04));
   const rimRight = [];
   for (let i = 0; i < OPENING.length; i++) {
     const [y, x] = OPENING[i];
