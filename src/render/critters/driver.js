@@ -326,9 +326,20 @@ export function createPoseDriver(cosmetic) {
     return pose;
   }
 
+  // The model lab's rest pose (the model review's side-by-sides): every
+  // postural field at its neutral and the idle clip, held for as long as the
+  // lab's still mode feeds no time (a zero dt blends nothing in).
+  function rest() {
+    Object.assign(pose, defaultPose());
+    Object.assign(target, defaultPose());
+    clip = 'idle';
+    downAge = 0;
+  }
+
   return {
     setAnim,
     update,
+    rest,
     get anim() {
       return clip;
     },

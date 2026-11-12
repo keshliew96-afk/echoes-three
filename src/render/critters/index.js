@@ -76,6 +76,7 @@ export function createCritter(classId, { cosmetic = null } = {}) {
   };
 
   const built = build(rig, trackAccent);
+  if (built.head && !built.head.name) built.head.name = 'rig-head'; // the model review levels it
   const M = built.metrics;
 
   // Ring sized so its bright band (0.74-0.85 of the radius) clears the widest
@@ -89,6 +90,7 @@ export function createCritter(classId, { cosmetic = null } = {}) {
   // Tank, whose accent luma was already below the ground's).
   const shadow = groundShadow(Math.min(M.halfWidth * 0.78, ringRadius * 0.56), 0.44);
   const decals = new Group();
+  decals.name = 'decals'; // the ring and the shadow (the model review's views hide them)
   decals.add(ring);
   decals.add(shadow);
   yawGroup.add(decals);
@@ -269,6 +271,14 @@ export function createCritter(classId, { cosmetic = null } = {}) {
     },
     // The model lab's handle on the rig.
     lab: built.lab,
+    // The model lab's rest pose: the idle at its neutral (no breath, sway or
+    // flourish) with no attack, spawn or recoil in play; it holds while the
+    // lab's still mode runs the rig at a zero dt.
+    rest: () => {
+      driver.rest();
+      built.cue('reset');
+      update(0);
+    },
     update,
   };
 }

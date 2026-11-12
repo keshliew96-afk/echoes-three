@@ -490,6 +490,7 @@ export function faceDecal({
   glint = GLINT_R, // glint radius as a fraction of the eye radius
   sclera = 0, //     light fur ring painted behind the bean (badger stripe fix)
   paint = null, //   optional extra canvas art (species markings)
+  segments = [36, 24], // the patch's mesh, across and down (a rig on a tight budget passes fewer)
 }) {
   const S = 256;
   const canvas = document.createElement('canvas');
@@ -529,8 +530,8 @@ export function faceDecal({
   tex.colorSpace = SRGBColorSpace;
   const geo = new SphereGeometry(
     R * 1.012,
-    36,
-    24,
+    segments[0],
+    segments[1],
     Math.PI / 2 - FACE_PHI_LEN / 2,
     FACE_PHI_LEN,
     FACE_THETA_START,

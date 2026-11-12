@@ -20,6 +20,8 @@
 //       [--out captures/model-review] [--only idle,combo]
 //   node tools/model-review.mjs page [--model healer] [--out captures/model-review]
 //       [--dest /mnt/project-files/model-review/healer] [--round 1] [--refs sheet.png,vfx.png]
+//   node tools/model-review.mjs views [--model healer] [--sheet sheet.png] [--tag r3] [--light studio|lab]
+//       (front, side and back flat beside the turnaround sheet: see views() below)
 //
 // `page` encodes each clip to MP4 (ffmpeg) and writes index.html beside them.
 // Needs `npm run dev` (and `npm run net`, or the title's cloud probe logs a 502).
@@ -40,6 +42,8 @@ const FPS = 30;
 const DT = 1000 / FPS;
 const T0 = Date.parse('2026-11-11T00:00:00Z');
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// a deadline for a race: its timer does not hold the process open after the work is done
+const deadline = (ms) => new Promise((r) => setTimeout(r, ms).unref());
 
 // The review plan per hero. `moves` are the cards: a lab ability (close-up)
 // and an in-game clip (play zoom). `skills` are the in-game skill grid.
@@ -277,7 +281,7 @@ async function shots() {
       });
     }, [w, h, part === 'lab']);
     await page.clock.runFor(DT / 2);
-    let url = await Promise.race([page.evaluate(() => window.__mr.cap), sleep(120000).then(() => null)]);
+    let url = await Promise.race([page.evaluate(() => window.__mr.cap), deadline(120000).then(() => null)]);
     if (!url) throw new Error(`no frame drawn in 120 s ${errors.slice(0, 5).join(" / ")} ${JSON.stringify(await page.evaluate(() => ({ draws: window.__mr.draws, renderers: window.__mr.renderers.length, scenes: window.__mr.scenes.length, fl: window.__echoes.settings.get('display.frameLimit'), tick: window.__echoes.tick })))}`);
     writeFileSync(file, Buffer.from(url.split(',')[1], 'base64'));
   };
@@ -517,7 +521,345 @@ async function stats() {
   writeFileSync(join(opt('out', 'captures/model-review'), 'stats-all.json'), JSON.stringify(rows, null, 2));
 }
 
+// ------------------------------------------------------------------ views --
+// The model beside the turnaround sheet it is built from: front, side and
+// back drawn flat (an orthographic camera, the model turned in front of the
+// lab's own lights) in the lab's rest pose with the head level, as a
+// turnaround sheet draws it, at the sheet's scale, so the floor and the ear tips sit
+// on the same rows and the middle line on the same column. Each view is four
+// panels: the sheet, the model, the sheet under the model's outline (magenta)
+// and the model under the sheet's (cyan); plus close-ups of the head, and the
+// silhouette numbers in metrics.json (the overlap, and the width at each
+// height). The model is shot twice per view, on black and on grey, and
+// matted from the pair, so its edges land clean on the sheet's paper.
+//
+//   node tools/model-review.mjs views [--model healer] [--sheet sheet.png] [--tag r3] [--light studio|lab]
+//       [--ability combo --t 0]
+const SHEETS = {
+  healer: {
+    file: '/mnt/project-files/model-review/healer/round2-ref/3d1450d2-mouse-turnaround.png',
+    top: 1.13, // u: her ear tips over the floor (the rig's metrics.earTopY)
+    paper: [210, 209, 205], // the sheet's background
+    // The sheet holds the staff in her right paw and the model in her left,
+    // so every view of the model is mirrored to match.
+    mirror: true,
+    // Each view: the crop (sheet px), the rows of the ear tips and the soles,
+    // the column of her middle line, the model's turn, the panel scale.
+    views: [
+      { id: 'front', x0: 50, y0: 90, w: 420, h: 560, earY: 105, footY: 630, cx: 275, yaw: 0, s: 2 },
+      { id: 'side', x0: 465, y0: 90, w: 420, h: 560, earY: 105, footY: 630, cx: 692, yaw: -Math.PI / 2, s: 2 },
+      { id: 'back', x0: 905, y0: 90, w: 420, h: 560, earY: 105, footY: 630, cx: 1117, yaw: Math.PI, s: 2 },
+      { id: 'front-head', x0: 105, y0: 95, w: 340, h: 270, earY: 105, footY: 630, cx: 275, yaw: 0, s: 3 },
+      { id: 'side-head', x0: 545, y0: 95, w: 340, h: 270, earY: 105, footY: 630, cx: 692, yaw: -Math.PI / 2, s: 3 },
+    ],
+  },
+};
+async function views() {
+  const { chromium } = await import('playwright');
+  // --light studio (the default: the key on the camera's side) or lab (as the lab lights her)
+  const SH = { ...SHEETS[MODEL], studio: opt('light', 'studio') === 'studio' };
+  if (!SHEETS[MODEL]) throw new Error(`no turnaround sheet for ${MODEL}`);
+  const sheetFile = opt('sheet', SH.file);
+  const dir = join(OUT, 'views', opt('tag', 'latest'));
+  mkdirSync(dir, { recursive: true });
+  const VW = 1100;
+  const VH = 1150;
+  const browser = await chromium.launch({ args: (process.env.ECHOES_CHROME_ARGS || '').split(/\s+/).filter(Boolean) });
+  const page = await browser.newPage({ viewport: { width: VW, height: VH } });
+  const errors = [];
+  page.on('pageerror', (e) => errors.push(String(e && e.message ? e.message : e)));
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+  await page.addInitScript(() => {
+    window.__mr = { scenes: [], renderers: [] };
+    const hook = new EventTarget();
+    hook.addEventListener('observe', (e) => {
+      const d = e.detail;
+      if (d && d.isScene) window.__mr.scenes.push(d);
+      else if (d && d.isWebGLRenderer) window.__mr.renderers.push(d);
+    });
+    window.__THREE_DEVTOOLS__ = hook;
+  });
+  await page.clock.install({ time: T0 });
+  // no vignette, and no bloom: a glow is an effect, not the model's shape or colour
+  await page.goto(`${URL0}?modellab=1&model=${MODEL}&view=showcase&turn=0&vignette=0&bloom=0`, { waitUntil: 'domcontentloaded', timeout: 300000 });
+  await page.waitForFunction(() => !!window.__echoes && window.__echoes.cmd && window.__echoes.tick > 30, null, { timeout: 300000, polling: 500 });
+  await page.clock.pauseAt(T0 + 15 * 60000);
+  // the rest pose (no breath, sway, flourish or grow-in caught mid-way), so
+  // every run draws the same body
+  const pose = { model: MODEL, view: 'showcase', turntable: false, azimuth: 0, ability: opt('ability', 'combo'), mode: 'still', t: Number(opt('t', 0)), rest: true };
+  await page.evaluate((p) => window.__echoes.cmd('lab', p), pose);
+  await page.clock.runFor(500);
+  const sheetUrl = `data:image/png;base64,${readFileSync(sheetFile).toString('base64')}`;
+  // The draw hook: while a view is set, the scene's draw shows the hero alone
+  // (no floor, pedestal, ring or shadow), turned to the view, on the view's
+  // background, through the view's flat camera.
+  await page.evaluate((model) => {
+    const M = window.__mr;
+    const scene = M.scenes.find((sc) => sc.children.some((c) => c.isDirectionalLight)) || M.scenes[0];
+    const r = M.renderers.find((x) => x.domElement && x.domElement.isConnected) || M.renderers[0];
+    // three's OrthographicCamera, from the key light's shadow camera
+    const Ortho = scene.children.find((c) => c.isDirectionalLight).shadow.camera.constructor;
+    Object.assign(M, { scene, r, model });
+    const draw = r.render.bind(r);
+    r.render = (s, c) => {
+      const V = M.view;
+      if (s !== scene || !V) return draw(s, c);
+      const critter = scene.getObjectByName(`critter-${M.model}`);
+      const keep = new Set();
+      critter.traverse((o) => keep.add(o));
+      const decals = critter.getObjectByName('decals');
+      if (decals) decals.traverse((o) => keep.delete(o));
+      // a glow is light the gem throws, not the model's shape
+      critter.traverse((o) => o.isSprite && keep.delete(o));
+      const hidden = [];
+      scene.traverse((o) => {
+        if ((o.isMesh || o.isSprite || o.isLine || o.isPoints) && o.visible && !keep.has(o)) {
+          o.visible = false;
+          hidden.push(o);
+        }
+      });
+      const yawGroup = critter.children[0];
+      const yaw0 = yawGroup.rotation.y;
+      // the head level, as the sheet draws it (the rig lifts the chin for
+      // the game's high camera)
+      const head = critter.getObjectByName('rig-head');
+      const pitch0 = head ? head.rotation.x : 0;
+      if (head) head.rotation.x = 0;
+      const bg0 = scene.background;
+      const fog0 = scene.fog;
+      yawGroup.rotation.y = V.yaw;
+      scene.background = V.bg;
+      scene.fog = null;
+      critter.updateMatrixWorld(true);
+      const at = critter.getWorldPosition(critter.position.clone());
+      const cam = (M.cam = M.cam || new Ortho());
+      Object.assign(cam, { left: V.left, right: V.right, top: V.top, bottom: V.bottom, near: 0.1, far: 40 });
+      cam.position.set(at.x, at.y, at.z + 12);
+      cam.up.set(0, 1, 0);
+      cam.lookAt(at.x, at.y, at.z);
+      cam.updateProjectionMatrix();
+      cam.updateMatrixWorld(true);
+      // A studio key: the lab's key light moved round to the camera's side
+      // (up and to the right, as the sheet is lit), so the faces the view
+      // shows sit in the toon ramp's lit band, where colours compare.
+      const key = scene.children.find((c) => c.isDirectionalLight);
+      const kp0 = key.position.clone();
+      const kt0 = key.target.position.clone();
+      if (V.studio) {
+        key.target.position.copy(at);
+        key.position.set(at.x + 2.4, at.y + 3.2, at.z + 8);
+        key.target.updateMatrixWorld(true);
+        key.updateMatrixWorld(true);
+      }
+      try {
+        return draw(s, cam);
+      } finally {
+        for (const o of hidden) o.visible = true;
+        yawGroup.rotation.y = yaw0;
+        if (head) head.rotation.x = pitch0;
+        scene.background = bg0;
+        scene.fog = fog0;
+        key.position.copy(kp0);
+        key.target.position.copy(kt0);
+        key.target.updateMatrixWorld(true);
+        key.updateMatrixWorld(true);
+      }
+    };
+  }, MODEL);
+  // one matted shot of a view: the model on black, then on grey
+  const shoot = async (v) => {
+    const out = [];
+    for (const shade of [0, 0.35]) {
+      await page.clock.runFor(DT / 2);
+      await page.evaluate(([v, shade, SH]) => {
+        const M = window.__mr;
+        const cw = M.r.domElement.width;
+        const ch = M.r.domElement.height;
+        const W = v.w * v.s;
+        const H = v.h * v.s;
+        const ppu = ((v.footY - v.earY) * v.s) / SH.top; // canvas px per u
+        const xc = (v.cx - v.x0) * v.s; // the middle line's column in the panel
+        const left = -(SH.mirror ? W - xc : xc) / ppu;
+        const top = ((v.footY - v.y0) * v.s) / ppu;
+        const bg = M.scene.background.clone().setRGB(shade, shade, shade);
+        M.view = { yaw: v.yaw, bg, left, right: left + cw / ppu, top, bottom: top - ch / ppu, studio: SH.studio };
+        M.cap = new Promise((res) => {
+          M.r.__echoesNextRender = M.r.__echoesNextRender || [];
+          M.r.__echoesNextRender.push((canvas) => {
+            const full = document.createElement('canvas');
+            full.width = canvas.width;
+            full.height = canvas.height;
+            const g = full.getContext('2d');
+            g.drawImage(canvas, 0, 0);
+            const paper = Array.from(g.getImageData(canvas.width - 3, canvas.height - 3, 1, 1).data.slice(0, 3));
+            const c = document.createElement('canvas');
+            c.width = W;
+            c.height = H;
+            const g2 = c.getContext('2d');
+            if (SH.mirror) {
+              g2.translate(W, 0);
+              g2.scale(-1, 1);
+            }
+            g2.drawImage(full, 0, 0, W, H, 0, 0, W, H);
+            res({ url: c.toDataURL('image/png'), paper });
+          });
+        });
+      }, [v, shade, SH]);
+      await page.clock.runFor(DT / 2);
+      const got = await Promise.race([page.evaluate(() => window.__mr.cap), deadline(180000).then(() => null)]);
+      if (!got) throw new Error(`no frame drawn for ${v.id} in 180 s ${errors.slice(0, 3).join(' / ')}`);
+      out.push(got);
+    }
+    await page.evaluate(() => {
+      window.__mr.view = null;
+    });
+    return out;
+  };
+  const metrics = { model: MODEL, sheet: sheetFile, top: SH.top, pose, views: {} };
+  for (const v of SH.views) {
+    const t0 = Date.now();
+    const [dark, grey] = await shoot(v);
+    // matte the pair, lay the model on the sheet's paper, and compose the panels
+    const res = await page.evaluate(async ([v, SH, dark, grey, sheetUrl]) => {
+      const img = (src) => new Promise((ok, no) => {
+        const i = new Image();
+        i.onload = () => ok(i);
+        i.onerror = no;
+        i.src = src;
+      });
+      const W = v.w * v.s;
+      const H = v.h * v.s;
+      const px = async (src) => {
+        const c = document.createElement('canvas');
+        c.width = W;
+        c.height = H;
+        const g = c.getContext('2d');
+        g.drawImage(await img(src), 0, 0);
+        return g.getImageData(0, 0, W, H);
+      };
+      const A = await px(dark.url);
+      const B = await px(grey.url);
+      const P = SH.paper;
+      const model = new ImageData(W, H);
+      const ours = new Uint8Array(W * H);
+      for (let i = 0, n = W * H; i < n; i++) {
+        let a = 0;
+        for (let k = 0; k < 3; k++) a += (B.data[i * 4 + k] - A.data[i * 4 + k]) / Math.max(1, grey.paper[k] - dark.paper[k]);
+        a = Math.min(1, Math.max(0, 1 - a / 3));
+        for (let k = 0; k < 3; k++) model.data[i * 4 + k] = Math.round(Math.min(255, Math.max(0, A.data[i * 4 + k] - (1 - a) * dark.paper[k] + (1 - a) * P[k])));
+        model.data[i * 4 + 3] = 255;
+        ours[i] = a > 0.5 ? 1 : 0;
+      }
+      // the sheet's crop at the panel scale, and its silhouette (off the paper)
+      const sc = document.createElement('canvas');
+      sc.width = W;
+      sc.height = H;
+      const sg = sc.getContext('2d');
+      sg.imageSmoothingQuality = 'high';
+      sg.drawImage(await img(sheetUrl), v.x0, v.y0, v.w, v.h, 0, 0, W, H);
+      const ref = sg.getImageData(0, 0, W, H);
+      const theirs = new Uint8Array(W * H);
+      for (let i = 0, n = W * H; i < n; i++) {
+        let d = 0;
+        for (let k = 0; k < 3; k++) d += Math.abs(ref.data[i * 4 + k] - P[k]);
+        theirs[i] = d > 40 ? 1 : 0;
+      }
+      // the outline of a silhouette, two pixels wide
+      const edge = (m) => {
+        const e = new Uint8Array(W * H);
+        for (let y = 1; y < H - 1; y++)
+          for (let x = 1; x < W - 1; x++) {
+            const i = y * W + x;
+            if (m[i] && (!m[i - 1] || !m[i + 1] || !m[i - W] || !m[i + W])) e[i] = e[i + 1] = e[i + W] = 1;
+          }
+        return e;
+      };
+      const tint = (base, m, rgb) => {
+        const o = new ImageData(new Uint8ClampedArray(base.data), W, H);
+        for (let i = 0; i < W * H; i++) if (m[i]) for (let k = 0; k < 3; k++) o.data[i * 4 + k] = rgb[k];
+        return o;
+      };
+      const panels = [
+        ['SHEET', ref],
+        ['MODEL', model],
+        ['SHEET + model outline', tint(ref, edge(ours), [235, 0, 200])],
+        ['MODEL + sheet outline', tint(model, edge(theirs), [0, 170, 235])],
+      ];
+      const GAP = 12;
+      const LAB = 40;
+      const out = document.createElement('canvas');
+      out.width = panels.length * W + (panels.length - 1) * GAP;
+      out.height = H + LAB;
+      const og = out.getContext('2d');
+      og.fillStyle = '#ffffff';
+      og.fillRect(0, 0, out.width, out.height);
+      og.font = 'bold 22px sans-serif';
+      og.fillStyle = '#222';
+      panels.forEach(([label, d], i) => {
+        og.putImageData(d, i * (W + GAP), LAB);
+        og.fillText(`${v.id.toUpperCase()}: ${label}`, i * (W + GAP) + 8, 28);
+      });
+      // the numbers: overlap, and each silhouette's spans at every 0.05 u
+      let both = 0;
+      let either = 0;
+      for (let i = 0; i < W * H; i++) {
+        both += ours[i] & theirs[i];
+        either += ours[i] | theirs[i];
+      }
+      const ppu = ((v.footY - v.earY) * v.s) / SH.top;
+      const floorRow = (v.footY - v.y0) * v.s;
+      const xc = (v.cx - v.x0) * v.s;
+      const spans = (m, y) => {
+        const runs = [];
+        let s0 = -1;
+        for (let x = 0; x <= W; x++) {
+          const on = x < W && m[y * W + x];
+          if (on && s0 < 0) s0 = x;
+          if (!on && s0 >= 0) {
+            if (x - s0 > 2) runs.push([+((s0 - xc) / ppu).toFixed(3), +((x - 1 - xc) / ppu).toFixed(3)]);
+            s0 = -1;
+          }
+        }
+        return runs;
+      };
+      const rows = [];
+      for (let h = 0.02; h <= SH.top + 0.03; h += 0.05) {
+        const y = Math.round(floorRow - h * ppu);
+        if (y < 0 || y >= H) continue;
+        rows.push({ h: +h.toFixed(2), sheet: spans(theirs, y), model: spans(ours, y) });
+      }
+      // the silhouettes' extents (u): lowest and highest rows, leftmost and rightmost
+      const ext = (m) => {
+        let x0 = W, x1 = -1, y0 = H, y1 = -1;
+        for (let y = 0; y < H; y++)
+          for (let x = 0; x < W; x++)
+            if (m[y * W + x]) {
+              if (x < x0) x0 = x;
+              if (x > x1) x1 = x;
+              if (y < y0) y0 = y;
+              if (y > y1) y1 = y;
+            }
+        return { left: +((x0 - xc) / ppu).toFixed(3), right: +((x1 - xc) / ppu).toFixed(3), top: +((floorRow - y0) / ppu).toFixed(3), bottom: +((floorRow - y1) / ppu).toFixed(3) };
+      };
+      const sm = document.createElement('canvas');
+      sm.width = W;
+      sm.height = H;
+      sm.getContext('2d').putImageData(model, 0, 0);
+      return { url: out.toDataURL('image/png'), model: sm.toDataURL('image/png'), iou: either ? +(both / either).toFixed(3) : 0, extent: { sheet: ext(theirs), model: ext(ours) }, rows };
+    }, [v, SH, dark, grey, sheetUrl]);
+    writeFileSync(join(dir, `${v.id}.png`), Buffer.from(res.url.split(',')[1], 'base64'));
+    writeFileSync(join(dir, `${v.id}-model.png`), Buffer.from(res.model.split(',')[1], 'base64'));
+    metrics.views[v.id] = { iou: res.iou, extent: res.extent, rows: res.rows };
+    console.log(`views ${v.id}: overlap ${res.iou} in ${Math.round((Date.now() - t0) / 1000)} s`);
+  }
+  writeFileSync(join(dir, 'metrics.json'), JSON.stringify(metrics, null, 1));
+  await browser.close();
+  console.log(errors.length ? `page errors:\n${errors.slice(0, 10).join('\n')}` : 'no page errors');
+  console.log(`views -> ${dir}`);
+}
+
 if (STEP === 'stats') await stats();
 else if (STEP === 'shots') await shots();
 else if (STEP === 'page') await page();
-else console.log('usage: node tools/model-review.mjs shots|page [...]');
+else if (STEP === 'views') await views();
+else console.log('usage: node tools/model-review.mjs shots|page|views|stats [...]');

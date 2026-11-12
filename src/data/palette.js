@@ -62,22 +62,46 @@ export const BLESSING_COLORS = Object.freeze({
   tempered: SHRINE_COLORS.kiln,
 });
 
-// THE HEALER'S GARB (model review round 2, from Kesh's 2026-11-11 turnaround
-// sheet): an undyed linen robe and hood with a brick-rust trim, a hemp rope
-// belt, leather pouches, linen foot wraps, a twig staff, pink ears, nose and
-// tail, every tone kept below the amber family's saturation (the model
-// probe's rule). The rust is a dark brick (hue 18, L 44%), well clear of Ember's bright
-// orange-red; the class accent (Sage) stays on her ring and HP bar.
+// THE HEALER'S GARB (model review, Kesh's 2026-11-11 turnaround sheet; round 3
+// matches the sheet's own colours): a sand linen robe, hood, cowl and sleeves,
+// a camel capelet, a rust trim and a dark rust lining, a hemp rope belt,
+// leather pouches, linen foot wraps, a twig staff, taupe fur with a pale
+// muzzle, and pink ears, nose, paws, toes and tail. The lit tones are solved
+// for the stage light: under the key, the toon ramp's lit band and the post
+// chain (exposure, ACES, grade) lift and warm an albedo, so each is the
+// sheet's colour divided by that lift as `tools/model-review.mjs views`
+// measures it, and shows on screen as the sheet's. The face paint (eye,
+// iris, brow, mouth) is unlit and already shows as authored. Every tone
+// stays below the amber family's saturation (the model probe's rule); the
+// rust is a dusty brick, well clear of Ember's orange-red; the class accent
+// (Sage) stays on her ring and HP bar.
 export const HEALER_GARB = Object.freeze({
-  robe: '#C9AE84',
-  robeShade: '#A28D70',
-  trim: '#9C5A3E',
-  rope: '#B4A07E',
-  leather: '#6E4A33',
-  wrap: '#B5A992',
-  wrapBand: '#867A64',
-  wood: '#6B4A32',
-  pink: '#E2A79C',
+  robe: '#B19E86', //     shows as the sheet's #E3C09A
+  cape: '#93776C', //     #C19478
+  trim: '#89645D', //     #BA765F
+  lining: '#725555', //   #8F5046
+  cloakLining: '#805D58', // the cloak's lining, facing in (the mid step): #8C5248
+  rope: '#786559', //     #AA846A
+  leather: '#866D60', //  #93654E
+  flap: '#796053', //     #9F7259
+  strap: '#9A8678', //    #C29C7E
+  fur: '#948A83', //      #C6A692
+  muzzle: '#B0ABA8', //   #DBC5B4
+  pink: '#CAA9A0', //     #E3B4A0
+  nose: '#D09389', //     #ECB29B
+  paw: '#B08A86', //      #DFAC9E
+  tail: '#C29C9B', //     the tail and toes, rosier than the ears: #D6A99C
+  wrap: '#A1A8A8', //     #CDC1B1
+  wrapBand: '#6A6561', // the bandage's lines: #897667
+  wrapShade: '#897E85', // the wrap's top, in the robe's shade: #B1948C
+  leg: '#7A7174', //      #846A69
+  throat: '#72696E', //   her neck in the V under her chin, in shade: #917170
+  wood: '#655651', //     #885D4D
+  eye: '#3F2C1E',
+  iris: '#7F5D4E',
+  brow: '#B89B88',
+  mouth: '#553823',
+  glint: '#FFFFFF', // painted as it is (the solved near-white clips to a mint)
 });
 
 // Class accents (BUILD_BRIEF §19.1) — rings, HP bars, cloak trim.
