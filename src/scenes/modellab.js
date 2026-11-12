@@ -234,6 +234,9 @@ export function createModelLabScene(stage, toggles, { cosmetic }) {
     // Still from a playing ability freezes that moment (the locked feet
     // where the motion left them); any other mode change starts clean
     if (patch.mode && patch.mode !== 'move' && !(patch.mode === 'still' && wasMode === 'ability')) resetModels();
+    // { rest: true }: the heroes take their rest pose (the model review's
+    // side-by-sides pass it with the still mode, so every shot is the same)
+    if (patch.rest) for (const h of HEROES) h.rig.rest();
     ui?.refresh();
   }
   function resetModels() {

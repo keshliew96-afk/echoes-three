@@ -100,14 +100,21 @@ its hit reaction and its death.
    screen when the stage was set and is not part of a hero rig. The AI allies lie downed out of
    frame, and one foe of the room's last wave sleeps in a far corner so the room stays in combat.
    Needs `npm run dev` and `npm run net`; about 25 minutes per game run on the cloud's software GL.
-2. **Page.** `node tools/model-review.mjs page --round N` encodes each clip to MP4 and writes the
+2. **Compare.** When the model is built to a turnaround sheet, `node tools/model-review.mjs views
+   --tag <name> --light lab` draws the front, side and back flat (an orthographic camera) in the
+   lab's rest pose with the head level, at the sheet's scale, mirrored when the sheet holds the
+   weapon in the other paw, beside the sheet and under its outline, plus head close-ups; it prints
+   each view's silhouette overlap and writes the row-by-row widths to `metrics.json` under
+   `captures/model-review/<model>/views/<name>/`. Each view sits on the sheet's middle column
+   (front 450, side 454, back 424 in the 840-wide panels). About 30 s.
+3. **Page.** `node tools/model-review.mjs page --round N` encodes each clip to MP4 and writes the
    review page (`tools/model-review-page.html`): one card per move with its three clips, the skill
    grid with VFX off and on, the model's numbers, the sign-off list and a notes box on every card.
    It is published as a private Artifact; republishing keeps the same link, and the notes live in
    the page's own store, so they survive each round.
-3. **Feedback.** Kesh writes notes on the page or in the thread. Each round is one commit on that
+4. **Feedback.** Kesh writes notes on the page or in the thread. Each round is one commit on that
    model's draft PR plus a re-recorded page with a line in its round log.
-4. **Sign-off.** When Kesh writes "sign off <model>", the model goes into the register below and
+5. **Sign-off.** When Kesh writes "sign off <model>", the model goes into the register below and
    stays locked unless he reopens it.
 
 Order: the Healer, then the other six heroes; then land by land, each land's foes, champions and
@@ -118,6 +125,25 @@ bosses; the VFX pass for each hero kit follows its model's sign-off.
 | Model | Rounds | Signed in | Date | Review page |
 |---|---|---|---|---|
 | (none yet) | | | | |
+
+Rounds in review:
+
+- Healer, round 1 (v0.5.362): the model as it stood.
+- Healer, round 2 (v0.5.363): dressed from Kesh's turnaround and VFX sheets
+  (2026-11-11): linen robe, mantle and hood with a rust trim, rope belt and
+  pouches, linen foot wraps, pink ears, nose and tail, a twig staff with a
+  long crystal; her magic in Leaf Green and gold with softer bursts and the
+  plain leaf circle (`docs/VFX_TEMPLATES.md` "Colours"). Colours in
+  `HEALER_GARB` (`src/data/palette.js`).
+- Healer, round 3 (v0.5.363): matched to the turnaround sheet view by view
+  (Kesh's notes of 2026-11-11: "exact same as reference image quality,
+  detailed model"), with two rounds of critics measuring every gap: the staff
+  leans out and forward as the sheet's does (it had stood upright), with a
+  forked club head round a longer inked crystal; a domed hood; a pear-shaped
+  face with a rounder profile and chin; the rim, eyes, brows, nose, mouth and
+  muzzle repainted; rounder ears; a bigger grip paw; the tail, cloak,
+  pouches, legs and feet reshaped. Silhouette overlap with the sheet: front
+  0.83 to 0.90, side 0.70 to 0.82, back 0.81 to 0.87.
 
 ## The kit (`src/render/facet/`)
 
@@ -319,20 +345,50 @@ with the blow (0.42 s against the contact's 0.41 s), not 0.18 s late.
 
 ## The Healer (`src/render/critters/healerfacet.js`)
 
-The player's hero. The classic contract stays: the wide closed bell in Sage (12-sided, 2%
-wider so its flats keep the classic's width), the round ears with their blush, the short
-snout, the head proportions and painted face, the staff held out to the side and forward,
-and the classic gem with its exact colour, glow and flare (Bright Heal on the gem only; it
-stays `tip`, so the player's bolts still leave the gem: at birth a bolt reads
-`releaseWorld`, where the gem will be at the shot's release, since the bolt is born on the
-press a few frames before the staff gets there).
+The player's hero, built to Kesh's turnaround sheet (rounds 2 and 3, 2026-11-11; the sheet is
+`/mnt/project-files/model-review/healer/round2-ref/3d1450d2-mouse-turnaround.png`, and
+`tools/model-review.mjs views` lays the model over it). The gem keeps the classic contract: it is
+`tip`, with its exact colour, glow and flare (Bright Heal on the gem only), so the player's bolts
+still leave the gem (at birth a bolt reads `releaseWorld`, where the gem will be at the shot's
+release, since the bolt is born on the press a few frames before the staff gets there).
+Colours are `HEALER_GARB` (`src/data/palette.js`), each solved so the lit render shows the
+sheet's colour written beside it.
 
-- **Detail.** A capelet of 21 folded leaves in two brick-laid rows round the shoulders,
-  open over the bone bib; a scalloped hem of 18 leaves; a sash of 12 folded plates (the
-  classic's sash sat hidden inside the bell); 7 criss-cross bindings on the shaft; 6 pewter
-  beads; a pewter claw setting of 8 blades round the gem. The leaves are Sage lightened at
-  its own hue; the wood is the classic's weathered toward Warm Grey (the classic's own wood
-  sits in the amber family); no gold. Two small faceted feet peek out under the front hem.
+- **Garments.** A sand linen robe, an A-line closed at the neck and wrapped across to the knot
+  on her staff side, its skirt fluted, with a rust hem band; a camel capelet with a rust foot,
+  longer behind, clasped under the hood's V; a cloak hung at her back from under the capelet,
+  its edges swinging back as it falls (`cloakSpan`) and its rust lining showing past her sides;
+  wide sleeves with rust cuffs, each with a small dark hollow sunk inside.
+- **Head.** A squashed ball drawn in over the crown and squared off below the eyes (`ringX`,
+  `ringZ`), so the face is widest at the cheeks as the sheet's pear-shaped face is; a snout and
+  a jaw swell (`SNOUT`, `JAW`) give the profile its round chin; the muzzle is one soft pale oval
+  and the cheeks a faint blush, graded vertex by vertex so they blend across the facets; the
+  painted face has dark eyes with a brown crescent of iris and one glint, and ringed brows; a
+  salmon nose with an ink outline; a fine "w" mouth. Head and hood sit 0.04 u forward of the
+  body's middle (`HEAD_Z`, `HOOD_DZ`), as the sheet's side view puts them.
+- **Hood.** A narrow dome over the crown (`HOOD_RINGS`, deeper there: `CROWN_D`), cut round the
+  face opening (`OPENING`, fitted to the face's edge) a hair wide so the cut edge hides under the
+  rim; the rust rim rolls round the opening, narrow over the brow and wider at the cheeks and
+  down the V (`rimWide`), with an ink line on its inner edge and a mauve-grey shade on the face
+  inside it (`openDist`). The cowl carries the hood down round the neck into the V, its two
+  rounded lobes over the capelet.
+- **Ears.** Big cupped discs built pole-forward, so their facets fan from the middle and the
+  outline stays round, turned out 0.82 rad and splayed 0.3 rad, with pink insides.
+- **Belt and pouches.** A twisted rope belt (instanced twists over a dark core) knotted on her
+  staff side, its two ends hanging to frayed tassels; two big leather pouches with flaps, one
+  strapped and buckled.
+- **Staff.** A gnarled branch, thin at the butt (0.012 u) and swelling to 0.027 u under its head
+  (`shaftR`), with two knots and nine bark scales; its head forks round the crystal's foot, a
+  short lobe outside and a taller stub inside. The crystal is a long six-sided point (0.17 u),
+  inked like every other part, its facets painted in steps (it is unlit) so it twinkles as it
+  turns. At rest it stands out and forward of her (`REST`: el 0.206 toward az 0.72), its butt on
+  the floor; the idle flourish's cant adds to that lean.
+- **Paws, feet, tail.** The grip paw is a fist round the shaft (1.3x) with a pink wrist out of a
+  shorter grip sleeve; the free paw hangs open. Grey-taupe legs, linen foot wraps with raised
+  crossings and three pink toes, each foot turned out 0.2 rad. A ringed pink tail arcs off the
+  floor behind her and hooks up at her free side.
+- **Budget.** 68 meshes and 14,870 triangles in the lab count (`node tools/model-review.mjs
+  stats`), ink included, against 80 and 15,000.
 - **3-hit combo, as melee** (Kesh's pick of 2026-10-26: her basic is a bolt every 0.5 s in
   the sim, but the rig plays it as melee blows: each contact holds, pulls back, lunges in,
   squashes +19% and recoils off a connect like the Tank and the Swordsman): wind 1 frame,

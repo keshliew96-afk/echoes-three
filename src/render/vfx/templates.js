@@ -30,7 +30,7 @@
 // randomness from the COSMETIC stream.
 import { Vector3 } from 'three';
 import { PALETTE } from '../../data/palette.js';
-import { vfxTemplate, vfxTemplateFor, vfxSkillClass, VFX_HEAL_SKILLS } from '../../data/vfx.js';
+import { vfxTemplate, vfxClassTemplate, vfxTemplateFor, vfxSkillClass, VFX_HEAL_SKILLS } from '../../data/vfx.js';
 import { TRACE } from './tplkit.js';
 
 const TAU = Math.PI * 2;
@@ -55,7 +55,8 @@ const MAGIC_EXIT = Object.freeze({ edge: 0.33, y: 0.55, out: 6, back: 3, speed: 
 export const TRACE_FX = Object.freeze({ strikeSpeed: 3.5, ghosts: [[0.03, 0.8, 0.45], [0.06, 0.6, 0.3]], under: 0.55 });
 
 export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd, mark, player, classOf, area, rigPoint = null, rigCenter = null, rigMoving = null }) {
-  const tpl = (classId, skill) => vfxTemplate(vfxTemplateFor(classId, skill));
+  // a class's own tone on its template (data/vfx.js CLASS_TONE: the Healer's leaf green)
+  const tpl = (classId, skill) => vfxClassTemplate(classId ?? (skill ? vfxSkillClass(skill) : null), vfxTemplateFor(classId, skill));
   // A magic heal: Bright Heal takes the purple's place, the gold stays.
   const healTone = (tp) => ({ ...tp, a: HEAL, deep: '#2E7A45', heal: true });
   const toneFor = (classId, skill) => {
@@ -75,10 +76,10 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     fire('magic_cast');
     const R = Math.min(2.6, Math.max(0.75, r * 0.9));
     magicGather(tp, x, z, R);
-    tk.circle({ x, z, radius: R, face: 'arcane', outer: tp.a, inner: tp.b, life: big ? 1.05 : 0.7, spin: 1.6, opacity: 0.95 });
+    tk.circle({ x, z, radius: R, face: tp.face ?? 'arcane', outer: tp.a, inner: tp.b, life: big ? 1.05 : 0.7, spin: 1.6, opacity: 0.95 });
     after(0.06, () => {
-      tk.blast({ x, y: 0.75, z, size: 1.5 + R * 0.6, mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: 0.42 });
-      if (beam) tk.beam({ x, z, height: 3.6, width: 0.55 + R * 0.2, core: tp.core, glow: tp.a, life: 0.55 });
+      tk.blast({ x, y: 0.75, z, size: (1.5 + R * 0.6) * (tp.hot ?? 1), mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: 0.42 });
+      if (beam) tk.beam({ x, z, height: 3.6, width: (0.55 + R * 0.2) * (tp.hot ?? 1), core: tp.core, glow: tp.a, life: 0.55 });
       tk.dust(x, 0.35, z, big ? tp.dust.cast : 12, { color: tp.b, color2: tp.a, mix: 0.45, radius: R * 0.8, speed: [0.2, 0.9], up: [0.6, 1.6], size: [0.05, 0.11], life: [0.9, 1.6], gravity: -0.15, drag: 1.2, swirl: 2.2 });
       kit.ring({ x, z, r0: 0.2, r1: R * 1.25, width: 0.07, life: 0.4, core: tp.core, glow: tp.b, soft: 0.3, y: 0.06 });
       kit.light({ x, z, radius: R * 1.7, color: tp.a, opacity: 0.5, life: 0.55, attack: 0.05 });
@@ -94,7 +95,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
       const a0 = rnd(0, TAU);
       for (let i = 0; i < n; i++) {
         const a = a0 + (i / n) * TAU;
-        tk.beam({ x: x + Math.cos(a) * r * 0.8, z: z + Math.sin(a) * r * 0.8, height: 2.4, width: 0.3, core: tp.core, glow: tp.b, life: 0.45, delay: i * 0.04, opacity: 0.7 });
+        tk.beam({ x: x + Math.cos(a) * r * 0.8, z: z + Math.sin(a) * r * 0.8, height: 2.4, width: (0.3) * (tp.hot ?? 1), core: tp.core, glow: tp.b, life: 0.45, delay: i * 0.04, opacity: 0.7 });
       }
       tk.dust(x, 0.2, z, 18, { color: tp.b, color2: tp.a, radius: r, speed: [0.1, 0.5], up: [0.3, 1.0], size: [0.04, 0.09], life: [0.8, 1.4], gravity: -0.1, drag: 1.4 });
       camfx.dolly(x, z, 0.03, 0.25);
@@ -107,9 +108,9 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     fire('magic_zone');
     const R = Math.min(3, Math.max(0.7, r));
     magicGather(tp, x, z, R * 0.8);
-    tk.beam({ x, z, height: 5.5, width: 0.9 + R * 0.25, core: tp.core, glow: tp.a, life: 0.6 });
+    tk.beam({ x, z, height: 5.5, width: (0.9 + R * 0.25) * (tp.hot ?? 1), core: tp.core, glow: tp.a, life: 0.6 });
     after(0.07, () => {
-      tk.blast({ x, y: 0.45, z, size: 1.4 + R * 0.7, mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: 0.45 });
+      tk.blast({ x, y: 0.45, z, size: (1.4 + R * 0.7) * (tp.hot ?? 1), mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: 0.45 });
       tk.dust(x, 0.2, z, tp.dust.cast, { color: tp.b, color2: tp.a, radius: R * 0.7, speed: [0.3, 1.2], up: [1.0, 2.2], size: [0.05, 0.11], life: [0.8, 1.4], gravity: 0.4, drag: 1.0 });
       kit.ring({ x, z, r0: 0.2, r1: R * 1.15, width: 0.1, life: 0.45, core: tp.core, glow: tp.b, soft: 0.3, y: 0.06 });
       kit.light({ x, z, radius: R * 1.8, color: tp.a, opacity: 0.55, life: 0.6, attack: 0.05 });
@@ -124,8 +125,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     const uz = dz / l;
     const mx = x + ux * 0.45;
     const mz = z + uz * 0.45;
-    tk.circle({ x: mx, y: 0.6, z: mz, radius: big || count > 1 ? 0.62 : 0.46, face: 'arcane', outer: tp.a, inner: tp.b, life: big ? 0.5 : 0.36, spin: 3, stand: Math.atan2(uz, ux), opacity: 0.9 });
-    tk.blast({ x: mx, y: 0.6, z: mz, size: big ? 1.2 : 0.8, mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: 0.26 });
+    tk.circle({ x: mx, y: 0.6, z: mz, radius: big || count > 1 ? 0.62 : 0.46, face: tp.face ?? 'arcane', outer: tp.a, inner: tp.b, life: big ? 0.5 : 0.36, spin: 3, stand: Math.atan2(uz, ux), opacity: 0.9 });
+    tk.blast({ x: mx, y: 0.6, z: mz, size: (big ? 1.2 : 0.8) * (tp.hot ?? 1), mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: 0.26 });
     tk.dust(mx, 0.6, mz, big ? 10 : 5, { color: tp.b, color2: tp.a, radius: 0.12, speed: [0.6, 1.8], up: [-0.1, 0.4], size: [0.04, 0.08], life: [0.4, 0.8], gravity: 0, drag: 2.2, dir: { x: ux, z: uz }, dirBias: 0.7 });
   }
   // A magic hit lands: a celestial star, a puff of stardust; a crit adds a
@@ -137,7 +138,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     fire('magic_hit');
     const l = Math.hypot(dx, dz);
     const dir = l > 1e-4 ? { x: dx / l, z: dz / l } : null;
-    tk.blast({ x, y: 0.55, z, size: (big ? 1.15 : 0.85) * (crit ? 1.55 : 1), mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: crit ? 0.34 : 0.24 });
+    tk.blast({ x, y: 0.55, z, size: ((big ? 1.15 : 0.85) * (crit ? 1.55 : 1)) * (tp.hot ?? 1), mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: crit ? 0.34 : 0.24 });
     if (dir) {
       const F = MAGIC_EXIT;
       const fx = x + dir.x * F.edge;
@@ -147,8 +148,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     }
     tk.dust(dir ? x + dir.x * MAGIC_EXIT.edge : x, 0.55, dir ? z + dir.z * MAGIC_EXIT.edge : z, tp.dust.hit + (crit ? 6 : 0), { color: tp.b, color2: tp.a, radius: 0.15, speed: [0.4, 1.3], up: [0.3, 1.1], size: [0.04, 0.08], life: [0.5, 0.9], gravity: 0.2, drag: 1.8, dir, dirBias: dir ? 0.6 : 0 });
     if (crit) {
-      tk.circle({ x, z, radius: 0.7, face: 'arcane', outer: tp.a, inner: tp.b, life: 0.5, spin: 3, opacity: 0.8 });
-      tk.beam({ x, z, height: 2.2, width: 0.35, core: tp.core, glow: tp.a, life: 0.32 });
+      tk.circle({ x, z, radius: 0.7, face: tp.face ?? 'arcane', outer: tp.a, inner: tp.b, life: 0.5, spin: 3, opacity: 0.8 });
+      tk.beam({ x, z, height: 2.2, width: (0.35) * (tp.hot ?? 1), core: tp.core, glow: tp.a, life: 0.32 });
     }
   }
   // A spell's travel (dash, blink, hop): stardust laid down the path and a
@@ -161,8 +162,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
       tk.dust(x0 + (x1 - x0) * k, 0.45, z0 + (z1 - z0) * k, 2, { color: tp.b, color2: tp.a, radius: 0.15, speed: [0.05, 0.3], up: [0.1, 0.6], size: [0.05, 0.1], life: [0.6, 1.1], gravity: -0.2, drag: 1.4, delay: k * 0.08 });
     }
     kit.streak({ a: { x: x0, y: 0.45, z: z0 }, b: { x: x1, y: 0.45, z: z1 }, width: 0.2, tailW: 0.3, core: tp.core, glow: tp.a, life: 0.32, fall: 1.2, opacity: 0.7 });
-    tk.circle({ x: x1, z: z1, radius: 0.85, face: 'arcane', outer: tp.a, inner: tp.b, life: 0.6, spin: 2.4 });
-    tk.blast({ x: x1, y: 0.5, z: z1, size: 1.1, mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: 0.3 });
+    tk.circle({ x: x1, z: z1, radius: 0.85, face: tp.face ?? 'arcane', outer: tp.a, inner: tp.b, life: 0.6, spin: 2.4 });
+    tk.blast({ x: x1, y: 0.5, z: z1, size: (1.1) * (tp.hot ?? 1), mode: 'celestial', core: tp.core, a: tp.a, b: tp.b, life: 0.3 });
   }
   // A ward or a blessing on each body: a circle under them and light
   // pouring down onto them.
@@ -171,8 +172,8 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
     ids.forEach((id, i) => {
       const t = byId(id);
       if (!t) return;
-      tk.circle({ x: t.x, z: t.z, radius: 0.7, face: 'arcane', outer: tp.a, inner: tp.b, life: 0.8, spin: 2, delay: 0.05 + i * 0.04 });
-      tk.beam({ x: t.x, z: t.z, height: 3.4, width: 0.5, core: tp.core, glow: tp.a, life: 0.5, delay: 0.05 + i * 0.04 });
+      tk.circle({ x: t.x, z: t.z, radius: 0.7, face: tp.face ?? 'arcane', outer: tp.a, inner: tp.b, life: 0.8, spin: 2, delay: 0.05 + i * 0.04 });
+      tk.beam({ x: t.x, z: t.z, height: 3.4, width: (0.5) * (tp.hot ?? 1), core: tp.core, glow: tp.a, life: 0.5, delay: 0.05 + i * 0.04 });
       tk.dust(t.x, 0.3, t.z, 8, { color: tp.b, color2: tp.a, radius: 0.35, speed: [0.05, 0.3], up: [0.5, 1.2], size: [0.04, 0.09], life: [0.8, 1.3], gravity: -0.2, drag: 1.4, swirl: 3, delay: 0.05 + i * 0.04 });
     });
   }
@@ -180,7 +181,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   // out, a circle at the caster, stardust riding the front.
   function magicWave(tp, x, z, angle, reach, half) {
     fire('magic_wave');
-    tk.circle({ x, z, radius: 0.8, face: 'arcane', outer: tp.a, inner: tp.b, life: 0.6, spin: 2.4 });
+    tk.circle({ x, z, radius: 0.8, face: tp.face ?? 'arcane', outer: tp.a, inner: tp.b, life: 0.6, spin: 2.4 });
     tk.blaze({ x, z, angle, radius: reach * 0.55, width: 0.6, span: half * 2, mode: 'wave', ring: false, sweep: 0.02, life: 0.5, grow: 0.9, core: tp.core, a: tp.a, b: tp.b, y: 0.4, lift: 0.1, taper: 0.8, tail: 1, gain: 1.3 });
     tk.blaze({ x, z, angle, radius: reach * 0.4, width: 0.25, span: half * 1.8, mode: 'wave', sweep: 0.02, life: 0.45, grow: 1.0, core: tp.core, a: tp.b, b: tp.b, y: 0.42, lift: 0.1, taper: 0.8, tail: 1, delay: 0.05, opacity: 0.7 });
     for (let i = 0; i < 8; i++) {
@@ -455,7 +456,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
   }
   function openZoneCircle(e) {
     const tp = zoneTone(e);
-    const face = tp.id === 'blade' ? 'sun' : tp.id === 'scifi' ? 'hex' : 'arcane';
+    const face = tp.id === 'blade' ? 'sun' : tp.id === 'scifi' ? 'hex' : tp.face ?? 'arcane';
     const blade = tp.id === 'blade';
     const s = tk.circle({ x: e.x, z: e.z, radius: e.radius, face, outer: blade ? tp.b : tp.a, inner: blade ? tp.core : tp.b, spin: ZONE_CIRCLE.spin, opacity: ZONE_CIRCLE.opacity, grow: 0, hold: true });
     return { s, tok: s.tok, tp, dust: 0 };
@@ -690,7 +691,7 @@ export function createTemplateFx({ kit, tk, bus, byId, spray, after, camfx, rnd,
 
   // The template a party shot plays in flight (boltfx.js draws it): a heal
   // bolt is green and gold, the Healer's plain bolt her basic's.
-  const boltTone = (e) => (e.heal ? healTone(vfxTemplate('magic')) : toneFor(e.kind === 'bolt' ? 'healer' : null, e.kind === 'bolt' ? 'healer_basic' : e.skill));
+  const boltTone = (e) => (e.heal ? healTone(tpl(null, e.skill ?? 'healer_basic')) : toneFor(e.kind === 'bolt' ? 'healer' : null, e.kind === 'bolt' ? 'healer_basic' : e.skill));
 
   // ------------------------------------------------------------ the lab --
   // showcase('magic' | 'blade' | 'scifi', { x, z }): every beat of one

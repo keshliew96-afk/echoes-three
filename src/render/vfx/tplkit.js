@@ -3,9 +3,10 @@
 //
 //   circle  an arcane circle on the ground (or standing up at a caster's
 //           hand): an outer ring of runes and an inner sigil that spin
-//           against each other. Three faces: 'arcane' (runes and a
+//           against each other. Four faces: 'arcane' (runes and a
 //           hexagram, MAGIC), 'sun' (a ring of flame rays, BLADE), 'hex' (a
-//           targeting hexagon and grid ticks, SCI-FI).
+//           targeting hexagon and grid ticks, SCI-FI), 'leaf' (one rim and
+//           twelve leaves round a leaf rosette: the Healer's magic).
 //   beam    an ethereal light beam: a tall camera-facing shaft with a hot
 //           core, a soft volumetric halo and light rising up it.
 //   blaze   a ribbon bent round a centre, like the base slash, but burning:
@@ -127,7 +128,7 @@ function getCircleTexture(face, layer) {
   c.width = S;
   c.height = S;
   const g = c.getContext('2d');
-  const R = lcg(face === 'arcane' ? 7 : face === 'sun' ? 11 : 13);
+  const R = lcg(face === 'arcane' ? 7 : face === 'sun' ? 11 : face === 'leaf' ? 17 : 13);
   g.strokeStyle = '#ffffff';
   g.fillStyle = '#ffffff';
   g.lineCap = 'round';
@@ -222,6 +223,49 @@ function getCircleTexture(face, layer) {
     });
     const core = g.createRadialGradient(H, H, 0, H, H, H * 0.22);
     core.addColorStop(0, 'rgba(255,255,255,0.85)');
+    core.addColorStop(1, 'rgba(255,255,255,0)');
+    g.fillStyle = core;
+    g.fillRect(0, 0, S, S);
+  } else if (face === 'leaf' && layer === 'outer') {
+    // The Healer's circle (Kesh's VFX sheet, area heal), cut down to what
+    // reads from the top-down camera: one bold rim, a thin inner ring and
+    // twelve leaves laid round between them. No runes, no ticks.
+    glowPass(() => {
+      ring(H * 0.93, 7);
+      ring(H * 0.7, 2.5, 0.8);
+    });
+    const leafAt = (a, r, len, wid) => {
+      g.save();
+      g.translate(H + Math.cos(a) * r, H + Math.sin(a) * r);
+      g.rotate(a + Math.PI / 2 + 0.5);
+      g.shadowColor = 'rgba(255,255,255,0.9)';
+      g.shadowBlur = 8;
+      g.beginPath();
+      g.moveTo(0, -len);
+      g.quadraticCurveTo(wid, 0, 0, len);
+      g.quadraticCurveTo(-wid, 0, 0, -len);
+      g.fill();
+      g.restore();
+    };
+    for (let i = 0; i < 12; i++) leafAt((i / 12) * Math.PI * 2, H * 0.815, 22, 13);
+  } else if (face === 'leaf') {
+    // Inside: a six-leaf rosette and a soft centre.
+    glowPass(() => ring(H * 0.34, 3, 0.9));
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 - Math.PI / 2;
+      g.save();
+      g.translate(H + Math.cos(a) * H * 0.2, H + Math.sin(a) * H * 0.2);
+      g.rotate(a + Math.PI / 2);
+      g.globalAlpha = 0.85;
+      g.beginPath();
+      g.moveTo(0, -H * 0.12);
+      g.quadraticCurveTo(H * 0.07, 0, 0, H * 0.12);
+      g.quadraticCurveTo(-H * 0.07, 0, 0, -H * 0.12);
+      g.fill();
+      g.restore();
+    }
+    const core = g.createRadialGradient(H, H, 0, H, H, H * 0.16);
+    core.addColorStop(0, 'rgba(255,255,255,0.6)');
     core.addColorStop(1, 'rgba(255,255,255,0)');
     g.fillStyle = core;
     g.fillRect(0, 0, S, S);
@@ -688,7 +732,7 @@ export function createTemplateKit({ stage, cosmetic, budgeted = () => false, nei
   const rnd = (a, b) => cosmetic.range(a, b);
   planeGeo ??= markShared(new PlaneGeometry(1, 1, 1, 1));
   arcGeo ??= markShared(new PlaneGeometry(1, 1, 48, 1));
-  for (const f of ['arcane', 'sun', 'hex']) for (const l of ['outer', 'inner']) getCircleTexture(f, l);
+  for (const f of ['arcane', 'sun', 'hex', 'leaf']) for (const l of ['outer', 'inner']) getCircleTexture(f, l);
   for (const k of ['star', 'square']) getDustTexture(k);
   let time = 0;
   let lightGain = 1;

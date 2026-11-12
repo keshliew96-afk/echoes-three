@@ -69,6 +69,13 @@ so a hero keeps its own shapes; the template is the finish on top.
 
 - Magic: Arcane Purple `#A24BFF`, Celestial Gold `#FFC94A`, Star White `#FFF4D6`.
   A magic heal swaps the purple for Bright Heal and keeps the gold.
+- The Healer's own magic (`CLASS_TONE` in `src/data/vfx.js`, from Kesh's VFX
+  sheet, model review round 2, 2026-11-11): Leaf Green `#A9DC7C` in the purple's
+  place (hue 95, well off Bright Heal's 131, which stays the heal colour), a
+  softer core `#EEF6D4`, bursts and beams at 70% (`hot`), and the plain
+  `leaf` circle (one rim, twelve leaves, a leaf rosette) instead of the rune
+  circle, so her circles and area heals read from the top-down camera. Her
+  heals still swap in Bright Heal. The other magic heroes keep the purple.
 - Blade: Blaze Core `#FFF3C4`, Blaze Gold `#FFB43C`, Flame `#F5952E`, Wave Gold `#FFD866`.
 - Sci-fi: Neon Cyan `#3DF2FF`, Neon Magenta `#FF3DD8`.
 - Kept clear of the gameplay signals: the blade's fire leans gold (Ember is
