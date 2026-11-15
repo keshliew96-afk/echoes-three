@@ -35,6 +35,7 @@ import { SPOILS_PER_CLEAR } from '../../sim/draft.js';
 import { SKILLS } from '../../sim/skills.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { classOfSeat } from '../../data/lineup.js';
+import { cap } from '../../app/controls.js';
 import { createPartyStrip, ownerBandHtml, netOwners } from './partystrip.js';
 import { service } from '../../app/registry.js';
 import { t, tn } from '../../i18n/index.js';
@@ -88,14 +89,14 @@ export function createDraftScreen({ run, build, party = () => null }) {
   const repLine = el.querySelector('.rn-repline');
   const hintEl = el.querySelector('.rn-drafthint');
   const HINT_PARTY = t(
-    '<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause'
+    '<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>Esc</b> pause'
   );
   const HINT_SWAP = t(
-    '<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>W</b>/<b>S</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave'
+    '<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>W</b>/<b>S</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit'
   );
-  const HINT_SOLO = t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause');
+  const HINT_SOLO = t('<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>Esc</b> pause');
   const HINT_SOLO_SWAP = t(
-    '<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause'
+    '<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>Esc</b> pause'
   );
 
   // 0 = Take (the rn-primary), 1 = Leave. PER PAGE state, re-initialised when
@@ -559,7 +560,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
         const def = SKILLS[sk.id];
         const sel = i === rep;
         return `<div class="rn-rep${sel ? ' rn-sel' : ''}" data-slot="${i}" data-skill="${esc(sk.id)}" data-seat="${seat}">
-          <span class="rn-repkey">${i + 1}</span><span class="rn-repx">✕</span>
+          <span class="rn-repkey">${esc(cap(`skill${i + 1}`))}</span><span class="rn-repx">✕</span>
           ${cardIconHtml(sk.id, 30)}
           <div class="rn-repname">${esc(def ? t(def.name) : sk.id)}</div>
           <div class="rn-repmeta">${sel ? esc(t('replace · ◈ {n}', { n: sk.filled })) : `◈ ${sk.filled}`}</div>
@@ -589,7 +590,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
       placed[rep] = c.id;
       const order = P.aiOrder(seat, placed);
       const at = order ? order.indexOf(c.id) : rep;
-      if (order && order.some((id, i) => id !== placed[i])) lands = t('AI re-sorts keys to cast order: {skill} → key {key}', { skill: newName, key: at + 1 });
+      if (order && order.some((id, i) => id !== placed[i])) lands = t('AI re-sorts keys to cast order: {skill} → key {key}', { skill: newName, key: cap(`skill${at + 1}`) });
     }
     repLine.style.display = '';
     repLine.textContent = [t('{new} replaces {old} — {nodes}', { new: newName, old: oldName, nodes }), advice, lands].filter(Boolean).join(' · ');
@@ -660,14 +661,10 @@ export function createDraftScreen({ run, build, party = () => null }) {
       return true;
     }
     // Ruling A13 (PLAN §1.5): Esc opens the pause menu on every page and is
-    // never consumed here. Leave is X (settle-guarded + fresh-press, exactly
-    // like Enter) or the Leave button.
-    if (code === 'KeyX') {
-      if (!fresh) return true;
-      decide('leave');
-      return true;
-    }
-    if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
+    // never consumed here. Leave is A / D to the Leave button, then Enter, or
+    // a click on it. KEY CLASH (Kesh, v0.5.363): X (skill 4) and Space (the
+    // dodge) are fight keys, so neither commits here; only Enter does.
+    if (code === 'Enter' || code === 'NumpadEnter') {
       // Fresh-press rule: a key carried in from the previous screen never commits.
       if (!fresh) return true;
       if (focus === 0 && btnTake.style.display !== 'none') decide('take');
@@ -678,7 +675,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
   }
 
   // Gamepad (app/gamepad.js → run UI): LB / RB characters, D-pad left / right
-  // Take / Leave, up / down Replaces, A decide, X leave.
+  // Take / Leave, up / down Replaces, A decide.
   function pad(action) {
     const page = partyPage(lastView);
     if ((action === 'tabPrev' || action === 'tabNext') && page) {
@@ -698,10 +695,8 @@ export function createDraftScreen({ run, build, party = () => null }) {
       else decide('leave');
       return true;
     }
-    if (action === 'secondary') {
-      decide('leave');
-      return true;
-    }
+    // KEY CLASH (v0.5.363): the pad's X is skill 1 in a fight, so it no
+    // longer leaves; the D-pad to Leave, then A, does.
     return false;
   }
 

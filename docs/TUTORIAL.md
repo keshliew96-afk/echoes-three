@@ -14,7 +14,7 @@ systems they meet later.
   1. Move (W A S D): walk 2.5 units.
   2. Attack: hold the right mouse button.
   3. Dodge: press Space.
-  4. Use: drink from the spring with E (the step lets go after 45 s).
+  4. Use: drink from the spring with the interact key, F by default (the step lets go after 45 s).
   5. Clear the waves: the coach releases them now. The room is gentle: half
      the threat budget, enemies at 60% health and 40% damage, no elites.
   6. Your first skill: a centred card over the reward page explains that
