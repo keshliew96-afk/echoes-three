@@ -10,6 +10,12 @@
 > faceted foe to its retired classic's draw calls, kept in `tools/classic-foe-calls.json`.
 > Level V, Spire and Kiln creatures were never faceted and keep their first rigs.
 
+> **Tripo models (2026-11-15, BUILD_BRIEF A23).** The Tripo models Kesh passed replace these
+> code-built rigs, one per creature, once the freeze lifts; their doc is `docs/TRIPO_MODELS.md`. This doc
+> still describes what the game draws until each rig is replaced, and a replaced rig's section stays as
+> its record. The detail standard below was closed unused (draft #144, the Healer's round 3, is
+> closed, and the sign-off register stays empty). Do not add detail to a code-built rig.
+
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
 planes, detail by repeating small parts, and abilities as named, rewindable timelines. He
@@ -67,6 +73,8 @@ is about 1,020 calls before the room and the effects, inside a 1,500-call frame.
 figure is a plan, not a measurement: the S9 frame-time probe on a 1050 Ti-class PC sets it.
 Level V, Spire and Kiln creatures were never faceted and get the standard when the freeze lifts.
 
+The Tripo models have their own budgets, measured: `docs/TRIPO_MODELS.md` "Budgets".
+
 ### What every model must show
 
 1. **Silhouette.** It reads as itself from its outline alone at play zoom (12 u, 52°, 1080p).
@@ -76,7 +84,7 @@ Level V, Spire and Kiln creatures were never faceted and get the standard when t
    level and keeps the first.
 3. **Face, hands and weapon** read at play zoom in a busy room.
 4. **Materials.** The facet material with the toon ramp and ink hulls; colours from `PALETTE`
-   only; no textures. The reserved colours hold (`.claude/rules/visuals.md`): no Ember or Violet
+   only; no textures (a code-built rig; a Tripo model carries its one texture, BUILD_BRIEF A23). The reserved colours hold (`.claude/rules/visuals.md`): no Ember or Violet
    on a hero, Bright Heal only for healing, Foe Crimson, Violet or magenta for foe fire.
 5. **Moves.** Every move has a wind-up, a contact and a follow-through ([M] beats, §6.1 of
    `docs/VFX_HIT_RULES.md`); feet stay planted; the hero lean stays inside 12°; weapons swing

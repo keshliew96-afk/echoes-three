@@ -128,6 +128,17 @@ Probes that drive a **built** dist through the debug API (`tools/cloudsave-brows
 `VITE_ECHOES_HARNESS=1 npx vite build` first. `node tools/player-build-gating-probe.mjs
 --dist dist` checks a player build; `--dev http://127.0.0.1:5199/` checks the dev server.
 
+### Tripo models
+
+The 14 `tools/model-standard-*-probe.mjs` probes in `npm test` (and `tools/classic-foe-calls.json`,
+`tools/model-review.mjs`) hold the code-built rigs: instanced detail parts, locked feet, draw calls,
+strikes on the sim tick. When a Tripo model replaces a rig (BUILD_BRIEF A23, `docs/TRIPO_MODELS.md`),
+the same change deletes that rig's checks from its probe and adds the model to one Tripo probe,
+which reads the packed GLB and checks: the clip names its standard asks for, triangles and bones
+inside its tier, one texture of the planned size, no reserved colour on a hero texture, and each
+attack's contact time against the sim's strike tick. A probe whose rigs are all replaced is deleted
+from `tools/test.mjs` in that change.
+
 The sections below are from the builder and critic rounds up to v0.5.220 (2026-10-04). The
 debug API, the frame analyzer and the harness boot parameters still work in a harness build
 ("Player build" above); the round, critic,

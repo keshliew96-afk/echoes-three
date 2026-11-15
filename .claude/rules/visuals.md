@@ -19,6 +19,8 @@ The reserved colours (BUILD_BRIEF §19, §23, as Kesh settled them since; `src/d
   frames, corrupted foes, defeat. A foe may cast in Violet.
 - **Bright Heal `#5FE873`** is every heal and nothing else.
 - **Heroes** never wear Ember or Violet; the Swordsman's red is Fox Crimson `#E8577A`.
+- A Tripo model's texture is held to the same rules (`docs/TRIPO_MODELS.md` "Look checks" has the
+  measured texels and the check).
 
 The VFX bar is Diablo IV or Hades (`?vfxlab=1`).
 Every VFX build follows Kesh's three templates (magic, knife and sword, sci-fi) and his enhancer
