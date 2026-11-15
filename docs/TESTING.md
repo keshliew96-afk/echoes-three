@@ -39,8 +39,8 @@ that request logs a 502.
 
 ### npm test and CI (v0.5.318)
 
-`npm test` runs `tools/test.mjs`: the browser-free probes in its `SUITE` one after another (54 at
-v0.5.359, about 3 to 5 minutes; `npm test -- --list` prints them), exit 1 if any fails. `npm test -- --list` prints the suite,
+`npm test` runs `tools/test.mjs`: the browser-free probes in its `SUITE` one after another (55 at
+v0.5.365, about 3 to 5 minutes; `npm test -- --list` prints them), exit 1 if any fails. `npm test -- --list` prints the suite,
 `npm test -- --only <part of a file name>` runs a few. The suite is the safety net itself
 (`test-safety-net-probe`), the nine goldens, the language check, the data cross-check
 (`data-xcheck-probe`), layout placements, save round trips (`save-determinism-probe`,
