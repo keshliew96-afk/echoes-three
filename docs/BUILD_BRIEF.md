@@ -6,9 +6,11 @@
 
 This is the original implementation spec for the Three.js web build of
 **Echoes**, translated from the approved GameStudio design corpus (game concept R3,
-combat GDD, build/draft/shop GDDs, HUD/UX specs, art bible). The binding visual/responsiveness
-quality bar is `docs/REFERENCE_BAR.md` (same folder) — every rendered frame is
-judged against its 10 checks and its responsiveness bar. Over the original
+combat GDD, build/draft/shop GDDs, HUD/UX specs, art bible). The visual quality bar
+was `docs/REFERENCE_BAR.md` and its 10 checks, judged by the critic rounds; Kesh
+retired it on 2026-11-15 (`CLAUDE.md` "Settled decisions", Workflow), and looks are
+now judged against the colour rule, the VFX templates and the Tripo standards. The
+responsiveness bar (§22) still holds. Over the original
 GameStudio docs this brief wins (scoping rulings are listed in Appendix A); later
 rulings and the per-system docs win over this brief.
 

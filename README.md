@@ -21,9 +21,9 @@ descend into the Ember Kiln.
 
 ## Requirements
 
-- [Node.js](https://nodejs.org/) 20 or newer (developed on 24)
-- A desktop browser with WebGL 2 (Chrome, Edge or Firefox). Keyboard + mouse;
-  a standard gamepad also works in the menus and for movement.
+- [Node.js](https://nodejs.org/) 22 (what CI runs)
+- A desktop browser with WebGL 2 (Chrome, Edge or Firefox). Keyboard + mouse,
+  or a standard gamepad.
 
 ## Run it
 
@@ -55,34 +55,39 @@ npm run serve        # -> http://localhost:7800/ and your network address
 Records / Exit. Navigate with the arrow keys or mouse; Enter confirms, Esc goes
 back.
 
-**The loop:** you start at the night camp. Walk to the violet portal at the top
-of the camp and press **E** to begin an expedition (once you have won Act I, the
-portal offers an expedition picker). A run is eight rooms: kill-all and defend
-rooms, a shop in room 7, and the expedition's boss in room 8 (the Hollow Stag, the
-Drowned Heron or the Barrow Wyrm). Clearing a room offers a
-reward draft — a skill or a node — then you pick a door to the next room.
-Winning or dying returns you to camp with your records updated.
+**The loop:** you start at the night camp. Walk to the violet portal and press
+**F** to begin a run: the campaign starts at Level I, and each level is eight
+rooms (fights, defend rooms, a shop, and the level's boss in the last room).
+Clearing a room offers a reward draft (a skill or a node), then you pick a door
+to the next room. After Level IV the party chooses the Still Spire or the Ember
+Kiln. Winning, losing or quitting returns you to camp; clearing a level opens
+the next one in Level Select at the map table (**L**).
 
 ### Controls
+
+Default keys (rebind them in Settings ▸ Controls; the full table with the
+gamepad buttons is in [docs/CONTROLS.md](docs/CONTROLS.md)):
 
 | Input | Action |
 |---|---|
 | **W A S D** | Move |
 | **Mouse** | Aim |
 | **Right mouse (hold)** | Basic attack, repeats while held |
-| **Space** | Dodge roll (invulnerable frames) |
-| **1 2 3 4** | Skills in slots 1–4 |
+| **Space** | Dodge (invulnerable frames) |
+| **Q E C X** | Skills in slots 1–4 |
+| **F** | Interact · **F (hold)** revive a downed ally next to you |
 | **R** | Rally: all allies regroup on you |
-| **E (hold)** | Revive a downed ally next to you · **E (tap)** interact with objects |
-| **Tab** | Cycle the party's focus target |
+| **G** | Use your tonic or bomb |
+| **Tab** | Mark the next enemy |
 | **F1–F4** | Toggle heal-target override per party member (or click a portrait) |
 | **B** | Open the socket screen (between rooms) |
 | **Esc / P** | Pause menu (Resume, Settings, Save, Load, Quit) |
+| **L · U · K** (camp) | Levels · Unlocks · Class select |
 | **F5 / F9** | Quick save / quick load (single player) |
 
-On a reward screen: **A/D** or the arrows choose, **Enter** takes, **X** or the
-Decline button declines. (Esc opens the pause menu everywhere; it never throws a
-reward away.)
+On a reward screen: **A/D** or the arrows choose, **Enter** takes; to leave the
+reward, move to the Leave button and press **Enter**. (Esc opens the pause menu
+everywhere; it never throws a reward away.)
 
 ### Build: skills and nodes
 

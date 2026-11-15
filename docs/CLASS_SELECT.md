@@ -6,7 +6,7 @@ Code: the solo seat driver and the setting in `src/app/playclass.js`; the picker
 
 ## How a player uses it
 
-- In the camp, **C** (or the portal prompt's *Class* chip, which names the class you play) opens the picker: four cards with the critter, role, health, speed and starting skills (the equipped unlock kit's skills when one is worn). Pressing a card picks it and closes the picker.
+- In the camp, **K** (or the portal prompt's *Class* chip, which names the class you play) opens the picker: a card per hero (seven since the Duskwing, docs/LINEUP.md) with the critter, role, health, speed and starting skills (the equipped unlock kit's skills when one is worn). Pressing a card picks it and closes the picker.
 - You walk your class's critter around the camp and through the portal. In a run you control that body: WASD, aim, right mouse for the basic, Q, E, C and X for its four skills, Space to dodge, F to interact and hold F to revive (the default keys, docs/CONTROLS.md).
 - Rally (R) and the target calls (Tab, F1 to F4) are the Healer's party commands, so they only work while you play the Healer.
 - The other three classes are played by the AI, so the party is always the four classes the game is balanced for. When you are not the Healer, the Healer is played by the same bot the autopilot uses, in combat only: drafts, doors, relics and the shop stay your decisions.

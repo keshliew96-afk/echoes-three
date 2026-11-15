@@ -1,4 +1,0 @@
-[
-  { "type": "eval", "code": "document.body.style.filter='grayscale(1)'" },
-  { "type": "wait", "ms": 400 }
-]

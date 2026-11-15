@@ -31,7 +31,6 @@ import {
   BackSide,
   BufferAttribute,
   CanvasTexture,
-  CapsuleGeometry,
   CircleGeometry,
   Color,
   DoubleSide,
@@ -44,9 +43,7 @@ import {
   ShaderMaterial,
   SphereGeometry,
   SRGBColorSpace,
-  TubeGeometry,
   Vector2,
-  Vector3,
   Vector4,
 } from 'three';
 import { mergeVertices } from 'three/addons/utils/BufferGeometryUtils.js';
@@ -219,14 +216,6 @@ export function cachedSphere(key, r, w = 18, h = 14) {
   return cache.get(key);
 }
 
-// Lathe bell profile: point pairs [radius, y], bottom -> top.
-export function bell(pointPairs, segments = 32) {
-  return new LatheGeometry(
-    pointPairs.map(([x, y]) => new Vector2(x, y)),
-    segments
-  );
-}
-
 // Garment panel: a lathe ARC that rides just outside the body surface, taking
 // the body's own profile. Embedding a squashed sphere in the torso instead (the
 // obvious approach) leaves only a small cap poking through, which reads as a
@@ -248,53 +237,6 @@ export function bodyPanel(pointPairs, { color, phiLength = 1.0, grow = 1.022, se
 // is exactly what the critic saw — "a rigid traffic cone... no curve, no
 // fluff". Fur reads as fur only when the mass swells away from the root.
 export const brushProfile = (t) => (0.42 + 0.58 * Math.sin(Math.PI * Math.pow(t, 0.72))) * (1 - 0.22 * t);
-
-// Brush tail: one TubeGeometry whose ring radii follow `brushProfile` along the
-// path and whose vertex colours fade to the light tip, plus a rounded cap so
-// the open tube end cannot read as a cut-off cone. Built as one mesh on
-// purpose — a chain of overlapping balls, or a tube plus a detached light cap,
-// each carried their own ink and read as a segmented caterpillar.
-export function brushTail(curve, { radius, colorA, colorB, split = 0.55, tubular = 28, radial = 12 }) {
-  const geo = new TubeGeometry(curve, tubular, radius, radial, false);
-  const pos = geo.attributes.position;
-  const colors = new Float32Array(pos.count * 3);
-  const cA = new Color(colorA);
-  const cB = new Color(colorB);
-  const tmp = new Color();
-  const centre = new Vector3();
-  for (let i = 0; i <= tubular; i++) {
-    const t = i / tubular;
-    curve.getPointAt(t, centre);
-    const k = brushProfile(t);
-    const c = Math.min(1, Math.max(0, (t - split) / (1 - split)));
-    tmp.copy(cA).lerp(cB, c * c);
-    for (let j = 0; j <= radial; j++) {
-      const idx = i * (radial + 1) + j;
-      pos.setXYZ(
-        idx,
-        centre.x + (pos.getX(idx) - centre.x) * k,
-        centre.y + (pos.getY(idx) - centre.y) * k,
-        centre.z + (pos.getZ(idx) - centre.z) * k
-      );
-      colors[idx * 3] = tmp.r;
-      colors[idx * 3 + 1] = tmp.g;
-      colors[idx * 3 + 2] = tmp.b;
-    }
-  }
-  pos.needsUpdate = true;
-  geo.setAttribute('color', new BufferAttribute(colors, 3));
-  geo.computeVertexNormals();
-  const mesh = new Mesh(geo, toonMaterial({ color: 0xffffff, vertexColors: true }));
-  addInk(mesh);
-  mesh.name = 'brush';
-  // Rounded tip cap, welded at the curve end in the tip colour.
-  const cap = part(cachedSphere('brushcap', 1, 16, 12), colorB);
-  cap.scale.setScalar(radius * brushProfile(1) * 1.02);
-  curve.getPointAt(1, cap.position);
-  mesh.attach ? mesh.parent : null;
-  mesh.userData.cap = cap;
-  return mesh;
-}
 
 // ---------------------------------------------------------------------------
 // Ink — inverted hull, constant screen-space width
@@ -449,13 +391,6 @@ export function addPartInk(mesh, px) {
   return hull;
 }
 
-// Toon mesh + ink in one call — the default body-part constructor.
-export function part(geometry, colorHex, { ink = true, mat = null } = {}) {
-  const m = new Mesh(geometry, mat || toonMaterial({ color: colorHex }));
-  if (ink) addInk(m);
-  return m;
-}
-
 // ---------------------------------------------------------------------------
 // Face decal — painted eyes (party-exclusive treatment, §19.2)
 // ---------------------------------------------------------------------------
@@ -587,43 +522,6 @@ export function faceMarkings({ R, sx = 1, sy = 1, sz = 1, paint }) {
   mesh.renderOrder = 2;
   mesh.name = 'markings';
   return mesh;
-}
-
-// ---------------------------------------------------------------------------
-// Paws and stubby arms
-// ---------------------------------------------------------------------------
-// §19.2: "Paws = single rounded mitten spheres, no digits". Arms exist so props
-// are visibly HELD: a mitten floating beside a sword grip is what made every
-// prop read as unattached in the previous captures.
-export function mitten(colorHex, r = 0.055) {
-  const m = new Mesh(cachedSphere('paw', 1, 14, 10), toonMaterial({ color: colorHex }));
-  m.scale.setScalar(r);
-  addInk(m);
-  return m;
-}
-
-const UP = new Vector3(0, 1, 0);
-const armTmp = new Vector3();
-
-// Stubby limb pivoting at the shoulder; `aimArm` re-points and stretches it at
-// whatever the paw is holding, every frame, so the chain shoulder->arm->paw->
-// prop can never come apart while a clip moves the prop.
-export function makeArm(colorHex, radius = 0.052, baseLen = 0.24) {
-  const pivot = new Group();
-  const m = new Mesh(new CapsuleGeometry(radius, baseLen - radius * 2, 5, 12), toonMaterial({ color: colorHex }));
-  m.position.y = baseLen / 2;
-  addInk(m);
-  pivot.add(m);
-  pivot.userData.baseLen = baseLen;
-  return pivot;
-}
-
-// target: a position in the arm pivot's PARENT space.
-export function aimArm(pivot, target) {
-  armTmp.copy(target).sub(pivot.position);
-  const len = Math.max(0.02, armTmp.length());
-  pivot.quaternion.setFromUnitVectors(UP, armTmp.normalize());
-  pivot.scale.set(1, len / pivot.userData.baseLen, 1);
 }
 
 // ---------------------------------------------------------------------------

@@ -1,4 +1,0 @@
-[
-  { "type": "wait", "ms": 400 },
-  { "type": "eval", "code": "({v: window.__echoes && window.__echoes.version, fps: window.__echoes && window.__echoes.fps, url: location.search})" }
-]

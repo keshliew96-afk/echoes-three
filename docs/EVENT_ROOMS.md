@@ -2,7 +2,7 @@
 
 Content plan 2, slice 1 (v0.5.233); six more in content plan 3, slice 6
 (v0.5.266). Some doors on the path screen are marked **"?"**. They lead to a
-small room with no fight that holds one of fourteen encounters. Walk up to it, press **E · Inspect**, and a card offers a trade:
+small room with no fight that holds one of fourteen encounters. Walk up to it, press **F · Inspect**, and a card offers a trade:
 **Take** or **Leave**.
 
 ## Where "?" doors appear
