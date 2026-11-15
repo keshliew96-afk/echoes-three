@@ -10,12 +10,11 @@
 > faceted foe to its retired classic's draw calls, kept in `tools/classic-foe-calls.json`.
 > Level V, Spire and Kiln creatures were never faceted and keep their first rigs.
 
-> **Tripo models (2026-11-15).** Kesh has passed a Tripo Studio model for every hero, boss and
-> champion, 38 foes and six NPCs (CLAUDE.md "Tripo models"). They are review pages and GLB files in
-> the project folder, not game assets yet, so this doc still describes what the game draws. The
-> detail standard below (draft #144, the Healer's round 3) is paused on his word, and its review
-> loop and sign-off register were never used. Where a Tripo model passes the budget or the rules
-> below, the measured numbers are in "Tripo models against these budgets".
+> **Tripo models (2026-11-15, BUILD_BRIEF A23).** The Tripo models Kesh passed replace these
+> code-built rigs, one per creature, once the freeze lifts; their doc is `docs/TRIPO_MODELS.md`. This doc
+> still describes what the game draws until each rig is replaced, and a replaced rig's section stays as
+> its record. The detail standard below was closed unused (draft #144, the Healer's round 3, is
+> closed, and the sign-off register stays empty). Do not add detail to a code-built rig.
 
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
@@ -74,23 +73,7 @@ is about 1,020 calls before the room and the effects, inside a 1,500-call frame.
 figure is a plan, not a measurement: the S9 frame-time probe on a 1050 Ti-class PC sets it.
 Level V, Spire and Kiln creatures were never faceted and get the standard when the freeze lifts.
 
-#### Tripo models against these budgets (measured 2026-11-15 from the passed GLBs)
-
-A Tripo model is one skinned mesh with one texture (a hero adds its weapon as a second mesh), so
-it costs a few draw calls where a faceted rig costs 30 to 120, but it carries more triangles and a
-2048 px JPEG texture (about 22 MB of GPU memory each once decoded with mipmaps).
-
-| Tier | Passed | Triangles | Bones | Budget triangles | Over budget |
-|---|---|---|---|---|---|
-| Hero | 7 | 14,609 to 14,994 | 19 to 24 | 15,000 | none |
-| Boss | 17 | 22,666 to 29,656 | 16 to 52 | 30,000 | none |
-| Champion | 12 | 11,301 to 12,000 | 17 to 28 | 12,000 | none |
-| Foe | 36 | 3,687 to 3,963 | 7 to 53 | 4,000 | none |
-| Small mob | 2 (brood, gravewisp) | 3,809 and 4,028 | 39 and 12 | 1,500 | both; Kesh passed them as sent |
-| NPC | 6 | 3,745 to 14,923 | 5 to 19 | no NPC tier | five NPCs sit at the hero budget |
-
-Not made yet: `bellows`, `knight`, `leech`, `broodling` and the five freed wardens. Item 4 below
-("no textures") and the mesh column above do not fit a Tripo model; they stand until Kesh rules.
+The Tripo models have their own budgets, measured: `docs/TRIPO_MODELS.md` "Budgets".
 
 ### What every model must show
 
@@ -101,7 +84,7 @@ Not made yet: `bellows`, `knight`, `leech`, `broodling` and the five freed warde
    level and keeps the first.
 3. **Face, hands and weapon** read at play zoom in a busy room.
 4. **Materials.** The facet material with the toon ramp and ink hulls; colours from `PALETTE`
-   only; no textures. The reserved colours hold (`.claude/rules/visuals.md`): no Ember or Violet
+   only; no textures (a code-built rig; a Tripo model carries its one texture, BUILD_BRIEF A23). The reserved colours hold (`.claude/rules/visuals.md`): no Ember or Violet
    on a hero, Bright Heal only for healing, Foe Crimson, Violet or magenta for foe fire.
 5. **Moves.** Every move has a wind-up, a contact and a follow-through ([M] beats, §6.1 of
    `docs/VFX_HIT_RULES.md`); feet stay planted; the hero lean stays inside 12°; weapons swing
