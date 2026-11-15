@@ -1,5 +1,10 @@
 # Reference Quality Bar — "Echoes Web" (Three.js)
 
+> **Historical (retired 2026-11-15, Kesh's pick in the workflow audit).** This was the critic rounds'
+> rubric. Blind judges now score against the colour rule (`.claude/rules/visuals.md`), the VFX
+> templates (`docs/VFX_TEMPLATES.md`) and the Tripo standards (`docs/tripo/`); see `docs/TESTING.md`
+> "Workflow tools". The responsiveness bar lives on in BUILD_BRIEF §22.
+
 This is the binding rubric for all art critics. It is distilled from four commercial
 reference screenshots (Pass the Fear / Lost Castle 2 camp scene, Hades boss arena,
 Magicraft swamp arena). Critics judge CAPTURED FRAMES of the running game against
