@@ -124,7 +124,7 @@ async function arm(id) {
 await bootTitle(`menu=1&fresh=1&lang=${LANG}`);
 await openControls();
 const ids = await page.$$eval('.ap-bind', (ns) => ns.map((n) => n.dataset.action));
-check(ids.length === 23, `the Controls tab lists every action as a key button (${ids.length})`);
+check(ids.length === 24, `the Controls tab lists every action as a key button (${ids.length})`);
 check((await capText('moveUp')) === 'W' && (await capText('dodge')) === 'Space' && (await capText('skill1')) === 'Q', 'defaults read W / Space / Q');
 check((await page.$eval('#ap-settings-reset', (n) => n.disabled)) === false, 'Reset to defaults is available on this tab');
 
@@ -230,7 +230,7 @@ await sleep(500);
 const campCaps = await page.$$eval('#camp-prompt .cp-key', (ns) => ns.map((n) => n.textContent));
 check(campCaps[0] === 'A' && campCaps.includes('X') && campCaps.includes('Y') && campCaps.includes('B'), `the camp prompt names pad buttons (${campCaps.join(' ')})`);
 const barCaps = await page.$$eval('#proto-hud .hud-slot-key', (ns) => ns.map((n) => n.textContent));
-check(barCaps.join(' ') === 'X Y B RB LT', `the command bar names pad buttons (${barCaps.join(' ')})`);
+check(barCaps.join(' ') === 'X Y B RB LT RS', `the command bar names pad buttons (${barCaps.join(' ')})`);
 
 await padSet({ buttons: { 7: 1 } });
 await waitFn(() => window.__echoes.controls.state().input.last && window.__echoes.controls.state().input.last.attack, null, 30000).catch(() => {});
@@ -297,7 +297,7 @@ check(st.device === 'keyboard', 'a key press turns the device back to keyboard')
 const coach3 = await page.evaluate(() => document.querySelector('#tu-coach .tu-keys').textContent);
 check(/F/.test(coach3), `the coach names the F key again (${coach3})`);
 const barCaps2 = await page.$$eval('#proto-hud .hud-slot-key', (ns) => ns.map((n) => n.textContent));
-check(barCaps2.join(' ') === 'H E C X Q', `the command bar names the rebound keys (${barCaps2.join(' ')})`);
+check(barCaps2.join(' ') === 'H E C X Q G', `the command bar names the rebound keys (${barCaps2.join(' ')})`);
 await shot('5-hud-keys');
 await page.evaluate(() => window.__echoes.tutorial().skip());
 await sleep(1000);

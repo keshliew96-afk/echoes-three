@@ -10,7 +10,7 @@ use.
 **Settings ▸ Controls** opens on the device in use; the *Show controls for*
 row switches between the two views.
 
-- **Keyboard & mouse**: 22 actions, each with its key on a button. Click it
+- **Keyboard & mouse**: 24 actions, each with its key on a button. Click it
   (or pick it and press Enter, or A) and press the new key or mouse button.
   - A key another action already uses **swaps**: that action takes the old
     key, and the status line says so ("Dodge now uses F. Skill 1 took 1.").
@@ -109,7 +109,7 @@ direction, else follows the move.
 ## Checks
 
 - `node tools/controls-browser.mjs [--lang <code>] [--shots <dir>]` (dev
-  server on 5199): the Controls tab lists 22 keys; bind, swap, refuse a
+  server on 5199): the Controls tab lists 24 keys; bind, swap, refuse a
   reserved key, Esc cancels without closing Settings, mouse buttons bind,
   the keys survive a reload, the Gamepad view; a rebound move key walks and
   the old one does not; a mocked standard pad walks, holds the attack on RT,
