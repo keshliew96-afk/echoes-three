@@ -25,6 +25,30 @@ run checks after every change."
 - Run checks after every change: `npm run check` (below), plus `npm test` and `npx vite build`
   when sim, data or build files change.
 
+## Tripo models (passed, not in the game yet)
+
+Since 2026-11-12 Kesh makes each model in Tripo Studio and the project threads rig and animate it on a
+review page. By 2026-11-15 he had passed the seven heroes, the 17 bosses, the 12 champions, 38 foes and
+six NPCs. They live in the project folder, not in the repo: `/mnt/project-files/tripo-pilot/`
+(heroes), `tripo-bosses/`, `tripo-champions/`, `tripo-mobs/`, `tripo-npcs/`, each model as
+`<name>-tripo-rigged.glb` (one skinned mesh, one 2K JPEG texture, a weapon as a second mesh on
+heroes, the clips by name). Each folder's `*_REVIEW_STANDARD.md` holds the rules for that kind.
+
+- **The game still draws the code-built rigs** (`src/render/critters/`, `boss/`, `enemies/`, `npcs/`).
+  Bringing a Tripo model into the game is a visual change: it waits for Kesh's go and the freeze lift.
+  Until then, do not add detail to a code-built rig that has a passed Tripo model (the faceted
+  detail rounds, draft #144, are paused on his word).
+- **Not yet decided, so not in force:** BUILD_BRIEF §1 ("no external asset downloads") and §19.2
+  (procedural chibi builds, procedural animation) and `docs/MODEL_STANDARD.md` "What every model must
+  show" item 4 ("no textures") all conflict with the Tripo models. They stand until Kesh rules.
+- **Rules Kesh set on the review pages** (they hold for every Tripo character; any that changes how
+  the game plays still needs the freeze lifted): the dash has top priority, cancels a wind-up or
+  recovery and has i-frames; no splayed feet (外八) in a humanoid's walk or run, except a heavy
+  character such as the Tank; a boss's head faces straight ahead and is seen coming out of the floor
+  or water; planted feet do not slide.
+- Not made yet: the foes `bellows`, `knight`, `leech` and `broodling`, and the five freed wardens at
+  camp (`src/render/npcs/wardens.js`).
+
 ## Slice rules
 
 - One draft PR into `gauntlet` from its current head. Bump `src/version.js` to the next free patch.
