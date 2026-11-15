@@ -1211,7 +1211,7 @@
  "Returning to camp in {secs} s &nbsp;·&nbsp; <b>Enter</b> return now": "{secs}秒後にキャンプへ帰還 &nbsp;·&nbsp; <b>Enter</b> 今すぐ戻る",
  "Revert": "元に戻す",
  "Reverting in {n} s": "{n}秒後に元に戻ります",
- "Right mouse": "右マウス",
+ "Right mouse": "マウス右ボタン",
  "Ring": "鳴らす",
  "Riposte": "切り返し",
  "RNG": "射程",
