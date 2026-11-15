@@ -9,7 +9,8 @@
 //             main.js loads the four test scenes, the co-op session and the
 //             combat art (enemy and boss layers) lazily; the Journal viewer
 //             loads its rig builders lazily
-//   dead      the removed dead exports and src/ui/run/expedition.js are gone
+//   dead      the removed dead exports, src/ui/run/expedition.js and the old
+//             workflow prompts and critic snippets in tools/ are gone
 //   audit     package-lock.json pins sharp >= 0.35.5 and source-map-js >= 1.2.2
 //   build     with --dist DIR (a built dist): no chunk the entry loads at boot
 //             (statically, followed through) holds session or combat art code
@@ -153,9 +154,18 @@ const hashOf = (W) =>
     ['src/sim/skills.js', 'classOfSkill'], ['src/sim/skills.js', 'isPassiveSkill'], ['src/ui/hud/icons.js', 'ICON_IDS'],
     ['src/ui/run/cards.js', 'rarityOf'], ['src/ui/run/shop.js', '_shopPalette'], ['src/ui/run/style.js', 'virtualScale'],
     ['src/ui/story/viewer.js', 'VIEWER_KINDS'], ['src/ui/tutorial/index.js', 'TIP_IDS'],
+    // The workflow audit (v0.5.365): classic-rig helpers left without a caller by AUDIT.md D1.
+    ['src/render/critters/common.js', 'bell'], ['src/render/critters/common.js', 'brushTail'], ['src/render/critters/common.js', 'part'],
+    ['src/render/critters/common.js', 'mitten'], ['src/render/critters/common.js', 'makeArm'], ['src/render/critters/common.js', 'aimArm'],
   ];
   const left = gone.filter(([f, n]) => new RegExp(`export\\s+(?:const|function|let)\\s+${n}\\b|as\\s+${n}\\b`).test(read(f))).map(([f, n]) => `${f}:${n}`);
   check(`dead: the ${gone.length} removed dead exports stay removed`, left.length === 0, left.length ? left : null);
+  // The workflow audit (v0.5.365): the Gauntlet-era orchestration prompts and the critic
+  // snippets nothing reads stay out of tools/ (git history keeps them).
+  const goneFiles = ['tools/gauntlet.workflow.js', 'tools/certification.workflow.js', 'tools/hkbody', 'tools/zk-prelude.txt',
+    'tools/xc-ringprobe.js', 'tools/xc-teleprobe.js', 'tools/xe-teleocc.js'];
+  const back = goneFiles.filter((f) => existsSync(join(here, f)));
+  check(`dead: the ${goneFiles.length} removed prompt and snippet files stay removed`, back.length === 0, back.length ? back : null);
 }
 
 // ----------------------------------------------------------------- audit --

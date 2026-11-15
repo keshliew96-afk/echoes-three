@@ -78,6 +78,17 @@ imports left unused by them. The nine strings only the expedition screen used ar
 `catalog.json` and the nine language tables; the 32 older unused entries are untouched.
 Probe-only code that ships (`campaign.census()`, `glTrack()`) stays: probes call it.
 
+**Workflow audit (v0.5.365, 2026-11-15).** Removed: six helpers in `src/render/critters/common.js`
+(`bell`, `brushTail`, `part`, `mitten`, `makeArm`, `aimArm`) that lost their last caller with the
+classic rigs (AUDIT.md D1; the faceted rigs use the facet kit's `aimLimb`); the two Gauntlet-era
+orchestration prompts `tools/gauntlet.workflow.js` and `tools/certification.workflow.js` (old Windows
+checkout, the historical round flow); and critic snippets no tool reads (`tools/hkbody/`,
+`tools/zk-prelude.txt`, `tools/xc-ringprobe.js`, `tools/xc-teleprobe.js`, `tools/xe-teleocc.js`).
+`code-health-probe` keeps them out. Every `src/` module is still reached from `index.html`, and no
+tool imports a name its module no longer exports. `seatCritter` (`src/net/seats.js`) is now read by
+nothing either; it is small and left for the co-op seat cleanup. The 930-odd finished-round probes
+and their 2,250 action files (AUDIT.md U3) are still Kesh's call.
+
 ## npm audit
 
 `npm audit fix` moved the two dev-only packages with high alerts: `sharp` 0.35.3 to 0.35.5 (libheif,
