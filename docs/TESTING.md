@@ -89,7 +89,8 @@ its capacity, or when the heap grows more than 12 MB (seed 7 grows about 5 MB). 
 the warm-up and is not counted. Before it passes it runs four levels with a planted leak (one
 listener added per level) and requires that run to fail. `--seed`, `--levels` and `--json <file>`
 change the run. It soaks the sim only: render-side leaks (geometry, textures, DOM) need a browser
-heap snapshot (the `gntfixCAMPAIGN6-heap*` tools read them).
+heap snapshot (`tools/memory-probe.mjs` tracks GPU and heap growth across rooms; the old
+`gntfixCAMPAIGN6-heap*` snapshot readers went with the finished-round probes, git history keeps them).
 
 Known limit: `src/sim/movement.js` keeps its colliders at module level, so two worlds in one
 Node process must run one after the other, never stepped in turn.
@@ -124,7 +125,7 @@ reads the query only through `pageQuery()` (or `parseBootParams`) and never read
 (`service('bus')`, `service('net')`).
 
 Probes that drive a **built** dist through the debug API (`tools/cloudsave-browser.mjs`,
-`tools/daily-browser.mjs`, the `gntDEPLOY-*` and `gntfix*` deploy probes and their kin) need
+`tools/daily-browser.mjs` and their kin) need
 `VITE_ECHOES_HARNESS=1 npx vite build` first. `node tools/player-build-gating-probe.mjs
 --dist dist` checks a player build; `--dev http://127.0.0.1:5199/` checks the dev server.
 

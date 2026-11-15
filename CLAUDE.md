@@ -173,7 +173,8 @@ npm run serve          # build, then serve dist/ and the session server together
   (read by `tools/gnt-arch-browser.mjs` and most newer probes). Software GL runs at 1 to 25 fps, so
   hold keys for about 250 ms and wait on sim state, not on time. Use `--wait domcontentloaded`, since
   `networkidle2` never settles. `captures/` is gitignored.
-- Some old `*-r6` probes import libraries that were never committed; skip them.
+- `tools/` keeps only the probes a current doc, CLAUDE.md, `package.json` or CI names, and what they import
+  or read (the finished-round probes and their action files went in v0.5.365, Kesh's pick; git history keeps them).
 - `.claude/settings.json` denies force pushes, deleting or force-moving `gauntlet`, `git reset --hard`,
   `git clean` and `rm -rf`. A `claude/` branch may still take `--force-with-lease`; clear scratch with
   `rm -r`. The safety-net probe checks the list.

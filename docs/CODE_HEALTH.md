@@ -86,8 +86,12 @@ checkout, the historical round flow); and critic snippets no tool reads (`tools/
 `tools/zk-prelude.txt`, `tools/xc-ringprobe.js`, `tools/xc-teleprobe.js`, `tools/xe-teleocc.js`).
 `code-health-probe` keeps them out. Every `src/` module is still reached from `index.html`, and no
 tool imports a name its module no longer exports. `seatCritter` (`src/net/seats.js`) is now read by
-nothing either; it is small and left for the co-op seat cleanup. The 930-odd finished-round probes
-and their 2,250 action files (AUDIT.md U3) are still Kesh's call.
+nothing either; it is small and left for the co-op seat cleanup. Kesh then picked "delete" for the
+finished-round probes (AUDIT.md U3): 735 scripts and 2,234 action files went. Kept are the files a
+current doc, `CLAUDE.md`, `package.json`, CI or a `src/` comment names, and whatever those import or
+read, followed through (224 files; the historical docs under `docs/gauntlet/`, `docs/critiques/`,
+`PROGRESS.md` and the round sections of `docs/TESTING.md` were not counted as naming a file). Paths in
+the historical docs to deleted probes now point at git history.
 
 ## npm audit
 
