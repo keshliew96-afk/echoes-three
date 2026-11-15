@@ -35,6 +35,7 @@ import { SPOILS_PER_CLEAR } from '../../sim/draft.js';
 import { SKILLS } from '../../sim/skills.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { classOfSeat } from '../../data/lineup.js';
+import { cap } from '../../app/controls.js';
 import { createPartyStrip, ownerBandHtml, netOwners } from './partystrip.js';
 import { service } from '../../app/registry.js';
 import { t, tn } from '../../i18n/index.js';
@@ -559,7 +560,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
         const def = SKILLS[sk.id];
         const sel = i === rep;
         return `<div class="rn-rep${sel ? ' rn-sel' : ''}" data-slot="${i}" data-skill="${esc(sk.id)}" data-seat="${seat}">
-          <span class="rn-repkey">${i + 1}</span><span class="rn-repx">✕</span>
+          <span class="rn-repkey">${esc(cap(`skill${i + 1}`))}</span><span class="rn-repx">✕</span>
           ${cardIconHtml(sk.id, 30)}
           <div class="rn-repname">${esc(def ? t(def.name) : sk.id)}</div>
           <div class="rn-repmeta">${sel ? esc(t('replace · ◈ {n}', { n: sk.filled })) : `◈ ${sk.filled}`}</div>
@@ -589,7 +590,7 @@ export function createDraftScreen({ run, build, party = () => null }) {
       placed[rep] = c.id;
       const order = P.aiOrder(seat, placed);
       const at = order ? order.indexOf(c.id) : rep;
-      if (order && order.some((id, i) => id !== placed[i])) lands = t('AI re-sorts keys to cast order: {skill} → key {key}', { skill: newName, key: at + 1 });
+      if (order && order.some((id, i) => id !== placed[i])) lands = t('AI re-sorts keys to cast order: {skill} → key {key}', { skill: newName, key: cap(`skill${at + 1}`) });
     }
     repLine.style.display = '';
     repLine.textContent = [t('{new} replaces {old} — {nodes}', { new: newName, old: oldName, nodes }), advice, lands].filter(Boolean).join(' · ');

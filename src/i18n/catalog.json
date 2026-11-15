@@ -14034,12 +14034,12 @@
    "src/ui/run/shop.js"
   ]
  },
- "slot order = keys 1–4": {
+ "slot order = keys {keys}": {
   "files": [
    "src/ui/socket/index.js"
   ]
  },
- "slot order = keys 1–4 = the order the AI casts in": {
+ "slot order = keys {keys} = the order the AI casts in": {
   "files": [
    "src/ui/socket/index.js"
   ]
