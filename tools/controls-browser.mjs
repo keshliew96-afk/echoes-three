@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// CONTROLS (docs/CONTROLS.md, v0.5.229) — key rebinding on Settings ▸
+// CONTROLS (docs/CONTROLS.md, v0.5.229; Valorant-style defaults v0.5.363) — key rebinding on Settings ▸
 // Controls and gamepad play, driven the way a player meets them (dev server
 // on 5199):
 //   1. Settings ▸ Controls lists every action with its key; a click arms a
@@ -125,22 +125,22 @@ await bootTitle(`menu=1&fresh=1&lang=${LANG}`);
 await openControls();
 const ids = await page.$$eval('.ap-bind', (ns) => ns.map((n) => n.dataset.action));
 check(ids.length === 23, `the Controls tab lists every action as a key button (${ids.length})`);
-check((await capText('moveUp')) === 'W' && (await capText('dodge')) === 'Space' && (await capText('skill1')) === '1', 'defaults read W / Space / 1');
+check((await capText('moveUp')) === 'W' && (await capText('dodge')) === 'Space' && (await capText('skill1')) === 'Q', 'defaults read W / Space / Q');
 check((await page.$eval('#ap-settings-reset', (n) => n.disabled)) === false, 'Reset to defaults is available on this tab');
 
 await arm('dodge');
 await shot('1-capturing');
-await page.keyboard.press('KeyF');
+await page.keyboard.press('KeyH');
 await sleep(300);
 let st = await ctl();
-check(st.keys.dodge === 'KeyF' && (await capText('dodge')) === 'F', `pressing F binds Dodge to F (${st.keys.dodge})`);
-check(/F/.test(await statusText()), 'the status line says what changed');
+check(st.keys.dodge === 'KeyH' && (await capText('dodge')) === 'H', `pressing H binds Dodge to H (${st.keys.dodge})`);
+check(/H/.test(await statusText()), 'the status line says what changed');
 
 await arm('skill1');
-await page.keyboard.press('KeyF');
+await page.keyboard.press('KeyH');
 await sleep(300);
 st = await ctl();
-check(st.keys.skill1 === 'KeyF' && st.keys.dodge === 'Digit1', `a key in use swaps: Skill 1 = F, Dodge = 1 (${st.keys.skill1}, ${st.keys.dodge})`);
+check(st.keys.skill1 === 'KeyH' && st.keys.dodge === 'KeyQ', `a key in use swaps: Skill 1 = H, Dodge = Q (${st.keys.skill1}, ${st.keys.dodge})`);
 
 await arm('rally');
 await page.keyboard.press('F5');
@@ -176,7 +176,7 @@ await shot('2-rebound');
 await page.evaluate(() => window.__echoes.app.service('settings').persist());
 await bootTitle(`menu=1&lang=${LANG}`);
 st = await ctl();
-check(st.keys.dodge === 'Digit1' && st.keys.skill1 === 'KeyF' && st.keys.moveRight === 'ArrowRight', 'the keys survive a reload');
+check(st.keys.dodge === 'KeyQ' && st.keys.skill1 === 'KeyH' && st.keys.moveRight === 'ArrowRight', 'the keys survive a reload');
 
 // Gamepad view.
 await openControls();
@@ -290,14 +290,14 @@ const ix = await page.evaluate(() => document.querySelector('#tu-coach .tu-body'
 check(/\bA\b/.test(ix), `the spring lesson says A (${ix})`);
 
 // Back to the keyboard: the next key press turns every cap back.
-await page.keyboard.press('KeyQ');
+await page.keyboard.press('KeyM');
 await sleep(800);
 st = await ctl();
 check(st.device === 'keyboard', 'a key press turns the device back to keyboard');
 const coach3 = await page.evaluate(() => document.querySelector('#tu-coach .tu-keys').textContent);
-check(/E/.test(coach3), `the coach names the E key again (${coach3})`);
+check(/F/.test(coach3), `the coach names the F key again (${coach3})`);
 const barCaps2 = await page.$$eval('#proto-hud .hud-slot-key', (ns) => ns.map((n) => n.textContent));
-check(barCaps2.join(' ') === 'F 2 3 4 1', `the command bar names the rebound keys (${barCaps2.join(' ')})`);
+check(barCaps2.join(' ') === 'H E C X Q', `the command bar names the rebound keys (${barCaps2.join(' ')})`);
 await shot('5-hud-keys');
 await page.evaluate(() => window.__echoes.tutorial().skip());
 await sleep(1000);
@@ -306,7 +306,7 @@ await sleep(1000);
 await page.evaluate(() => window.__echoes.controls.reset());
 await sleep(300);
 st = await ctl();
-check(st.keys.dodge === 'Space' && st.keys.skill1 === 'Digit1' && st.keys.moveRight === 'KeyD' && st.keys.attack === 'MouseRight', 'Reset to defaults restores every key');
+check(st.keys.dodge === 'Space' && st.keys.skill1 === 'KeyQ' && st.keys.moveRight === 'KeyD' && st.keys.attack === 'MouseRight', 'Reset to defaults restores every key');
 
 const misses = await page.evaluate(() => (window.__echoes.i18n ? window.__echoes.i18n().misses : []));
 if (LANG !== 'en') check(!misses.length, `no line missing in ${LANG} (${misses.slice(0, 5).join(' | ')})`);

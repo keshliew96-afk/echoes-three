@@ -31,21 +31,42 @@ player reads Z on the key the game calls KeyW).
 
 ### Default keys
 
+**Valorant-style skill keys (v0.5.363, Kesh's pick).** The skills moved off
+1 2 3 4 to Q E C X, the way Valorant binds its abilities: players said casting
+on the number row felt stuck, because 3 and 4 sit two rows above the fingers
+that hold W, S and D, so every cast let go of a movement key. Interact moved
+to F (Valorant's use key), the tonic or bomb to G and camp class select to K
+to make room. Every other key, the mouse and the gamepad are unchanged. This
+table replaces the skill, interact and tonic rows of BUILD_BRIEF §3.
+
+- Keys are per browser and never reach the sim or the wire: the goldens and
+  the co-op protocol are untouched, and each co-op player keeps their own.
+- **Old profiles:** the settings store saves every key, defaults included, so
+  a player who has saved any setting keeps the keys they had (1–4, E, Q, C)
+  until **Reset to defaults** on this tab; the tab marks those four skill
+  keys, interact, tonic and class select with the amber changed dot. A
+  profile that never saved settings starts on the new keys.
+- Every label that names a skill key reads the bindings: the command bar,
+  the tutorial, the sockets page (row keycaps, the header's "key", the swap
+  line and "slot order = keys Q / E / C / X"), and the draft's Replace row
+  and its "AI re-sorts keys" line. The level table's screen-reader label
+  names the interact key.
+
 | Action | Key | Gamepad |
 |---|---|---|
 | Move | W A S D | left stick |
 | Aim | mouse | right stick (at rest: the nearest foe) |
 | Basic attack (hold) | right mouse | RT |
 | Dodge | Space | LT |
-| Skills 1–4 | 1 2 3 4 | X Y B RB |
-| Interact · Revive (hold) | E | A |
+| Skills 1–4 | Q E C X | X Y B RB |
+| Interact · Revive (hold) | F | A |
 | Rally the party | R | LB |
-| Use your tonic or bomb (bombs land at your aim) | Q | RS (click the right stick) |
+| Use your tonic or bomb (bombs land at your aim) | G | RS (click the right stick) |
 | Mark the next enemy | Tab | D-pad ▲ |
 | Heal target: ally 1–4 | F1–F4 | D-pad ◀ ▶ cycle, ▼ again to clear |
 | Build workbench (between rooms) | B | View |
 | Pause | P (and Esc) | Start |
-| Levels · Unlocks · Class select (camp) | L · U · C | B · Y · X |
+| Levels · Unlocks · Class select (camp) | L · U · K | B · Y · X |
 
 In camp nobody fights, so X / Y / B open the camp screens there instead of
 casting.
@@ -97,4 +118,9 @@ direction, else follows the move.
   command bar, the camp prompt and the tutorial coach name pad buttons and
   turn back to keys on the next key press; Reset restores every key; no page
   error, no missing line.
+- `node tools/skill-keys-probe.mjs` (headless, in `npm test`): the
+  Valorant-style defaults, Q / E / C / X press skills 1–4 and 1–4 press
+  nothing, F holds the revive, every skill-key label reads the bindings, the
+  co-op guest's instant feedback follows the bound keys, and an old profile
+  keeps its stored keys.
 - `node tools/gntM2-goldens.mjs`: the nine golden traces stay 9/9.
