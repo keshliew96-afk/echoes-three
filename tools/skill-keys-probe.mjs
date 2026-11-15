@@ -21,6 +21,8 @@
 //   5. Old profiles (Kesh's pick 1): a saved v1 profile that never rebound a
 //      key moves to the new keys; one with any key of its own keeps all of
 //      them; the move runs once (settings v2) and keeps every other setting.
+//   6. Key clash: the reward page leaves on neither X nor the pad's X, and no
+//      run page that opens from a fight commits on Space.
 // Exit code 1 on any failure.
 import { readFileSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -113,6 +115,22 @@ for (const k of ['slot order = keys {keys}', 'slot order = keys {keys} = the ord
 check(LANGS.every((l) => typeof loc(l)['Choose a level ({key})'] === 'string' && loc(l)['Choose a level ({key})'].includes('{key}')), '"Choose a level ({key})" in nine languages');
 check(/мыши/.test(loc('ru')['Right mouse']) && /мыши/.test(loc('ru')['Left mouse']), `Russian right and left mouse match (${loc('ru')['Right mouse']} · ${loc('ru')['Left mouse']})`);
 check(/ボタン/.test(loc('ja')['Right mouse']) && /ボタン/.test(loc('ja')['Left mouse']), `Japanese right and left mouse match (${loc('ja')['Right mouse']} · ${loc('ja')['Left mouse']})`);
+
+// ---------------------------------------------------------- 6. key clash --
+// Kesh: the reward page's Leave must not use X; no fight key commits a
+// choice on a page that opens straight from a fight.
+const RUNPAGES = ['draft', 'path', 'relic', 'encounter', 'transit', 'endscreens'];
+for (const pg of RUNPAGES) {
+  const code = src(`src/ui/run/${pg}.js`);
+  check(!/code === 'Space'/.test(code), `the ${pg} page commits nothing on Space (the dodge)`);
+}
+check(!/code === 'KeyX'/.test(draft), 'the reward page leaves on no X key (skill 4)');
+check(!/action === 'secondary'/.test(draft), "the reward page leaves on no pad X (skill 1)");
+const runIndex = src('src/ui/run/index.js');
+const commitSet = /const COMMIT_KEYS = new Set\(\[([^\]]*)\]\)/.exec(runIndex);
+check(!!commitSet && !/Space|KeyX/.test(commitSet[1]), `the run pages' commit keys hold no fight key but the shop's R (${commitSet && commitSet[1]})`);
+check(!/<b>X<\/b>/.test(draft), 'the reward page hints name no X key');
+check(LANGS.every((l) => !Object.entries(loc(l)).some(([k, v]) => /<b>Enter<\/b>/.test(k) && /<b>X<\/b>/.test(String(v)))), 'no language still shows "X leave" on the reward page');
 
 // --------------------------------------------------------- 5. old profiles --
 function memStorage(doc) {

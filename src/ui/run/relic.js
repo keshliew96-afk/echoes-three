@@ -209,7 +209,7 @@ export function createRelicScreen({ run }) {
       move(1);
       return true;
     }
-    if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
+    if (code === 'Enter' || code === 'NumpadEnter') {
       if (!fresh) return true; // §16 fresh-press rule
       const o = offerOf(sys.view());
       sys.chooseRelic(o ? o.focus : 0);

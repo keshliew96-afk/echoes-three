@@ -73,6 +73,43 @@ table replaces the skill, interact and tonic rows of BUILD_BRIEF §3.
 In camp nobody fights, so X / Y / B open the camp screens there instead of
 casting.
 
+### Key clash review (v0.5.363)
+
+Kesh asked that the reward page's Leave stop using X, and for a review of
+every page and menu against the fight keys. The danger is a fight key
+pressed as a page opens straight from a fight (a wave reward, the doors, a
+level's road fork, the run's end): it would make a choice the player did not
+mean. The run pages already drop navigation and commit keys for 300 ms after
+opening, and up to 1 s while fight keys keep coming (`src/ui/run/index.js`,
+the settle window); after that a fresh press counts.
+
+Changed:
+
+| Page | Before | Now |
+|---|---|---|
+| Reward (draft) | X, or the pad's X, left the reward | Leave is A / D (or ← / →) to the Leave button, then Enter; the D-pad, then A; or a click. X is skill 4 and the pad's X is skill 1. The four hint lines drop "X leave" in all ten languages. |
+| Reward, doors, relic pick, event choice, road fork, run end | Space committed the focused choice | Enter commits (the shop already worked this way). Space is the dodge. |
+
+Checked and left as they are:
+
+- **Shop:** R refreshes the shelf (rally in a fight) and the pad's X does too
+  (skill 1). The shop never opens straight from a fight (a reward page, the
+  doors and the walk come first), and both keys stay inside the settle
+  window's commit set.
+- **Sockets page:** X removes a node, F auto-fills, Q / E switch hero, 1–4 jump
+  to a skill row. It opens only on B or straight after a deliberate Take, and
+  every change there can be undone on the same page.
+- **Road fork:** 1 and 2 pick a road. They are no longer fight keys.
+- **Menus** (pause, settings, journal, class select, levels): Q / E switch
+  tabs and Space confirms. A menu opens only on a deliberate press (Esc, P or
+  a camp key), never straight from a fight.
+- **Camp:** F talks and uses, K / L / U / J open screens. No fighting there,
+  and Q / E / C / X cast nothing.
+- **Tutorial tip cards** close on Enter, Space or Esc: closing a tip changes
+  nothing in the run. The loading card between levels skips on any key.
+- **Gamepad:** A is interact in a fight and confirm on every page. It is the
+  pad's only confirm, so it stays, behind the same settle window.
+
 ### Gamepad aim
 
 The right stick points the aim from the character; a foe inside a 22° cone

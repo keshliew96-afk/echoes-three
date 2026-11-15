@@ -207,7 +207,7 @@ export function createPathScreen({ run }) {
       render(sys.view());
       return true;
     }
-    if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
+    if (code === 'Enter' || code === 'NumpadEnter') {
       // §16 FRESH-PRESS RULE: "a held Enter from the previous screen never
       // commits". `fresh` is false for auto-repeat and for any key that was
       // already down when this screen opened.
