@@ -99,6 +99,9 @@ Checked and left as they are:
 - **Sockets page:** X removes a node, F auto-fills, Q / E switch hero, 1–4 jump
   to a skill row. It opens only on B or straight after a deliberate Take, and
   every change there can be undone on the same page.
+- **Reward and shop pages:** Q / E and F1–F4 switch which hero's page you
+  view (Q / E are skills 1 and 2, F1–F4 the heal targets). Viewing another
+  hero chooses nothing, and the settle window drops them first.
 - **Road fork:** 1 and 2 pick a road. They are no longer fight keys.
 - **Menus** (pause, settings, journal, class select, levels): Q / E switch
   tabs and Space confirms. A menu opens only on a deliberate press (Esc, P or
