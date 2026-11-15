@@ -29,25 +29,21 @@ run checks after every change."
 
 Since 2026-11-12 Kesh makes each model in Tripo Studio and the project threads rig and animate it on a
 review page. By 2026-11-15 he had passed the seven heroes, the 17 bosses, the 12 champions, 38 foes and
-six NPCs. They live in the project folder, not in the repo: `/mnt/project-files/tripo-pilot/`
-(heroes), `tripo-bosses/`, `tripo-champions/`, `tripo-mobs/`, `tripo-npcs/`, each model as
-`<name>-tripo-rigged.glb` (one skinned mesh, one 2K JPEG texture, a weapon as a second mesh on
-heroes, the clips by name). Each folder's `*_REVIEW_STANDARD.md` holds the rules for that kind.
+six NPCs. Ruling A23 (BUILD_BRIEF, 2026-11-15) makes them the game's models, one per creature. The
+system doc is `docs/TRIPO_MODELS.md` (files, budgets, loading plan, what is missing, what is page-only);
+the review standards are under `docs/tripo/`. The GLBs live in the project folder, not the repo
+(`/mnt/project-files/tripo-pilot/` for heroes, `tripo-bosses/`, `tripo-champions/`, `tripo-mobs/`,
+`tripo-npcs/`, each model as `<name>-tripo-rigged.glb`).
 
 - **The game still draws the code-built rigs** (`src/render/critters/`, `boss/`, `enemies/`, `npcs/`).
-  Bringing a Tripo model into the game is a visual change: it waits for Kesh's go and the freeze lift.
-  Until then, do not add detail to a code-built rig that has a passed Tripo model (the faceted
-  detail rounds, draft #144, are paused on his word).
-- **Not yet decided, so not in force:** BUILD_BRIEF §1 ("no external asset downloads") and §19.2
-  (procedural chibi builds, procedural animation) and `docs/MODEL_STANDARD.md` "What every model must
-  show" item 4 ("no textures") all conflict with the Tripo models. They stand until Kesh rules.
+  Bringing a Tripo model in is a visual change: it waits for the freeze lift, starting with the
+  in-game trial (one hero, one foe, one boss in a Level I room). Until then, do not add detail to a
+  code-built rig; the faceted detail rounds are closed (draft #144).
 - **Rules Kesh set on the review pages** (they hold for every Tripo character; any that changes how
   the game plays still needs the freeze lifted): the dash has top priority, cancels a wind-up or
   recovery and has i-frames; no splayed feet (外八) in a humanoid's walk or run, except a heavy
   character such as the Tank; a boss's head faces straight ahead and is seen coming out of the floor
   or water; planted feet do not slide.
-- Not made yet: the foes `bellows`, `knight`, `leech` and `broodling`, and the five freed wardens at
-  camp (`src/render/npcs/wardens.js`).
 
 ## Slice rules
 
@@ -126,6 +122,8 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
   attack is melee; the spawn grow-in plays only on a run's first room; weapons swing clear of the face.
 - Boss and foe rigs: the Wyrm's hit reaction is half squash, half flinch; boss contact squash is +11%
   wide and -5% tall; bosses and Level II rigs hold contact on a slow frame; champion coats reach the floor.
+- Models: the passed Tripo models replace the code-built rigs, one per creature, once the freeze lifts
+  (BUILD_BRIEF A23, `docs/TRIPO_MODELS.md`).
 - Out of scope (BUILD_BRIEF A8): Echoes/Seals currencies, talent trees, camp facilities.
 
 ## House conventions
