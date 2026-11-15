@@ -18,8 +18,9 @@
 //      Replace row and its "AI re-sorts" line; the level table's label names
 //      the interact key; the co-op guest's instant feedback and its timing
 //      follow the bound keys. Russian and Japanese right mouse match left.
-//   5. Old profiles: stored keys (any saved settings hold every key) are kept;
-//      a profile with no stored keys gets the new defaults.
+//   5. Old profiles (Kesh's pick 1): a saved v1 profile that never rebound a
+//      key moves to the new keys; one with any key of its own keeps all of
+//      them; the move runs once (settings v2) and keeps every other setting.
 // Exit code 1 on any failure.
 import { readFileSync } from 'node:fs';
 import { pathToFileURL, fileURLToPath } from 'node:url';
@@ -118,15 +119,31 @@ function memStorage(doc) {
   const m = new Map(doc ? [[SETTINGS_STORAGE_KEY, JSON.stringify(doc)]] : []);
   return { getItem: (k) => (m.has(k) ? m.get(k) : null), setItem: (k, v) => m.set(k, String(v)), removeItem: (k) => m.delete(k) };
 }
-// An old profile that saved any setting holds every key at its old default.
+// The keys a profile ends up with, read through the settings store the way
+// installControls registers them.
+function keysAfterLoad(doc) {
+  const store = createSettingsStore({ storage: memStorage(doc) });
+  const out = {};
+  for (const id of Object.keys(OLD)) out[id] = store.register(`controls.key.${id}`, { default: DEFAULT_BINDINGS[id] });
+  return { keys: out, store };
+}
+// Any saved v1 settings hold every key, defaults included.
 const oldData = Object.fromEntries(Object.entries(OLD).map(([id, c]) => [`controls.key.${id}`, c]));
-const oldStore = createSettingsStore({ storage: memStorage({ v: 1, savedAt: '2026-11-01T00:00:00Z', data: { ...oldData, 'audio.master': 0.5 } }) });
-installControls(oldStore);
-check(bindings.code('skill1') === 'Digit1' && bindings.code('interact') === 'KeyE' && bindings.code('classes') === 'KeyC', 'an old profile with saved keys keeps 1-4, E and C');
-// A profile with no stored keys (never saved settings) gets the new defaults.
-// (setAll with nothing stored is what installControls hands over then.)
-bindings.setAll({});
-check(bindings.code('skill1') === 'KeyQ' && bindings.code('interact') === 'KeyF', 'a profile with no stored keys gets Q / F');
+const v1 = (data) => ({ v: 1, savedAt: '2026-11-01T00:00:00Z', data: { ...data, 'audio.master': 0.5 } });
+let r = keysAfterLoad(v1(oldData));
+check(Object.keys(OLD).every((id) => r.keys[id] === DEFAULT_BINDINGS[id]), `an old profile that never rebound a key moves to the new keys (skill1 ${r.keys.skill1}, interact ${r.keys.interact}, classes ${r.keys.classes})`);
+check(r.store.register('audio.master', { default: 1 }) === 0.5, 'the move keeps every other setting');
+r = keysAfterLoad(v1({ ...oldData, 'controls.key.dodge': 'KeyH', 'controls.key.rally': 'Space' }));
+check(r.keys.dodge === 'KeyH' && r.keys.rally === 'Space' && r.keys.skill1 === 'Digit1' && r.keys.interact === 'KeyE' && r.keys.useItem === 'KeyQ' && r.keys.classes === 'KeyC', 'an old profile with a key of its own keeps every key (1-4, E, Q, C and its own)');
+r = keysAfterLoad({ v: 1, savedAt: '2026-10-01T00:00:00Z', data: { 'audio.master': 0.4 } });
+check(r.keys.skill1 === 'KeyQ' && r.keys.interact === 'KeyF', 'a v1 profile saved before the Controls slice (no keys) gets the new keys');
+r = keysAfterLoad({ v: 2, savedAt: '2026-11-16T00:00:00Z', data: { ...oldData } });
+check(r.keys.skill1 === 'Digit1', 'a v2 profile that chose 1-4 after the move keeps it (the move runs once)');
+r = keysAfterLoad(null);
+check(r.keys.skill1 === 'KeyQ' && r.keys.interact === 'KeyF', 'a new profile starts on Q / F');
+// installControls hands the stored keys to the bindings.
+installControls(createSettingsStore({ storage: memStorage(v1({ ...oldData, 'controls.key.skill2': 'KeyV' })) }));
+check(bindings.code('skill1') === 'Digit1' && bindings.code('skill2') === 'KeyV', 'the bindings follow the kept keys');
 
 console.log(JSON.stringify({ probe: 'skill-keys', ok: fails.length === 0, fails }));
 process.exit(fails.length ? 1 : 0);

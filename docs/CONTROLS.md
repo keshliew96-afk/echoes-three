@@ -41,11 +41,13 @@ table replaces the skill, interact and tonic rows of BUILD_BRIEF §3.
 
 - Keys are per browser and never reach the sim or the wire: the goldens and
   the co-op protocol are untouched, and each co-op player keeps their own.
-- **Old profiles:** the settings store saves every key, defaults included, so
-  a player who has saved any setting keeps the keys they had (1–4, E, Q, C)
-  until **Reset to defaults** on this tab; the tab marks those four skill
-  keys, interact, tonic and class select with the amber changed dot. A
-  profile that never saved settings starts on the new keys.
+- **Old profiles (Kesh's pick):** the settings store saves every key,
+  defaults included, so the move is a settings migration (v1 -> v2,
+  `src/app/settings.js`): a saved profile whose keys all sit at the old
+  defaults (it never rebound one) moves onto the new keys; a profile with
+  any key of its own keeps every key it had, and Reset to defaults on this
+  tab moves it. Every other setting stays. The migration runs once: a
+  player who picks 1–4 again afterwards keeps them.
 - Every label that names a skill key reads the bindings: the command bar,
   the tutorial, the sockets page (row keycaps, the header's "key", the swap
   line and "slot order = keys Q / E / C / X"), and the draft's Replace row
