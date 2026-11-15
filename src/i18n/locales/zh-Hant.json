@@ -466,7 +466,7 @@
  "Checking…": "檢查中…",
  "Choose": "選擇",
  "Choose a level": "選擇關卡",
- "Choose a level (E)": "選擇關卡（E）",
+ "Choose a level ({key})": "選擇關卡（{key}）",
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "選擇欄位：自動存檔與快速存檔（F5）分開保存",
  "Choose what it leaves behind.": "選擇它留下的遺物。",
  "Choose what it pays.": "選擇它給予的回報。",

@@ -530,7 +530,7 @@
  "Checking…": "Vérification…",
  "Choose": "Choisir",
  "Choose a level": "Choisir un niveau",
- "Choose a level (E)": "Choisir un niveau (E)",
+ "Choose a level ({key})": "Choisir un niveau ({key})",
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "Choisis un emplacement — les sauvegardes auto et la sauvegarde rapide (F5) sont gardées à part",
  "Choose what it leaves behind.": "Choisis ce qu’elle laisse derrière.",
  "Choose what it pays.": "Choisis ce qu’elle rapporte.",

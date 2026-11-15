@@ -466,7 +466,7 @@
  "Checking…": "確認中…",
  "Choose": "選ぶ",
  "Choose a level": "レベルを選択",
- "Choose a level (E)": "レベルを選択 (E)",
+ "Choose a level ({key})": "レベルを選択 ({key})",
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "スロットを選択 — オートセーブとクイックセーブ (F5) は別に保存されます",
  "Choose what it leaves behind.": "残していくものを選んでください。",
  "Choose what it pays.": "見返りを選んでください。",

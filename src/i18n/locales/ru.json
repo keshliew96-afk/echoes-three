@@ -546,7 +546,7 @@
  "Checking…": "Проверка…",
  "Choose": "Выбрать",
  "Choose a level": "Выбрать уровень",
- "Choose a level (E)": "Выбрать уровень (E)",
+ "Choose a level ({key})": "Выбрать уровень ({key})",
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "Выбери слот — автосохранения и быстрое (F5) хранятся отдельно",
  "Choose what it leaves behind.": "Выбери, что останется.",
  "Choose what it pays.": "Выбери награду.",

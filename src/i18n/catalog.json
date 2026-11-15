@@ -4831,7 +4831,7 @@
    "src/ui/run/levels.js"
   ]
  },
- "Choose a level (E)": {
+ "Choose a level ({key})": {
   "files": [
    "src/campaign/maptable.js"
   ]

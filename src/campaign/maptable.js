@@ -215,12 +215,12 @@ export function createTablePrompt(onClick) {
   const el = document.createElement('div');
   el.id = 'cg-table-prompt';
   el.setAttribute('role', 'button');
-  el.setAttribute('aria-label', t('Choose a level (E)'));
   el.innerHTML = `<span class="cg-key">E</span><span><b>${t('Choose a level')}</b></span>`;
   // Controls slice: the cap follows the interact binding / the pad's A.
   const keyEl = el.querySelector('.cg-key');
   const paint = () => {
     keyEl.textContent = cap('interact');
+    el.setAttribute('aria-label', t('Choose a level ({key})', { key: cap('interact') }));
   };
   paint();
   onHintsChange(paint);

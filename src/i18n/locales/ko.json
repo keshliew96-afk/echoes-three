@@ -466,7 +466,7 @@
  "Checking…": "확인 중…",
  "Choose": "선택",
  "Choose a level": "레벨 선택",
- "Choose a level (E)": "레벨 선택 (E)",
+ "Choose a level ({key})": "레벨 선택 ({key})",
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "슬롯을 고르세요 — 자동 저장과 빠른 저장(F5)은 따로 보관됩니다",
  "Choose what it leaves behind.": "무엇을 남길지 고르세요.",
  "Choose what it pays.": "무엇을 대가로 받을지 고르세요.",

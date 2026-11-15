@@ -514,7 +514,7 @@
  "Checking…": "Prüfe …",
  "Choose": "Wählen",
  "Choose a level": "Level wählen",
- "Choose a level (E)": "Level wählen (E)",
+ "Choose a level ({key})": "Level wählen ({key})",
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "Wähle einen Platz — Autospeicherungen und Schnellspeicherung (F5) liegen separat",
  "Choose what it leaves behind.": "Wähle, was er zurücklässt.",
  "Choose what it pays.": "Wähle, was er zahlt.",

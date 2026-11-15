@@ -466,7 +466,7 @@
  "Checking…": "正在检查…",
  "Choose": "选择",
  "Choose a level": "选择关卡",
- "Choose a level (E)": "选择关卡（E）",
+ "Choose a level ({key})": "选择关卡（{key}）",
  "Choose a slot — autosaves and the quicksave (F5) are kept separately": "选择槽位——自动存档和快速存档（F5）单独保存",
  "Choose what it leaves behind.": "选择它留下的东西。",
  "Choose what it pays.": "选择它的回报。",
