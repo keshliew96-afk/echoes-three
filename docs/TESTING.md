@@ -139,6 +139,34 @@ inside its tier, one texture of the planned size, no reserved colour on a hero t
 attack's contact time against the sim's strike tick. A probe whose rigs are all replaced is deleted
 from `tools/test.mjs` in that change.
 
+### Workflow tools (Kesh's picks, 2026-11-15)
+
+From the workflow audit (PR #147). None of these is built yet; each is one tool when it is, and
+each follows the house rule of one implementation per system.
+
+- **Blind before and after** (once the freeze lifts). Every visible change gets a before and an after
+  shot from the same camera; a fresh judge (one agent, no context from the thread) sees them shuffled
+  as X and Y. A change whose after loses is dropped; a tie is kept; the READY reply names the verdict.
+  The judge scores against the colour rule (`.claude/rules/visuals.md`), the VFX templates
+  (`docs/VFX_TEMPLATES.md`) and the Tripo standards (`docs/tripo/`), never `docs/REFERENCE_BAR.md`
+  (retired). The shots extend `tools/shot-stamp.mjs` rather than a new shot tool.
+- **Where a look is judged.** Cloud shots (software GL, about 1 fps, washed colour) judge layout and
+  readability. Colour and feel are judged on Kesh's laptop. Store-page shots never come from the cloud
+  (launch plan S15).
+- **Dream targets.** One repainted shot per land, kept in the project folder (never in the repo, the
+  build or the store page). They rank below the colour rule and the VFX templates: where a target
+  breaks either, the rule wins. Changing the game toward them waits for the freeze lift.
+- **earshot** (github.com/Leonxlnx/earshot, MIT; uv, ffmpeg and about 1.1 GB of models per session).
+  It only listens: each synthesized cue is rendered to a file for it, and none of its own sounds,
+  `forge` or `fit` output enter the game (BUILD_BRIEF A9; launch plan section 7 rule 5). Kesh's own
+  speaker pass (launch plan G5) stays.
+- **Model rule script.** The first version of the one Tripo probe ("Tripo models" above), reading the
+  final GLBs in the project folder until the packed ones are in `public/models/`. It reuses the review
+  kit's measurements (loop pops, toe-out 0 to 5 degrees, clipping, `texture-colours.py`). It stays out of
+  `npm test` and CI while it reads the project folder.
+- **Live-site check.** Run when Kesh says "deployed": a `--live <url>` mode of `tools/check.mjs` that
+  uses real keys only (a player build has no debug API) and waits out the free host's cold start.
+
 The sections below are from the builder and critic rounds up to v0.5.220 (2026-10-04). The
 debug API, the frame analyzer and the harness boot parameters still work in a harness build
 ("Player build" above); the round, critic,

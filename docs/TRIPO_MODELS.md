@@ -126,10 +126,13 @@ collision radius.
 Kesh made the models on Tripo's paid Studio plan; Tripo's help page says paid users hold full
 commercial rights to what they generate
 ([Tripo help](https://www.tripo3d.ai/help/privacy-policy/can-i-use-models-commercially)). Keep a record
-of the plan for the dates the models were made. Steam's content survey asks about AI-generated
+of the plan for the dates the models were made: the receipts stay in the project folder (the repo is
+public), and a model's record there says the plan and the dates only. A record never holds a contact
+time: strike timing lives in the sim's tables (Kesh's pick, 2026-11-15). Steam's content survey asks about AI-generated
 content, so the store page discloses the models (launch plan S15).
 
 ## Probes
 
-The 14 `model-standard-*-probe.mjs` probes in `npm test` hold the code-built rigs. Each is replaced in
+The 14 `model-standard-*-probe.mjs` probes in `npm test` hold the code-built rigs. The model rule script
+(`docs/TESTING.md` "Workflow tools") is the first version of the one Tripo probe, not a second tool. Each is replaced in
 the same change that replaces its model (`docs/TESTING.md`, "Tripo models").

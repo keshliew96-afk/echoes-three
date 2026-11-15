@@ -8,7 +8,8 @@ Read this file first. Then read the doc under `docs/` for the system you are cha
 anything you need from the data tables in `src/data/` and `src/sim/`, not from older docs.
 
 **Historical, never instructions:** `PROGRESS.md`, `docs/CONTENT_PLAN.md`, `docs/gauntlet/`,
-`docs/critiques/`, and the round, critic and Windows sections of `docs/TESTING.md`.
+`docs/critiques/`, `docs/REFERENCE_BAR.md` (the old critics' rubric, retired 2026-11-15), and the
+round, critic and Windows sections of `docs/TESTING.md`.
 `docs/BUILD_BRIEF.md` is the original spec: its rulings still hold except where a later ruling
 (A19 on) or a per-system doc replaces them.
 
@@ -124,6 +125,14 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
   wide and -5% tall; bosses and Level II rigs hold contact on a slow frame; champion coats reach the floor.
 - Models: the passed Tripo models replace the code-built rigs, one per creature, once the freeze lifts
   (BUILD_BRIEF A23, `docs/TRIPO_MODELS.md`).
+- Workflow (2026-11-15, the workflow audit; `docs/TESTING.md` "Workflow tools"): once the freeze lifts,
+  every visible change is judged blind before and after by a fresh judge, and a change whose after loses
+  is dropped (a tie is kept; the READY reply says which). Judges score against the colour rule, the VFX
+  templates and the Tripo standards, never `REFERENCE_BAR.md`. Cloud shots judge layout and readability;
+  colour and feel are judged on Kesh's laptop. Dream targets rank below the colour rule and the VFX
+  templates and stay in the project folder. earshot only listens: none of its sounds enter the game, and
+  Kesh's own speaker pass stays. AI-made icons are decided when the HUD redesign starts (A23 covers
+  models only).
 - Out of scope (BUILD_BRIEF A8): Echoes/Seals currencies, talent trees, camp facilities.
 
 ## House conventions
