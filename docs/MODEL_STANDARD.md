@@ -10,6 +10,13 @@
 > faceted foe to its retired classic's draw calls, kept in `tools/classic-foe-calls.json`.
 > Level V, Spire and Kiln creatures were never faceted and keep their first rigs.
 
+> **Tripo models (2026-11-15).** Kesh has passed a Tripo Studio model for every hero, boss and
+> champion, 38 foes and six NPCs (CLAUDE.md "Tripo models"). They are review pages and GLB files in
+> the project folder, not game assets yet, so this doc still describes what the game draws. The
+> detail standard below (draft #144, the Healer's round 3) is paused on his word, and its review
+> loop and sign-off register were never used. Where a Tripo model passes the budget or the rules
+> below, the measured numbers are in "Tripo models against these budgets".
+
 Kesh's sample video (a Claude Design "Leviathan" page, studied in
 `/mnt/project-files/plan/MODEL_STANDARD.md`) builds its creature in code: faceted low-poly
 planes, detail by repeating small parts, and abilities as named, rewindable timelines. He
@@ -66,6 +73,24 @@ budgets add up to: four heroes (320), a boss (120), two champions (220) and twel
 is about 1,020 calls before the room and the effects, inside a 1,500-call frame. That frame
 figure is a plan, not a measurement: the S9 frame-time probe on a 1050 Ti-class PC sets it.
 Level V, Spire and Kiln creatures were never faceted and get the standard when the freeze lifts.
+
+#### Tripo models against these budgets (measured 2026-11-15 from the passed GLBs)
+
+A Tripo model is one skinned mesh with one texture (a hero adds its weapon as a second mesh), so
+it costs a few draw calls where a faceted rig costs 30 to 120, but it carries more triangles and a
+2048 px JPEG texture (about 22 MB of GPU memory each once decoded with mipmaps).
+
+| Tier | Passed | Triangles | Bones | Budget triangles | Over budget |
+|---|---|---|---|---|---|
+| Hero | 7 | 14,609 to 14,994 | 19 to 24 | 15,000 | none |
+| Boss | 17 | 22,666 to 29,656 | 16 to 52 | 30,000 | none |
+| Champion | 12 | 11,301 to 12,000 | 17 to 28 | 12,000 | none |
+| Foe | 36 | 3,687 to 3,963 | 7 to 53 | 4,000 | none |
+| Small mob | 2 (brood, gravewisp) | 3,809 and 4,028 | 39 and 12 | 1,500 | both; Kesh passed them as sent |
+| NPC | 6 | 3,745 to 14,923 | 5 to 19 | no NPC tier | five NPCs sit at the hero budget |
+
+Not made yet: `bellows`, `knight`, `leech`, `broodling` and the five freed wardens. Item 4 below
+("no textures") and the mesh column above do not fit a Tripo model; they stand until Kesh rules.
 
 ### What every model must show
 
