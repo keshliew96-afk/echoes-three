@@ -19,12 +19,32 @@ import { EventEmitterLite } from './emitter.js';
 import { MAX_PIXEL_RATIO } from '../core/constants.js';
 
 export const SETTINGS_STORAGE_KEY = 'echoes.settings';
-export const SETTINGS_VERSION = 1;
+export const SETTINGS_VERSION = 2;
 const PERSIST_DEBOUNCE_MS = 150;
+
+// The keys every v1 profile saved before the Valorant-style skill keys
+// (v0.5.363, docs/CONTROLS.md): the store writes defaults too, so a stored
+// v1 key at its old default is a key the player never touched.
+const V1_CONTROL_DEFAULTS = Object.freeze({
+  moveUp: 'KeyW', moveLeft: 'KeyA', moveDown: 'KeyS', moveRight: 'KeyD', attack: 'MouseRight', dodge: 'Space',
+  skill1: 'Digit1', skill2: 'Digit2', skill3: 'Digit3', skill4: 'Digit4', interact: 'KeyE', useItem: 'KeyQ',
+  rally: 'KeyR', markEnemy: 'Tab', ally1: 'F1', ally2: 'F2', ally3: 'F3', ally4: 'F4',
+  backpack: 'KeyB', pause: 'KeyP', levels: 'KeyL', unlocks: 'KeyU', classes: 'KeyC', story: 'KeyJ',
+});
 
 // v -> function(dataOfVersionV) -> dataOfVersionV+1
 const MIGRATIONS = {
-  // 1: (d) => ({ ...d, 'new.key': d['old.key'] }),
+  // 1 -> 2 (Kesh's pick, 2026-11-15): a profile that never rebound a key
+  // moves onto the new default keys (its stored keys are dropped, so the
+  // defaults apply); a profile with any key of its own keeps every key.
+  1: (d) => {
+    const keys = Object.keys(d).filter((k) => k.startsWith('controls.key.'));
+    const untouched = keys.every((k) => V1_CONTROL_DEFAULTS[k.slice(13)] === d[k]);
+    if (!untouched) return d;
+    const out = { ...d };
+    for (const k of keys) delete out[k];
+    return out;
+  },
 };
 
 // ---------------------------------------------------------- validators --

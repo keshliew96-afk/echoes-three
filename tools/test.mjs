@@ -38,6 +38,7 @@ export const SUITE = [
   { file: 'tools/polish-probe.mjs', args: [], what: 'Short Fuse in its room, Records dates, Level Select rows, Hourwarden weights' },
   { file: 'tools/code-health-probe.mjs', args: [], what: 'per-world colliders, the bundle split, dead code, audit pins' },
   { file: 'tools/lineup-probe.mjs', args: [], what: 'the party lineup' },
+  { file: 'tools/skill-keys-probe.mjs', args: [], what: 'Valorant-style skill keys (Q E C X) and every key label reading the bindings' },
   { file: 'tools/healer-restore-probe.mjs', args: [], what: 'the original healer, the mouse model removed' },
   { file: 'tools/model-standard-probe.mjs', args: [], what: 'the model standard pilot: faceted Wyrm and Tank, timelines, locked feet' },
   { file: 'tools/model-standard-heroes-probe.mjs', args: [], what: 'the model standard heroes: combo, holds, recoil, spawn, points, locked feet, colours' },

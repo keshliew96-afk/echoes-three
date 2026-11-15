@@ -389,7 +389,7 @@ export function createEndScreen({ run }) {
   function key(code, fresh) {
     // Esc is the pause key on every page (PLAN §1.5, ruling A13) — the end
     // card no longer treats it as "return to camp".
-    if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
+    if (code === 'Enter' || code === 'NumpadEnter') {
       if (!fresh) return true;
       run().returnToCamp();
       return true;

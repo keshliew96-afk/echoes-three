@@ -267,7 +267,7 @@ export function createEncounterScreen({ run, onTake = null }) {
       render(sys.view());
       return true;
     }
-    if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
+    if (code === 'Enter' || code === 'NumpadEnter') {
       if (!fresh) return true; // §16 fresh-press rule
       choose(e && e.focus === 1 ? 'leave' : 'take');
       return true;

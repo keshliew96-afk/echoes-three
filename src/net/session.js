@@ -52,6 +52,7 @@ import { cdTicksOf } from '../sim/allycast.js';
 import { dodgeCooldownTicks } from '../sim/relics.js';
 import { t } from '../i18n/index.js';
 import { pageQuery } from '../app/harness.js';
+import { bindings, MOUSE_BUTTON_CODE } from '../core/bindings.js';
 
 // seats.js seatControlText() in the player's language (docs/I18N.md): the net
 // HUD note for a seat changing hands.
@@ -70,8 +71,8 @@ function seatControlCopy(ev, nameOf = () => null) {
 }
 
 const now = () => performance.now();
-// A seat plays at most 4 skills (keys 1-4; the user's correction — the
-// guest seats' class kits are 4 skills too). Keys 5-8 are unbound.
+// A seat plays at most 4 skills (the user's correction — the guest seats'
+// class kits are 4 skills too). skill_5..8 have no key.
 // TONICS AND BOMBS: a guest's slot press rides bit 10; the host resolves it
 // (no local prediction: the slot and the throw are the host's).
 const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_4', 'interact', 'use_item']);
@@ -79,8 +80,12 @@ const GUEST_PRESSES = new Set(['dodge', 'skill_1', 'skill_2', 'skill_3', 'skill_
 // commands — Rally (R), Mark (Tab) and the heal target (F1-F4) — as a host
 // or single-player Healer has them.
 const HEALER_PRESSES = new Set([...GUEST_PRESSES, ...PARTY_COMMANDS]);
-const KEY_OF = { dodge: 'Space', interact: 'KeyE', basic: 'Mouse2' };
-for (let i = 1; i <= 4; i++) KEY_OF[`skill_${i}`] = `Digit${i}`;
+// The action behind each predicted press, so the keydown -> visual timing
+// (ownActionFeedbackMs) reads the key the player actually bound
+// (Settings ▸ Controls; core/bindings.js), not a fixed one.
+const ACTION_OF = { dodge: 'dodge', interact: 'interact', basic: 'attack' };
+for (let i = 1; i <= 4; i++) ACTION_OF[`skill_${i}`] = `skill${i}`;
+const keyOf = (kind) => (ACTION_OF[kind] ? bindings.code(ACTION_OF[kind]) : null);
 // (+ CAMPAIGN, PLAN §12.9: a guest can neither start, advance nor abandon a
 // campaign — the host drives every level transition.)
 const RUN_MUTATORS = new Set(['takeReward', 'declineReward', 'setRewardReplace', 'partyPick', 'partyReplace', 'partyCommit', 'partyBuy', 'partyShopMark', 'partyShopDone', 'refreshShop', 'reorderLoadout', 'autoFillAll', 'focusPath', 'choosePath', 'focusRelic', 'chooseRelic', 'openEncounter', 'focusEncounter', 'chooseEncounter', 'openVault', 'buyRelic', 'buyTonic', 'buy', 'advanceFromShop', 'returnToCamp', 'startRun', 'endRun', 'startCampaign', 'campaignAdvance', 'pickRoad', 'abandonRun']);
@@ -1127,9 +1132,10 @@ export function createNetSession(ctx) {
     if (guest) guest.keyAt[e.code] = e.timeStamp;
   };
   const onMouseTime = (e) => {
-    if (guest && e.button === 2) guest.keyAt.Mouse2 = e.timeStamp;
+    const code = MOUSE_BUTTON_CODE[e.button];
+    if (guest && code) guest.keyAt[code] = e.timeStamp;
   };
-  // Input-triggered prediction: a trusted keydown / right-button press is
+  // Input-triggered prediction: a trusted keydown / bound mouse-button press is
   // sampled the moment it is dispatched (bubble phase — after core/input.js
   // queued it), not at the next rendered frame's start: the predicted swing /
   // cast / cue / cooldown tile start NOW (the cue sounds at once) and are
@@ -1138,7 +1144,7 @@ export function createNetSession(ctx) {
   const onInputNow = (e) => {
     const g = guest;
     if (!g || g.frozen || g.away || !g.own.ready || e.repeat) return;
-    if (e.type === 'mousedown' && e.button !== 2) return;
+    if (e.type === 'mousedown' && !bindings.action(MOUSE_BUTTON_CODE[e.button])) return;
     try {
       sampleFrame();
     } catch (err) {
@@ -1247,7 +1253,7 @@ export function createNetSession(ctx) {
       dashing: body ? body.dashTicksLeft > 0 || g.dodgeSeq === seq : false,
       // PARTY: a displaced cast (dash / vault) still waiting to deliver.
       pending: body ? !!body.pendingSkill : false,
-      keyAt: g.keyAt[KEY_OF[kind]],
+      keyAt: g.keyAt[keyOf(kind)],
     });
     const order = (k) => (k === 'dodge' ? 0 : k === 'interact' ? 9 : k === 'use_item' ? 10 : PARTY_COMMANDS.includes(k) ? 11 : Number(k.slice(6)) || 5);
     const vocab = g.seat === 0 ? HEALER_PRESSES : GUEST_PRESSES;
@@ -1266,7 +1272,7 @@ export function createNetSession(ctx) {
     }
     if (g.held.basic && g.own.ready) {
       const c = ctxFor('basic');
-      if (!wasBasic) c.keyAt = g.keyAt.Mouse2;
+      if (!wasBasic) c.keyAt = g.keyAt[keyOf('basic')];
       else c.keyAt = undefined;
       // §10: a seat channelling a revive swings only on a FRESH press (the
       // press breaks the channel); a held basic waits (host resolveHuman).

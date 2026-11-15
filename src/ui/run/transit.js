@@ -350,7 +350,7 @@ export function createTransitScreen({ run }) {
     if (code === 'ArrowLeft' || code === 'KeyA') roadFocus = (roadFocus + n - 1) % n;
     else if (code === 'ArrowRight' || code === 'KeyD') roadFocus = (roadFocus + 1) % n;
     else if (code === 'Digit1' || code === 'Digit2') return pick(card.fork.roads[code === 'Digit1' ? 0 : 1]) || true;
-    else if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') return pick(card.fork.roads[roadFocus]) || true;
+    else if (code === 'Enter' || code === 'NumpadEnter') return pick(card.fork.roads[roadFocus]) || true;
     else return false;
     forkEl.innerHTML = forkHtml(card.fork);
     return true;
@@ -364,7 +364,7 @@ export function createTransitScreen({ run }) {
 
   function key(code, fresh) {
     if (fresh && forkKey(code)) return true;
-    if (code === 'Enter' || code === 'NumpadEnter' || code === 'Space') {
+    if (code === 'Enter' || code === 'NumpadEnter') {
       if (!fresh) return true;
       const mgr = service('campaign');
       if (mgr && typeof mgr.requestSkip === 'function') mgr.requestSkip('enter');

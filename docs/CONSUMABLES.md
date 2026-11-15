@@ -47,7 +47,7 @@ in seat order. At most three lie loose at once.
 
 ## Using it
 
-Q, or click the right stick (rebindable as "Use tonic or bomb"). Only during a
+G (Q before v0.5.363), or click the right stick (rebindable as "Use tonic or bomb"). Only during a
 fight: between rooms, Downed, or with an empty slot the press is refused with
 a dull tap. The command bar shows the slot right of the dodge, coloured by
 kind.

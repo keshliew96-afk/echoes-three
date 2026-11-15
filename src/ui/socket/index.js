@@ -73,6 +73,7 @@ import { NODE_EFFECT, NODE_GLYPH as CARD_GLYPH, skillAbbrev } from '../run/cards
 import { createPartyStrip } from '../run/partystrip.js';
 import { CLASS_NAME } from '../../data/classes.js';
 import { classOfSeat } from '../../data/lineup.js';
+import { cap, skillsCap } from '../../app/controls.js';
 import { CLASS_ACCENTS } from '../../data/palette.js';
 import { service } from '../../app/registry.js';
 import { t, tn } from '../../i18n/index.js';
@@ -302,6 +303,9 @@ function previewText(line) {
 
 const esc = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+// A skill row's key, named as the player presses it (Settings ▸ Controls, or
+// the pad button while a gamepad is in use): row r is skill slot r + 1.
+const skillKey = (r) => cap(`skill${r + 1}`);
 
 const DESIGN_W = 1280;
 // fix-M4a-r5 (F8, G4c.5): the page is compacted vertically (head 52, rows
@@ -425,9 +429,9 @@ export function createSocketScreen({ bus, world }) {
     .nd-strip .rn-ptab .rn-pcaret { line-height: 1; top: -15px; }
     .nd-btn.nd-focusbtn { outline: 2px solid ${PALETTE.hearthAmber}; outline-offset: 2px; }
     .nd-rowhead { display: flex; align-items: center; gap: 10px; min-width: 0; }
-    /* the skill's key (1-4) rides the icon medallion's corner as a keycap */
+    /* the skill's key (the player's own: Q E C X by default) rides the icon medallion's corner as a keycap */
     .nd-rkey {
-      position: absolute; left: -7px; top: -7px; width: 24px; height: 24px; border-radius: 6px;
+      position: absolute; left: -7px; top: -7px; min-width: 24px; height: 24px; padding: 0 3px; box-sizing: border-box; border-radius: 6px;
       display: flex; align-items: center; justify-content: center;
       font-size: 16px; font-weight: 800; color: ${PALETTE.parchment};
       background: ${PALETTE.voidCharcoal}; border: 1px solid ${PALETTE.warmGrey}AA;
@@ -823,7 +827,7 @@ export function createSocketScreen({ bus, world }) {
       const vd = held ? rowVerdict(sys, sk, held.node) : null;
       row.innerHTML = `
         <div class="nd-rowhead">
-          <span class="nd-ricon${iconCls}">${hasIcon(sk.id) ? iconHtml(sk.id, { size: 28 }) : esc(skillAbbrev(def))}<span class="nd-rkey">${r + 1}</span></span>
+          <span class="nd-ricon${iconCls}">${hasIcon(sk.id) ? iconHtml(sk.id, { size: 28 }) : esc(skillAbbrev(def))}<span class="nd-rkey">${esc(skillKey(r))}</span></span>
           <span style="min-width:0">
             <div class="nd-rname">${esc(t(sk.name))}</div>
             <div class="nd-rsub">${sk.shape === 'aura' ? t('passive · aura field') : `${esc(word(sk.archetype))} · ${esc(SHAPE_LABEL[sk.shape] ?? sk.shape)}`}</div>
@@ -1001,11 +1005,11 @@ export function createSocketScreen({ bus, world }) {
     if (focus.zone === 'head' && view.skills[focus.r]) {
       // PARTY reorder zone.
       const sk = view.skills[focus.r];
-      title = `<span>${esc(t(sk.name))}</span><span class="nd-rar">${t('key {key} · row {row} of {rows}', { key: focus.r + 1, row: focus.r + 1, rows: view.skills.length })}</span>`;
+      title = `<span>${esc(t(sk.name))}</span><span class="nd-rar">${t('key {key} · row {row} of {rows}', { key: esc(skillKey(focus.r)), row: focus.r + 1, rows: view.skills.length })}</span>`;
       if (headerInHand === null) lines.push(t('Enter picks this skill up to REORDER — its sockets travel with it'));
       else if (headerInHand === focus.r) lines.push(t('picked up — ↑ / ↓ or 1–4 to another skill, Enter there swaps the two rows · Esc drops it'));
-      else lines.push(t('Enter swaps {from} (key {fromKey}) with {to} (key {toKey}) — keys follow the new order', { from: esc(t(view.skills[headerInHand].name)), fromKey: headerInHand + 1, to: esc(t(sk.name)), toKey: focus.r + 1 }));
-      lines.push(esc(viewSeat === 0 ? t('slot order = keys 1–4') : t('slot order = keys 1–4 = the order the AI casts in')));
+      else lines.push(t('Enter swaps {from} (key {fromKey}) with {to} (key {toKey}) — keys follow the new order', { from: esc(t(view.skills[headerInHand].name)), fromKey: esc(skillKey(headerInHand)), to: esc(t(sk.name)), toKey: esc(skillKey(focus.r)) }));
+      lines.push(esc(viewSeat === 0 ? t('slot order = keys {keys}', { keys: skillsCap() }) : t('slot order = keys {keys} = the order the AI casts in', { keys: skillsCap() })));
     } else if (focus.zone === 'autoall') {
       title = `<span>${t('Auto-fill all')}</span>`;
       lines.push(t('every character’s bench goes into its own live sockets — the same policy as F, for all four'));

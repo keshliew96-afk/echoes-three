@@ -256,9 +256,10 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // navigation too — dropped for the page's first 300 ms, and E / F1-F4 (the
   // combat's revive / heal-override keys) keep restarting that window.
   const NAV_KEYS = new Set(['KeyA', 'KeyD', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyS', 'ArrowUp', 'ArrowDown', 'KeyQ', 'KeyE', 'PageUp', 'PageDown', 'F1', 'F2', 'F3', 'F4']);
-  // X (the draft's decline, ruling A13) is a commit key: settle-guarded and
-  // fresh-press only, exactly like Enter.
-  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX', 'KeyR']);
+  // KEY CLASH (v0.5.363): Space (the dodge) and X (skill 4) commit nothing on
+  // a run page any more; R stays (the shop's refresh, which never opens
+  // straight from a fight).
+  const COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'KeyR']);
   // §23.9: the carry-over set follows the skill keys (Digit1..Digit8).
   const CARRY_KEYS = new Set([
     ...Array.from({ length: SKILL_SLOTS }, (_, i) => `Digit${i + 1}`),
@@ -1259,7 +1260,7 @@ export function createRunUi({ bus, world, socket = null, autostart = false }) {
   // decides and emits the app `nav` event the audio engine already plays.
   // Commit keys never tick (their own cue plays: draft_take, path, purchase).
   const selSound = createSelectionSound('run');
-  const SEL_COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'Space', 'KeyX', 'KeyR', 'Escape']);
+  const SEL_COMMIT_KEYS = new Set(['Enter', 'NumpadEnter', 'KeyR', 'Escape']);
   const HOVER_SEL = {
     draft: '.rn-btn, .rn-rep, .rn-ptab',
     path: '.rn-doorwrap',

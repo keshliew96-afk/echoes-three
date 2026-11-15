@@ -1412,7 +1412,7 @@
    "src/ui/socket/index.js"
   ]
  },
- "<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>X</b> decline · <b>Esc</b> pause": {
+ "<b>A</b>/<b>D</b> or <b>←</b>/<b>→</b> choose · <b>Enter</b> commit · <b>Esc</b> pause": {
   "files": [
    "src/ui/run/draft.js"
   ]
@@ -1482,12 +1482,12 @@
    "src/ui/run/path.js"
   ]
  },
- "<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause": {
+ "<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>Esc</b> pause": {
   "files": [
    "src/ui/run/draft.js"
   ]
  },
- "<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>W</b>/<b>S</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave": {
+ "<b>Q</b>/<b>E</b> · <b>F1</b>–<b>F4</b> character · <b>W</b>/<b>S</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit": {
   "files": [
    "src/ui/run/draft.js"
   ]
@@ -1512,7 +1512,7 @@
    "src/scenes/camp.js"
   ]
  },
- "<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>X</b> leave · <b>Esc</b> pause": {
+ "<b>W</b>/<b>S</b> or <b>↑</b>/<b>↓</b> replace · <b>A</b>/<b>D</b> choose · <b>Enter</b> commit · <b>Esc</b> pause": {
   "files": [
    "src/ui/run/draft.js"
   ]
@@ -4831,7 +4831,7 @@
    "src/ui/run/levels.js"
   ]
  },
- "Choose a level (E)": {
+ "Choose a level ({key})": {
   "files": [
    "src/campaign/maptable.js"
   ]
@@ -14034,12 +14034,12 @@
    "src/ui/run/shop.js"
   ]
  },
- "slot order = keys 1–4": {
+ "slot order = keys {keys}": {
   "files": [
    "src/ui/socket/index.js"
   ]
  },
- "slot order = keys 1–4 = the order the AI casts in": {
+ "slot order = keys {keys} = the order the AI casts in": {
   "files": [
    "src/ui/socket/index.js"
   ]

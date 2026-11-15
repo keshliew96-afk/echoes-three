@@ -25,13 +25,15 @@ export const ACTIONS = Object.freeze([
   { id: 'moveRight', def: 'KeyD', group: 'play' },
   { id: 'attack', def: 'MouseRight', group: 'play' },
   { id: 'dodge', def: 'Space', group: 'play' },
-  { id: 'skill1', def: 'Digit1', group: 'play' },
-  { id: 'skill2', def: 'Digit2', group: 'play' },
-  { id: 'skill3', def: 'Digit3', group: 'play' },
-  { id: 'skill4', def: 'Digit4', group: 'play' },
-  { id: 'interact', def: 'KeyE', group: 'play' },
+  // VALORANT KEYS (docs/CONTROLS.md, v0.5.363, Kesh's pick): the skills sit
+  // next to W A S D, so a cast never lifts a movement finger (1-4 did).
+  { id: 'skill1', def: 'KeyQ', group: 'play' },
+  { id: 'skill2', def: 'KeyE', group: 'play' },
+  { id: 'skill3', def: 'KeyC', group: 'play' },
+  { id: 'skill4', def: 'KeyX', group: 'play' },
+  { id: 'interact', def: 'KeyF', group: 'play' },
   // TONICS AND BOMBS (docs/CONSUMABLES.md): the hero's carry slot.
-  { id: 'useItem', def: 'KeyQ', group: 'play' },
+  { id: 'useItem', def: 'KeyG', group: 'play' },
   { id: 'rally', def: 'KeyR', group: 'play' },
   { id: 'markEnemy', def: 'Tab', group: 'play' },
   { id: 'ally1', def: 'F1', group: 'play' },
@@ -42,7 +44,7 @@ export const ACTIONS = Object.freeze([
   { id: 'pause', def: 'KeyP', group: 'camp' },
   { id: 'levels', def: 'KeyL', group: 'camp' },
   { id: 'unlocks', def: 'KeyU', group: 'camp' },
-  { id: 'classes', def: 'KeyC', group: 'camp' },
+  { id: 'classes', def: 'KeyK', group: 'camp' },
   { id: 'story', def: 'KeyJ', group: 'camp' },
 ]);
 export const ACTION_IDS = Object.freeze(ACTIONS.map((a) => a.id));
