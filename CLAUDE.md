@@ -133,7 +133,9 @@ The goldens run the legacy single-level run, so new content is campaign-only or 
   templates and stay in the project folder. earshot only listens: none of its sounds enter the game, and
   Kesh's own speaker pass stays. AI-made icons are decided when the HUD redesign starts (A23 covers
   models only).
-- Out of scope (BUILD_BRIEF A8): Echoes/Seals currencies, talent trees, camp facilities.
+- Talents: every hero gets three play-style paths, picked at camp, one pick per tier from any path;
+  built only after the freeze lifts (BUILD_BRIEF A24, `docs/TALENTS.md`).
+- Out of scope (BUILD_BRIEF A8, A19): Echoes/Seals currencies, camp facilities.
 
 ## House conventions
 
