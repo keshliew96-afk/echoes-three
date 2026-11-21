@@ -1,0 +1,64 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 10,
+  "pre": 0.25,
+  "name": "kit_C33",
+  "aim": [
+   3,
+   0
+  ],
+  "slots": [
+   "lantern_ward"
+  ],
+  "allies": [
+   [
+    2.2,
+    0.8,
+    0.4
+   ],
+   [
+    -3.2,
+    -2.4,
+    1
+   ],
+   [
+    -1.6,
+    3.4,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    4.4,
+    -1.2
+   ],
+   [
+    6.0,
+    1.5
+   ]
+  ],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=600;e.hp=600;}",
+  "seq": [
+   [
+    0.2,
+    "eval",
+    "globalThis.__reviewSeedAt(2.2,2.2);"
+   ],
+   [
+    0.8,
+    "key",
+    "q"
+   ],
+   [
+    3.4,
+    "eval",
+    "globalThis.__reviewSeedAt(5.6,-1.8);"
+   ]
+  ],
+  "secs": 16.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C33 \u00b7 Firefly Swarm eats seeds: up to 2 more stops"
+ }
+]

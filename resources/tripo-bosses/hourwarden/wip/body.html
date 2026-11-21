@@ -1,0 +1,110 @@
+<div class="wrap">
+  <div>
+    <h1>Hourwarden from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the Spire's last warden: a stone and bronze clock tower on a bed of gears, with a pagoda cap, violet eyes under the hood, a pale clock face on its chest, a pendulum in an arched window front and back, and two great fists that each hold a clock weight on a chain. It now has a skeleton, a swinging pendulum, a clock hand that turns, swinging chains and 12 moves made by hand. It glides on its gear bed. For the Pendulum it swings its own pendulum hard and a ghost of the swing runs down the lane. For the Hand Sweep it swings both weights across its front, and for the Toll of the Hours it strikes its own clock face once for each hour while clock weights fall onto the rings, then runs down and stands still before it winds up again. The timings come from the game. Pick a move and drag to turn the view, then judge the weight and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Glide sets what it does between attacks, and Going turns it on the spot. An Action plays over that and repeats until you press it again. Hurt plays on top of anything. Death holds it down; press it again to spawn it back in. The bar names the part of the move that is playing. Anything under the floor is hidden, as in the game.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="hourwarden-views.png" alt="The Tripo Hourwarden from the front, its left side, the back and three quarters, before rigging" width="1280" height="400">
+      <p class="note" style="padding-top:12px">It came through in one piece. The arms, the chains and the weights are clear of the body, so they were cut free cleanly. The pendulums and the clock hand were carved into the case as relief, so I cut each one free along its groove and filled the hole behind it with the dark of the window and the pale of the dial. The gears are carved into the bed the same way. Its face points straight ahead, so nothing was corrected.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>27,174 <small>26,776 as sent, plus the fill behind the parts I cut free; boss budget about 28,000</small></dd></div>
+    <div><dt>Bones</dt><dd>16 <small>root, hips, spine, chest, neck, head, the pendulum, the clock hand, and a shoulder, elbow, wrist and chain on each side</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.5 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.4 u tall <small>cap to gear bed, 1.45 u wide across the weights, at the game's scale of 2.4, beside a 1 u hero</small></dd></div>
+    <div><dt>Clock hand</dt><dd>turned by the page <small>one tick a second, an hour for each toll; it stops when it runs down and runs backward when it dies</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>It stands upright on its gears. The pendulum swings slowly behind the window, the hand ticks, it looks left and right and the fists flex on the chains. The eyes and the dial glow faintly on the beat.</td><td>6 s loop</td></tr>
+      <tr><td>Glide</td><td>It rolls forward on its gear bed with a slight lean and sway. The chains swing behind the fists as it goes.</td><td>Game: 1.45 u/s.</td></tr>
+      <tr><td>Turn left, turn right</td><td>It swings round on its bed, the head first and the case after it.</td><td>Mine: 90 degrees a second. The game turns it to its target at once.</td></tr>
+      <tr><td>Pendulum</td><td>While the lane fills it draws its pendulum back and leans into it. On the beat the pendulum swings hard and a violet ghost of the swing runs down the lane through the hero. It holds, then swings back the other way for the back-swing, and settles.</td><td>Game: an Ember lane 1.4 u wide and up to 9.5 u long for 54 ticks; 14 damage; the back-swing 30 ticks later for 10. Here the hero stands 6 u away.</td></tr>
+      <tr><td>Hand Sweep</td><td>While the cone fills it winds both arms to its right. On the beat it swings both weights across its front in a wide arc, the hand spins once, and the hero is thrown. It swings its arms back.</td><td>Game: when a hero is inside 2.8 u; an Ember cone of radius 3.4 u and half-angle 70 degrees for 40 ticks; 13 damage and a 1.8 u throw over 8 ticks. Here the hero stands 2.2 u away.</td></tr>
+      <tr><td>Toll of the Hours</td><td>It raises its right fist and strikes its own clock face once for each hour. Each strike jumps the hand an hour, and a clock weight falls from above onto that hour's ring. Then it runs down: it slumps, the glow gutters and the hand stops. It wakes with a shudder and the hand starts again.</td><td>Game: Ember rings of radius 1.3 u at the hero's distance (2.5 to 6.5 u), the first on the hero and each next 30 degrees clockwise and 14 ticks later; the first lands after 60 ticks; 11 damage each; 3 hours, 4 from phase two, 6 when enraged; then run down for 70 ticks, taking 25 percent more damage. Here the hero stands 4 u away and it strikes 3 hours.</td></tr>
+      <tr><td>Enrage</td><td>It shudders, the hand spins, and it throws both arms up with its eyes flaring. Then it slams both weights down onto the floor.</td><td>Mine: 1.8 s. The game enrages it under 40 percent health but has no pose for it.</td></tr>
+      <tr><td>Hurt</td><td>The head and the top of the case are knocked back. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>It is shoved back 0.25 u and rocks back on the edge of its bed, then rocks down onto its gears again.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>It rises out of the floor gears first, lands on its bed, and the hand whirs round as its eyes wake.</td><td>Game: grow in 7 frames. The rise is mine.</td></tr>
+      <tr><td>Death</td><td>A jolt, and the hand runs backward. It sags as it runs down, tips back over the edge of its bed and falls on its back with its dial to the sky. The glow goes out and the hand stops for good.</td><td>2.6 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker follows every point of the model through every frame of every move. It looks for five things. Sizes are in u; it is 2.4 u tall.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>The elbow bent backward when a fist was sent to strike the dial, because the reach let the arm fold the wrong way.</td><td>None. The elbow now only bends the way an elbow bends.</td></tr>
+      <tr><td>Any part under the floor</td><td>The chains and weights sank 0.01 u through the floor when it lay dead.</td><td>Clean in every move. The weights hang on their chains and stop at the floor. The spawn goes under the floor on purpose, and the page hides that part.</td></tr>
+      <tr><td>One part pushed through another</td><td>On each toll the right fist went into the chest beside the dial.</td><td>The fist now strikes the rim of the dial and stops there. The checker still counts 0.04 u of contact at the rim, which is the fist touching it, not going in. In one frame of the enrage the right chain brushes the shoulder by 0.04 u as the arms go up.</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>None on the case. Cutting the pendulum and the hand free left a hole behind each one.</td><td>The holes are filled in the colours behind them. The biggest pull is 8 times on a few small triangles of the left fist as the arms go up in the enrage. Everything else stays under 6 times, which does not show.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>None.</td><td>None. Every move eases in and out, and the loops meet themselves.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bed sliding</td><td>It has no feet. The gear bed stays flat on the floor in every move, except when it rocks on its edge in the heavy hit and tips over in the death.</td></tr>
+      <tr><td>Loops that jump when they restart (idle, glide, both turns)</td><td>0 degrees.</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model, so nothing was corrected.</td></tr>
+      <tr><td>Fists reaching their marks</td><td>On the dial's rim for each toll, and on the floor for the enrage slam.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only, because the cloud machine cannot play the page at full speed. The weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ol style="margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:60ch">
+        <li><strong>The gears.</strong> They are carved into the bed, so they cannot turn. A re-export with the gears as separate parts, or gears built for it, would let them roll as it glides.</li>
+        <li><strong>The pendulum and the hand.</strong> They were carved in, so I cut them free. A re-export with them standing clear would give a cleaner edge.</li>
+        <li><strong>The Pendulum swing.</strong> Its own pendulum swings out of sight inside the case, so the big swing down the lane is a ghost drawn by the page.</li>
+        <li><strong>Weights, not blades.</strong> The game's stand-in has blade hands. Your export holds clock weights, so the Hand Sweep swings the weights.</li>
+        <li><strong>Striking its own dial.</strong> Mine. The game's stand-in strikes a bell for the Toll. It could strike the floor or ring a bell of its own instead.</li>
+        <li><strong>The hours.</strong> The page strikes 3. The game strikes 4 from phase two and 6 when enraged; those would be the same strike repeated.</li>
+        <li><strong>The enrage, the death, the turn and the spawn rise.</strong> Mine. It falls on its back with the dial up when it dies.</li>
+        <li><strong>No wind key.</strong> Your sheet has none, so the wind-up after the Toll is a shudder rather than a key turning.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Rough so far</h2>
+      <ul>
+        <li>The ghost pendulum, the falling weights and the clock hand's turning are drawn by the page. They are not in the GLB.</li>
+        <li>The hero is a grey stand-in that takes the hit but does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for the song in its eyes, dial and pendulum, and gold for the sparks. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>

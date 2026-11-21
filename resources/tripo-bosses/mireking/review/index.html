@@ -1,0 +1,465 @@
+<title>Tripo Mire King Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a review bench, the same one the hero pages use. The live model on the left, the model as sent on the right, facts and notes under. */
+:root{
+  --bg:#f3f2ee; --panel:#fbfaf7; --fg:#23262b; --muted:#666b73; --line:#d9d6cd;
+  --stage:#c9cbc6; --stage2:#b4b7b0; --accent:#2f7d57; --accent-fg:#ffffff; --warn:#9a5b12; --chip:#e8e6df; --phase:#7a5fc4;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0}
+.lede{color:var(--muted);margin:4px 0 0;max-width:65ch}
+.bench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.25fr);gap:16px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.pane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,var(--stage),var(--stage2));aspect-ratio:4/3;max-width:100%}
+.stage canvas{transition:filter .9s;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--fg);opacity:.7;pointer-events:none}
+.stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:14px}
+.sent img{display:block;width:100%;height:auto}
+.controls{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lab{font-size:12px;color:var(--muted);width:52px;flex:none}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--fg);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+button:disabled{opacity:.38;cursor:not-allowed;border-color:transparent}
+.layers{margin:0 0 0 58px;font-size:13px;font-weight:500;color:var(--accent);min-height:1.5em}
+.rule{margin:0 0 0 58px;font-size:12px;color:var(--muted);max-width:62ch}
+.phases{margin:0 0 0 58px;display:flex;gap:2px;height:22px;position:relative;max-width:520px}
+.phases span{flex:var(--w) 1 0;min-width:0;background:var(--chip);font-size:11px;line-height:22px;text-align:center;color:var(--muted);overflow:hidden;white-space:nowrap;border-radius:3px}
+.phases span.on{background:var(--phase);color:var(--panel)}
+.phases i{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);left:0;border-radius:1px}
+@media (max-width:480px){.layers,.rule,.phases{margin-left:0}}
+.note{font-size:13px;color:var(--muted);padding:0 14px 12px;margin:0}
+.wrap>.note{padding:0;max-width:78ch}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0}
+.facts div{background:var(--panel);padding:12px 14px}
+.facts dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.facts small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.cols ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:60ch}
+.rough{color:var(--warn)}
+.audit{overflow-x:auto;margin:0}.audit table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}.audit th,.audit td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}.audit th{font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Mire King from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 3</span></h1>
+    <p class="lede">Your export of the second Level II boss, with a toad's skeleton and 13 moves added by hand. The model came with its mouth sealed and its crown fused to its head, so I cut the mouth open along the lip, built the inside and a tongue that reaches the length of the lane, and cut the crown free so it sits loose and jumps when he lands. The throat sac and the belly swell, the eyes sink when he blinks or swallows, and his legs fold the way the sculpt folds them. His timings are the game's. Pick a move, drag to turn him, and judge the weight and the hit. Nothing in the game has changed.</p>
+    <p class="note"><strong>Changed 13 Nov, your ask:</strong> the Swallow is gone. In its place is the Venom Shake: he charges while the warts on his back light up violet, shakes himself, and each wart throws a gob of venom that lands somewhere round him and leaves a small pool.</p>
+    <p class="note"><strong>Changed 14 Nov, your ask:</strong> the Belly Flop no longer winds up like a dive. He sinks onto his haunches with his hands on the floor, his hind legs push twice (the hips bob up onto the toes and stamp back down), and on the third push he jumps, now 2.2 u high instead of 1.4 u.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what he does between attacks, and Going turns him on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death holds him down: press it again and he spawns back in. The bar names the part of the move that is playing, in the game's own words. Enraged is the game's state under 40% health: the sac beats faster, the eyes and crown gems burn, and the Belly Flop leaves a wider mire.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="rage" aria-pressed="false">Enraged</button>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="mireking-views.png" alt="The Tripo Mire King from the front, his left, the back and his right, before rigging" width="810" height="864">
+      <p class="note" style="padding-top:12px">It came through whole and in one piece: the warty back, the cream belly, the lilac throat sac, all four legs with their fingers and toes, the weed on his rump and the rust crown with its violet gems. The head measures straight (under 1 degree). The mouth is a sealed line and the crown is one skin with the head.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>29,656 <small>boss budget 30,000 · 26,934 as sent, the rest are the inside of the mouth, the tongue, and the crown's underside and seat</small></dd></div>
+    <div><dt>Bones</dt><dd>36 <small>hips, chest, head, jaw, throat sac, belly, crown, 2 eyes, 8 in the tongue, 2 in the weed, 4 in each leg</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only; the mouth and tongue colours are painted into unused corners of it</small></dd></div>
+    <div><dt>File</dt><dd>3.2 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>3.0 u to the crown tips <small>2.35 u wide and 2.5 u long, beside a 1 u hero. The game's toad is flatter: about 2.7 u wide and long, 2.4 u tall.</small></dd></div>
+    <div><dt>Mouth, tongue, crown</dt><dd>Built here <small>the mouth is cut along the sculpted lip; the inside, the tongue and the crown's underside are plain pieces of mine. See what is rough.</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>A toad sits like a stone and lives in its throat. The sac flutters in quick runs with pauses between, and the flanks breathe slowly underneath. He blinks by pulling his eyes down into his head. Once a loop he looks to his left and shifts his weight, swallows, and drums the fingers of his left hand twice.</td><td>6 s loop</td></tr>
+      <tr><td>Walk</td><td>A fat toad's crawl, not a hop: opposite hand and foot together, the belly swinging over whichever side carries it. The hand rolls up off its heel as it leaves, and the long hind foot peels off the floor heel first and is carried forward folded.</td><td>1.0 u/s, as the game. 0.9 s a cycle.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Shuffles round on the spot, hands leading.</td><td>120° a second (my number: the game turns him instantly)</td></tr>
+      <tr><td>Tongue Lash</td><td>He narrows his eyes and takes aim, then sits back on his haunches as the throat fills and the mouth cracks open. He throws his whole weight forward and the tongue goes the length of the lane to the hero. The pad sticks. The tongue drags the hero in as his body rocks back, then lets go and whips home, and the mouth shuts on a gulp with the eyes sinking.</td><td>Game: draw for the 48-tick lane (1.0 u wide), lash 2.5 frames, held 3 frames, a 12-tick yank of 2 u, settle. The lane here is 5 u, the game's lab length (in a fight it runs up to 7.5 u). The hero stands 4.7 u out and the tongue stops on them.</td></tr>
+      <tr><td>Belly Flop</td><td>He sinks onto his haunches, hands flat on the floor, swelling. His hind legs push twice: each time his hips bob up onto his toes and his heels stamp back down. He loads low, then hands and feet push off together and he goes up and over in a high arc with every limb spread. He lands belly down with all four feet wide, the crown jumps off his head and drops back, his eyes shut, the belly shudders, and he gathers his limbs under him one at a time.</td><td>Game: a 66-tick ring (radius 2.0 u), the leap in the last 20 ticks; the two pushes fill the 46 ticks before it (stamps at 0.36 s and 0.62 s, mine); 2.2 u high at the top (your ask: higher; the game's leap time stays 20 ticks, so he goes up faster), land 2.5 frames, held 3 frames, settle. He leaves the mire: radius 2.0 u, 2.6 u enraged, 5 s. Here he travels 3.6 u; the game's range is 3 to 8 u.</td></tr>
+      <tr><td>Venom Shake <em>(your move, 13 Nov)</em></td><td>He hunkers down and swells with his eyes drawn in, pumping three times, each quicker, while the eleven biggest warts on his back light up violet. A small twist one way, then he shakes like a wet dog: the body rolls, the head and the crown lag behind it, the belly and sac slosh. Each wart throws one gob of venom in a high arc. Every gob lands on an Ember mark and leaves a small violet pool. He settles with a satisfied puff of the throat.</td><td>Charge 78 ticks (1.3 s, the Swallow's old warning), shake 0.62 s at 6.5 shakes a second, settle to 2.6 s. Mine until the game has the move: 11 gobs, 0.5 s in the air, landing 1.8 to 4.6 u from him, pools 0.6 u across the radius for 5 s. The landing marks show from 0.6 s. On this page the first gob always lands on the hero so the hit shows.</td></tr>
+      <tr><td>Call the brood <em>(pose is mine)</em></td><td>A breath in, then the sac blows right up and his body pumps the call out in three beats, eyes shut, the crown buzzing on his head. Three marks show where the toads and the leech answer.</td><td>The game calls adds at three quarters, half and a quarter health with no pose of its own. 1.7 s, the beats 0.26 s apart.</td></tr>
+      <tr><td>Enrage <em>(pose is mine)</em></td><td>He swells, rears, and brings both hands down on the floor with a roar, mouth wide. From then on the sac beats faster and the eyes and gems burn.</td><td>The game marks enrage (under 40% health) with the sac, the eyes and the gems only. 1.5 s, the slam at 0.62 s.</td></tr>
+      <tr><td>Hurt</td><td>The head jerks, the eyes shut, the sac jumps, the belly wobbles and the crown hops. Plays on top of any move, so planted feet stay planted.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Thrown back 0.3 u. He rocks up onto his haunches with his hands knocked off the floor and the crown nearly off, shuffles his feet back under him, drops onto his hands with a thud, and shakes his head.</td><td>1.25 s</td></tr>
+      <tr><td>Spawn</td><td>Grows from the floor squat and wide, bobs up with his throat filling, drops back onto his hands, and croaks once as the crown settles.</td><td>Game: grow in 7 frames, then stand. The bob and the croak are mine.</td></tr>
+      <tr><td>Death</td><td>The blow throws his head up on a last croak. He rears, paws at the air and goes over backward. The crown comes off as he tips, lands beside him and rings down on its rim. He lies belly up: the legs kick twice and go slack, the tongue falls out of the side of his mouth, the throat empties and the eyes go down.</td><td>3.2 s, then he stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">The checker takes every point of the model (18,124 of them) through every frame of every move (1,458 frames) and looks for four things. Sizes are in u; he is 3.0 u to the crown tips.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>Six. Both hands snapped 39° as they came down in the Heavy hit. The fingers snapped 40° as the Belly Flop left the floor. Both hind feet snapped 62° as he went over in the death, and the weed flipped 118° under him twice in the same roll. The tongue turned 29° and 115° in one frame while still hidden in the mouth.</td><td>None. A hand or foot that leaves the floor now blends its position, its heel, its toes and its own frame together. The weed lies along the floor where it is pinned and cannot flip. The largest single-frame turns left are in the Belly Flop, where he now jumps harder: the weed whips 15° as he lands, both hind shins turn 13° in the push off, and the hands 12° as they leave the floor.</td></tr>
+      <tr><td>Any part under the floor</td><td>The weed 0.47 u under as he rolled onto his back. The hind feet 0.10 u in the same roll. The belly 0.09 u at the Belly Flop landing. The tongue tip 0.05 u on the first frame of the lash. The fallen crown's rim 0.05 u while it rang down, and his head 0.02 u lying dead.</td><td>The weed tips 0.03 u for a few frames of the death roll. Nothing else, in any move.</td></tr>
+      <tr><td>One part pushed through another</td><td colspan="2">Not fixed, and worth knowing. He is sculpted as one skin with his limbs pressed against his body, so the forearm already sits 0.09 u into the thigh while he idles. In the crawl the hind shin presses 0.18 u into the upper arm for half of each step. In the Venom Shake, swollen, the forearms press 0.11 u into the belly and the upper arms 0.08 u into the sac. Lying dead, the folded arms sit 0.17 u into the thighs. These are soft parts squeezed together and they read as a fat toad from play distance, but up close the skins pass through each other.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>0 loop jumps.</td><td>The same.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>A planted hand or foot moving on the floor (locked feet)</td><td>0 mm in every move, the Belly Flop's take-off and landing included</td></tr>
+      <tr><td>A planted hand or foot its limb could not reach</td><td>0 mm</td></tr>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns)</td><td>0</td></tr>
+      <tr><td>Lowest point of the body under the floor</td><td>None, apart from the weed tips in the death roll (0.03 u). On his back he rests on the floor: the body's height is solved from its own outline at every frame of the roll.</td></tr>
+      <tr><td>Head facing straight</td><td>Under 1 degree off (0.9 between the eyes, 0.1 between the mouth corners), measured on the model. Nothing to correct.</td></tr>
+      <tr><td>Legs at rest</td><td>The limb solver gives the sculpted fold back exactly when the feet are where the sculpt put them, so the idle is the pose you approved in Tripo.</td></tr>
+      <tr><td>Venom spots</td><td>The 11 biggest warts on his back, found on the model itself (the skin measured against a smoothed copy of it) and kept at least 0.29 u apart. Each one glows and throws one gob.</td></tr>
+      <tr><td>Crown and weed</td><td>Run as springs. The crown rocks and settles after every jolt and leaves the head only where a move throws it (Belly Flop, Hurt, Heavy hit, Spawn, Death). The weed hangs toward the floor and lies along it when he sits on it.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>Venom Shake numbers.</strong> You gave the move; the numbers are mine: 11 gobs, each lands at a random spot 1.8 to 4.6 u from him, pools of 0.6 u that last 5 s, a 1.3 s charge. Say if there should be more or fewer, bigger pools, or a longer stay. It is a new mechanic, so it goes into the game only after the freeze.</li>
+        <li><strong>Venom warning.</strong> I mark each landing spot in Ember from 0.6 s into the charge, so a player can step off it. Say if the spots should stay hidden until the shake.</li>
+        <li><strong>Where the tongue stops.</strong> It stops on the hero and drags them in 2 u. The game hits everyone in the lane to its far end. Say if the tongue should always run the full lane and pull whoever it passes.</li>
+        <li><strong>Call the brood.</strong> The game has no pose for the add calls. The three-beat croak is mine: keep it, shorten it, or drop it.</li>
+        <li><strong>Enrage.</strong> The swell and the two-handed slam are mine. The game only changes the sac, the eyes and the gems.</li>
+        <li><strong>The death.</strong> Belly up with the crown knocked off is my pick for a toad king. The quieter version slumps forward onto his chin with the crown still on.</li>
+        <li><strong>The loose crown.</strong> It hops off his head on the Belly Flop landing, on a Heavy hit and when he is hurt. Say if it should stay fixed until the death.</li>
+        <li><strong>Where the hero stands for the Belly Flop.</strong> The ring here is where he lands and the hero stands 1.7 u from its middle, so the hit shows without him landing on top of them. The game puts the ring on the hero.</li>
+        <li><strong>Size.</strong> 3.0 u to the crown tips, which makes his body about 2.3 u tall, close to the game's toad (2.4 u), and a little narrower (2.35 u against 2.7 u). Say if he should be wider or bigger.</li>
+        <li><strong>Turn speed.</strong> 120° a second is my number, the same as the wolf and the heron.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The inside of the mouth is a plain pocket of mine, violet at the lips and dark at the back. It has no teeth, gums or throat detail.</li>
+        <li>The mouth is cut along the sculpted lip line. Closed, the cut shows as a thin dark seam that follows the lip's ticks.</li>
+        <li>The tongue is a plain tube with a pad on the end, in two tones.</li>
+        <li>He has no eyelids. A blink is the eye pulled down into the head, which smears the eye's paint for a frame or two.</li>
+        <li>The throat sac and the belly swell as balls, evenly. They do not wrinkle when empty.</li>
+        <li>Each hand and each foot is one piece: the fingers and toes curl together, not one by one.</li>
+        <li>The body cannot flatten on the Belly Flop landing. The page's squash does that; the model only spreads its limbs and drops.</li>
+        <li>The crown's underside is a flat rust lid, and the head under it is a plain teal patch. Both show when the crown is off.</li>
+        <li>The overlaps the audit still finds are in its table: limbs pressed into the body, 0.18 u at most.</li>
+        <li>Switching from Walk into an attack blends in 0.03 s, so a hand can jump a little at that instant.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for his power and his venom, a dark slick for the mire. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="mireking-model.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=3.0;
+  const VIOLET=0x8F63EE, EMBER=0xFF5A36, DUST=0x8d8478;
+  const LABEL={idle:'Idle',walk:'Walk',turnL:'Turn left',turnR:'Turn right',lash:'Tongue Lash',flop:'Belly Flop',venom:'Venom Shake',croak:'Call the brood',enrage:'Enrage',hurt:'Hurt',heavyHit:'Heavy hit',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['lash','flop','venom','croak','enrage','heavyHit'];
+  const NEAR=3.0, LASHZ=4.7, FLOPD=3.6, FLOPZ=5.3; let HOME=NEAR; // where the hero stands, in u, in front of him: a stand-off, the far end of the lane, inside the flop's ring
+  const WALK=1.0, RAGEWALK=1.0, TURN=2*Math.PI/3.0, LANE=5.0, YANK=2.0, MIRE=0x2b4640, SLICK=0x86a89e, VPOOL=0.6, VLIFE=5.0, VFLY=0.5, VNEAR=1.8, VFAR=4.6, VDARK=0x3b2a66, VGOB=0x9a6cf0;
+  const WARTS=[{"bone":"hips","off":[-0.0012,0.3706,-0.0137],"n":[-0.012,0.872,-0.49],"r":0.0618},{"bone":"chest","off":[-0.1548,0.194,-0.1523],"n":[-0.595,0.603,0.53],"r":0.036},{"bone":"chest","off":[0.1632,0.2294,-0.1387],"n":[0.753,0.261,-0.604],"r":0.0406},{"bone":"hips","off":[-0.0003,0.2212,-0.1115],"n":[-0.012,0.798,-0.603],"r":0.036},{"bone":"hips","off":[0.0072,0.1145,-0.1623],"n":[0.418,0.653,-0.631],"r":0.052},{"bone":"chest","off":[-0.0055,0.3384,-0.1428],"n":[-0.114,0.761,-0.639],"r":0.0565},{"bone":"hips","off":[0.1496,0.2431,-0.0026],"n":[0.656,0.278,-0.702],"r":0.036},{"bone":"chest","off":[0.1069,0.3579,0.0149],"n":[0.433,0.591,-0.681],"r":0.0399},{"bone":"chest","off":[0.2392,0.2524,0.0849],"n":[0.822,0.354,-0.446],"r":0.036},{"bone":"hips","off":[-0.1377,0.1977,-0.0132],"n":[-0.684,0.522,0.51],"r":0.036},{"bone":"chest","off":[-0.1258,0.3599,0.0391],"n":[-0.744,0.552,-0.375],"r":0.0404}]; // the venom spots: the joint each wart rides and its place from it
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){$('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(2.5,6,4.5); scene.add(sun);
+  // the floor: a grid that wraps, and a group for things that lie on the floor and stay where they fell
+  const gridG=new THREE.Group(), fxG=new THREE.Group(); gridG.matrixAutoUpdate=false; fxG.matrixAutoUpdate=false; scene.add(gridG,fxG);
+  const grid=new THREE.GridHelper(48,48,0x4a4f48,0x4a4f48); grid.material.transparent=true; grid.material.opacity=0.85; grid.position.y=0.002; gridG.add(grid);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.17,depthWrite:false}));
+  blob.rotation.x=-Math.PI/2; blob.scale.set(1.08,1.2,1); blob.position.set(0,0.004,0); scene.add(blob);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,120);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=2.5; orbit.maxDistance=30;
+  const VIEWS={Close:{p:[7.2,4.0,9.8],t:[0,1.45,1.2]},'Game zoom':{p:[0,12.4,10.8],t:[0,0.7,1.8]},Side:{p:[15,2.0,1.8],t:[0,1.3,1.8]},Front:{p:[0.8,2.0,14],t:[0,1.3,0]},Back:{p:[-4.6,3.8,-10.4],t:[0,1.2,0.8]},Top:{p:[0,18,0.4],t:[0,0.4,1.6]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  // ---- controls
+  function group(id,names,onPick,active,multi){const row=$(id);const btns={};names.forEach(n=>{const b=document.createElement('button');b.textContent=LABEL[n]||n;b.dataset.k=n;b.setAttribute('aria-pressed',String(n===active));b.onclick=()=>onPick(n,b);row.appendChild(b);btns[n]=b;});return btns;}
+  const sel={base:'idle',going:'Forward',action:null,dead:false};
+  let rage=false, rageW=0, rageAct=null;
+  let speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, feel=true, fxOn=true, showTarget=true, helper=null;
+  const B={};
+  B.moves=group('moves',['idle','walk','spawn','death'],k=>pick(k),'idle');
+  B.dirs=group('dirs',['Forward','Turn left','Turn right'],k=>{sel.going=k;if(sel.base!=='walk'&&!sel.dead)sel.base='walk';refresh();},'Forward');
+  B.acts=group('acts',[...ACTIONS,'hurt'],k=>pick(k),null);
+  B.speeds=group('speeds',['0.1×','0.25×','0.5×','1×'],(k)=>{speed=parseFloat(k);Object.values(B.speeds).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'1×');
+  B.views=group('views',Object.keys(VIEWS),k=>{setView(k);Object.values(B.views).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'Close');
+  const toggle=(id,get,set)=>{const b=$(id);b.onclick=()=>{set(!get());b.setAttribute('aria-pressed',String(get()));};b.setAttribute('aria-pressed',String(get()));};
+  toggle('feel',()=>feel,v=>feel=v); toggle('fx',()=>fxOn,v=>{fxOn=v;if(!v)clearFx();}); toggle('target',()=>showTarget,v=>{showTarget=v;if(dummy)dummy.visible=v;});
+  toggle('rage',()=>rage,v=>{rage=v;});
+  toggle('bones',()=>!!(helper&&helper.visible),v=>{if(helper)helper.visible=v;}); toggle('pause',()=>paused,v=>paused=v);
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, glowU={value:new THREE.Vector4(0,0.25,0,0.3)}, wartU={value:0}, hurtAct=null, shot=null, dummy=null;
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    mesh.material.onBeforeCompile=sh=>{sh.uniforms.uGlow=glowU; sh.uniforms.uWart=wartU;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uGlow;\nuniform float uWart;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3(0.5,0.3,0.9)*uGlow.x*max(vMask.x,0.0)+vec3(0.62,0.3,1.0)*uWart*max(-vMask.x,0.0)+vec3(0.45,0.2,0.9)*uGlow.y*vMask.y+vec3(0.55)*uGlow.z+vec3(0.62,0.4,1.0)*uGlow.w*vMask.z;');};
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; scene.add(helper);
+    mixer=new THREE.AnimationMixer(model);
+    const UPPER=/^(head|jaw|sac|belly|crown|eyeL|eyeR)\./; const restC=gltf.animations.find(c=>c.name==='hurt');
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1);
+    makeFx(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,rage:[rage,+rageW.toFixed(2)],hipY:+bones.hips.getWorldPosition(new THREE.Vector3()).y.toFixed(2),tele:[ringT.visible,laneT.visible],mire:MIRES.filter(m=>m.t>=0).length,venom:[VP.filter(q=>q.t>=0).length,VG.filter(q=>q.t>=0).length,VM.filter(q=>q.visible).length,+wart.toFixed(2)],tip:bones.tg7?pt(bones.tg7,[0,0,0.078]).toArray().map(v=>+v.toFixed(2)):null,dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,t:shot&&+shot.action.time.toFixed(3),fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glow:glowU.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+  // ---- what plays
+  function baseName(){return sel.dead?null:sel.base==='walk'?(sel.going==='Forward'?'walk':sel.going==='Turn left'?'turnL':'turnR'):'idle';}
+  function startShot(name,hold){ if(!A[name])return; if(shot){shot.action.__w=0;shot.action.setEffectiveWeight(0);}
+    const a=A[name]; a.reset(); a.paused=false; a.__w=1; a.setEffectiveWeight(1); Object.entries(A).forEach(([k,x])=>{if(x!==a){x.__w=Math.min(x.__w,0.0);x.setEffectiveWeight(x.__w);}});
+    shot={name,action:a,prev:0,hold:!!hold,done:false,gap:0,tz:0}; fxStart(name); }
+  function pick(k){
+    if(!mixer)return;
+    if(k==='idle'||k==='walk'){ if(sel.dead)return; sel.base=k; }
+    else if(k==='spawn'){ sel.dead=false; sel.action=null; cv.style.filter=''; startShot('spawn'); }
+    else if(k==='death'){ if(sel.dead){ sel.dead=false; cv.style.filter=''; startShot('spawn'); } else { sel.dead=true; sel.action=null; startShot('death',true); } }
+    else if(k==='hurt'){ if(sel.dead)return; hurtAct.reset(); hurtAct.setEffectiveWeight(1); hurtAct.play(); hitFeel(0.3,0.04,0.5); flash=0.35; if(fxOn)sparks(pt(bones.head,[0,-0.03,0.1]),6,0xfff4e0,1.6,0.25); }
+    else { if(sel.dead)return; sel.action=sel.action===k?null:k; if(sel.action&&(!shot||shot.done||shot.name!==k))startShot(k); }
+    refresh();
+  }
+  function refresh(){
+    Object.values(B.moves).forEach(b=>{const k=b.dataset.k; b.setAttribute('aria-pressed',String(k==='death'?sel.dead:k==='spawn'?!!(shot&&shot.name==='spawn'&&!shot.done):!sel.dead&&sel.base===k)); b.disabled=sel.dead&&(k==='idle'||k==='walk'); b.textContent=k==='death'&&sel.dead?'Death (press to spawn)':LABEL[k];});
+    Object.values(B.dirs).forEach(b=>{b.setAttribute('aria-pressed',String(sel.base==='walk'&&!sel.dead&&b.dataset.k===sel.going)); b.disabled=sel.dead;});
+    Object.values(B.acts).forEach(b=>{b.setAttribute('aria-pressed',String(sel.action===b.dataset.k)); b.disabled=sel.dead;});
+  }
+  function showPhase(){
+    const el=$('layers'), ph=$('phases'), tag=$('clipname'); const bn=baseName();
+    if(shot&&!shot.done){ const m=META[shot.name], t=shot.action.time; let cur=''; m.phases.forEach(p=>{if(t>=p[1])cur=p[0];});
+      el.textContent=LABEL[shot.name]+(cur?' · '+cur:'')+' · '+t.toFixed(2)+' s'; tag.textContent=LABEL[shot.name];
+      if(ph.dataset.name!==shot.name){ph.dataset.name=shot.name; ph.innerHTML=m.phases.map((p,i)=>{const e=i+1<m.phases.length?m.phases[i+1][1]:m.dur;return '<span style="--w:'+Math.max(0.04,(e-p[1])).toFixed(3)+'">'+p[0]+'</span>';}).join('')+'<i></i>'; ph.hidden=!m.phases.length;}
+      const spans=ph.querySelectorAll('span'); m.phases.forEach((p,i)=>spans[i]&&spans[i].classList.toggle('on',p[0]===cur)); const mk=ph.querySelector('i'); if(mk)mk.style.left=(100*Math.min(1,t/m.dur)).toFixed(1)+'%';
+    } else { el.textContent=sel.dead?'Down. Press Death again to spawn him back in.':(LABEL[bn]||'')+(sel.action?' · '+LABEL[sel.action]+' repeats':''); tag.textContent=sel.dead?'Death':LABEL[bn]||''; ph.hidden=true; ph.dataset.name=''; }
+  }
+
+  // ---- floor motion: the floor moves under him, he stays in the middle of the stage
+  const floorPos=new THREE.Vector3(); let floorYaw=0; const PIV=new THREE.Vector3(0,0,-0.08*U);
+  function moveFloor(dz,dyaw){ // he moves forward dz and turns left dyaw: the floor does the opposite
+    floorPos.z-=dz; if(dyaw){ floorPos.sub(PIV).applyAxisAngle(Y,-dyaw).add(PIV); floorYaw-=dyaw; }
+    fxG.matrix.makeRotationY(floorYaw).setPosition(floorPos);
+    const l=floorPos.clone().applyAxisAngle(Y,-floorYaw); l.x-=Math.round(l.x); l.z-=Math.round(l.z); l.applyAxisAngle(Y,floorYaw); gridG.matrix.makeRotationY(floorYaw).setPosition(l);
+  }
+  const Y=new THREE.Vector3(0,1,0), tmp=new THREE.Vector3(), tmp2=new THREE.Vector3();
+  const pt=(bone,v)=>tmp.set(v[0],v[1],v[2]).applyMatrix4(bone.matrixWorld).clone();
+  const toFloor=(w)=>w.clone().applyMatrix4(fxG.matrix.clone().invert());
+
+  // ---- hit feel: freeze, squash (the game's boss contact squash: 11% wider, 5% shorter), shake, flash
+  let hitstop=0, squash=0, shake=0, flash=0; const shakeV=new THREE.Vector3();
+  function hitFeel(sh,stop,sq){ if(!feel)return; hitstop=Math.max(hitstop,stop); squash=Math.max(squash,sq); shake=Math.max(shake,sh); }
+
+  // ---- effects (dim on purpose; Ember marks the floor warnings, Violet is his power)
+  const FXP=[], RINGS=[], CLAWS=[], MIRES=[], VP=[], VG=[], VM=[], VS=[]; let vspots=[], vland=[], wart=0, wartTo=0; let dotTex=null, ringT=null, ringF=null, laneT=null, rune=null, summon=[];
+  let buds=0.3, budsTo=0.3, throat=0.2, throatTo=0.2, eyes=1, eyesTo=1;
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<110;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<12;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false});}
+    // the floor warnings: one Ember ring with a fill that grows to it (Belly Flop) and one Ember lane (Tongue Lash)
+    ringT=new THREE.Mesh(new THREE.RingGeometry(0.965,1,72),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.7,depthWrite:false})); ringF=new THREE.Mesh(new THREE.CircleGeometry(1,72),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false}));
+    ringT.rotation.x=ringF.rotation.x=-Math.PI/2; ringT.position.y=0.012; ringF.position.y=0.011; ringT.visible=ringF.visible=false; fxG.add(ringT,ringF);
+    laneT=new THREE.Group(); const lg=new THREE.PlaneGeometry(1,1); lg.translate(0,-0.5,0);
+    const lf=new THREE.Mesh(lg,new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false})); lf.rotation.x=-Math.PI/2;
+    const em=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.6,depthWrite:false});
+    const strip=(w,l,x,z)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,l),em); m.rotation.x=-Math.PI/2; m.position.set(x,0.001,z); laneT.add(m);};
+    strip(0.035,LANE,-0.5,LANE/2); strip(0.035,LANE,0.5,LANE/2); strip(1.035,0.035,0,LANE);
+    laneT.add(lf); laneT.userData={fill:lf,fm:lf.material,em}; laneT.position.y=0.011; laneT.visible=false; fxG.add(laneT);
+    // the mire the Belly Flop leaves: a dark slick with a pale rim that stays 5 s
+    for(let i=0;i<3;i++){ const g2=new THREE.Group(); const dm2=new THREE.MeshBasicMaterial({color:MIRE,transparent:true,opacity:0,depthWrite:false}), rm=new THREE.MeshBasicMaterial({color:SLICK,transparent:true,opacity:0,depthWrite:false});
+      const dd=new THREE.Mesh(new THREE.CircleGeometry(1,56),dm2), rr=new THREE.Mesh(new THREE.RingGeometry(0.955,1,56),rm); dd.rotation.x=rr.rotation.x=-Math.PI/2; rr.position.y=0.001; g2.add(dd,rr); g2.visible=false; fxG.add(g2); MIRES.push({g:g2,dm:dm2,rm,t:-1,r:2}); }
+    // the Venom Shake: a pool, a gob in the air, an Ember landing mark and a glow for each wart
+    WARTS.forEach((w,i)=>{ const g3=new THREE.Group(); const dm3=new THREE.MeshBasicMaterial({color:VDARK,transparent:true,opacity:0,depthWrite:false}), rm3=new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false});
+      const d3=new THREE.Mesh(new THREE.CircleGeometry(1,36),dm3), r3=new THREE.Mesh(new THREE.RingGeometry(0.9,1,36),rm3); d3.rotation.x=r3.rotation.x=-Math.PI/2; r3.position.y=0.001; g3.add(d3,r3); g3.visible=false; fxG.add(g3); VP.push({g:g3,dm:dm3,rm:rm3,t:-1});
+      const gm=new THREE.Mesh(new THREE.SphereGeometry(0.11,10,8),new THREE.MeshBasicMaterial({color:VGOB})); gm.visible=false; fxG.add(gm); VG.push({m:gm,t:-1,i,a:new THREE.Vector3(),b:new THREE.Vector3(),h:1.6});
+      const mk=new THREE.Group(); const em3=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.6,depthWrite:false}), ef3=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false});
+      const mr=new THREE.Mesh(new THREE.RingGeometry(0.93,1,36),em3), mf=new THREE.Mesh(new THREE.CircleGeometry(1,36),ef3); mr.rotation.x=mf.rotation.x=-Math.PI/2; mk.add(mr,mf); mk.userData={fill:mf,rm:em3}; mk.scale.setScalar(VPOOL); mk.visible=false; fxG.add(mk); VM.push(mk);
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:0xa98cf5,transparent:true,depthWrite:false,opacity:0})); sp.visible=false; scene.add(sp); VS.push(sp); });
+    // the spawn's rune ring and the three places the pack answers from
+    const mkRune=(r)=>{const gq=new THREE.Group(); const o=new THREE.Mesh(new THREE.RingGeometry(r*0.94,r,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0.5,depthWrite:false})); const i2=new THREE.Mesh(new THREE.RingGeometry(r*0.62,r*0.66,6),o.material); const i3=new THREE.Mesh(new THREE.RingGeometry(r*0.4,r*0.43,3),o.material); [o,i2,i3].forEach(m=>{m.rotation.x=-Math.PI/2;gq.add(m);}); gq.userData.mat=o.material; gq.position.y=0.013; gq.visible=false; return gq;};
+    rune=mkRune(1.5); fxG.add(rune); for(let i=0;i<3;i++){const s=mkRune(0.42); fxG.add(s); summon.push(s);}
+    RINGS.forEach(r=>scene.add(r.m));
+    // a hero's height, for scale and to take the hit
+    dummy=new THREE.Group(); const dm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dm); body.position.y=0.31; const head=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dm); head.position.y=0.8; dummy.add(body,head); dummy.userData={mat:dm,z:HOME,x:0,sx:0,kick:0,hold:0,slow:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+  function puff(pos,vel,o){ if(!fxOn)return; const p=FXP.find(p=>p.life<=0); if(!p)return; p.life=o.life||0.5; p.age=0; p.v.copy(vel); p.g=o.g||0; p.s0=o.s0||0.1; p.s1=o.s1||0.3; p.a=o.a||0.4; p.drag=o.drag||0; p.floor=!!o.floor; p.s.material.color.setHex(o.col||DUST); p.s.material.blending=o.add?THREE.AdditiveBlending:THREE.NormalBlending; p.s.position.copy(pos); if(p.floor){fxG.add(p.s);p.s.position.copy(toFloor(pos));}else scene.add(p.s); p.s.visible=true; }
+  function dust(pos,n,spd,up){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(tmp2.copy(pos).setY(0.05),new THREE.Vector3(Math.cos(a)*spd*(0.5+Math.random()),up*(0.4+Math.random()*0.6),Math.sin(a)*spd*(0.5+Math.random())),{life:0.55+Math.random()*0.3,s0:0.16,s1:0.55,a:0.22,drag:3,floor:true});} }
+  function sparks(pos,n,col,spd,life){ if(col===0xfff4e0)col=0xe9dcc0; if(col===0xd9c8ff)col=0xa98cf5; for(let i=0;i<n;i++){const v=new THREE.Vector3(Math.random()-0.5,Math.random()-0.2,Math.random()-0.5).normalize().multiplyScalar(spd*(0.4+Math.random()*0.8)); puff(pos,v,{life:life*(0.6+Math.random()*0.6),s0:0.1,s1:0.02,a:0.5,col,add:false,g:-2.5,drag:2});} }
+  function motes(pos,n,spread,rise){ for(let i=0;i<n;i++){ puff(tmp2.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*spread,Math.random()*0.2,(Math.random()-0.5)*spread)),new THREE.Vector3((Math.random()-0.5)*0.2,rise*(0.5+Math.random()),(Math.random()-0.5)*0.2),{life:0.9+Math.random()*0.7,s0:0.07,s1:0.02,a:0.38,col:VIOLET,add:false}); } }
+  function ringAt(pos,o){ if(!fxOn)return; const r=RINGS.find(r=>r.t<0); if(!r)return; r.t=0; r.dur=o.dur||0.5; r.r0=o.r0||0.1; r.r1=o.r1||1; r.a=o.a||0.4; r.bill=!!o.bill; r.delay=o.delay||0; r.m.material.color.setHex(o.col||VIOLET); r.m.material.blending=o.add?THREE.AdditiveBlending:THREE.NormalBlending;
+    if(r.bill){scene.add(r.m); r.m.position.copy(pos);} else {fxG.add(r.m); r.m.position.copy(toFloor(pos)).setY(0.016); r.m.rotation.set(-Math.PI/2,0,0);} r.m.visible=false; }
+  function hideTele(){ if(ringT){ringT.visible=ringF.visible=laneT.visible=false;} VM.forEach(q=>q.visible=false); tele=null; }
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); hideTele(); if(rune){rune.visible=false;summon.forEach(s=>s.visible=false);} CLAWS.forEach(c=>{c.userData.t=-1;c.visible=false;}); MIRES.forEach(m=>{m.t=-1;m.g.visible=false;}); VP.forEach(q=>{q.t=-1;q.g.visible=false;}); VG.forEach(q=>{q.t=-1;q.m.visible=false;}); }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  const muzzle=()=>pt(bones.head,[0,0.03,0.2]);
+  const hands=()=>['fFingL','fFingR'].map(b=>pt(bones[b],[0,0,0]).setY(0.03)), hinds=()=>['hToeL','hToeR'].map(b=>pt(bones[b],[0,0,0]).setY(0.03)), paws=()=>hands().concat(hinds());
+  const tipW=()=>pt(bones.tg7,[0,0,0.078]);
+  let runeT=-1, sumT=-1, tele=null;
+  const cue=(n,k,i)=>{const c=META[n].cues; return c&&c[k]?c[k][i||0]:0;};
+  function placeHero(z){ HOME=z; if(dummy){ const u=dummy.userData; u.z=z; u.x=0; u.kick=0; u.sx=0; u.hold=0; u.slow=0; dummy.position.set(0,0,z); } }
+  function mireAt(c,r){ if(!fxOn)return; const m=MIRES.find(m=>m.t<0)||MIRES.reduce((a,b)=>a.t>b.t?a:b); m.t=0; m.r=r; m.g.position.copy(toFloor(c)).setY(0.008+0.001*MIRES.indexOf(m)); m.g.scale.setScalar(0.3*r); m.g.visible=true; }
+  function fxStart(name){
+    hideTele(); HOME=NEAR;
+    if(name==='lash'){ placeHero(LASHZ); tele={kind:'lane',w:1.0,len:LANE,dur:META.lash.contact[0],at:toFloor(new THREE.Vector3(0,0,0)),yaw:-floorYaw}; }
+    if(name==='flop'){ placeHero(FLOPZ); tele={kind:'ring',r:2.0,dur:META.flop.contact[0],at:toFloor(new THREE.Vector3(0,0,FLOPD))}; }
+    if(name==='venom'){ placeHero(NEAR); const n=WARTS.length; vland=WARTS.map(()=>false); // where each gob will land: the first on the hero, the rest scattered right round him
+      vspots=WARTS.map((w,i)=>{ if(i===0)return toFloor(new THREE.Vector3(0,0,NEAR)).setY(0); const a=0.5+(i-1)/(n-1)*(Math.PI*2-1.0)+(Math.random()-0.5)*0.4, r=VNEAR+Math.random()*(VFAR-VNEAR); return toFloor(new THREE.Vector3(Math.sin(a)*r,0,Math.cos(a)*r)).setY(0); });
+      VM.forEach((mk,i)=>mk.position.copy(vspots[i]).setY(0.012+0.0005*i)); }
+    if(name==='enrage'){ rage=true; $('rage').setAttribute('aria-pressed','true'); }
+    if(name==='spawn'){ buds=0; eyes=0; cv.style.filter=''; if(fxOn){runeT=0; rune.position.copy(toFloor(new THREE.Vector3(0,0,0))).setY(0.013);} }
+    if(name==='death'){ rage=false; $('rage').setAttribute('aria-pressed','false'); hitFeel(0.5,0.07,0.4); flash=0.5; if(fxOn)sparks(muzzle(),10,0xfff4e0,2.2,0.3); }
+    if(name==='heavyHit'){ hitFeel(0.55,0.09,0.6); flash=0.5; if(fxOn)sparks(muzzle(),12,0xfff4e0,2.4,0.3); }
+  }
+  function venomSpit(i){ if(!fxOn||!vspots[i])return; const w=WARTS[i], g=VG[i], from=pt(bones[w.bone],w.off); g.a.copy(toFloor(from)); g.b.copy(vspots[i]); g.h=1.5+Math.random()*0.9; g.t=0; g.m.visible=true; g.m.position.copy(g.a);
+    sparks(from,3,0xd9c8ff,1.6,0.2); }
+  function venomLand(i,b){ vland[i]=true; VM[i].visible=false; const c=b.clone().applyMatrix4(fxG.matrix); const q=VP[i]; q.t=0; q.g.position.copy(b).setY(0.009+0.0006*i); q.g.visible=true;
+    ringAt(c.clone().setY(0.03),{r0:0.15,r1:VPOOL*1.2,dur:0.26,a:0.45}); sparks(c.clone().setY(0.12),5,0xd9c8ff,1.7,0.25); hitFeel(0.1,0,0);
+    if(dummy&&showTarget&&targetW().distanceTo(c)<VPOOL+0.25){ sparks(targetW().setY(0.5),8,0xfff4e0,2.4,0.3); hitDummy(0.12); dummy.userData.hold=1.6; } }
+  function fxContact(name,i){
+    if(name==='lash'){ hideTele(); hitFeel(0.6,0.08,0); const tp=tipW(); if(fxOn){ sparks(tp,10,0xd9c8ff,2.6,0.28); ringAt(tp,{r0:0.1,r1:0.7,dur:0.22,a:0.5,bill:true}); }
+      if(dummy&&showTarget&&Math.abs(dummy.position.x)<0.8&&dummy.position.z<LANE+0.3){ hitDummy(0); dummy.userData.hold=1.3; shot.z0=dummy.userData.z; shot.caught=true; if(fxOn)sparks(targetW().setY(0.6),8,0xfff4e0,2.4,0.3); } }
+    if(name==='flop'){ const c=tele?tele.at.clone().applyMatrix4(fxG.matrix):new THREE.Vector3(); hideTele(); hitFeel(1,0.1,1);
+      if(fxOn){ paws().forEach(p=>dust(p,6,2.4,0.9)); for(let k=0;k<10;k++){const a=k/10*Math.PI*2; dust(new THREE.Vector3(c.x+Math.cos(a)*1.1,0,c.z+Math.sin(a)*1.1),2,2.2,0.7);} ringAt(c,{r0:0.6,r1:2.0,dur:0.36,a:0.5}); mireAt(c,rage?2.6:2.0); }
+      if(dummy&&showTarget&&targetW().distanceTo(c)<2.0+0.3){ if(fxOn)sparks(targetW().setY(0.5),12,0xfff4e0,3.0,0.3); hitDummy(0.4); dummy.userData.hold=1.4; dummy.userData.slow=2.5; } }
+    if(name==='venom'){ hitFeel(0.35,0.03,0.3); if(fxOn){ ringAt(pt(bones.chest,[0,0.1,0]),{r0:0.5,r1:1.7,dur:0.3,a:0.3,bill:true}); hands().forEach(q=>dust(q,3,1.0,0.4)); } }
+    if(name==='croak'){ hitFeel(0.3,0.02,0.2); if(fxOn){ ringAt(muzzle(),{r0:0.2,r1:1.5,dur:0.5,a:0.35,bill:true}); sumT=0; const spots=[[-3.0,1.4],[3.0,1.4],[0,-3.6]]; summon.forEach((q,k)=>{q.position.copy(toFloor(new THREE.Vector3(spots[k][0],0,spots[k][1]))).setY(0.013);}); } }
+    if(name==='enrage'){ hitFeel(0.7,0.06,0.6); if(fxOn){ hands().forEach(p=>dust(p,7,2.0,0.8)); ringAt(new THREE.Vector3(0,0,0.9),{r0:0.4,r1:2.4,dur:0.4,a:0.45}); sparks(muzzle(),8,0xd9c8ff,2.2,0.3); } }
+    if(name==='heavyHit'){ hitFeel(0.35,0.02,0.4); if(fxOn)hands().forEach(p=>dust(p,5,1.4,0.6)); }
+    if(name==='spawn'){ if(i===0){ hitFeel(0.4,0.03,0.5); if(fxOn)paws().forEach(p=>dust(p,4,1.4,0.6)); } else { hitFeel(0.2,0.02,0.15); if(fxOn)ringAt(muzzle(),{r0:0.2,r1:1.3,dur:0.45,a:0.35,bill:true}); } }
+    if(name==='death'){ if(i===0){ hitFeel(0.7,0.05,0.5); if(fxOn){ const b=pt(bones.hips,[0,0,0]).setY(0); for(let k=0;k<8;k++){const a=k/8*Math.PI*2; dust(new THREE.Vector3(b.x+Math.cos(a)*0.9,0,b.z+Math.sin(a)*0.9),2,1.8,0.6);} } }
+      else { hitFeel(0.25,0,0); if(fxOn){ const cw=pt(bones.crown,[0,0,0]); sparks(cw.clone().setY(0.12),7,0xfff4e0,1.8,0.25); dust(cw,3,0.8,0.3); } } }
+  }
+  function hitDummy(k){ if(!dummy||!showTarget)return; dummy.userData.kick=k; dummy.userData.hold=Math.max(dummy.userData.hold,0.6); dummy.userData.mat.emissiveIntensity=feel?0.45:0; }
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time, m=META[n];
+    if(tele&&fxOn){ const k=Math.min(1,t/tele.dur), pulse=0.03*Math.sin(t*24)*k;
+      if(tele.kind==='ring'){ ringT.visible=ringF.visible=true; ringT.position.x=ringF.position.x=tele.at.x; ringT.position.z=ringF.position.z=tele.at.z; ringT.scale.setScalar(tele.r); ringF.scale.setScalar(Math.max(0.001,tele.r*k)); ringT.material.opacity=0.45+0.25*k+pulse*3; ringF.material.opacity=0.1+0.08*k; }
+      else { laneT.visible=true; laneT.position.x=tele.at.x; laneT.position.z=tele.at.z; laneT.rotation.y=tele.yaw; const u=laneT.userData; u.fill.scale.set(tele.w,Math.max(0.001,tele.len*k),1); u.fm.opacity=0.1+0.1*k+pulse; u.em.opacity=0.45+0.25*k; } }
+    if(n==='lash'){ const dr=cue('lash','yank',0), re=cue('lash','yank',1), hm=cue('lash','home',0);
+      budsTo=t<m.contact[0]?0.3+0.9*Math.min(1,t/0.6):0.3; throatTo=t>0.45&&t<hm?1.2:0.2; eyesTo=t<hm?1.7:1;
+      if(shot.caught&&dummy&&t>=dr&&t<=re+0.02){ const u=dummy.userData; u.z=shot.z0-YANK*Math.min(1,(t-dr)/(re-dr)); u.hold=1.0; // the tongue hauls the hero in 2 u over 12 ticks
+        if(fxOn&&Math.random()<d*40)puff(targetW().setY(0.05),new THREE.Vector3((Math.random()-0.5)*0.6,0.3,0.8),{life:0.35,s0:0.12,s1:0.4,a:0.2,drag:3,floor:true}); }
+      if(shot.prev<hm&&t>=hm&&fxOn)sparks(muzzle(),4,0xd9c8ff,1.2,0.2); }
+    if(n==='flop'){ const lp=cue('flop','leap',0), cr=cue('flop','crown',0); if(dummy&&t<m.contact[0])dummy.userData.hold=0.3; /* the hero stands their ground under the ring */ eyesTo=t<m.contact[0]?1+1.0*Math.min(1,t/0.6):1; budsTo=t<lp?0.3+0.6*Math.min(1,t/0.5):0.3;
+      [0,1].forEach(i=>{ const c=cue('flop','stamp',i); if(shot.prev<c&&t>=c){ hitFeel(0.18,0,0.12); if(fxOn)hinds().forEach(p=>dust(p,4,1.2,0.45)); } }); // the two pushes stamp
+      if(shot.prev<lp&&t>=lp&&fxOn)hinds().forEach(p=>dust(p,7,2.0,0.8));
+      if(shot.prev<cr&&t>=cr&&fxOn)sparks(pt(bones.crown,[0,0,0]),4,0xfff4e0,1.0,0.2); }
+    if(n==='venom'){ const sh=m.contact[0], st=cue('venom','shake',1), ch=Math.min(1,Math.max(0,(t-0.12)/(sh-0.3)));
+      wartTo=t<sh?0.2+0.9*ch+0.3*ch*Math.max(0,Math.sin(t*(6+10*ch))):t<st?1.3-0.9*(t-sh)/(st-sh):0; eyesTo=t<st?1.6:1; budsTo=t<sh?0.3:t<st+0.4?0.9:0.3; if(dummy&&t<st+0.5)dummy.userData.hold=0.3;
+      VM.forEach((mk,i)=>{ const land=m.cues.spit[i]+VFLY, on=fxOn&&t>=0.6&&t<land&&!vland[i]; mk.visible=on; if(on){ const k=(t-0.6)/(land-0.6); mk.userData.fill.scale.setScalar(Math.max(0.001,k)); mk.userData.rm.opacity=0.45+0.25*k+0.08*Math.sin(t*24)*k; } });
+      m.cues.spit.forEach((c,i)=>{ if(shot.prev<c&&t>=c)venomSpit(i); });
+      if(fxOn&&t>0.3&&t<sh&&Math.random()<d*16*ch){ const w=WARTS[Math.floor(Math.random()*WARTS.length)]; motes(pt(bones[w.bone],w.off),1,0.1,0.7); }
+      if(fxOn&&t>=sh&&t<st&&Math.random()<d*45){ const w=WARTS[Math.floor(Math.random()*WARTS.length)]; sparks(pt(bones[w.bone],w.off),1,0xd9c8ff,2.6,0.3); } }
+    if(n==='croak'){ const on=t>0.44&&t<1.3; budsTo=on?1.3:0.3; eyesTo=on?1.5:1; [1,2].forEach(k=>{ const c=cue('croak','call',k); if(shot.prev<c&&t>=c){ ringAt(muzzle(),{r0:0.2,r1:1.5,dur:0.5,a:0.3,bill:true}); hitFeel(0.15,0,0.12); } }); }
+    if(n==='enrage'){ budsTo=t<1.2?1.2:0.3; throatTo=t>0.5&&t<1.2?1.3:0.2; if(t>0.2&&t<1.3&&Math.random()<d*14)motes(pt(bones.crown,[0,0.1,0]),1,0.7,0.9); }
+    if(n==='spawn'){ if(t>0.1&&t<0.9&&Math.random()<d*26)motes(new THREE.Vector3(0,0,0),1,2.6,1.4); budsTo=t>0.7&&t<1.15?1.2:0.3; }
+    if(n==='death'){ eyesTo=t>2.4?0:1-0.6*t/2.4; budsTo=t<0.4?1.0:t>1.4?0:0.3; throatTo=t<0.5?0.8:t>2.0?0:0.3; if(t>1.5&&t<2.6&&Math.random()<d*8)motes(pt(bones.belly,[0,0,0]),1,1.0,0.7); if(shot.prev<2.6&&t>=2.6)cv.style.filter='saturate(0.45)'; }
+  }
+  function updateFx(d){
+    const busy=shot&&!shot.done; if(!busy){ budsTo=sel.dead?0:0.3; throatTo=sel.dead?0:0.2; eyesTo=sel.dead?0:1; hideTele(); }
+    const rg=sel.dead?0:rageW;
+    buds+=(budsTo+0.7*rg-buds)*Math.min(1,d*6); throat+=(throatTo+0.3*rg-throat)*Math.min(1,d*5); eyes+=(eyesTo+1.0*rg-eyes)*Math.min(1,d*6); flash=Math.max(0,flash-d*3.2);
+    const on=fxOn?1:0; const breathe=0.06*Math.sin(clockT*(2.1+4*rg));
+    glowU.value.set(on*Math.max(0,buds+breathe*(buds>0.05?1:0))*0.5,on*throat*0.2,feel?flash:0,on*0.3*Math.min(2.4,eyes));
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.03)p.s.position.y=0.03; const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    CLAWS.forEach(c=>{ const u=c.userData; if(u.t<0)return; u.t+=d; const k=(u.t-u.d)/0.3; if(k>=1){u.t=-1;c.visible=false;return;} c.visible=fxOn&&k>=0; u.mat.opacity=0.6*(1-Math.max(0,k))**1.5; });
+    VP.forEach(q=>{ if(q.t<0)return; q.t+=d; const u=q.t/VLIFE; if(u>=1||!fxOn){q.t=-1;q.g.visible=false;return;} const g=Math.min(1,q.t/0.22), e=1-(1-g)*(1-g); q.g.scale.setScalar(VPOOL*(0.35+0.65*e)); const a=Math.min(1,(1-u)*5); q.dm.opacity=0.62*a; q.rm.opacity=0.45*a*(0.75+0.25*Math.sin(q.t*4+q.g.position.x)); if(Math.random()<d*1.6*a){ const an=Math.random()*6.283, rr=Math.random()*VPOOL*0.7; motes(q.g.position.clone().add(new THREE.Vector3(Math.cos(an)*rr,0.03,Math.sin(an)*rr)).applyMatrix4(fxG.matrix),1,0.05,0.6); } });
+    VG.forEach(g=>{ if(g.t<0)return; g.t+=d; const u=Math.min(1,g.t/VFLY); g.m.position.lerpVectors(g.a,g.b,u); g.m.position.y=g.a.y*(1-u)+g.h*4*u*(1-u)+0.06*u; const sq=1+0.35*Math.sin(u*Math.PI); g.m.scale.set(1/Math.sqrt(sq),sq,1/Math.sqrt(sq)); g.m.visible=fxOn;
+      if(fxOn&&Math.random()<d*36)puff(g.m.position.clone().applyMatrix4(fxG.matrix),new THREE.Vector3(0,-0.2,0),{life:0.28,s0:0.1,s1:0.02,a:0.32,col:0x8a63e6});
+      if(u>=1){ g.t=-1; g.m.visible=false; venomLand(g.i,g.b); } });
+    wart+=(wartTo-wart)*Math.min(1,d*10); wartU.value=fxOn?Math.max(0,wart)*0.55:0;
+    VS.forEach((sp,i)=>{ const on=fxOn&&wart>0.03&&bones[WARTS[i].bone]; sp.visible=!!on; if(on){ const w=WARTS[i]; sp.position.copy(pt(bones[w.bone],[w.off[0]+w.n[0]*0.02,w.off[1]+w.n[1]*0.02,w.off[2]+w.n[2]*0.02])); sp.scale.setScalar((0.5+0.35*Math.min(1.3,wart))*w.r*U*2.2); sp.material.opacity=Math.min(0.5,0.38*wart); } });
+    MIRES.forEach(m=>{ if(m.t<0)return; m.t+=d; const u=m.t/5.0; if(u>=1||!fxOn){m.t=-1;m.g.visible=false;return;} const g=Math.min(1,m.t/0.3), e=1-(1-g)*(1-g); m.g.scale.setScalar(m.r*(0.3+0.7*e)); const a=Math.min(1,(1-u)*5); m.dm.opacity=0.42*a; m.rm.opacity=0.38*a*(0.8+0.2*Math.sin(m.t*3)); });
+    if(runeT>=0){ runeT+=d; const u=runeT/0.95; rune.visible=u<1&&fxOn; rune.rotation.y=runeT*2.2; rune.scale.setScalar(1.15-0.35*u); rune.userData.mat.opacity=0.5*Math.sin(Math.PI*Math.min(1,u)); if(u>=1)runeT=-1; }
+    if(sumT>=0){ sumT+=d; const u=sumT/1.3; summon.forEach((s,k)=>{ s.visible=u<1&&fxOn; s.rotation.y=sumT*(k%2?-2:2); s.scale.setScalar(0.6+0.5*Math.min(1,u*3)); }); summon[0].userData.mat.opacity=0.5*Math.sin(Math.PI*Math.min(1,u)); summon.forEach(s=>s.userData.mat.opacity=summon[0].userData.mat.opacity); if(sumT>0.25&&sumT<0.9&&Math.random()<d*30){const s=summon[Math.floor(Math.random()*3)]; motes(s.getWorldPosition(new THREE.Vector3()),1,0.6,1.2);} if(u>=1)sumT=-1; }
+    if(dummy){ const u=dummy.userData; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4); if(u.slow>0){ u.slow-=d; u.mat.color.setHex(0x5d5670); if(fxOn&&Math.random()<d*8)motes(targetW(),1,0.5,0.5); } else u.mat.color.setHex(0x6b645c);
+      u.x+=u.sx*d; u.sx=Math.max(0,u.sx-u.sx*d*8-d*0.3); if(u.kick>0){ u.z+=u.kick*d*9; u.kick=Math.max(0,u.kick-u.kick*d*9-d*0.2); } else if(u.hold>0)u.hold-=d; else { u.z+=(HOME-u.z)*Math.min(1,d*3); u.x+=(0-u.x)*Math.min(1,d*3); } dummy.position.z=u.z; dummy.position.x=u.x; }
+    // his shadow shrinks while he is in the air
+    const hy=bones.hips.getWorldPosition(tmp).y, k=Math.max(0,Math.min(1,(hy-0.9)/1.2)); blob.scale.set(1.08*(1-0.3*k),1.2*(1-0.3*k),1); blob.material.opacity=0.17*(1-0.45*k); bones.belly.getWorldPosition(tmp); blob.position.set(tmp.x,0.004,tmp.z+0.18); // the shadow stays under the body when it goes over on its back
+  }
+  // paw dust in the walk and the turns
+  const STEP={FL:[0,'fFingL'],HR:[0.1,'hToeR'],FR:[0.5,'fFingR'],HL:[0.6,'hToeL']}; const stepPrev={};
+  function footfalls(){ ['walk','turnL','turnR'].forEach(n=>{ const a=A[n]; if(!a||a.__w<0.6)return; const T=META[n].dur; for(const k in STEP){ const u=((a.time/T-STEP[k][0])%1+1)%1; const key=n+k; if(stepPrev[key]!==undefined&&u<stepPrev[key]&&fxOn)dust(pt(bones[STEP[k][1]],[0,0,0]),2,0.4,0.25); stepPrev[key]=u; } }); }
+
+  // ---- the loop
+  let clockT=0, last=performance.now();
+  function travelAt(name,t){ const tr=META[name].travel; if(!tr)return 0; const f=Math.min(tr.length-1,Math.max(0,t*60)); const i=Math.floor(f), j=Math.min(tr.length-1,i+1); return tr[i]+(tr[j]-tr[i])*(f-i); }
+  function tick(d){
+    if(!mixer)return; clockT+=d;
+    const stopped=hitstop>0; if(stopped){hitstop-=d;} const md=stopped?0:d;
+    // weights: the shot owns the body while it plays, then the base fades back in
+    const bn=baseName();
+    if(shot&&!shot.done){ const a=shot.action, m=META[shot.name]; if(a.time>=Math.min(m.dur,a.getClip().duration)-1e-3){ shot.done=true; if(shot.name==='spawn')refresh(); } }
+    if(shot&&shot.done&&!shot.hold&&sel.action&&!sel.dead){ shot.gap+=md; if(shot.gap>0.7)startShot(sel.action); }
+    Object.entries(A).forEach(([k,a])=>{ let to=0; if(shot&&shot.action===a)to=(shot.done&&!shot.hold)?0:1; else if(k===bn)to=(shot&&(!shot.done||shot.hold))?0:1;
+      const tau=(shot&&shot.action===a)?0.18:(to>a.__w?0.18:0.12); a.__w+=(to-a.__w)*Math.min(1,md/tau); if(Math.abs(to-a.__w)<0.002)a.__w=to; a.setEffectiveWeight(a.__w); });
+    rageW+=((rage&&!sel.dead?1:0)-rageW)*Math.min(1,md/0.3); if(rageAct)rageAct.setEffectiveWeight(rageW); const fast=1+(RAGEWALK/WALK-1)*rageW; ['walk','turnL','turnR'].forEach(k=>A[k].timeScale=fast);
+    mixer.update(md);
+    if(rageW>0.01&&bones.sac&&!sel.dead)bones.sac.scale.multiplyScalar(1+0.08*rageW*Math.max(0,Math.sin(clockT*9)));
+    // root motion and floor
+    let dz=0, dyaw=0; dz+=(A.walk.__w)*WALK*fast*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*fast*md;
+    if(shot&&!shot.done){ const tz=travelAt(shot.name,shot.action.time); const dd=tz-shot.tz; shot.tz=tz; dz+=dd; if(dummy&&dd)dummy.userData.z-=dd; }
+    if(dz||dyaw)moveFloor(dz,dyaw);
+    // contacts
+    if(shot){ const m=META[shot.name], t=shot.action.time; m.contact.forEach((c,i)=>{ if(c>0&&shot.prev<c&&t>=c)fxContact(shot.name,i); }); fxOngoing(md); shot.prev=t; }
+    squash=Math.max(0,squash-d*7); const sq=feel?squash:0; model.scale.set(U*(1+0.11*sq),U*(1-0.05*sq),U*(1+0.11*sq));
+    model.updateMatrixWorld(true); footfalls(); updateFx(stopped?d*0.25:d); showPhase();
+  }
+  function frame(now){
+    requestAnimationFrame(frame); const raw=Math.min(0.05,(now-last)/1000); last=now;
+    if(!paused)tick(raw*speed);
+    orbit.update(); shake=Math.max(0,shake-raw*3.2); const sk=feel?shake*shake*0.09:0; shakeV.set((Math.random()-0.5)*sk,(Math.random()-0.5)*sk,(Math.random()-0.5)*sk); cam.position.add(shakeV);
+    renderer.render(scene,cam); cam.position.sub(shakeV);
+  }
+  moveFloor(0,0); requestAnimationFrame(frame);
+})();
+</script>

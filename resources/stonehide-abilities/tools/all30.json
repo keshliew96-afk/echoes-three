@@ -1,0 +1,2559 @@
+{
+"S45": {
+"name": "S45",
+"cap": "Colossus \u00b7 8 s a stone giant",
+"secs": 10.2,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"hp": {
+"1": 0.8
+},
+"foes": [
+[
+"rotcap",
+1.7,
+0.6,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+1.6,
+-0.7,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+-1.6,
+0.7,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+0.3,
+-1.7,
+{
+"hpMul": 25
+}
+]
+],
+"holdFoes": 10.2,
+"seq": [
+[
+0.5,
+"cast",
+"colossus",
+[
+2,
+0
+]
+],
+[
+2.1,
+"combo"
+],
+[
+3.8,
+"aim",
+[
+-2,
+0.8
+]
+],
+[
+4.0,
+"combo"
+],
+[
+5.4,
+"aim",
+[
+2,
+0
+]
+],
+[
+5.6,
+"cast",
+"heavy_slam",
+[
+2,
+0
+]
+]
+],
+"fps": 30
+},
+"S19": {
+"name": "S19",
+"cap": "Growlstone",
+"secs": 6.5,
+"tank": [
+-1.6,
+-0.4
+],
+"aim": [
+1.8,
+0.6
+],
+"allies": [
+[
+9,
+6
+],
+[
+2.6,
+-1.4
+]
+],
+"foes": [
+[
+"rotcap",
+2.9,
+1.5
+],
+[
+"rotcap",
+1.1,
+1.9
+],
+[
+"rotcap",
+3.1,
+-0.1
+]
+],
+"seq": [
+[
+0.6,
+"cast",
+"growlstone",
+[
+1.8,
+0.6
+]
+]
+],
+"fps": 30
+},
+"S50": {
+"name": "S50",
+"cap": "Stone Cubs \u00b7 run to foes on an ally, bite, turn them to him",
+"secs": 6.0,
+"tank": [
+-1.2,
+-0.5
+],
+"aim": [
+2,
+0
+],
+"allies": [
+[
+9,
+6
+],
+[
+1.8,
+0.8
+]
+],
+"hp": {
+"3": 0.6
+},
+"foes": [
+[
+"rotcap",
+2.7,
+1.4
+],
+[
+"rotcap",
+2.7,
+0.1
+]
+],
+"holdFoes": 0.3,
+"seq": [
+[
+0.5,
+"cast",
+"stone_cubs",
+[
+2,
+0
+]
+]
+],
+"fps": 30
+},
+"S32": {
+"name": "S32",
+"cap": "Iron Briar",
+"secs": 5.8,
+"tank": [
+-0.8,
+0
+],
+"aim": [
+1.3,
+0.2
+],
+"foes": [
+[
+"rotcap",
+0.5,
+0.6
+],
+[
+"rotcap",
+0.7,
+-0.5
+],
+[
+"rotcap",
+1.9,
+0.8
+]
+],
+"seq": [
+[
+0.6,
+"cast",
+"iron_briar",
+[
+1.3,
+0.2
+]
+]
+],
+"fps": 30
+},
+"S21": {
+"name": "S21",
+"cap": "Slabguard \u00b7 shots stop at the slab and fly back",
+"secs": 5.4,
+"tank": [
+-1,
+0
+],
+"aim": [
+3,
+0
+],
+"allies": [
+[
+9,
+6
+],
+[
+-2.4,
+0.4
+]
+],
+"foes": [
+[
+"mantis",
+2.6,
+1.0
+],
+[
+"mantis",
+2.8,
+-0.9
+],
+[
+"rotcap",
+1.0,
+0.3
+]
+],
+"holdFoes": 5.4,
+"seq": [
+[
+0.6,
+"cast",
+"slabguard",
+[
+3,
+0
+]
+],
+[
+1.7,
+"hold",
+"KeyD",
+0.8
+]
+],
+"fps": 30
+},
+"C9": {
+"name": "C9",
+"cap": "Grudge bursts the quills \u00b7 Iron Quills on a pack, then Grudge",
+"secs": 5.5,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+2.4,
+0.6,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+-2.2,
+-0.8,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+0.3,
+-1.3,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+4.4,
+1.4,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+-4.2,
+-1.6,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 5.5,
+"seq": [
+[
+0.3,
+"cast",
+"iron_quills",
+[
+2,
+0
+]
+],
+[
+0.9,
+"cast",
+"grudge",
+[
+2,
+0
+]
+],
+[
+1.5,
+"eval",
+"__SH.blow(12,0)"
+],
+[
+2.2,
+"eval",
+"__SH.blow(12,1)"
+],
+[
+2.9,
+"eval",
+"__SH.blow(12,2)"
+]
+],
+"fps": 30
+},
+"S30": {
+"name": "S30",
+"cap": "Iron Bristles",
+"secs": 5.0,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.2,
+0.3,
+{
+"dmgMul": 0.6
+}
+],
+[
+"rotcap",
+-1.1,
+1.0,
+{
+"dmgMul": 0.6
+}
+],
+[
+"rotcap",
+-0.6,
+-1.3,
+{
+"dmgMul": 0.6
+}
+]
+],
+"seq": [
+[
+0.5,
+"cast",
+"iron_bristles"
+]
+],
+"fps": 30
+},
+"S31": {
+"name": "S31",
+"cap": "Grudge",
+"secs": 5.1,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"guides": [
+{
+"r": 3
+}
+],
+"foes": [
+[
+"rotcap",
+1.3,
+0.3,
+{
+"dmgMul": 0.9
+}
+],
+[
+"rotcap",
+-1.1,
+1.0,
+{
+"dmgMul": 0.9
+}
+],
+[
+"rotcap",
+-0.8,
+-1.2,
+{
+"dmgMul": 0.9
+}
+],
+[
+"rotcap",
+2.4,
+-1.4
+]
+],
+"seq": [
+[
+0.4,
+"cast",
+"grudge"
+]
+],
+"fps": 30
+},
+"S28": {
+"name": "S28",
+"cap": "Bloodboil",
+"secs": 4.6,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.3,
+0.4
+],
+[
+"rotcap",
+1.35,
+-0.5
+]
+],
+"seq": [
+[
+0.5,
+"cast",
+"bloodboil"
+],
+[
+1.6,
+"combo"
+]
+],
+"holdFoes": 3.6,
+"fps": 30
+},
+"C2": {
+"name": "C2",
+"cap": "Slab pinball \u00b7 Stone Ring, then Slab Throw: foe, foe, stone, foe, stone, foe",
+"secs": 4.4,
+"tank": [
+0,
+0
+],
+"aim": [
+1.2,
+-0.8
+],
+"foes": [
+[
+"rotcap",
+1.2,
+-0.8,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+1.2,
+0.8,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 4.4,
+"seq": [
+[
+0.3,
+"cast",
+"stone_ring",
+[
+2,
+0
+]
+],
+[
+1.1,
+"cast",
+"slab_throw",
+[
+1.2,
+-0.8
+]
+]
+],
+"fps": 30
+},
+"S19b": {
+"name": "S19b",
+"cap": "Kick the stone \u00b7 Heavy Slam sends the Growlstone rolling",
+"secs": 4.2,
+"tank": [
+-2.6,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+0.2,
+0.25
+],
+[
+"rotcap",
+1.4,
+-0.3
+],
+[
+"rotcap",
+2.5,
+0.35
+]
+],
+"holdFoes": 1.6,
+"seq": [
+[
+0.3,
+"cast",
+"growlstone",
+[
+-1.6,
+0
+]
+],
+[
+1.4,
+"cast",
+"heavy_slam",
+[
+2,
+0
+]
+]
+],
+"fov": 34,
+"fps": 30
+},
+"S25": {
+"name": "S25",
+"cap": "Rallying Cry",
+"secs": 4.0,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"allies": [
+[
+1.3,
+1.3
+],
+[
+-1.4,
+1.0
+]
+],
+"healer": [
+0.3,
+-1.6
+],
+"guides": [
+{
+"r": 4
+}
+],
+"foes": [
+[
+"rotcap",
+2.6,
+0
+],
+[
+"rotcap",
+-2.4,
+-1.2
+]
+],
+"seq": [
+[
+0.7,
+"cast",
+"rallying_cry"
+]
+],
+"fps": 30
+},
+"S55b": {
+"name": "S55b",
+"cap": "Badger Toss \u00b7 thrown against a ring stone: wall slam",
+"secs": 4.0,
+"tank": [
+-0.5,
+0
+],
+"aim": [
+4,
+0
+],
+"foes": [
+[
+"rotcap",
+0.6,
+0.1
+]
+],
+"holdFoes": 1.0,
+"seq": [
+[
+0.3,
+"cast",
+"stone_ring",
+[
+4,
+0
+]
+],
+[
+1.1,
+"cast",
+"badger_toss",
+[
+4,
+0
+]
+]
+],
+"fps": 30
+},
+"S33": {
+"name": "S33",
+"cap": "Iron Quills \u00b7 a quilled foe that falls sends its quills on",
+"secs": 3.6,
+"tank": [
+-0.9,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"boar",
+1.9,
+0
+],
+[
+"boar",
+3.4,
+1.0
+],
+[
+"boar",
+3.6,
+-0.6
+],
+[
+"boar",
+3.0,
+-1.8
+],
+[
+"boar",
+-0.2,
+1.2
+],
+[
+"boar",
+-0.4,
+-1.2
+]
+],
+"holdFoes": 3.6,
+"setup": "window.__recFoes[0].e.hp=8",
+"seq": [
+[
+0.5,
+"cast",
+"iron_quills",
+[
+2,
+0
+]
+]
+],
+"fps": 30
+},
+"S51": {
+"name": "S51",
+"cap": "Wall slam \u00b7 his dash knocks a foe into a stone of his Stone Ring",
+"secs": 3.6,
+"tank": [
+-2.4,
+-1.5
+],
+"aim": [
+2,
+-1.5
+],
+"foes": [
+[
+"rotcap",
+0.3,
+-1.9
+]
+],
+"holdFoes": 1.45,
+"seq": [
+[
+0.3,
+"cast",
+"stone_ring",
+[
+0,
+-1.5
+]
+],
+[
+1.0,
+"dash",
+[
+1,
+0
+]
+]
+],
+"setup": "__SH.set({})",
+"fps": 30
+},
+"S55": {
+"name": "S55",
+"cap": "Badger Toss \u00b7 grabs a foe and throws it into a pack",
+"secs": 3.6,
+"tank": [
+-1.6,
+0
+],
+"aim": [
+2.3,
+0
+],
+"foes": [
+[
+"rotcap",
+-0.4,
+0.1
+],
+[
+"rotcap",
+2.0,
+0.5
+],
+[
+"rotcap",
+2.3,
+-0.6
+],
+[
+"rotcap",
+2.8,
+0.2
+]
+],
+"holdFoes": 0.5,
+"seq": [
+[
+0.5,
+"cast",
+"badger_toss",
+[
+2.3,
+0
+]
+]
+],
+"fps": 30
+},
+"S14": {
+"name": "S14",
+"cap": "Basic attack \u00b7 bash and slam taunt",
+"secs": 3.2,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.3,
+0.45
+],
+[
+"rotcap",
+1.35,
+-0.5
+],
+[
+"rotcap",
+-1.0,
+1.3
+]
+],
+"seq": [
+[
+0.4,
+"combo"
+]
+],
+"holdFoes": 2.0,
+"fps": 30
+},
+"S27": {
+"name": "S27",
+"cap": "Maul",
+"secs": 3.2,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.15,
+0.35
+],
+[
+"rotcap",
+1.2,
+-0.45
+],
+[
+"rotcap",
+1.0,
+0.95
+]
+],
+"seq": [
+[
+0.4,
+"cast",
+"maul",
+[
+2,
+0
+]
+]
+],
+"holdFoes": 2.6,
+"fps": 30
+},
+"S29": {
+"name": "S29",
+"cap": "Savage Bite \u00b7 at 30% health",
+"secs": 2.6,
+"tank": [
+-1.2,
+0
+],
+"aim": [
+1.5,
+0.2
+],
+"hp": {
+"1": 0.3
+},
+"foes": [
+[
+"thornling",
+1.5,
+0.2,
+{
+"hpMul": 1
+}
+]
+],
+"seq": [
+[
+0.5,
+"cast",
+"savage_bite",
+[
+1.5,
+0.2
+]
+]
+],
+"holdFoes": 0.9,
+"fps": 30
+},
+"S49": {
+"name": "S49",
+"cap": "Grindstone \u00b7 6 s, he burns 3%/s, foes near him lose 6% of his max HP/s",
+"secs": 7.6,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.4,
+0.4,
+{
+"hpMul": 3,
+"dmgMul": 0.05
+}
+],
+[
+"rotcap",
+-1.2,
+0.9,
+{
+"hpMul": 3,
+"dmgMul": 0.05
+}
+],
+[
+"rotcap",
+0.3,
+-1.5,
+{
+"hpMul": 3,
+"dmgMul": 0.05
+}
+],
+[
+"rotcap",
+4.2,
+1.2,
+{
+"hpMul": 3,
+"dmgMul": 0.05
+}
+]
+],
+"holdFoes": 7.6,
+"seq": [
+[
+0.5,
+"cast",
+"grindstone",
+[
+2,
+0
+]
+]
+],
+"fps": 30
+},
+"BC": {
+"name": "BC",
+"cap": "Bare Claws moves \u00b7 no slab",
+"secs": 7.0,
+"shield": false,
+"tank": [
+-2.6,
+0
+],
+"aim": [
+3,
+0
+],
+"foes": [
+[
+"rotcap",
+1.0,
+0.45
+],
+[
+"rotcap",
+1.1,
+-0.45
+]
+],
+"seq": [
+[
+0.3,
+"hold",
+"KeyD",
+0.7
+],
+[
+1.4,
+"combo"
+],
+[
+4.0,
+"dash",
+[
+1,
+0
+]
+],
+[
+5.0,
+"aim",
+[
+-4,
+0
+]
+],
+[
+5.4,
+"cast",
+"heavy_slam",
+[
+-4,
+0
+]
+]
+],
+"fps": 30
+},
+"S47": {
+"name": "S47",
+"cap": "Stone Ring \u00b7 walking foes cannot cross; heroes and shots pass",
+"secs": 6.0,
+"pin": false,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"allies": [
+[
+9,
+6
+],
+[
+5.4,
+0.4
+]
+],
+"foes": [
+[
+"rotcap",
+1.5,
+0.9
+],
+[
+"rotcap",
+-1.3,
+-1.3
+],
+[
+"rotcap",
+4.6,
+-1.2
+],
+[
+"rotcap",
+-4.4,
+1.4
+],
+[
+"mantis",
+5.2,
+-2.6,
+{
+"dmgMul": 0.3
+}
+]
+],
+"holdFoes": 0.4,
+"seq": [
+[
+0.5,
+"cast",
+"stone_ring",
+[
+2,
+0
+]
+],
+[
+1.5,
+"eval",
+"E.cmd('placeAlly',3,5.40,0.4)"
+],
+[
+1.567,
+"eval",
+"E.cmd('placeAlly',3,5.20,0.4)"
+],
+[
+1.633,
+"eval",
+"E.cmd('placeAlly',3,5.00,0.4)"
+],
+[
+1.7,
+"eval",
+"E.cmd('placeAlly',3,4.80,0.4)"
+],
+[
+1.767,
+"eval",
+"E.cmd('placeAlly',3,4.60,0.4)"
+],
+[
+1.833,
+"eval",
+"E.cmd('placeAlly',3,4.40,0.4)"
+],
+[
+1.9,
+"eval",
+"E.cmd('placeAlly',3,4.20,0.4)"
+],
+[
+1.967,
+"eval",
+"E.cmd('placeAlly',3,4.00,0.4)"
+],
+[
+2.033,
+"eval",
+"E.cmd('placeAlly',3,3.80,0.4)"
+],
+[
+2.1,
+"eval",
+"E.cmd('placeAlly',3,3.60,0.4)"
+],
+[
+2.167,
+"eval",
+"E.cmd('placeAlly',3,3.40,0.4)"
+],
+[
+2.233,
+"eval",
+"E.cmd('placeAlly',3,3.20,0.4)"
+],
+[
+2.3,
+"eval",
+"E.cmd('placeAlly',3,3.00,0.4)"
+],
+[
+2.367,
+"eval",
+"E.cmd('placeAlly',3,2.80,0.4)"
+],
+[
+2.433,
+"eval",
+"E.cmd('placeAlly',3,2.60,0.4)"
+],
+[
+2.5,
+"eval",
+"E.cmd('placeAlly',3,2.40,0.4)"
+],
+[
+2.567,
+"eval",
+"E.cmd('placeAlly',3,2.20,0.4)"
+],
+[
+2.633,
+"eval",
+"E.cmd('placeAlly',3,2.00,0.4)"
+],
+[
+2.7,
+"eval",
+"E.cmd('placeAlly',3,1.80,0.4)"
+],
+[
+2.767,
+"eval",
+"E.cmd('placeAlly',3,1.60,0.4)"
+]
+],
+"fps": 30
+},
+"S54": {
+"name": "S54",
+"cap": "Counter Spin (passive) \u00b7 every 5th hit he spins",
+"secs": 6.0,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.2,
+0.3
+],
+[
+"rotcap",
+-1.1,
+0.6
+],
+[
+"rotcap",
+0.2,
+-1.2
+],
+[
+"rotcap",
+-0.5,
+1.2
+]
+],
+"holdFoes": 6.0,
+"seq": [
+[
+0.1,
+"cast",
+"counter_spin"
+],
+[
+0.5,
+"eval",
+"__SH.blow(7,0)"
+],
+[
+0.9,
+"eval",
+"__SH.blow(7,1)"
+],
+[
+1.3,
+"eval",
+"__SH.blow(7,2)"
+],
+[
+1.7,
+"eval",
+"__SH.blow(7,3)"
+],
+[
+2.1,
+"eval",
+"__SH.blow(7,0)"
+],
+[
+2.5,
+"eval",
+"__SH.blow(7,1)"
+],
+[
+2.9,
+"eval",
+"__SH.blow(7,2)"
+],
+[
+3.3,
+"eval",
+"__SH.blow(7,3)"
+],
+[
+3.7,
+"eval",
+"__SH.blow(7,0)"
+],
+[
+4.1,
+"eval",
+"__SH.blow(7,1)"
+],
+[
+4.5,
+"eval",
+"__SH.blow(7,2)"
+],
+[
+4.9,
+"eval",
+"__SH.blow(7,3)"
+],
+[
+5.3,
+"eval",
+"__SH.blow(7,0)"
+]
+],
+"fps": 30
+},
+"S53": {
+"name": "S53",
+"cap": "Stoneheart \u00b7 a heavy blow without it",
+"secs": 5.6,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.3,
+0.1,
+{
+"dmgMul": 0.01,
+"hpMul": 20
+}
+]
+],
+"holdFoes": 5.6,
+"seq": [
+[
+0.6,
+"eval",
+"__SH.blow(45)"
+],
+[
+1.8,
+"cap",
+"Stoneheart \u00b7 no hit takes more than 5% of his max HP"
+],
+[
+1.9,
+"cast",
+"stoneheart",
+[
+2,
+0
+]
+],
+[
+3.0,
+"eval",
+"__SH.blow(45)"
+],
+[
+4.2,
+"eval",
+"__SH.blow(45)"
+]
+],
+"fps": 30
+},
+"S21b": {
+"name": "S21b",
+"cap": "Slabguard \u00b7 Bare Claws rips a slab from the floor",
+"secs": 5.4,
+"shield": false,
+"tank": [
+-1,
+0
+],
+"aim": [
+3,
+0
+],
+"allies": [
+[
+9,
+6
+],
+[
+-2.4,
+0.4
+]
+],
+"foes": [
+[
+"mantis",
+2.6,
+1.0
+],
+[
+"mantis",
+2.8,
+-0.9
+],
+[
+"rotcap",
+1.0,
+0.3
+]
+],
+"holdFoes": 5.4,
+"seq": [
+[
+0.6,
+"cast",
+"slabguard",
+[
+3,
+0
+]
+],
+[
+1.7,
+"hold",
+"KeyD",
+0.8
+]
+],
+"fps": 30
+},
+"S22": {
+"name": "S22",
+"cap": "Bodyguard \u00b7 hops to the most hurt ally",
+"secs": 5.0,
+"tank": [
+-2.6,
+-0.4
+],
+"aim": [
+2,
+1
+],
+"allies": [
+[
+9,
+6
+],
+[
+1.8,
+0.6
+]
+],
+"hp": {
+"3": 0.45
+},
+"guides": [
+{
+"r": 6
+}
+],
+"foes": [
+[
+"rotcap",
+3.0,
+1.3,
+{
+"dmgMul": 0.6
+}
+],
+[
+"rotcap",
+2.9,
+-0.2,
+{
+"dmgMul": 0.6
+}
+],
+[
+"rotcap",
+4.2,
+0.6,
+{
+"dmgMul": 0.6
+}
+]
+],
+"holdFoes": 0.8,
+"seq": [
+[
+0.8,
+"cast",
+"bodyguard",
+[
+1.8,
+0.6
+]
+]
+],
+"fps": 30
+},
+"C4": {
+"name": "C4",
+"cap": "The cubs copy him \u00b7 Stone Cubs, then Burrow, then Bellow",
+"secs": 4.8,
+"tank": [
+-2.5,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.6,
+0.6,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+2.3,
+-0.4,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+1.3,
+-0.9,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 1.6,
+"seq": [
+[
+0.3,
+"cast",
+"stone_cubs",
+[
+2,
+0
+]
+],
+[
+1.6,
+"cast",
+"burrow",
+[
+2,
+0
+]
+],
+[
+3.3,
+"cast",
+"bellow",
+[
+2,
+0
+]
+]
+],
+"fps": 30
+},
+"C1": {
+"name": "C1",
+"cap": "Throw the stone \u00b7 Rock Toss beside the Growlstone throws the stone",
+"secs": 4.6,
+"tank": [
+-1.6,
+-0.6
+],
+"aim": [
+2.0,
+0.0
+],
+"allies": [
+[
+9,
+6
+],
+[
+2.7,
+0.3
+]
+],
+"foes": [
+[
+"rotcap",
+2.0,
+0.0,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+1.9,
+0.9,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+2.8,
+-0.6,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 2.0,
+"seq": [
+[
+0.3,
+"cast",
+"growlstone",
+[
+-0.4,
+-0.1
+]
+],
+[
+1.3,
+"cast",
+"rock_toss",
+[
+2.0,
+0.0
+]
+]
+],
+"fps": 30
+},
+"S23": {
+"name": "S23",
+"cap": "Fault Line \u00b7 foes on the crack and at his feet are thrown up",
+"secs": 4.5,
+"tank": [
+-3,
+0
+],
+"aim": [
+3,
+0
+],
+"foes": [
+[
+"rotcap",
+-3.0,
+1.2
+],
+[
+"rotcap",
+-3.1,
+-1.15
+],
+[
+"rotcap",
+-1.4,
+0.3
+],
+[
+"rotcap",
+0,
+-0.3
+],
+[
+"rotcap",
+1.4,
+0.4
+],
+[
+"rotcap",
+2.4,
+-0.2
+]
+],
+"holdFoes": 1.0,
+"seq": [
+[
+0.5,
+"cast",
+"fault_line",
+[
+3,
+0
+]
+]
+],
+"fps": 30
+},
+"S26": {
+"name": "S26",
+"cap": "Heavy Slam \u00b7 no Stone",
+"secs": 4.4,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+1.3,
+0.4
+],
+[
+"rotcap",
+1.4,
+-0.45
+],
+[
+"rotcap",
+1.1,
+1.0
+]
+],
+"holdFoes": 4.4,
+"seq": [
+[
+0.4,
+"cast",
+"heavy_slam",
+[
+2,
+0
+]
+],
+[
+2.0,
+"eval",
+"__SH.set({stone:8, stoneTick:E.tick})"
+],
+[
+2.0,
+"cap",
+"Heavy Slam \u00b7 full Stone (8): hits harder"
+],
+[
+2.5,
+"cast",
+"heavy_slam",
+[
+2,
+0
+]
+]
+],
+"fps": 30
+},
+"S45b": {
+"name": "S45b",
+"cap": "Colossus \u00b7 Bare Claws",
+"secs": 4.4,
+"shield": false,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"hp": {
+"1": 0.8
+},
+"foes": [
+[
+"rotcap",
+1.7,
+0.6,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+1.6,
+-0.7,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+-1.6,
+0.8,
+{
+"hpMul": 25
+}
+]
+],
+"holdFoes": 4.4,
+"seq": [
+[
+0.4,
+"cast",
+"colossus",
+[
+2,
+0
+]
+],
+[
+2.0,
+"combo"
+]
+],
+"fps": 30
+},
+"C3": {
+"name": "C3",
+"cap": "Rubble is ammo \u00b7 Fault Line, then Rock Toss from the rubble: three rocks",
+"secs": 3.8,
+"tank": [
+-2.5,
+0
+],
+"aim": [
+3,
+0
+],
+"foes": [
+[
+"rotcap",
+-0.9,
+0.3,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+0.4,
+-0.3,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+1.6,
+0.3,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 1.5,
+"seq": [
+[
+0.4,
+"cast",
+"fault_line",
+[
+3,
+0
+]
+],
+[
+1.7,
+"cast",
+"rock_toss",
+[
+1.6,
+0.3
+]
+]
+],
+"fps": 30
+},
+"C8": {
+"name": "C8",
+"cap": "Thorn slam \u00b7 Iron Briar, then Badger Toss a foe into it",
+"secs": 3.8,
+"tank": [
+1.2,
+0
+],
+"aim": [
+-1.8,
+0
+],
+"foes": [
+[
+"rotcap",
+0.75,
+0.1,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+-2.1,
+0.6,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 1.0,
+"seq": [
+[
+0.3,
+"cast",
+"iron_briar",
+[
+-1.8,
+0
+]
+],
+[
+1.0,
+"cast",
+"badger_toss",
+[
+-1.8,
+0
+]
+]
+],
+"fps": 30
+},
+"S48": {
+"name": "S48",
+"cap": "Slab Throw \u00b7 bounces through 4 foes and flies back",
+"secs": 3.6,
+"tank": [
+-1.5,
+0
+],
+"aim": [
+0.8,
+0.2
+],
+"foes": [
+[
+"rotcap",
+0.8,
+0.2
+],
+[
+"rotcap",
+1.8,
+-1.3
+],
+[
+"rotcap",
+2.2,
+1.2
+],
+[
+"rotcap",
+0.2,
+1.8
+]
+],
+"holdFoes": 3.6,
+"seq": [
+[
+0.5,
+"cast",
+"slab_throw",
+[
+0.8,
+0.2
+]
+]
+],
+"fps": 30
+},
+"C7": {
+"name": "C7",
+"cap": "Slab charge \u00b7 Slabguard, then dash: the foes in front go with him into a ring stone",
+"secs": 3.4,
+"tank": [
+-1,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+0.1,
+0.35,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+0.1,
+-0.35,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 1.55,
+"seq": [
+[
+0.3,
+"cast",
+"stone_ring",
+[
+2,
+0
+]
+],
+[
+0.9,
+"cast",
+"slabguard",
+[
+2,
+0
+]
+],
+[
+1.6,
+"dash",
+[
+1,
+0
+]
+]
+],
+"fps": 30
+},
+"C5": {
+"name": "C5",
+"cap": "Spike \u00b7 Fault Line throws a foe up, Heavy Slam drives it down (beside: the plain slam)",
+"secs": 3.2,
+"tank": [
+1,
+0
+],
+"aim": [
+-2,
+0
+],
+"foes": [
+[
+"rotcap",
+-0.6,
+0.0,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+-0.5,
+1.0,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 2.6,
+"seq": [
+[
+0.4,
+"cast",
+"fault_line",
+[
+-2,
+0
+]
+],
+[
+1.1,
+"cast",
+"heavy_slam",
+[
+-2,
+0
+]
+]
+],
+"fps": 30
+},
+"S18": {
+"name": "S18",
+"cap": "Landslide",
+"secs": 3.2,
+"tank": [
+-2.6,
+0
+],
+"aim": [
+2.5,
+0
+],
+"foes": [
+[
+"rotcap",
+-0.6,
+0.5
+],
+[
+"rotcap",
+0.6,
+-0.6
+],
+[
+"rotcap",
+1.6,
+0.3
+],
+[
+"rotcap",
+2.2,
+-0.3
+]
+],
+"seq": [
+[
+0.6,
+"cast",
+"landslide",
+[
+2.5,
+0
+]
+]
+],
+"fps": 30
+},
+"S24": {
+"name": "S24",
+"cap": "Burrow",
+"secs": 3.0,
+"tank": [
+-2.5,
+0
+],
+"aim": [
+2.5,
+0
+],
+"foes": [
+[
+"rotcap",
+2.4,
+0.7
+],
+[
+"rotcap",
+2.8,
+-0.6
+],
+[
+"rotcap",
+2.0,
+0.0
+]
+],
+"seq": [
+[
+0.4,
+"cast",
+"burrow",
+[
+2.5,
+0
+]
+]
+],
+"fps": 30
+},
+"S15": {
+"name": "S15",
+"cap": "Dash \u00b7 knocks aside and taunts",
+"secs": 2.2,
+"tank": [
+-1.6,
+0
+],
+"aim": [
+3,
+0
+],
+"foes": [
+[
+"dummy",
+0,
+0.3
+],
+[
+"thornling",
+0.6,
+-0.45
+]
+],
+"seq": [
+[
+0.3,
+"dash",
+[
+1,
+0
+]
+]
+],
+"fps": 30
+},
+"S13": {
+"name": "S13",
+"cap": "Bristle \u00b7 free taunts, the growl, Stone, Hearty",
+"secs": 6.5,
+"loud": true,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"allies": [
+[
+9,
+6
+],
+[
+-3,
+1.6
+]
+],
+"foes": [
+[
+"thornling",
+-3.6,
+2.4
+],
+[
+"thornling",
+-2.4,
+2.6
+],
+[
+"thornling",
+1.3,
+0.35,
+{
+"hpMul": 0.6
+}
+],
+[
+"rotcap",
+1.4,
+-0.55
+]
+],
+"seq": [
+[
+0.4,
+"combo"
+],
+[
+3.2,
+"combo"
+]
+],
+"holdFoes": 3.0,
+"fps": 30
+},
+"S16": {
+"name": "S16",
+"cap": "Bellow",
+"secs": 4.0,
+"loud": true,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"allies": [
+[
+9,
+6
+],
+[
+-3.6,
+0.8
+]
+],
+"guides": [
+{
+"r": 3
+}
+],
+"foes": [
+[
+"rotcap",
+-2.3,
+1.3
+],
+[
+"rotcap",
+-2.5,
+0.1
+],
+[
+"rotcap",
+1.9,
+1.4
+],
+[
+"rotcap",
+2.1,
+-1.2
+]
+],
+"seq": [
+[
+1.0,
+"cast",
+"bellow"
+]
+],
+"fps": 30
+},
+"S17": {
+"name": "S17",
+"cap": "Rock Toss",
+"secs": 4.0,
+"loud": true,
+"tank": [
+-1.8,
+-0.3
+],
+"aim": [
+1.6,
+0.6
+],
+"allies": [
+[
+9,
+6
+],
+[
+2.4,
+1.8
+]
+],
+"guides": [],
+"foes": [
+[
+"rotcap",
+1.6,
+0.6
+]
+],
+"seq": [
+[
+0.8,
+"cast",
+"rock_toss",
+[
+1.6,
+0.6
+]
+]
+],
+"holdFoes": 1.0,
+"fps": 30
+},
+"S20": {
+"name": "S20",
+"cap": "Fracture (passive) \u00b7 every hit adds a Crack, at 4 the foe shatters",
+"secs": 6.0,
+"loud": true,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"allies": [
+[
+-2.2,
+1.5
+],
+[
+-2.3,
+-1.3
+]
+],
+"foes": [
+[
+"rotcap",
+1.3,
+0.5,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+1.4,
+-0.5,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+1.9,
+0.1,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 6.0,
+"seq": [
+[
+0.1,
+"cast",
+"fracture"
+],
+[
+0.5,
+"cast",
+"bellow",
+[
+2,
+0
+]
+],
+[
+1.5,
+"combo"
+],
+[
+3.4,
+"combo"
+]
+],
+"fps": 30
+}
+}

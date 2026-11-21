@@ -1,0 +1,24 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"./three/build/three.module.js","three/addons/":"./three/examples/jsm/"}}</script>
+</head><body style="margin:0"><canvas id="c" width="300" height="300"></canvas>
+<script type="module">
+import * as THREE from 'three';
+import * as W from './wb.js';
+import { DEFS, FORMS } from './defs.js';
+
+await W.loadHer('./windbriar.glb');
+const q = new URLSearchParams(location.search), id = q.get('id');
+const def = id.includes(':') ? FORMS[id.split(':')[0]][id.split(':')[1]] : DEFS[id];
+const card = W.addCard(def, document.getElementById('c')); card.build();
+const r = W.renderer;
+const cam = new THREE.PerspectiveCamera(22, 1, 0.05, 50);
+window.__shot = (t, off, side) => { globalThis.__noKnee = !!off; W.kneeProbe(card, t); const m = W.her; m.root.updateMatrixWorld(true);
+  const hips = W.her.b.hips, P = new THREE.Vector3().setFromMatrixPosition(hips.matrixWorld), yaw = m.root.rotation.y;
+  const s = side || 1; const dx = Math.cos(yaw) * s, dz = -Math.sin(yaw) * s; // his right side (s=1) or front (s=2)
+  const f = new THREE.Vector3(0, 0, 1).transformDirection(W.her.b.hips.matrixWorld); f.y = 0; f.normalize(); const dir = s === 2 ? f : new THREE.Vector3(-f.z, 0, f.x);
+  const Y = +(q.get('y') || 0.22), D = +(q.get('d') || 2.2);
+  cam.position.set(P.x + dir.x * D, Y + 0.12, P.z + dir.z * D); cam.lookAt(P.x, Y, P.z); cam.updateMatrixWorld();
+  for (const o of W.scene.children) if (o.isGroup && o !== m.root && !o.userData.keep) {}
+  r.setSize(300, 300, false); r.render(W.scene, cam); return r.domElement.toDataURL('image/jpeg', 0.85); };
+window.__ready = true;
+</script></body></html>

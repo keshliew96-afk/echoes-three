@@ -1,0 +1,9 @@
+{
+ "version": "0.5.363",
+ "files": {
+  "src/ui/run/draft.js": "d9b987c28ef1afad98a742ed5d8296ad835ebbbad45e4471362a70f8ee22a675",
+  "src/ui/run/index.js": "d3e90a54415a5b3db849e4792f19b40f5a32552f5edd06841c02c4ad88762853",
+  "src/i18n/locales/de.json": "6e6ac26299895f0ebe592fbe96172ea5d2327f1ec72bf8470e779f433a235a5b",
+  "src/version.js": "51c3efc2ae276611e3af9bd61e54e78215173f1a1218b4e7e87e01d998fd9404"
+ }
+}

@@ -1,0 +1,97 @@
+<div class="wrap">
+  <div>
+    <h1>Otter Tidecaller from Tripo, rigged</h1>
+    <p class="lede">Your Tripo otter and her reed staff, rigged and given a tide-caller's moves: loose, rolling and low, the staff swung in wide arcs and her heavy tail following every turn. Pick one move or combine several, and drag to turn her. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way she walks, runs or dashes while she keeps facing the same way. Add one Action for the upper body, and Hurt on top. Tap attack plays one hit per press: press again after a hit lands to chain hits 1, 2 and 3. Dash and Downed use the whole body, so they play alone. Press Downed again to revive her. Hit feel adds the freeze, the kick, the camera shake, the water and the dust.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="otter-views.png" alt="The Tripo otter from the front, right, back and left, arms out, before rigging" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">The body is as you sent it, thinned a little to fit the budget. The satchel and the sash are part of the body, so they move with her trunk.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,981 <small>body 13,045 + staff 1,936 · budget 15,000</small></dd></div>
+    <div><dt>Bones</dt><dd>21 <small>spine, head, arms, fingers, legs, four in the tail</small></dd></div>
+    <div><dt>Textures</dt><dd>2 × 2K <small>body and staff, colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.6 MB <small>one GLB with all 28 moves at 60 frames a second</small></dd></div>
+    <div><dt>Moves</dt><dd>28 <small>idle, 4 walks, 4 runs, 4 dashes, staff combo and its 3 hits, 4 casts, ripple step, downed (fall, lie, crawl, revive), hurt, wave</small></dd></div>
+  </dl>
+
+  <h2>The body and the staff</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Part</th><th>As it came</th><th>What was done</th></tr></thead>
+    <tbody>
+      <tr><td>Body</td><td>14,119 triangles, one piece, arms out, nothing broken; the thick tail lies on the floor and curls to her left</td><td>thinned to 13,045 triangles to make room for the staff; no visible change in the four views. The tail has four bones so it can drag, swing and slap</td></tr>
+      <tr><td>Reed staff</td><td>1,936 triangles, sound, with the shell at the top and a blue wrap low on the shaft</td><td>kept as it is, scaled to nine tenths so the shell sits just above her head, and held in her right paw at the blue wrap</td></tr>
+    </tbody></table></div>
+
+  <h2>Her moves</h2>
+  <p class="note"><strong>The rule for all of it:</strong> water, not steel. Nothing snaps: each move swells, breaks and washes back. Her weight sits low over her short legs, her trunk rolls into every swing, and the tail follows a beat late like a rudder.</p>
+  <p class="note"><strong>Idle.</strong> She stands easy with the staff upright beside her, sways a little as if on a slow current, looks about, and the tail tip stirs on the floor.</p>
+  <p class="note"><strong>Walk and run.</strong> The walk is a rolling waddle with the staff carried upright. In the run she leans in and levels the staff forward, and the tail streams behind.</p>
+  <p class="note"><strong>Staff combo, three hits in 1.6 seconds.</strong> Hit 1 (0.22 s) is a short flick of the shell forward that throws a bolt of water. Hit 2 (0.56 s) is a level sweep across her front, right to left, with a second bolt. Hit 3 (1.02 s) is the finisher: the staff goes up over her right shoulder, she drops her weight and drives the butt into the floor, and her tail slaps down with it; a ring of water runs out.</p>
+  <p class="note"><strong>Casts.</strong> <em>Torrent</em> (0.44 s): she winds the staff back and pushes the shell straight out, and a stream leaves it; this covers riverbolt, torrent and undertow. <em>Call the water</em> (0.60 s): the staff goes up high and stirs a circle overhead, and rain comes down around her; for rain squall, bubble ward and tidepool. <em>Whirlpool</em> (0.40 s): she plants the butt on the floor ahead and a pool stays there for a moment; for whirlpool and maelstrom. <em>Crashing wave</em> (0.46 s): a wide level sweep that sends a wave rolling out ahead; for breaker and crashing wave. <em>Ripple step</em>: she throws herself forward on her belly and slides, the staff held back along her side.</p>
+  <p class="note"><strong>Effects.</strong> Deep Cobalt for the water and Sea Foam for its crest, the Tidecaller's two colours in the game, and River Pebble for the dust. A short bolt off the shell, a few drops, a ring on the floor, a rolling wave. All of them are dim and switch off with Hit feel. The two bolts barely freeze and do not shake the camera; the slam, the whirlpool and the wave do.</p>
+
+  <h2>Measured, 12 November</h2>
+  <p class="note">Every frame of all 28 moves (60 a second) was measured, and the poses were checked as still frames from the front, the side, above and behind. The cloud machine cannot play it at full speed, so the speed and the weight are yours to judge.</p>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured in every frame</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Staff cutting into her body (the build's own check)</td><td>0 in all 28 moves</td></tr>
+      <tr><td>Staff arm stretched past its reach</td><td>never by more than a hair: the paw stays on the grip</td></tr>
+      <tr><td>Shell against her head</td><td>21 cm or more from the centre of her head, which is about 5 cm off her cheek at the closest (dash, hurt, and the whirlpool plant): tight, look at these</td></tr>
+      <tr><td>Staff against her trunk and satchel</td><td>22 cm or more from the middle of her trunk, which is just outside her fur: she is 40 cm wide, so the staff always travels close to her side</td></tr>
+      <tr><td>Staff against her legs and her tail</td><td>29 cm or more</td></tr>
+      <tr><td>Staff against her free arm</td><td>36 cm or more</td></tr>
+      <tr><td>Tail under the floor</td><td>0; it rests on the floor and lifts when her hips sink</td></tr>
+      <tr><td>Feet under the floor</td><td>0</td></tr>
+      <tr><td>Feet crossing</td><td>never closer than 23 cm</td></tr>
+      <tr><td>Loops that jump on restart</td><td>0</td></tr>
+    </tbody></table></div>
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The staff stays in her paw and clear of her head, belly, satchel and tail through every move.</li>
+        <li>The four casts and the ripple step cover her 11 skills in the game.</li>
+        <li>The tail drags behind every turn, lifts when she sinks so it never goes through the floor, and slaps down on the slam.</li>
+        <li>Her feet stay on the floor when she drops her weight.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>Her arms are very short (about 19 cm of reach on a body 40 cm wide), so the staff cannot swing far across her front or behind her. The sweeps come mostly from turning her trunk.</li>
+        <li>Only her right paw holds the staff. Her left paw cannot reach it across her belly, so there are no two-handed moves.</li>
+        <li>She has no knees, so sinking low is a lean and a drop of the hips. Her fingers don't close round the staff, and the satchel and sash are stiff.</li>
+        <li>Her feet can slide while she walks, the moves play in place (the ripple step does not carry her forward), and she has no ink outline or flat game colours yet.</li>
+        <li>Dash, the downed moves, Hurt and Wave use the other heroes' timing with her tail added; they were not designed for her from scratch.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+

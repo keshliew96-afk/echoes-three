@@ -1,0 +1,369 @@
+<title>Tripo Barrow Ram Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a review bench, the same one the hero pages use. The live model on the left, the model as sent on the right, facts and notes under. */
+:root{
+  --bg:#f3f2ee; --panel:#fbfaf7; --fg:#23262b; --muted:#666b73; --line:#d9d6cd;
+  --stage:#c9cbc6; --stage2:#b4b7b0; --accent:#2f7d57; --accent-fg:#ffffff; --warn:#9a5b12; --chip:#e8e6df; --phase:#7a5fc4;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0}
+.lede{color:var(--muted);margin:4px 0 0;max-width:65ch}
+.bench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.25fr);gap:16px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.pane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,var(--stage),var(--stage2));aspect-ratio:4/3;max-width:100%}
+.stage canvas{transition:filter .9s;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--fg);opacity:.7;pointer-events:none}
+.stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:14px}
+.sent img{display:block;width:100%;height:auto}
+.controls{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lab{font-size:12px;color:var(--muted);width:52px;flex:none}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--fg);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+button:disabled{opacity:.38;cursor:not-allowed;border-color:transparent}
+.layers{margin:0 0 0 58px;font-size:13px;font-weight:500;color:var(--accent);min-height:1.5em}
+.rule{margin:0 0 0 58px;font-size:12px;color:var(--muted);max-width:62ch}
+.phases{margin:0 0 0 58px;display:flex;gap:2px;height:22px;position:relative;max-width:520px}
+.phases span{flex:var(--w) 1 0;min-width:0;background:var(--chip);font-size:11px;line-height:22px;text-align:center;color:var(--muted);overflow:hidden;white-space:nowrap;border-radius:3px}
+.phases span.on{background:var(--phase);color:var(--panel)}
+.phases i{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);left:0;border-radius:1px}
+@media (max-width:480px){.layers,.rule,.phases{margin-left:0}}
+.note{font-size:13px;color:var(--muted);padding:0 14px 12px;margin:0}
+.wrap>.note{padding:0;max-width:78ch}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0}
+.facts div{background:var(--panel);padding:12px 14px}
+.facts dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.facts small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.cols ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:60ch}
+.rough{color:var(--warn)}
+.audit{overflow-x:auto;margin:0}.audit table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}.audit th,.audit td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}.audit th{font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Barrow Ram from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Level III's heavy: your export, with a skeleton and nine moves added by hand. A big mossy ram, its pale bone skull under two huge curled horns hung with iron rings, thick fleece patched with moss, short stout legs on dark hooves and pale glowing eyes. It walks slowly where its horns point and turns slowly, so you beat it by going round it; shots that hit its horns are blocked. Close in, it winds back while an Ember cone marks the ground in front of it, then slams its horns through the cone. Press a move to watch it; the numbers under the page come from the model file.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what it does between slams, and Going turns it on the spot. Horn slams plays the game's three slams back to back, each on its own 1 s Ember cone, with the hero stand-in inside the cone. Block fires a shot from the hero stand-in into its horns. An action repeats until you press it again. Hurt plays on top of anything. Death drops it: press it again and it spawns back. The bar names the part of the move that is playing, in the game's own words where it has them.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="ram-views.png" alt="The Tripo Barrow Ram from the front, its left side, the back and from above, before rigging" width="800" height="800">
+      <p class="note" style="padding-top:12px">It came through as one piece: a heavy ram with a long pale skull, glowing pale blue eyes, two big dark horns curling forward round its face with an iron ring hanging from each, a deep coat of cream fleece patched with green moss, a short tail tuft, and four short dark legs on cloven hooves.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>3,784 <small>foe budget 4,000</small></dd></div>
+    <div><dt>Bones</dt><dd>23 <small>a root, hips, spine, chest, neck and head (the head carries both horns); a tail; upper leg, forearm, cannon and hoof for each front leg; thigh, shin, cannon and hoof for each hind leg</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>1.2 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>1.26 u long <small>1.3 u tall at the horns; as tall as the 1 u hero and much heavier</small></dd></div>
+    <div><dt>In the game</dt><dd>Barrow Ram <small>90 health. It walks at 1.1 u/s and turns at only 90° a second, walking where its horns point, so the party wins by flanking it. Its horn guard blocks every shot that arrives within 55° either side of its facing (arcs, novas, zones and heals still land). Horn Slam: a cone 1.8 u long at a half-angle of 50°, marked by a 60-tick Ember cone, 18 damage, cooldown 270 ticks. It takes only 0.3 of any knockback. Level III.</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>The game's rest: a slow breath and a small nod of the head. On top: it looks left and right, lowers its head and shakes its horns, then scrapes the floor twice with a front hoof, the tail flicking now and then.</td><td>A 6 s loop. The breath and nod are the game's; the rest is mine.</td></tr>
+      <tr><td>Walk</td><td>A heavy trot in diagonal pairs, as the game's legs step, leaning into the travel with its head carried low.</td><td>Game: 1.1 u/s, diagonal pairs, the lean. The step is mine, 0.4 s a cycle, short for its short legs.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Steps round on the spot, the head leading into the turn.</td><td>Game: 90° a second.</td></tr>
+      <tr><td>Horn slams</td><td>The game's three slams in Kesh's 3-hit flow, each on its own Ember cone. The hook from its right: through the cone it winds back to its right with the hips sunk and the head cocked up and away, then rips the horns across to its left. The reverse hook: the mirror. The heave: gathered low, then heaved up and forward with its whole weight. On each slam the front hooves step in to land with the horns, it holds the contact, snaps back and settles with one overshoot. The heave also walks the hind hooves in a short step.</td><td>Game: the cone 60 ticks; the slam is its last 2.5 frames so the horns land as the cone resolves (18); held 3 frames, snap 2.5, settle 6, rest 0.25 s. The hind step on the heave is mine.</td></tr>
+      <tr><td>Block</td><td>A shot from the hero hits its horns and is blocked: the horn glow flares indigo, and the head braces down into the blow and shoves back up.</td><td>Game: the flare on every blocked shot. The brace is mine, 0.5 s.</td></tr>
+      <tr><td>Hurt</td><td>The head snaps away and the tail tucks. Plays on top of any move.</td><td>0.4 s</td></tr>
+      <tr><td>Spawn</td><td>Grows in low with its head down, shakes its horns and stamps a front hoof.</td><td>Game: grow in 7 frames, about 10% over. The rest is mine.</td></tr>
+      <tr><td>Death</td><td>Struck, its head jerks up; its forelegs buckle, then it rolls heavily onto its right side, the legs kick once and it lies still.</td><td>Mine: 2.2 s, then it stays down. The game pops every foe where it is.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Hooves sliding while planted (walk, both turns, the slams)</td><td>0 mm</td></tr>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns)</td><td>0</td></tr>
+      <tr><td>Anything into the floor</td><td>Up to 12 mm on the walk and turns (a hoof's edge as it rolls off the floor); up to 20 mm in the slams; up to 13 mm in the death.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the walk and the slams are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>The guard glow is on your horns.</strong> The game's ram carries its indigo tell on a bone shield disc where its horns meet. Yours has no disc, so the horns carry a faint indigo glow that flares on every blocked shot, with the game's soft indigo glow in front of them.</li>
+        <li><strong>The body squash is softened.</strong> The game squashes its ram's body hard on each slam (19% wider). Here the legs hang from the body, so a full squash would push the hooves through the floor; I widen it by 40% of the game's amount and leave its height alone.</li>
+        <li><strong>Mine.</strong> The idle on top of the breath, the step length, the hind step on the heave, the block's brace, the hurt, the spawn after the grow-in, and the death.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The jaw is part of the skull, so its mouth does not open.</li>
+        <li>The iron rings are fixed to the horns; they do not swing.</li>
+        <li>The eyes are painted in your texture, so they keep their glow and do not dim when it dies.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page, after the game's own: the guard's indigo glow and its flare, the Ember cone, the hero's shot, the slam on the hero, the dust and bone chips off the horns, and hoof dust. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="ram-model.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=1.3;
+  const EMBER=0xFF5A36, DUST=0x8d8478;
+  const LABEL={idle:'Idle',walk:'Walk',turnL:'Turn left',turnR:'Turn right',slams:'Horn slams',block:'Block',hurt:'Hurt',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['slams','block'];
+  const NEAR=1.15, FAR=2.4; let HOME=FAR; // where the hero stands, in u, in front of it: inside its 1.8 u cone for the slams
+  const WALK=1.1, RAGEWALK=1.1, TURN=Math.PI/2;
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){$('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(2.5,6,4.5); scene.add(sun);
+  // the floor: a grid that wraps, and a group for things that lie on the floor and stay where they fell
+  const gridG=new THREE.Group(), fxG=new THREE.Group(); gridG.matrixAutoUpdate=false; fxG.matrixAutoUpdate=false; scene.add(gridG,fxG);
+  const grid=new THREE.GridHelper(48,48,0x4a4f48,0x4a4f48); grid.material.transparent=true; grid.material.opacity=0.85; grid.position.y=0.002; gridG.add(grid);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.17,depthWrite:false}));
+  blob.rotation.x=-Math.PI/2; blob.scale.set(0.42,0.72,1); blob.position.set(0,0.004,-0.03); scene.add(blob);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,120);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=1.5; orbit.maxDistance=30;
+  const VIEWS={Close:{p:[4.6,1.9,1.4],t:[0,0.6,1.0]},'Game zoom':{p:[0,10.6,9.4],t:[0,0.5,1.0]},Side:{p:[6.8,1.3,0.9],t:[0,0.6,0.9]},Front:{p:[0.5,1.4,6.6],t:[0,0.6,0]},Back:{p:[-2.4,2.2,-5.2],t:[0,0.6,0.3]},Top:{p:[0,9,0.9],t:[0,0.2,0.9]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  // ---- controls
+  function group(id,names,onPick,active,multi){const row=$(id);const btns={};names.forEach(n=>{const b=document.createElement('button');b.textContent=LABEL[n]||n;b.dataset.k=n;b.setAttribute('aria-pressed',String(n===active));b.onclick=()=>onPick(n,b);row.appendChild(b);btns[n]=b;});return btns;}
+  const sel={base:'idle',going:'Forward',action:null,dead:false};
+  let rage=false, rageW=0, rageAct=null;
+  let speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, feel=true, fxOn=true, showTarget=true, helper=null;
+  const B={};
+  B.moves=group('moves',['idle','walk','spawn','death'],k=>pick(k),'idle');
+  B.dirs=group('dirs',['Forward','Turn left','Turn right'],k=>{sel.going=k;if(sel.base!=='walk'&&!sel.dead)sel.base='walk';refresh();},'Forward');
+  B.acts=group('acts',[...ACTIONS,'hurt'],k=>pick(k),null);
+  B.speeds=group('speeds',['0.1×','0.25×','0.5×','1×'],(k)=>{speed=parseFloat(k);Object.values(B.speeds).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'1×');
+  B.views=group('views',Object.keys(VIEWS),k=>{setView(k);Object.values(B.views).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'Close');
+  const toggle=(id,get,set)=>{const b=$(id);b.onclick=()=>{set(!get());b.setAttribute('aria-pressed',String(get()));};b.setAttribute('aria-pressed',String(get()));};
+  toggle('feel',()=>feel,v=>feel=v); toggle('fx',()=>fxOn,v=>{fxOn=v;if(!v)clearFx();}); toggle('target',()=>showTarget,v=>{showTarget=v;if(dummy)dummy.visible=v;});
+  toggle('bones',()=>!!(helper&&helper.visible),v=>{if(helper)helper.visible=v;}); toggle('pause',()=>paused,v=>paused=v);
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, glowU={value:new THREE.Vector4(0,0.25,0,0.3)}, hurtAct=null, shot=null, dummy=null;
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    mesh.material.onBeforeCompile=sh=>{sh.uniforms.uGlow=glowU;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uGlow;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3(0.42,0.26,1.0)*uGlow.x*vMask.x+vec3(0.55,0.22,0.9)*uGlow.y*vMask.y+vec3(0.55)*uGlow.z+vec3(0.8,0.75,1.0)*uGlow.w*vMask.z;');};
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; scene.add(helper);
+    mixer=new THREE.AnimationMixer(model);
+    const UPPER=/^(chest|neck1|head|tail1)\./; const restC=gltf.animations.find(c=>c.name==='hurt');
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      if(c.name==='rageHold'){const h=new THREE.AnimationClip('rageAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,restC,60); rageAct=mixer.clipAction(h); rageAct.blendMode=THREE.AdditiveAnimationBlendMode; rageAct.setLoop(THREE.LoopRepeat,Infinity); rageAct.setEffectiveWeight(0); rageAct.play(); return;}
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1);
+    makeFx(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,hipY:+bones.hips.getWorldPosition(new THREE.Vector3()).y.toFixed(2),cone:cone.visible,guard:+guard.toFixed(2),flare:+flare.toFixed(2),hero:[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)],dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,t:shot&&+shot.action.time.toFixed(3),fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glow:glowU.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+  // ---- what plays
+  function baseName(){return sel.dead?null:sel.base==='walk'?(sel.going==='Forward'?'walk':sel.going==='Turn left'?'turnL':'turnR'):'idle';}
+  function startShot(name,hold){ if(!A[name])return; if(shot){shot.action.__w=0;shot.action.setEffectiveWeight(0);}
+    const a=A[name]; a.reset(); a.paused=false; a.__w=1; a.setEffectiveWeight(1); Object.entries(A).forEach(([k,x])=>{if(x!==a){x.__w=Math.min(x.__w,0.0);x.setEffectiveWeight(x.__w);}});
+    shot={name,action:a,prev:0,hold:!!hold,done:false,gap:0,tz:0}; fxStart(name); }
+  function pick(k){
+    if(!mixer)return;
+    if(k==='idle'||k==='walk'){ if(sel.dead)return; sel.base=k; }
+    else if(k==='spawn'){ sel.dead=false; sel.action=null; cv.style.filter=''; startShot('spawn'); }
+    else if(k==='death'){ if(sel.dead){ sel.dead=false; cv.style.filter=''; startShot('spawn'); } else { sel.dead=true; sel.action=null; startShot('death',true); } }
+    else if(k==='hurt'){ if(sel.dead)return; hurtAct.reset(); hurtAct.setEffectiveWeight(1); hurtAct.play(); hitFeel(0.3,0.04,0.5); flash=0.35; if(fxOn)sparks(pt(bones.head,[0,-0.06,0.2]),6,0xe9dcc0,1.4,0.25); }
+    else { if(sel.dead)return; sel.action=sel.action===k?null:k; if(sel.action&&(!shot||shot.done||shot.name!==k))startShot(k); }
+    refresh();
+  }
+  function refresh(){
+    Object.values(B.moves).forEach(b=>{const k=b.dataset.k; b.setAttribute('aria-pressed',String(k==='death'?sel.dead:k==='spawn'?!!(shot&&shot.name==='spawn'&&!shot.done):!sel.dead&&sel.base===k)); b.disabled=sel.dead&&(k==='idle'||k==='walk'); b.textContent=k==='death'&&sel.dead?'Death (press to spawn)':LABEL[k];});
+    Object.values(B.dirs).forEach(b=>{b.setAttribute('aria-pressed',String(sel.base==='walk'&&!sel.dead&&b.dataset.k===sel.going)); b.disabled=sel.dead;});
+    Object.values(B.acts).forEach(b=>{b.setAttribute('aria-pressed',String(sel.action===b.dataset.k)); b.disabled=sel.dead;});
+  }
+  function showPhase(){
+    const el=$('layers'), ph=$('phases'), tag=$('clipname'); const bn=baseName();
+    if(shot&&!shot.done){ const m=META[shot.name], t=shot.action.time; let cur=''; m.phases.forEach(p=>{if(t>=p[1])cur=p[0];});
+      el.textContent=LABEL[shot.name]+(cur?' · '+cur:'')+' · '+t.toFixed(2)+' s'; tag.textContent=LABEL[shot.name];
+      if(ph.dataset.name!==shot.name){ph.dataset.name=shot.name; ph.innerHTML=m.phases.map((p,i)=>{const e=i+1<m.phases.length?m.phases[i+1][1]:m.dur;return '<span style="--w:'+Math.max(0.04,(e-p[1])).toFixed(3)+'">'+p[0]+'</span>';}).join('')+'<i></i>'; ph.hidden=!m.phases.length;}
+      const spans=ph.querySelectorAll('span'); m.phases.forEach((p,i)=>spans[i]&&spans[i].classList.toggle('on',p[0]===cur)); const mk=ph.querySelector('i'); if(mk)mk.style.left=(100*Math.min(1,t/m.dur)).toFixed(1)+'%';
+    } else { el.textContent=sel.dead?'Down. Press Death again to spawn it back in.':(LABEL[bn]||'')+(sel.action?' · '+LABEL[sel.action]+' repeats':''); tag.textContent=sel.dead?'Death':LABEL[bn]||''; ph.hidden=true; ph.dataset.name=''; }
+  }
+
+  // ---- floor motion: the floor moves under him, he stays in the middle of the stage
+  const floorPos=new THREE.Vector3(); let floorYaw=0; const PIV=new THREE.Vector3(0,0,-0.04*U);
+  function moveFloor(dz,dyaw){ // he moves forward dz and turns left dyaw: the floor does the opposite
+    floorPos.z-=dz; if(dyaw){ floorPos.sub(PIV).applyAxisAngle(Y,-dyaw).add(PIV); floorYaw-=dyaw; }
+    fxG.matrix.makeRotationY(floorYaw).setPosition(floorPos);
+    const l=floorPos.clone().applyAxisAngle(Y,-floorYaw); l.x-=Math.round(l.x); l.z-=Math.round(l.z); l.applyAxisAngle(Y,floorYaw); gridG.matrix.makeRotationY(floorYaw).setPosition(l);
+  }
+  const Y=new THREE.Vector3(0,1,0), tmp=new THREE.Vector3(), tmp2=new THREE.Vector3();
+  const pt=(bone,v)=>tmp.set(v[0],v[1],v[2]).applyMatrix4(bone.matrixWorld).clone();
+  const toFloor=(w)=>w.clone().applyMatrix4(fxG.matrix.clone().invert());
+
+  // ---- hit feel: freeze, squash (the game's boss contact squash: 11% wider, 5% shorter), shake, flash
+  let hitstop=0, squash=0, shake=0, flash=0; const shakeV=new THREE.Vector3();
+  function hitFeel(sh,stop,sq){ if(!feel)return; hitstop=Math.max(hitstop,stop); squash=Math.max(squash,sq); shake=Math.max(shake,sh); }
+
+  // ---- effects (stand-ins, dim on purpose, after the game's own: the horn guard's faint indigo glow, flaring on every
+  // blocked shot; the Ember cone 1.8 u at a half-angle of 50° filling over each 60-tick coil; the slam on the hero (18)
+  // with a scuff of dust and bone chips off the horns; hoof dust on the walk; a stamp's dust ring on the spawn)
+  const FXP=[], RINGS=[]; let dotTex=null, cone=null, coneFill=null, coneEdge=null, guardS=null, bolt=null;
+  let guard=0, flare=0, coneT=-1, coneI=0, boltT=-1;
+  const INDIGO=0x6b5cff, BONE=0xe9dcc0, DUSTC=0x6e625a, SHOT=0xdfe8ff;
+  const TEL=1.0, D=TEL+(3+2.5+6)/30+0.25, R=1.8, HALF=50*Math.PI/180;
+  const c01=(x)=>Math.max(0,Math.min(1,x)), easeOut=(k)=>1-(1-k)*(1-k);
+  const coilCurve=(k)=>{const c=c01(k);return 0.85*easeOut(Math.min(1,c/0.4))+0.15*c;};
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<160;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<8;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:DUSTC,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false}); scene.add(m);}
+    // the cone, on the floor: the game's 1.8 u at a half-angle of 50° ahead of it, its edge drawn at once, its fill
+    // reaching out over the coil
+    const A0=1.5*Math.PI-HALF, AL=2*HALF, cm=(o)=>new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:o,depthWrite:false,side:THREE.DoubleSide});
+    cone=new THREE.Group(); fxG.add(cone); cone.visible=false;
+    const bed=new THREE.Mesh(new THREE.CircleGeometry(R,48,A0,AL).rotateX(-Math.PI/2),cm(0.07)); cone.add(bed); cone.userData.bed=bed;
+    coneFill=new THREE.Mesh(new THREE.CircleGeometry(1,48,A0,AL).rotateX(-Math.PI/2).translate(0,0.002,0),cm(0.14)); cone.add(coneFill);
+    const eg=new THREE.RingGeometry(R-0.05,R,48,1,A0,AL).rotateX(-Math.PI/2).translate(0,0.003,0); coneEdge=[new THREE.Mesh(eg,cm(0.5))];
+    for(const s of [-1,1]){ const a=s*HALF, L=new THREE.Mesh(new THREE.PlaneGeometry(0.05,R).rotateX(-Math.PI/2).translate(0,0.003,R/2),cm(0.5)); L.rotation.y=a; coneEdge.push(L); }
+    coneEdge.forEach(e=>cone.add(e));
+    // the guard's glow in front of the horns (the game's makeGlowSprite, indigo, 0.18) and the hero's shot it blocks
+    guardS=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:INDIGO,transparent:true,depthWrite:false,opacity:0,blending:THREE.AdditiveBlending})); scene.add(guardS);
+    bolt=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:SHOT,transparent:true,depthWrite:false,opacity:0,blending:THREE.AdditiveBlending})); bolt.visible=false; scene.add(bolt);
+    dummy=new THREE.Group(); const dm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dm); body.position.y=0.31; const hd=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dm); hd.position.y=0.8; dummy.add(body,hd); dummy.userData={mat:dm,z:HOME,x:0,tip:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+  function puff(pos,vel,o){ if(!fxOn)return; const p=FXP.find(p=>p.life<=0); if(!p)return; p.life=o.life||0.5; p.age=0; p.v.copy(vel); p.g=o.g||0; p.s0=o.s0||0.1; p.s1=o.s1||0.3; p.a=o.a||0.4; p.drag=o.drag||0; p.floor=!!o.floor; p.s.material.color.setHex(o.col||DUST); p.s.position.copy(pos); if(p.floor){fxG.add(p.s);p.s.position.copy(toFloor(pos));}else scene.add(p.s); p.s.visible=true; p.s.scale.setScalar(p.s0); p.s.material.opacity=0; }
+  function dust(pos,n,spd,up,col){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(tmp2.copy(pos).setY(0.04),new THREE.Vector3(Math.cos(a)*spd*(0.5+Math.random()),up*(0.4+Math.random()*0.6),Math.sin(a)*spd*(0.5+Math.random())),{life:0.5+Math.random()*0.3,s0:0.08,s1:0.28,a:0.2,drag:2.6,floor:true,col:col||DUSTC});} }
+  function sparks(pos,n,col,spd,life){ for(let i=0;i<n;i++){const v=new THREE.Vector3(Math.random()-0.5,Math.random()-0.1,Math.random()-0.5).normalize().multiplyScalar(spd*(0.4+Math.random()*0.8)); puff(pos,v,{life:life*(0.6+Math.random()*0.6),s0:0.045,s1:0.015,a:0.55,col,g:-3,drag:1.4});} }
+  function ringAt(pos,o){ if(!fxOn)return; const r=RINGS.find(r=>r.t<0); if(!r)return; r.t=0; r.dur=o.dur||0.5; r.r0=o.r0||0.1; r.r1=o.r1||1; r.a=o.a||0.4; r.bill=!!o.bill; r.delay=o.delay||0; r.m.material.color.setHex(o.col||DUSTC);
+    if(r.bill){scene.add(r.m); r.m.position.copy(pos);} else {fxG.add(r.m); r.m.position.copy(toFloor(pos)).setY(0.016); r.m.rotation.set(-Math.PI/2,0,0);} r.m.visible=false; }
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); coneT=-1; if(cone)cone.visible=false; boltT=-1; if(bolt)bolt.visible=false; }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  const hornFront=()=>pt(bones.head,[0,-0.06,0.2]);
+  function coneAt(){ cone.position.copy(toFloor(new THREE.Vector3(0,0.012,0))); cone.rotation.set(0,-floorYaw,0); cone.visible=fxOn; coneT=0; }
+  function fxStart(name){
+    HOME=name==='slams'?NEAR:FAR; prevT=0; coneI=-1;
+    if(dummy){ const u=dummy.userData; u.z=HOME; u.x=0; u.tip=0; dummy.position.set(0,0,HOME); }
+    if(name==='block'){ boltT=0; bolt.visible=fxOn; }
+    if(name==='spawn'){ cv.style.filter=''; }
+  }
+  function fxContact(name,i){
+    if(name==='slams'){ const heave=i===2; hitFeel(heave?0.6:0.5,0.08,0.6); flash=0.3; // the slam: 18
+      if(dummy&&showTarget){ const u=dummy.userData; u.tip=heave?0.55:0.45; u.z+=0.3; u.x+=heave?0:(i===0?0.18:-0.18); u.mat.emissiveIntensity=feel?0.5:0; }
+      if(fxOn){ const h=hornFront(); sparks(h,heave?10:7,BONE,1.8,0.3); dust(h.clone().setY(0),heave?10:6,1.1,0.35); ringAt(h.clone().setY(0),{r0:0.25,r1:heave?1.0:0.75,dur:0.4,a:0.3}); } }
+    if(name==='block'){ flare=1; hitFeel(0.12,0.02,0.15); boltT=-1; bolt.visible=false; if(fxOn)sparks(hornFront(),8,INDIGO,1.6,0.28); }
+    if(name==='spawn'){ if(fxOn){ const h=pt(bones.fHoofR,[0,0,0]).setY(0); dust(h,6,0.8,0.3); ringAt(h,{r0:0.1,r1:0.5,dur:0.35,a:0.3}); } }
+    if(name==='death'){ hitFeel(0.25,0.03,0.2); if(fxOn){ dust(pt(bones.spine,[0,0,0]).setY(0),10,1.0,0.3); ringAt(pt(bones.spine,[0,0,0]).setY(0),{r0:0.3,r1:1.0,dur:0.45,a:0.25}); } }
+  }
+  let prevT=0;
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time, pv=prevT; prevT=t;
+    if(n==='slams'){ const i=Math.min(2,Math.floor(t/D)); if(i!==coneI&&t-i*D<TEL){ coneI=i; coneAt(); coneT=t-i*D; }
+      // the front hooves stepping in for each slam scuff the floor
+      for(const c of [0,1,2].map(j=>j*D+TEL)) if(pv<c-0.12&&t>=c-0.12&&fxOn){ dust(pt(bones.fHoofL,[0,0,0]).setY(0),2,0.5,0.25); dust(pt(bones.fHoofR,[0,0,0]).setY(0),2,0.5,0.25); } }
+    if(n==='block'&&boltT>=0){ boltT=t; const k=c01(t/0.25), a=new THREE.Vector3(dummy.position.x,0.6,dummy.position.z), b=hornFront(); bolt.position.copy(a.lerp(b,k)); bolt.scale.setScalar(0.16); bolt.material.opacity=fxOn?0.7:0; }
+    if(n==='death'){ if(t>1.2)cv.style.filter='saturate(0.5)'; }
+  }
+  function updateFx(d){
+    const busy=shot&&!shot.done; if(!busy){ HOME=FAR; }
+    flare=Math.max(0,flare-d*3.5); flash=Math.max(0,flash-d*3.2);
+    guard=sel.dead||(busy&&shot.name==='death')?Math.max(0,guard-d*2):0.035+0.015*Math.sin(clockT*2);
+    glowU.value.set(fxOn?guard+0.3*flare:0,0,feel?flash:0,0);
+    guardS.position.copy(hornFront()); guardS.scale.setScalar(0.9*(1+0.5*flare)); guardS.material.opacity=fxOn?1.2*guard+0.3*flare:0;
+    if(coneT>=0){ coneT+=d; const f=coilCurve(coneT/TEL), go=coneT>=TEL, fade=go?1-c01((coneT-TEL)/0.15):1; coneFill.scale.setScalar(Math.max(0.001,R*f));
+      cone.userData.bed.material.opacity=0.07*fade; coneFill.material.opacity=(go?0.22:0.14)*fade; coneEdge.forEach(e=>e.material.opacity=(go?0.6:0.5)*fade);
+      if(fade<=0||!fxOn||(busy&&shot.name!=='slams')||!busy){coneT=-1;cone.visible=false;} }
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.02)p.s.position.y=0.02; const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    if(dummy){ const u=dummy.userData; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4); u.tip=Math.max(0,u.tip-d*1.2); dummy.rotation.x=0.6*u.tip;
+      if(!busy||shot.name!=='slams'||coneT>=0&&coneT<TEL){ u.z+=(HOME-u.z)*Math.min(1,d*2); u.x+=(0-u.x)*Math.min(1,d*2); } dummy.position.z=u.z; dummy.position.x=u.x; }
+  }
+  const STEP={FL:[0,'fHoofL'],HR:[0.02,'hHoofR'],FR:[0.5,'fHoofR'],HL:[0.52,'hHoofL']}; const stepPrev={};
+  function footfalls(){ ['walk','turnL','turnR'].forEach(n=>{ const a=A[n]; if(!a||a.__w<0.6)return; const T=META[n].dur; for(const k in STEP){ const u=((a.time/T-STEP[k][0])%1+1)%1; const key=n+k; if(stepPrev[key]!==undefined&&u<stepPrev[key]&&fxOn)dust(pt(bones[STEP[k][1]],[0,-0.03,0.03]),2,0.4,0.25); stepPrev[key]=u; } }); }
+
+  // ---- the loop
+  let clockT=0, last=performance.now();
+  function travelAt(name,t){ const tr=META[name].travel; if(!tr)return 0; const f=Math.min(tr.length-1,Math.max(0,t*60)); const i=Math.floor(f), j=Math.min(tr.length-1,i+1); return tr[i]+(tr[j]-tr[i])*(f-i); }
+  function tick(d){
+    if(!mixer)return; clockT+=d;
+    const stopped=hitstop>0; if(stopped){hitstop-=d;} const md=stopped?0:d;
+    // weights: the shot owns the body while it plays, then the base fades back in
+    const bn=baseName();
+    if(shot&&!shot.done){ const a=shot.action, m=META[shot.name]; if(a.time>=m.dur-1e-3){ shot.done=true; if(shot.name==='spawn')refresh(); } }
+    if(shot&&shot.done&&!shot.hold&&sel.action&&!sel.dead){ shot.gap+=md; if(shot.gap>0.7)startShot(sel.action); }
+    Object.entries(A).forEach(([k,a])=>{ let to=0; if(shot&&shot.action===a)to=(shot.done&&!shot.hold)?0:1; else if(k===bn)to=(shot&&(!shot.done||shot.hold))?0:1;
+      const tau=(shot&&shot.action===a)?0.18:(to>a.__w?0.18:0.12); a.__w+=(to-a.__w)*Math.min(1,md/tau); if(Math.abs(to-a.__w)<0.002)a.__w=to; a.setEffectiveWeight(a.__w); });
+    rageW+=((rage&&!sel.dead?1:0)-rageW)*Math.min(1,md/0.3); if(rageAct)rageAct.setEffectiveWeight(rageW); const fast=1+(RAGEWALK/WALK-1)*rageW; ['walk','turnL','turnR'].forEach(k=>A[k].timeScale=fast);
+    mixer.update(md);
+    // root motion and floor
+    let dz=0, dyaw=0; dz+=(A.walk.__w)*WALK*fast*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*fast*md;
+    if(shot&&!shot.done){ const tz=travelAt(shot.name,shot.action.time); const dd=tz-shot.tz; shot.tz=tz; dz+=dd; if(dummy&&dd)dummy.userData.z-=dd; }
+    if(dz||dyaw)moveFloor(dz,dyaw);
+    // contacts
+    if(shot){ const m=META[shot.name], t=shot.action.time; m.contact.forEach((c,i)=>{ if(c>0&&shot.prev<c&&t>=c)fxContact(shot.name,i); }); fxOngoing(md); shot.prev=t; }
+    squash=Math.max(0,squash-d*7); const sq=feel?squash:0; model.scale.set(U*(1+0.11*sq),U*(1-0.05*sq),U*(1+0.11*sq));
+    model.updateMatrixWorld(true); footfalls(); updateFx(stopped?d*0.25:d); showPhase();
+  }
+  function frame(now){
+    requestAnimationFrame(frame); const raw=Math.min(0.05,(now-last)/1000); last=now;
+    if(!paused)tick(raw*speed);
+    orbit.update(); shake=Math.max(0,shake-raw*3.2); const sk=feel?shake*shake*0.09:0; shakeV.set((Math.random()-0.5)*sk,(Math.random()-0.5)*sk,(Math.random()-0.5)*sk); cam.position.add(shakeV);
+    renderer.render(scene,cam); cam.position.sub(shakeV);
+  }
+  moveFloor(0,0); requestAnimationFrame(frame);
+})();
+</script>

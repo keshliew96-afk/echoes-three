@@ -1,0 +1,66 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -2.8
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S23",
+  "skill": "rootsnare",
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    -2.0,
+    -2.4
+   ],
+   [
+    1.9,
+    -2.2
+   ],
+   [
+    0.4,
+    -4.4
+   ]
+  ],
+  "secs": 4.4,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(400-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "guides": [
+   {
+    "k": "area",
+    "r": 2.4,
+    "c": [
+     0,
+     -2.8
+    ]
+   }
+  ],
+  "cap": "S23 Rootsnare (v1.3) \u00b7 roots, radius 2.4 u: for 3 s foes inside take 5 a second, are slowed 45% and dragged to the middle \u00b7 then they clench: 12 and held 0.8 s",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ]
+ }
+]

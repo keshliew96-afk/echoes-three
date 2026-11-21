@@ -1,0 +1,76 @@
+[
+ {
+  "name": "basic",
+  "skill": "nova_bloom",
+  "key": null,
+  "aim": [
+   3.2,
+   0
+  ],
+  "allies": [
+   [
+    -1.0,
+    -0.8,
+    0.5
+   ],
+   [
+    -1.0,
+    0.8,
+    0.5
+   ],
+   [
+    -2.6,
+    2.6,
+    1
+   ]
+  ],
+  "pin": true,
+  "seq": [
+   [
+    0.25,
+    "rdown"
+   ],
+   [
+    1.15,
+    "rup"
+   ],
+   [
+    2.1,
+    "key",
+    "q"
+   ],
+   [
+    3.6,
+    "rdown"
+   ],
+   [
+    4.1,
+    "rup"
+   ]
+  ],
+  "cap": "1 Basic attack, latest version \u00b7 hits 1 and 2: a bolt each \u00b7 hit 3 throws the staff into the floor; its gem glows and shoots the nearest foe for up to 5 s \u00b7 she casts with an empty paw (Nova Bloom at 2 s) \u00b7 attacking again calls the staff back",
+  "leg": "dashed: cast range \u00b7 gold: area (guides, not in the game)",
+  "secs": 4.8,
+  "fps": 20,
+  "dummies": [
+   [
+    3.3,
+    -1.1
+   ],
+   [
+    3.6,
+    0
+   ],
+   [
+    3.3,
+    1.1
+   ]
+  ],
+  "guides": [
+   {
+    "k": "range",
+    "r": 5.0
+   }
+  ]
+ }
+]

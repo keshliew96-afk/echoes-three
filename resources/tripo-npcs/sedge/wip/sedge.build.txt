@@ -1,0 +1,9 @@
+idle          {"dur":5.716666666666667,"frames":344,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"root@0.00","under":0,"loopPopDeg":0}
+walk          {"dur":1,"frames":61,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"root@0.00","under":0,"loopPopDeg":0}
+turnL         {"dur":1,"frames":61,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"root@0.00","under":0,"loopPopDeg":0}
+turnR         {"dur":1,"frames":61,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"root@0.00","under":0,"loopPopDeg":0}
+gift          {"dur":2.5,"frames":151,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"root@0.00","under":0,"loopPopDeg":0}
+hurt          {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"root@0.00","under":0,"loopPopDeg":0}
+spawn         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"root@0.00","under":0,"loopPopDeg":0}
+death         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"root@0.00","under":0,"loopPopDeg":0}
+wrote sedge.glb 1.51 MB

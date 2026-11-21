@@ -1,0 +1,9 @@
+idle          {"dur":3,"frames":181,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.004,"loAt":"pawR@1.13","under":0,"loopPopDeg":0}
+walk          {"dur":0.11,"frames":8,"slide_mm":0,"slideAt":"HR@0.05","reach_mm":0,"reachAt":"HL@0.02","lowest":0,"loAt":"pawR@0.07","under":0,"loopPopDeg":0}
+turnL         {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"FL@0.30","reach_mm":0,"reachAt":"FL@0.30","lowest":-0.0021,"loAt":"tail3@0.40","under":0,"loopPopDeg":0}
+turnR         {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"FL@0.28","reach_mm":0,"reachAt":"HR@0.18","lowest":-0.0021,"loAt":"tail3@0.03","under":0,"loopPopDeg":0}
+lunge         {"dur":1.9935897435897436,"frames":121,"slide_mm":0,"slideAt":"FR@0.55","reach_mm":8.3,"reachAt":"FL@0.83","lowest":-0.0123,"loAt":"tail3@1.17","under":3,"loopPopDeg":0}
+hurt          {"dur":0.35,"frames":22,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.004,"loAt":"pawR@0.20","under":0,"loopPopDeg":0}
+spawn         {"dur":0.9,"frames":55,"slide_mm":0,"slideAt":"FL@0.28","reach_mm":0,"reachAt":"FL@0.28","lowest":0.004,"loAt":"pawR@0.40","under":0,"loopPopDeg":0}
+death         {"dur":1.8,"frames":109,"slide_mm":0,"slideAt":"FL@0.15","reach_mm":0,"reachAt":"FL@0.15","lowest":-0.0106,"loAt":"pawR@0.17","under":7,"loopPopDeg":0}
+wrote newt.glb 0.92 MB

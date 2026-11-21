@@ -1,0 +1,112 @@
+<div class="wrap">
+  <div>
+    <h1>Skyhorn from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the Still Spire's warden, the great ibex whose curled horns were cast in bell bronze, with a skeleton and 12 moves added by hand. It walks on four locked hooves, rears and paws before the Horn Rush, slams into the wall at the end of the lane and stands dazed, clashes its horns for the Bell Toll and bounds into the air for the Sky Leap. Its timings are the game's. Pick a move, drag to turn it, and judge the weight and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what it does between attacks, and Going turns it on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death holds it down: press it again and it spawns back in. The bar names the part of the move that is playing. Enraged is its state under 40 percent health: the eyes burn and the horns keep a violet sheen. It stays on over every move until you switch it off; the Enrage action switches it on.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="rage" aria-pressed="false">Enraged</button>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="skyhorn-views.png" alt="The Tripo Skyhorn from the front, its left, the back and its right, before rigging" width="1600" height="500">
+      <p class="note" style="padding-top:12px">It came through whole, in one piece: the white coat with the grey saddle and mane, the long beard, the two bronze horns curled back over the body with whole tips, the bronze bell on a strap round the neck, the amber eyes and four slender legs with dark hooves. It stands exactly on the floor and its face points straight ahead (the eyes mirror each other within 1 mm), so nothing was corrected. Your design sheet shows a violet vein along each horn; the export has none, so the horns' violet sheen on this page is a glow over the whole horn.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>27,466 <small>as sent; boss budget about 28,000</small></dd></div>
+    <div><dt>Bones</dt><dd>29 <small>hips, spine, chest, two in the neck, head, two ears, beard, bell, two in the tail, and 4 in each leg</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.5 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.5 u tall <small>to the top of the horns, at the game's scale of 2.5, beside a 1 u hero</small></dd></div>
+    <div><dt>Length</dt><dd>2.0 u <small>nose to tail; the game's body radius is 0.8 u</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>It breathes, rolls its weight, looks out left then right, flicks its ears and tail, chews once with the beard working, and ends with a short head shake that rings the bell.</td><td>6 s loop</td></tr>
+      <tr><td>Walk</td><td>A walk on four locked hooves, each diagonal pair stepping close together, the head nodding with each forehoof and the bell swinging.</td><td>Game: 1.6 u/s. One stride of 0.96 u every 0.6 s.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Turns on the spot round the middle of its body, the head leading and the legs stepping wide so they never cross.</td><td>Mine: 90 degrees a second. The game turns it to its target at once.</td></tr>
+      <tr><td>Horn Rush</td><td>While the lane fills it rears with both forehooves off the floor, comes down, paws twice with its left forehoof and drops its horns level. On the beat it bursts down the lane in four bounds, throwing aside a hero in its path, and slams horns first into the wall: the head is thrown up and it rocks back. Dazed, it stands with its legs set wide and its head low and swimming while three pale motes circle its head, takes one stagger step, then shakes its head hard so the bell rings, and squares up.</td><td>Game: Ember lane 1.3 u wide from it through the hero to the wall (up to 11 u) for 60 ticks; charges at 12 u/s; 12 damage and a 2.2 u throw; dazed 75 ticks against the wall, taking 25 percent more damage. Here the hero stands 5 u away and the wall is 9 u away.</td></tr>
+      <tr><td>Bell Toll</td><td>It rocks back and lifts its forehooves while the ring fills, throws its head up, then brings its horns down hard on the beat. The horns ring with a violet sheen, the bell glints and the ring bursts round it. It settles back onto its forehooves.</td><td>Game: when a hero is inside 2.6 u, an Ember ring of radius 2.9 u round itself for 50 ticks; 12 damage and a 30 percent slow for 1 s. Clash 2.5 frames, held 3 frames, settle. Here the hero stands 2.2 u away.</td></tr>
+      <tr><td>Sky Leap</td><td>It crouches with its head down while the ring fills on the far hero, springs with its forehooves first, tucks its legs in the air with its ears blown back, reaches its forehooves out to land, and comes down on the ring. Six stone shards fly out from the landing. It rises from the crouch.</td><td>Game: Ember ring of radius 2.0 u on the farthest hero for 72 ticks, the last 36 of them in the air (out of reach); 18 damage; six shards at 4.5 u/s out to 4.2 u, 6 damage each. From the second phase, under 50 percent. Here the hero stands 6 u away and it leaps 6 u.</td></tr>
+      <tr><td>Enrage</td><td>It rears high and beats the air with its forehooves, shakes its horns so the bell rings, comes down on both forehooves together and throws its horns up. The Enraged state stays on after it.</td><td>Mine: 1.85 s. The game has no pose for it; it only marks the boss enraged under 40 percent.</td></tr>
+      <tr><td>Hurt</td><td>The head is knocked aside, the ears flatten and the bell jolts. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Shoved back 0.2 u: the head snaps aside, it staggers back on all four hooves, shakes its head and squares up.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>It grows out of the floor, rises onto its legs, lifts its horns and stamps a forehoof once.</td><td>Game: grow in 7 frames. The rise and the stamp are mine.</td></tr>
+      <tr><td>Death</td><td>A jolt throws its head up, its front knees buckle, its hind legs give and it falls onto its side, and the eyes go dark; the head and horns come down last and the legs lie loose.</td><td>2.7 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker takes every point of the model (16,254 of them) through every frame of every move (1,375 frames) and looks for five things. Sizes are in u; it is 2.5 u tall.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>As the rear came down before the rush, the front legs jumped 54 to 60 degrees. At the Sky Leap's landing the legs jumped 112 degrees, because the hooves were sent to the floor while the body was still 0.4 u up; at its take-off the front legs jumped 60 degrees as the body sprang. The beard jumped 70 to 76 degrees on every strike. Standing in the idle, the forelegs were at full stretch and jumped 19 degrees each time a hoof went up on its toe.</td><td>Only where the move is meant to be fast: the front legs turn 21 to 33 degrees in the frame the horns hit the wall, the toll clashes and the heavy hit lands; the hind thighs turn 30 degrees as they push off into the leap; the ears and beard flick up to 37 degrees as it springs and lands. Elsewhere nothing over 13 degrees.</td></tr>
+      <tr><td>Any part under the floor</td><td>In the death the chest sank 0.03 u into the floor as it lay down.</td><td>A hoof dips up to 0.02 u for a few frames as it stamps in the Spawn and the Enrage, and the chest and a foreleg 0.015 u as it lands on its side in the death.</td></tr>
+      <tr><td>One part pushed through another</td><td>In both turns the front feet crossed into each other.</td><td>The turns are clean. Still touching: the beard sinks into the ruff on the chest, up to 0.14 u, when the head drops low (fur into fur); the raised forelegs brush the bell, up to 0.1 u, in the rear and the Enrage; and the legs lie into each other, up to 0.15 u, on its side in the death.</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>The belly and the brisket stretched to 15 to 25 times their size, because the lower legs pulled skin from the body with them. The skin at the back of a front fetlock tore open as the hooves came down in the Enrage.</td><td>The lower legs now let go of the body skin gradually, and the fetlock blends from hoof to leg over 0.07 u, so both hold. The checker still names one sliver of skin inside the right hind shin (0.6 mm across as modelled) that grows to about 13 mm; it cannot be seen.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>The second paw before the rush ran past the start of the charge and the leg snapped.</td><td>None. Every move eases in and out, and the loops meet themselves.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Planted hooves</td><td>0 mm of sliding on any planted hoof, in any move. A raised hoof falls short of where it is aimed by up to 0.04 u as it reaches for the floor in the Sky Leap and the Enrage. In the death the hooves let go of the floor on purpose as it falls.</td></tr>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns)</td><td>0 degrees.</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model: the eyes mirror each other about the middle line within 1 mm, so nothing was corrected.</td></tr>
+      <tr><td>Hard parts</td><td>The horns ride the head and the bell rides its own bone on the neck strap, so neither bends. The bend is in the neck, the back, the legs, the ears, the beard and the tail.</td></tr>
+      <tr><td>Feet</td><td>The legs come straight down under the body with the hooves pointing forward, so there is no splay.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ol style="margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:60ch">
+        <li><strong>The rear before the rush.</strong> It rears and paws while the lane fills (mine; the game only says it paws the floor). It could stand and paw only, which reads less dramatic but keeps it low.</li>
+        <li><strong>The dazed motes.</strong> Three pale motes circle its head while it is dazed, so the punish window reads at a glance. They are a page stand-in; the game shows no mark for dazed today, so keeping them would need the freeze lifted.</li>
+        <li><strong>The enrage.</strong> The rear, the beating hooves and the horns thrown up are mine.</li>
+        <li><strong>The turn.</strong> Mine, 90 degrees a second; the game turns it at once.</li>
+        <li><strong>The death.</strong> On its side with the legs loose. It could fold down onto its belly with its legs under it instead, like the Stag.</li>
+        <li><strong>The horns' violet vein.</strong> The design sheet has one; the export does not. It could be painted onto the texture, or you can re-export.</li>
+        <li><strong>The chained rush.</strong> Enraged, a rush that misses the wall chains straight into a second one. This page shows a single rush into the wall.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Rough so far</h2>
+      <ul>
+        <li>The wall at the end of the lane is a low, see-through stand-in block, so it does not hide the dazed pose.</li>
+        <li>The game backs it off to make room when the hero stands at its horns; the page does not show that step.</li>
+        <li>The hero is a grey stand-in that is thrown aside but does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for its power, grey stone for the shards. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>

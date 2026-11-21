@@ -1,0 +1,69 @@
+[
+ {
+  "key": null,
+  "aim": [
+   3.2,
+   0
+  ],
+  "pin": true,
+  "fps": 15,
+  "secs": 6.0,
+  "pre": 0.25,
+  "skill": null,
+  "allies": [
+   [
+    2.4,
+    1.2,
+    0.35
+   ],
+   [
+    -2.6,
+    -2.0,
+    1
+   ],
+   [
+    -2.6,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    3.4,
+    -0.9
+   ],
+   [
+    3.7,
+    0.1
+   ]
+  ],
+  "seq": [
+   [
+    0.25,
+    "rdown"
+   ],
+   [
+    1.15,
+    "rup"
+   ]
+  ],
+  "cap": "T27 Rooted Staff (Harvest, tier III) · the planted staff stores 50% of its own bolts as Sap and pours to allies within 1.8 u of it · the hurt Tank is out of her reach but beside the staff",
+  "live": "'Sap '+Math.round(window.__echoes.content.world().player.reviewSap||0)+' / '+(window.__echoes.content.world().player.reviewSapCap||50)",
+  "guides": [
+   {
+    "k": "area",
+    "r": 1.8,
+    "c": [
+     1.74,
+     0
+    ]
+   },
+   {
+    "k": "range",
+    "r": 1.8
+   }
+  ],
+  "leg": "",
+  "name": "tal_T27"
+ }
+]

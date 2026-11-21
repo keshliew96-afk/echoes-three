@@ -1,0 +1,47 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S15",
+  "aim": [
+   0,
+   -3
+  ],
+  "skill": "kindred_shield",
+  "allies": [
+   [
+    0,
+    -2.0,
+    0.4
+   ],
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 7.6,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 3.6
+   }
+  ],
+  "cap": "S15 Mossgrowth"
+ }
+]

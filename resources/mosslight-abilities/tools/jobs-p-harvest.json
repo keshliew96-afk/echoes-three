@@ -1,0 +1,62 @@
+[
+ {
+  "name": "path_harvest",
+  "skill": "lantern_flurry",
+  "key": "hold-right",
+  "aim": [
+   0,
+   -3
+  ],
+  "allies": [
+   [
+    -1.1,
+    0.6,
+    0.35
+   ],
+   [
+    2.8,
+    2.6,
+    1
+   ],
+   [
+    -2.8,
+    2.6,
+    1
+   ]
+  ],
+  "pin": true,
+  "dummies": [
+   [
+    -0.9,
+    -3.0
+   ],
+   [
+    0,
+    -3.3
+   ],
+   [
+    0.9,
+    -3.0
+   ]
+  ],
+  "seq": [
+   [
+    1.4,
+    "key",
+    "q"
+   ]
+  ],
+  "cap": "Harvest keystone, Reap (T25) \u00b7 30% of her damage is stored in the gem as Sap (up to 50) \u00b7 within 1.8 u the gem pours it into the most hurt ally, up to 8 every 0.5 s",
+  "leg": "",
+  "live": "'Sap '+Math.round(window.__echoes.content.world().player.reviewSap||0)+' / 50'",
+  "secs": 6.0,
+  "fps": 15,
+  "guides": [
+   {
+    "k": "area",
+    "r": 1.8
+   }
+  ],
+  "pre": 0.25
+ }
+]

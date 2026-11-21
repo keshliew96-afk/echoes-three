@@ -1,0 +1,71 @@
+idle      floor clean
+          jaw into neck1                14.8 mm at 5.25  (7 verts, 60 frames)
+          stretch x6.04 at 5.10 on neck1
+walk      floor hHoofL -5mm@0.07, hHoofR -4mm@0.42
+          jaw into neck1                14.6 mm at 0.20  (7 verts, 43 frames)
+          stretch x6.22 at 0.58 on hShinR
+turnL     floor hHoofL -5mm@0.08, hHoofR -4mm@0.43
+          jaw into neck1                16.7 mm at 0.70  (4 verts, 43 frames)
+          stretch x6.02 at 0.55 on hShinR
+turnR     floor hHoofL -5mm@0.08, hHoofR -4mm@0.43
+          jaw into neck1                11.6 mm at 0.70  (4 verts, 43 frames)
+          stretch x6.02 at 0.57 on hShinR
+rush      floor head -28mm@2.05, fHoofL -9mm@1.58, fHoofR -9mm@1.58, hHoofL -6mm@0.92
+          chest into fCannonL           27.1 mm at 1.52  (2 verts, 1 frames)
+          fHoofR into hCannonR          24.8 mm at 1.07  (22 verts, 5 frames)
+          hHoofR into fHoofR            23.0 mm at 1.03  (5 verts, 7 frames)
+          fHoofL into hCannonL          22.9 mm at 1.27  (11 verts, 4 frames)
+          chest into head               22.6 mm at 1.60  (50 verts, 161 frames)
+          fHoofR into hHoofR            22.2 mm at 1.07  (19 verts, 6 frames)
+          chest into hShinR             20.9 mm at 2.35  (16 verts, 73 frames)
+          chest into jaw                20.2 mm at 0.33  (23 verts, 36 frames)
+          snaps: fUpperL 34 deg@1.53 (beside 4), fUpperL 26 deg@1.50 (beside 4), fForeL 22 deg@0.87 (beside 0), fCannonR 15 deg@0.87 (beside 2), fCannonL 13 deg@0.90 (beside 3)
+          stretch x9.34 at 0.90 on neck1
+call      floor fHoofL -10mm@0.35
+          jaw into neck1                 9.1 mm at 0.88  (3 verts, 3 frames)
+          snaps: tail1 14 deg@0.52 (beside 2), tail1 11 deg@0.55 (beside 3)
+          stretch x6.93 at 0.58 on neck1
+enrage    floor fHoofR -8mm@1.20, fHoofL -8mm@1.20
+          heart into head               20.6 mm at 0.27  (8 verts, 20 frames)
+          chest into jaw                20.5 mm at 0.23  (34 verts, 7 frames)
+          head into chest               19.0 mm at 0.45  (55 verts, 22 frames)
+          chest into head               18.9 mm at 0.57  (71 verts, 28 frames)
+          jaw into chest                17.7 mm at 0.23  (32 verts, 8 frames)
+          jaw into neck1                14.2 mm at 0.07  (7 verts, 13 frames)
+          jaw into heart                 7.6 mm at 0.57  (2 verts, 5 frames)
+          snaps: fHoofR 10 deg@0.95 (beside 1)
+          stretch x8.00 at 0.57 on neck1
+block     floor clean
+          chest into head               19.2 mm at 0.03  (6 verts, 3 frames)
+          jaw into neck1                14.4 mm at 0.30  (3 verts, 19 frames)
+          stretch x4.94 at 0.03 on neck1
+hurt      floor clean
+          jaw into neck1                15.7 mm at 0.08  (4 verts, 12 frames)
+          stretch x3.91 at 0.05 on neck1
+heavyHit  floor fHoofL -4mm@0.10
+          jaw into neck1                26.2 mm at 0.07  (16 verts, 50 frames)
+          chest into head               19.2 mm at 0.40  (6 verts, 8 frames)
+          chest into jaw                15.0 mm at 0.43  (16 verts, 3 frames)
+          jaw into chest                13.7 mm at 0.45  (7 verts, 4 frames)
+          snaps: fCannonR 18 deg@0.05 (beside 1)
+          stretch x6.43 at 0.20 on hShinR
+spawn     floor fHoofR -8mm@0.87, fHoofL -8mm@0.87
+          chest into head               33.1 mm at 0.17  (102 verts, 32 frames)
+          heart into head               23.0 mm at 0.17  (2 verts, 20 frames)
+          heart into jaw                22.0 mm at 0.12  (11 verts, 15 frames)
+          jaw into chest                18.6 mm at 0.38  (57 verts, 12 frames)
+          jaw into heart                18.1 mm at 0.12  (31 verts, 14 frames)
+          chest into jaw                17.9 mm at 0.47  (14 verts, 11 frames)
+          head into chest               17.2 mm at 0.27  (67 verts, 25 frames)
+          jaw into neck1                13.6 mm at 0.53  (5 verts, 11 frames)
+          stretch x8.02 at 0.00 on neck1
+death     floor hHoofR -8mm@1.32, fHoofR -5mm@1.25
+          chest into head               28.0 mm at 1.48  (29 verts, 36 frames)
+          head into chest               24.9 mm at 1.38  (42 verts, 36 frames)
+          jaw into neck1                20.2 mm at 2.35  (13 verts, 144 frames)
+          chest into fHoofR             18.7 mm at 0.82  (4 verts, 7 frames)
+          fHoofR into fHoofL            16.1 mm at 1.03  (3 verts, 3 frames)
+          fCannonR into fHoofL          14.5 mm at 1.07  (1 verts, 2 frames)
+          hips into hCannonR             9.3 mm at 1.02  (3 verts, 6 frames)
+          hShinL into hShinR             6.5 mm at 1.08  (2 verts, 1 frames)
+          stretch x8.34 at 0.98 on hShinR

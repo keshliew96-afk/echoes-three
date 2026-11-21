@@ -1,0 +1,145 @@
+{
+ "results": [
+  {
+   "leg": "heal",
+   "name": "an ally under 70% out of Nova Bloom's 1.4 u: the bloom is held and the bot shoots the foe",
+   "ok": true,
+   "info": {
+    "slot": 0,
+    "presses": [],
+    "basic": true
+   }
+  },
+  {
+   "leg": "heal",
+   "name": "the same ally inside 1.4 u: Nova Bloom goes out",
+   "ok": true,
+   "info": {
+    "presses": [
+     {
+      "kind": "skill_1",
+      "slot": 0
+     }
+    ]
+   }
+  },
+  {
+   "leg": "heal",
+   "name": "Mending Bolt (5 u) reaches the ally at 3 u: it takes the aim and the bolt goes out",
+   "ok": true,
+   "info": {
+    "presses": [
+     {
+      "kind": "skill_2",
+      "slot": 1
+     }
+    ],
+    "aim": {
+     "x": 3,
+     "z": 0
+    }
+   }
+  },
+  {
+   "leg": "heal",
+   "name": "out of the bolt's reach too: no heal, the aim and the basic go back to the foe",
+   "ok": true,
+   "info": {
+    "presses": []
+   }
+  },
+  {
+   "leg": "heal",
+   "name": "the leader seat (AI Healer under a human) is unchanged: it still aims the hurt ally",
+   "ok": true,
+   "info": {
+    "aim": {
+     "x": 6.5,
+     "z": 0
+    }
+   }
+  },
+  {
+   "leg": "heal",
+   "name": "a carried Level I (seed 5): the bot keeps shooting on ticks an ally is hurt",
+   "ok": true,
+   "info": {
+    "hurtTicks": 2426,
+    "firedHurt": 1548
+   }
+  },
+  {
+   "leg": "heal",
+   "name": "and no nova heal goes out with nobody hurt inside it",
+   "ok": true,
+   "info": {
+    "wastedNova": 0
+   }
+  },
+  {
+   "leg": "revive",
+   "name": "party down, a foe by the bodies, the Healer alone at 45%: it goes for a body",
+   "ok": true,
+   "info": {
+    "reviveHeld": false,
+    "move": {
+     "x": 0,
+     "z": 1
+    },
+    "threat": 0.6
+   }
+  },
+  {
+   "leg": "revive",
+   "name": "and starts the channel",
+   "ok": true,
+   "info": {
+    "reviveTargetId": 2,
+    "hp": 45
+   }
+  },
+  {
+   "leg": "revive",
+   "name": "it holds the channel at 30% HP (the floor is 20%)",
+   "ok": true,
+   "info": {
+    "hp": 30
+   }
+  },
+  {
+   "leg": "revive",
+   "name": "the leader seat keeps its 60% start (no channel at 45%)",
+   "ok": true,
+   "info": {}
+  },
+  {
+   "leg": "seats",
+   "name": "the Thornmother's Briar Charge: seats standing in the lane at the warning mostly leave it before she charges",
+   "ok": true,
+   "info": {
+    "started": 15,
+    "caughtAtStart": 32,
+    "caughtAtEnd": 1
+   }
+  },
+  {
+   "leg": "seats",
+   "name": "the Stag's Antler Quake: at least two in five seats standing in the ring at the warning leave it before it lands",
+   "ok": true,
+   "info": {
+    "started": 18,
+    "caughtAtStart": 37,
+    "caughtAtEnd": 19
+   }
+  },
+  {
+   "leg": "replay",
+   "name": "a carried Level I (seed 7, 12000 ticks) replays to the same hash",
+   "ok": true,
+   "info": {
+    "a": "1ef2878a",
+    "b": "1ef2878a"
+   }
+  }
+ ]
+}

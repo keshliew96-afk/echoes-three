@@ -1,0 +1,167 @@
+diff --git a/src/main.js b/src/main.js
+index f82e746..fddc2e6 100644
+--- a/src/main.js
++++ b/src/main.js
+@@ -927,7 +927,7 @@ function frame(now) {
+   // Title backdrop framing (src/app/titlecam.js): after every layer placed
+   // the camera, before it draws.
+   app.beforeRender(now);
+-  stage.render();
++  if (!globalThis.__reviewSkipDraw) stage.render(); // REVIEW-ONLY: the recorder draws only the frame it shoots
+   // Boot warm-up: the render layers park one of every transient rig in the
+   // scene for a few frames so the driver pays for its first draw here, in
+   // camp, instead of on the frame a wave starts (see render/warmup.js).
+diff --git a/src/render/allies/index.js b/src/render/allies/index.js
+index fd6134d..68dea48 100644
+--- a/src/render/allies/index.js
++++ b/src/render/allies/index.js
+@@ -735,7 +735,7 @@ export function createAllyLayer({ stage, world, bus, cosmetic, scene = null }) {
+       const st = rigState.get(a.classId);
+       const ix = a.px + (a.x - a.px) * alpha;
+       const iz = a.pz + (a.z - a.pz) * alpha;
+-      c.group.position.set(ix, 0, iz);
++      c.group.position.set(ix, a.reviewY || 0, iz); // REVIEW-ONLY: reviewY lifts an ally (Bodyguard swap)
+ 
+       if (a.hp > 0 && (a.faceX !== undefined)) {
+         let dy = Math.atan2(a.faceX, a.faceZ) - st.yaw;
+diff --git a/src/render/critters/index.js b/src/render/critters/index.js
+index cb3c6b9..232781e 100644
+--- a/src/render/critters/index.js
++++ b/src/render/critters/index.js
+@@ -24,6 +24,7 @@
+ //             └ torso  THE single lean pivot at hip height: pitch, roll, yaw.
+ //                      Head, arms and props are all children, so a lean can
+ //                      never separate the head from the shoulders.
++import { attachTripoTank, tripoOn } from './tripoTank.js'; // REVIEW-ONLY
+ import { Color, Group, Vector3 } from 'three';
+ import { CLASS_ACCENTS } from '../../data/palette.js';
+ import { groundRing, groundShadow, desatTarget, setInkViewport } from './common.js';
+@@ -76,6 +77,13 @@ export function createCritter(classId, { cosmetic = null } = {}) {
+   };
+ 
+   const built = build(rig, trackAccent);
++  // REVIEW-ONLY local hook (never committed): ?tripo=1 draws Stonehide's Tripo model.
++  const tr = tripoOn() && classId === 'tank' ? attachTripoTank({ yawGroup, rig, group }) : null;
++  if (tr && typeof window !== 'undefined') {
++    // every Tank rig built (camp, arena, portraits) hears the review cues
++    (window.__tripoTankRigs ||= []).push(tr);
++    window.__tripoTankCue = (k, ev) => window.__tripoTankRigs.forEach((r) => r.cue(k, ev));
++  }
+   const M = built.metrics;
+ 
+   // Ring sized so its bright band (0.74-0.85 of the radius) clears the widest
+@@ -115,6 +123,7 @@ export function createCritter(classId, { cosmetic = null } = {}) {
+     // freeze together.
+     dt = built.hold(dt);
+     t += dt;
++    if (tr) tr.update(dt);
+     const P = driver.update(dt);
+     const c = P.collapse;
+     const upright = 1 - c;
+diff --git a/src/render/enemies/index.js b/src/render/enemies/index.js
+index dfce8f1..a8acaaf 100644
+--- a/src/render/enemies/index.js
++++ b/src/render/enemies/index.js
+@@ -389,12 +389,13 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
+           // ELITE AFFIXES: a Splitting elite's halves are smaller copies.
+           r.build.group.scale.setScalar(e.scale);
+         }
++        if (window.__reviewDummy) window.__reviewDummy(r, e); // REVIEW-ONLY
+         rigs.set(e.id, r);
+         root.add(r.build.group);
+       }
+       const ix = e.px + (e.x - e.px) * alpha;
+       const iz = e.pz + (e.z - e.pz) * alpha;
+-      r.build.group.position.set(ix, 0, iz);
++      r.build.group.position.set(ix, e.reviewY || 0, iz);
+ 
+       // Yaw: shortest-arc smoothing toward the sim facing.
+       const targetYaw = Math.atan2(e.faceX ?? 0, e.faceZ ?? 1);
+diff --git a/src/render/skillfx/class/index.js b/src/render/skillfx/class/index.js
+index c2a6651..d39b827 100644
+--- a/src/render/skillfx/class/index.js
++++ b/src/render/skillfx/class/index.js
+@@ -388,7 +388,7 @@ export function createClassFx({ stage, world, bus, cosmetic }) {
+     if (ev.status !== 'taunt') return;
+     const e = byId(ev.id);
+     const src = ev.src != null ? byId(ev.src) : null;
+-    if (e && src) line(src.x, src.z, e.x, e.z, { color: PARCH, width: 0.04, life: 0.3, opacity: 0.85, y: 0.8 });
++    if (e && src && !globalThis.__reviewNoTauntLine) line(src.x, src.z, e.x, e.z, { color: PARCH, width: 0.04, life: 0.3, opacity: 0.85, y: 0.8 }); // REVIEW-ONLY flag: Colossus draws its own gold beams
+   });
+   bus.on('technique_pulse', (ev) => {
+     if (ev.seat === undefined) return;
+diff --git a/src/scenes/arena.js b/src/scenes/arena.js
+index 01fd18c..1015ba0 100644
+--- a/src/scenes/arena.js
++++ b/src/scenes/arena.js
+@@ -78,6 +78,8 @@ import {
+ import { makeFlameSprite, createEmberField } from '../env/flame.js';
+ import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
+ import { variantLayoutRng } from '../env/layout.js';
++import { createReviewStonehideFx } from '../render/critters/reviewStonehideFx.js'; // REVIEW-ONLY
++import { createReviewFlatStage } from '../render/critters/reviewFlatStage.js'; // REVIEW-ONLY
+ import { createAfterimages } from '../render/critters/afterimage.js';
+ import { installBandGuard, bandGuardInfo, guardSubtree } from '../env/bandguard.js';
+ import { compileAsyncSafe } from '../render/precompile.js';
+@@ -651,6 +653,10 @@ export function createArenaScene(stage, toggles, ctx) {
+   // The world froze (the ally layer tells the party's own rigs).
+   bus.on('hitstop', (ev) => healerRig.cue('hitstop', ev));
+   bus.on('room_enter', () => healerRig.cue('spawn'));
++  const reviewSH = /[?&]tripo=1\b/.test(location.search) ? createReviewStonehideFx({ bus, root, world }) : null; // REVIEW-ONLY
++  if (reviewSH) window.__reviewCam = stage.camera; // REVIEW-ONLY: the recorder narrows the view for his clips
++  const reviewFlat = reviewSH && /[?&]flat=1\b/.test(location.search) ? createReviewFlatStage({ stage, getActive: () => active }) : null; // REVIEW-ONLY
++  if (reviewFlat) window.__reviewDummy = reviewFlat.dress; // REVIEW-ONLY
+ 
+   // --- Entity contact shadows: same treatment for every sim body in the arena
+   // (training dummies today, enemies when they land), so nothing ever floats.
+@@ -1706,6 +1712,8 @@ export function createArenaScene(stage, toggles, ctx) {
+     // contact, B2), so it takes the raw dt: the render hold on top would
+     // freeze it at the press and hold it twice.
+     healerRig.update(dt);
++    if (reviewSH) reviewSH.update(dt); // REVIEW-ONLY
++    if (reviewFlat) reviewFlat.update(); // REVIEW-ONLY
+     for (const a of allies) a.update(dt);
+ 
+     // Dash afterimages: one ghost per SMEAR_TICK_OFFSETS entry of dash travel
+diff --git a/src/sim/allies.js b/src/sim/allies.js
+index 12ec33d..1f41513 100644
+--- a/src/sim/allies.js
++++ b/src/sim/allies.js
+@@ -316,7 +316,7 @@ export function createAllySystem({
+   // Living, hittable hostiles (boar / mantis / dummy). Retreating enemies drop
+   // `hittable` on the clear tick, so they leave the set for free (§13).
+   const hostiles = () =>
+-    registry.all().filter((e) => e.faction === 'hostile' && e.hittable && e.hp > 0);
++    globalThis.__reviewQuietAllies ? [] : registry.all().filter((e) => e.faction === 'hostile' && e.hittable && e.hp > 0); // REVIEW-ONLY: quiet allies in a clip
+ 
+   caster = createAllyCaster({
+     registry,
+diff --git a/src/sim/world.js b/src/sim/world.js
+index b6c1032..242969d 100644
+--- a/src/sim/world.js
++++ b/src/sim/world.js
+@@ -52,6 +52,7 @@ import { seatDisplacement } from './allycast.js';
+ import { createHazardSystem, createLayoutSystem } from './hazards.js';
+ import { createInteractableSystem } from './interactables.js';
+ import { MENACE } from '../core/constants.js';
++import { installStonehideReview } from './reviewStonehide.js'; // REVIEW-ONLY
+ // @gnt:M4b IMPORTS end
+ 
+ // §10: a Downed character crawls at 0.8 u/s (movement only, cannot act).
+@@ -952,6 +953,8 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
+     // PARTY: the replicated builds (a guest's probes / HUD reads).
+     'partyView', 'partyState', 'partyPools', 'partyVerdicts', 'partyAiLog',
+   ]);
++  // REVIEW-ONLY (never committed): Stonehide's kit 1.1 for his ability page (?tripo=1).
++  const reviewSH = typeof location !== 'undefined' && /[?&]tripo=1\b/.test(location.search) ? installStonehideReview({ registry, events, combat, getTick: () => currentTick }) : null;
+   function step(tick, snapshot, seatInputs) {
+     useMovementState(movement);
+     if (replicaMode) {
+@@ -976,6 +979,7 @@ export function createWorld({ rng, registry, events, harness = true, requestHits
+     }
+     continuousPhase(snapshot);
+     discretePhase(snapshot);
++    if (reviewSH) reviewSH.step(tick); // REVIEW-ONLY
+   }
+   // Human seats' E presses resolve inside the interactables pass, together
+   // with the Healer's, sorted by party index (sim/interactables.js

@@ -1,0 +1,97 @@
+idle      floor clean
+          stretch x3.43 at 2.62 on tail1
+walk      floor clean
+          shinR into weedR              36.7 mm at 0.22  (32 verts, 7 frames)
+          tail1 into weedR              25.1 mm at 0.15  (24 verts, 17 frames)
+          shinL into tail2              18.6 mm at 0.58  (26 verts, 3 frames)
+          wingL into tail2              17.3 mm at 0.08  (3 verts, 24 frames)
+          tarsusR into hips             17.0 mm at 0.23  (6 verts, 4 frames)
+          tarsusL into hips             16.0 mm at 0.70  (10 verts, 4 frames)
+          tarsusR into weedR            15.7 mm at 0.23  (10 verts, 2 frames)
+          wingL into tarsusL            14.1 mm at 0.58  (11 verts, 9 frames)
+          stretch x9.54 at 0.80 on thighL
+turnL     floor clean
+          tail1 into weedR              25.9 mm at 0.15  (35 verts, 19 frames)
+          wingL into tail2              17.0 mm at 0.08  (3 verts, 21 frames)
+          tail1 into tarsusR            14.4 mm at 0.28  (7 verts, 9 frames)
+          tail1 into tarsusL            13.6 mm at 0.73  (8 verts, 6 frames)
+          tarsusR into tarsusL          13.3 mm at 0.07  (5 verts, 10 frames)
+          shinL into tarsusR            13.2 mm at 0.03  (11 verts, 10 frames)
+          weedR into tarsusR            13.2 mm at 0.37  (20 verts, 2 frames)
+          tarsusL into tarsusR          12.9 mm at 0.87  (8 verts, 7 frames)
+          stretch x5.79 at 0.62 on thighL
+turnR     floor clean
+          tail1 into weedR              18.5 mm at 0.12  (10 verts, 11 frames)
+          wingL into tail2              17.0 mm at 0.08  (6 verts, 20 frames)
+          tail1 into tarsusR            14.2 mm at 0.28  (7 verts, 6 frames)
+          tarsusL into tarsusR          13.9 mm at 0.55  (10 verts, 9 frames)
+          tail1 into tarsusL            13.8 mm at 0.73  (8 verts, 9 frames)
+          tarsusL into shinR            13.5 mm at 0.48  (14 verts, 7 frames)
+          shinL into tarsusR            13.2 mm at 0.42  (17 verts, 6 frames)
+          shinL into shinR              13.0 mm at 0.42  (12 verts, 8 frames)
+          stretch x4.28 at 0.00 on wingL
+spear     floor clean
+          hips into plume2              36.6 mm at 1.22  (2 verts, 2 frames)
+          plume2 into thighR            36.3 mm at 0.82  (28 verts, 4 frames)
+          tarsusR into hips             36.3 mm at 1.50  (17 verts, 5 frames)
+          plume2 into thighL            31.7 mm at 0.82  (9 verts, 1 frames)
+          thighR into plume2            30.6 mm at 1.22  (7 verts, 3 frames)
+          crest2 into neck4             22.1 mm at 1.20  (5 verts, 1 frames)
+          shinR into tail2              21.5 mm at 1.12  (67 verts, 25 frames)
+          shinL into tail2              21.5 mm at 0.83  (76 verts, 18 frames)
+          snaps: shinL 57 deg@1.27 (beside 16), crest1 34 deg@0.77 (beside 4), crest2 34 deg@0.77 (beside 7), tail2 26 deg@1.27 (beside 4), plume1 23 deg@0.77 (beside 2)
+          stretch x38.06 at 1.25 on weedR
+peck      floor clean
+          thighR into plume2            24.3 mm at 0.97  (14 verts, 23 frames)
+          hips into plume2              21.2 mm at 0.97  (1 verts, 9 frames)
+          neck3 into crest1             19.7 mm at 1.08  (8 verts, 24 frames)
+          crest1 into neck2             14.0 mm at 1.05  (7 verts, 1 frames)
+          crest1 into neck3             12.0 mm at 1.05  (11 verts, 5 frames)
+          tail1 into tarsusR             9.2 mm at 0.22  (1 verts, 2 frames)
+          neck2 into crest1              7.5 mm at 1.02  (1 verts, 3 frames)
+          wingR into tail2               7.5 mm at 0.72  (2 verts, 1 frames)
+          snaps: plume1 30 deg@0.93 (beside 6), crest1 29 deg@0.83 (beside 6), plume2 21 deg@0.95 (beside 2)
+          stretch x14.11 at 1.10 on weedR
+wingbeat  floor clean
+          thighR into plume2            28.3 mm at 0.70  (3 verts, 19 frames)
+          stretch x35.41 at 0.67 on weedR
+submerge  floor head -1657mm@0.72, jaw -1648mm@0.72, neck4 -1374mm@0.72, crest1 -1370mm@0.72
+          wingL into shinL              34.2 mm at 0.85  (54 verts, 57 frames)
+          crest2 into neck4             32.5 mm at 1.07  (8 verts, 10 frames)
+          tarsusR into tail1            27.7 mm at 1.95  (7 verts, 31 frames)
+          thighR into weedR             26.8 mm at 1.08  (5 verts, 5 frames)
+          weedR into tail1              24.5 mm at 1.22  (16 verts, 9 frames)
+          wingR into shinR              24.3 mm at 0.73  (17 verts, 56 frames)
+          shinL into tail2              23.7 mm at 1.95  (46 verts, 50 frames)
+          shinR into tail2              22.8 mm at 1.92  (40 verts, 61 frames)
+          snaps: tarsusR 78 deg@1.12 (beside 0), tarsusL 78 deg@1.12 (beside 0), shinR 70 deg@1.12 (beside 0), shinL 70 deg@1.12 (beside 0), tarsusR 52 deg@0.23 (beside 10)
+          stretch x35.67 at 1.92 on weedR
+hurt      floor clean
+          wingL into tail2              21.4 mm at 0.23  (40 verts, 12 frames)
+          wingR into tail2              15.6 mm at 0.20  (3 verts, 6 frames)
+          stretch x3.99 at 0.33 on tail1
+heavyHit  floor clean
+          tarsusR into hips             25.1 mm at 0.13  (9 verts, 3 frames)
+          thighR into plume2            16.5 mm at 0.48  (2 verts, 3 frames)
+          weedL into hips               16.4 mm at 0.97  (11 verts, 8 frames)
+          weedL into tail2              15.8 mm at 0.88  (18 verts, 4 frames)
+          tail1 into tarsusR            15.4 mm at 0.12  (40 verts, 5 frames)
+          hips into tarsusR             13.2 mm at 0.08  (1 verts, 1 frames)
+          weedR into tail2              13.0 mm at 0.93  (5 verts, 4 frames)
+          plume2 into thighR            12.9 mm at 0.40  (28 verts, 5 frames)
+          stretch x29.46 at 0.22 on wingL
+spawn     floor clean
+          tail1 into tarsusL            14.0 mm at 0.12  (9 verts, 13 frames)
+          tail1 into tarsusR            13.7 mm at 0.12  (8 verts, 14 frames)
+          shinR into tail2              10.0 mm at 0.12  (3 verts, 11 frames)
+          shinL into tail2               9.0 mm at 0.13  (2 verts, 3 frames)
+          snaps: crest2 27 deg@0.78 (beside 7)
+          stretch x8.67 at 0.40 on wingL
+death     floor clean
+          neck3 into crest1             20.4 mm at 0.20  (7 verts, 46 frames)
+          tail1 into tarsusL            13.4 mm at 0.67  (11 verts, 7 frames)
+          tail1 into tarsusR             8.1 mm at 0.57  (4 verts, 1 frames)
+          footR into thighR              7.0 mm at 1.07  (1 verts, 76 frames)
+          shinL into tail2               6.4 mm at 0.67  (1 verts, 1 frames)
+          snaps: crest2 10 deg@0.17 (beside 2), crest2 10 deg@0.13 (beside 2)
+          stretch x24.74 at 1.05 on wingL

@@ -1,0 +1,39 @@
+<!doctype html><html><body>
+<script type="importmap">{"imports":{"three":"./three.module.js","three/addons/":"./jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const P=new URLSearchParams(location.search);
+const g=await new GLTFLoader().loadAsync(P.get('f'));const root=g.scene;
+const J={};root.traverse(o=>{J[o.name]=o});
+const mixer=new THREE.AnimationMixer(root);
+const wp=n=>J[n].getWorldPosition(new THREE.Vector3());
+const segD=(p,a,b)=>{const ab=b.clone().sub(a),t=Math.max(0,Math.min(1,p.clone().sub(a).dot(ab)/ab.lengthSq()));return p.distanceTo(a.clone().addScaledVector(ab,t));};
+const out={};
+for(const clip of g.animations){mixer.stopAllAction();const act=mixer.clipAction(clip);act.play();
+ const m={}; const lo=(k,v,t)=>{if(!(k in m)||v<m[k][0])m[k]=[+v.toFixed(3),+t.toFixed(2)];}; const hi=(k,v,t)=>{if(!(k in m)||v>m[k][0])m[k]=[+v.toFixed(3),+t.toFixed(2)];};
+ const N=Math.round(clip.duration*60); let prevFoot=null, slide={L:0,R:0};
+ for(let i=0;i<=N;i++){const t=Math.min(i/60,clip.duration-1e-4);mixer.setTime(t);root.updateMatrixWorld(true);
+  const W=J.weapon; const blade=[[0.11,0.095],[0.06,0.17],[0.0,0.27],[-0.04,0.38],[-0.055,0.5],[-0.04,0.62],[0.0,0.73],[0.06,0.83],[0.11,0.906]].map(v=>new THREE.Vector3(v[0],v[1],0).applyMatrix4(W.matrixWorld));
+  const tail=[wp('tail1'),wp('tail1')]; const hips=wp('hips'),chest=wp('chest'),head=wp('head');
+  const up=new THREE.Vector3(0,1,0).transformDirection(J.head.matrixWorld), fw=new THREE.Vector3(0,0,1).transformDirection(J.head.matrixWorld);
+  const skull=head.clone().addScaledVector(up,0.08).addScaledVector(fw,0.01), muzzle=skull.clone().addScaledVector(fw,0.07).addScaledVector(up,-0.02);
+  const chestTop=chest.clone().add(new THREE.Vector3(0,1,0).transformDirection(J.chest.matrixWorld).multiplyScalar(0.06));
+  for(const b of blade){lo('bladeFloor',b.y,t);
+   lo('bladeTail',b.distanceTo(tail[0]),t);
+   lo('bladeHead',Math.min(b.distanceTo(skull),segD(b,skull,muzzle)),t);
+   lo('bladeLegs',Math.min(segD(b,wp('legL'),wp('footL')),segD(b,wp('legR'),wp('footR'))),t);
+   lo('bladeFreeArm',Math.min(segD(b,wp('upperarmR'),wp('forearmR')),segD(b,wp('forearmR'),wp('handR'))),t);
+   lo('bladeTorso',segD(b,hips,chestTop),t);}
+  const hl=wp('handR'),fl=wp('forearmR'),hr=wp('handL');
+  lo('freePawTorso',segD(hl,hips,chestTop),t); lo('freeElbowTorso',segD(fl,hips,chestTop),t); lo('swordPawTorso',segD(hr,hips,chestTop),t);
+  lo('freePawHead',Math.min(hl.distanceTo(skull),segD(hl,skull,muzzle)),t); lo('swordPawHead',Math.min(hr.distanceTo(skull),segD(hr,skull,muzzle)),t);
+  lo('freePawFloor',hl.y,t); lo('tailFloor',Math.min(...tail.map(v=>v.y)),t); lo('tailLegs',1,t);
+  const sole=n=>[[0,-0.06,-0.02],[0,-0.06,0.09]].map(s=>new THREE.Vector3(...s).applyMatrix4(J[n].matrixWorld));
+  const sL=sole('footL'),sR=sole('footR'); lo('feetFloor',Math.min(...sL.map(v=>v.y),...sR.map(v=>v.y)),t); hi('feetAir',Math.min(Math.min(...sL.map(v=>v.y)),Math.min(...sR.map(v=>v.y))),t);
+  lo('headY',head.y,t); lo('hipsY',hips.y,t); hi('feetApart',wp('footL').distanceTo(wp('footR')),t); lo('feetApartMin',wp('footL').distanceTo(wp('footR')),t);
+  lo('earEar',wp('earL').distanceTo(wp('earR')),t);
+ }
+ out[clip.name]=m;}
+window.result=out;window.done=true;
+</script></body></html>

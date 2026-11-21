@@ -1,0 +1,43 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "tal_T32",
+  "skill": "nova_bloom",
+  "allies": [
+   [
+    -1.2,
+    -0.45,
+    0.5
+   ],
+   [
+    1.2,
+    -0.45,
+    0.5
+   ],
+   [
+    0,
+    1.25,
+    0.5
+   ]
+  ],
+  "selfHp": 0.8,
+  "seq": [
+   [
+    0.4,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 6.0,
+  "guides": [],
+  "cap": "T32 Perennial (Evergreen, tier V) · anyone she heals regrows 1% of maximum health a second for 6 s (a vine ring) · Nova Bloom heals her and two allies, then the small ticks follow",
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' · ');})()"
+ }
+]

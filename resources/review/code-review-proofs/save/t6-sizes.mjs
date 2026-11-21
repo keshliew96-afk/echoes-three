@@ -1,0 +1,11 @@
+const R = '/home/claude/echoes-three/src/';
+const J = await import(R + 'data/journal.js');
+const { RELIC_IDS, CURSES } = await import(R + 'sim/relics.js');
+const { ENCOUNTER_IDS } = await import(R + 'sim/encounters.js');
+const { AFFIX_IDS } = await import(R + 'sim/affixes.js');
+console.log('enemy', J.ENEMY_JOURNAL_IDS.length, 'boss', J.BOSS_JOURNAL_IDS.length, 'relic', RELIC_IDS.length, 'curse', Object.keys(CURSES).length, 'event', ENCOUNTER_IDS.length, 'affix', AFFIX_IDS.length);
+const long = [...RELIC_IDS, ...Object.keys(CURSES), ...J.ENEMY_JOURNAL_IDS, ...J.BOSS_JOURNAL_IDS, ...ENCOUNTER_IDS].filter((id) => !/^[a-z0-9_:-]{1,40}$/.test(id));
+console.log('ids failing STORY_ID regex:', long);
+const { UNLOCK_IDS, DEEDS } = await import(R + 'data/unlocks.js');
+console.log('unlocks', UNLOCK_IDS.length, 'deeds', Object.keys(DEEDS).length);
+console.log(Object.keys(J).join(','));

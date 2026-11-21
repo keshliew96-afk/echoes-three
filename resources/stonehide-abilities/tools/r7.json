@@ -1,0 +1,442 @@
+[
+{
+"name": "S48",
+"cap": "Slab Throw \u00b7 bounces through 4 foes and flies back",
+"secs": 3.6,
+"tank": [
+-1.5,
+0
+],
+"aim": [
+0.8,
+0.2
+],
+"foes": [
+[
+"rotcap",
+0.8,
+0.2
+],
+[
+"rotcap",
+1.8,
+-1.3
+],
+[
+"rotcap",
+2.2,
+1.2
+],
+[
+"rotcap",
+0.2,
+1.8
+]
+],
+"holdFoes": 3.6,
+"seq": [
+[
+0.5,
+"cast",
+"slab_throw",
+[
+0.8,
+0.2
+]
+]
+]
+},
+{
+"name": "S50",
+"cap": "Stone Cubs \u00b7 run to foes on an ally, bite, turn them to him",
+"secs": 6.0,
+"tank": [
+-1.2,
+-0.5
+],
+"aim": [
+2,
+0
+],
+"allies": [
+[
+9,
+6
+],
+[
+1.8,
+0.8
+]
+],
+"hp": {
+"3": 0.6
+},
+"foes": [
+[
+"rotcap",
+2.7,
+1.4
+],
+[
+"rotcap",
+2.7,
+0.1
+]
+],
+"holdFoes": 0.3,
+"seq": [
+[
+0.5,
+"cast",
+"stone_cubs",
+[
+2,
+0
+]
+]
+]
+},
+{
+"name": "S33",
+"cap": "Iron Quills \u00b7 a quilled foe that falls sends its quills on",
+"secs": 3.6,
+"tank": [
+-0.9,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"boar",
+1.9,
+0
+],
+[
+"boar",
+3.4,
+1.0
+],
+[
+"boar",
+3.6,
+-0.6
+],
+[
+"boar",
+3.0,
+-1.8
+],
+[
+"boar",
+-0.2,
+1.2
+],
+[
+"boar",
+-0.4,
+-1.2
+]
+],
+"holdFoes": 3.6,
+"setup": "window.__recFoes[0].e.hp=8",
+"seq": [
+[
+0.5,
+"cast",
+"iron_quills",
+[
+2,
+0
+]
+]
+]
+},
+{
+"name": "S19b",
+"cap": "Kick the stone \u00b7 Heavy Slam sends the Growlstone rolling",
+"secs": 4.2,
+"tank": [
+-2.6,
+0
+],
+"aim": [
+2,
+0
+],
+"foes": [
+[
+"rotcap",
+0.2,
+0.25
+],
+[
+"rotcap",
+1.4,
+-0.3
+],
+[
+"rotcap",
+2.5,
+0.35
+]
+],
+"holdFoes": 1.6,
+"seq": [
+[
+0.3,
+"cast",
+"growlstone",
+[
+-1.6,
+0
+]
+],
+[
+1.4,
+"cast",
+"heavy_slam",
+[
+2,
+0
+]
+]
+],
+"fov": 34
+},
+{
+"name": "S55",
+"cap": "Badger Toss \u00b7 grabs a foe and throws it into a pack",
+"secs": 3.4,
+"tank": [
+-1.6,
+0
+],
+"aim": [
+2.3,
+0
+],
+"foes": [
+[
+"rotcap",
+-0.4,
+0.1
+],
+[
+"rotcap",
+2.0,
+0.5
+],
+[
+"rotcap",
+2.3,
+-0.6
+],
+[
+"rotcap",
+2.8,
+0.2
+]
+],
+"holdFoes": 3.4,
+"seq": [
+[
+0.5,
+"cast",
+"badger_toss",
+[
+2.3,
+0
+]
+]
+]
+},
+{
+"name": "S55b",
+"cap": "Badger Toss \u00b7 against the wall: wall slam",
+"secs": 3.4,
+"tank": [
+-1.5,
+-5.0
+],
+"aim": [
+-1.5,
+-9
+],
+"foes": [
+[
+"rotcap",
+-1.5,
+-6.0
+]
+],
+"holdFoes": 0.4,
+"seq": [
+[
+0.5,
+"cast",
+"badger_toss",
+[
+-1.5,
+-9
+]
+]
+]
+},
+{
+"name": "S20",
+"cap": "Fracture (passive) \u00b7 every hit adds a Crack, at 4 the foe shatters",
+"secs": 6.0,
+"loud": true,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"allies": [
+[
+-2.2,
+1.5
+],
+[
+-2.3,
+-1.3
+]
+],
+"foes": [
+[
+"rotcap",
+1.3,
+0.5,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+1.4,
+-0.5,
+{
+"hpMul": 20
+}
+],
+[
+"rotcap",
+1.9,
+0.1,
+{
+"hpMul": 20
+}
+]
+],
+"holdFoes": 6.0,
+"seq": [
+[
+0.1,
+"cast",
+"fracture"
+],
+[
+0.5,
+"cast",
+"bellow",
+[
+2,
+0
+]
+],
+[
+1.5,
+"combo"
+],
+[
+3.4,
+"combo"
+]
+]
+},
+{
+"name": "S45",
+"cap": "Colossus \u00b7 8 s a stone giant",
+"secs": 10.0,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"hp": {
+"1": 0.8
+},
+"foes": [
+[
+"rotcap",
+2.2,
+0.6,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+2.4,
+-0.7,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+-1.9,
+1.0,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+0.4,
+-2.3,
+{
+"hpMul": 25
+}
+]
+],
+"holdFoes": 0.6,
+"seq": [
+[
+0.5,
+"cast",
+"colossus",
+[
+2,
+0
+]
+],
+[
+1.9,
+"combo"
+],
+[
+4.2,
+"cast",
+"heavy_slam",
+[
+2,
+0
+]
+],
+[
+5.4,
+"combo"
+]
+]
+}
+]

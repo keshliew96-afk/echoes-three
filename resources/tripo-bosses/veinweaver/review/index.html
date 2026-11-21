@@ -1,0 +1,453 @@
+<title>Tripo Vein Weaver Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a review bench, the same one the hero pages use. The live model on the left, the model as sent on the right, facts and notes under. */
+:root{
+  --bg:#f3f2ee; --panel:#fbfaf7; --fg:#23262b; --muted:#666b73; --line:#d9d6cd;
+  --stage:#c9cbc6; --stage2:#b4b7b0; --accent:#2f7d57; --accent-fg:#ffffff; --warn:#9a5b12; --chip:#e8e6df; --phase:#7a5fc4;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0}
+.lede{color:var(--muted);margin:4px 0 0;max-width:65ch}
+.bench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.25fr);gap:16px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.pane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,var(--stage),var(--stage2));aspect-ratio:4/3;max-width:100%}
+.stage canvas{transition:filter .9s;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--fg);opacity:.7;pointer-events:none}
+.stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:14px}
+.sent img{display:block;width:100%;height:auto}
+.controls{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lab{font-size:12px;color:var(--muted);width:52px;flex:none}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--fg);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+button:disabled{opacity:.38;cursor:not-allowed;border-color:transparent}
+.layers{margin:0 0 0 58px;font-size:13px;font-weight:500;color:var(--accent);min-height:1.5em}
+.rule{margin:0 0 0 58px;font-size:12px;color:var(--muted);max-width:62ch}
+.phases{margin:0 0 0 58px;display:flex;gap:2px;height:22px;position:relative;max-width:520px}
+.phases span{flex:var(--w) 1 0;min-width:0;background:var(--chip);font-size:11px;line-height:22px;text-align:center;color:var(--muted);overflow:hidden;white-space:nowrap;border-radius:3px}
+.phases span.on{background:var(--phase);color:var(--panel)}
+.phases i{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);left:0;border-radius:1px}
+@media (max-width:480px){.layers,.rule,.phases{margin-left:0}}
+.note{font-size:13px;color:var(--muted);padding:0 14px 12px;margin:0}
+.wrap>.note{padding:0;max-width:78ch}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0}
+.facts div{background:var(--panel);padding:12px 14px}
+.facts dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.facts small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.cols ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:60ch}
+.rough{color:var(--warn)}
+.audit{overflow-x:auto;margin:0}.audit table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}.audit th,.audit td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}.audit th{font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Vein Weaver from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the Heart's third boss, the one that comes in Level IV once the Hollow Cantor and the Geode Colossus have fallen, with a skeleton and 12 moves added by hand. She walks on eight locked feet in two sets of four, as the game's rig walks her, and casts her binding thread from the spinnerets at the tip of her abdomen, over her back and down the lane. The veins over her abdomen beat with her heart. Her timings are the game's. Pick a move, drag to turn her, and judge the weight and the hit. Nothing in the game has changed.</p>
+    <p class="note"><strong>Eight legs, not six.</strong> Your export has six legs. The game's Vein Weaver has eight, so I copied her back pair, turned each copy 48 degrees further back and set it in the gap behind, as I proposed. If you would rather have six, or re-export her from Tripo with eight, say so and I will rig that instead.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what she does between attacks, and Going turns her on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death holds her down: press it again and she spawns back in. The bar names the part of the move that is playing, in the game's own words. Enraged is her state under 40 percent health: the veins burn, the heart beats faster and the crystals on her legs light. It stays on over every move until you switch it off; the Enrage action switches it on.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="rage" aria-pressed="false">Enraged</button>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="veinweaver-views.png" alt="The Tripo Vein Weaver from the front, her left, the back and her right, before rigging, with six legs" width="1600" height="500">
+      <p class="note" style="padding-top:12px">It came through whole, in one piece: the dark crimson body, the violet abdomen with its veins and crystal spires, the cluster of violet eyes, two hooked fangs, the spinnerets at the tail, and six legs with a violet crystal at each knee and each tip. She stands exactly on the floor and her face points straight ahead, so nothing was corrected. The one change is the added back pair of legs.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>29,210 <small>27,246 as sent, plus 1,964 for the added pair (each copy thinned to half); boss budget about 28,000</small></dd></div>
+    <div><dt>Bones</dt><dd>39 <small>body, head, abdomen, spinnerets, two fangs, and 4 in each of the 8 legs (femur, tibia, tarsus, tip)</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.7 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>1.7 u tall <small>to the tip of the tallest spire, at the game's scale of 2.4, beside a 1 u hero</small></dd></div>
+    <div><dt>Width</dt><dd>2.4 u <small>leg tip to leg tip; the game's body radius is 0.85 u</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>She breathes through the abdomen, which swells with each heartbeat, sways a little on her legs and works her fangs. The front legs lift and tap the floor in turn, tasting the threads.</td><td>4 s loop</td></tr>
+      <tr><td>Walk</td><td>An alternating tetrapod, as the game's rig walks her: four legs step together (left 1, right 2, left 3, right 4) while the other four hold, then they swap. The body glides level with a small bob on each set, and the abdomen swings a little against it.</td><td>Game: 1.25 u/s. One stride of 0.5 u every 0.4 s.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Turns on the spot in the same two sets of four, the head leading and the abdomen trailing.</td><td>Mine: 90 degrees a second. The game turns her to her target at once.</td></tr>
+      <tr><td>Bind</td><td>While the lane fills she draws back off it, tips her abdomen up so the spinnerets point over her back, and lifts her two front legs. On the beat the front legs whip down, she lunges, and the thread shoots from the spinnerets over her head and down the lane. A hero it catches is bound: a ring of thread round them. She hauls the thread in hand over hand, her front legs reaching and pulling in turn, and the hero is dragged in to the end of the leash. Then she settles.</td><td>Game: Ember lane 0.9 u wide and up to 8 u long for 44 ticks; 9 damage; bound 2.5 s on a 3.6 u leash (3.0 enraged). Cast 2.5 frames, held 3 frames, haul 0.45 s (the game's draw), settle. Here the hero stands 6 u away.</td></tr>
+      <tr><td>Heartbeat Slam</td><td>She rears up on her back legs with the front four raised and her fangs spread, while the ring fills and the veins brighten. On the beat she drops and slams the front four down wide, the heart beats, the ring bursts and four vein patches spread out round her. She steps her front legs back in one by one.</td><td>Game: Ember ring of radius 2.8 u round herself for 60 ticks; 18 damage; four vein patches on a 2.1 u ring, radius 0.7 u, 4 s, 40 percent slow. Slam 2.5 frames, held 3 frames, settle. Here the hero stands 2.2 u away.</td></tr>
+      <tr><td>Brood Sacs</td><td>Unwarned: the abdomen swells and lifts as she loads it, a heave, and she flicks it up over her back and dips her head. Three egg sacs fly from the spinnerets, one onto the hero and one to either side, each falling into its Ember ring and bursting into a web.</td><td>Game: no warning; the game's rig loads it over the last 30 ticks, heaves 1.5 frames, throws 2.5 frames. Then three Ember rings of radius 1.1 u for 64 ticks, on the hero and 2.2 u to either side; 10 damage; webs 4 s, 50 percent slow.</td></tr>
+      <tr><td>Enrage</td><td>She rears and drums the air with her front legs, left, right, left, right, her fangs clattering and the abdomen shaking, then slams down. The Enraged state stays on after it.</td><td>Mine: 2 s. The game has no pose for it: the veins burn and the heart quickens.</td></tr>
+      <tr><td>Hurt</td><td>The head is knocked aside, the fangs flare and the abdomen jolts. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Shoved back 0.3 u: the head snaps aside, the body is thrown back, and she scrambles back on all eight legs in two quick sets, braces with her fangs spread and squares up.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>She grows out of the floor curled up with her legs folded under her. The legs unfold and plant one after another, she rises, rears with her front legs up and slams them down once.</td><td>Game: grow in 7 frames. The unfold and the slam are mine.</td></tr>
+      <tr><td>Death</td><td>The veins go dark. A jolt rears her up with her front legs thrown up, she lurches to one side, her legs give one after another and she drops onto her belly. Then all eight legs curl in under her, the way a dead spider's do, and the abdomen sags.</td><td>2.8 s, then she stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker takes every point of the model (17,778 of them) through every frame of every move (1,075 frames) and looks for five things. Sizes are in u; she is 1.7 u tall.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>Hauling the thread in the Bind, the right front leg jumped 47 degrees as its haul started and again as it went back to the floor.</td><td>Only on the strike, where the move is meant to be fast: the front legs and the back shins turn 11 to 43 degrees in the frame the Heartbeat Slam, the Enrage and the Spawn come down. Elsewhere nothing over 10 degrees.</td></tr>
+      <tr><td>Any part under the floor</td><td>In five moves (the Heartbeat Slam, the Enrage, the heavy hit, the Spawn and the Death) the whole body sank out of sight, down to 12 u under the floor: the legs could not reach, and lowering a spider whose hips sit level with her ankles only puts the feet further out. In the Bind and the Brood Sacs the abdomen dipped 0.23 u into the floor, because it was tipped the wrong way.</td><td>Only the fangs, by 0.03 u, for one frame as she drops onto her belly in the death. The body never drops to reach a foot now; each pose is set so all eight feet reach, and the abdomen tips up.</td></tr>
+      <tr><td>One part pushed through another</td><td>In both turns the front legs crossed into the middle legs, up to 0.06 u. In the Spawn the folded back legs went 0.04 u into the abdomen. In the death the third and fourth legs curled into each other, 0.08 u.</td><td>The turns step faster with shorter sweeps, and the folded back legs tuck out from under the abdomen, so both are clean. In the death the third and fourth legs still touch, up to 0.08 u at the knees, as all eight curl in.</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>The waist between the body and the abdomen stretched to 6 times its size as she flicked the abdomen over her back in the Brood Sacs and swelled it in the Heartbeat Slam.</td><td>The flick is smaller (35 degrees) and the swell is about half, so the waist holds. The checker still names one sliver of skin at the top of the right front leg (0.3 mm across as modelled) that grows to 13 mm when the leg lifts; it cannot be seen.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>The walk took one frame further than the front legs reach and the leg snapped back.</td><td>None. Every move eases in and out, and the loops meet themselves.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Planted feet</td><td>0 mm of sliding on any planted foot, in any move. A foot raised in the air falls short of where it is aimed by up to 0.07 u in the Heartbeat Slam's rear, where the leg is at full stretch.</td></tr>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns)</td><td>0 degrees.</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model: the eyes and fangs mirror each other about the middle line, so nothing was corrected.</td></tr>
+      <tr><td>Hard parts</td><td>The crystal spires ride the abdomen, the leg crystals ride their own segment and the fangs are rigid, so no crystal bends. The bend is at the hips, knees and ankles of each leg, the waist and the neck.</td></tr>
+      <tr><td>Feet</td><td>The legs keep the model's spread. A spider's legs splay by nature, so the no-splay rule for humanoids does not apply.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>The legs.</strong> Eight, made by copying her back pair (my pick, the game's count), six as you sent her, or a Tripo re-export with eight.</li>
+        <li><strong>The thread's path.</strong> It leaves the spinnerets at her tail, arcs over her back and head and goes down the lane. The game's rig shoots it the same way. It could come from her fangs instead, which reads faster but is not how spiders spin.</li>
+        <li><strong>The haul.</strong> She pulls the thread in hand over hand with her front legs. The game only pulls the hero in.</li>
+        <li><strong>The enrage.</strong> The drumming and the slam are mine; the game only burns the veins and quickens the heart.</li>
+        <li><strong>The death.</strong> Belly down with her legs curled under her. She could flip onto her back instead, legs curled up, which reads as dead faster from the game's camera.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Rough so far</h2>
+      <ul>
+        <li>The added legs are copies, so they carry the same crystals and wear as the back pair.</li>
+        <li>She is about 1,200 triangles over the boss budget because of the added pair.</li>
+        <li>The crystal spires do not move on their own, and the abdomen's swell is a scale, not a breath.</li>
+        <li>The thread is a thin line, the same width at every zoom.</li>
+        <li>The hero is a grey stand-in that does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for her power, pale silk for the webs. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="veinweaver-model.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=2.4;
+  const VIOLET=0x8F63EE, PEAK=0xE6DDF8, EMBER=0xFF5A36, DUST=0x8a8580, SILK=0xd8d2e4, VEIN=0x5b2a66;
+  const LABEL={idle:'Idle',walk:'Walk',turnL:'Turn left',turnR:'Turn right',bind:'Bind',slam:'Heartbeat Slam',brood:'Brood Sacs',enrage:'Enrage',hurt:'Hurt',heavyHit:'Heavy hit',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['bind','slam','brood','enrage','heavyHit'];
+  const NEAR=3.6, BIND_AT=6.0, SLAM_AT=2.2, BROOD_AT=4.5; let HOME=NEAR; // where the hero stands, in u, in front of it
+  const WALK=1.25, TURN=90*Math.PI/180, LANE_T=44/60, LANE_LEN=8.0, LANE_W=0.9, LEASH=3.6, BOUND=2.5, RING_R=2.8, VEIN_RING=2.1, VEIN_R=0.7, SAC_R=1.1, SAC_SIDE=2.2, SAC_T=64/60, WEB_R=1.1;
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){$('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(2.5,6,4.5); scene.add(sun);
+  const gridG=new THREE.Group(), fxG=new THREE.Group(); gridG.matrixAutoUpdate=false; fxG.matrixAutoUpdate=false; scene.add(gridG,fxG);
+  const grid=new THREE.GridHelper(48,48,0x4a4f48,0x4a4f48); grid.material.transparent=true; grid.material.opacity=0.85; grid.position.y=0.002; gridG.add(grid);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.16,depthWrite:false}));
+  blob.rotation.x=-Math.PI/2; blob.scale.set(1.25,1.0,1); blob.position.set(0,0.004,0.0); scene.add(blob);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,120);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=2.5; orbit.maxDistance=34;
+  const VIEWS={Close:{p:[4.6,2.4,6.2],t:[0,0.7,0.6]},'Game zoom':{p:[0,12.5,11.2],t:[0,0.4,2.4]},Side:{p:[10,1.6,0.8],t:[0,0.7,0.6]},Front:{p:[0.6,1.6,9.5],t:[0,0.7,0]},Back:{p:[-3.4,2.8,-7.6],t:[0,0.7,0.4]},Top:{p:[0,15,0.4],t:[0,0.3,1.6]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  // ---- controls
+  function group(id,names,onPick,active){const row=$(id);const btns={};names.forEach(n=>{const b=document.createElement('button');b.textContent=LABEL[n]||n;b.dataset.k=n;b.setAttribute('aria-pressed',String(n===active));b.onclick=()=>onPick(n,b);row.appendChild(b);btns[n]=b;});return btns;}
+  const sel={base:'idle',going:'Forward',action:null,dead:false};
+  let speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, feel=true, fxOn=true, showTarget=true, helper=null, rage=false;
+  const B={};
+  B.moves=group('moves',['idle','walk','spawn','death'],k=>pick(k),'idle');
+  B.dirs=group('dirs',['Forward','Turn left','Turn right'],k=>{sel.going=k;if(sel.base!=='walk'&&!sel.dead)sel.base='walk';refresh();},'Forward');
+  B.acts=group('acts',[...ACTIONS,'hurt'],k=>pick(k),null);
+  B.speeds=group('speeds',['0.1×','0.25×','0.5×','1×'],(k)=>{speed=parseFloat(k);Object.values(B.speeds).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'1×');
+  B.views=group('views',Object.keys(VIEWS),k=>{setView(k);Object.values(B.views).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'Close');
+  const toggle=(id,get,set)=>{const b=$(id);b.onclick=()=>{set(!get());b.setAttribute('aria-pressed',String(get()));};b.setAttribute('aria-pressed',String(get()));};
+  toggle('rage',()=>rage,v=>rage=v); toggle('feel',()=>feel,v=>feel=v); toggle('fx',()=>fxOn,v=>{fxOn=v;if(!v)clearFx();}); toggle('target',()=>showTarget,v=>{showTarget=v;if(dummy)dummy.visible=v;});
+  toggle('bones',()=>!!(helper&&helper.visible),v=>{if(helper)helper.visible=v;}); toggle('pause',()=>paused,v=>paused=v);
+  function setRage(v){ rage=v; $('rage').setAttribute('aria-pressed',String(v)); }
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, hurtAct=null, shot=null, dummy=null;
+  const gA={value:new THREE.Vector4(0.3,0.3,0.12,0)}, gB={value:new THREE.Vector4(0.1,0.1,0,0)};
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    // glow masks: x the eyes; y the veins over the abdomen; z the crystal spires (1), the crystals on the legs (0.75) and the spinnerets (0.5)
+    mesh.material.onBeforeCompile=sh=>{Object.assign(sh.uniforms,{uA:gA,uB:gB});
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uA;\nuniform vec4 uB;')
+        .replace('#include <emissivemap_fragment>',['#include <emissivemap_fragment>',
+          'float ez=vMask.z;',
+          'float spireM=step(0.95,ez), xtalM=step(0.7,ez)*(1.0-step(0.8,ez)), spinM=step(0.45,ez)*(1.0-step(0.55,ez));',
+          'totalEmissiveRadiance+=vec3(0.75,0.4,1.0)*uA.x*vMask.x+vec3(0.85,0.35,1.0)*uA.y*vMask.y+vec3(0.7,0.45,1.0)*uA.z*spinM+vec3(0.55)*uA.w;',
+          'totalEmissiveRadiance+=vec3(0.65,0.4,1.0)*uB.x*xtalM+vec3(0.6,0.4,1.0)*uB.y*spireM;'].join('\n'));};
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; scene.add(helper);
+    mixer=new THREE.AnimationMixer(model);
+    const UPPER=/^(hips|head|abdomen|spinner|fangL|fangR)\./;
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1);
+    makeFx(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,rage,hipY:+bones.hips.getWorldPosition(new THREE.Vector3()).y.toFixed(2),tele:[laneG.visible,ringG.visible,SACS.filter(s=>s.g.visible).length],thread:[thread.visible,+threadK.toFixed(2),bound],sacs:SACS.filter(s=>s.sac.visible).length,patches:PATCHES.filter(p=>p.t>=0).length,webs:WEBS.filter(p=>p.t>=0).length,dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,t:shot&&+shot.action.time.toFixed(3),fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glowA:gA.value.toArray().map(v=>+v.toFixed(2)),glowB:gB.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+  // ---- what plays
+  function baseName(){return sel.dead?null:sel.base==='walk'?({'Forward':'walk','Turn left':'turnL','Turn right':'turnR'})[sel.going]:'idle';}
+  function startShot(name,hold){ if(!A[name])return; if(shot){shot.action.__w=0;shot.action.setEffectiveWeight(0);}
+    const a=A[name]; a.reset(); a.paused=false; a.__w=1; a.setEffectiveWeight(1); Object.entries(A).forEach(([k,x])=>{if(x!==a){x.__w=0;x.setEffectiveWeight(0);}});
+    shot={name,action:a,prev:0,hold:!!hold,done:false,gap:0,tz:0}; fxStart(name); }
+  function pick(k){
+    if(!mixer)return;
+    if(k==='idle'||k==='walk'){ if(sel.dead)return; sel.base=k; }
+    else if(k==='spawn'){ sel.dead=false; sel.action=null; cv.style.filter=''; startShot('spawn'); }
+    else if(k==='death'){ if(sel.dead){ sel.dead=false; cv.style.filter=''; startShot('spawn'); } else { sel.dead=true; sel.action=null; startShot('death',true); } }
+    else if(k==='hurt'){ if(sel.dead)return; hurtAct.reset(); hurtAct.setEffectiveWeight(1); hurtAct.play(); hitFeel(0.3,0.04,0.5); flash=0.35; if(fxOn)sparks(headPt(),6,PEAK,1.6,0.25); }
+    else { if(sel.dead)return; sel.action=sel.action===k?null:k; if(sel.action&&(!shot||shot.done||shot.name!==k))startShot(k); }
+    refresh();
+  }
+  function refresh(){
+    Object.values(B.moves).forEach(b=>{const k=b.dataset.k; b.setAttribute('aria-pressed',String(k==='death'?sel.dead:k==='spawn'?!!(shot&&shot.name==='spawn'&&!shot.done):!sel.dead&&sel.base===k)); b.disabled=sel.dead&&(k==='idle'||k==='walk'); b.textContent=k==='death'&&sel.dead?'Death (press to spawn)':LABEL[k];});
+    Object.values(B.dirs).forEach(b=>{b.setAttribute('aria-pressed',String(sel.base==='walk'&&!sel.dead&&b.dataset.k===sel.going)); b.disabled=sel.dead;});
+    Object.values(B.acts).forEach(b=>{b.setAttribute('aria-pressed',String(sel.action===b.dataset.k)); b.disabled=sel.dead;});
+  }
+  function showPhase(){
+    const el=$('layers'), ph=$('phases'), tag=$('clipname'); const bn=baseName(); const rg=rage?' · enraged':'';
+    if(shot&&!shot.done){ const m=META[shot.name], t=shot.action.time; let cur=''; m.phases.forEach(p=>{if(t>=p[1])cur=p[0];});
+      el.textContent=LABEL[shot.name]+(cur?' · '+cur:'')+' · '+t.toFixed(2)+' s'+rg; tag.textContent=LABEL[shot.name];
+      if(ph.dataset.name!==shot.name){ph.dataset.name=shot.name; ph.innerHTML=m.phases.map((p,i)=>{const e=i+1<m.phases.length?m.phases[i+1][1]:m.dur;return '<span style="--w:'+Math.max(0.04,(e-p[1])).toFixed(3)+'">'+p[0]+'</span>';}).join('')+'<i></i>'; ph.hidden=!m.phases.length;}
+      const spans=ph.querySelectorAll('span'); m.phases.forEach((p,i)=>spans[i]&&spans[i].classList.toggle('on',p[0]===cur)); const mk=ph.querySelector('i'); if(mk)mk.style.left=(100*Math.min(1,t/m.dur)).toFixed(1)+'%';
+    } else { el.textContent=sel.dead?'Down. Press Death again to spawn it back in.':(LABEL[bn]||'')+(sel.action?' · '+LABEL[sel.action]+' repeats':'')+rg; tag.textContent=sel.dead?'Death':LABEL[bn]||''; ph.hidden=true; ph.dataset.name=''; }
+  }
+
+  // ---- floor motion: the floor moves under it, it stays in the middle of the stage
+  const floorPos=new THREE.Vector3(); let floorYaw=0;
+  const Y=new THREE.Vector3(0,1,0), tmp=new THREE.Vector3(), tmp2=new THREE.Vector3();
+  function moveFloor(dz,dyaw){
+    floorPos.z-=dz; if(dyaw){ floorPos.applyAxisAngle(Y,-dyaw); floorYaw-=dyaw; }
+    fxG.matrix.makeRotationY(floorYaw).setPosition(floorPos);
+    const l=floorPos.clone().applyAxisAngle(Y,-floorYaw); l.x-=Math.round(l.x); l.z-=Math.round(l.z); l.applyAxisAngle(Y,floorYaw); gridG.matrix.makeRotationY(floorYaw).setPosition(l);
+  }
+  const pt=(bone,v)=>tmp.set(v[0],v[1],v[2]).applyMatrix4(bone.matrixWorld).clone();
+  const toFloor=(w)=>w.clone().applyMatrix4(fxG.matrix.clone().invert());
+  const toWorld=(p)=>p.clone().applyMatrix4(fxG.matrix);
+
+  // ---- hit feel: freeze, squash (the game's boss contact squash: 11% wider, 5% shorter), shake, flash
+  let hitstop=0, squash=0, shake=0, flash=0; const shakeV=new THREE.Vector3();
+  function hitFeel(sh,stop,sq){ if(!feel)return; hitstop=Math.max(hitstop,stop); squash=Math.max(squash,sq); shake=Math.max(shake,sh); }
+  // ---- effects (dim on purpose; Ember marks the floor warnings, Violet is its power, pale silk for the webs)
+  const FXP=[], RINGS=[], MARKS=[], PATCHES=[], WEBS=[], SACS=[]; let dotTex=null, laneG=null, ringG=null, thread=null, boundRing=null;
+  let eyes=1, eyesTo=1, veins=0.35, veinsTo=0.35, spin=0.2, spinTo=0.2, xtal=0.15, laneT=-1, ringT=-1, beatPh=0, threadK=0, bound=0, boundT=-1;
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<200;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<16;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false}); scene.add(m);}
+    const eMat=(op)=>new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:op,depthWrite:false,side:THREE.DoubleSide});
+    const flatRing=(r)=>{const g=new THREE.Group(); const e=new THREE.Mesh(new THREE.RingGeometry(r-0.04,r,72),eMat(0.6)); const f=new THREE.Mesh(new THREE.CircleGeometry(r,72),eMat(0.12)); e.rotation.x=f.rotation.x=-Math.PI/2; e.position.y=0.002; g.add(e,f); g.userData={e,f}; g.visible=false; fxG.add(g); return g;};
+    // Heartbeat Slam: an Ember ring of radius 2.8 u round herself
+    ringG=flatRing(RING_R);
+    // Bind: an Ember lane 0.9 u wide and up to 8 u long from her front, with a fill that runs down it
+    const flat=(w,l,x,z,op)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,l),eMat(op)); m.rotation.x=-Math.PI/2; m.position.set(x,0,z); return m;};
+    laneG=new THREE.Group(); const L=LANE_LEN, hw=LANE_W/2, lf=flat(LANE_W,L,0,L/2,0.14), le=[flat(0.035,L,-hw,L/2,0.6),flat(0.035,L,hw,L/2,0.6),flat(LANE_W,0.035,0,L,0.6),flat(LANE_W,0.035,0,0,0.6)]; le.forEach(m=>m.position.y=0.002); laneG.add(lf,...le); laneG.userData={lf,le}; laneG.position.y=0.011; laneG.visible=false; fxG.add(laneG);
+    // the thread: from her spinnerets, over her back and head, out to where it struck
+    const tg=new THREE.BufferGeometry().setFromPoints(Array.from({length:33},()=>new THREE.Vector3())); thread=new THREE.Line(tg,new THREE.LineBasicMaterial({color:SILK,transparent:true,opacity:0})); thread.frustumCulled=false; thread.visible=false; scene.add(thread);
+    const tg2=tg.clone(); const glowT=new THREE.Line(tg2,new THREE.LineBasicMaterial({color:VIOLET,transparent:true,opacity:0})); glowT.frustumCulled=false; thread.userData.glow=glowT; glowT.visible=false; scene.add(glowT);
+    // the bound hero: a violet ring of thread round them
+    boundRing=new THREE.Mesh(new THREE.TorusGeometry(0.32,0.018,6,40),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false})); boundRing.rotation.x=-Math.PI/2; boundRing.visible=false; scene.add(boundRing);
+    // vein patches the slam leaves: a dark violet stain with veins running out of it (4 s, 40 percent slow)
+    for(let i=0;i<8;i++){ const g=new THREE.Group(); const disc=new THREE.Mesh(new THREE.CircleGeometry(VEIN_R,32),new THREE.MeshBasicMaterial({color:VEIN,transparent:true,opacity:0,depthWrite:false})); disc.rotation.x=-Math.PI/2; disc.position.y=0.008; g.add(disc);
+      const vs=[]; for(let k=0;k<6;k++){ const a=k/6*Math.PI*2+i*0.7, pts=[]; let x=0, z=0; for(let j=0;j<5;j++){ x+=Math.cos(a+0.5*Math.sin(j*2.1+k))*VEIN_R/5; z+=Math.sin(a+0.5*Math.sin(j*2.1+k))*VEIN_R/5; pts.push(new THREE.Vector3(x,0.012,z)); } pts.unshift(new THREE.Vector3(0,0.012,0)); const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:VIOLET,transparent:true,opacity:0})); g.add(l); vs.push(l); }
+      g.visible=false; fxG.add(g); PATCHES.push({g,disc,vs,t:-1,life:4,delay:0}); }
+    // the webs a sac leaves: pale silk, radial threads and two rings (4 s, 50 percent slow)
+    for(let i=0;i<6;i++){ const g=new THREE.Group(); const disc=new THREE.Mesh(new THREE.CircleGeometry(WEB_R,32),new THREE.MeshBasicMaterial({color:SILK,transparent:true,opacity:0,depthWrite:false})); disc.rotation.x=-Math.PI/2; disc.position.y=0.007; g.add(disc);
+      const pts=[]; for(let k=0;k<10;k++){ const a=k/10*Math.PI*2+i; pts.push(new THREE.Vector3(0,0.011,0),new THREE.Vector3(Math.cos(a)*WEB_R,0.011,Math.sin(a)*WEB_R)); } [0.45,0.8].forEach(r=>{ for(let k=0;k<10;k++){ const a=k/10*Math.PI*2+i, b=(k+1)/10*Math.PI*2+i; pts.push(new THREE.Vector3(Math.cos(a)*r*WEB_R,0.011,Math.sin(a)*r*WEB_R),new THREE.Vector3(Math.cos(b)*r*WEB_R,0.011,Math.sin(b)*r*WEB_R)); } });
+      const lines=new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:SILK,transparent:true,opacity:0})); g.add(lines); g.visible=false; fxG.add(g); WEBS.push({g,disc,lines,t:-1,life:4}); }
+    // Brood Sacs: three Ember rings and the sacs that fall into them (a pale egg sac veined violet)
+    const sacM=new THREE.MeshStandardMaterial({color:0xcfc6d8,roughness:0.7,emissive:VIOLET,emissiveIntensity:0.15});
+    for(let i=0;i<3;i++){ const g=flatRing(SAC_R); const sac=new THREE.Mesh(new THREE.SphereGeometry(0.22,16,12),sacM); sac.scale.set(1,1.25,1); sac.visible=false; fxG.add(sac); SACS.push({g,sac,t:-1,at:new THREE.Vector3(),from:new THREE.Vector3(),hit:false}); }
+    for(let i=0;i<14;i++){ const m=new THREE.Mesh(new THREE.CircleGeometry(1,24),new THREE.MeshBasicMaterial({color:0x2a2630,transparent:true,opacity:0,depthWrite:false})); m.rotation.x=-Math.PI/2; m.visible=false; fxG.add(m); MARKS.push({m,t:-1,life:2.6,a:0.3}); }
+    dummy=new THREE.Group(); const dm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dm); body.position.y=0.31; const head=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dm); head.position.y=0.8; dummy.add(body,head); dummy.userData={mat:dm,z:HOME,x:0,hold:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+  function puff(pos,vel,o){ if(!fxOn)return; const p=FXP.find(p=>p.life<=0); if(!p)return; p.life=o.life||0.5; p.age=0; p.v.copy(vel); p.g=o.g||0; p.s0=o.s0||0.1; p.s1=o.s1||0.3; p.a=o.a||0.4; p.drag=o.drag||0; p.floor=!!o.floor; p.s.material.color.setHex(o.col||DUST); p.s.position.copy(pos); if(p.floor){fxG.add(p.s);p.s.position.copy(toFloor(pos));}else scene.add(p.s); p.s.visible=true; }
+  function dust(pos,n,spd,up,col,big){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(tmp2.copy(pos).setY(0.05),new THREE.Vector3(Math.cos(a)*spd*(0.5+Math.random()),up*(0.4+Math.random()*0.6),Math.sin(a)*spd*(0.5+Math.random())),{life:0.6+Math.random()*0.35,s0:0.18*(big||1),s1:0.55*(big||1),a:0.2,drag:3,floor:true,col});} }
+  function sparks(pos,n,col,spd,life){ for(let i=0;i<n;i++){const v=new THREE.Vector3(Math.random()-0.5,Math.random()-0.2,Math.random()-0.5).normalize().multiplyScalar(spd*(0.4+Math.random()*0.8)); puff(pos,v,{life:life*(0.6+Math.random()*0.6),s0:0.1,s1:0.02,a:0.5,col,g:-2.5,drag:2});} }
+  function rise(pos,n,spread,up,col,life){ for(let i=0;i<n;i++){ puff(tmp2.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*spread,Math.random()*0.3,(Math.random()-0.5)*spread)),new THREE.Vector3((Math.random()-0.5)*0.4,up*(0.5+Math.random()),(Math.random()-0.5)*0.4),{life:(life||1.3)*(0.7+Math.random()*0.6),s0:0.08,s1:0.03,a:0.4,col:col||VIOLET,drag:1.3}); } }
+  function ringAt(pos,o){ if(!fxOn)return; const r=RINGS.find(r=>r.t<0); if(!r)return; r.t=0; r.dur=o.dur||0.5; r.r0=o.r0||0.1; r.r1=o.r1||1; r.a=o.a||0.4; r.bill=!!o.bill; r.delay=o.delay||0; r.m.material.color.setHex(o.col||VIOLET);
+    if(r.bill){scene.add(r.m); r.m.position.copy(pos);} else {fxG.add(r.m); r.m.position.copy(o.local?pos:toFloor(pos)).setY(0.016); r.m.rotation.set(-Math.PI/2,0,0);} r.m.visible=false; }
+  function markAt(pos,o){ if(!fxOn)return; const m=MARKS.find(m=>m.t<0)||MARKS[0]; m.t=0; m.life=o.life||2.6; m.a=o.a||0.3; m.delay=o.delay||0; m.m.position.copy(o.local?pos:toFloor(pos)).setY(0.009); m.m.scale.set(o.sx||o.r||1,o.sz||o.r||1,1); m.m.rotation.set(-Math.PI/2,0,o.rot||0); m.m.material.color.setHex(o.col||0x2a2630); m.m.visible=false; }
+  function patchAt(local,delay){ if(!fxOn)return; const p=PATCHES.find(p=>p.t<0)||PATCHES[0]; p.g.position.copy(local).setY(0); p.g.visible=false; p.t=0; p.delay=delay||0; }
+  function webAt(local){ if(!fxOn)return; const p=WEBS.find(p=>p.t<0)||WEBS[0]; p.g.position.copy(local).setY(0); p.g.rotation.y=Math.random()*6; p.g.visible=false; p.t=0; }
+  function hideTele(){ if(laneG){laneG.visible=false;ringG.visible=false;} laneT=-1; ringT=-1; }
+  function dropThread(){ threadK=0; bound=0; boundT=-1; if(thread){ thread.visible=false; thread.userData.glow.visible=false; boundRing.visible=false; } }
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); hideTele(); dropThread(); MARKS.forEach(m=>{m.t=-1;m.m.visible=false;}); PATCHES.forEach(p=>{p.t=-1;p.g.visible=false;}); WEBS.forEach(p=>{p.t=-1;p.g.visible=false;}); SACS.forEach(s=>{s.t=-1;s.g.visible=false;s.sac.visible=false;}); }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  const headPt=()=>pt(bones.head,[0,0,0.05]);
+  const spinPt=()=>pt(bones.spinner,[0,0,0]);
+  const footPt=(k)=>{ const b=bones['tip'+k[1]+k[0]]; return b?pt(b,[0,0,0]).setY(0.02):new THREE.Vector3(); };
+  function setHero(z){ HOME=z; if(dummy){ const u=dummy.userData; u.z=z; u.x=0; u.hold=0; dummy.position.set(0,0,z); } }
+  function hitDummy(push){ if(!dummy||!showTarget)return; const u=dummy.userData; u.hold=Math.max(u.hold,0.6); u.mat.emissiveIntensity=feel?0.45:0; if(push){u.z+=push;} if(fxOn)sparks(targetW().setY(0.5),10,PEAK,2.2,0.3); }
+  const inLane=()=>dummy&&showTarget&&Math.abs(dummy.userData.x)<LANE_W/2+0.24&&dummy.userData.z>0&&dummy.userData.z<LANE_LEN+0.3;
+  function fxStart(name){
+    hideTele(); HOME=NEAR; if(name!=='bind'&&boundT<0)dropThread();
+    if(name==='bind'){ dropThread(); setHero(BIND_AT); if(dummy)dummy.userData.hold=2.6; if(fxOn){ laneT=0; const p=toFloor(new THREE.Vector3(0,0,0.3)); laneG.position.set(p.x,0.011,p.z); laneG.rotation.y=-floorYaw; } }
+    if(name==='slam'){ setHero(SLAM_AT); if(dummy)dummy.userData.hold=2.0; if(fxOn){ ringT=0; ringG.position.copy(toFloor(new THREE.Vector3(0,0,0))).setY(0.012); ringG.visible=true; } }
+    if(name==='brood'){ setHero(BROOD_AT); if(dummy)dummy.userData.hold=2.6; }
+    if(name==='spawn'){ eyes=0; veins=0; spin=0; cv.style.filter=''; if(fxOn){ const o=new THREE.Vector3(0,0,0); ringAt(o,{r0:0.4,r1:2.0,dur:0.6,a:0.35}); dust(o,14,1.4,0.6); markAt(o,{r:1.5,life:1.8,a:0.12,col:0x3a3346}); } }
+    if(name==='heavyHit'){ hitFeel(0.55,0.09,0.6); flash=0.5; if(fxOn){ sparks(headPt(),12,PEAK,2.4,0.3); } }
+  }
+  function legsDust(ks,big){ ks.forEach(k=>{ const p=footPt(k); dust(p,3,0.9*big,0.35,DUST,0.8*big); }); }
+  function fxContact(name,i){
+    if(name==='bind'){ hitFeel(0.45,0.04,0.35); laneT=Math.max(laneT,LANE_T); threadK=0.001; bound=inLane()?1:0; if(fxOn){ legsDust(['L1','R1'],1); sparks(spinPt(),8,VIOLET,1.8,0.35); } }
+    if(name==='slam'){ hitFeel(0.85,0.07,0.8); ringG.visible=false; ringT=-1; const c=new THREE.Vector3(0,0,0);
+      if(fxOn){ ringAt(c,{r0:0.4,r1:RING_R,dur:0.3,a:0.5,col:EMBER}); ringAt(c,{r0:0.4,r1:3.4,dur:0.55,a:0.4,delay:0.03}); ringAt(spinPt(),{r0:0.1,r1:1.2,dur:0.3,a:0.45,bill:true}); legsDust(['L1','R1','L2','R2'],1.2); dust(c,16,2.0,0.5,DUST,1.2);
+        const o=toFloor(c); for(let k=0;k<4;k++){ const a=k/4*Math.PI*2+Math.PI/4-floorYaw; patchAt(new THREE.Vector3(o.x+Math.sin(a)*VEIN_RING,0,o.z+Math.cos(a)*VEIN_RING),0.05*k); } }
+      if(dummy&&showTarget&&targetW().distanceTo(c)<RING_R+0.24)hitDummy(0.5); }
+    if(name==='brood'){ hitFeel(0.3,0.03,0.3); if(fxOn){ ringAt(spinPt(),{r0:0.1,r1:0.8,dur:0.3,a:0.35,bill:true}); sparks(spinPt(),8,VIOLET,1.8,0.4);
+        // three sacs: on the hero and 2.2 u to either side, across the line from her to the hero
+        const h=toFloor(targetW()), o=toFloor(new THREE.Vector3(0,0,0)); const dir=h.clone().sub(o).setY(0).normalize(), side=new THREE.Vector3(-dir.z,0,dir.x); const from=toFloor(spinPt());
+        const spots=[h.clone(),h.clone().addScaledVector(side,SAC_SIDE),h.clone().addScaledVector(side,-SAC_SIDE)];
+        SACS.forEach((s,k)=>{ s.t=0; s.hit=false; s.at.copy(spots[k]).setY(0); s.from.copy(from); s.g.position.copy(s.at).setY(0.012); s.g.visible=true; s.sac.visible=true; s.sac.position.copy(from); }); } }
+    if(name==='enrage'){ hitFeel(0.7,0.06,0.7); setRage(true); if(fxOn){ legsDust(['L1','R1','L2','R2'],1); ringAt(new THREE.Vector3(0,0,0.2),{r0:0.4,r1:2.4,dur:0.5,a:0.35}); } }
+    if(name==='spawn'){ hitFeel(0.45,0.04,0.45); if(fxOn){ legsDust(['L1','R1'],1); ringAt(headPt(),{r0:0.1,r1:0.9,dur:0.3,a:0.35,bill:true}); } }
+    if(name==='death'){ if(i===0){ hitFeel(0.3,0.02,0.3); if(fxOn)legsDust(['L1','R1','L2','R2','L3','R3','L4','R4'],0.8); } else { hitFeel(0.6,0.05,0.5); if(fxOn){ const c=new THREE.Vector3(0,0,-0.1); dust(c,18,1.8,0.5,DUST,1.2); ringAt(c,{r0:0.5,r1:2.0,dur:0.6,a:0.3,col:0x8d8478}); rise(c,14,1.2,1.1,VIOLET,1.6); } } }
+  }
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time, p0=shot.prev, cross=(c)=>p0<c&&t>=c, m=META[n];
+    const hit=m.contact[0]||0;
+    if(n==='bind'){ spinTo=t<hit?0.3+1.0*t/hit:(t<m.cues.draw[1]?1.0:0.3); eyesTo=t<hit+0.3?1.6:1; veinsTo=0.5;
+      if(t<hit&&fxOn&&Math.random()<d*14)rise(spinPt(),1,0.1,0.4,VIOLET,0.5);
+      const [d0,d1]=m.cues.draw; if(bound&&dummy&&t>d0&&t<d1){ const u=dummy.userData; u.hold=Math.max(u.hold,0.5); const k=(t-d0)/(d1-d0); u.z+=(LEASH-u.z)*Math.min(1,d*6*(0.4+k)); if(fxOn&&Math.random()<d*12)dust(targetW(),1,0.6,0.2); } }
+    if(n==='slam'){ veinsTo=t<hit?0.4+1.0*t/hit:(t<hit+0.3?1.5:0.45); eyesTo=1.5; }
+    if(n==='brood'){ veinsTo=t<hit?0.5+0.6*t/hit:0.45; spinTo=t<hit?0.3+1.1*t/hit:(t<hit+0.25?1.4:0.3); eyesTo=1.4; }
+    if(n==='enrage'){ eyesTo=1.8; veinsTo=t>m.cues.burn[0]?1.4:0.5+2*t; for(const c of m.cues.beats) if(cross(c)){ hitFeel(0.2,0.02,0.2); if(fxOn){ legsDust([[ 'L1','R1'][m.cues.beats.indexOf(c)%2]],0.8); } } }
+    if(n==='spawn'){ eyesTo=t>0.5?1:0; veinsTo=t>0.4?0.35:0.05; spinTo=t>0.4?0.2:0; if(t>0.05&&t<0.7&&Math.random()<d*20)puff(new THREE.Vector3((Math.random()-0.5)*1.8,0.1,(Math.random()-0.5)*1.8),new THREE.Vector3(0,0.6+Math.random(),0),{life:1.0,s0:0.14,s1:0.32,a:0.2,col:DUST}); }
+    if(n==='death'){ const dk=m.cues.dark; eyesTo=t<dk[0]?2.0:Math.max(0,1-(t-dk[0])/1.6); veinsTo=t<dk[0]?1.4:Math.max(0,0.8-(t-dk[0])*0.6); spinTo=0; if(t>2.0)cv.style.filter='saturate(0.45)'; }
+  }
+  // the heart's beat through the veins: faster when enraged
+  function heartBeat(d){ beatPh+=d*(rage?2.6:1.6)*Math.PI; return Math.pow(Math.max(0,Math.sin(beatPh)),6); }
+  const _a=new THREE.Vector3(), _b=new THREE.Vector3(), _c=new THREE.Vector3();
+  function drawThread(d){ // the thread shoots out over 0.1 s, holds the bound hero, and slackens away when it lets go
+    if(threadK<=0||!fxOn){ thread.visible=false; thread.userData.glow.visible=false; boundRing.visible=false; return; }
+    threadK=Math.min(1,threadK+d/0.1); if(bound&&boundT<0)boundT=0; if(boundT>=0)boundT+=d;
+    const life=bound?BOUND:0.5, age=boundT>=0?boundT:(shot&&shot.name==='bind'?shot.action.time-META.bind.contact[0]:9); const fade=age>life?Math.max(0,1-(age-life)/0.3):1; if(fade<=0){ dropThread(); return; }
+    const a=spinPt(), end=bound&&dummy?targetW().setY(0.45):toWorld(laneG.position.clone().add(new THREE.Vector3(0,0,LANE_LEN).applyAxisAngle(Y,-floorYaw))).setY(0.05);
+    const top=headPt().setY(headPt().y+0.9), P=thread.geometry.attributes.position, Q=thread.userData.glow.geometry.attributes.position, n=P.count;
+    for(let i=0;i<n;i++){ const s=(i/(n-1))*threadK; const u=s<0.35?s/0.35:1, w=s<0.35?0:(s-0.35)/0.65; // up over her back to above her head, then out and down to the end
+      if(s<0.35){ _a.copy(a).lerp(top,u); _a.y+=0.25*Math.sin(Math.PI*u); } else { _a.copy(top).lerp(end,w); _a.y+=0.5*Math.sin(Math.PI*w)*(bound?0.4:1)-0.12*fade*(1-fade); }
+      P.setXYZ(i,_a.x,_a.y,_a.z); Q.setXYZ(i,_a.x,_a.y+0.004,_a.z); }
+    P.needsUpdate=true; Q.needsUpdate=true; thread.visible=true; thread.userData.glow.visible=true; thread.material.opacity=0.85*fade; thread.userData.glow.material.opacity=0.35*fade;
+    boundRing.visible=!!bound&&!!dummy&&showTarget; if(boundRing.visible){ boundRing.position.copy(targetW()).setY(0.45); boundRing.material.opacity=0.6*fade; boundRing.rotation.z+=d*3; } }
+  function updateFx(d){
+    const busy=shot&&!shot.done; if(!busy){ HOME=NEAR; eyesTo=sel.dead?0:1; veinsTo=sel.dead?0:0.35; spinTo=sel.dead?0:0.2; if(ringT>=0)hideTele(); }
+    const beat=sel.dead?0:heartBeat(d);
+    eyes+=(eyesTo-eyes)*Math.min(1,d*6); veins+=(veinsTo-veins)*Math.min(1,d*6); spin+=(spinTo-spin)*Math.min(1,d*6); flash=Math.max(0,flash-d*3.2);
+    xtal+=((sel.dead?0:rage?0.5+0.25*beat:0.15)-xtal)*Math.min(1,d*4);
+    const on=fxOn?1:0, vb=rage?1.6:1; gA.value.set(on*0.3*Math.min(2.2,eyes),on*Math.min(1.6,veins*vb*(0.45+0.7*beat))*0.6,on*0.4*spin,feel?flash:0);
+    gB.value.set(on*xtal,on*(0.06+0.06*beat*vb),0,0);
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.03){p.s.position.y=0.03; if(p.g<0){p.v.set(0,0,0);}} const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    MARKS.forEach(m=>{ if(m.t<0)return; m.t+=d; const u=(m.t-m.delay)/m.life; if(u<0){m.m.visible=false;return;} if(u>=1){m.t=-1;m.m.visible=false;return;} m.m.visible=true; m.m.material.opacity=m.a*(u<0.05?u/0.05:1-Math.max(0,(u-0.6)/0.4)); });
+    // vein patches: spread out, stand 4 s, fade
+    PATCHES.forEach(p=>{ if(p.t<0)return; p.t+=d; const u=p.t-p.delay; if(u<0){p.g.visible=false;return;} if(u>p.life+0.5||!fxOn){p.t=-1;p.g.visible=false;return;} p.g.visible=true; const gr=Math.min(1,u/0.25), fade=u>p.life?1-(u-p.life)/0.5:1;
+      p.disc.material.opacity=0.32*fade*gr; p.g.scale.setScalar(Math.max(0.01,gr)); p.vs.forEach((l,k)=>{ l.material.opacity=fade*(0.35+0.3*beat); }); });
+    WEBS.forEach(p=>{ if(p.t<0)return; p.t+=d; const u=p.t; if(u>p.life+0.5||!fxOn){p.t=-1;p.g.visible=false;return;} p.g.visible=true; const gr=Math.min(1,u/0.15), fade=u>p.life?1-(u-p.life)/0.5:1; p.g.scale.setScalar(Math.max(0.01,gr)); p.disc.material.opacity=0.16*fade; p.lines.material.opacity=0.55*fade; });
+    drawThread(d);
+    // the Ember warnings fill over the game's ticks
+    const fill=(g,t,T)=>{ const k=Math.min(1,t/T), u=g.userData; u.f.scale.setScalar(Math.max(0.001,k)); u.f.material.opacity=0.07+0.08*k+0.02*Math.sin(t*24)*k; u.e.material.opacity=0.45+0.25*k; };
+    if(ringT>=0){ ringT+=d; fill(ringG,ringT,META.slam.contact[0]); if(!fxOn)hideTele(); }
+    // the sacs: thrown up out of her spinnerets, each falls into its ring as the ring fills (64 ticks), bursts and leaves a web
+    SACS.forEach((s,k)=>{ if(s.t<0)return; s.t+=d; const t=s.t; if(!fxOn){ s.t=-1; s.g.visible=false; s.sac.visible=false; return; }
+      if(t<SAC_T){ fill(s.g,t,SAC_T); const u=t/SAC_T; s.sac.position.lerpVectors(s.from,s.at,u); s.sac.position.y=s.from.y*(1-u)+0.22*u+3.2*4*u*(1-u); s.sac.rotation.set(t*2+k,t*1.5,0); if(Math.random()<d*12)puff(toWorld(s.sac.position),new THREE.Vector3(0,0.2,0),{life:0.4,s0:0.1,s1:0.04,a:0.25,col:VIOLET}); }
+      else if(!s.hit){ s.hit=true; s.g.visible=false; s.sac.visible=false; const w=toWorld(s.at); hitFeel(0.3,0.02,0); ringAt(w,{r0:0.2,r1:SAC_R+0.3,dur:0.35,a:0.45}); ringAt(w,{r0:SAC_R,r1:SAC_R+0.15,dur:0.22,a:0.45,col:EMBER}); dust(w,8,1.2,0.5); sparks(w.clone().setY(0.3),10,SILK,2.0,0.4); webAt(s.at); if(dummy&&showTarget&&targetW().distanceTo(w.setY(0))<SAC_R+0.24)hitDummy(); }
+      else if(t>SAC_T+0.2){ s.t=-1; } });
+    if(laneT>=0){ laneT+=d; const k=Math.min(1,laneT/LANE_T), out=Math.max(0,(laneT-LANE_T)/0.26); if(out>=1||!fxOn){ laneG.visible=false; laneT=-1; } else { laneG.visible=true; const u=laneG.userData, a=1-out; u.lf.scale.y=Math.max(0.001,k); u.lf.position.z=LANE_LEN/2*k; u.lf.material.opacity=(laneT>LANE_T?0.4:(0.08+0.1*k+0.02*Math.sin(laneT*24)*k))*a; u.le.forEach(m=>m.material.opacity=(0.4+0.3*k)*a); } }
+    if(dummy){ const u=dummy.userData; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4); if(u.hold>0)u.hold-=d; else { u.z+=(HOME-u.z)*Math.min(1,d*3); u.x+=(0-u.x)*Math.min(1,d*4); } dummy.position.z=u.z; dummy.position.x=u.x; }
+  }
+  // after the clips: the abdomen swells a little with each beat of the heart. The page undoes it before the clips write.
+  let abdS=new THREE.Vector3(1,1,1);
+  function overlay(){ abdS.copy(bones.abdomen.scale); const beat=sel.dead?0:Math.pow(Math.max(0,Math.sin(beatPh)),6); bones.abdomen.scale.multiplyScalar(1+0.035*beat); }
+  function unOverlay(){ bones.abdomen.scale.copy(abdS); }
+
+  // ---- the loop
+  let last=performance.now(); const LAND={walk:[[0,'A'],[0.2,'B']],turnL:[[0,'A'],[0.15,'B']],turnR:[[0,'A'],[0.15,'B']]}; const SETS={A:['L1','R2','L3','R4'],B:['R1','L2','R3','L4']}; let baseT={};
+  function travelAt(name,t){ const tr=META[name].travel; if(!tr)return 0; const f=Math.min(tr.length-1,Math.max(0,t*60)); const i=Math.floor(f), j=Math.min(tr.length-1,i+1); return tr[i]+(tr[j]-tr[i])*(f-i); }
+  function tick(d){
+    if(!mixer)return;
+    const stopped=hitstop>0; if(stopped){hitstop-=d;} const md=stopped?0:d;
+    const bn=baseName();
+    if(shot&&!shot.done){ const a=shot.action, m=META[shot.name]; if(a.time>=Math.min(m.dur,a.getClip().duration)-1e-3){ shot.done=true; if(shot.name==='spawn')refresh(); } }
+    if(shot&&shot.done&&!shot.hold&&sel.action&&!sel.dead){ shot.gap+=md; if(shot.gap>0.8)startShot(sel.action); }
+    Object.entries(A).forEach(([k,a])=>{ let to=0; if(shot&&shot.action===a)to=(shot.done&&!shot.hold)?0:1; else if(k===bn)to=(shot&&(!shot.done||shot.hold))?0:1;
+      const tau=(shot&&shot.action===a)?0.15:(to>a.__w?0.18:0.12); a.__w+=(to-a.__w)*Math.min(1,md/tau); if(Math.abs(to-a.__w)<0.002)a.__w=to; a.setEffectiveWeight(a.__w); });
+    unOverlay(); mixer.update(md); overlay();
+    // a puff of dust as each set of four feet comes down in the walk and the turns
+    for(const [k,ls] of Object.entries(LAND)){ const a=A[k]; if(!a||a.__w<0.5)continue; const T=META[k].dur, t=a.time%T, p=baseT[k]??t; for(const [c,s] of ls){ if((p<c&&t>=c)||(p>t&&(c>=p||c<=t))){ if(fxOn)SETS[s].forEach(f=>dust(footPt(f),1,0.4,0.2,DUST,0.6)); } } baseT[k]=t; }
+    let dz=0, dyaw=0; dz+=A.walk.__w*WALK*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*md;
+    if(shot&&!shot.done){ const tz=travelAt(shot.name,shot.action.time); const dd=tz-shot.tz; shot.tz=tz; dz+=dd; if(dummy&&dd)dummy.userData.z-=dd; }
+    if(dz||dyaw)moveFloor(dz,dyaw);
+    if(shot){ const m=META[shot.name], t=shot.action.time; m.contact.forEach((c,i)=>{ if(c>0&&shot.prev<c&&t>=c)fxContact(shot.name,i); }); fxOngoing(md); shot.prev=t; }
+    squash=Math.max(0,squash-d*7); const sq=feel?squash:0; model.scale.set(U*(1+0.11*sq),U*(1-0.05*sq),U*(1+0.11*sq));
+    model.updateMatrixWorld(true); updateFx(stopped?d*0.25:d); showPhase();
+  }
+  function frame(now){
+    requestAnimationFrame(frame); const raw=Math.min(0.05,(now-last)/1000); last=now;
+    if(!paused)tick(raw*speed);
+    orbit.update(); shake=Math.max(0,shake-raw*3.2); const sk=feel?shake*shake*0.09:0; shakeV.set((Math.random()-0.5)*sk,(Math.random()-0.5)*sk,(Math.random()-0.5)*sk); cam.position.add(shakeV);
+    renderer.render(scene,cam); cam.position.sub(shakeV);
+  }
+  moveFloor(0,0); requestAnimationFrame(frame);
+})();
+
+</script>

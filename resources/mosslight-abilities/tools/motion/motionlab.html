@@ -1,0 +1,29 @@
+<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;background:#3a3d44;overflow:hidden}canvas{display:block}</style></head><body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+import { loadCasts, twirlMatrix } from '/src/render/critters/reviewCasts.js';
+const W=360,H=360;
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true}); r.setSize(W,H); document.body.appendChild(r.domElement);
+const scene=new THREE.Scene(); scene.background=new THREE.Color('#4a4d55');
+scene.add(new THREE.HemisphereLight('#ffffff','#555560',1.5)); const d=new THREE.DirectionalLight('#fff',1.6); d.position.set(2,4,3); scene.add(d);
+const grid=new THREE.GridHelper(6,12,'#888','#666'); scene.add(grid);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(6,6),new THREE.MeshBasicMaterial({color:'#55585f'})); floor.rotation.x=-Math.PI/2; floor.position.y=-0.001; scene.add(floor);
+const cam=new THREE.PerspectiveCamera(30,W/H,0.1,50);
+const VIEWS={q:[1.5,1.0,2.4],s:[3.0,0.7,0.0],f:[0,0.8,3.1],g:[0,3.2,-2.6],b:[-1.4,1.1,-2.4],t:[0.01,4.2,0.01]};
+const g=await new GLTFLoader().loadAsync('/review/healer-tripo-rigged.glb'); const m=g.scene; scene.add(m);
+m.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
+const mixer=new THREE.AnimationMixer(m); const A={};
+for(const c of g.animations)A[c.name]={act:mixer.clipAction(c),T:c.duration};
+const casts=await loadCasts(); for(const [n,c] of Object.entries(casts))A[n]={act:mixer.clipAction(c.clip),T:c.T,twirl:c.twirl,ct:c.ct};
+const hand=m.getObjectByName('handR'), staff=m.getObjectByName('weapon');
+A.idle.act.play(); mixer.setTime(0); m.updateMatrixWorld(true);
+const G=hand.matrixWorld.clone().invert().multiply(staff.matrixWorld); A.idle.act.stop();
+const inv=new THREE.Matrix4(),att=new THREE.Matrix4(),tw=new THREE.Matrix4();
+let cur=null;
+window.lab={names:()=>Object.keys(A),info:(n)=>({T:A[n].T,ct:A[n].ct}),
+ show(name,t,view='q',look=[0,0.42,0]){ if(cur&&cur!==A[name].act)cur.stop(); cur=A[name].act; cur.reset(); cur.setLoop(THREE.LoopOnce,1); cur.clampWhenFinished=true; cur.play(); mixer.setTime(Math.min(t,A[name].T-1e-4));
+  m.updateMatrixWorld(true); inv.copy(staff.parent.matrixWorld).invert(); att.multiplyMatrices(inv,hand.matrixWorld).multiply(G).multiply(twirlMatrix(A[name].twirl,t,tw)); att.decompose(staff.position,staff.quaternion,staff.scale); staff.updateMatrixWorld(true);
+  cam.position.set(...VIEWS[view]); cam.lookAt(...look); r.render(scene,cam); return true; }};
+window.ready=true;
+</script></body></html>

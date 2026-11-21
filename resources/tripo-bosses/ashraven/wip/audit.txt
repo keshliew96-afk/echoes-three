@@ -1,0 +1,102 @@
+idle      floor clean
+          head into hackle              27.5 mm at 3.58  (11 verts, 44 frames)
+          hackle into head              18.2 mm at 4.18  (14 verts, 162 frames)
+          shinL into shinR               9.1 mm at 1.10  (1 verts, 110 frames)
+          stretch x8.75 at 2.63 on hackle
+walk      floor footL -6mm@0.18, footR -5mm@0.20
+          tail1 into tarsusR            17.6 mm at 0.23  (8 verts, 7 frames)
+          tail1 into tarsusL            16.8 mm at 0.22  (8 verts, 6 frames)
+          shinL into shinR              13.3 mm at 0.30  (6 verts, 15 frames)
+          hackle into head              10.8 mm at 0.40  (26 verts, 10 frames)
+          wingL into tail2               9.8 mm at 0.03  (7 verts, 3 frames)
+          wingR into tail2               9.7 mm at 0.03  (5 verts, 3 frames)
+          head into hackle               8.2 mm at 0.20  (1 verts, 2 frames)
+          stretch x10.05 at 0.30 on tail1
+turnL     floor footL -6mm@0.18, footR -5mm@0.20
+          wingL into tail2              17.4 mm at 0.02  (10 verts, 4 frames)
+          shinR into shinL              13.3 mm at 0.38  (7 verts, 14 frames)
+          head into hackle              12.2 mm at 0.22  (2 verts, 13 frames)
+          shinL into shinR              11.3 mm at 0.18  (13 verts, 9 frames)
+          hackle into head              11.0 mm at 0.40  (31 verts, 12 frames)
+          stretch x12.82 at 0.20 on shinL
+turnR     floor footL -6mm@0.18, footR -5mm@0.20
+          shinR into shinL              15.9 mm at 0.22  (5 verts, 18 frames)
+          wingR into tail2              12.1 mm at 0.03  (6 verts, 4 frames)
+          head into hackle              11.3 mm at 0.22  (1 verts, 11 frames)
+          hackle into head              10.8 mm at 0.07  (21 verts, 11 frames)
+          shinL into shinR              10.2 mm at 0.03  (4 verts, 15 frames)
+          stretch x9.19 at 0.18 on shinL
+dive      floor footL -9mm@0.15, footR -9mm@0.17
+          head into hackle              42.6 mm at 0.65  (10 verts, 35 frames)
+          wingL into head               36.3 mm at 1.50  (19 verts, 41 frames)
+          hackle into head              35.9 mm at 1.22  (23 verts, 54 frames)
+          shinL into shinR              33.3 mm at 0.82  (21 verts, 92 frames)
+          wingL into jaw                33.2 mm at 1.43  (18 verts, 20 frames)
+          jaw into wingL                33.1 mm at 1.45  (36 verts, 20 frames)
+          head into wingL               32.9 mm at 1.43  (52 verts, 21 frames)
+          jaw into hackle               30.4 mm at 1.27  (2 verts, 4 frames)
+          snaps: tail2 24 deg@0.85 (beside 5), fR0 19 deg@0.85 (beside 2), fL0 19 deg@0.85 (beside 2), fR1 18 deg@0.85 (beside 2), fL1 18 deg@0.85 (beside 2)
+          stretch x22.65 at 0.67 on shinL
+gust      floor clean
+          wingL into head               38.9 mm at 0.27  (4 verts, 29 frames)
+          wingR into head               38.6 mm at 0.27  (4 verts, 24 frames)
+          jaw into neck1                 8.5 mm at 0.67  (7 verts, 5 frames)
+          hackle into head               8.3 mm at 0.73  (1 verts, 16 frames)
+          jaw into chest                 8.0 mm at 0.68  (1 verts, 1 frames)
+          head into wingL                6.8 mm at 0.57  (1 verts, 2 frames)
+          shinL into shinR               6.4 mm at 1.10  (1 verts, 21 frames)
+          head into wingR                6.2 mm at 0.57  (1 verts, 1 frames)
+          snaps: hackle 12 deg@0.65 (beside 3)
+          stretch x13.95 at 0.62 on shinL
+omen      floor footL -4mm@1.18
+          wingL into head               37.3 mm at 1.30  (8 verts, 49 frames)
+          head into hackle              36.8 mm at 1.05  (2 verts, 22 frames)
+          wingR into head               23.8 mm at 1.35  (9 verts, 30 frames)
+          hackle into head              13.1 mm at 0.45  (29 verts, 28 frames)
+          head into wingL               11.0 mm at 1.35  (6 verts, 5 frames)
+          head into wingR                9.9 mm at 1.30  (8 verts, 5 frames)
+          shinL into shinR               6.4 mm at 0.42  (1 verts, 47 frames)
+          stretch x11.46 at 1.40 on hackle
+enrage    floor clean
+          head into hackle              49.6 mm at 1.13  (16 verts, 36 frames)
+          wingL into head               34.2 mm at 1.20  (1 verts, 27 frames)
+          wingR into head               34.1 mm at 1.20  (2 verts, 14 frames)
+          hackle into head              11.6 mm at 1.50  (28 verts, 15 frames)
+          shinL into shinR               6.4 mm at 0.80  (1 verts, 24 frames)
+          snaps: tail2 12 deg@0.60 (beside 3)
+          stretch x13.27 at 0.57 on shinL
+rageHold  floor clean
+          hackle into head              10.9 mm at 0.20  (25 verts, 31 frames)
+          shinL into shinR               6.2 mm at 0.00  (1 verts, 31 frames)
+          stretch x7.49 at 0.18 on hackle
+hurt      floor clean
+          head into hackle              22.8 mm at 0.22  (3 verts, 10 frames)
+          hackle into head              16.4 mm at 0.20  (64 verts, 18 frames)
+          wingR into tail2              12.4 mm at 0.18  (10 verts, 9 frames)
+          jaw into neck1                 9.8 mm at 0.12  (7 verts, 9 frames)
+          shinL into shinR               6.2 mm at 0.00  (1 verts, 26 frames)
+          stretch x9.17 at 0.22 on hackle
+heavyHit  floor clean
+          wingL into head               38.9 mm at 0.10  (2 verts, 4 frames)
+          hackle into head              31.7 mm at 0.23  (103 verts, 28 frames)
+          jaw into neck1                20.1 mm at 0.17  (40 verts, 15 frames)
+          shinR into shinL              18.3 mm at 0.13  (15 verts, 30 frames)
+          neck1 into jaw                10.7 mm at 0.15  (6 verts, 7 frames)
+          shinL into shinR              10.6 mm at 0.05  (6 verts, 22 frames)
+          wingR into head                9.7 mm at 0.12  (2 verts, 1 frames)
+          stretch x11.38 at 0.25 on hackle
+spawn     floor clean
+          hackle into head              15.2 mm at 0.48  (50 verts, 36 frames)
+          shinL into shinR               9.3 mm at 0.77  (1 verts, 51 frames)
+          head into hackle               6.6 mm at 0.65  (1 verts, 1 frames)
+          stretch x11.02 at 0.57 on hackle
+death     floor clean
+          hackle into head              45.3 mm at 1.20  (182 verts, 85 frames)
+          head into hackle              41.5 mm at 1.77  (12 verts, 116 frames)
+          wingR into head               35.0 mm at 0.68  (1 verts, 23 frames)
+          wingL into head               33.4 mm at 0.65  (2 verts, 28 frames)
+          footR into thighR             30.8 mm at 1.00  (10 verts, 101 frames)
+          footL into thighL             21.2 mm at 2.60  (9 verts, 99 frames)
+          shinL into shinR              20.6 mm at 0.62  (11 verts, 157 frames)
+          jaw into neck1                 8.2 mm at 0.08  (4 verts, 3 frames)
+          stretch x16.60 at 1.00 on shinL

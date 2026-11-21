@@ -1,0 +1,394 @@
+<title>Tripo Coal Hurler Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a review bench, the same one the hero pages use. The live model on the left, the model as sent on the right, facts and notes under. */
+:root{
+  --bg:#f3f2ee; --panel:#fbfaf7; --fg:#23262b; --muted:#666b73; --line:#d9d6cd;
+  --stage:#c9cbc6; --stage2:#b4b7b0; --accent:#2f7d57; --accent-fg:#ffffff; --warn:#9a5b12; --chip:#e8e6df; --phase:#7a5fc4;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0}
+.lede{color:var(--muted);margin:4px 0 0;max-width:65ch}
+.bench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.25fr);gap:16px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.pane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,var(--stage),var(--stage2));aspect-ratio:4/3;max-width:100%}
+.stage canvas{transition:filter .9s;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--fg);opacity:.7;pointer-events:none}
+.stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:14px}
+.sent img{display:block;width:100%;height:auto}
+.controls{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lab{font-size:12px;color:var(--muted);width:52px;flex:none}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--fg);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+button:disabled{opacity:.38;cursor:not-allowed;border-color:transparent}
+.layers{margin:0 0 0 58px;font-size:13px;font-weight:500;color:var(--accent);min-height:1.5em}
+.rule{margin:0 0 0 58px;font-size:12px;color:var(--muted);max-width:62ch}
+.phases{margin:0 0 0 58px;display:flex;gap:2px;height:22px;position:relative;max-width:520px}
+.phases span{flex:var(--w) 1 0;min-width:0;background:var(--chip);font-size:11px;line-height:22px;text-align:center;color:var(--muted);overflow:hidden;white-space:nowrap;border-radius:3px}
+.phases span.on{background:var(--phase);color:var(--panel)}
+.phases i{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);left:0;border-radius:1px}
+@media (max-width:480px){.layers,.rule,.phases{margin-left:0}}
+.note{font-size:13px;color:var(--muted);padding:0 14px 12px;margin:0}
+.wrap>.note{padding:0;max-width:78ch}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0}
+.facts div{background:var(--panel);padding:12px 14px}
+.facts dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.facts small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.cols ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:60ch}
+.rough{color:var(--warn)}
+.audit{overflow-x:auto;margin:0}.audit table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}.audit th,.audit td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}.audit th{font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Coal Hurler from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">The Kiln's mortar: your export, with a skeleton and nine moves added by hand. A squat soot-grey imp with a sack of live coals over its shoulder. It sidles, keeping 3.6 to 5.2 u from you; then it plants, heaves the sack back while an Ember ring marks your spot, and hurls: a coal leaves the sack mouth on a high arc, lands in the ring for 9 and leaves a bed of cinders that slows. Stunned mid-heave, it fumbles the sack instead. The ring, the coal's flight and the bed use the game's numbers frame for frame. Pick a move, drag to turn it, and judge it. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Sidle sets what it does between throws, and Going turns it on the spot. Coal plays the game's whole attack against the hero stand-in 4.4 u ahead (the heave while the ring fills, the hurl, the coal's flight, the landing and the bed) and repeats until you press it again. Fumble plays the stun mid-heave. Hurt plays on top of anything. Death drops it: press it again and it spawns back. The bar names the part of the move that is playing, in the game's own words.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="hurler-views.png" alt="The Tripo Coal Hurler from the front, its right side, the back and its left side, before rigging" width="800" height="800">
+      <p class="note" style="padding-top:12px">It came through whole, as one piece: a big-nosed grey imp in a head rag, a leather vest and patched breeches, a coal sack over its right shoulder with glowing coals in the mouth, its right fist gripping the sack's fold at its chest, and a small shovel at its right hip. The right fist and forearm are fused to the chest and the sack's drape, so that arm cannot move without tearing; see the open choices.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>3,938 <small>foe budget 4,000 (3,860 as sent; the rest closes the shoulder under the sack)</small></dd></div>
+    <div><dt>Bones</dt><dd>23 <small>hips, spine, chest, neck, head; per leg the thigh, shin, foot and toe; per arm the collar, upper arm, forearm and hand, and the right hand's fingers; and the sack, which swings from the right fist</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>1.2 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>1.2 u tall <small>the game's squat height (its rig stands about 1.2 u), a little over the 1 u hero</small></dd></div>
+    <div><dt>In the game</dt><dd>Coal Hurler <small>22 health. It sidles at 1.6 u/s keeping 3.6 to 5.2 u from its target, and scurries back up close. With a hero 2.4 to 6.8 u off it plants and marks an Ember ring r 1.3 on the hero's spot for 66 ticks; the coal is in the air for the last 0.42 s of it, lands for 9 and leaves a cinder bed r 1.0 that slows by 30% for 150 ticks. A stun mid-heave makes it fumble (no throw, cooldown 110 ticks). Cooldown 240 ticks from the throw. Level V, the Kiln.</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>Stands squat with the sack on its shoulder, breathing, hitching the sack, the free left arm loose. The coals breathe a dim Kiln Gold.</td><td>Mine: a 4 s loop.</td></tr>
+      <tr><td>Sidle</td><td>A short bow-legged trot, the sack bouncing, the left arm swinging.</td><td>Game: 1.6 u/s. The stride is mine: a step every 0.3 s.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Shuffles round on the spot.</td><td>180° a second (mine: the game turns it at once).</td></tr>
+      <tr><td>Coal</td><td>The game's attack, whole. It braces, the left foot forward, and heaves the sack back over its shoulder, leaning back with the left arm raised, while the Ember ring fills on you; the coals brighten. At 0.68 s it hurls: the body snaps forward, the sack swings up and over from the fist, the left arm throws forward, and a coal leaves the sack mouth on a high arc, smoking. It lands in the ring at 1.1 s for 9: an Ember shock ring, a flash, sparks, coal chunks, smoke, and a scorch with a bed of cinders that lasts 2.5 s. The sack hangs slack as it steps back into its stance.</td><td>Game: the ring 66 ticks, the coal in the air its last 0.42 s, peaking 1.5 u up; the bed 150 ticks. The heave and the hurl's poses are mine.</td></tr>
+      <tr><td>Fumble</td><td>Starts the heave, is stunned at 0.4 s: it jolts, the sack slips off the shoulder and coals spill in a puff of sack smoke; it hauls the sack back up.</td><td>Game: a stun mid-heave cancels the coal. The poses and the 1.6 s are mine.</td></tr>
+      <tr><td>Hurt</td><td>The upper body jolts back with the sack. Plays on top of any move.</td><td>0.4 s</td></tr>
+      <tr><td>Spawn</td><td>Grows in, hitches the sack up, and settles into its stance.</td><td>Game: grow in 7 frames, about 10% over. The rest is mine.</td></tr>
+      <tr><td>Death</td><td>Struck, it jolts back and the sack slips; the knees give, it topples forward onto the sack, and the coals spill out of the mouth and smoulder as the glow dies.</td><td>Mine: 2 s, then it stays down. The game pops every foe where it is; the split sack and spilled coals are the game's death effect.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Planted feet that slide (idle, sidle, both turns, the brace, the fumble)</td><td>0 mm</td></tr>
+      <tr><td>Loops that jump when they restart (idle, sidle, both turns)</td><td>0</td></tr>
+      <tr><td>Feet sinking into the floor</td><td>5 mm at worst</td></tr>
+      <tr><td>Lying dead</td><td>On the floor, not in it: its lowest point measured on every frame of the fall (3 mm at worst).</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the heave, the hurl and the coal's arc are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>The right arm stays put.</strong> Its right fist is fused to its chest and to the sack's drape, so moving that arm tore it. The fist stays where it grips, and the sack swings from it: back on the heave, up and over on the hurl. The free left arm does the throwing. If you want both hands on the sack, the model needs the right arm free of the body (a fresh Tripo pass), and I can redo it.</li>
+        <li><strong>The sack is on its right shoulder.</strong> That is where your model carries it; the game's own figure carries it on the left. I kept your model's side.</li>
+        <li><strong>When it hurls.</strong> Here the hurl plays as the coal leaves the sack, 0.42 s before it lands; the game's current figure swings at the landing. Playing it at the release lets you see the coal leave the sack.</li>
+        <li><strong>Mine.</strong> The turn rate, the stride, the idle, the heave and hurl poses, the fumble, the hurt, the spawn after the grow-in and the death's fall.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The shoulder under the sack had no surface in your model, so when the sack lifts there is a patch of vest leather there; from behind a few jagged edges of it show, and small slivers at the fist.</li>
+        <li>The eyes are painted orange in your texture, so they do not light.</li>
+        <li>The vest and breeches bend with the body like skin; the rag tails do not flap.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page, after the game's own: the Ember ring and its fill, the coal and its smoke trail, the landing's shock, flash, sparks, chunks and smoke, the scorch and cinder bed, the coals' Kiln Gold glow, the fumble's spill and the death's spill. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="hurler-model.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=1.2;
+  const DUST=0x8d8478;
+  const LABEL={idle:'Idle',walk:'Sidle',turnL:'Turn left',turnR:'Turn right',throw:'Coal',fumble:'Fumble',hurt:'Hurt',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['throw','fumble'];
+  const NEAR=4.4; let HOME=NEAR; // where the hero stands, in u, in front of it: inside the 3.6 to 5.2 u it keeps
+  const WALK=1.6, RAGEWALK=1.6, TURN=Math.PI;
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){$('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(2.5,6,4.5); scene.add(sun);
+  // the floor: a grid that wraps, and a group for things that lie on the floor and stay where they fell
+  const gridG=new THREE.Group(), fxG=new THREE.Group(); gridG.matrixAutoUpdate=false; fxG.matrixAutoUpdate=false; scene.add(gridG,fxG);
+  const grid=new THREE.GridHelper(48,48,0x4a4f48,0x4a4f48); grid.material.transparent=true; grid.material.opacity=0.85; grid.position.y=0.002; gridG.add(grid);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.17,depthWrite:false}));
+  blob.rotation.x=-Math.PI/2; blob.scale.set(0.5,0.42,1); blob.position.set(0,0.004,0); scene.add(blob);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,120);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=1.2; orbit.maxDistance=30;
+  const VIEWS={Close:{p:[8.0,3.2,4.2],t:[0,0.5,2.2]},'Game zoom':{p:[0,12,11],t:[0,0.5,2.6]},Side:{p:[10.5,1.6,2.4],t:[0,0.8,2.4]},Front:{p:[0.6,1.3,4.8],t:[0,0.62,0]},Back:{p:[-2.4,2.2,-4.2],t:[0,0.7,1.0]},Top:{p:[0,15,3.0],t:[0,0.4,3.0]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  // ---- controls
+  function group(id,names,onPick,active,multi){const row=$(id);const btns={};names.forEach(n=>{const b=document.createElement('button');b.textContent=LABEL[n]||n;b.dataset.k=n;b.setAttribute('aria-pressed',String(n===active));b.onclick=()=>onPick(n,b);row.appendChild(b);btns[n]=b;});return btns;}
+  const sel={base:'idle',going:'Forward',action:null,dead:false};
+  let rage=false, rageW=0, rageAct=null;
+  let speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, feel=true, fxOn=true, showTarget=true, helper=null;
+  const B={};
+  B.moves=group('moves',['idle','walk','spawn','death'],k=>pick(k),'idle');
+  B.dirs=group('dirs',['Forward','Turn left','Turn right'],k=>{sel.going=k;if(sel.base!=='walk'&&!sel.dead)sel.base='walk';refresh();},'Forward');
+  B.acts=group('acts',[...ACTIONS,'hurt'],k=>pick(k),null);
+  B.speeds=group('speeds',['0.1×','0.25×','0.5×','1×'],(k)=>{speed=parseFloat(k);Object.values(B.speeds).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'1×');
+  B.views=group('views',Object.keys(VIEWS),k=>{setView(k);Object.values(B.views).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'Close');
+  const toggle=(id,get,set)=>{const b=$(id);b.onclick=()=>{set(!get());b.setAttribute('aria-pressed',String(get()));};b.setAttribute('aria-pressed',String(get()));};
+  toggle('feel',()=>feel,v=>feel=v); toggle('fx',()=>fxOn,v=>{fxOn=v;if(!v)clearFx();}); toggle('target',()=>showTarget,v=>{showTarget=v;if(dummy)dummy.visible=v;});
+  toggle('bones',()=>!!(helper&&helper.visible),v=>{if(helper)helper.visible=v;}); toggle('pause',()=>paused,v=>paused=v);
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, glowU={value:new THREE.Vector4(0,0.25,0,0.3)}, hurtAct=null, shot=null, dummy=null;
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    mesh.material.onBeforeCompile=sh=>{sh.uniforms.uGlow=glowU;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uGlow;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3(1.0,0.76,0.29)*uGlow.x*vMask.x+vec3(0.55,0.22,0.9)*uGlow.y*vMask.y+vec3(0.55)*uGlow.z+vec3(0.8,0.75,1.0)*uGlow.w*vMask.z;');};
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; scene.add(helper);
+    mixer=new THREE.AnimationMixer(model);
+    const UPPER=/^(spine|chest|neck|head|clvL|clvR|armL|armR|foreL|foreR|handL|handR|fingR|sack)\./; const restC=gltf.animations.find(c=>c.name==='hurt');
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      if(c.name==='rageHold'){const h=new THREE.AnimationClip('rageAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,restC,60); rageAct=mixer.clipAction(h); rageAct.blendMode=THREE.AdditiveAnimationBlendMode; rageAct.setLoop(THREE.LoopRepeat,Infinity); rageAct.setEffectiveWeight(0); rageAct.play(); return;}
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1);
+    makeFx(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,hipY:+bones.hips.getWorldPosition(new THREE.Vector3()).y.toFixed(2),ring:ringT.visible,coal:coal.visible,bed:bedT>=0,heat:+heat.toFixed(2),hero:[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)],dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,t:shot&&+shot.action.time.toFixed(3),fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glow:glowU.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+  // ---- what plays
+  function baseName(){return sel.dead?null:sel.base==='walk'?(sel.going==='Forward'?'walk':sel.going==='Turn left'?'turnL':'turnR'):'idle';}
+  function startShot(name,hold){ if(!A[name])return; if(shot){shot.action.__w=0;shot.action.setEffectiveWeight(0);}
+    const a=A[name]; a.reset(); a.paused=false; a.__w=1; a.setEffectiveWeight(1); Object.entries(A).forEach(([k,x])=>{if(x!==a){x.__w=Math.min(x.__w,0.0);x.setEffectiveWeight(x.__w);}});
+    shot={name,action:a,prev:0,hold:!!hold,done:false,gap:0,tz:0}; fxStart(name); }
+  function pick(k){
+    if(!mixer)return;
+    if(k==='idle'||k==='walk'){ if(sel.dead)return; sel.base=k; }
+    else if(k==='spawn'){ sel.dead=false; sel.action=null; cv.style.filter=''; startShot('spawn'); }
+    else if(k==='death'){ if(sel.dead){ sel.dead=false; cv.style.filter=''; startShot('spawn'); } else { sel.dead=true; sel.action=null; startShot('death',true); } }
+    else if(k==='hurt'){ if(sel.dead)return; hurtAct.reset(); hurtAct.setEffectiveWeight(1); hurtAct.play(); hitFeel(0.3,0.04,0.5); flash=0.35; if(fxOn)sparks(pt(bones.sack,MOUTH),4,KSPARK,1.0,0.25); }
+    else { if(sel.dead)return; sel.action=sel.action===k?null:k; if(sel.action&&(!shot||shot.done||shot.name!==k))startShot(k); }
+    refresh();
+  }
+  function refresh(){
+    Object.values(B.moves).forEach(b=>{const k=b.dataset.k; b.setAttribute('aria-pressed',String(k==='death'?sel.dead:k==='spawn'?!!(shot&&shot.name==='spawn'&&!shot.done):!sel.dead&&sel.base===k)); b.disabled=sel.dead&&(k==='idle'||k==='walk'); b.textContent=k==='death'&&sel.dead?'Death (press to spawn)':LABEL[k];});
+    Object.values(B.dirs).forEach(b=>{b.setAttribute('aria-pressed',String(sel.base==='walk'&&!sel.dead&&b.dataset.k===sel.going)); b.disabled=sel.dead;});
+    Object.values(B.acts).forEach(b=>{b.setAttribute('aria-pressed',String(sel.action===b.dataset.k)); b.disabled=sel.dead;});
+  }
+  function showPhase(){
+    const el=$('layers'), ph=$('phases'), tag=$('clipname'); const bn=baseName();
+    if(shot&&!shot.done){ const m=META[shot.name], t=shot.action.time; let cur=''; m.phases.forEach(p=>{if(t>=p[1])cur=p[0];});
+      el.textContent=LABEL[shot.name]+(cur?' · '+cur:'')+' · '+t.toFixed(2)+' s'; tag.textContent=LABEL[shot.name];
+      if(ph.dataset.name!==shot.name){ph.dataset.name=shot.name; ph.innerHTML=m.phases.map((p,i)=>{const e=i+1<m.phases.length?m.phases[i+1][1]:m.dur;return '<span style="--w:'+Math.max(0.04,(e-p[1])).toFixed(3)+'">'+p[0]+'</span>';}).join('')+'<i></i>'; ph.hidden=!m.phases.length;}
+      const spans=ph.querySelectorAll('span'); m.phases.forEach((p,i)=>spans[i]&&spans[i].classList.toggle('on',p[0]===cur)); const mk=ph.querySelector('i'); if(mk)mk.style.left=(100*Math.min(1,t/m.dur)).toFixed(1)+'%';
+    } else { el.textContent=sel.dead?'Down. Press Death again to spawn it back in.':(LABEL[bn]||'')+(sel.action?' · '+LABEL[sel.action]+' repeats':''); tag.textContent=sel.dead?'Death':LABEL[bn]||''; ph.hidden=true; ph.dataset.name=''; }
+  }
+
+  // ---- floor motion: the floor moves under him, he stays in the middle of the stage
+  const floorPos=new THREE.Vector3(); let floorYaw=0; const PIV=new THREE.Vector3(0,0,-0.04*U);
+  function moveFloor(dz,dyaw){ // he moves forward dz and turns left dyaw: the floor does the opposite
+    floorPos.z-=dz; if(dyaw){ floorPos.sub(PIV).applyAxisAngle(Y,-dyaw).add(PIV); floorYaw-=dyaw; }
+    fxG.matrix.makeRotationY(floorYaw).setPosition(floorPos);
+    const l=floorPos.clone().applyAxisAngle(Y,-floorYaw); l.x-=Math.round(l.x); l.z-=Math.round(l.z); l.applyAxisAngle(Y,floorYaw); gridG.matrix.makeRotationY(floorYaw).setPosition(l);
+  }
+  const Y=new THREE.Vector3(0,1,0), tmp=new THREE.Vector3(), tmp2=new THREE.Vector3();
+  const pt=(bone,v)=>tmp.set(v[0],v[1],v[2]).applyMatrix4(bone.matrixWorld).clone();
+  const toFloor=(w)=>w.clone().applyMatrix4(fxG.matrix.clone().invert());
+
+  // ---- hit feel: freeze, squash (the game's boss contact squash: 11% wider, 5% shorter), shake, flash
+  let hitstop=0, squash=0, shake=0, flash=0; const shakeV=new THREE.Vector3();
+  function hitFeel(sh,stop,sq){ if(!feel)return; hitstop=Math.max(hitstop,stop); squash=Math.max(squash,sq); shake=Math.max(shake,sh); }
+
+  // ---- effects (stand-ins, dim on purpose, after the game's own: the Ember ring on the hero over the 66-tick
+  // telegraph; the coal leaving the sack mouth on a high arc, a Kiln Gold coal with a smoke trail; the landing's
+  // Ember shock, the Kiln Heat flash, Kiln Gold sparks, coal chunks, brick smoke, a scorch and the cinder bed; the
+  // coals' glow; the fumble's sack smoke and spilled coals; on death the sack splits and the coals spill)
+  const FXP=[], RINGS=[]; let dotTex=null, ringT=null, ringFill=null, coal=null, coalGlow=null, flashS=null, scorch=null, bed=null, bedFlecks=[];
+  let heat=0.35, coalT=-1, coalA=null, coalB=null, bedT=-1, deadSpill=false;
+  const EMBER=0xFF5A36, KGOLD=0xFFC24A, KHEAT=0xFFE6A8, KSPARK=0xFFD27A, KCOAL=0x7A1E2A, KBRICK=0x584640, SACKC=0x4A3E34;
+  const TEL=66/60, FLIGHT=0.42, REL=TEL-FLIGHT, HERO_AT=4.4, RING_R=1.3, BED_R=1.0, BED_LIFE=150/60, HURL_Y=1.5, FUMBLE_AT=0.4;
+  const MOUTH=[-0.014,0.2,-0.2]; // the sack mouth, where the coals show, on the sack bone
+  const sm=(x)=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}, c01=(x)=>Math.max(0,Math.min(1,x));
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<160;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<8;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:DUST,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false}); scene.add(m);}
+    const fm=(col,o)=>new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:o,depthWrite:false,side:THREE.DoubleSide});
+    // the telegraph: an Ember ring r 1.3 on the hero, its fill growing over the 66 ticks
+    ringT=new THREE.Mesh(new THREE.RingGeometry(RING_R-0.05,RING_R,64).rotateX(-Math.PI/2),fm(EMBER,0.5)); ringT.visible=false; fxG.add(ringT);
+    ringFill=new THREE.Mesh(new THREE.CircleGeometry(1,48).rotateX(-Math.PI/2),fm(EMBER,0.12)); ringFill.visible=false; fxG.add(ringFill);
+    // the coal in flight: a dark chunk, hot at the core, and its Kiln Gold glow
+    coal=new THREE.Mesh(new THREE.DodecahedronGeometry(0.075,0),new THREE.MeshStandardMaterial({color:KCOAL,roughness:0.9,emissive:KGOLD,emissiveIntensity:0.55})); coal.visible=false; scene.add(coal);
+    coalGlow=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:KGOLD,transparent:true,depthWrite:false,opacity:0.35,blending:THREE.AdditiveBlending})); coalGlow.visible=false; scene.add(coalGlow);
+    flashS=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:KHEAT,transparent:true,depthWrite:false,opacity:0,blending:THREE.AdditiveBlending})); flashS.visible=false; scene.add(flashS); flashS.userData.t=-1;
+    // what it leaves: a scorch, and the cinder bed r 1.0 that slows (150 ticks), coal-dark with Kiln Gold flecks
+    scorch=new THREE.Mesh(new THREE.CircleGeometry(0.75,40).rotateX(-Math.PI/2),fm(0x231a17,0)); scorch.visible=false; fxG.add(scorch);
+    bed=new THREE.Mesh(new THREE.CircleGeometry(BED_R,48).rotateX(-Math.PI/2),fm(KCOAL,0)); bed.visible=false; fxG.add(bed);
+    for(let i=0;i<10;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:KGOLD,transparent:true,depthWrite:false,opacity:0})); const a=i*2.4, r=0.2+0.7*((i*0.37)%1); s.userData={x:Math.cos(a)*r,z:Math.sin(a)*r,ph:i*1.7}; s.visible=false; fxG.add(s); bedFlecks.push(s);}
+    // a hero's height, for scale and to take the hit
+    dummy=new THREE.Group(); const dm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dm); body.position.y=0.31; const head=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dm); head.position.y=0.8; dummy.add(body,head); dummy.userData={mat:dm,z:HOME,x:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+  function puff(pos,vel,o){ if(!fxOn)return; const p=FXP.find(p=>p.life<=0); if(!p)return; p.life=o.life||0.5; p.age=0; p.v.copy(vel); p.g=o.g||0; p.s0=o.s0||0.1; p.s1=o.s1||0.3; p.a=o.a||0.4; p.drag=o.drag||0; p.floor=!!o.floor; p.s.material.color.setHex(o.col||DUST); p.s.material.blending=o.add?THREE.AdditiveBlending:THREE.NormalBlending; p.s.position.copy(pos); if(p.floor){fxG.add(p.s);p.s.position.copy(toFloor(pos));}else scene.add(p.s); p.s.visible=true; }
+  function dust(pos,n,spd,up,col){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(tmp2.copy(pos).setY(0.06),new THREE.Vector3(Math.cos(a)*spd*(0.5+Math.random()),up*(0.4+Math.random()*0.6),Math.sin(a)*spd*(0.5+Math.random())),{life:0.6+Math.random()*0.3,s0:0.12,s1:0.36,a:0.22,drag:2.4,floor:true,col:col||KBRICK});} }
+  function sparks(pos,n,col,spd,life,gv){ for(let i=0;i<n;i++){const v=new THREE.Vector3(Math.random()-0.5,Math.random()*0.8,Math.random()-0.5).normalize().multiplyScalar(spd*(0.4+Math.random()*0.8)); puff(pos,v,{life:life*(0.6+Math.random()*0.6),s0:0.045,s1:0.012,a:0.6,col,g:gv===undefined?-3:gv,drag:1.2,floor:true,add:true});} }
+  function chunks(pos,n,spd){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(pos,new THREE.Vector3(Math.cos(a)*spd*(0.4+Math.random()),1.2+Math.random()*1.2,Math.sin(a)*spd*(0.4+Math.random())),{life:0.55+Math.random()*0.2,s0:0.06,s1:0.05,a:0.9,col:KCOAL,g:-7,floor:true});} }
+  function ringAt(pos,o){ if(!fxOn)return; const r=RINGS.find(r=>r.t<0); if(!r)return; r.t=0; r.dur=o.dur||0.5; r.r0=o.r0||0.1; r.r1=o.r1||1; r.a=o.a||0.4; r.bill=!!o.bill; r.delay=o.delay||0; r.m.material.color.setHex(o.col||DUST);
+    if(r.bill){scene.add(r.m); r.m.position.copy(pos);} else {fxG.add(r.m); r.m.position.copy(toFloor(pos)).setY(0.016); r.m.rotation.set(-Math.PI/2,0,0);} r.m.visible=false; }
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); if(ringT){ringT.visible=ringFill.visible=false;} coalT=-1; if(coal){coal.visible=coalGlow.visible=false;} bedT=-1; if(bed){bed.visible=scorch.visible=false; bedFlecks.forEach(s=>s.visible=false);} }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  function fxStart(name){
+    HOME=NEAR;
+    if(name==='throw'){ if(dummy){ const u=dummy.userData; u.z=HERO_AT; u.x=0; dummy.position.set(0,0,HERO_AT); }
+      const o=toFloor(targetW().setY(0.014)); ringT.position.copy(o); ringFill.position.copy(o).setY(0.012); ringT.visible=ringFill.visible=fxOn; ringFill.scale.setScalar(0.001); }
+    if(name==='spawn'){ heat=0; deadSpill=false; cv.style.filter=''; dust(new THREE.Vector3(0,0,0),5,0.6,0.3); }
+    if(name==='death'){ deadSpill=false; }
+  }
+  function fxContact(name,i){
+    if(name==='throw'&&i===0){ // the hurl: the coal leaves the sack mouth
+      hitFeel(0.1,0,0); coalT=0; coalA=pt(bones.sack,MOUTH); coalB=targetW().setY(0.08);
+      if(fxOn){ sparks(coalA,5,KSPARK,1.2,0.3); puff(coalA,new THREE.Vector3(0,0.3,0.4),{life:0.6,s0:0.12,s1:0.3,a:0.25,col:SACKC}); } }
+    if(name==='throw'&&i===1){ // the landing on the ring: 9 to the hero, and the cinder bed
+      hitFeel(0.3,0.04,0); coalT=-1; coal.visible=coalGlow.visible=false; ringT.visible=ringFill.visible=false;
+      const b=coalB.clone().setY(0);
+      if(dummy&&showTarget&&feel)dummy.userData.mat.emissiveIntensity=0.45;
+      if(fxOn){ ringAt(b,{r0:0.2,r1:RING_R,dur:0.3,a:0.5,col:EMBER}); flashS.position.copy(b).setY(0.35); flashS.userData.t=0; flashS.visible=true;
+        sparks(b.clone().setY(0.15),12,KGOLD,2.4,0.4); chunks(b.clone().setY(0.12),7,1.6); dust(b,5,0.9,0.4,KBRICK);
+        const o=toFloor(b.clone().setY(0.006)); scorch.position.copy(o); bed.position.copy(o).setY(0.009); bedFlecks.forEach(s=>s.position.set(o.x+s.userData.x,0.03,o.z+s.userData.z)); bedT=0; } }
+    if(name==='fumble'){ hitFeel(0.15,0,0.2);
+      if(fxOn){ const m=pt(bones.sack,MOUTH); for(let k=0;k<5;k++)puff(m,new THREE.Vector3((Math.random()-0.5)*0.6,0.2+Math.random()*0.3,(Math.random()-0.5)*0.6),{life:0.9,s0:0.12,s1:0.36,a:0.28,col:SACKC,drag:1.5});
+        chunks(m,4,0.5); sparks(m,5,KSPARK,1.0,0.35); } }
+    if(name==='death'&&i===0){ hitFeel(0.2,0,0.25); }
+    if(name==='death'&&i===1){ hitFeel(0.15,0,0); if(fxOn){ const b=pt(bones.sack,MOUTH).setY(0.1); dust(b,6,0.9,0.35); chunks(b,8,1.2); sparks(b,8,KGOLD,1.4,0.5); deadSpill=true; } }
+  }
+  let prevT=0;
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time, pv=prevT; prevT=t;
+    if(n==='throw'){
+      if(ringT.visible){ const k=c01(t/TEL); ringFill.scale.setScalar(Math.max(0.001,RING_R*k)); ringT.material.opacity=0.35+0.2*k; ringFill.material.opacity=0.08+0.08*k; }
+      // the heave: the coals brighten as the sack comes back
+      if(t<REL)heat=Math.max(heat,0.35+0.4*c01(t/REL));
+    }
+  }
+  function updateFx(d){
+    const busy=shot&&!shot.done;
+    // the coal on its arc: from the sack mouth to the ring, peaking at 1.5 u, in the game's 0.42 s
+    if(coalT>=0){ coalT+=d; const u=c01(coalT/FLIGHT); const p=coalA.clone().lerp(coalB,u); const mid=(coalA.y+coalB.y)/2; p.y+=4*Math.max(0.2,HURL_Y-mid)*u*(1-u);
+      coal.position.copy(p); coal.rotation.set(coalT*9,coalT*6,0); coal.visible=fxOn; coalGlow.position.copy(p); coalGlow.scale.setScalar(0.32); coalGlow.visible=fxOn;
+      if(fxOn&&Math.random()<0.7)puff(p,new THREE.Vector3(0,0.25,0),{life:0.5,s0:0.07,s1:0.22,a:0.22,col:KBRICK,drag:1});
+      if(fxOn&&Math.random()<0.35)puff(p,new THREE.Vector3((Math.random()-0.5)*0.5,0,(Math.random()-0.5)*0.5),{life:0.3,s0:0.035,s1:0.01,a:0.6,col:KSPARK,g:-2,add:true});
+      if(u>=1){ coalT=-1; coal.visible=coalGlow.visible=false; } }
+    if(flashS.userData.t>=0){ flashS.userData.t+=d; const u=flashS.userData.t/0.22; if(u>=1){flashS.userData.t=-1;flashS.visible=false;} else {flashS.scale.setScalar(0.5+0.9*u); flashS.material.opacity=0.5*(1-u);} }
+    if(bedT>=0){ bedT+=d; const u=bedT/BED_LIFE, f=u<0.06?u/0.06:1-sm((u-0.75)/0.25); if(u>=1||!fxOn){bedT=-1; bed.visible=scorch.visible=false; bedFlecks.forEach(s=>s.visible=false);}
+      else { bed.visible=scorch.visible=true; bed.material.opacity=0.28*f; scorch.material.opacity=0.45*f; bedFlecks.forEach(s=>{s.visible=true; s.scale.setScalar(0.07); s.material.opacity=f*(0.35+0.3*Math.sin(clockT*5+s.userData.ph));}); } }
+    // the coals' glow, Kiln Gold: a slow breath, up on the heave, dimmer once the sack is emptied, out on death
+    const dead=sel.dead||(busy&&shot.name==='death');
+    let base=0.35+0.08*Math.sin(clockT*2.2);
+    if(busy&&shot.name==='throw'&&shot.action.time>REL)base=0.18+0.17*c01((shot.action.time-REL-0.4)/1.0);
+    if(dead)base=busy?0.35*(1-c01(shot.action.time/1.6)):0;
+    if(busy&&shot.name==='spawn')base=0.35*c01(shot.action.time/0.6);
+    heat+=(base-heat)*Math.min(1,d*5); flash=Math.max(0,flash-d*3.2);
+    glowU.value.set(fxOn?heat:0,0,feel?flash:0,0);
+    if(deadSpill&&!busy&&fxOn&&Math.random()<0.08){ const b=pt(bones.sack,MOUTH).setY(0.08); puff(b.add(new THREE.Vector3((Math.random()-0.5)*0.4,0,(Math.random()-0.5)*0.4)),new THREE.Vector3(0,0.25,0),{life:0.9,s0:0.04,s1:0.015,a:0.5,col:KGOLD,add:true,floor:true}); }
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.02){p.s.position.y=0.02; p.v.y=0; p.v.x*=0.8; p.v.z*=0.8;} const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    if(dummy){ const u=dummy.userData; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4);
+      if(!busy){ u.z+=(HOME-u.z)*Math.min(1,d*2); u.x+=(0-u.x)*Math.min(1,d*2); }
+      dummy.position.z=u.z; dummy.position.x=u.x; }
+  }
+  const STEP={A:[0.05,'toeL'],B:[0.55,'toeR']}; const stepPrev={};
+  function footfalls(){ ['walk','turnL','turnR'].forEach(n=>{ const a=A[n]; if(!a||a.__w<0.6)return; const T=META[n].dur; for(const k in STEP){ const u=((a.time/T-STEP[k][0])%1+1)%1; const key=n+k; if(stepPrev[key]!==undefined&&u<stepPrev[key]&&fxOn)dust(pt(bones[STEP[k][1]],[0,0,0]),1,0.25,0.1); stepPrev[key]=u; } }); }
+
+  // ---- the loop
+  let clockT=0, last=performance.now();
+  function travelAt(name,t){ const tr=META[name].travel; if(!tr)return 0; const f=Math.min(tr.length-1,Math.max(0,t*60)); const i=Math.floor(f), j=Math.min(tr.length-1,i+1); return tr[i]+(tr[j]-tr[i])*(f-i); }
+  function tick(d){
+    if(!mixer)return; clockT+=d;
+    const stopped=hitstop>0; if(stopped){hitstop-=d;} const md=stopped?0:d;
+    // weights: the shot owns the body while it plays, then the base fades back in
+    const bn=baseName();
+    if(shot&&!shot.done){ const a=shot.action, m=META[shot.name]; if(a.time>=m.dur-1e-3){ shot.done=true; if(shot.name==='spawn')refresh(); } }
+    if(shot&&shot.done&&!shot.hold&&sel.action&&!sel.dead){ shot.gap+=md; if(shot.gap>0.7)startShot(sel.action); }
+    Object.entries(A).forEach(([k,a])=>{ let to=0; if(shot&&shot.action===a)to=(shot.done&&!shot.hold)?0:1; else if(k===bn)to=(shot&&(!shot.done||shot.hold))?0:1;
+      const tau=(shot&&shot.action===a)?0.18:(to>a.__w?0.18:0.12); a.__w+=(to-a.__w)*Math.min(1,md/tau); if(Math.abs(to-a.__w)<0.002)a.__w=to; a.setEffectiveWeight(a.__w); });
+    rageW+=((rage&&!sel.dead?1:0)-rageW)*Math.min(1,md/0.3); if(rageAct)rageAct.setEffectiveWeight(rageW); const fast=1+(RAGEWALK/WALK-1)*rageW; ['walk','turnL','turnR'].forEach(k=>A[k].timeScale=fast);
+    mixer.update(md);
+    // root motion and floor
+    let dz=0, dyaw=0; dz+=(A.walk.__w)*WALK*fast*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*fast*md;
+    if(shot&&!shot.done){ const tz=travelAt(shot.name,shot.action.time); const dd=tz-shot.tz; shot.tz=tz; dz+=dd; if(dummy&&dd)dummy.userData.z-=dd; }
+    if(dz||dyaw)moveFloor(dz,dyaw);
+    // contacts
+    if(shot){ const m=META[shot.name], t=shot.action.time; m.contact.forEach((c,i)=>{ if(c>0&&shot.prev<c&&t>=c)fxContact(shot.name,i); }); fxOngoing(md); shot.prev=t; }
+    squash=Math.max(0,squash-d*7); const sq=feel?squash:0; model.scale.set(U*(1+0.11*sq),U*(1-0.05*sq),U*(1+0.11*sq));
+    model.updateMatrixWorld(true); footfalls(); updateFx(stopped?d*0.25:d); showPhase();
+  }
+  function frame(now){
+    requestAnimationFrame(frame); const raw=Math.min(0.05,(now-last)/1000); last=now;
+    if(!paused)tick(raw*speed);
+    orbit.update(); shake=Math.max(0,shake-raw*3.2); const sk=feel?shake*shake*0.09:0; shakeV.set((Math.random()-0.5)*sk,(Math.random()-0.5)*sk,(Math.random()-0.5)*sk); cam.position.add(shakeV);
+    renderer.render(scene,cam); cam.position.sub(shakeV);
+  }
+  moveFloor(0,0); requestAnimationFrame(frame);
+})();
+</script>

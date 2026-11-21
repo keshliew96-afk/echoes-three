@@ -1,0 +1,9 @@
+idle          {"dur":2.7318196987737333,"frames":165,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.6063,"loAt":"legL@2.03","under":0,"loopPopDeg":0}
+walk          {"dur":2.7318196987737333,"frames":165,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.5719,"loAt":"legL@2.03","under":0,"loopPopDeg":0}
+turnL         {"dur":2.7318196987737333,"frames":165,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.5921,"loAt":"legL@2.03","under":0,"loopPopDeg":0}
+turnR         {"dur":2.7318196987737333,"frames":165,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.5882,"loAt":"legR@2.03","under":0,"loopPopDeg":0}
+swoops        {"dur":8.0125,"frames":482,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.0386,"loAt":"legR@7.37","under":0,"loopPopDeg":0}
+hurt          {"dur":0.35,"frames":22,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0088,"loAt":"legR@0.17","under":5,"loopPopDeg":0}
+spawn         {"dur":1,"frames":61,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.3,"loAt":"legL@0.00","under":0,"loopPopDeg":0}
+death         {"dur":2,"frames":121,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0003,"loAt":"legR@0.87","under":0,"loopPopDeg":0}
+wrote moth.glb 1.05 MB

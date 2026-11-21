@@ -1,0 +1,47 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "skill": "warding_aura",
+  "allies": [
+   [
+    -0.9,
+    -1.7,
+    1
+   ],
+   [
+    1.0,
+    -2.3,
+    1
+   ],
+   [
+    -3.0,
+    1.2,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    5.5,
+    "eval",
+    "const p=E.state().party;E.cmd('setHp',p[1].id,0.5);E.cmd('setHp',p[2].id,0.8);E.cmd('setHp',p[3].id,0.7);"
+   ]
+  ],
+  "secs": 9.0,
+  "live": "(()=>{const w=window.__echoes.content.world();const L=globalThis.__reviewGladeWisps||[];return 'waiting '+L.filter(x=>x.state==='wait').length+' \u00b7 flying '+L.filter(x=>x.state==='fly').length+' \u00b7 '+w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 4.0
+   }
+  ],
+  "cap": "S19 Glade Wisps with Multiply, Bounce and Breeze \u00b7 two wisps form each time (at most 4) \u00b7 each heal hops on to the next hurt ally within 2.2 u \u00b7 wisps fly 40% faster",
+  "name": "kit_S19n"
+ }
+]

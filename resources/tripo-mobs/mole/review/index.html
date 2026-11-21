@@ -1,0 +1,386 @@
+<title>Tripo Grave Mole Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a review bench, the same one the hero pages use. The live model on the left, the model as sent on the right, facts and notes under. */
+:root{
+  --bg:#f3f2ee; --panel:#fbfaf7; --fg:#23262b; --muted:#666b73; --line:#d9d6cd;
+  --stage:#c9cbc6; --stage2:#b4b7b0; --accent:#2f7d57; --accent-fg:#ffffff; --warn:#9a5b12; --chip:#e8e6df; --phase:#7a5fc4;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0}
+.lede{color:var(--muted);margin:4px 0 0;max-width:65ch}
+.bench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.25fr);gap:16px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.pane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,var(--stage),var(--stage2));aspect-ratio:4/3;max-width:100%}
+.stage canvas{transition:filter .9s;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--fg);opacity:.7;pointer-events:none}
+.stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:14px}
+.sent img{display:block;width:100%;height:auto}
+.controls{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lab{font-size:12px;color:var(--muted);width:52px;flex:none}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--fg);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+button:disabled{opacity:.38;cursor:not-allowed;border-color:transparent}
+.layers{margin:0 0 0 58px;font-size:13px;font-weight:500;color:var(--accent);min-height:1.5em}
+.rule{margin:0 0 0 58px;font-size:12px;color:var(--muted);max-width:62ch}
+.phases{margin:0 0 0 58px;display:flex;gap:2px;height:22px;position:relative;max-width:520px}
+.phases span{flex:var(--w) 1 0;min-width:0;background:var(--chip);font-size:11px;line-height:22px;text-align:center;color:var(--muted);overflow:hidden;white-space:nowrap;border-radius:3px}
+.phases span.on{background:var(--phase);color:var(--panel)}
+.phases i{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);left:0;border-radius:1px}
+@media (max-width:480px){.layers,.rule,.phases{margin-left:0}}
+.note{font-size:13px;color:var(--muted);padding:0 14px 12px;margin:0}
+.wrap>.note{padding:0;max-width:78ch}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0}
+.facts div{background:var(--panel);padding:12px 14px}
+.facts dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.facts small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.cols ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:60ch}
+.rough{color:var(--warn)}
+.audit{overflow-x:auto;margin:0}.audit table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}.audit th,.audit td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}.audit th{font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Grave Mole from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">The Ashen Barrow's burrower: your export, with a skeleton and eight moves added by hand. A fat, dark star-nosed mole with a pink star on its nose, yellow eyes, huge pale digging claws, short hind feet, a pink tail, and a grave candle and broken planks stuck in the earth on its back. It tunnels under the floor toward you, only its mound showing; close by, an Ember ring marks the spot, and it bursts up out of the earth inside it, stands blinking for a moment, then digs back in. Press a move to watch it; the numbers under the page come from the model file.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle stands it on the floor (the game's surfaced mole); Tunnel sends it under, with the mound riding over it, and Going turns it on the spot. Emerge plays the game's three bursts in turn (the left claw, the right claw, then both claws off a leap): each one under the floor through the 0.8 u Ember ring, the burst, a moment surfaced, then the dig back in. The hero stand-in waits inside the ring. An action repeats until you press it again. Hurt plays on top of anything. Death drops it: press it again and it spawns back. The bar names the part of the move that is playing, in the game's own words where it has them.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="mole-views.png" alt="The Tripo Grave Mole from the front, its left side, the back and its right side, before rigging" width="800" height="800">
+      <p class="note" style="padding-top:12px">It came through as one piece: a round, low mole standing on its big front paws, each with five long pale claws, and short hind feet. A pink star nose with yellow whiskers and small yellow eyes, dark fur with a mantle of earth over its back, a stubby grave candle and two broken planks set in the earth there, and a short pink tail.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>3,790 <small>foe budget 4,000</small></dd></div>
+    <div><dt>Bones</dt><dd>24 <small>a root, hips, spine, chest, head and the star nose; two in the tail; upper arm, forearm, paw and claws each side; thigh, shin, foot and toe each side</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>1.2 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>0.8 u tall <small>1.4 u from nose to tail; a low, broad beast beside the 1 u hero</small></dd></div>
+    <div><dt>In the game</dt><dd>Grave Mole <small>24 health. It spawns burrowed and can't be hit while under: it tunnels at 2.2 u/s toward its target, under blockers, leaving a ripple of earth. Within 0.3 u of the target, or after 180 ticks under, it commits: an Ember ring of 0.8 u marks the spot for 60 ticks while it waits below, then it bursts out for 11 to every hero in the ring and stays surfaced and hittable for 120 ticks before it digs back in. Level III, the Ashen Barrow.</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>It stands on its claws and breathes, the star nose wiggling and sniffing, the head turning to look, the tail twitching.</td><td>Mine: a 4 s loop. The game's surfaced mole stands and blinks.</td></tr>
+      <tr><td>Tunnel</td><td>Under the floor, nose first, the claws raking in turn; only the tip of the grave candle shows, poking out of a churning mound of earth that leaves a furrow behind it.</td><td>Game: 2.2 u/s. The rake is mine, 0.5 s a cycle.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Shuffles round on the spot, the claws stepping.</td><td>90° a second (mine: the game turns it at once).</td></tr>
+      <tr><td>Emerge</td><td>The game's three bursts in turn, on its own key poses. Through the ring telegraph it waits under the floor while the mound heaves and quakes; the burst throws it up out of the earth, the left claw raised high with the body turned to its right, then the right claw, then both claws off a leap, and earth and clods fly. It lands on its feet, settles, and stands surfaced, sniffing and looking round; then it digs back in: nose down, the claws raking earth back in turn, and it sinks under as the mound rises over it.</td><td>Game: the 60-tick ring (1 s); the burst in the last 2.5 frames, held 3, snap 3, settle 9 (at 30 a second); 11 to every hero in the ring on the burst. Surfaced 1 s here (the game: 2 s). The dig back in is mine, 1.1 s.</td></tr>
+      <tr><td>Hurt</td><td>The head and nose snap back and the tail jerks. Plays on top of any move.</td><td>0.4 s</td></tr>
+      <tr><td>Spawn</td><td>Grows in on the floor.</td><td>Game: grow in 7 frames, about 10% over. The rest is mine.</td></tr>
+      <tr><td>Death</td><td>Struck, it rears with its claws up, rolls over onto its side, gives a last kick of the hind legs and lies still.</td><td>Mine: 2.2 s, then it stays down. The game pops every foe where it is.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Feet sliding while planted (both turns and the emerges)</td><td>0 mm</td></tr>
+      <tr><td>Loops that jump when they restart (idle, tunnel, both turns)</td><td>0</td></tr>
+      <tr><td>Under the floor on purpose</td><td>Tunnelling, and under through the ring and after the dig; the page's floor hides it there, as the game's does.</td></tr>
+      <tr><td>Anything else into the floor</td><td>A paw dips up to 23 mm as it turns; a shoulder up to 19 mm as it rolls onto its side in the death.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the bursts and the dig are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>The candle tip shows while it tunnels.</strong> The game's mole goes fully under with only the mound showing. Here it tunnels a little higher, so the top of the candle pokes out of the mound with its flame; through the ring it is fully under, as in the game. Say if you want it fully under while it tunnels too.</li>
+        <li><strong>Surfaced for 1 s.</strong> The game keeps it up for 2 s; it is shortened here so the three bursts come round quickly.</li>
+        <li><strong>The hero waits inside the ring.</strong> The game commits when the hero is within 0.3 u; the stand-in stands at the ring's edge so it does not sit inside the mole.</li>
+        <li><strong>Emerge plays all three bursts in a row.</strong> The game picks one each time.</li>
+        <li><strong>Spawn is on the floor.</strong> The game's mole spawns already burrowed; the page grows it in standing so you can see it.</li>
+        <li><strong>Mine.</strong> The idle, the rake while tunnelling, the turn rate, the dig back in, the hurt, the spawn after the grow-in, and the death.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The planks and the candle are fixed to its back; they do not rock on their own.</li>
+        <li>The five claws on each paw move as one; they spread and curl together.</li>
+        <li>The mound is a plain earth hump with six clods, drawn by the page after the game's.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models. Your model has no glow of its own, so the indigo tell is lit on its claw tips.</li>
+        <li>The effects are stand-ins drawn for this page, after the game's own: the mound and its furrow, the Ember ring, the quake, earth and clods thrown by the burst, the hit on the hero, the earth raked back by the dig, and a small candle flame. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="mole-model.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=1.4;
+  const EMBER=0xFF5A36, DUST=0x8d8478;
+  const LABEL={idle:'Idle',walk:'Tunnel',turnL:'Turn left',turnR:'Turn right',emerges:'Emerge',hurt:'Hurt',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['emerges'];
+  const NEAR=0.55, FAR=1.5; let HOME=FAR; // where the hero stands, in u: out in front, and for the emerges inside the 0.8 u ring, a little to one side
+  const WALK=2.2, RAGEWALK=2.2, TURN=Math.PI*0.5;
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){$('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(2.5,6,4.5); scene.add(sun);
+  // the floor: a grid that wraps, and a group for things that lie on the floor and stay where they fell
+  const gridG=new THREE.Group(), fxG=new THREE.Group(); gridG.matrixAutoUpdate=false; fxG.matrixAutoUpdate=false; scene.add(gridG,fxG);
+  const grid=new THREE.GridHelper(48,48,0x4a4f48,0x4a4f48); grid.material.transparent=true; grid.material.opacity=0.85; grid.position.y=0.002; gridG.add(grid);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.17,depthWrite:false}));
+  blob.rotation.x=-Math.PI/2; blob.scale.set(0.45,0.72,1); blob.position.set(0,0.004,0); scene.add(blob);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,120);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=1.0; orbit.maxDistance=30;
+  const VIEWS={Close:{p:[2.7,1.7,3.3],t:[0.15,0.3,0.3]},'Game zoom':{p:[0,10.6,9.4],t:[0,0.3,0.6]},Side:{p:[5.2,0.9,0.6],t:[0,0.35,0.4]},Front:{p:[0.4,0.9,4.6],t:[0,0.35,0]},Back:{p:[-1.9,1.7,-3.9],t:[0,0.35,0.2]},Top:{p:[0,8,0.6],t:[0,0.2,0.4]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  // ---- controls
+  function group(id,names,onPick,active,multi){const row=$(id);const btns={};names.forEach(n=>{const b=document.createElement('button');b.textContent=LABEL[n]||n;b.dataset.k=n;b.setAttribute('aria-pressed',String(n===active));b.onclick=()=>onPick(n,b);row.appendChild(b);btns[n]=b;});return btns;}
+  const sel={base:'idle',going:'Forward',action:null,dead:false};
+  let rage=false, rageW=0, rageAct=null;
+  let speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, feel=true, fxOn=true, showTarget=true, helper=null;
+  const B={};
+  B.moves=group('moves',['idle','walk','spawn','death'],k=>pick(k),'idle');
+  B.dirs=group('dirs',['Forward','Turn left','Turn right'],k=>{sel.going=k;if(sel.base!=='walk'&&!sel.dead)sel.base='walk';refresh();},'Forward');
+  B.acts=group('acts',[...ACTIONS,'hurt'],k=>pick(k),null);
+  B.speeds=group('speeds',['0.1×','0.25×','0.5×','1×'],(k)=>{speed=parseFloat(k);Object.values(B.speeds).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'1×');
+  B.views=group('views',Object.keys(VIEWS),k=>{setView(k);Object.values(B.views).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'Close');
+  const toggle=(id,get,set)=>{const b=$(id);b.onclick=()=>{set(!get());b.setAttribute('aria-pressed',String(get()));};b.setAttribute('aria-pressed',String(get()));};
+  toggle('feel',()=>feel,v=>feel=v); toggle('fx',()=>fxOn,v=>{fxOn=v;if(!v)clearFx();}); toggle('target',()=>showTarget,v=>{showTarget=v;if(dummy)dummy.visible=v;});
+  toggle('bones',()=>!!(helper&&helper.visible),v=>{if(helper)helper.visible=v;}); toggle('pause',()=>paused,v=>paused=v);
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, glowU={value:new THREE.Vector4(0,0.25,0,0.3)}, hurtAct=null, shot=null, dummy=null;
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    mesh.material.onBeforeCompile=sh=>{sh.uniforms.uGlow=glowU;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uGlow;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3(0.36,0.45,0.95)*uGlow.x*vMask.x+vec3(0.55,0.22,0.9)*uGlow.y*vMask.y+vec3(0.55)*uGlow.z+vec3(0.8,0.75,1.0)*uGlow.w*vMask.z;');};
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; scene.add(helper);
+    mixer=new THREE.AnimationMixer(model);
+    const UPPER=/^(spine|chest|head|snout|tail1|tail2)\./; const restC=gltf.animations.find(c=>c.name==='hurt');
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      if(c.name==='rageHold'){const h=new THREE.AnimationClip('rageAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,restC,60); rageAct=mixer.clipAction(h); rageAct.blendMode=THREE.AdditiveAnimationBlendMode; rageAct.setLoop(THREE.LoopRepeat,Infinity); rageAct.setEffectiveWeight(0); rageAct.play(); return;}
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1);
+    makeFx(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,hipY:+bones.hips.getWorldPosition(new THREE.Vector3()).y.toFixed(2),ring:ring.visible,mound:[mound.visible,+mAmt.toFixed(2)],tell:+tell.toFixed(2),hero:[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)],dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,t:shot&&+shot.action.time.toFixed(3),fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glow:glowU.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+  // ---- what plays
+  function baseName(){return sel.dead?null:sel.base==='walk'?(sel.going==='Forward'?'walk':sel.going==='Turn left'?'turnL':'turnR'):'idle';}
+  function startShot(name,hold){ if(!A[name])return; if(shot){shot.action.__w=0;shot.action.setEffectiveWeight(0);}
+    const a=A[name]; a.reset(); a.paused=false; a.__w=1; a.setEffectiveWeight(1); Object.entries(A).forEach(([k,x])=>{if(x!==a){x.__w=Math.min(x.__w,0.0);x.setEffectiveWeight(x.__w);}});
+    shot={name,action:a,prev:0,hold:!!hold,done:false,gap:0,tz:0}; fxStart(name); }
+  function pick(k){
+    if(!mixer)return;
+    if(k==='idle'||k==='walk'){ if(sel.dead)return; sel.base=k; }
+    else if(k==='spawn'){ sel.dead=false; sel.action=null; cv.style.filter=''; startShot('spawn'); }
+    else if(k==='death'){ if(sel.dead){ sel.dead=false; cv.style.filter=''; startShot('spawn'); } else { sel.dead=true; sel.action=null; startShot('death',true); } }
+    else if(k==='hurt'){ if(sel.dead)return; hurtAct.reset(); hurtAct.setEffectiveWeight(1); hurtAct.play(); hitFeel(0.3,0.04,0.5); flash=0.35; if(fxOn)sparks(pt(bones.snout,[0,0,0.04]),5,0xe9dcc0,1.1,0.2); }
+    else { if(sel.dead)return; sel.action=sel.action===k?null:k; if(sel.action&&(!shot||shot.done||shot.name!==k))startShot(k); }
+    refresh();
+  }
+  function refresh(){
+    Object.values(B.moves).forEach(b=>{const k=b.dataset.k; b.setAttribute('aria-pressed',String(k==='death'?sel.dead:k==='spawn'?!!(shot&&shot.name==='spawn'&&!shot.done):!sel.dead&&sel.base===k)); b.disabled=sel.dead&&(k==='idle'||k==='walk'); b.textContent=k==='death'&&sel.dead?'Death (press to spawn)':LABEL[k];});
+    Object.values(B.dirs).forEach(b=>{b.setAttribute('aria-pressed',String(sel.base==='walk'&&!sel.dead&&b.dataset.k===sel.going)); b.disabled=sel.dead;});
+    Object.values(B.acts).forEach(b=>{b.setAttribute('aria-pressed',String(sel.action===b.dataset.k)); b.disabled=sel.dead;});
+  }
+  function showPhase(){
+    const el=$('layers'), ph=$('phases'), tag=$('clipname'); const bn=baseName();
+    if(shot&&!shot.done){ const m=META[shot.name], t=shot.action.time; let cur=''; m.phases.forEach(p=>{if(t>=p[1])cur=p[0];});
+      el.textContent=LABEL[shot.name]+(cur?' · '+cur:'')+' · '+t.toFixed(2)+' s'; tag.textContent=LABEL[shot.name];
+      if(ph.dataset.name!==shot.name){ph.dataset.name=shot.name; ph.innerHTML=m.phases.map((p,i)=>{const e=i+1<m.phases.length?m.phases[i+1][1]:m.dur;return '<span style="--w:'+Math.max(0.04,(e-p[1])).toFixed(3)+'">'+p[0]+'</span>';}).join('')+'<i></i>'; ph.hidden=!m.phases.length;}
+      const spans=ph.querySelectorAll('span'); m.phases.forEach((p,i)=>spans[i]&&spans[i].classList.toggle('on',p[0]===cur)); const mk=ph.querySelector('i'); if(mk)mk.style.left=(100*Math.min(1,t/m.dur)).toFixed(1)+'%';
+    } else { el.textContent=sel.dead?'Down. Press Death again to spawn it back in.':(LABEL[bn]||'')+(sel.action?' · '+LABEL[sel.action]+' repeats':''); tag.textContent=sel.dead?'Death':LABEL[bn]||''; ph.hidden=true; ph.dataset.name=''; }
+  }
+
+  // ---- floor motion: the floor moves under him, he stays in the middle of the stage
+  const floorPos=new THREE.Vector3(); let floorYaw=0; const PIV=new THREE.Vector3(0,0,-0.04*U);
+  function moveFloor(dz,dyaw){ // he moves forward dz and turns left dyaw: the floor does the opposite
+    floorPos.z-=dz; if(dyaw){ floorPos.sub(PIV).applyAxisAngle(Y,-dyaw).add(PIV); floorYaw-=dyaw; }
+    fxG.matrix.makeRotationY(floorYaw).setPosition(floorPos);
+    const l=floorPos.clone().applyAxisAngle(Y,-floorYaw); l.x-=Math.round(l.x); l.z-=Math.round(l.z); l.applyAxisAngle(Y,floorYaw); gridG.matrix.makeRotationY(floorYaw).setPosition(l);
+  }
+  const Y=new THREE.Vector3(0,1,0), tmp=new THREE.Vector3(), tmp2=new THREE.Vector3();
+  const pt=(bone,v)=>tmp.set(v[0],v[1],v[2]).applyMatrix4(bone.matrixWorld).clone();
+  const toFloor=(w)=>w.clone().applyMatrix4(fxG.matrix.clone().invert());
+
+  // ---- hit feel: freeze, squash (the game's boss contact squash: 11% wider, 5% shorter), shake, flash
+  let hitstop=0, squash=0, shake=0, flash=0; const shakeV=new THREE.Vector3();
+  function hitFeel(sh,stop,sq){ if(!feel)return; hitstop=Math.max(hitstop,stop); squash=Math.max(squash,sq); shake=Math.max(shake,sh); }
+
+  // ---- effects (stand-ins, dim on purpose, after the game's own: the floor hides it while it is under, and the earth
+  // mound with its clods rides over it, churning as it tunnels and leaving a furrow of loose earth; the Ember ring r 0.8
+  // filling over the 60-tick coil while the mound quakes; the burst out of the earth throwing clods and dust, 11 to the
+  // hero; the claws raking earth back as it digs in; the indigo claw tips, its tell, brighter from the coil to the
+  // landing; a small candle flame on its back)
+  const FXP=[], RINGS=[]; let dotTex=null, ring=null, ringFill=null, occ=null, mound=null, flame=null;
+  let ringT=-1, tell=0.25, mAmt=0;
+  const EARTH=0x3b2d22, EARTHD=0x261c14, SPARK=0xe9dcc0, FLAMEC=0xffd9a0;
+  const TEL=1.0, R_EM=0.8, FR=1/30, CYCLE=3.9, DIG_AT=2.8, HX=-0.6, HIP0=0.18*U;
+  const sm=(x)=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);}, c01=(x)=>Math.max(0,Math.min(1,x));
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<200;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<8;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:DUST,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false}); scene.add(m);}
+    // the floor itself: invisible, but it hides whatever is under it, so the burrowed mole is gone but for its mound
+    occ=new THREE.Mesh(new THREE.PlaneGeometry(60,60).rotateX(-Math.PI/2),new THREE.MeshBasicMaterial({colorWrite:false})); occ.renderOrder=-1; scene.add(occ);
+    const em=(o)=>new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:o,depthWrite:false,side:THREE.DoubleSide});
+    // the emerge ring, on the floor round it: the outline and a fill growing out over the coil
+    ring=new THREE.Mesh(new THREE.RingGeometry(R_EM-0.04,R_EM,72).rotateX(-Math.PI/2),em(0.5)); ring.position.y=0.012; ring.visible=false; fxG.add(ring);
+    ringFill=new THREE.Mesh(new THREE.CircleGeometry(1,72).rotateX(-Math.PI/2),em(0.12)); ringFill.position.y=0.011; ringFill.visible=false; fxG.add(ringFill);
+    // the mound: the game's earth hump and six clods round it, sized to this mole
+    mound=new THREE.Group(); const hm=new THREE.Mesh(new THREE.SphereGeometry(1,12,6,0,Math.PI*2,0,Math.PI/2).scale(0.46,0.17,0.66),new THREE.MeshStandardMaterial({color:EARTH,roughness:1,flatShading:true})); mound.add(hm);
+    const cm=new THREE.MeshStandardMaterial({color:EARTHD,roughness:1,flatShading:true});
+    for(let i=0;i<6;i++){const a=i/6*Math.PI*2, cl=new THREE.Mesh(new THREE.IcosahedronGeometry(0.1,0),cm); cl.position.set(Math.cos(a)*0.42,0.03,Math.sin(a)*0.6); cl.rotation.set(a,a*0.7,0); cl.scale.set(1,0.8,1); mound.add(cl);}
+    mound.visible=false; scene.add(mound);
+    // the grave candle's flame: small and dim
+    flame=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,color:FLAMEC,transparent:true,depthWrite:false,opacity:0.35})); flame.scale.set(0.07,0.11,1); scene.add(flame);
+    dummy=new THREE.Group(); const dm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dm); body.position.y=0.31; const hd=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dm); hd.position.y=0.8; dummy.add(body,hd); dummy.userData={mat:dm,z:HOME,x:0,tip:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+  function puff(pos,vel,o){ if(!fxOn)return; const p=FXP.find(p=>p.life<=0); if(!p)return; p.life=o.life||0.5; p.age=0; p.v.copy(vel); p.g=o.g||0; p.s0=o.s0||0.1; p.s1=o.s1||0.3; p.a=o.a||0.4; p.drag=o.drag||0; p.floor=!!o.floor; p.s.material.color.setHex(o.col||DUST); p.s.position.copy(pos); if(p.floor){fxG.add(p.s);p.s.position.copy(toFloor(pos));}else scene.add(p.s); p.s.visible=true; p.s.scale.setScalar(p.s0); p.s.material.opacity=0; }
+  function dust(pos,n,spd,up,col){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(tmp2.copy(pos).setY(0.04),new THREE.Vector3(Math.cos(a)*spd*(0.5+Math.random()),up*(0.4+Math.random()*0.6),Math.sin(a)*spd*(0.5+Math.random())),{life:0.5+Math.random()*0.3,s0:0.08,s1:0.3,a:0.2,drag:2.6,floor:true,col:col||EARTH});} }
+  function clods(pos,n,spd,up){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(tmp2.copy(pos).setY(0.06),new THREE.Vector3(Math.cos(a)*spd*(0.4+Math.random()),up*(0.6+Math.random()*0.6),Math.sin(a)*spd*(0.4+Math.random())),{life:0.55+Math.random()*0.3,s0:0.07,s1:0.05,a:0.75,col:EARTHD,g:-7,drag:0.4,floor:true});} }
+  function sparks(pos,n,col,spd,life){ for(let i=0;i<n;i++){const v=new THREE.Vector3(Math.random()-0.5,Math.random()-0.2,Math.random()-0.5).normalize().multiplyScalar(spd*(0.4+Math.random()*0.8)); puff(pos,v,{life:life*(0.6+Math.random()*0.6),s0:0.05,s1:0.012,a:0.55,col,g:-2.5,drag:1.6});} }
+  function ringAt(pos,o){ if(!fxOn)return; const r=RINGS.find(r=>r.t<0); if(!r)return; r.t=0; r.dur=o.dur||0.5; r.r0=o.r0||0.1; r.r1=o.r1||1; r.a=o.a||0.4; r.bill=!!o.bill; r.delay=o.delay||0; r.m.material.color.setHex(o.col||DUST);
+    if(r.bill){scene.add(r.m); r.m.position.copy(pos);} else {fxG.add(r.m); r.m.position.copy(pos).setY(0.016); r.m.rotation.set(-Math.PI/2,0,0);} r.m.visible=false; }
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); ringT=-1; if(ring){ring.visible=ringFill.visible=false;} }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  const hipW=()=>pt(bones.hips,[0,0,0]);
+  function ringStart(){ const o=toFloor(new THREE.Vector3(0,0,0)); ring.position.set(o.x,0.012,o.z); ringFill.position.set(o.x,0.011,o.z); ringT=0; ring.visible=ringFill.visible=fxOn; }
+  function fxStart(name){
+    HOME=name==='emerges'?NEAR:FAR; prevT=0;
+    if(dummy){ const u=dummy.userData; u.z=HOME; u.x=name==='emerges'?HX:0; u.tip=0; dummy.position.set(u.x,0,HOME); }
+    if(name==='emerges')ringStart();
+    if(name==='spawn'){ cv.style.filter=''; }
+  }
+  function hitHero(n){ if(dummy&&showTarget){ const u=dummy.userData; u.tip=0.3; u.z+=0.1; u.x-=0.08; u.mat.emissiveIntensity=feel?0.45:0; if(fxOn)sparks(targetW().setY(0.5),n,SPARK,1.6,0.25); } }
+  function fxContact(name,i){
+    if(name==='emerges'){ hitFeel(i===2?0.55:0.4,0.05,i===2?0.55:0.45); hitHero(7);
+      if(fxOn){ const c=toFloor(new THREE.Vector3(0,0,0)); ringAt(c,{r0:R_EM*0.9,r1:R_EM*1.1,dur:0.35,a:0.4,col:EMBER}); const h=hipW().setY(0); clods(h,14,1.8,3.2); dust(h,10,1.3,0.5); ringAt(toFloor(h),{r0:0.3,r1:1.1,dur:0.4,a:0.35,col:EARTH}); } }
+    if(name==='death'&&i===1){ hitFeel(0.15,0,0.15); if(fxOn)dust(hipW().setY(0),7,0.9,0.3); }
+  }
+  let prevT=0, dirtAcc=0;
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time, pv=prevT; prevT=t;
+    const cross=(c)=>pv<c&&t>=c;
+    if(n==='emerges'){
+      const k=Math.min(2,Math.floor(t/CYCLE)), tt=t-k*CYCLE;
+      if(k>0&&cross(k*CYCLE))ringStart();
+      // the tell: the claw tips brighten from the coil to the landing
+      tell=0.25+0.55*(tt<TEL?sm((tt-0.3)/0.6):1-sm((tt-TEL-0.5)/0.5));
+      // the dig back in: earth raked back off the claws, then the mound rises over it
+      if(fxOn&&tt>DIG_AT+0.1&&tt<DIG_AT+0.75){ dirtAcc+=d*22; while(dirtAcc>1){ dirtAcc-=1; const cl=pt(bones[Math.random()<0.5?'clawL':'clawR'],[0,0,0.04]).setY(0.05); puff(cl,new THREE.Vector3((Math.random()-0.5)*1.2,1.4+Math.random(),-1.2-Math.random()),{life:0.5,s0:0.06,s1:0.04,a:0.7,col:EARTHD,g:-7,floor:true}); } }
+      if(cross(k*CYCLE+DIG_AT+0.75)&&fxOn)dust(hipW().setY(0),6,0.7,0.3);
+    }
+    if(n==='death'){ tell=0.25*Math.max(0,1-t/0.6); if(t>1.4)cv.style.filter='saturate(0.5)'; }
+  }
+  function updateFx(d){
+    const busy=shot&&!shot.done; if(!busy)HOME=FAR; if(!busy)tell+=((sel.dead?0:0.25)-tell)*Math.min(1,d*4);
+    flash=Math.max(0,flash-d*3.2); glowU.value.set(fxOn?tell:0,0,feel?flash:0,0);
+    // the mound: up as the body goes under, churning while it tunnels, quaking through the coil
+    const h=hipW(), want=c01((HIP0-h.y)/(0.32*U)); mAmt+=(want-mAmt)*Math.min(1,d*10);
+    const tun=A.walk?A.walk.__w:0, coil=busy&&shot.name==='emerges'&&((shot.action.time%CYCLE)<TEL)?1:0;
+    const ch=0.05*tun*Math.sin(clockT*13), qk=coil*0.05*Math.sin(clockT*47);
+    mound.visible=mAmt>0.02; mound.position.set(h.x+qk*0.4,0,h.z); mound.scale.set(1+ch+qk,Math.max(0.01,mAmt)*(1+0.5*coil*Math.abs(Math.sin(clockT*23))),1-ch+qk);
+    blob.visible=mAmt<0.5;
+    // a furrow of loose earth left behind as it tunnels
+    if(fxOn&&tun>0.5&&mAmt>0.5&&!busy){ dirtAcc+=d*16; while(dirtAcc>1){ dirtAcc-=1; const b=pt(bones.hips,[(Math.random()-0.5)*0.35,0,-0.42+(Math.random()-0.5)*0.12]).setY(0.03); puff(b,new THREE.Vector3((Math.random()-0.5)*0.4,0.25,(Math.random()-0.5)*0.3),{life:1.4,s0:0.12,s1:0.2,a:0.4,col:Math.random()<0.5?EARTH:EARTHD,drag:3,floor:true}); } }
+    if(fxOn&&coil&&Math.random()<d*10)dust(h.clone().setY(0),1,0.5,0.4);
+    // the candle flame on its back, a slow dim flicker
+    flame.position.copy(pt(bones.spine,[0,0.37,-0.02])); flame.visible=fxOn&&!sel.dead; flame.material.opacity=0.3+0.08*Math.sin(clockT*11)+0.05*Math.sin(clockT*29); flame.scale.set(0.07,0.1+0.015*Math.sin(clockT*17),1);
+    if(ringT>=0){ ringT+=d; const f=c01(ringT/TEL), go=ringT>=TEL, fade=go?1-c01((ringT-TEL-0.1)/0.25):1; ringFill.scale.setScalar(Math.max(0.001,R_EM*f));
+      ring.material.opacity=(go?0.75:0.5)*fade; ringFill.material.opacity=(go?0.2:0.12)*fade; if(fade<=0||!fxOn||(busy&&shot.name!=='emerges')){ringT=-1;ring.visible=ringFill.visible=false;} }
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.02)p.s.position.y=0.02; const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    if(dummy){ const u=dummy.userData, hx=busy&&shot.name==='emerges'?HX:0; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4); u.tip=Math.max(0,u.tip-d*1.2); dummy.rotation.x=-0.6*u.tip;
+      u.z+=(HOME-u.z)*Math.min(1,d*1.5); u.x+=(hx-u.x)*Math.min(1,d*2); dummy.position.z=u.z; dummy.position.x=u.x; }
+  }
+  const STEP={HL:[0.1,'toeL'],HR:[0.6,'toeR']}; const stepPrev={};
+  function footfalls(){ ['walk','turnL','turnR'].forEach(n=>{ const a=A[n]; if(!a||a.__w<0.6)return; const T=META[n].dur; for(const k in STEP){ const u=((a.time/T-STEP[k][0])%1+1)%1; const key=n+k; if(stepPrev[key]!==undefined&&u<stepPrev[key]&&fxOn)dust(pt(bones[STEP[k][1]],[0,-0.03,0.03]),2,0.4,0.25); stepPrev[key]=u; } }); }
+
+  // ---- the loop
+  let clockT=0, last=performance.now();
+  function travelAt(name,t){ const tr=META[name].travel; if(!tr)return 0; const f=Math.min(tr.length-1,Math.max(0,t*60)); const i=Math.floor(f), j=Math.min(tr.length-1,i+1); return tr[i]+(tr[j]-tr[i])*(f-i); }
+  function tick(d){
+    if(!mixer)return; clockT+=d;
+    const stopped=hitstop>0; if(stopped){hitstop-=d;} const md=stopped?0:d;
+    // weights: the shot owns the body while it plays, then the base fades back in
+    const bn=baseName();
+    if(shot&&!shot.done){ const a=shot.action, m=META[shot.name]; if(a.time>=m.dur-1e-3){ shot.done=true; if(shot.name==='spawn')refresh(); } }
+    if(shot&&shot.done&&!shot.hold&&sel.action&&!sel.dead){ shot.gap+=md; if(shot.gap>0.7)startShot(sel.action); }
+    Object.entries(A).forEach(([k,a])=>{ let to=0; if(shot&&shot.action===a)to=(shot.done&&!shot.hold)?0:1; else if(k===bn)to=(shot&&(!shot.done||shot.hold))?0:1;
+      const tau=(shot&&shot.action===a)?0.18:(to>a.__w?0.18:0.12); a.__w+=(to-a.__w)*Math.min(1,md/tau); if(Math.abs(to-a.__w)<0.002)a.__w=to; a.setEffectiveWeight(a.__w); });
+    rageW+=((rage&&!sel.dead?1:0)-rageW)*Math.min(1,md/0.3); if(rageAct)rageAct.setEffectiveWeight(rageW); const fast=1+(RAGEWALK/WALK-1)*rageW; ['walk','turnL','turnR'].forEach(k=>A[k].timeScale=fast);
+    mixer.update(md);
+    // root motion and floor
+    let dz=0, dyaw=0; dz+=(A.walk.__w)*WALK*fast*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*fast*md;
+    if(shot&&!shot.done){ const tz=travelAt(shot.name,shot.action.time); const dd=tz-shot.tz; shot.tz=tz; dz+=dd; if(dummy&&dd)dummy.userData.z-=dd; }
+    if(dz||dyaw)moveFloor(dz,dyaw);
+    // contacts
+    if(shot){ const m=META[shot.name], t=shot.action.time; m.contact.forEach((c,i)=>{ if(c>0&&shot.prev<c&&t>=c)fxContact(shot.name,i); }); fxOngoing(md); shot.prev=t; }
+    squash=Math.max(0,squash-d*7); const sq=feel?squash:0; model.scale.set(U*(1+0.11*sq),U*(1-0.05*sq),U*(1+0.11*sq));
+    model.updateMatrixWorld(true); footfalls(); updateFx(stopped?d*0.25:d); showPhase();
+  }
+  function frame(now){
+    requestAnimationFrame(frame); const raw=Math.min(0.05,(now-last)/1000); last=now;
+    if(!paused)tick(raw*speed);
+    orbit.update(); shake=Math.max(0,shake-raw*3.2); const sk=feel?shake*shake*0.09:0; shakeV.set((Math.random()-0.5)*sk,(Math.random()-0.5)*sk,(Math.random()-0.5)*sk); cam.position.add(shakeV);
+    renderer.render(scene,cam); cam.position.sub(shakeV);
+  }
+  moveFloor(0,0); requestAnimationFrame(frame);
+})();
+</script>

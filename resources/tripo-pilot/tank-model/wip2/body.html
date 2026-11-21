@@ -1,0 +1,90 @@
+<div class="wrap">
+  <div>
+    <h1>Badger Tank from Tripo, rigged</h1>
+    <p class="lede">Your Tripo body and shield, brought to the same level as the mouse Healer and reworked to move like a tank: heavy, planted, the shield leading. Pick one move or combine several, and drag to turn him. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way he walks, runs or dashes while he keeps facing the same way. Add one Action for the upper body, and Hurt on top. Tap attack plays one combo hit per press: press again after a hit lands to chain hits 1, 2 and 3. Dash and Downed use the whole body, so they play alone. Press Downed again to revive him. Hit feel adds the freeze, the squash, the camera shake, the dust, cracks and sparks, and his lean into travel.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="tank-views.png" alt="The Tripo badger from the front, right, back and left, arms out, before rigging" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">He is a badger, the same animal as the Tank in the game.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,973 <small>body 13,206 + shield 1,767 · budget 15,000</small></dd></div>
+    <div><dt>Bones</dt><dd>22 <small>spine, head, ears, arms, fingers, legs, 3 in the tail</small></dd></div>
+    <div><dt>Textures</dt><dd>2 × 2K <small>body and shield, colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.6 MB <small>one GLB with all 28 moves at 60 frames a second</small></dd></div>
+    <div><dt>Moves</dt><dd>28 <small>idle, 4 walks, 4 runs, 4 dashes, shield combo and its 3 hits, 4 casts, downed (fall, lie, crawl, revive), hurt, wave, guard</small></dd></div>
+  </dl>
+
+  <h2>Audit against the Healer's level, 12 November</h2>
+  <p class="note">The Tank was measured the way the Healer was, moved onto the Healer's build, and then every move was checked against one question: does it move like a tank? The numbers are from the model file and the poses were checked as still frames. The cloud machine cannot play it at full speed, so the weight and timing are still yours to judge.</p>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured</th><th>Before</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>Frames stored per second</td><td>30</td><td>60</td></tr>
+      <tr><td>Loops that jumped when they restarted</td><td>2 (idle 3.5°, walk back 1°)</td><td>0</td></tr>
+      <tr><td>Stop-and-go dips inside a move</td><td>16</td><td>14</td></tr>
+      <tr><td>Sharp corners inside a loop (a foot leaving the floor)</td><td>walk, walk back, all runs</td><td>0</td></tr>
+      <tr><td>Moves where the shield cut into his body</td><td>0</td><td>0</td></tr>
+      <tr><td>Switching from one move to another</td><td>one-frame snap</td><td>blends over 0.07 to 0.16 s</td></tr>
+      <tr><td>Ears and tail</td><td>moved only where a pose said so</td><td>trail the body and settle after it stops</td></tr>
+      <tr><td>Head, free arm and shield arm</td><td>all moved at the same instant</td><td>follow the trunk a few hundredths of a second late; a blow carries past its target and settles</td></tr>
+      <tr><td>Free paw on the shield</td><td>reached for it, did not touch</td><td>on the shield's edge in the slam, the plant and the guard (within 1 cm in the guard and the slam, 8 cm short at the first frame of the plant)</td></tr>
+    </tbody></table></div>
+
+  <h2>What changed, move by move</h2>
+  <p class="note"><strong>The rule for all of it:</strong> a long load, a short release, a slow recovery. His weight drops on every contact, the shield leads and the body follows it, and the free paw is a fist.</p>
+  <p class="note"><strong>Idle.</strong> A slower, deeper breath. His weight rolls from one foot to the other, his head scans the room, and once a cycle he hitches the shield up and re-seats it.</p>
+  <p class="note"><strong>Walk and run.</strong> The walk is a waddle now: the hips swing over the planted foot and drop as it lands, the trunk counters, and the shield bounces a beat late. It is slower than before (0.84 s a stride, was 0.76). The run is a charge: he leans in behind the shield, the free arm pumps, and each footfall kicks up a little dust.</p>
+  <p class="note"><strong>Shield combo, three weights of blow.</strong> Hit 1 (0.30 s) is a backhand shield bash with a stamped step. It leaves him turned to his right with the fist cocked behind him. Hit 2 (0.78 s) is new: a hook with the free fist, driven by the hips turning back the other way. Hit 3 (1.42 s) is the heavy one: the shield goes up, a short hop, and its lower edge is driven into the ground with both paws on it. He stays down on it for a long beat. The freezes are longer than the Healer's, the camera shakes on the bash and hard on the slam, and the slam cracks the floor and throws dust.</p>
+  <p class="note"><strong>Casts.</strong> <em>Thrust</em> (0.30 s): he coils behind the shield and drives it straight out with his whole weight; a flat shock leaves its face. <em>Roar</em> (0.40 s): he sinks and fills his chest, then throws his arms wide and his head back, and his head and chest shake with it; two rings roll out along the floor. <em>Plant</em> (0.46 s): a short hop and the shield is driven into the ground; he stays crouched behind it inside a faint steel shell, and the floor cracks. <em>Sweep</em> (0.36 s): he winds his whole trunk to the left and turns it through with the shield held out.</p>
+  <p class="note"><strong>Guard.</strong> The shield snaps up with a stamp and now stands upright, facing straight ahead and centred on him, with the free paw braced behind it. Two blows land on it (0.80 and 1.30 s): sparks fly off its face and each one drives him back a hand's width before he leans back into it.</p>
+  <p class="note"><strong>Hurt.</strong> He barely gives ground. The blow rocks his head and shoulders, the shield comes up by reflex, and he leans back into it.</p>
+  <p class="note"><strong>Effects.</strong> Dust and cracks are earth brown, shocks, sparks and the shell are forge steel, the Tank's two colours in the game. All of them are dim and switch off with Hit feel. The pale arc behind the shield shows only in the combo and the sweep.</p>
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The four casts cover his 11 skills in the game: thrust for the charge and the slams, roar for the taunt and the rally, plant for the wall, the stance and the ground skills, sweep for the cleave and the whirl.</li>
+        <li>His feet stay on the floor when he crouches or lunges. The legs slide up under the tabard like a hidden knee bend.</li>
+        <li>Every frame of every move is measured for the shield cutting into his body, and all 28 measure clear.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>He cannot hold the shield over his head in both paws: his arms are short and his head is in the way. In the slam and the plant the left paw lifts it and the right paw joins as it lands.</li>
+        <li>In the sweep the shield ends close to his right shoulder instead of wide out, because the build pulls it clear of his head.</li>
+        <li>The blows still start and stop hard on purpose, so a hit reads as a hit. Say if you want them softer.</li>
+        <li>The tabard below the belt is one stiff piece, and the shoulder guards ride on the upper arms. Nothing sways yet. His fingers don't close.</li>
+        <li>His feet can still slide while he walks, the moves play in place, and he has no ink outline or flat game colours yet.</li>
+        <li>Dash, the downed moves and Wave were moved to the new build but not redesigned.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+

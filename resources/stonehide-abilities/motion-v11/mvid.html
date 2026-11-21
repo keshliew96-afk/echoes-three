@@ -1,0 +1,50 @@
+<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#2b2a27;overflow:hidden}#lab{position:absolute;left:0;top:0;font:600 15px system-ui,sans-serif;color:#fff;pointer-events:none}#lab div{position:absolute;background:rgba(0,0,0,.5);padding:2px 6px;border-radius:3px}</style>
+<canvas id="c"></canvas><div id="lab"></div>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+// mvid.html?spec=<base64 json>: side-by-side close-up panels of baked clips, one render per window.setT(t)
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const S=JSON.parse(atob(new URLSearchParams(location.search).get('spec')));
+const CW=S.cw||480, CH=S.ch||480, views=S.views||['q'], P=S.panels;
+const W=CW*P.length, H=CH*views.length;
+const cv=document.getElementById('c'); const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true}); r.setSize(W,H); r.setPixelRatio(1);
+r.setScissorTest(true); r.autoClear=false;
+const loader=new GLTFLoader(); const cache={};
+const panels=[];
+for(const p of P){
+  const sc=new THREE.Scene(); sc.background=new THREE.Color('#6a665f');
+  sc.add(new THREE.HemisphereLight('#ffffff','#55524c',1.6)); const dl=new THREE.DirectionalLight('#fff6e8',1.8); dl.position.set(-3,6,4); sc.add(dl);
+  const grid=new THREE.GridHelper(12,24,'#3a3835','#4e4b46'); sc.add(grid);
+  const ax=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.002,0.6),new THREE.MeshBasicMaterial({color:'#9db8cf'})); ax.position.set(0,0.001,0.3); sc.add(ax);
+  const g=await loader.loadAsync(p.glb+'?'+Math.random()); const m=g.scene; sc.add(m);
+  m.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
+  if(p.bare){const w=m.getObjectByName('weapon'); if(w)w.visible=false;}
+  const mixer=new THREE.AnimationMixer(m); const clip=g.animations.find(a=>a.name===p.clip);
+  if(!clip){document.title='NOCLIP '+p.clip;throw 0;}
+  mixer.clipAction(clip).play();
+  const hips=m.getObjectByName('hips');
+  panels.push({sc,m,mixer,clip,hips,off:p.off||0});
+}
+const Z=S.zoom||1;
+const mk=(kind)=>{const a=CW/CH, h=1.05/Z; const c=new THREE.OrthographicCamera(-h*a,h*a,h*1.15,-h*0.85,0.1,40);
+  c.userData.kind=kind; return c;};
+const place=(c,tx,tz)=>{const k=c.userData.kind;
+  if(k==='q'){c.position.set(tx+2.2,2.6,tz+3.6);c.lookAt(tx,0.5,tz);} else if(k==='s'){c.position.set(tx+6,0.55,tz);c.lookAt(tx,0.55,tz);}
+  else if(k==='f'){c.position.set(tx,0.55,tz+6);c.lookAt(tx,0.55,tz);} else if(k==='b'){c.position.set(tx-2.2,2.6,tz-3.6);c.lookAt(tx,0.5,tz);}
+  else if(k==='g'){c.position.set(tx+0.9,4.2,tz+5.2);c.lookAt(tx,0.4,tz);} // the page's play camera direction, close
+  c.updateProjectionMatrix();};
+const cams=panels.map(()=>views.map(mk));
+const lab=document.getElementById('lab');
+P.forEach((p,i)=>{if(p.label){const d=document.createElement('div');d.style.left=(i*CW+6)+'px';d.style.top='6px';d.textContent=p.label;lab.appendChild(d);}});
+const tl=document.createElement('div'); tl.style.right='6px'; tl.style.bottom='6px'; tl.style.left='auto'; tl.style.top='auto'; tl.style.position='absolute'; lab.appendChild(tl);
+const v=new THREE.Vector3();
+window.setT=(t)=>{ r.clear();
+  panels.forEach((p,i)=>{ const tt=Math.max(0,Math.min(p.clip.duration-1e-4,t-p.off)); p.mixer.setTime(tt); p.m.updateMatrixWorld(true);
+    p.hips.getWorldPosition(v);
+    views.forEach((vw,j)=>{ const c=cams[i][j]; place(c,S.follow===false?0:v.x,S.follow===false?0:v.z);
+      r.setViewport(i*CW,(views.length-1-j)*CH,CW,CH); r.setScissor(i*CW,(views.length-1-j)*CH,CW,CH); r.render(p.sc,c); }); });
+  tl.textContent=(S.slow?S.slow+'x slow  ':'')+t.toFixed(2)+' s'; return true; };
+window.dur=Math.max(...panels.map(p=>p.clip.duration+p.off));
+document.title='READY';
+</script>

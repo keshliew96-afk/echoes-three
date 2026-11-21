@@ -1,0 +1,63 @@
+idle      floor clean
+          notes into chest               6.4 mm at 1.10  (1 verts, 17 frames)
+          stretch x2.78 at 0.88 on handR
+walk      floor clean
+          stretch x4.31 at 0.32 on robe
+back      floor clean
+          stretch x4.20 at 0.22 on robe
+turnL     floor clean
+          stretch x2.08 at 0.00 on handL
+turnR     floor clean
+          notes into chest              32.7 mm at 0.60  (1 verts, 42 frames)
+          stretch x2.08 at 0.08 on handL
+note      floor clean
+          snaps: skB3 15 deg@0.77 (beside 2), skB5 14 deg@0.77 (beside 2), skB4 14 deg@0.77 (beside 2), skB6 14 deg@0.77 (beside 3), skB2 14 deg@0.77 (beside 3)
+          stretch x6.76 at 0.85 on chest
+lance     floor clean
+          elL into spine                58.7 mm at 0.62  (182 verts, 56 frames)
+          elR into spine                57.2 mm at 0.85  (255 verts, 57 frames)
+          elL into hips                 53.9 mm at 0.83  (68 verts, 47 frames)
+          elR into hips                 51.7 mm at 0.70  (77 verts, 48 frames)
+          chest into halo               44.7 mm at 0.90  (78 verts, 13 frames)
+          notes into chest              34.6 mm at 1.05  (7 verts, 13 frames)
+          spine into elR                32.8 mm at 0.83  (58 verts, 58 frames)
+          spine into elL                31.7 mm at 0.63  (40 verts, 57 frames)
+          snaps: skB4 15 deg@0.87 (beside 2), skB5 14 deg@0.87 (beside 2), skB3 14 deg@0.87 (beside 2)
+          stretch x6.28 at 0.95 on chest
+pulse     floor clean
+          stretch x10.15 at 1.13 on robe
+fade      floor robe -76mm@0.30
+          notes into chest              20.5 mm at 0.20  (8 verts, 2 frames)
+          jaw into chest                18.1 mm at 0.28  (6 verts, 9 frames)
+          stretch x5.64 at 0.30 on handR
+rise      floor robe -54mm@0.00
+          notes into chest              40.5 mm at 0.18  (3 verts, 13 frames)
+          chest into halo               35.6 mm at 0.30  (15 verts, 10 frames)
+          halo into chest               19.4 mm at 0.27  (3 verts, 9 frames)
+          jaw into chest                18.7 mm at 0.00  (7 verts, 12 frames)
+          stretch x6.31 at 0.42 on robe
+verse     floor clean
+          stretch x6.87 at 0.55 on chest
+hurt      floor clean
+          chest into halo               31.8 mm at 0.13  (11 verts, 10 frames)
+          notes into chest              13.1 mm at 0.15  (5 verts, 14 frames)
+          halo into chest                8.7 mm at 0.27  (1 verts, 5 frames)
+          stretch x1.96 at 0.05 on neck
+heavyHit  floor clean
+          notes into chest              16.7 mm at 0.55  (7 verts, 11 frames)
+          stretch x4.83 at 0.22 on robe
+spawn     floor robe -54mm@0.00
+          notes into chest              33.6 mm at 0.40  (6 verts, 13 frames)
+          jaw into chest                18.7 mm at 0.00  (7 verts, 23 frames)
+          mote1 into elL                 6.0 mm at 0.05  (1 verts, 1 frames)
+          stretch x6.71 at 1.00 on chest
+death     floor clean
+          chest into halo               47.0 mm at 1.08  (18 verts, 12 frames)
+          notes into chest              46.7 mm at 1.18  (40 verts, 16 frames)
+          halo into chest               40.3 mm at 1.17  (1 verts, 8 frames)
+          notes into neck               26.1 mm at 1.42  (3 verts, 17 frames)
+          jaw into chest                19.4 mm at 1.90  (7 verts, 87 frames)
+          jaw into heart                12.9 mm at 2.00  (6 verts, 40 frames)
+          mote1 into elL                10.3 mm at 1.12  (1 verts, 9 frames)
+          chest into jaw                 7.6 mm at 2.00  (1 verts, 38 frames)
+          stretch x20.62 at 1.72 on robe

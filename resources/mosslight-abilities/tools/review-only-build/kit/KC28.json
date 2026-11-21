@@ -1,0 +1,50 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C28",
+  "aim": [
+   3,
+   0
+  ],
+  "slots": [
+   "sanctuary"
+  ],
+  "allies": [
+   [
+    2.4,
+    -1.2,
+    0.45
+   ],
+   [
+    3.6,
+    1.0,
+    0.5
+   ],
+   [
+    -3.2,
+    -2.4,
+    1
+   ]
+  ],
+  "dummies": [],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=600;e.hp=600;}",
+  "seq": [
+   [
+    0.2,
+    "eval",
+    "for(const [x,z] of [[1.6, 1.8], [4.4, -1.6], [3.9, 2.2]]) globalThis.__reviewSeedAt(x,z);"
+   ],
+   [
+    1.0,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 9.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C28 \u00b7 Mending Sapling draws in three seeds: 2 s and a blossom each"
+ }
+]

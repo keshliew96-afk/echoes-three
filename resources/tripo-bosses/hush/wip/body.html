@@ -1,0 +1,111 @@
+<div class="wrap">
+  <div>
+    <h1>Hush from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the Still Spire's last warden, the robed figure with a cracked bronze bell for a head, its finger pressed to where its lips would be. It now has a skeleton and 12 moves made by hand. It drifts 0.22 u above the floor. Five small bells circle it, and each Stillness silences one of them. It points the Still Note onto a hero and swings its bell head down a lane for the Unringing. For the Great Hush it rises with its arms spread, then sinks drained. The timings come from the game. Pick a move and drag to turn the view, then judge the weight and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <div class="row" id="stills"><span class="lab">Stilled</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Drift sets what it does between attacks, and Going turns it on the spot. An Action plays over that and repeats until you press it again. Hurt plays on top of anything. Death holds it down; press it again to spawn it back in. The bar names the part of the move that is playing. Stilled sets how many of its five bells are silenced: the game stills one at 75, 50 and 25 percent health. Each Stillness press stills the next bell. From the Second Stillness the note leaves a patch of silence, and in the Third its ring grows to 2.3 u.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="hush-views.png" alt="The Tripo Hush from the front, its left, the back and its right, before rigging" width="1200" height="600">
+      <p class="note" style="padding-top:12px">It came through in one piece. It has the verdigris bell head with the crack down its face and a loop on top, the violet face under the rim, the long white robe with a torn hem, and pale hands. Its left hand holds a finger to its face. Its face points straight ahead, so nothing was corrected. Three things are joined that a skeleton needs apart. There was a small third hand hanging low on its left side, under the raised left arm; I cut it away (about 320 triangles). The right hand is fused to the robe's hem, so it hangs with the cloth. The left forearm is fused to the chest. Your design has five small bells circling it, but the export has none, so I added them (about 1,240 triangles).</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>28,308 <small>27,390 as sent, with the third hand cut and the five bells added; boss budget about 28,000</small></dd></div>
+    <div><dt>Bones</dt><dd>35 <small>hips, spine, chest, neck, head, 4 in the left arm down to the finger, 3 in the right arm, a ring and the 5 small bells, and 16 in eight columns of robe</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.8 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.6 u tall <small>to the loop on its bell, at the game's scale of 2.6, beside a 1 u hero</small></dd></div>
+    <div><dt>Float</dt><dd>0.22 u <small>it hovers above the floor; it rises for the Great Hush and sinks when drained</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>It floats and breathes, and the robe sways and settles. The crack in its bell breathes a cold light. The small bells circle and sway. Partway through it lifts its finger and presses it back to its face.</td><td>6 s loop</td></tr>
+      <tr><td>Drift</td><td>It glides forward, leaning a little. The hem trails behind and ripples. It has no feet, so nothing steps.</td><td>Game: 1.25 u/s. It keeps 3 to 5.5 u from its target.</td></tr>
+      <tr><td>Turn left, turn right</td><td>It turns on the spot. The bell head leads and the robe swings after it.</td><td>Mine: 90 degrees a second. The game turns it to its target at once.</td></tr>
+      <tr><td>Still Note</td><td>The ring fills on the hero while it points at them with its finger, and the crack brightens. On the beat the ring goes off and the hero is hushed: a pale ring hangs round them. Then the finger comes back to its face.</td><td>Game: Ember ring of radius 1.8 u on a hero for 50 ticks; 11 damage and a 35 percent slow for 1.5 s. From the Second Stillness it leaves a patch of silence for 3 s (30 percent slow); in the Third the ring is 2.3 u. Here the hero stands 4.2 u away.</td></tr>
+      <tr><td>Unringing</td><td>While the lane fills it draws its head back and its arm in. On the beat it swings the bell head down the lane and thrusts its hand after it. A pale wave runs down the lane. Then it straightens.</td><td>Game: Ember lane 1.3 u wide, 2.5 to 9 u long, for 56 ticks; 15 damage. Here the hero stands 6 u away.</td></tr>
+      <tr><td>Great Hush</td><td>It rises with its arms spread while the great ring fills round it. Its bells swing wide and pale motes are drawn in from the edge. On the beat the ring goes off, and it holds high for a moment. Then it drops, drained: it hangs low and limp with the crack gone dim and the bells slowed. It wakes and rises back to its float.</td><td>Game: Ember ring of radius 4.6 u round itself for 96 ticks; 20 damage. Then it is drained for 90 ticks, taking 30 percent more damage. It comes every 600 ticks, or every 480 in the Third Stillness. Here the hero stands 3.2 u away.</td></tr>
+      <tr><td>Stillness</td><td>It lifts its finger high, then brings it down. The next small bell goes dead: it drops, goes grey and stops swaying. The head bows as it happens.</td><td>Mine: 1.8 s. The game stills a bell at 75, 50 and 25 percent health but has no pose for it.</td></tr>
+      <tr><td>Hurt</td><td>The bell head and chest are knocked back. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>It is shoved back 0.3 u. The bell head snaps back, the robe flares, and it rights itself.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>It grows out of a pale pool on the floor and rises limp. It lifts its head, and the finger comes to its face as the bells rise into their ring.</td><td>Game: grow in 7 frames. The rise is mine.</td></tr>
+      <tr><td>Death</td><td>A jolt throws it upright with its arm spread. It hangs for a moment, then the robe sinks and crumples to the floor. The bell head bows down onto the heap. The crack and the face go dark, and the small bells fall and go grey.</td><td>2.7 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker follows every point of the model (17,543 of them) through every frame of every move (1,526 frames). It looks for five things. Sizes are in u; it is 2.6 u tall.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>None.</td><td>None.</td></tr>
+      <tr><td>Any part under the floor</td><td>In the death the robe and hips sank up to 0.12 u into the floor as it crumpled.</td><td>None. The heap now settles on the floor.</td></tr>
+      <tr><td>One part pushed through another</td><td>The robe lies in folds over itself as modelled, so the checker counts layers that already touch at rest.</td><td>The same folds, up to about 0.15 u deep. They are layers of cloth over cloth that you cannot see from outside. The left hand dips into the bell's rim, up to 0.14 u, when it presses the finger to the face. That is where your model has it.</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>Lifting the right arm pulled the robe's hem up with it into a sheet, stretching it 58 times. The left elbow pulled the drape at the chest, stretching it 17 times.</td><td>The right arm stays down and its hand moves with the hem, so the hem holds. The drape now follows the shoulder. One stretch is still there, where the left forearm is fused to the chest. When that arm lifts high (the Great Hush, the Stillness and the death), the cloth between them tents out, stretching up to about 20 times. It reads as the sleeve pulling, not a tear. The stills look natural.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>None.</td><td>None. Every move eases in and out, and the loops meet themselves.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Floor</td><td>It has no feet. The hem stays above the floor in every move, and the death heap rests on it.</td></tr>
+      <tr><td>Loops that jump when they restart (idle, drift, both turns)</td><td>0 degrees.</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model, so nothing was corrected.</td></tr>
+      <tr><td>Hard parts</td><td>The bell head rides its own bone, and so does each small bell, so none of them bends. The bending is in the robe, the neck and the arms.</td></tr>
+      <tr><td>Feet</td><td>None; it floats, so there is no splay to check.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only, because the cloud machine cannot play the page at full speed. The weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ol style="margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:60ch">
+        <li><strong>The right arm.</strong> Its hand is fused to the hem, so the right arm hangs still and every move is made with the left. A re-export with both hands free of the robe would let it spread both arms for the Great Hush. The other way is for me to cut the hand free and patch the hem.</li>
+        <li><strong>The left forearm.</strong> It is fused to the chest, so the cloth tents when that arm lifts high. A re-export with the arm clear of the body would fix it.</li>
+        <li><strong>The third hand.</strong> I cut it away. Earlier I said I would fold it into the sleeve, but cutting it was cleaner. If you want it back as a design point, a re-export can place it on purpose.</li>
+        <li><strong>The small bells.</strong> I made them to match the game's look and size, about 0.15 u tall. They could be larger so they read at game zoom.</li>
+        <li><strong>The Stillness pose.</strong> Mine. The game only stills a bell; it has no pose for it.</li>
+        <li><strong>The death.</strong> The empty robe crumples into a heap with the bell head on top. Another way is for it to sink straight down into the pool, the way it came out.</li>
+        <li><strong>The turn.</strong> Mine, at 90 degrees a second. The game turns it at once.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Rough so far</h2>
+      <ul>
+        <li>The small bells' circling, swaying and dropping is drawn by the page, the same way the game's code moves them. They are not in the GLB's moves.</li>
+        <li>The hero is a grey stand-in that takes the hit but does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, its cold pale for the silence, and Violet for the rim of its power. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>

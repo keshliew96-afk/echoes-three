@@ -1,0 +1,25 @@
+<!doctype html><html><body style="margin:0;background:#888">
+<script type="importmap">{"imports":{"three":"./three.module.js","three/addons/":"./jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const P=new URLSearchParams(location.search);
+const W=innerWidth,H=innerHeight;
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(W,H);document.body.appendChild(r.domElement);r.setScissorTest(true);r.autoClear=false;
+const sc=new THREE.Scene();sc.background=new THREE.Color(0xbbbbbb);
+sc.add(new THREE.HemisphereLight(0xffffff,0x666666,2.2));const d=new THREE.DirectionalLight(0xffffff,1.5);d.position.set(1,2,2);sc.add(d);
+const grid=new THREE.GridHelper(4,16,0x666666,0x999999);sc.add(grid);
+const g=await new GLTFLoader().loadAsync(P.get('f')||'healer-rigged.glb');sc.add(g.scene);
+g.scene.traverse(o=>{if(o.isMesh)o.frustumCulled=false});
+const mixer=new THREE.AnimationMixer(g.scene);const clip=g.animations.find(a=>a.name===P.get('clip'))||g.animations[0];
+const act=mixer.clipAction(clip);act.play();
+const n=+(P.get('n')||8), rows=(P.get('cams')||'f,s').split(',');
+const t0=+(P.get('t0')||0), t1=+(P.get('t1')||clip.duration);
+const cams={f:[0,0.5,3],s:[3,0.5,0.1],q:[2,1.6,2.2],b:[0,0.5,-3],l:[-3,0.5,0.1]};
+const half=+(P.get('half')||0.75), cy=+(P.get('cy')||0.55);
+const NC=P.get("flat")?n*rows.length:n; const vw=W/NC, vh=P.get("flat")?H:H/rows.length; r.clear();
+for(let i=0;i<n;i++){const t=t0+(t1-t0)*i/(n-1||1); mixer.setTime(Math.min(t,clip.duration-1e-4));
+ rows.forEach((k,j)=>{const a=vw/vh;const c=new THREE.OrthographicCamera(-half*a,half*a,half,-half,0.1,20);const p=cams[k];c.position.set(p[0],p[1]===0.5?cy:p[1],p[2]);c.lookAt(0,cy,0.1);
+  const X=P.get("flat")?(i*rows.length+j)*vw:i*vw, Y=P.get("flat")?0:H-(j+1)*vh; r.setViewport(X,Y,vw,vh);r.setScissor(X,Y,vw,vh);r.clear();r.render(sc,c);});}
+window.done=true;
+</script></body></html>

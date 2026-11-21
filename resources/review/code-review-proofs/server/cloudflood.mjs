@@ -1,0 +1,11 @@
+import { readFileSync } from 'node:fs';
+const [base, pid, N] = process.argv.slice(2);
+const rss = () => Math.round(Number(/VmRSS:\s+(\d+)/.exec(readFileSync(`/proc/${pid}/status`, 'utf8'))[1]) / 1024);
+const slot = 'x'.repeat(3 * 1024 * 1024 - 200);
+const body = JSON.stringify({ bundle: { kind: 'echoes-cloud', v: 1, profile: null, slots: { a: slot } } });
+console.log('body bytes', body.length, 'rss before', rss());
+let peak = 0; const iv = setInterval(() => { peak = Math.max(peak, rss()); }, 20);
+const codes = {};
+await Promise.all(Array.from({ length: +N }, () => fetch(base + '/cloud/save', { method: 'POST', body }).then((r) => { codes[r.status] = (codes[r.status] || 0) + 1; }).catch((e) => { codes.err = (codes.err || 0) + 1; })));
+clearInterval(iv);
+console.log('statuses', codes, 'peak rss MB', peak, 'now', rss());

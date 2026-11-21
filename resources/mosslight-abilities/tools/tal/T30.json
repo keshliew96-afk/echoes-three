@@ -1,0 +1,49 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "secs": 4.0,
+  "pre": 0.25,
+  "skill": null,
+  "allies": [
+   [
+    2.15,
+    0.3,
+    0.45
+   ],
+   [
+    -2.8,
+    -2.4,
+    1
+   ],
+   [
+    -2.8,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.5,
+    "eval",
+    "w.player.reviewSap=15;"
+   ]
+  ],
+  "cap": "T30 Deep Gem (Harvest, tier IV) · the gem holds 80, pours 2.4 u instead of 1.8 u, and starts each room with 15 Sap · here the room starts (0.5 s) and she has dealt no damage",
+  "live": "'Sap '+Math.round(window.__echoes.content.world().player.reviewSap||0)+' / '+(window.__echoes.content.world().player.reviewSapCap||50)",
+  "leg": "gold: pour reach 2.4 u",
+  "guides": [
+   {
+    "k": "area",
+    "r": 2.4
+   }
+  ],
+  "name": "tal_T30",
+  "setup": "w.player.reviewSap=0;"
+ }
+]

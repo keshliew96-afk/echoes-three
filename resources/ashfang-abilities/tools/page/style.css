@@ -1,0 +1,53 @@
+/* One column of skill rows, clip left and words right; stacks on phones. Ashfang: crimson and his four elements. */
+:root {
+  --bg: #F2F1EE; --card: #FFFFFF; --fg: #23211E; --muted: #625D56; --line: #DDD9D2;
+  --steel: #A8304F; --steel-soft: #F7E3E8; --earth: #8A6A2A;
+  --f-head: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --f-body: Inter, "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #161514; --card: #1F1E1C; --fg: #ECE8E1; --muted: #A39C92; --line: #33302C;
+  --steel: #F08AA4; --steel-soft: #3A2128; --earth: #E0B25C; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #161514; --card: #1F1E1C; --fg: #ECE8E1; --muted: #A39C92; --line: #33302C;
+  --steel: #F08AA4; --steel-soft: #3A2128; --earth: #E0B25C; color-scheme: dark; }
+body { background: var(--bg); color: var(--fg); font: 15px/1.5 var(--f-body); margin: 0; }
+.wrap { max-width: 1040px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+header h1 { font: 600 30px/1.15 var(--f-head); margin: 0; text-wrap: balance; }
+header p { margin: 6px 0 0; color: var(--muted); }
+nav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+nav a { color: var(--fg); text-decoration: none; border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 13px; background: var(--card); }
+nav a:hover, nav a:focus-visible { border-color: var(--steel); outline: none; }
+section { display: grid; gap: 14px; }
+section > h2 { font: 600 20px/1.2 var(--f-head); margin: 0; }
+.intro { margin: -6px 0 0; color: var(--muted); font-size: 13px; }
+.skill { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 18px;
+  background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 12px; align-items: start; }
+video { width: 100%; aspect-ratio: 16 / 10; border-radius: 6px; background: #0E0E0D; display: block; max-width: 100%; }
+.txt { min-width: 0; display: grid; gap: 8px; padding-top: 4px; }
+.head { display: flex; align-items: baseline; gap: 10px; }
+.num { font: 600 12px/1 var(--f-body); letter-spacing: 0.04em; color: var(--steel); background: var(--steel-soft); border-radius: 4px; padding: 4px 6px; font-variant-numeric: tabular-nums; }
+h3 { font: 600 19px/1.2 var(--f-head); margin: 0; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); }
+.chip { border: 1px solid var(--line); border-radius: 999px; padding: 1px 9px; }
+.cd::before { content: "Cooldown "; }
+.txt p { margin: 0; max-width: 60ch; }
+.nodes { font-size: 13px; color: var(--muted); }
+.nodes::before { content: "Nodes: "; color: var(--earth); font-weight: 500; }
+@media (max-width: 720px) { .skill { grid-template-columns: minmax(0, 1fr); } }
+.el { font-weight: 600; }
+.el-fire, .el-earth, .el-water, .el-wind { color: inherit; }
+
+.wrap[data-lang="zh"] .en, .wrap[data-lang="en"] .zh { display: none; }
+.lang { float: right; display: inline-flex; gap: 0; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 4px 0 8px 12px; }
+.lang button { font: 500 13px Inter, system-ui, sans-serif; padding: 6px 12px; border: 0; background: transparent; color: inherit; cursor: pointer; min-height: 32px; }
+.lang button[aria-pressed="true"] { background: var(--fg); color: var(--bg); }
+.forms { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin: 2px 0 8px; }
+.forms button { font: 500 13px var(--f-body); padding: 5px 12px; min-height: 32px; border: 0; background: transparent; color: inherit; cursor: pointer; }
+.forms button + button { border-left: 1px solid var(--line); }
+.forms button[aria-pressed="true"] { background: var(--steel-soft); color: var(--steel); font-weight: 600; }
+.fline { font-weight: 500; }
+.chip.marks { font-weight: 600; }
+.chip.marks .mk { font-size: 1.05em; }

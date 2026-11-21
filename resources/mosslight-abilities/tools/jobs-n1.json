@@ -1,0 +1,86 @@
+[
+ {
+  "name": "basic",
+  "skill": null,
+  "key": "hold-right",
+  "aim": [
+   0,
+   -3
+  ],
+  "allies": [
+   [
+    -2.6,
+    2.0,
+    1
+   ],
+   [
+    2.6,
+    2.0,
+    1
+   ],
+   [
+    0,
+    2.8,
+    1
+   ]
+  ],
+  "pin": true,
+  "cap": "1 Basic attack, latest version \u00b7 darker green bolts, model page style \u00b7 hits 1 and 2: 8 each \u00b7 hit 3 sends the gem out as a turret: 3 a bolt at the nearest foe",
+  "leg": "dashed: cast range \u00b7 gold: area (guides, not in the game)",
+  "secs": 4.2,
+  "fps": 20,
+  "dummies": [
+   [
+    -1.2,
+    -3.6
+   ],
+   [
+    0,
+    -3.4
+   ],
+   [
+    1.2,
+    -3.6
+   ]
+  ],
+  "guides": [
+   {
+    "k": "range",
+    "r": 5.0
+   }
+  ]
+ },
+ {
+  "name": "dash",
+  "skill": null,
+  "key": "d+Space",
+  "aim": [
+   0,
+   3
+  ],
+  "selfHp": 0.8,
+  "allies": [
+   [
+    -2.6,
+    2.0,
+    1
+   ],
+   [
+    2.6,
+    2.0,
+    1
+   ],
+   [
+    0,
+    2.8,
+    1
+   ]
+  ],
+  "pin": true,
+  "cap": "2 Dash, accepted \u00b7 leaf turn, faces where she dashes \u00b7 1.8 u in 0.25 s, untouchable \u00b7 lands with a 5% heal, once per 3 s",
+  "leg": "",
+  "secs": 1.6,
+  "fps": 20,
+  "guides": []
+ }
+]

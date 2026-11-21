@@ -1,0 +1,49 @@
+idle      floor clean
+          stretch x2.78 at 0.88 on handR
+walk      floor clean
+          stretch x2.42 at 0.68 on handR
+back      floor clean
+          stretch x3.40 at 0.22 on robe
+turnL     floor clean
+          stretch x2.08 at 0.00 on handL
+turnR     floor clean
+          stretch x2.08 at 0.08 on handL
+note      floor clean
+          stretch x6.76 at 0.85 on chest
+lance     floor clean
+          elL into spine                55.5 mm at 0.85  (152 verts, 56 frames)
+          elR into spine                54.7 mm at 0.80  (175 verts, 57 frames)
+          elR into hips                 47.6 mm at 0.83  (57 verts, 48 frames)
+          elL into hips                 44.8 mm at 0.72  (66 verts, 47 frames)
+          chest into halo               35.9 mm at 0.93  (8 verts, 7 frames)
+          spine into elR                28.8 mm at 0.95  (44 verts, 58 frames)
+          spine into elL                28.6 mm at 0.95  (64 verts, 57 frames)
+          hips into shR                 24.7 mm at 0.23  (5 verts, 25 frames)
+          stretch x6.28 at 0.95 on chest
+pulse     floor clean
+          stretch x7.04 at 1.05 on chest
+fade      floor robe -76mm@0.30, hips -53mm@0.30
+          jaw into chest                18.1 mm at 0.28  (6 verts, 9 frames)
+          stretch x5.64 at 0.30 on handR
+rise      floor robe -54mm@0.00, hips -28mm@0.00
+          jaw into chest                18.7 mm at 0.00  (7 verts, 12 frames)
+          notes into chest              11.7 mm at 0.22  (2 verts, 1 frames)
+          stretch x5.24 at 0.00 on handR
+verse     floor clean
+          stretch x6.87 at 0.55 on chest
+hurt      floor clean
+          stretch x1.96 at 0.05 on neck
+heavyHit  floor clean
+          stretch x4.28 at 0.20 on robe
+spawn     floor robe -54mm@0.00, hips -28mm@0.00
+          jaw into chest                18.7 mm at 0.00  (7 verts, 23 frames)
+          mote1 into elL                 6.0 mm at 0.05  (1 verts, 1 frames)
+          stretch x6.71 at 1.00 on chest
+death     floor hips -110mm@1.45, robe -51mm@1.45
+          notes into chest              40.3 mm at 1.20  (9 verts, 8 frames)
+          notes into neck               22.7 mm at 1.43  (15 verts, 20 frames)
+          jaw into chest                19.4 mm at 1.90  (7 verts, 87 frames)
+          jaw into heart                12.9 mm at 2.00  (6 verts, 40 frames)
+          mote1 into elL                10.3 mm at 1.12  (1 verts, 9 frames)
+          chest into jaw                 7.6 mm at 2.00  (1 verts, 38 frames)
+          stretch x9.73 at 2.00 on robe

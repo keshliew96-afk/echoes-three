@@ -1,0 +1,13 @@
+diff --git a/src/main.js b/src/main.js
+index f82e746..57bd1ca 100644
+--- a/src/main.js
++++ b/src/main.js
+@@ -111,6 +111,8 @@ registerLanguageSetting(app.settings); // docs/I18N.md: Settings ▸ Gameplay 
+ // @gnt:APP-BOOT end
+ 
+ const stage = createStage({ container: document.getElementById('app'), toggles });
++// REVIEW-ONLY (cast modes review): ?aimrev=1 lays a skill's aim indicator on the floor.
++if (params.has('aimrev')) import('./render/skillfx/aimreview.js').then((m) => { window.__aimrev = m.createAimReview({ stage }); });
+ 
+ // --- Sim core (§1). Seed: ?seed= forces the gameplay stream; otherwise a
+ // fresh random seed per load (drawn outside the gameplay stream — the seed

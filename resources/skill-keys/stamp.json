@@ -1,0 +1,14 @@
+{
+ "version": "0.5.363",
+ "files": {
+  "src/core/bindings.js": "d33e43e13a0154ce0afce3643f73d7a293b8595187415c114857e96f9f8b56a7",
+  "src/ui/socket/index.js": "44aeae74261a212d454066ee4da97aea6103dbff6b785039a285a9796dd69a90",
+  "src/ui/run/draft.js": "f818d6fb8a03e091ddd5c6ad002e4504488198603a2751980a843d9b1ce0f80f",
+  "src/campaign/maptable.js": "2761385a45b39e388d9671ad4c0b4faccf1b3a4efb8e7b7790ecf1899c8d6305",
+  "src/net/session.js": "d368ed0cdd42e03a3a3cca5b3eea68c46d3ce3041903f02ff11c07c65f1b7379",
+  "src/i18n/locales/de.json": "4abac59621e60ee04b7cdde9af6893b4347369b8d81ccbb4e11911529e3120f1",
+  "src/i18n/locales/ru.json": "aee86747005aff2d3c3d4262195db96d92f89687dd43a865942dce5926d0216e",
+  "src/i18n/locales/ja.json": "3e4e65cf6374bba85446405f31a5402fdd2762fcb1d784661273d4bb6a9e47e2",
+  "src/version.js": "51c3efc2ae276611e3af9bd61e54e78215173f1a1218b4e7e87e01d998fd9404"
+ }
+}

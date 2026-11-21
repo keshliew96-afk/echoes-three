@@ -1,0 +1,23 @@
+<!doctype html><html><body style="margin:0;background:#888">
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(900, 450); document.body.appendChild(r.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#9aa');
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445544, 2.5));
+const grid = new THREE.GridHelper(6, 24, 0x333333, 0x666666); scene.add(grid);
+const camS = new THREE.OrthographicCamera(-1.6, 1.6, 1.4, -0.2, 0.1, 20); camS.position.set(5, 0.6, 0.6); camS.lookAt(0, 0.6, 0.6);
+const camF = new THREE.OrthographicCamera(-1.6, 1.6, 1.4, -0.2, 0.1, 20); camF.position.set(0, 0.6, 5); camF.lookAt(0, 0.6, 0);
+const g = await new GLTFLoader().loadAsync('/review/healer-tripo-rigged.glb');
+const m = g.scene; scene.add(m);
+const mixer = new THREE.AnimationMixer(m); const A = {}; for (const c of g.animations) A[c.name] = mixer.clipAction(c);
+const hand = m.getObjectByName('handR'), staff = m.getObjectByName('weapon');
+window.V = { pose(name, t, side = true) { mixer.stopAllAction(); const a = A[name]; a.reset().play(); a.paused = false; mixer.setTime(0); a.time = t; mixer.update(0); m.updateMatrixWorld(true);
+  r.setViewport(0, 0, 450, 450); r.setScissor(0,0,450,450); r.setScissorTest(true); camS.left=-1.6;camS.right=1.6; r.render(scene, camS);
+  r.setViewport(450, 0, 450, 450); r.setScissor(450,0,450,450); r.render(scene, camF);
+  const hp = hand.getWorldPosition(new THREE.Vector3()), sp = staff.getWorldPosition(new THREE.Vector3()), q = staff.getWorldQuaternion(new THREE.Quaternion());
+  const up = new THREE.Vector3(0,1,0).applyQuaternion(q);
+  return { hand: hp.toArray().map(v=>+v.toFixed(2)), staff: sp.toArray().map(v=>+v.toFixed(2)), up: up.toArray().map(v=>+v.toFixed(2)) }; },
+  dur: (n) => A[n].getClip().duration };
+window.ready = true;
+</script></body></html>

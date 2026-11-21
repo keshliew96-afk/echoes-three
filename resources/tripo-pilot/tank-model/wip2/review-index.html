@@ -1,0 +1,431 @@
+<title>Tripo Tank Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a review bench. The live model on the left, the current Healer's clip on the right, facts and notes under. */
+:root{
+  --bg:#f3f2ee; --panel:#fbfaf7; --fg:#23262b; --muted:#666b73; --line:#d9d6cd;
+  --stage:#c9cbc6; --stage2:#b4b7b0; --accent:#2f7d57; --accent-fg:#ffffff; --warn:#9a5b12; --chip:#e8e6df;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0}
+.lede{color:var(--muted);margin:4px 0 0;max-width:65ch}
+.bench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.pane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,var(--stage),var(--stage2));aspect-ratio:4/3;max-width:100%}
+.stage canvas{transition:filter .6s;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--fg);opacity:.7;pointer-events:none}
+.stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:14px}
+.cur{background:var(--stage2);aspect-ratio:4/3;display:grid;place-items:center}
+.cur video{width:100%;height:100%;object-fit:contain;display:block}
+.cur p{color:var(--fg);opacity:.75;padding:16px;text-align:center;margin:0;font-size:14px}
+.controls{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lab{font-size:12px;color:var(--muted);width:52px;flex:none}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--fg);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+button:disabled{opacity:.38;cursor:not-allowed;border-color:transparent}
+.layers{margin:0 0 0 58px;font-size:13px;font-weight:500;color:var(--accent)}
+.rule{margin:0 0 0 58px;font-size:12px;color:var(--muted);max-width:60ch}
+@media (max-width:480px){.layers,.rule{margin-left:0}}
+.note{font-size:13px;color:var(--muted);padding:0 14px 12px;margin:0}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.facts div{background:var(--panel);padding:12px 14px}
+.facts dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.facts small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.cols ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:60ch}
+.rough{color:var(--warn)}
+.audit{overflow-x:auto;margin:8px 0 4px}.audit table{border-collapse:collapse;width:100%;font-size:14px}.audit th,.audit td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line,rgba(127,127,127,.3));vertical-align:top}.audit th{font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Badger Tank from Tripo, rigged</h1>
+    <p class="lede">Your Tripo body and shield, brought to the same level as the mouse Healer and reworked to move like a tank: heavy, planted, the shield leading. Pick one move or combine several, and drag to turn him. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way he walks, runs or dashes while he keeps facing the same way. Add one Action for the upper body, and Hurt on top. Tap attack plays one combo hit per press: press again after a hit lands to chain hits 1, 2 and 3. Dash and Downed use the whole body, so they play alone. Press Downed again to revive him. Hit feel adds the freeze, the squash, the camera shake, the dust, cracks and sparks, and his lean into travel.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="tank-views.png" alt="The Tripo badger from the front, right, back and left, arms out, before rigging" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">He is a badger, the same animal as the Tank in the game.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,973 <small>body 13,206 + shield 1,767 · budget 15,000</small></dd></div>
+    <div><dt>Bones</dt><dd>22 <small>spine, head, ears, arms, fingers, legs, 3 in the tail</small></dd></div>
+    <div><dt>Textures</dt><dd>2 × 2K <small>body and shield, colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.6 MB <small>one GLB with all 28 moves at 60 frames a second</small></dd></div>
+    <div><dt>Moves</dt><dd>28 <small>idle, 4 walks, 4 runs, 4 dashes, shield combo and its 3 hits, 4 casts, downed (fall, lie, crawl, revive), hurt, wave, guard</small></dd></div>
+  </dl>
+
+  <h2>Audit against the Healer's level, 12 November</h2>
+  <p class="note">The Tank was measured the way the Healer was, moved onto the Healer's build, and then every move was checked against one question: does it move like a tank? The numbers are from the model file and the poses were checked as still frames. The cloud machine cannot play it at full speed, so the weight and timing are still yours to judge.</p>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured</th><th>Before</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>Frames stored per second</td><td>30</td><td>60</td></tr>
+      <tr><td>Loops that jumped when they restarted</td><td>2 (idle 3.5°, walk back 1°)</td><td>0</td></tr>
+      <tr><td>Stop-and-go dips inside a move</td><td>16</td><td>14</td></tr>
+      <tr><td>Sharp corners inside a loop (a foot leaving the floor)</td><td>walk, walk back, all runs</td><td>0</td></tr>
+      <tr><td>Moves where the shield cut into his body</td><td>0</td><td>0</td></tr>
+      <tr><td>Switching from one move to another</td><td>one-frame snap</td><td>blends over 0.07 to 0.16 s</td></tr>
+      <tr><td>Ears and tail</td><td>moved only where a pose said so</td><td>trail the body and settle after it stops</td></tr>
+      <tr><td>Head, free arm and shield arm</td><td>all moved at the same instant</td><td>follow the trunk a few hundredths of a second late; a blow carries past its target and settles</td></tr>
+      <tr><td>Free paw on the shield</td><td>reached for it, did not touch</td><td>on the shield's edge in the slam, the plant and the guard (within 1 cm in the guard and the slam, 8 cm short at the first frame of the plant)</td></tr>
+    </tbody></table></div>
+
+  <h2>What changed, move by move</h2>
+  <p class="note"><strong>The rule for all of it:</strong> a long load, a short release, a slow recovery. His weight drops on every contact, the shield leads and the body follows it, and the free paw is a fist.</p>
+  <p class="note"><strong>Idle.</strong> A slower, deeper breath. His weight rolls from one foot to the other, his head scans the room, and once a cycle he hitches the shield up and re-seats it.</p>
+  <p class="note"><strong>Walk and run.</strong> The walk is a waddle now: the hips swing over the planted foot and drop as it lands, the trunk counters, and the shield bounces a beat late. It is slower than before (0.84 s a stride, was 0.76). The run is a charge: he leans in behind the shield, the free arm pumps, and each footfall kicks up a little dust.</p>
+  <p class="note"><strong>Shield combo, three weights of blow.</strong> Hit 1 (0.30 s) is a backhand shield bash with a stamped step. It leaves him turned to his right with the fist cocked behind him. Hit 2 (0.78 s) is new: a hook with the free fist, driven by the hips turning back the other way. Hit 3 (1.42 s) is the heavy one: the shield goes up, a short hop, and its lower edge is driven into the ground with both paws on it. He stays down on it for a long beat. The freezes are longer than the Healer's, the camera shakes on the bash and hard on the slam, and the slam cracks the floor and throws dust.</p>
+  <p class="note"><strong>Casts.</strong> <em>Thrust</em> (0.30 s): he coils behind the shield and drives it straight out with his whole weight; a flat shock leaves its face. <em>Roar</em> (0.40 s): he sinks and fills his chest, then throws his arms wide and his head back, and his head and chest shake with it; two rings roll out along the floor. <em>Plant</em> (0.46 s): a short hop and the shield is driven into the ground; he stays crouched behind it inside a faint steel shell, and the floor cracks. <em>Sweep</em> (0.36 s): he winds his whole trunk to the left and turns it through with the shield held out.</p>
+  <p class="note"><strong>Guard.</strong> The shield snaps up with a stamp and now stands upright, facing straight ahead and centred on him, with the free paw braced behind it. Two blows land on it (0.80 and 1.30 s): sparks fly off its face and each one drives him back a hand's width before he leans back into it.</p>
+  <p class="note"><strong>Hurt.</strong> He barely gives ground. The blow rocks his head and shoulders, the shield comes up by reflex, and he leans back into it.</p>
+  <p class="note"><strong>Effects.</strong> Dust and cracks are earth brown, shocks, sparks and the shell are forge steel, the Tank's two colours in the game. All of them are dim and switch off with Hit feel. The pale arc behind the shield shows only in the combo and the sweep.</p>
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The four casts cover his 11 skills in the game: thrust for the charge and the slams, roar for the taunt and the rally, plant for the wall, the stance and the ground skills, sweep for the cleave and the whirl.</li>
+        <li>His feet stay on the floor when he crouches or lunges. The legs slide up under the tabard like a hidden knee bend.</li>
+        <li>Every frame of every move is measured for the shield cutting into his body, and all 28 measure clear.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>He cannot hold the shield over his head in both paws: his arms are short and his head is in the way. In the slam and the plant the left paw lifts it and the right paw joins as it lands.</li>
+        <li>In the sweep the shield ends close to his right shoulder instead of wide out, because the build pulls it clear of his head.</li>
+        <li>The blows still start and stop hard on purpose, so a hit reads as a hit. Say if you want them softer.</li>
+        <li>The tabard below the belt is one stiff piece, and the shoulder guards ride on the upper arms. Nothing sways yet. His fingers don't close.</li>
+        <li>His feet can still slide while he walks, the moves play in place, and he has no ink outline or flat game colours yet.</li>
+        <li>Dash, the downed moves and Wave were moved to the new build but not redesigned.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="tank-model.js"></script>
+<script>
+(function(){
+  const cv=document.getElementById('cv'), stage=cv.parentElement;
+  const CUR={};
+  const ORDER=['idle','walk','run','dash','downed','crawl','spawn'], ORDER2=['tap','combo','castPoint','castBloom','castPlant','castSweep','guard','wave','hurt'];
+  const LABEL={idle:'Idle',walk:'Walk',run:'Run',combo:'Shield combo',dash:'Dash',hurt:'Hurt',wave:'Wave',guard:'Guard',downed:'Downed',crawl:'Crawl',spawn:'Spawn',tap:'Tap attack',castPoint:'Cast: thrust',castBloom:'Cast: roar',castPlant:'Cast: plant',castSweep:'Cast: sweep'};
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){document.getElementById('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(1.5,3,2.5); scene.add(sun);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(0.42,40),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.16}));
+  blob.rotation.x=-Math.PI/2; blob.position.set(0,0.002,0.05); scene.add(blob);
+  const floor=new THREE.GridHelper(12,24,0x5c6159,0x5c6159); floor.material.transparent=true; floor.material.opacity=0.7; floor.position.y=0.001; scene.add(floor);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,60);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=1.2; orbit.maxDistance=14;
+  const VIEWS={Close:{p:[1.3,0.95,2.6],t:[0,0.5,0.1]},'Game zoom':{p:[0,6.2,5.4],t:[0,0.4,0.2]},Side:{p:[3.1,0.6,0.1],t:[0,0.5,0.2]},Back:{p:[-1.0,0.9,-2.8],t:[0,0.5,0]},Top:{p:[0,4.2,0.2],t:[0,0.3,0.1]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  let mixer=null, speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, helper=null, model=null;
+  const clock=new THREE.Clock();
+  function group(id,names,onPick,active){const row=document.getElementById(id);const btns=names.map(n=>{const b=document.createElement('button');b.textContent=n.label||n;b.setAttribute('aria-pressed',String((n.key||n)===active));b.addEventListener('click',()=>{btns.forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');onPick(n.key||n);});row.appendChild(b);return b;});}
+
+  // ---- layered moves. Base (idle or walk) drives the legs; one action drives the upper body; hurt is added on top.
+  const UPPER=/^(spine|chest|head|ear|upperarm|forearm|hand|fingers)/, ACTIONS=['combo','castPoint','castBloom','castPlant','castSweep','guard','wave'];
+  const UPPERS=['combo','combo1','combo2','combo3','wave','guard','castPoint','castBloom','castPlant','castSweep'];
+  const sel={base:'idle',dir:'F',action:null,hurt:false,dash:false,downed:false,crawl:false,tap:0};
+  let rising=false, downPhase='fall', tapUntil=0, feel=true;
+  const DIRS={F:'Forward',B:'Backward',L:'Left',R:'Right',FL:'Forward-left',FR:'Forward-right',BL:'Back-left',BR:'Back-right'};
+  const DIRV={F:[0,1],B:[0,-1],L:[1,0],R:[-1,0],FL:[.7,.7],FR:[-.7,.7],BL:[.7,-.7],BR:[-.7,-.7]};
+  const SUF={F:'',B:'Back',L:'Left',R:'Right'};
+  const mixOf=(stem,d,tail)=>d.split('').map(c=>({n:stem+SUF[c]+(tail||''),w:1/d.length,sync:d.length>1&&stem!=='run'}));
+  const CT={combo:[0.30,0.78,1.42],combo1:[0.30],combo2:[0.32],combo3:[0.48],castPoint:[0.30],castBloom:[0.40],castPlant:[0.46],castSweep:[0.36],guard:[0.20,0.80,1.30]};
+  const A={}; let running=new Map(), throwAct=null, last='idle';
+  const THROWS={}, GEMFLY={}; let TR=0.42, TC=1.22; let hand=null, staff=null, glow=null, rootInv=new THREE.Matrix4(), G=new THREE.Matrix4(), dOff=new THREE.Vector3();
+  let hitstop=0, squash=0, flash=0, spawnT=-1; const lean=new THREE.Vector2();
+  const bone=n=>n.split('.')[0];
+  function sub(clip,name,pred){return new THREE.AnimationClip(name,clip.duration,clip.tracks.filter(t=>pred(bone(t.name))).map(t=>t.clone()));}
+  function buildLayers(clips){
+    const by={}; clips.forEach(c=>by[c.name]=c);
+    const noStaff=n=>n!=='weapon';
+    clips.forEach(c=>{if(c.name!=='hurt')A[c.name]=THROWS[c.name]?mixer.clipAction(c):mixer.clipAction(sub(c,c.name,noStaff));});
+    ['walk','walkBack','walkLeft','walkRight','run','runBack','runLeft','runRight'].forEach(d=>{A[d+'Legs']=mixer.clipAction(sub(by[d],d+'Legs',n=>noStaff(n)&&!UPPER.test(n)));});
+    UPPERS.forEach(n=>{A[n+'Up']=mixer.clipAction(sub(by[n],n+'Up',n2=>UPPER.test(n2)||(THROWS[n]&&n2==='weapon')));});
+    const h=THREE.AnimationUtils.makeClipAdditive(sub(by.hurt,'hurtAdd',noStaff)); h.duration=1.5;
+    A.hurtAdd=mixer.clipAction(h); A.hurtAdd.blendMode=THREE.AdditiveAnimationBlendMode;
+  }
+  // Start what is wanted, stop what is not, and leave alone what is already playing (so the walk keeps its step).
+  function setPlaying(want){
+    const names=new Set(want.map(w=>w.n));
+    const first=running.size===0;
+    running.forEach((a,n)=>{if(!names.has(n)){a.__tw=0; a.__fade=a.blendMode===THREE.AdditiveAnimationBlendMode?0.12:FADE_OUT;}});
+    throwAct=null;
+    want.forEach(w=>{
+      let a=running.get(w.n);
+      if(!a||w.restart){a=A[w.n]; a.reset(); a.setLoop(w.once?THREE.LoopOnce:THREE.LoopRepeat,w.once?1:Infinity); a.clampWhenFinished=!!w.once; a.play(); a.__prev=0; a.__w=first?(w.w==null?1:w.w):0; a.__fade=w.once||/^(dash|downFall|hurt)/.test(w.n)?FADE_FAST:FADE_IN; running.set(w.n,a);}
+      a.__tw=w.w==null?1:w.w; a.setEffectiveWeight(a.__w); a.setEffectiveTimeScale(w.sync?a.getClip().duration/(/^dash/.test(w.n)?0.7:0.84):1);
+      const tw=THROWS[w.n.replace(/Up$/,'')]; if(tw){throwAct=a;TR=tw[0];TC=tw[1];}
+    });
+  }
+  // Moves blend into each other instead of switching in one frame: each one's weight slides to its target.
+  const FADE_IN=0.16, FADE_OUT=0.16, FADE_FAST=0.07;
+  function stepFades(dt){
+    running.forEach((a,n)=>{ if(a.__w!==a.__tw){const k=dt/(a.__fade||FADE_IN); a.__w=a.__w<a.__tw?Math.min(a.__tw,a.__w+k):Math.max(a.__tw,a.__w-k); a.setEffectiveWeight(a.__w);}
+      if(a.__tw===0&&a.__w<=0){a.stop();running.delete(n);} });
+  }
+  function apply(restartAction){
+    const want=[]; let parts; const dl=DIRS[sel.dir].toLowerCase();
+    if(rising){want.push({n:'revive',once:true}); parts='Whole body: getting up';}
+    else if(sel.downed){
+      if(downPhase==='fall'){want.push({n:'downFall',once:true}); parts='Whole body: falling';}
+      else if(sel.crawl){want.push({n:'downCrawl'}); parts='Whole body: crawling while downed';}
+      else{want.push({n:'downLie'}); parts='Whole body: downed';}
+    }
+    else if(sel.dash){mixOf('dash',sel.dir).forEach(m=>want.push(m)); parts='Whole body: dash '+dl;}
+    else{
+      const act=sel.tap?'combo'+sel.tap:sel.action;
+      if(act){
+        if(sel.base!=='idle'){mixOf(sel.base,sel.dir,'Legs').forEach(m=>want.push(m)); want.push({n:act+'Up',once:!!sel.tap,restart:restartAction}); parts='Legs: '+sel.base+' '+dl+' · Upper body: '+(sel.tap?'combo hit '+sel.tap:LABEL[act].toLowerCase());}
+        else{want.push({n:act,once:!!sel.tap,restart:restartAction}); parts='Whole body: '+(sel.tap?'combo hit '+sel.tap:LABEL[act].toLowerCase());}
+      }else if(sel.base!=='idle'){mixOf(sel.base,sel.dir).forEach(m=>want.push(m)); parts='Whole body: '+sel.base+' '+dl;}
+      else{want.push({n:'idle'}); parts='Whole body: idle';}
+      if(sel.hurt){want.push({n:'hurtAdd'}); parts+=' · Added on top: hurt flinch';}
+    }
+    setPlaying(want);
+    document.getElementById('layers').textContent=parts;
+    document.getElementById('clipname').textContent=sel.downed||rising?(rising?'Revive':sel.crawl?'Downed + Crawl':'Downed'):[sel.dash?'Dash':LABEL[sel.base],!sel.dash&&sel.tap?'Combo hit '+sel.tap:null,!sel.dash&&sel.action?LABEL[sel.action]:null,!sel.dash&&sel.hurt?'Hurt':null].filter(Boolean).join(' + ');
+    showCurrent(last);
+    cv.style.filter=sel.downed?'saturate(0.3) brightness(0.92)':'none';
+    const lock=sel.downed||rising;
+    Object.entries(dbtn).forEach(([k,b])=>{const off=lock||(!sel.dash&&sel.base==='idle');b.disabled=off;b.setAttribute('aria-pressed',String(!off&&k===sel.dir));b.title=off?'Pick Walk, Run or Dash first.':'';});
+    moving=rising?null:sel.downed?(sel.crawl&&downPhase==='lie'?[0,0.28]:null):sel.dash?DIRV[sel.dir].map(v=>v*2.2):sel.base==='walk'?DIRV[sel.dir]:sel.base==='run'?DIRV[sel.dir].map(v=>v*1.9):null;
+    Object.entries(btn).forEach(([k,b])=>{
+      const pressed=k==='downed'?sel.downed:k==='crawl'?sel.crawl:k==='dash'?sel.dash:k==='hurt'?sel.hurt:(k===sel.base||k===sel.action);
+      let off=false, why='';
+      if(rising){off=true;why='She is getting up.';}
+      else if(k==='crawl'){off=!sel.downed||downPhase!=='lie';why='Crawling only works while she is downed.';}
+      else if(k==='downed'){off=!!(sel.action||sel.hurt||sel.dash||sel.tap);why='Downed uses the whole body, so it plays alone.';}
+      else if(sel.downed){off=true;why='She is downed. Press Downed again to revive her.';}
+      else if(k==='spawn'){off=false;}
+      else if(k==='dash'){off=!!(sel.action||sel.hurt||sel.tap);why='Dash uses the whole body, so it plays alone.';}
+      else if(sel.dash){off=true;why='Dash uses the whole body, so it plays alone.';}
+      else if(k==='tap'){off=!!sel.action;why='Only one upper-body move at a time.';}
+      else if(ACTIONS.includes(k)){off=!!((sel.action&&sel.action!==k)||sel.tap);why='Only one upper-body move at a time.';}
+      b.setAttribute('aria-pressed',String(!!pressed&&!off)); b.disabled=off; b.title=off?why:'';
+    });
+  }
+  function showCurrent(name){
+    const cur=document.getElementById('cur'); if(!cur||cur.dataset.name===name)return; cur.dataset.name=name; cur.textContent='';
+    if(CUR[name]){const v=document.createElement('video');v.src=CUR[name];v.muted=true;v.loop=true;v.playsInline=true;v.autoplay=!paused;v.controls=true;cur.appendChild(v);}
+    else{const p=document.createElement('p');p.textContent='No clip of the current Healer for '+LABEL[name].toLowerCase()+'.';cur.appendChild(p);}
+  }
+  const btn={}, dbtn={}; let moving=null;
+  function tapAttack(){
+    const now=performance.now()/1000; let next=1;
+    if(sel.tap){const a=running.get('combo'+sel.tap)||running.get('combo'+sel.tap+'Up'); if(a&&a.time<CT['combo'+sel.tap][0])return; next=sel.tap%3+1;}
+    else if(now<tapUntil&&tapLast){next=tapLast%3+1;}
+    sel.tap=next; tapLast=next; last='combo'; apply(true);
+  }
+  let tapLast=0;
+  function pick(k){
+    if(k==='tap'){tapAttack();return;}
+    if(k==='spawn'){spawnT=0;return;}
+    if(k==='idle'||k==='walk'||k==='run'){sel.base=k;}
+    else if(k==='dash'){sel.dash=!sel.dash;}
+    else if(k==='downed'){if(sel.downed){sel.downed=false;sel.crawl=false;rising=true;}else{sel.downed=true;downPhase='fall';sel.tap=0;}}
+    else if(k==='crawl'){sel.crawl=!sel.crawl;}
+    else if(k==='hurt'){sel.hurt=!sel.hurt;}
+    else{sel.action=sel.action===k?null:k;}
+    last=(k==='dash'&&!sel.dash)||(k==='hurt'&&!sel.hurt)||(ACTIONS.includes(k)&&!sel.action)||k==='crawl'?(k==='crawl'?'downed':sel.base):k;
+    apply();
+  }
+  let wasFlying=false;
+  function driveStaff(){
+    if(!hand||!staff)return;
+    model.updateMatrixWorld(true);
+    rootInv.copy(staff.parent.matrixWorld).invert();
+    const att=new THREE.Matrix4().multiplyMatrices(rootInv,hand.matrixWorld).multiply(G);
+    const ap=new THREE.Vector3(),aq=new THREE.Quaternion(),as=new THREE.Vector3(); att.decompose(ap,aq,as);
+    const t=throwAct?throwAct.time:-1;
+    if(throwAct&&t>=0&&t<=TR){dOff.copy(ap).sub(staff.position);}
+    if(throwAct&&t>TR&&t<TC){
+      staff.position.add(dOff);
+      const k=Math.max(0,(t-(TC-0.12))/0.12); if(k>0){staff.position.lerp(ap,k);staff.quaternion.slerp(aq,k);}
+    }else{staff.position.copy(ap);staff.quaternion.copy(aq);}
+    const fl=!!(throwAct&&t>TR&&t<TC); wasFlying=fl;
+  }
+  // contact: a short freeze, a squash and a gem flash when a blow or cast lands
+  function watchContacts(){
+    running.forEach((a,n)=>{const key=n.replace(/Up$/,''); const cts=CT[key]; const t=a.time; if(cts&&feel&&a.__tw>0){cts.forEach((c,i)=>{if(a.__prev<c&&t>=c){
+      const hitNo=key==='combo'?i+1:key==='combo1'?1:key==='combo2'?2:key==='combo3'?3:0; const fx=hitNo?HITFX[hitNo-1]:key==='guard'?GUARDFX[i]:CASTFX[key]||{pw:0.5}; const pw=fx.pw;
+      hitstop=pw>0?0.035+0.085*pw:0; squash=pw>0?0.35+0.55*pw:0; shake=Math.max(shake,pw>=0.45?pw:0); castFx(key,hitNo,i); if(fx.at){ringT=0;ringAt=fx.at;ringSize=fx.size;}}});} a.__prev=t;});
+  }
+  // hit feel per hit. A tank's blows are heavy: longer freezes than the Healer's, the camera shakes on the bash and hard on the slam.
+  const HITFX=[{pw:0.5},{pw:0.4},{pw:1,at:'foot',size:1.7}], GUARDFX=[{pw:0.3},{pw:0.45},{pw:0.45}], CASTFX={castPoint:{pw:0.6},castBloom:{pw:0.5,at:'self',size:2.1},castPlant:{pw:1,at:'foot',size:1.5},castSweep:{pw:0.5}}; let ringAt='head', ringSize=1; let shake=0, ringT=-1, ring=null, trail=null; const TN=14, tHist=[]; const tA=new THREE.Vector3(), tB=new THREE.Vector3(), shakeV=new THREE.Vector3();
+  function makeFx(){
+    ring=new THREE.Mesh(new THREE.RingGeometry(0.82,1,48),new THREE.MeshBasicMaterial({color:0xC4D2DE,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide}));
+    ring.rotation.x=-Math.PI/2; ring.position.y=0.012; ring.visible=false; scene.add(ring);
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(TN*6),3)); g.setAttribute('color',new THREE.BufferAttribute(new Float32Array(TN*8),4));
+    const idx=[]; for(let i=0;i<TN-1;i++){const a=i*2; idx.push(a,a+1,a+2,a+1,a+3,a+2);} g.setIndex(idx);
+    trail=new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,transparent:true,depthWrite:false,side:THREE.DoubleSide})); trail.frustumCulled=false; trail.visible=false; scene.add(trail);
+  }
+  // the staff head leaves a short arc behind it when it moves fast, so each swing's path can be read
+  function updateFx(d,frozen){
+    if(!trail||!staff)return;
+    if(d>0.05)tHist.length=0; if(!frozen){ tA.set(0,0.12,0.05).applyMatrix4(staff.matrixWorld); tB.set(0,0.92,0.05).applyMatrix4(staff.matrixWorld);
+      const prev=tHist[0]; const sp=prev&&d>0?tB.distanceTo(prev.b)/d:0; tHist.unshift({a:tA.clone(),b:tB.clone(),s:Math.min(1,Math.max(0,(sp-2.2)/4))}); if(tHist.length>TN)tHist.pop(); }
+    const P=trail.geometry.attributes.position, C=trail.geometry.attributes.color; let inCombo=false, any=false; running.forEach((a,n)=>{if(/^(combo|castSweep)/.test(n)&&a.__tw>0)inCombo=true;}); if(!inCombo)tHist.forEach(h=>h.s=0);
+    for(let i=0;i<TN;i++){const h=tHist[Math.min(i,tHist.length-1)]||{a:tA,b:tB,s:0}; const k=feel&&inCombo?h.s*(1-i/(TN-1)):0;
+      P.setXYZ(i*2,h.a.x,h.a.y,h.a.z); P.setXYZ(i*2+1,h.b.x,h.b.y,h.b.z); C.setXYZW(i*2,0.62,0.72,0.81,0.22*k); C.setXYZW(i*2+1,0.62,0.72,0.81,0.22*k); if(k>0.01)any=true;}
+    P.needsUpdate=true; C.needsUpdate=true; trail.visible=any;
+    if(ringT>=0&&feel){ if(ringT===0){ if(ringAt==='self')ring.position.set(0,0.012,0.1); else if(ringAt==='foot'){tA.set(0,0.02,0).applyMatrix4(staff.matrixWorld);ring.position.set(tA.x,0.012,tA.z);} else ring.position.set(tB.x,0.012,tB.z); } ringT+=d; const u=Math.min(1,ringT/0.38), e=1-Math.pow(1-u,3); ring.visible=true; ring.scale.setScalar((0.15+1.25*e)*ringSize); ring.material.opacity=0.5*(1-u); if(u>=1){ringT=-1;ring.visible=false;} }
+    shake=Math.max(0,shake-d/0.22);
+  }
+  // ---- the Tank's effects, all dim and in his own colours (forge steel for force, earth ochre and brown for the ground):
+  // dust thrown up by heavy contacts, cracks in the floor under a slam, a flat shock in front of the shield, sparks when a blow lands on it, a faint steel shell while he holds a stance
+  const FXP=[], STEEL=0x9DB8CF, DUST=0x8E7B5E, EARTH=0x5A4632; let shell=null, shellT=-1, shellLife=1, bell=null, bellT=-1, bellSize=0.3, crack=null, crackT=-1, crackLife=1.6; const fxV=new THREE.Vector3(), fxF=new THREE.Vector3();
+  function mote(pos,vel,life,size,grav,col,op){ if(FXP.length>260)return; const s=new THREE.Sprite(new THREE.SpriteMaterial({map:glow.material.map,color:col,blending:THREE.NormalBlending,depthWrite:false,transparent:true,opacity:0})); s.scale.setScalar(size); s.position.copy(pos); scene.add(s); FXP.push({s,v:vel,t:0,life,grav:grav||0,op:op||0.5,size}); }
+  const rnd=(a)=>(Math.random()-0.5)*2*a;
+  const facing=(out)=>{out.set(0,0,1).applyQuaternion(model.quaternion); out.y=0; return out.normalize();};
+  // dust: low, thrown outward from a point on the floor, falls back and fades
+  function dustAt(c,n,power,spread){ for(let i=0;i<n;i++){const a=Math.random()*6.283, sp=power*(0.5+Math.random()); mote(new THREE.Vector3(c.x+Math.cos(a)*spread*Math.random(),0.03+Math.random()*0.06,c.z+Math.sin(a)*spread*Math.random()),new THREE.Vector3(Math.cos(a)*sp,0.25+Math.random()*0.7*power,Math.sin(a)*sp),0.55+Math.random()*0.45,0.07+Math.random()*0.08,-2.0,DUST,0.5);} }
+  // sparks: small, fast, steel-coloured, off the face of the shield
+  function sparksAt(c,n,dir){ for(let i=0;i<n;i++){const v=new THREE.Vector3(rnd(1),rnd(1)+0.3,rnd(1)).addScaledVector(dir,0.9).multiplyScalar(1.1+Math.random()*0.9); mote(c.clone(),v,0.18+Math.random()*0.14,0.035+Math.random()*0.03,-3,0xDCE6EE,0.8);} }
+  const shieldFace=(out)=>out.set(0,0.5,0.1).applyMatrix4(staff.matrixWorld), shieldFoot=(out)=>out.set(0,0.02,0).applyMatrix4(staff.matrixWorld);
+  function makeSoft(){
+    shell=new THREE.Mesh(new THREE.SphereGeometry(0.78,28,18,0,6.283,0,1.6),new THREE.MeshBasicMaterial({color:STEEL,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); shell.visible=false; scene.add(shell);
+    bell=new THREE.Mesh(new THREE.RingGeometry(0.86,1,40),new THREE.MeshBasicMaterial({color:0xDCE6EE,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); bell.visible=false; scene.add(bell);
+    // cracks: nine jagged lines running out from the point of impact, each with a short fork
+    const pts=[]; for(let k=0;k<9;k++){let d=k/9*6.283+rnd(0.22), x=0,z=0; for(let i=0;i<8;i++){const st=0.07+0.05*Math.random(), nx=x+Math.cos(d)*st, nz=z+Math.sin(d)*st; pts.push(x,0.013,z,nx,0.013,nz); if(i===3){const fd=d+(Math.random()<0.5?0.8:-0.8); pts.push(nx,0.013,nz,nx+Math.cos(fd)*0.12,0.013,nz+Math.sin(fd)*0.12);} x=nx;z=nz; d+=rnd(0.45);} }
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(pts),3)); crack=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:EARTH,transparent:true,opacity:0})); crack.visible=false; scene.add(crack);
+  }
+  function crackAt(c,size,life){ crackT=0; crackLife=life||1.6; crack.position.set(c.x,0,c.z); crack.scale.setScalar(size); crack.rotation.y=Math.random()*6.283; }
+  function shockAt(c,size){ bellT=0; bellSize=size; bell.position.copy(c); bell.quaternion.copy(model.quaternion); }
+  // one-off effects at a move's contact time
+  function castFx(key,hitNo,i){ if(!feel||!staff)return; staff.updateWorldMatrix(true,false); facing(fxF);
+    if(hitNo===1){ shieldFace(fxV); sparksAt(fxV,8,fxF); shockAt(fxV,0.28); dustAt(fxV.clone().setY(0),5,0.5,0.15); }
+    else if(hitNo===2){ model.getObjectByName('handR').getWorldPosition(fxV); sparksAt(fxV,6,fxF); shockAt(fxV,0.16); }
+    else if(hitNo===3){ shieldFoot(fxV); crackAt(fxV,1.25); dustAt(fxV,26,1.25,0.25); }
+    else if(key==='castPoint'){ shieldFace(fxV); shockAt(fxV,0.42); sparksAt(fxV,6,fxF); dustAt(new THREE.Vector3(model.position.x,0,model.position.z+0.1),8,0.6,0.25); }
+    else if(key==='castBloom'){ dustAt(new THREE.Vector3(model.position.x,0,model.position.z+0.05),16,0.9,0.3); roarT=0; }
+    else if(key==='castPlant'){ shieldFoot(fxV); crackAt(fxV,1.0,2.0); dustAt(fxV,18,1.0,0.25); shellT=0; shellLife=1.15; }
+    else if(key==='castSweep'){ shieldFace(fxV); dustAt(fxV.clone().setY(0),10,0.8,0.3); }
+    else if(key==='guard'){ if(i===0){ dustAt(new THREE.Vector3(model.position.x,0,model.position.z+0.15),7,0.6,0.25); shellT=0; shellLife=1.6; } else { shieldFace(fxV); sparksAt(fxV,10,fxF); shockAt(fxV,0.3); } } }
+  // effects that run while a move plays: the roar sends out a second, slower ring; a run or a dash kicks up a little dust at each footfall
+  let roarT=-1, stepPh=0;
+  function ongoingFx(d){ if(!feel||!staff)return;
+    if(roarT>=0){ roarT+=d; if(roarT>=0.22){ roarT=-1; ringT=0; ringAt='self'; ringSize=2.6; shake=Math.max(shake,0.35); } }
+    const fast=!sel.downed&&!rising&&moving&&(sel.dash||sel.base==='run'); if(fast){ stepPh+=d/0.28; if(stepPh>=1){ stepPh=0; dustAt(new THREE.Vector3(model.position.x+rnd(0.12),0,model.position.z-0.05),3,0.35,0.08); } } }
+  function updateSoft(d){
+    for(let i=FXP.length-1;i>=0;i--){const m=FXP[i]; m.t+=d; m.v.y+=m.grav*d; m.s.position.addScaledVector(m.v,d); if(m.grav&&m.s.position.y<0.02){m.s.position.y=0.02;m.v.multiplyScalar(0.2);m.v.y=0;}
+      const u=m.t/m.life; m.s.material.opacity=m.op*Math.min(1,u*6)*(1-u); m.s.scale.setScalar(m.size*(1+0.8*u)); if(u>=1){scene.remove(m.s);m.s.material.dispose();FXP.splice(i,1);} }
+    if(shellT>=0){shellT+=d; const u=shellT/shellLife; shell.visible=true; shell.position.set(model.position.x,0,model.position.z+0.12); shell.material.opacity=0.12*Math.min(1,u*8)*(1-u*u); shell.scale.setScalar(0.92+0.1*Math.min(1,u*6)); if(u>=1){shellT=-1;shell.visible=false;}}
+    if(bellT>=0){bellT+=d; const u=bellT/0.26, e=1-Math.pow(1-u,3); bell.visible=true; bell.scale.setScalar(bellSize*(0.25+0.85*e)); bell.material.opacity=0.45*(1-u); if(u>=1){bellT=-1;bell.visible=false;}}
+    if(crackT>=0){crackT+=d; const u=crackT/crackLife; crack.visible=true; crack.geometry.setDrawRange(0,Math.ceil(Math.min(1,crackT/0.12)*8)*2*10); crack.material.opacity=0.85*(1-Math.max(0,(u-0.45)/0.55)); if(u>=1){crackT=-1;crack.visible=false;}}
+  }
+  function makeGlow(){
+    const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');const g=x.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(0.3,'rgba(255,255,255,0.6)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,128,128);
+    const m=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),color:0xA9DC7C,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:0.3});
+    const s=new THREE.Sprite(m); s.position.set(0,0.85,0); s.scale.setScalar(0.5); return s;
+  }
+  group('speeds',[{key:1,label:'1×'},{key:0.5,label:'½×'},{key:0.25,label:'¼×'}],k=>{speed=k;},1);
+  group('views',Object.keys(VIEWS),setView,'Close');
+  const bBones=document.getElementById('bones'), bPause=document.getElementById('pause'), bFeel=document.getElementById('feel');
+  bPause.setAttribute('aria-pressed',String(paused));
+  bBones.addEventListener('click',()=>{const on=bBones.getAttribute('aria-pressed')!=='true';bBones.setAttribute('aria-pressed',String(on));if(helper)helper.visible=on;});
+  bPause.addEventListener('click',()=>{paused=!paused;bPause.setAttribute('aria-pressed',String(paused));});
+  bFeel.addEventListener('click',()=>{feel=!feel;bFeel.setAttribute('aria-pressed',String(feel));});
+
+  const bin=Uint8Array.from(atob(window.MODEL_GLB_B64||''),c=>c.charCodeAt(0)).buffer;
+  new THREE.GLTFLoader().parse(bin,'',g=>{
+    model=g.scene; scene.add(model);
+    model.traverse(o=>{if(o.isMesh){o.frustumCulled=false;}});
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; helper.material.depthTest=false; scene.add(helper);
+    hand=model.getObjectByName('handL'); staff=model.getObjectByName('weapon');
+    model.updateMatrixWorld(true);
+    rootInv.copy(staff.parent.matrixWorld).invert();
+    G.copy(hand.matrixWorld).invert().multiply(staff.matrixWorld);
+    glow=makeGlow(); glow.visible=false; makeFx(); makeSoft();
+    mixer=new THREE.AnimationMixer(model); buildLayers(g.animations);
+    const row=document.getElementById('clips');
+    const mk=(r,k)=>{const b=document.createElement('button');b.textContent=LABEL[k];b.addEventListener('click',()=>pick(k));r.appendChild(b);btn[k]=b;};
+    ORDER.forEach(k=>mk(row,k)); const row2=document.getElementById('acts'); ORDER2.forEach(k=>mk(row2,k));
+    mixer.addEventListener('finished',e=>{const n=e.action.getClip().name;
+      if(n==='downFall'&&sel.downed){downPhase='lie';apply();}
+      else if(n==='revive'){rising=false;apply();}
+      else if(/^combo[123](Up)?$/.test(n)&&sel.tap){sel.tap=0;tapUntil=performance.now()/1000+0.4;apply();}});
+    const drow=document.getElementById('dirs');
+    Object.keys(DIRS).forEach(k=>{const b=document.createElement('button');b.textContent=DIRS[k];b.addEventListener('click',()=>{sel.dir=k;apply();});drow.appendChild(b);dbtn[k]=b;});
+    document.getElementById('load').hidden=true; apply();
+    window.__review={fx:()=>({motes:FXP.length,crack:crackT,shell:shellT,bell:bellT,ring:ringT}),sel,pick,A,mixer,staff,hand,running:()=>[...running.entries()].filter(e=>e[1].__tw>0).map(e=>e[0]),fading:()=>[...running.entries()].map(e=>[e[0],+e[1].__w.toFixed(2)]),state:()=>({hitstop,squash,flash,lean:[lean.x,lean.y],scale:model.scale.toArray()})};
+  },()=>{document.getElementById('load').textContent='The model file did not load. Reload the page to try again.';});
+
+  function frame(){
+    requestAnimationFrame(frame); const dt=Math.min(clock.getDelta(),0.1), d=dt*speed;
+    if(mixer&&!paused){
+      if(hitstop>0){hitstop-=d;}
+      else{
+        stepFades(d); mixer.update(d); watchContacts();
+        if(moving){floor.position.x=((floor.position.x-moving[0]*0.9*d)%0.5+0.5)%0.5;floor.position.z=((floor.position.z-moving[1]*0.9*d)%0.5+0.5)%0.5;}
+      }
+      // lean into the travel, capped at 12 degrees
+      const amt=!feel||sel.downed||rising||!moving?0:sel.dash?0.21:sel.base==='run'?0.17:0.1, k=Math.min(1,d*10);
+      const tx=moving?moving[0]:0, tz=moving?moving[1]:0, len=Math.hypot(tx,tz)||1;
+      lean.x+=((tz/len)*amt-lean.x)*k; lean.y+=((tx/len)*amt-lean.y)*k;
+      model.rotation.x=lean.x; model.rotation.z=-lean.y;
+      // squash on contact, grow-in on spawn
+      squash=Math.max(0,squash-d/0.18); flash=Math.max(0,flash-d/0.3);
+      let s=1; if(spawnT>=0){spawnT+=d; const u=Math.min(1,spawnT/0.5), c1=1.70158, c3=c1+1; s=Math.max(0.001,1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2)); if(u>=1)spawnT=-1;}
+      const q=squash*squash; model.scale.set(s*(1+0.07*q),s*(1-0.05*q),s*(1+0.07*q));
+      driveStaff(); updateFx(d,hitstop>0); if(hitstop<=0){ongoingFx(d); updateSoft(d);}
+    }
+    orbit.update(); const sk=feel?shake*shake*0.07:0; shakeV.set((Math.random()-0.5)*sk,(Math.random()-0.5)*sk,0).applyQuaternion(cam.quaternion); cam.position.add(shakeV); renderer.render(scene,cam); cam.position.sub(shakeV);
+  }
+  frame();
+})();
+</script>

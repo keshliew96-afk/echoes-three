@@ -1,0 +1,18 @@
+<!doctype html><html><body style="margin:0;background:#888">
+<script type="module">
+import * as THREE from 'three';
+import { attachTripoHealer } from '/src/render/critters/tripoHealer.js';
+const r = new THREE.WebGLRenderer({ antialias: true }); r.setSize(1200, 400); document.body.appendChild(r.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color('#9aa');
+scene.add(new THREE.HemisphereLight(0xffffff, 0x445544, 2.5));
+scene.add(new THREE.GridHelper(8, 32, 0x333333, 0x666666));
+const group = new THREE.Group(), yawGroup = new THREE.Group(), rig = new THREE.Group(); group.add(yawGroup); yawGroup.add(rig); scene.add(group);
+const tr = attachTripoHealer({ yawGroup, rig, group, comboHitOf: () => 1 });
+const mk = (pos) => { const c = new THREE.OrthographicCamera(-1.8, 1.8, 1.4, -0.2, 0.1, 30); c.position.copy(pos); return c; };
+const cams = [mk(new THREE.Vector3(6, 0.6, 1.1)), mk(new THREE.Vector3(0, 0.6, -6)), mk(new THREE.Vector3(0, 9, 7))];
+cams[0].lookAt(0, 0.6, 1.1); cams[1].lookAt(0, 0.6, 0); cams[2].lookAt(0, 0, 1.1);
+cams[2].top = 2.2; cams[2].bottom = -0.6; cams[2].updateProjectionMatrix();
+function render() { r.setScissorTest(true); cams.forEach((c, i) => { r.setViewport(i * 400, 0, 400, 400); r.setScissor(i * 400, 0, 400, 400); r.render(scene, c); }); }
+window.T = { ready: () => tr.ready(), step(n, dt = 1 / 60) { for (let i = 0; i < n; i++) tr.update(dt, 'idle'); render(); return { st: window.__tripo.th.state, age: +window.__tripo.th.age.toFixed(2) }; },
+  hit(h) { tr.cue('basic', { hit: h, dx: 0, dz: 1 }); }, cast(shape) { tr.cue('skill', { shape, skill: 'nova_bloom' }); } };
+</script></body></html>

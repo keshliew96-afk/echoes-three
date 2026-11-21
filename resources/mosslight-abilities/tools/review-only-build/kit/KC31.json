@@ -1,0 +1,50 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C31",
+  "aim": [
+   3,
+   0
+  ],
+  "slots": [
+   "kindred_shield"
+  ],
+  "allies": [
+   [
+    2.6,
+    0.0,
+    0.4
+   ],
+   [
+    -3.2,
+    -2.4,
+    1
+   ],
+   [
+    -1.6,
+    3.4,
+    1
+   ]
+  ],
+  "dummies": [],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=600;e.hp=600;}",
+  "seq": [
+   [
+    0.2,
+    "eval",
+    "for(const [x,z] of [[2.6, 0.9], [0.8, -2.6]]) globalThis.__reviewSeedAt(x,z);"
+   ],
+   [
+    1.0,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 5.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C31 \u00b7 Mossgrowth eats a seed: Moss 9 s"
+ }
+]

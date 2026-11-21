@@ -1,0 +1,68 @@
+[
+ {
+  "key": null,
+  "aim": [
+   3,
+   0
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S14",
+  "skill": "hearthsong",
+  "allies": [
+   [
+    1.2,
+    -0.7,
+    0.5
+   ],
+   [
+    2.6,
+    0.9,
+    0.6
+   ],
+   [
+    -3.4,
+    2.4,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    1.9,
+    0.3
+   ],
+   [
+    3.2,
+    -0.8
+   ]
+  ],
+  "secs": 3.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "area",
+    "rect": true,
+    "c": [
+     0,
+     0
+    ],
+    "dir": [
+     1,
+     0
+    ],
+    "len": 7.0,
+    "w": 3.0
+   }
+  ],
+  "cap": "S14 Pollen Gust (v1.3) \u00b7 a wall of wind 3 u wide rolls 7 u along her aim \u00b7 allies it passes: healed 10, 30% faster for 3 s \u00b7 foes: pushed 2 u, slowed 30% for 2 s",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ]
+ }
+]

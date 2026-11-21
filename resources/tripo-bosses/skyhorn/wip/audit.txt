@@ -1,0 +1,108 @@
+idle      floor clean
+          stretch x4.41 at 2.10 on neck2
+walk      floor clean
+          fCannonR into chest           34.4 mm at 0.23  (14 verts, 9 frames)
+          fCannonL into chest           33.7 mm at 0.50  (9 verts, 9 frames)
+          chest into fCannonR           27.2 mm at 0.22  (3 verts, 5 frames)
+          chest into hShinR             12.2 mm at 0.52  (2 verts, 2 frames)
+          beard into chest              11.7 mm at 0.53  (1 verts, 3 frames)
+          hShinR into chest              7.7 mm at 0.02  (2 verts, 6 frames)
+          chest into fCannonL            6.1 mm at 0.50  (1 verts, 1 frames)
+          stretch x9.53 at 0.02 on hShinR
+turnL     floor clean
+          fCannonL into chest           34.6 mm at 0.45  (9 verts, 10 frames)
+          fCannonR into chest           31.4 mm at 0.15  (10 verts, 9 frames)
+          chest into hShinR             30.0 mm at 0.42  (8 verts, 20 frames)
+          hCannonR into hShinL          25.8 mm at 0.33  (10 verts, 6 frames)
+          hCannonL into hShinR          21.4 mm at 0.33  (5 verts, 6 frames)
+          hCannonR into hCannonL        14.2 mm at 0.37  (3 verts, 4 frames)
+          hCannonL into hCannonR        13.3 mm at 0.32  (1 verts, 4 frames)
+          hCannonR into hHoofL          12.0 mm at 0.33  (5 verts, 4 frames)
+          stretch x11.81 at 0.02 on hShinR
+turnR     floor clean
+          fCannonR into chest           32.7 mm at 0.13  (22 verts, 10 frames)
+          chest into hShinR             31.6 mm at 0.00  (3 verts, 24 frames)
+          chest into fCannonR           26.9 mm at 0.13  (1 verts, 3 frames)
+          hShinL into hShinR            26.3 mm at 0.03  (1 verts, 1 frames)
+          hCannonR into hShinL          24.3 mm at 0.05  (1 verts, 6 frames)
+          hCannonL into hShinR          19.1 mm at 0.03  (8 verts, 7 frames)
+          fCannonL into chest           17.7 mm at 0.43  (8 verts, 9 frames)
+          hShinR into hShinL            16.9 mm at 0.07  (3 verts, 5 frames)
+          stretch x11.86 at 0.38 on hShinR
+rush      floor clean
+          beard into chest              57.7 mm at 1.55  (109 verts, 117 frames)
+          beard into neck1              48.7 mm at 1.05  (59 verts, 76 frames)
+          fCannonR into bell            40.0 mm at 0.47  (3 verts, 5 frames)
+          fCannonR into chest           34.9 mm at 2.40  (5 verts, 85 frames)
+          chest into fCannonR           34.1 mm at 1.03  (3 verts, 24 frames)
+          beard into bell               31.3 mm at 0.97  (34 verts, 94 frames)
+          fCannonL into chest           31.1 mm at 1.63  (16 verts, 63 frames)
+          head into chest               24.9 mm at 0.87  (2 verts, 70 frames)
+          snaps: fCannonR 33 deg@1.45 (beside 8), tail2 32 deg@1.68 (beside 3), earR 32 deg@2.88 (beside 5), earR 32 deg@0.97 (beside 8), earL 32 deg@0.97 (beside 8)
+          stretch x16.44 at 1.53 on hShinR
+toll      floor clean
+          beard into chest              57.8 mm at 0.85  (148 verts, 18 frames)
+          beard into neck1              54.0 mm at 0.85  (58 verts, 12 frames)
+          beard into bell               33.3 mm at 0.83  (11 verts, 9 frames)
+          fCannonR into chest           33.1 mm at 0.88  (10 verts, 24 frames)
+          head into chest               29.3 mm at 0.90  (3 verts, 8 frames)
+          neck1 into beard              24.5 mm at 0.83  (34 verts, 16 frames)
+          bell into head                21.8 mm at 0.87  (15 verts, 2 frames)
+          fCannonL into chest           17.0 mm at 0.78  (5 verts, 27 frames)
+          snaps: fCannonR 21 deg@0.83 (beside 2), fCannonL 21 deg@0.83 (beside 2)
+          stretch x7.21 at 0.88 on fForeL
+leap      floor clean
+          beard into chest              55.6 mm at 1.20  (77 verts, 52 frames)
+          fCannonR into chest           36.0 mm at 0.97  (11 verts, 51 frames)
+          beard into neck1              32.1 mm at 1.20  (82 verts, 15 frames)
+          fCannonL into chest           31.6 mm at 0.77  (18 verts, 63 frames)
+          chest into fCannonR           28.8 mm at 0.62  (2 verts, 22 frames)
+          hCannonL into hips            27.4 mm at 0.73  (10 verts, 15 frames)
+          beard into bell               24.9 mm at 1.25  (16 verts, 5 frames)
+          hCannonR into hips            22.1 mm at 0.72  (10 verts, 17 frames)
+          snaps: beard 37 deg@0.57 (beside 8), hThighL 30 deg@0.62 (beside 0), earR 30 deg@1.27 (beside 8), earL 30 deg@1.27 (beside 8), hThighR 30 deg@0.60 (beside 6)
+          stretch x12.42 at 0.73 on hShinR
+enrage    floor fHoofL -5mm@1.30, fHoofR -5mm@1.30
+          beard into chest              55.0 mm at 1.05  (122 verts, 6 frames)
+          beard into neck1              47.1 mm at 1.05  (73 verts, 4 frames)
+          fCannonR into bell            38.6 mm at 0.75  (11 verts, 16 frames)
+          chest into fCannonR           35.5 mm at 0.97  (6 verts, 42 frames)
+          fCannonR into chest           35.4 mm at 0.27  (11 verts, 47 frames)
+          fCannonL into chest           34.7 mm at 0.40  (8 verts, 49 frames)
+          fCannonL into bell            27.5 mm at 0.90  (4 verts, 6 frames)
+          beard into bell               26.9 mm at 1.05  (3 verts, 4 frames)
+          snaps: earR 32 deg@1.12 (beside 8), earL 32 deg@1.12 (beside 8), fCannonR 13 deg@1.05 (beside 3), fCannonL 13 deg@1.05 (beside 3), fHoofR 10 deg@1.57 (beside 1)
+          stretch x9.78 at 0.95 on fForeL
+hurt      floor clean
+          stretch x3.03 at 0.28 on tail1
+heavyHit  floor fHoofL -5mm@0.02
+          beard into chest              40.0 mm at 0.28  (45 verts, 30 frames)
+          fCannonL into chest           30.2 mm at 0.27  (10 verts, 5 frames)
+          chest into hShinR             19.8 mm at 0.23  (2 verts, 8 frames)
+          neck1 into beard              11.1 mm at 0.30  (3 verts, 3 frames)
+          chest into fCannonL           10.9 mm at 0.25  (2 verts, 1 frames)
+          beard into neck1              10.7 mm at 0.28  (2 verts, 6 frames)
+          hCannonL into hips            10.2 mm at 0.07  (1 verts, 1 frames)
+          snaps: fCannonR 33 deg@0.08 (beside 9)
+          stretch x9.59 at 0.17 on hShinR
+spawn     floor fHoofR -8mm@0.63, fHoofL -7mm@0.87
+          beard into chest              35.6 mm at 0.23  (40 verts, 34 frames)
+          fCannonR into chest           35.4 mm at 0.23  (11 verts, 27 frames)
+          fCannonL into chest           32.2 mm at 0.00  (25 verts, 37 frames)
+          beard into bell               24.0 mm at 0.17  (51 verts, 23 frames)
+          chest into fCannonR           23.0 mm at 0.20  (7 verts, 16 frames)
+          neck1 into beard              22.9 mm at 0.15  (43 verts, 27 frames)
+          head into chest               22.6 mm at 0.17  (5 verts, 22 frames)
+          bell into beard               19.1 mm at 0.23  (35 verts, 23 frames)
+          stretch x9.23 at 0.00 on chest
+death     floor fForeR -6mm@1.05, chest -5mm@1.07, hHoofR -5mm@1.37
+          fForeR into fForeL            59.8 mm at 0.83  (16 verts, 23 frames)
+          fHoofR into fForeL            59.4 mm at 0.73  (142 verts, 25 frames)
+          fCannonR into fForeL          56.4 mm at 0.73  (81 verts, 26 frames)
+          hShinL into hShinR            54.1 mm at 1.15  (14 verts, 17 frames)
+          fCannonR into chest           52.1 mm at 0.73  (116 verts, 126 frames)
+          fCannonR into fUpperL         51.7 mm at 1.03  (3 verts, 16 frames)
+          fCannonL into chest           47.3 mm at 0.97  (64 verts, 127 frames)
+          fForeL into fHoofR            42.6 mm at 1.03  (24 verts, 20 frames)
+          snaps: fCannonR 11 deg@0.05 (beside 2)
+          stretch x21.10 at 0.95 on hShinR

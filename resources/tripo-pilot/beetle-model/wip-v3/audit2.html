@@ -1,0 +1,43 @@
+<!doctype html><html><body>
+<script type="importmap">{"imports":{"three":"./three.module.js","three/addons/":"./jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const P=new URLSearchParams(location.search);
+const g=await new GLTFLoader().loadAsync(P.get('f'));const root=g.scene; const only=P.get('only');
+const J={};let sm=null;root.traverse(o=>{J[o.name]=o;if(o.isSkinnedMesh&&o.skeleton.bones.some(b=>b.name==='bell'))sm=o;});
+const mixer=new THREE.AnimationMixer(root);
+const bones=sm.skeleton.bones.map(b=>b.name), SI=sm.geometry.attributes.skinIndex, SW=sm.geometry.attributes.skinWeight, NV=SI.count;
+const cls=(n)=>/^bell/.test(n)?'bell':/^pole/.test(n)?'pole':/^head/.test(n)?'head':/^ant/.test(n)?'ant'+n.slice(-1):/^cape/.test(n)?'cape':/^(leg|foot)/.test(n)?'leg':/R$/.test(n)?'armR':/L$/.test(n)?'armL':'torso';
+const C={}; const dom=new Array(NV);
+for(let v=0;v<NV;v++){let bi=SI.getX(v),bw=SW.getX(v); if(SW.getY(v)>bw){bi=SI.getY(v);bw=SW.getY(v);} if(SW.getZ(v)>bw){bi=SI.getZ(v);bw=SW.getZ(v);} const c=cls(bones[bi]); dom[v]=bw; (C[c]=C[c]||[]).push(v);}
+// only verts that belong firmly to their part count for part-to-part distances (the blend zone between two parts is always near both)
+const firm=(c,w=0.85,step=1)=>C[c].filter((v,i)=>dom[v]>=w&&i%step===0);
+const F={bell:firm('bell',0.95),pole:firm('pole',0.95),head:firm('head',0.9,2),antL:firm('antL',0.9),antR:firm('antR',0.9),cape:firm('cape',0.9,3),leg:firm('leg',0.9),armL:firm('armL',0.9),torso:firm('torso',0.9,2)};
+const pos=new Float32Array(NV*3), tv=new THREE.Vector3();
+const skin=()=>{for(let v=0;v<NV;v++){sm.getVertexPosition(v,tv); tv.applyMatrix4(sm.matrixWorld); pos[v*3]=tv.x;pos[v*3+1]=tv.y;pos[v*3+2]=tv.z;}};
+const dmin=(A,B)=>{let m=1e9;for(const a of A){const ax=pos[a*3],ay=pos[a*3+1],az=pos[a*3+2];for(const b of B){const dx=ax-pos[b*3],dy=ay-pos[b*3+1],dz=az-pos[b*3+2],d=dx*dx+dy*dy+dz*dz;if(d<m)m=d;}}return Math.sqrt(m);};
+const pmin=(p,B)=>{let m=1e9;for(const b of B){const dx=p.x-pos[b*3],dy=p.y-pos[b*3+1],dz=p.z-pos[b*3+2],d=dx*dx+dy*dy+dz*dz;if(d<m)m=d;}return Math.sqrt(m);};
+const ymin=(A)=>{let m=1e9;for(const a of A)if(pos[a*3+1]<m)m=pos[a*3+1];return m;};
+const PAIRS=[['bell','pole'],['bell','head'],['bell','antL'],['bell','torso'],['bell','cape'],['antL','pole'],['head','pole'],['armL','cape'],['armL','torso'],['leg','cape'],['antL','antR']];
+const NOTARM=[...C.torso,...C.head,...C.cape,...C.leg,...C.armL,...C.bell,...C.pole,...(C.antL||[]),...(C.antR||[])];
+const out={}; const want=(P.get('at')||'').split(';').filter(Boolean).map(s=>s.split(':')); const atOut=[];
+// bind (rest) values first
+root.updateMatrixWorld(true); skin(); const bind={}; for(const [a,b] of PAIRS)bind[a+'-'+b]=+dmin(F[a],F[b]).toFixed(3); bind.capeY=+ymin(C.cape).toFixed(3); out.__bind=bind;
+for(const clip of g.animations){ if(only&&!only.split(',').includes(clip.name))continue; mixer.stopAllAction();const act=mixer.clipAction(clip);act.play();
+ const m={}; const lo=(k,v,t)=>{if(!(k in m)||v<m[k][0])m[k]=[+v.toFixed(3),+t.toFixed(2)];}; const hi=(k,v,t)=>{if(!(k in m)||v>m[k][0])m[k]=[+v.toFixed(3),+t.toFixed(2)];};
+ const N=Math.round(clip.duration*60); let prev=null;
+ for(let i=0;i<=N;i++){const t=Math.min(i/60,clip.duration-1e-4);mixer.setTime(t);root.updateMatrixWorld(true);skin();
+  for(const [a,b] of PAIRS)lo(a+'-'+b,dmin(F[a],F[b]),t);
+  lo('capeY',ymin(C.cape),t); for(const c of ['leg','torso','armL'])lo('y-'+c,ymin(C[c]),t); lo('bodyY',ymin(NOTARM),t); lo('bellY',ymin(C.bell),t);
+  const W=J.weapon; const ball=new THREE.Vector3(0,0.83,0).applyMatrix4(W.matrixWorld); lo('ballBody',pmin(ball,NOTARM)-0.058,t); lo('ballFloor',ball.y-0.058,t);
+  for(let k=0;k<=5;k++){const s=new THREE.Vector3(0,0.42+0.24*k/5,0).applyMatrix4(W.matrixWorld); lo('shaftBody',pmin(s,NOTARM)-0.032,t);}
+  for(const c of ['head','torso','cape','leg','armL'])lo('ball-'+c,pmin(ball,C[c])-0.058,t);
+  // swing of the bell from straight down, and how fast things move
+  const bt=new THREE.Vector3(0,-1,0).transformDirection(J.bell.matrixWorld); hi('bellSwing',Math.acos(Math.max(-1,Math.min(1,-bt.y)))*180/Math.PI,t);
+  const cur={ball:ball.clone(),head:J.head.getWorldPosition(new THREE.Vector3())}; if(prev){hi('ballSpeed',cur.ball.distanceTo(prev.ball)*60,t);hi('headSpeed',cur.head.distanceTo(prev.head)*60,t);} prev=cur;
+  for(const [c,tt] of want)if(c===clip.name&&Math.abs(t-+tt)<1/120)atOut.push({clip:c,t:+tt,ball:ball.toArray().map(v=>+v.toFixed(3))});
+ }
+ out[clip.name]=m;}
+out.__at=atOut; window.result=out;window.done=true;
+</script></body></html>

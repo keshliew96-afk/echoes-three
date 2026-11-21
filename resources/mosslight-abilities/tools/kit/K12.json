@@ -1,0 +1,57 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "skill": "mending_tide",
+  "allies": [
+   [
+    -0.35,
+    -1.2,
+    0.5
+   ],
+   [
+    0.45,
+    -2.4,
+    0.5
+   ],
+   [
+    -0.3,
+    -3.6,
+    0.5
+   ]
+  ],
+  "seq": [
+   [
+    0.4,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 3.2,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "area",
+    "rect": true,
+    "c": [
+     0,
+     0
+    ],
+    "dir": [
+     0,
+     -1
+    ],
+    "len": 4.0,
+    "w": 1.6
+   }
+  ],
+  "cap": "S12 Dew Wave (was Dew Fan) \u00b7 a lane of dew 4 u long and 1.6 u wide along her aim heals up to 4 allies in it for 12 each",
+  "name": "kit_S12"
+ }
+]

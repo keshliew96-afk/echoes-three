@@ -1,0 +1,47 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "skill": "kindred_shield",
+  "allies": [
+   [
+    0,
+    -2.6,
+    0.4
+   ],
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 7.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' · ');})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 3.6
+   }
+  ],
+  "cap": "S15 Mossgrowth (new, takes Kindred Shield's place) · Moss grows on the neediest ally within 3.6 u: 5 a second for 6 s, 30 in all · vine ring at his feet",
+  "name": "kit_S15"
+ }
+]

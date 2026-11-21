@@ -1,0 +1,3047 @@
+{
+ "idle": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.1,
+    "at": 3.7,
+    "verts": 12,
+    "frames": 361
+   },
+   "fLoL into hThL": {
+    "deep_mm": 30.5,
+    "at": 4.8,
+    "verts": 5,
+    "frames": 342
+   },
+   "fUpR into sac": {
+    "deep_mm": 19.4,
+    "at": 3.083,
+    "verts": 9,
+    "frames": 154
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 361
+   },
+   "fLoR into belly": {
+    "deep_mm": 16.2,
+    "at": 3.95,
+    "verts": 50,
+    "frames": 275
+   },
+   "fLoL into belly": {
+    "deep_mm": 15.1,
+    "at": 1.1,
+    "verts": 29,
+    "frames": 166
+   },
+   "fLoR into hThR": {
+    "deep_mm": 14.3,
+    "at": 1.733,
+    "verts": 9,
+    "frames": 232
+   },
+   "hFtR into hips": {
+    "deep_mm": 14.1,
+    "at": 1.1,
+    "verts": 15,
+    "frames": 361
+   },
+   "fUpL into sac": {
+    "deep_mm": 13.8,
+    "at": 2.95,
+    "verts": 2,
+    "frames": 149
+   },
+   "hFtL into hips": {
+    "deep_mm": 13.3,
+    "at": 5.95,
+    "verts": 8,
+    "frames": 361
+   },
+   "sac into fUpL": {
+    "deep_mm": 13.0,
+    "at": 4.167,
+    "verts": 1,
+    "frames": 185
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 6.0,
+    "verts": 10,
+    "frames": 361
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 6.0,
+    "verts": 10,
+    "frames": 361
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 361
+   },
+   "tg7 into jaw": {
+    "deep_mm": 9.8,
+    "at": 3.8,
+    "verts": 2,
+    "frames": 361
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 361
+   },
+   "jaw into tg7": {
+    "deep_mm": 7.5,
+    "at": 3.967,
+    "verts": 3,
+    "frames": 361
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 6.0,
+    "verts": 4,
+    "frames": 361
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   5.9,
+   0.9,
+   "eyeL"
+  ]
+ },
+ "walk": {
+  "floor": {},
+  "through": {
+   "hShR into fUpR": {
+    "deep_mm": 58.9,
+    "at": 0.017,
+    "verts": 19,
+    "frames": 32
+   },
+   "hShL into fUpL": {
+    "deep_mm": 57.2,
+    "at": 0.483,
+    "verts": 30,
+    "frames": 29
+   },
+   "tg7 into sac": {
+    "deep_mm": 54.1,
+    "at": 0.533,
+    "verts": 11,
+    "frames": 55
+   },
+   "fLoL into hShL": {
+    "deep_mm": 50.8,
+    "at": 0.617,
+    "verts": 43,
+    "frames": 22
+   },
+   "fLoR into hThR": {
+    "deep_mm": 50.3,
+    "at": 0.183,
+    "verts": 25,
+    "frames": 24
+   },
+   "hFtL into hips": {
+    "deep_mm": 49.8,
+    "at": 0.45,
+    "verts": 15,
+    "frames": 47
+   },
+   "fUpL into hShL": {
+    "deep_mm": 49.5,
+    "at": 0.383,
+    "verts": 34,
+    "frames": 31
+   },
+   "hFtR into hips": {
+    "deep_mm": 47.6,
+    "at": 0.033,
+    "verts": 27,
+    "frames": 55
+   },
+   "fUpR into hShR": {
+    "deep_mm": 46.9,
+    "at": 0.817,
+    "verts": 32,
+    "frames": 30
+   },
+   "fLoR into hShR": {
+    "deep_mm": 45.0,
+    "at": 0.167,
+    "verts": 48,
+    "frames": 25
+   },
+   "fLoL into hThL": {
+    "deep_mm": 42.1,
+    "at": 0.55,
+    "verts": 2,
+    "frames": 36
+   },
+   "hShR into fLoR": {
+    "deep_mm": 39.2,
+    "at": 0.033,
+    "verts": 46,
+    "frames": 43
+   },
+   "hShL into fLoL": {
+    "deep_mm": 38.4,
+    "at": 0.633,
+    "verts": 53,
+    "frames": 33
+   },
+   "hThR into fLoR": {
+    "deep_mm": 38.3,
+    "at": 0.2,
+    "verts": 13,
+    "frames": 18
+   },
+   "hThL into fLoL": {
+    "deep_mm": 36.1,
+    "at": 0.65,
+    "verts": 9,
+    "frames": 15
+   },
+   "fLoL into belly": {
+    "deep_mm": 29.6,
+    "at": 0.633,
+    "verts": 45,
+    "frames": 40
+   },
+   "fHandL into chest": {
+    "deep_mm": 27.2,
+    "at": 0.7,
+    "verts": 12,
+    "frames": 6
+   },
+   "fHandR into chest": {
+    "deep_mm": 26.5,
+    "at": 0.233,
+    "verts": 20,
+    "frames": 6
+   },
+   "fLoR into belly": {
+    "deep_mm": 25.3,
+    "at": 0.233,
+    "verts": 34,
+    "frames": 44
+   },
+   "hFtR into belly": {
+    "deep_mm": 24.8,
+    "at": 0.0,
+    "verts": 4,
+    "frames": 27
+   },
+   "fUpL into sac": {
+    "deep_mm": 22.6,
+    "at": 0.017,
+    "verts": 5,
+    "frames": 25
+   },
+   "belly into fHandL": {
+    "deep_mm": 18.9,
+    "at": 0.633,
+    "verts": 8,
+    "frames": 7
+   },
+   "hips into hFtL": {
+    "deep_mm": 18.6,
+    "at": 0.267,
+    "verts": 24,
+    "frames": 36
+   },
+   "fHandL into belly": {
+    "deep_mm": 18.3,
+    "at": 0.65,
+    "verts": 14,
+    "frames": 7
+   },
+   "hips into hFtR": {
+    "deep_mm": 16.6,
+    "at": 0.733,
+    "verts": 9,
+    "frames": 14
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 55
+   },
+   "fHandR into belly": {
+    "deep_mm": 16.1,
+    "at": 0.2,
+    "verts": 15,
+    "frames": 7
+   },
+   "sac into fUpL": {
+    "deep_mm": 13.6,
+    "at": 0.817,
+    "verts": 1,
+    "frames": 7
+   },
+   "belly into fLoR": {
+    "deep_mm": 12.9,
+    "at": 0.033,
+    "verts": 2,
+    "frames": 15
+   },
+   "fUpR into sac": {
+    "deep_mm": 12.6,
+    "at": 0.45,
+    "verts": 1,
+    "frames": 46
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 0.9,
+    "verts": 10,
+    "frames": 55
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 0.9,
+    "verts": 10,
+    "frames": 55
+   },
+   "belly into fHandR": {
+    "deep_mm": 11.9,
+    "at": 0.217,
+    "verts": 3,
+    "frames": 6
+   },
+   "hFtL into belly": {
+    "deep_mm": 11.0,
+    "at": 0.4,
+    "verts": 2,
+    "frames": 20
+   },
+   "chest into sac": {
+    "deep_mm": 10.6,
+    "at": 0.167,
+    "verts": 2,
+    "frames": 5
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 55
+   },
+   "belly into fLoL": {
+    "deep_mm": 9.7,
+    "at": 0.9,
+    "verts": 5,
+    "frames": 7
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 8,
+    "frames": 55
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 0.9,
+    "verts": 4,
+    "frames": 55
+   },
+   "tg7 into jaw": {
+    "deep_mm": 7.5,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 55
+   },
+   "jaw into tg7": {
+    "deep_mm": 7.3,
+    "at": 0.9,
+    "verts": 3,
+    "frames": 55
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   14.52,
+   0.617,
+   "jaw"
+  ]
+ },
+ "turnL": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 58.3,
+    "at": 0.317,
+    "verts": 17,
+    "frames": 37
+   },
+   "hShL into fUpL": {
+    "deep_mm": 53.0,
+    "at": 0.183,
+    "verts": 35,
+    "frames": 19
+   },
+   "fUpL into hShL": {
+    "deep_mm": 50.5,
+    "at": 0.133,
+    "verts": 64,
+    "frames": 16
+   },
+   "hFtL into hips": {
+    "deep_mm": 49.7,
+    "at": 0.167,
+    "verts": 8,
+    "frames": 23
+   },
+   "hFtR into hips": {
+    "deep_mm": 46.8,
+    "at": 0.0,
+    "verts": 5,
+    "frames": 36
+   },
+   "fLoL into hThL": {
+    "deep_mm": 45.7,
+    "at": 0.6,
+    "verts": 22,
+    "frames": 26
+   },
+   "hShR into fUpR": {
+    "deep_mm": 42.9,
+    "at": 0.083,
+    "verts": 39,
+    "frames": 12
+   },
+   "belly into fHandL": {
+    "deep_mm": 37.2,
+    "at": 0.433,
+    "verts": 8,
+    "frames": 9
+   },
+   "fLoL into hShL": {
+    "deep_mm": 34.3,
+    "at": 0.583,
+    "verts": 14,
+    "frames": 18
+   },
+   "fLoL into belly": {
+    "deep_mm": 33.8,
+    "at": 0.367,
+    "verts": 83,
+    "frames": 29
+   },
+   "hToeL into hThL": {
+    "deep_mm": 33.0,
+    "at": 0.333,
+    "verts": 16,
+    "frames": 4
+   },
+   "hShL into fLoL": {
+    "deep_mm": 32.4,
+    "at": 0.067,
+    "verts": 28,
+    "frames": 20
+   },
+   "hShR into fLoR": {
+    "deep_mm": 30.7,
+    "at": 0.583,
+    "verts": 18,
+    "frames": 18
+   },
+   "fLoR into belly": {
+    "deep_mm": 30.4,
+    "at": 0.217,
+    "verts": 88,
+    "frames": 30
+   },
+   "fLoR into hThR": {
+    "deep_mm": 28.6,
+    "at": 0.117,
+    "verts": 14,
+    "frames": 23
+   },
+   "fUpR into sac": {
+    "deep_mm": 26.7,
+    "at": 0.3,
+    "verts": 15,
+    "frames": 37
+   },
+   "fHandL into fFingR": {
+    "deep_mm": 25.5,
+    "at": 0.3,
+    "verts": 12,
+    "frames": 8
+   },
+   "hThL into fLoL": {
+    "deep_mm": 25.0,
+    "at": 0.033,
+    "verts": 6,
+    "frames": 19
+   },
+   "fUpL into sac": {
+    "deep_mm": 24.6,
+    "at": 0.367,
+    "verts": 18,
+    "frames": 24
+   },
+   "fHandR into fFingL": {
+    "deep_mm": 24.3,
+    "at": 0.3,
+    "verts": 5,
+    "frames": 8
+   },
+   "fLoR into hShR": {
+    "deep_mm": 22.8,
+    "at": 0.3,
+    "verts": 23,
+    "frames": 24
+   },
+   "hThR into fLoR": {
+    "deep_mm": 21.9,
+    "at": 0.1,
+    "verts": 4,
+    "frames": 15
+   },
+   "fHandR into fLoL": {
+    "deep_mm": 21.7,
+    "at": 0.283,
+    "verts": 1,
+    "frames": 1
+   },
+   "fHandR into fHandL": {
+    "deep_mm": 20.5,
+    "at": 0.283,
+    "verts": 28,
+    "frames": 11
+   },
+   "hips into hFtL": {
+    "deep_mm": 20.4,
+    "at": 0.35,
+    "verts": 21,
+    "frames": 18
+   },
+   "fHandL into fHandR": {
+    "deep_mm": 19.9,
+    "at": 0.4,
+    "verts": 15,
+    "frames": 10
+   },
+   "fHandL into fLoR": {
+    "deep_mm": 19.9,
+    "at": 0.383,
+    "verts": 1,
+    "frames": 1
+   },
+   "hips into hFtR": {
+    "deep_mm": 17.8,
+    "at": 0.483,
+    "verts": 12,
+    "frames": 11
+   },
+   "hFtR into belly": {
+    "deep_mm": 17.3,
+    "at": 0.483,
+    "verts": 3,
+    "frames": 5
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 37
+   },
+   "belly into fLoL": {
+    "deep_mm": 16.0,
+    "at": 0.383,
+    "verts": 14,
+    "frames": 16
+   },
+   "sac into fUpL": {
+    "deep_mm": 15.4,
+    "at": 0.317,
+    "verts": 4,
+    "frames": 16
+   },
+   "fUpR into hShR": {
+    "deep_mm": 14.3,
+    "at": 0.083,
+    "verts": 5,
+    "frames": 12
+   },
+   "fFingL into fFingR": {
+    "deep_mm": 13.3,
+    "at": 0.267,
+    "verts": 4,
+    "frames": 11
+   },
+   "fFingR into fFingL": {
+    "deep_mm": 13.1,
+    "at": 0.267,
+    "verts": 8,
+    "frames": 11
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 0.6,
+    "verts": 10,
+    "frames": 37
+   },
+   "fHandL into chest": {
+    "deep_mm": 12.4,
+    "at": 0.483,
+    "verts": 4,
+    "frames": 3
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 0.6,
+    "verts": 10,
+    "frames": 37
+   },
+   "hFtL into belly": {
+    "deep_mm": 12.1,
+    "at": 0.267,
+    "verts": 6,
+    "frames": 8
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 37
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 8,
+    "frames": 37
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 0.6,
+    "verts": 4,
+    "frames": 37
+   },
+   "tg7 into jaw": {
+    "deep_mm": 7.5,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 21
+   },
+   "jaw into tg7": {
+    "deep_mm": 7.3,
+    "at": 0.6,
+    "verts": 3,
+    "frames": 37
+   },
+   "fFingR into fHandL": {
+    "deep_mm": 7.1,
+    "at": 0.367,
+    "verts": 1,
+    "frames": 1
+   },
+   "belly into fHandR": {
+    "deep_mm": 6.5,
+    "at": 0.267,
+    "verts": 1,
+    "frames": 1
+   },
+   "belly into fLoR": {
+    "deep_mm": 6.4,
+    "at": 0.583,
+    "verts": 1,
+    "frames": 1
+   },
+   "fHandR into belly": {
+    "deep_mm": 6.3,
+    "at": 0.183,
+    "verts": 1,
+    "frames": 1
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   18.14,
+   0.367,
+   "jaw"
+  ]
+ },
+ "turnR": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 58.9,
+    "at": 0.083,
+    "verts": 17,
+    "frames": 37
+   },
+   "hShR into fUpR": {
+    "deep_mm": 51.4,
+    "at": 0.483,
+    "verts": 45,
+    "frames": 19
+   },
+   "fUpR into hShR": {
+    "deep_mm": 50.8,
+    "at": 0.467,
+    "verts": 40,
+    "frames": 15
+   },
+   "hShL into fUpL": {
+    "deep_mm": 49.9,
+    "at": 0.35,
+    "verts": 35,
+    "frames": 11
+   },
+   "hFtR into hips": {
+    "deep_mm": 45.9,
+    "at": 0.417,
+    "verts": 6,
+    "frames": 37
+   },
+   "hFtL into hips": {
+    "deep_mm": 44.7,
+    "at": 0.283,
+    "verts": 5,
+    "frames": 28
+   },
+   "fLoR into hThR": {
+    "deep_mm": 43.1,
+    "at": 0.3,
+    "verts": 47,
+    "frames": 25
+   },
+   "hShR into fLoR": {
+    "deep_mm": 36.5,
+    "at": 0.367,
+    "verts": 33,
+    "frames": 20
+   },
+   "fLoR into belly": {
+    "deep_mm": 35.7,
+    "at": 0.067,
+    "verts": 92,
+    "frames": 30
+   },
+   "fLoR into hShR": {
+    "deep_mm": 32.6,
+    "at": 0.283,
+    "verts": 7,
+    "frames": 28
+   },
+   "fLoL into hThL": {
+    "deep_mm": 32.2,
+    "at": 0.167,
+    "verts": 15,
+    "frames": 28
+   },
+   "hToeR into hThR": {
+    "deep_mm": 31.8,
+    "at": 0.05,
+    "verts": 13,
+    "frames": 5
+   },
+   "fUpL into sac": {
+    "deep_mm": 28.3,
+    "at": 0.033,
+    "verts": 15,
+    "frames": 37
+   },
+   "fLoL into belly": {
+    "deep_mm": 27.9,
+    "at": 0.567,
+    "verts": 65,
+    "frames": 33
+   },
+   "hThR into fLoR": {
+    "deep_mm": 27.3,
+    "at": 0.333,
+    "verts": 8,
+    "frames": 15
+   },
+   "fHandR into fFingL": {
+    "deep_mm": 26.4,
+    "at": 0.6,
+    "verts": 9,
+    "frames": 9
+   },
+   "fLoL into hShL": {
+    "deep_mm": 25.9,
+    "at": 0.4,
+    "verts": 19,
+    "frames": 16
+   },
+   "fHandR into fLoL": {
+    "deep_mm": 25.4,
+    "at": 0.083,
+    "verts": 1,
+    "frames": 1
+   },
+   "fHandL into fFingR": {
+    "deep_mm": 22.7,
+    "at": 0.067,
+    "verts": 12,
+    "frames": 9
+   },
+   "hShL into fLoL": {
+    "deep_mm": 22.1,
+    "at": 0.267,
+    "verts": 12,
+    "frames": 16
+   },
+   "belly into fHandL": {
+    "deep_mm": 20.5,
+    "at": 0.567,
+    "verts": 4,
+    "frames": 6
+   },
+   "hThL into fLoL": {
+    "deep_mm": 19.8,
+    "at": 0.4,
+    "verts": 7,
+    "frames": 18
+   },
+   "fHandL into fHandR": {
+    "deep_mm": 19.6,
+    "at": 0.567,
+    "verts": 19,
+    "frames": 12
+   },
+   "fHandR into fHandL": {
+    "deep_mm": 18.9,
+    "at": 0.1,
+    "verts": 14,
+    "frames": 12
+   },
+   "hips into hFtL": {
+    "deep_mm": 17.0,
+    "at": 0.15,
+    "verts": 27,
+    "frames": 16
+   },
+   "fUpL into hShL": {
+    "deep_mm": 16.9,
+    "at": 0.35,
+    "verts": 6,
+    "frames": 12
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 37
+   },
+   "fFingR into fFingL": {
+    "deep_mm": 16.1,
+    "at": 0.567,
+    "verts": 7,
+    "frames": 12
+   },
+   "fHandR into chest": {
+    "deep_mm": 15.1,
+    "at": 0.15,
+    "verts": 3,
+    "frames": 3
+   },
+   "hFtL into belly": {
+    "deep_mm": 14.9,
+    "at": 0.217,
+    "verts": 8,
+    "frames": 7
+   },
+   "hFtR into belly": {
+    "deep_mm": 14.9,
+    "at": 0.567,
+    "verts": 2,
+    "frames": 4
+   },
+   "belly into fHandR": {
+    "deep_mm": 14.0,
+    "at": 0.1,
+    "verts": 3,
+    "frames": 5
+   },
+   "fFingL into fFingR": {
+    "deep_mm": 13.3,
+    "at": 0.55,
+    "verts": 6,
+    "frames": 12
+   },
+   "hips into hFtR": {
+    "deep_mm": 12.7,
+    "at": 0.567,
+    "verts": 13,
+    "frames": 16
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 0.6,
+    "verts": 10,
+    "frames": 37
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 0.6,
+    "verts": 10,
+    "frames": 37
+   },
+   "fUpR into sac": {
+    "deep_mm": 12.0,
+    "at": 0.067,
+    "verts": 10,
+    "frames": 15
+   },
+   "chest into sac": {
+    "deep_mm": 11.6,
+    "at": 0.35,
+    "verts": 2,
+    "frames": 9
+   },
+   "fHandR into belly": {
+    "deep_mm": 11.5,
+    "at": 0.167,
+    "verts": 1,
+    "frames": 4
+   },
+   "belly into fLoR": {
+    "deep_mm": 11.1,
+    "at": 0.1,
+    "verts": 1,
+    "frames": 9
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 37
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 37
+   },
+   "belly into fLoL": {
+    "deep_mm": 9.0,
+    "at": 0.05,
+    "verts": 1,
+    "frames": 7
+   },
+   "fHandL into chest": {
+    "deep_mm": 7.9,
+    "at": 0.5,
+    "verts": 1,
+    "frames": 2
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 0.6,
+    "verts": 4,
+    "frames": 37
+   },
+   "tg7 into jaw": {
+    "deep_mm": 7.5,
+    "at": 0.117,
+    "verts": 1,
+    "frames": 23
+   },
+   "jaw into tg7": {
+    "deep_mm": 7.3,
+    "at": 0.6,
+    "verts": 3,
+    "frames": 37
+   },
+   "fFingL into fHandR": {
+    "deep_mm": 6.7,
+    "at": 0.067,
+    "verts": 1,
+    "frames": 1
+   },
+   "sac into fUpR": {
+    "deep_mm": 6.6,
+    "at": 0.25,
+    "verts": 1,
+    "frames": 3
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   15.49,
+   0.0,
+   "jaw"
+  ]
+ },
+ "lash": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.3,
+    "at": 0.667,
+    "verts": 13,
+    "frames": 76
+   },
+   "tg7 into jaw": {
+    "deep_mm": 54.4,
+    "at": 0.75,
+    "verts": 25,
+    "frames": 70
+   },
+   "tg2 into sac": {
+    "deep_mm": 49.4,
+    "at": 1.15,
+    "verts": 7,
+    "frames": 2
+   },
+   "hFtR into hips": {
+    "deep_mm": 45.3,
+    "at": 0.933,
+    "verts": 3,
+    "frames": 101
+   },
+   "fLoL into hThL": {
+    "deep_mm": 41.3,
+    "at": 0.817,
+    "verts": 17,
+    "frames": 100
+   },
+   "fLoR into hThR": {
+    "deep_mm": 41.2,
+    "at": 0.85,
+    "verts": 27,
+    "frames": 52
+   },
+   "tg3 into sac": {
+    "deep_mm": 40.6,
+    "at": 1.15,
+    "verts": 8,
+    "frames": 1
+   },
+   "fUpR into sac": {
+    "deep_mm": 39.6,
+    "at": 0.683,
+    "verts": 31,
+    "frames": 77
+   },
+   "sac into chest": {
+    "deep_mm": 38.8,
+    "at": 0.85,
+    "verts": 118,
+    "frames": 32
+   },
+   "fLoL into hShL": {
+    "deep_mm": 38.4,
+    "at": 0.833,
+    "verts": 25,
+    "frames": 9
+   },
+   "fLoR into hShR": {
+    "deep_mm": 37.3,
+    "at": 0.85,
+    "verts": 36,
+    "frames": 15
+   },
+   "tg4 into sac": {
+    "deep_mm": 34.5,
+    "at": 1.15,
+    "verts": 4,
+    "frames": 1
+   },
+   "fUpL into sac": {
+    "deep_mm": 32.5,
+    "at": 0.683,
+    "verts": 27,
+    "frames": 78
+   },
+   "tg3 into jaw": {
+    "deep_mm": 31.2,
+    "at": 1.15,
+    "verts": 2,
+    "frames": 1
+   },
+   "hFtL into hips": {
+    "deep_mm": 30.4,
+    "at": 0.85,
+    "verts": 2,
+    "frames": 99
+   },
+   "fLoL into belly": {
+    "deep_mm": 29.2,
+    "at": 0.85,
+    "verts": 52,
+    "frames": 101
+   },
+   "fLoR into belly": {
+    "deep_mm": 28.7,
+    "at": 0.85,
+    "verts": 47,
+    "frames": 101
+   },
+   "tg4 into jaw": {
+    "deep_mm": 28.5,
+    "at": 1.15,
+    "verts": 6,
+    "frames": 1
+   },
+   "tg5 into tg0": {
+    "deep_mm": 26.1,
+    "at": 0.75,
+    "verts": 8,
+    "frames": 77
+   },
+   "jaw into tg2": {
+    "deep_mm": 22.7,
+    "at": 0.767,
+    "verts": 13,
+    "frames": 9
+   },
+   "tg4 into tg0": {
+    "deep_mm": 21.8,
+    "at": 0.75,
+    "verts": 8,
+    "frames": 77
+   },
+   "sac into fUpR": {
+    "deep_mm": 21.3,
+    "at": 1.15,
+    "verts": 3,
+    "frames": 26
+   },
+   "tg2 into jaw": {
+    "deep_mm": 20.3,
+    "at": 1.133,
+    "verts": 8,
+    "frames": 1
+   },
+   "tg6 into tg0": {
+    "deep_mm": 19.5,
+    "at": 1.167,
+    "verts": 8,
+    "frames": 77
+   },
+   "jaw into tg7": {
+    "deep_mm": 18.8,
+    "at": 1.183,
+    "verts": 12,
+    "frames": 73
+   },
+   "tg7 into tg0": {
+    "deep_mm": 18.6,
+    "at": 1.167,
+    "verts": 1,
+    "frames": 76
+   },
+   "tg6 into tg1": {
+    "deep_mm": 18.1,
+    "at": 0.75,
+    "verts": 4,
+    "frames": 4
+   },
+   "tg7 into tg2": {
+    "deep_mm": 17.2,
+    "at": 0.75,
+    "verts": 2,
+    "frames": 2
+   },
+   "jaw into tg6": {
+    "deep_mm": 17.2,
+    "at": 1.15,
+    "verts": 7,
+    "frames": 1
+   },
+   "tg5 into sac": {
+    "deep_mm": 17.2,
+    "at": 1.15,
+    "verts": 4,
+    "frames": 1
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 77
+   },
+   "fHandR into chest": {
+    "deep_mm": 16.2,
+    "at": 0.85,
+    "verts": 6,
+    "frames": 4
+   },
+   "tg7 into tg1": {
+    "deep_mm": 15.6,
+    "at": 0.733,
+    "verts": 2,
+    "frames": 4
+   },
+   "tg3 into tg0": {
+    "deep_mm": 15.1,
+    "at": 0.75,
+    "verts": 6,
+    "frames": 77
+   },
+   "chest into sac": {
+    "deep_mm": 13.5,
+    "at": 0.967,
+    "verts": 6,
+    "frames": 13
+   },
+   "tg5 into tg1": {
+    "deep_mm": 12.2,
+    "at": 0.733,
+    "verts": 2,
+    "frames": 2
+   },
+   "hShL into fUpL": {
+    "deep_mm": 12.2,
+    "at": 0.8,
+    "verts": 1,
+    "frames": 3
+   },
+   "sac into fUpL": {
+    "deep_mm": 12.0,
+    "at": 0.017,
+    "verts": 1,
+    "frames": 28
+   },
+   "jaw into tg4": {
+    "deep_mm": 11.4,
+    "at": 1.15,
+    "verts": 4,
+    "frames": 1
+   },
+   "tg5 into jaw": {
+    "deep_mm": 11.2,
+    "at": 1.15,
+    "verts": 4,
+    "frames": 1
+   },
+   "hThL into fLoL": {
+    "deep_mm": 10.3,
+    "at": 0.85,
+    "verts": 8,
+    "frames": 7
+   },
+   "fHandL into belly": {
+    "deep_mm": 10.0,
+    "at": 0.85,
+    "verts": 7,
+    "frames": 4
+   },
+   "fHandL into chest": {
+    "deep_mm": 9.8,
+    "at": 0.85,
+    "verts": 1,
+    "frames": 1
+   },
+   "hThR into fLoR": {
+    "deep_mm": 9.3,
+    "at": 0.85,
+    "verts": 2,
+    "frames": 4
+   },
+   "belly into fHandL": {
+    "deep_mm": 9.1,
+    "at": 0.85,
+    "verts": 2,
+    "frames": 4
+   },
+   "belly into fHandR": {
+    "deep_mm": 9.1,
+    "at": 0.85,
+    "verts": 3,
+    "frames": 4
+   },
+   "fHandR into belly": {
+    "deep_mm": 9.1,
+    "at": 0.85,
+    "verts": 5,
+    "frames": 4
+   },
+   "tg0 into tg7": {
+    "deep_mm": 9.0,
+    "at": 0.75,
+    "verts": 2,
+    "frames": 1
+   },
+   "belly into fLoR": {
+    "deep_mm": 8.1,
+    "at": 0.683,
+    "verts": 7,
+    "frames": 16
+   },
+   "tg0 into tg4": {
+    "deep_mm": 8.1,
+    "at": 0.733,
+    "verts": 2,
+    "frames": 1
+   },
+   "hips into hFtL": {
+    "deep_mm": 7.4,
+    "at": 1.333,
+    "verts": 2,
+    "frames": 54
+   },
+   "jaw into tg3": {
+    "deep_mm": 7.4,
+    "at": 0.717,
+    "verts": 2,
+    "frames": 2
+   },
+   "tg1 into tg7": {
+    "deep_mm": 7.0,
+    "at": 0.75,
+    "verts": 2,
+    "frames": 1
+   },
+   "belly into fLoL": {
+    "deep_mm": 6.6,
+    "at": 0.683,
+    "verts": 2,
+    "frames": 9
+   },
+   "tg0 into tg5": {
+    "deep_mm": 6.3,
+    "at": 0.717,
+    "verts": 2,
+    "frames": 1
+   },
+   "tg1 into tg6": {
+    "deep_mm": 6.2,
+    "at": 0.717,
+    "verts": 2,
+    "frames": 1
+   },
+   "hFtL into belly": {
+    "deep_mm": 6.2,
+    "at": 0.75,
+    "verts": 2,
+    "frames": 1
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   19.67,
+   0.683,
+   "jaw"
+  ]
+ },
+ "flop": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.5,
+    "at": 1.483,
+    "verts": 12,
+    "frames": 130
+   },
+   "hFtR into hips": {
+    "deep_mm": 54.9,
+    "at": 1.8,
+    "verts": 16,
+    "frames": 124
+   },
+   "hFtL into hips": {
+    "deep_mm": 49.6,
+    "at": 1.833,
+    "verts": 5,
+    "frames": 117
+   },
+   "fLoL into hThL": {
+    "deep_mm": 35.9,
+    "at": 1.1,
+    "verts": 16,
+    "frames": 128
+   },
+   "fUpR into sac": {
+    "deep_mm": 34.3,
+    "at": 0.683,
+    "verts": 25,
+    "frames": 112
+   },
+   "fUpL into sac": {
+    "deep_mm": 32.5,
+    "at": 0.667,
+    "verts": 23,
+    "frames": 114
+   },
+   "fLoR into belly": {
+    "deep_mm": 31.1,
+    "at": 0.45,
+    "verts": 58,
+    "frames": 77
+   },
+   "belly into fLoL": {
+    "deep_mm": 30.6,
+    "at": 0.983,
+    "verts": 17,
+    "frames": 53
+   },
+   "hips into hFtR": {
+    "deep_mm": 30.6,
+    "at": 0.983,
+    "verts": 1,
+    "frames": 45
+   },
+   "fLoL into belly": {
+    "deep_mm": 29.5,
+    "at": 0.767,
+    "verts": 60,
+    "frames": 83
+   },
+   "hips into hFtL": {
+    "deep_mm": 27.1,
+    "at": 0.883,
+    "verts": 26,
+    "frames": 52
+   },
+   "fLoR into hShR": {
+    "deep_mm": 26.6,
+    "at": 1.817,
+    "verts": 15,
+    "frames": 67
+   },
+   "fLoR into hThR": {
+    "deep_mm": 26.1,
+    "at": 0.85,
+    "verts": 7,
+    "frames": 82
+   },
+   "belly into fLoR": {
+    "deep_mm": 25.9,
+    "at": 0.95,
+    "verts": 11,
+    "frames": 57
+   },
+   "chest into fHandL": {
+    "deep_mm": 24.2,
+    "at": 0.433,
+    "verts": 7,
+    "frames": 3
+   },
+   "hShR into fUpR": {
+    "deep_mm": 23.7,
+    "at": 0.767,
+    "verts": 1,
+    "frames": 1
+   },
+   "hShR into fLoR": {
+    "deep_mm": 23.3,
+    "at": 0.767,
+    "verts": 9,
+    "frames": 2
+   },
+   "hShL into fLoL": {
+    "deep_mm": 21.4,
+    "at": 0.767,
+    "verts": 6,
+    "frames": 2
+   },
+   "fLoL into hShL": {
+    "deep_mm": 19.3,
+    "at": 1.75,
+    "verts": 6,
+    "frames": 11
+   },
+   "hFtR into belly": {
+    "deep_mm": 18.6,
+    "at": 0.767,
+    "verts": 5,
+    "frames": 9
+   },
+   "sac into chest": {
+    "deep_mm": 18.5,
+    "at": 0.983,
+    "verts": 50,
+    "frames": 18
+   },
+   "fHandR into chest": {
+    "deep_mm": 18.4,
+    "at": 0.417,
+    "verts": 6,
+    "frames": 23
+   },
+   "tg7 into jaw": {
+    "deep_mm": 18.0,
+    "at": 1.15,
+    "verts": 4,
+    "frames": 113
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 130
+   },
+   "fHandL into fHandR": {
+    "deep_mm": 13.8,
+    "at": 0.483,
+    "verts": 5,
+    "frames": 22
+   },
+   "sac into fUpL": {
+    "deep_mm": 13.5,
+    "at": 1.633,
+    "verts": 1,
+    "frames": 54
+   },
+   "fHandR into belly": {
+    "deep_mm": 13.0,
+    "at": 0.45,
+    "verts": 1,
+    "frames": 4
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 2.15,
+    "verts": 10,
+    "frames": 130
+   },
+   "fHandR into fHandL": {
+    "deep_mm": 12.3,
+    "at": 0.767,
+    "verts": 6,
+    "frames": 22
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 2.15,
+    "verts": 10,
+    "frames": 130
+   },
+   "hThL into fLoL": {
+    "deep_mm": 12.1,
+    "at": 0.483,
+    "verts": 4,
+    "frames": 73
+   },
+   "hThR into fLoR": {
+    "deep_mm": 11.2,
+    "at": 0.417,
+    "verts": 2,
+    "frames": 71
+   },
+   "sac into fUpR": {
+    "deep_mm": 10.7,
+    "at": 0.983,
+    "verts": 3,
+    "frames": 12
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 130
+   },
+   "jaw into tg7": {
+    "deep_mm": 10.1,
+    "at": 0.917,
+    "verts": 7,
+    "frames": 130
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 130
+   },
+   "hFtL into belly": {
+    "deep_mm": 9.5,
+    "at": 0.933,
+    "verts": 2,
+    "frames": 5
+   },
+   "fHandL into belly": {
+    "deep_mm": 7.6,
+    "at": 0.433,
+    "verts": 2,
+    "frames": 2
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 2.15,
+    "verts": 4,
+    "frames": 130
+   },
+   "hShL into fUpL": {
+    "deep_mm": 7.5,
+    "at": 0.767,
+    "verts": 1,
+    "frames": 1
+   },
+   "belly into fHandL": {
+    "deep_mm": 6.9,
+    "at": 0.417,
+    "verts": 1,
+    "frames": 1
+   },
+   "fHandL into chest": {
+    "deep_mm": 6.5,
+    "at": 0.417,
+    "verts": 2,
+    "frames": 1
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   21.1,
+   0.833,
+   "hFtR"
+  ]
+ },
+ "venom": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.5,
+    "at": 1.85,
+    "verts": 15,
+    "frames": 157
+   },
+   "fLoL into belly": {
+    "deep_mm": 35.2,
+    "at": 1.483,
+    "verts": 78,
+    "frames": 157
+   },
+   "fLoR into belly": {
+    "deep_mm": 34.0,
+    "at": 1.417,
+    "verts": 76,
+    "frames": 157
+   },
+   "fLoL into hThL": {
+    "deep_mm": 32.2,
+    "at": 1.85,
+    "verts": 7,
+    "frames": 154
+   },
+   "fUpR into sac": {
+    "deep_mm": 27.9,
+    "at": 1.467,
+    "verts": 21,
+    "frames": 115
+   },
+   "fUpL into sac": {
+    "deep_mm": 27.8,
+    "at": 1.383,
+    "verts": 15,
+    "frames": 102
+   },
+   "hShR into fLoR": {
+    "deep_mm": 21.1,
+    "at": 1.5,
+    "verts": 19,
+    "frames": 44
+   },
+   "hThR into fLoR": {
+    "deep_mm": 20.9,
+    "at": 1.65,
+    "verts": 2,
+    "frames": 5
+   },
+   "belly into fHandL": {
+    "deep_mm": 20.1,
+    "at": 1.467,
+    "verts": 3,
+    "frames": 45
+   },
+   "fLoR into hShR": {
+    "deep_mm": 19.8,
+    "at": 1.583,
+    "verts": 20,
+    "frames": 8
+   },
+   "hFtR into hips": {
+    "deep_mm": 18.2,
+    "at": 1.567,
+    "verts": 17,
+    "frames": 157
+   },
+   "fLoR into hThR": {
+    "deep_mm": 17.7,
+    "at": 1.767,
+    "verts": 5,
+    "frames": 45
+   },
+   "hFtL into hips": {
+    "deep_mm": 16.5,
+    "at": 1.483,
+    "verts": 8,
+    "frames": 157
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 157
+   },
+   "hFtL into belly": {
+    "deep_mm": 15.6,
+    "at": 1.1,
+    "verts": 9,
+    "frames": 50
+   },
+   "hThL into fLoL": {
+    "deep_mm": 15.0,
+    "at": 1.567,
+    "verts": 4,
+    "frames": 5
+   },
+   "chest into sac": {
+    "deep_mm": 15.0,
+    "at": 1.383,
+    "verts": 1,
+    "frames": 1
+   },
+   "hShL into fLoL": {
+    "deep_mm": 14.7,
+    "at": 1.417,
+    "verts": 10,
+    "frames": 4
+   },
+   "hShL into fUpL": {
+    "deep_mm": 14.1,
+    "at": 1.4,
+    "verts": 13,
+    "frames": 5
+   },
+   "sac into fUpL": {
+    "deep_mm": 12.8,
+    "at": 0.65,
+    "verts": 1,
+    "frames": 30
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 2.6,
+    "verts": 10,
+    "frames": 157
+   },
+   "hFtR into belly": {
+    "deep_mm": 12.5,
+    "at": 1.1,
+    "verts": 6,
+    "frames": 37
+   },
+   "belly into fLoL": {
+    "deep_mm": 12.4,
+    "at": 1.483,
+    "verts": 4,
+    "frames": 2
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 2.6,
+    "verts": 10,
+    "frames": 157
+   },
+   "fUpL into hShL": {
+    "deep_mm": 12.0,
+    "at": 1.567,
+    "verts": 9,
+    "frames": 3
+   },
+   "hShR into fUpR": {
+    "deep_mm": 11.9,
+    "at": 1.483,
+    "verts": 9,
+    "frames": 4
+   },
+   "fUpR into hShR": {
+    "deep_mm": 11.1,
+    "at": 1.483,
+    "verts": 4,
+    "frames": 3
+   },
+   "hips into hFtL": {
+    "deep_mm": 10.8,
+    "at": 1.35,
+    "verts": 2,
+    "frames": 65
+   },
+   "tg7 into jaw": {
+    "deep_mm": 10.6,
+    "at": 2.183,
+    "verts": 2,
+    "frames": 72
+   },
+   "sac into chest": {
+    "deep_mm": 10.4,
+    "at": 1.383,
+    "verts": 1,
+    "frames": 4
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 157
+   },
+   "fLoL into hShL": {
+    "deep_mm": 9.9,
+    "at": 1.567,
+    "verts": 2,
+    "frames": 3
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 157
+   },
+   "jaw into tg7": {
+    "deep_mm": 8.4,
+    "at": 2.233,
+    "verts": 4,
+    "frames": 157
+   },
+   "belly into hFtL": {
+    "deep_mm": 8.0,
+    "at": 1.117,
+    "verts": 1,
+    "frames": 12
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 2.6,
+    "verts": 4,
+    "frames": 157
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   16.34,
+   1.5,
+   "jaw"
+  ]
+ },
+ "croak": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.6,
+    "at": 0.65,
+    "verts": 9,
+    "frames": 103
+   },
+   "fLoL into hThL": {
+    "deep_mm": 29.2,
+    "at": 0.05,
+    "verts": 4,
+    "frames": 103
+   },
+   "fUpR into sac": {
+    "deep_mm": 29.1,
+    "at": 0.55,
+    "verts": 27,
+    "frames": 73
+   },
+   "fUpL into sac": {
+    "deep_mm": 27.2,
+    "at": 0.55,
+    "verts": 25,
+    "frames": 73
+   },
+   "fLoR into belly": {
+    "deep_mm": 24.7,
+    "at": 0.317,
+    "verts": 37,
+    "frames": 103
+   },
+   "fLoL into belly": {
+    "deep_mm": 21.0,
+    "at": 0.367,
+    "verts": 35,
+    "frames": 94
+   },
+   "tg7 into jaw": {
+    "deep_mm": 18.6,
+    "at": 0.55,
+    "verts": 10,
+    "frames": 103
+   },
+   "fLoR into hThR": {
+    "deep_mm": 16.6,
+    "at": 0.467,
+    "verts": 13,
+    "frames": 61
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 103
+   },
+   "hFtR into hips": {
+    "deep_mm": 15.0,
+    "at": 0.333,
+    "verts": 16,
+    "frames": 103
+   },
+   "hFtL into hips": {
+    "deep_mm": 14.5,
+    "at": 0.433,
+    "verts": 9,
+    "frames": 103
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 1.7,
+    "verts": 10,
+    "frames": 103
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 1.7,
+    "verts": 10,
+    "frames": 103
+   },
+   "sac into fUpL": {
+    "deep_mm": 11.9,
+    "at": 1.7,
+    "verts": 1,
+    "frames": 47
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 103
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 103
+   },
+   "fLoR into hShR": {
+    "deep_mm": 8.6,
+    "at": 0.367,
+    "verts": 7,
+    "frames": 15
+   },
+   "jaw into tg7": {
+    "deep_mm": 8.2,
+    "at": 1.1,
+    "verts": 4,
+    "frames": 103
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 1.7,
+    "verts": 4,
+    "frames": 103
+   },
+   "chest into sac": {
+    "deep_mm": 6.8,
+    "at": 0.55,
+    "verts": 1,
+    "frames": 8
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   8.39,
+   0.367,
+   "jaw"
+  ]
+ },
+ "enrage": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.3,
+    "at": 1.267,
+    "verts": 15,
+    "frames": 91
+   },
+   "fLoL into hThL": {
+    "deep_mm": 37.7,
+    "at": 0.867,
+    "verts": 9,
+    "frames": 91
+   },
+   "sac into chest": {
+    "deep_mm": 35.5,
+    "at": 0.85,
+    "verts": 77,
+    "frames": 49
+   },
+   "fUpR into sac": {
+    "deep_mm": 32.7,
+    "at": 0.467,
+    "verts": 24,
+    "frames": 78
+   },
+   "fUpL into sac": {
+    "deep_mm": 29.5,
+    "at": 0.567,
+    "verts": 23,
+    "frames": 76
+   },
+   "fLoR into hThR": {
+    "deep_mm": 29.2,
+    "at": 0.717,
+    "verts": 9,
+    "frames": 66
+   },
+   "sac into fUpR": {
+    "deep_mm": 26.3,
+    "at": 1.017,
+    "verts": 3,
+    "frames": 38
+   },
+   "chest into sac": {
+    "deep_mm": 25.9,
+    "at": 0.8,
+    "verts": 22,
+    "frames": 41
+   },
+   "tg7 into jaw": {
+    "deep_mm": 24.9,
+    "at": 0.9,
+    "verts": 5,
+    "frames": 78
+   },
+   "fLoL into belly": {
+    "deep_mm": 20.7,
+    "at": 0.4,
+    "verts": 26,
+    "frames": 85
+   },
+   "sac into fUpL": {
+    "deep_mm": 20.6,
+    "at": 0.683,
+    "verts": 4,
+    "frames": 45
+   },
+   "fLoR into belly": {
+    "deep_mm": 20.5,
+    "at": 0.383,
+    "verts": 21,
+    "frames": 88
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 91
+   },
+   "jaw into tg7": {
+    "deep_mm": 15.0,
+    "at": 0.75,
+    "verts": 11,
+    "frames": 91
+   },
+   "hFtR into hips": {
+    "deep_mm": 14.7,
+    "at": 0.567,
+    "verts": 16,
+    "frames": 91
+   },
+   "hFtL into hips": {
+    "deep_mm": 13.9,
+    "at": 0.45,
+    "verts": 7,
+    "frames": 91
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 1.5,
+    "verts": 10,
+    "frames": 91
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 1.5,
+    "verts": 10,
+    "frames": 91
+   },
+   "hThL into fLoL": {
+    "deep_mm": 12.0,
+    "at": 0.5,
+    "verts": 4,
+    "frames": 53
+   },
+   "hThR into fLoR": {
+    "deep_mm": 11.9,
+    "at": 0.433,
+    "verts": 2,
+    "frames": 23
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 91
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 91
+   },
+   "hips into hFtL": {
+    "deep_mm": 7.8,
+    "at": 0.283,
+    "verts": 2,
+    "frames": 6
+   },
+   "fHandR into belly": {
+    "deep_mm": 7.8,
+    "at": 0.417,
+    "verts": 1,
+    "frames": 2
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 1.5,
+    "verts": 4,
+    "frames": 91
+   }
+  },
+  "snaps": [
+   [
+    9.5,
+    "crown",
+    0.6,
+    0.0
+   ]
+  ],
+  "stretch": [
+   11.36,
+   0.55,
+   "fUpL"
+  ]
+ },
+ "hurt": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.1,
+    "at": 0.083,
+    "verts": 12,
+    "frames": 26
+   },
+   "fLoL into hThL": {
+    "deep_mm": 28.8,
+    "at": 0.417,
+    "verts": 4,
+    "frames": 26
+   },
+   "fUpR into sac": {
+    "deep_mm": 21.0,
+    "at": 0.05,
+    "verts": 21,
+    "frames": 7
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 26
+   },
+   "fUpL into sac": {
+    "deep_mm": 15.1,
+    "at": 0.05,
+    "verts": 11,
+    "frames": 7
+   },
+   "hFtR into hips": {
+    "deep_mm": 13.8,
+    "at": 0.0,
+    "verts": 15,
+    "frames": 26
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 0.417,
+    "verts": 10,
+    "frames": 26
+   },
+   "sac into fUpL": {
+    "deep_mm": 12.4,
+    "at": 0.133,
+    "verts": 1,
+    "frames": 15
+   },
+   "hFtL into hips": {
+    "deep_mm": 12.2,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 26
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 0.417,
+    "verts": 10,
+    "frames": 26
+   },
+   "tg7 into jaw": {
+    "deep_mm": 10.4,
+    "at": 0.05,
+    "verts": 2,
+    "frames": 26
+   },
+   "fLoR into belly": {
+    "deep_mm": 10.3,
+    "at": 0.033,
+    "verts": 23,
+    "frames": 26
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 26
+   },
+   "fLoL into belly": {
+    "deep_mm": 9.5,
+    "at": 0.033,
+    "verts": 16,
+    "frames": 21
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 8,
+    "frames": 26
+   },
+   "jaw into tg7": {
+    "deep_mm": 8.2,
+    "at": 0.05,
+    "verts": 4,
+    "frames": 26
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 0.417,
+    "verts": 4,
+    "frames": 26
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   6.03,
+   0.05,
+   "eyeL"
+  ]
+ },
+ "heavyHit": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.5,
+    "at": 0.817,
+    "verts": 12,
+    "frames": 76
+   },
+   "hFtL into hips": {
+    "deep_mm": 43.3,
+    "at": 0.1,
+    "verts": 6,
+    "frames": 74
+   },
+   "hFtR into hips": {
+    "deep_mm": 42.2,
+    "at": 0.233,
+    "verts": 3,
+    "frames": 74
+   },
+   "fLoL into hThL": {
+    "deep_mm": 38.1,
+    "at": 0.417,
+    "verts": 17,
+    "frames": 74
+   },
+   "hShR into fUpR": {
+    "deep_mm": 35.8,
+    "at": 0.25,
+    "verts": 1,
+    "frames": 2
+   },
+   "hShR into fLoR": {
+    "deep_mm": 34.9,
+    "at": 0.217,
+    "verts": 23,
+    "frames": 17
+   },
+   "fLoR into hThR": {
+    "deep_mm": 30.4,
+    "at": 0.367,
+    "verts": 22,
+    "frames": 21
+   },
+   "fUpR into sac": {
+    "deep_mm": 27.8,
+    "at": 0.067,
+    "verts": 18,
+    "frames": 60
+   },
+   "hShL into fLoL": {
+    "deep_mm": 26.0,
+    "at": 0.117,
+    "verts": 14,
+    "frames": 6
+   },
+   "fLoR into belly": {
+    "deep_mm": 25.6,
+    "at": 0.65,
+    "verts": 56,
+    "frames": 55
+   },
+   "fUpL into sac": {
+    "deep_mm": 24.4,
+    "at": 0.067,
+    "verts": 18,
+    "frames": 61
+   },
+   "fLoL into belly": {
+    "deep_mm": 24.1,
+    "at": 0.633,
+    "verts": 54,
+    "frames": 54
+   },
+   "hThR into fLoR": {
+    "deep_mm": 22.6,
+    "at": 0.217,
+    "verts": 5,
+    "frames": 30
+   },
+   "hFtR into belly": {
+    "deep_mm": 19.8,
+    "at": 0.25,
+    "verts": 4,
+    "frames": 7
+   },
+   "sac into fUpL": {
+    "deep_mm": 18.0,
+    "at": 0.5,
+    "verts": 3,
+    "frames": 24
+   },
+   "hThL into fLoL": {
+    "deep_mm": 17.8,
+    "at": 0.367,
+    "verts": 5,
+    "frames": 28
+   },
+   "belly into fLoR": {
+    "deep_mm": 17.3,
+    "at": 0.25,
+    "verts": 2,
+    "frames": 20
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 76
+   },
+   "fLoR into hShR": {
+    "deep_mm": 13.5,
+    "at": 0.35,
+    "verts": 4,
+    "frames": 12
+   },
+   "sac into chest": {
+    "deep_mm": 13.3,
+    "at": 0.283,
+    "verts": 33,
+    "frames": 26
+   },
+   "tg7 into jaw": {
+    "deep_mm": 12.8,
+    "at": 0.267,
+    "verts": 3,
+    "frames": 76
+   },
+   "belly into fLoL": {
+    "deep_mm": 12.6,
+    "at": 0.117,
+    "verts": 1,
+    "frames": 29
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 1.25,
+    "verts": 10,
+    "frames": 76
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 1.25,
+    "verts": 10,
+    "frames": 76
+   },
+   "jaw into tg7": {
+    "deep_mm": 11.0,
+    "at": 0.217,
+    "verts": 8,
+    "frames": 76
+   },
+   "fUpR into hShR": {
+    "deep_mm": 10.5,
+    "at": 0.233,
+    "verts": 1,
+    "frames": 3
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 76
+   },
+   "hFtL into belly": {
+    "deep_mm": 10.2,
+    "at": 0.633,
+    "verts": 5,
+    "frames": 3
+   },
+   "belly into fHandL": {
+    "deep_mm": 9.8,
+    "at": 0.633,
+    "verts": 1,
+    "frames": 1
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 7,
+    "frames": 76
+   },
+   "hips into hFtL": {
+    "deep_mm": 8.2,
+    "at": 0.133,
+    "verts": 3,
+    "frames": 14
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 1.25,
+    "verts": 4,
+    "frames": 76
+   },
+   "chest into sac": {
+    "deep_mm": 6.3,
+    "at": 0.9,
+    "verts": 1,
+    "frames": 2
+   },
+   "fUpL into hShL": {
+    "deep_mm": 6.2,
+    "at": 0.117,
+    "verts": 1,
+    "frames": 2
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   10.63,
+   0.1,
+   "hFtL"
+  ]
+ },
+ "spawn": {
+  "floor": {},
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.2,
+    "at": 0.467,
+    "verts": 12,
+    "frames": 91
+   },
+   "fLoL into hThL": {
+    "deep_mm": 32.8,
+    "at": 0.483,
+    "verts": 6,
+    "frames": 91
+   },
+   "fLoR into belly": {
+    "deep_mm": 32.0,
+    "at": 0.083,
+    "verts": 50,
+    "frames": 91
+   },
+   "fUpR into sac": {
+    "deep_mm": 30.3,
+    "at": 0.817,
+    "verts": 33,
+    "frames": 62
+   },
+   "fLoL into belly": {
+    "deep_mm": 28.7,
+    "at": 0.0,
+    "verts": 57,
+    "frames": 91
+   },
+   "fUpL into sac": {
+    "deep_mm": 28.5,
+    "at": 0.817,
+    "verts": 28,
+    "frames": 56
+   },
+   "fLoR into hShR": {
+    "deep_mm": 18.5,
+    "at": 0.3,
+    "verts": 22,
+    "frames": 23
+   },
+   "fLoR into hThR": {
+    "deep_mm": 18.4,
+    "at": 0.3,
+    "verts": 12,
+    "frames": 56
+   },
+   "tg7 into jaw": {
+    "deep_mm": 18.4,
+    "at": 0.867,
+    "verts": 10,
+    "frames": 91
+   },
+   "tg0 into tg3": {
+    "deep_mm": 16.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 91
+   },
+   "hFtL into belly": {
+    "deep_mm": 16.0,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 10
+   },
+   "hFtR into hips": {
+    "deep_mm": 15.4,
+    "at": 0.317,
+    "verts": 15,
+    "frames": 91
+   },
+   "hFtL into hips": {
+    "deep_mm": 14.8,
+    "at": 0.317,
+    "verts": 8,
+    "frames": 85
+   },
+   "belly into fLoR": {
+    "deep_mm": 13.6,
+    "at": 0.3,
+    "verts": 14,
+    "frames": 7
+   },
+   "belly into fLoL": {
+    "deep_mm": 13.3,
+    "at": 0.317,
+    "verts": 11,
+    "frames": 7
+   },
+   "hFtR into belly": {
+    "deep_mm": 12.7,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 9
+   },
+   "tg6 into tg0": {
+    "deep_mm": 12.5,
+    "at": 1.5,
+    "verts": 10,
+    "frames": 91
+   },
+   "tg5 into tg0": {
+    "deep_mm": 12.2,
+    "at": 1.5,
+    "verts": 10,
+    "frames": 91
+   },
+   "sac into fUpL": {
+    "deep_mm": 11.9,
+    "at": 1.5,
+    "verts": 1,
+    "frames": 13
+   },
+   "tg4 into tg0": {
+    "deep_mm": 10.3,
+    "at": 0.0,
+    "verts": 10,
+    "frames": 91
+   },
+   "belly into fHandL": {
+    "deep_mm": 9.8,
+    "at": 0.133,
+    "verts": 1,
+    "frames": 9
+   },
+   "tg7 into tg0": {
+    "deep_mm": 9.5,
+    "at": 0.0,
+    "verts": 6,
+    "frames": 91
+   },
+   "fLoL into hShL": {
+    "deep_mm": 8.8,
+    "at": 0.3,
+    "verts": 4,
+    "frames": 6
+   },
+   "jaw into tg7": {
+    "deep_mm": 8.1,
+    "at": 0.8,
+    "verts": 4,
+    "frames": 91
+   },
+   "tg3 into tg0": {
+    "deep_mm": 7.5,
+    "at": 1.5,
+    "verts": 4,
+    "frames": 91
+   },
+   "belly into hFtR": {
+    "deep_mm": 7.1,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 3
+   },
+   "hShR into fLoR": {
+    "deep_mm": 6.8,
+    "at": 0.0,
+    "verts": 4,
+    "frames": 5
+   },
+   "hips into hFtL": {
+    "deep_mm": 6.8,
+    "at": 0.517,
+    "verts": 2,
+    "frames": 6
+   },
+   "belly into hFtL": {
+    "deep_mm": 6.6,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 3
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   16.49,
+   0.3,
+   "jaw"
+  ]
+ },
+ "death": {
+  "floor": {
+   "weed1": [
+    -12.1,
+    1.217
+   ],
+   "weed2": [
+    -8.8,
+    1.217
+   ]
+  },
+  "through": {
+   "tg7 into sac": {
+    "deep_mm": 59.6,
+    "at": 0.067,
+    "verts": 11,
+    "frames": 104
+   },
+   "fLoL into hThL": {
+    "deep_mm": 56.2,
+    "at": 1.0,
+    "verts": 20,
+    "frames": 175
+   },
+   "tg2 into sac": {
+    "deep_mm": 54.6,
+    "at": 1.683,
+    "verts": 1,
+    "frames": 7
+   },
+   "fLoR into hThR": {
+    "deep_mm": 52.3,
+    "at": 1.0,
+    "verts": 29,
+    "frames": 73
+   },
+   "hFtR into hips": {
+    "deep_mm": 49.4,
+    "at": 2.183,
+    "verts": 10,
+    "frames": 188
+   },
+   "hShL into fUpL": {
+    "deep_mm": 48.4,
+    "at": 1.017,
+    "verts": 28,
+    "frames": 105
+   },
+   "hFtL into hips": {
+    "deep_mm": 47.0,
+    "at": 1.8,
+    "verts": 8,
+    "frames": 168
+   },
+   "hShR into fLoR": {
+    "deep_mm": 45.4,
+    "at": 2.717,
+    "verts": 24,
+    "frames": 134
+   },
+   "fUpL into hShL": {
+    "deep_mm": 45.3,
+    "at": 2.733,
+    "verts": 32,
+    "frames": 122
+   },
+   "sac into chest": {
+    "deep_mm": 44.3,
+    "at": 3.2,
+    "verts": 135,
+    "frames": 186
+   },
+   "hShR into fUpR": {
+    "deep_mm": 44.2,
+    "at": 1.017,
+    "verts": 55,
+    "frames": 113
+   },
+   "fUpR into hShR": {
+    "deep_mm": 43.8,
+    "at": 1.067,
+    "verts": 6,
+    "frames": 125
+   },
+   "hShL into fLoL": {
+    "deep_mm": 43.6,
+    "at": 2.633,
+    "verts": 26,
+    "frames": 126
+   },
+   "sac into fUpR": {
+    "deep_mm": 42.6,
+    "at": 2.833,
+    "verts": 31,
+    "frames": 114
+   },
+   "head into tg7": {
+    "deep_mm": 35.8,
+    "at": 1.767,
+    "verts": 93,
+    "frames": 6
+   },
+   "hFtR into belly": {
+    "deep_mm": 35.3,
+    "at": 1.033,
+    "verts": 16,
+    "frames": 104
+   },
+   "sac into fUpL": {
+    "deep_mm": 34.7,
+    "at": 3.167,
+    "verts": 16,
+    "frames": 102
+   },
+   "hFtL into belly": {
+    "deep_mm": 33.9,
+    "at": 1.05,
+    "verts": 14,
+    "frames": 99
+   },
+   "fUpR into sac": {
+    "deep_mm": 33.5,
+    "at": 0.117,
+    "verts": 26,
+    "frames": 118
+   },
+   "fLoR into hShR": {
+    "deep_mm": 33.0,
+    "at": 0.983,
+    "verts": 4,
+    "frames": 64
+   },
+   "fLoL into belly": {
+    "deep_mm": 32.9,
+    "at": 1.033,
+    "verts": 4,
+    "frames": 57
+   },
+   "tg7 into head": {
+    "deep_mm": 32.7,
+    "at": 1.767,
+    "verts": 8,
+    "frames": 6
+   },
+   "fLoR into belly": {
+    "deep_mm": 32.1,
+    "at": 1.033,
+    "verts": 12,
+    "frames": 58
+   },
+   "tg7 into fUpL": {
+    "deep_mm": 31.4,
+    "at": 1.767,
+    "verts": 2,
+    "frames": 3
+   },
+   "tg5 into tg0": {
+    "deep_mm": 29.9,
+    "at": 1.7,
+    "verts": 2,
+    "frames": 103
+   },
+   "fUpL into sac": {
+    "deep_mm": 28.4,
+    "at": 0.283,
+    "verts": 20,
+    "frames": 130
+   },
+   "tg3 into tg0": {
+    "deep_mm": 27.3,
+    "at": 1.733,
+    "verts": 2,
+    "frames": 105
+   },
+   "jaw into tg7": {
+    "deep_mm": 26.3,
+    "at": 1.767,
+    "verts": 50,
+    "frames": 109
+   },
+   "tg6 into tg0": {
+    "deep_mm": 26.1,
+    "at": 1.683,
+    "verts": 4,
+    "frames": 102
+   },
+   "tg4 into tg0": {
+    "deep_mm": 25.7,
+    "at": 1.7,
+    "verts": 4,
+    "frames": 103
+   },
+   "tg7 into tg0": {
+    "deep_mm": 24.1,
+    "at": 1.683,
+    "verts": 2,
+    "frames": 102
+   },
+   "tg4 into head": {
+    "deep_mm": 24.1,
+    "at": 1.95,
+    "verts": 4,
+    "frames": 79
+   },
+   "hThL into fLoL": {
+    "deep_mm": 24.0,
+    "at": 1.117,
+    "verts": 2,
+    "frames": 85
+   },
+   "tg5 into head": {
+    "deep_mm": 23.3,
+    "at": 1.867,
+    "verts": 4,
+    "frames": 3
+   },
+   "hips into hFtL": {
+    "deep_mm": 23.1,
+    "at": 1.0,
+    "verts": 26,
+    "frames": 104
+   },
+   "tg0 into tg3": {
+    "deep_mm": 22.3,
+    "at": 1.667,
+    "verts": 1,
+    "frames": 102
+   },
+   "hips into hFtR": {
+    "deep_mm": 21.7,
+    "at": 1.017,
+    "verts": 14,
+    "frames": 118
+   },
+   "tg7 into jaw": {
+    "deep_mm": 21.4,
+    "at": 0.35,
+    "verts": 6,
+    "frames": 102
+   },
+   "head into tg4": {
+    "deep_mm": 20.7,
+    "at": 3.2,
+    "verts": 25,
+    "frames": 82
+   },
+   "head into tg6": {
+    "deep_mm": 19.9,
+    "at": 1.817,
+    "verts": 45,
+    "frames": 6
+   },
+   "head into tg5": {
+    "deep_mm": 19.9,
+    "at": 1.9,
+    "verts": 16,
+    "frames": 84
+   },
+   "tg6 into head": {
+    "deep_mm": 19.2,
+    "at": 1.833,
+    "verts": 3,
+    "frames": 2
+   },
+   "head into tg3": {
+    "deep_mm": 19.2,
+    "at": 2.067,
+    "verts": 21,
+    "frames": 79
+   },
+   "tg4 into jaw": {
+    "deep_mm": 19.1,
+    "at": 2.8,
+    "verts": 4,
+    "frames": 75
+   },
+   "jaw into tg2": {
+    "deep_mm": 18.4,
+    "at": 1.683,
+    "verts": 7,
+    "frames": 104
+   },
+   "belly into fLoR": {
+    "deep_mm": 16.9,
+    "at": 2.967,
+    "verts": 13,
+    "frames": 150
+   },
+   "belly into fLoL": {
+    "deep_mm": 16.4,
+    "at": 2.8,
+    "verts": 15,
+    "frames": 160
+   },
+   "tg5 into jaw": {
+    "deep_mm": 16.3,
+    "at": 1.883,
+    "verts": 4,
+    "frames": 3
+   },
+   "tg3 into sac": {
+    "deep_mm": 15.9,
+    "at": 1.683,
+    "verts": 1,
+    "frames": 9
+   },
+   "fLoL into hShL": {
+    "deep_mm": 14.6,
+    "at": 0.967,
+    "verts": 4,
+    "frames": 38
+   },
+   "jaw into tg4": {
+    "deep_mm": 14.6,
+    "at": 2.15,
+    "verts": 6,
+    "frames": 81
+   },
+   "tg4 into sac": {
+    "deep_mm": 13.9,
+    "at": 1.7,
+    "verts": 1,
+    "frames": 5
+   },
+   "tg6 into jaw": {
+    "deep_mm": 13.4,
+    "at": 1.85,
+    "verts": 1,
+    "frames": 2
+   },
+   "tg6 into sac": {
+    "deep_mm": 13.2,
+    "at": 1.683,
+    "verts": 1,
+    "frames": 3
+   },
+   "jaw into tg3": {
+    "deep_mm": 12.7,
+    "at": 3.2,
+    "verts": 4,
+    "frames": 83
+   },
+   "jaw into tg5": {
+    "deep_mm": 12.7,
+    "at": 1.917,
+    "verts": 3,
+    "frames": 7
+   },
+   "tg5 into sac": {
+    "deep_mm": 12.6,
+    "at": 1.7,
+    "verts": 1,
+    "frames": 3
+   },
+   "hThR into fLoR": {
+    "deep_mm": 12.3,
+    "at": 0.267,
+    "verts": 2,
+    "frames": 70
+   },
+   "jaw into tg6": {
+    "deep_mm": 9.6,
+    "at": 1.8,
+    "verts": 2,
+    "frames": 5
+   },
+   "tg3 into jaw": {
+    "deep_mm": 9.1,
+    "at": 1.967,
+    "verts": 1,
+    "frames": 1
+   },
+   "chest into sac": {
+    "deep_mm": 8.4,
+    "at": 1.4,
+    "verts": 1,
+    "frames": 27
+   },
+   "hips into hToeL": {
+    "deep_mm": 8.4,
+    "at": 1.033,
+    "verts": 2,
+    "frames": 1
+   },
+   "tg6 into tg1": {
+    "deep_mm": 7.2,
+    "at": 1.667,
+    "verts": 1,
+    "frames": 1
+   },
+   "tg4 into tg1": {
+    "deep_mm": 7.2,
+    "at": 1.683,
+    "verts": 1,
+    "frames": 3
+   },
+   "tg5 into tg1": {
+    "deep_mm": 7.0,
+    "at": 1.7,
+    "verts": 1,
+    "frames": 1
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   15.09,
+   0.917,
+   "hFtR"
+  ]
+ }
+}

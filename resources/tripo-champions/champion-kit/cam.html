@@ -1,0 +1,32 @@
+<!doctype html><html><body style="margin:0;background:#888">
+<script type="importmap">{"imports":{"three":"./three.module.js","three/addons/":"./jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const P=new URLSearchParams(location.search);
+const W=innerWidth,H=innerHeight;
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(W,H);document.body.appendChild(r.domElement);
+r.setScissorTest(true); r.localClippingEnabled=true;
+const sc=new THREE.Scene();sc.background=new THREE.Color(0xbbbbbb);
+sc.add(new THREE.HemisphereLight(0xffffff,0x666666,2.2));const d=new THREE.DirectionalLight(0xffffff,1.5);d.position.set(1,2,2);sc.add(d);
+const g=await new GLTFLoader().loadAsync(P.get('f')||'model.glb');sc.add(g.scene);
+if(P.get('anim')){const mx=new THREE.AnimationMixer(g.scene);const cl=g.animations.find(a=>a.name===P.get('anim'));mx.clipAction(cl).play();mx.setTime(Math.min(+(P.get('t')||0),cl.duration-1e-4));g.scene.traverse(o=>{if(o.isMesh)o.frustumCulled=false});let rb=null;g.scene.traverse(o=>{if(o.name==='root')rb=o});if(rb)g.scene.position.z=-rb.position.z;g.scene.updateMatrixWorld(true);}
+const clip=P.get('clip'); // "nx,ny,nz,c;..."
+g.scene.traverse(o=>{if(o.isMesh){
+ if(P.get('wire')) o.material.wireframe=true;
+ if(P.get('vc')) o.material=new THREE.MeshBasicMaterial({vertexColors:true});
+ if(P.get('ds')) o.material.side=THREE.DoubleSide;
+ if(clip) o.material.clippingPlanes=clip.split(';').map(s=>{const a=s.split(',').map(Number);return new THREE.Plane(new THREE.Vector3(a[0],a[1],a[2]),a[3])});
+}});
+const half=+(P.get('half')||0.3); const tg=(P.get('tg')||'0,0.5,0').split(',').map(Number);
+// cams: "az,el;az,el" degrees; az 0 = front (+z), 90 = from +x
+const cams=(P.get('cams')||'0,0;90,0;180,0;270,0').split(';').map(s=>s.split(',').map(Number));
+const n=cams.length, vw=W/n;
+cams.forEach((c,i)=>{const a=vw/H;const cam=new THREE.OrthographicCamera(-half*a,half*a,half,-half,0.1,20);
+ const az=c[0]*Math.PI/180, el=c[1]*Math.PI/180;
+ cam.position.set(tg[0]+5*Math.sin(az)*Math.cos(el),tg[1]+5*Math.sin(el),tg[2]+5*Math.cos(az)*Math.cos(el));
+ if(Math.abs(c[1])>89) cam.up.set(0,0,c[1]>0?-1:1);
+ cam.lookAt(tg[0],tg[1],tg[2]);
+ r.setViewport(i*vw,0,vw,H);r.setScissor(i*vw,0,vw,H);r.render(sc,cam);});
+window.done=true;
+</script></body></html>

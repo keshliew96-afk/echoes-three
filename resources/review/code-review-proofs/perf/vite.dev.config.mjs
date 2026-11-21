@@ -1,0 +1,1 @@
+export default { root: '/home/claude/echoes-three', cacheDir: '/tmp/claude-0/-home-claude-echoes-three/db360b6f-576b-5949-b9b6-1f5418a172e2/scratchpad/perf-review/vitecache', server: { port: 5291, strictPort: true, host: '127.0.0.1' }, logLevel: 'warn' };

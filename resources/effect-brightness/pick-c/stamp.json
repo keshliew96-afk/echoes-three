@@ -1,0 +1,12 @@
+{
+ "version": "0.5.359",
+ "files": {
+  "src/render/stage.js": "83bb1ab0aa68521250857b46241a2058e9cc4737319242b8b7033151e49123a2",
+  "src/core/constants.js": "8daa41cb0898fece8dde1e6a918d0c222875fb7b0e25079fe4353c72b94b03f4",
+  "src/render/enemies/champions.js": "ba5760dd43006627933ed262d314ebdbe1eb3453714efc62d74b13ed0bf90e69",
+  "src/render/vfx/kit.js": "91fd615caf66f2dc053fac98104e83619b933f0329d21f26f35069e7947ad11e",
+  "src/render/vfx/tplkit.js": "2f48bd9a2e507478401c0c91fa0560007d382fc064fb89341695b6877a6f0f55",
+  "src/render/vfx/signature.js": "dd150f570209474c25a2876ee7bafc837ab4c791827eadfcced204cb9fcdb907",
+  "src/render/vfx/sig/common.js": "7508e8d3ccb2abf7797a0ff89984ea6b69f18edbd1b9098cdd9cf25f3f14fef5"
+ }
+}

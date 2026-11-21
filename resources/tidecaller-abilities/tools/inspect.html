@@ -1,0 +1,23 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.js","three/addons/":"../node_modules/three/examples/jsm/"}}</script></head><body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const gl = await new GLTFLoader().loadAsync('./otter.glb');
+const s = gl.scene; s.updateMatrixWorld(true);
+const out = {};
+const w = s.getObjectByName('weapon'), h = s.getObjectByName('handR');
+const box = new THREE.Box3().setFromObject(s.getObjectByName('otter_body')); out.body = [box.min.toArray(), box.max.toArray()];
+const wb = new THREE.Box3().setFromObject(w); out.staffBox=[wb.min.toArray(), wb.max.toArray()];
+w.geometry.computeBoundingBox(); out.staffGeo=[w.geometry.boundingBox.min.toArray(), w.geometry.boundingBox.max.toArray()];
+const mixer = new THREE.AnimationMixer(s);
+const rel = (t) => { s.updateMatrixWorld(true); const m = new THREE.Matrix4().copy(h.matrixWorld).invert().multiply(w.matrixWorld); const p=new THREE.Vector3(),q=new THREE.Quaternion(),sc=new THREE.Vector3(); m.decompose(p,q,sc); return [p.toArray().map(x=>+x.toFixed(3)), q.toArray().map(x=>+x.toFixed(3))]; };
+out.clips = {};
+for (const c of gl.animations) { mixer.stopAllAction(); const a = mixer.clipAction(c); a.play(); const r=[]; for (const f of [0,0.33,0.66,0.99]) { mixer.setTime(c.duration*f); r.push(rel()); }
+  // hips height, foot world y
+  mixer.setTime(0); s.updateMatrixWorld(true); const fy = new THREE.Vector3().setFromMatrixPosition(s.getObjectByName('footL').matrixWorld).y;
+  const sh = new THREE.Vector3(0,0.87,0).applyMatrix4(w.matrixWorld); out.clips[c.name] = { r, fy:+fy.toFixed(3), shell: sh.toArray().map(x=>+x.toFixed(2)) }; }
+// rest quats
+out.rest = {}; s.traverse(o => { if (o.isBone || o.type==='Object3D') out.rest[o.name] = o.quaternion.toArray().map(x=>+x.toFixed(3)); });
+window.__out = out;
+</script></body></html>

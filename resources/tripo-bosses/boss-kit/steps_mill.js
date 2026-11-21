@@ -1,0 +1,16 @@
+const st=(n)=>({eval:'for(let i=0;i<'+n+';i++)__review.step(1/60);JSON.stringify(__review.state())'});
+module.exports=[{wait:2500},{eval:'JSON.stringify(__review.state())'},{shot:'idle'},
+ {eval:'__review.pause(true)',log:false},
+ {eval:'__review.A.idle.time=2.4;1'},st(30),{wait:300},{shot:'idle_roam'},{click:'Plank Spin'},st(20),{wait:300},{shot:'idle_roam_wait'},st(40),{click:'Plank Spin'},st(230),
+ {click:'Plank Spin'},st(21),{wait:300},{shot:'ps_hop'},st(12),{wait:300},{shot:'ps_flat'},st(15),{wait:300},{shot:'ps_spinup'},st(14),{wait:300},{shot:'ps_throw'},st(20),{wait:300},{shot:'ps_throw2'},st(26),{wait:300},{shot:'ps_bare'},st(18),{wait:300},{shot:'ps_grow'},st(26),{wait:300},{shot:'ps_kick'},st(40),{wait:300},{shot:'ps_settle'},{click:'Plank Spin'},st(240),
+ {click:'Crosscut'},st(50),{wait:300},{shot:'cc_rock'},st(18),{wait:300},{shot:'cc_go'},st(12),{wait:300},{shot:'cc_cut'},st(10),{wait:300},{shot:'cc_cut2'},st(14),{wait:300},{shot:'cc_slam'},st(8),{wait:300},{shot:'cc_hop'},st(40),{wait:300},{shot:'cc_dizzy'},st(60),{wait:300},{shot:'cc_settle'},{click:'Crosscut'},st(60),
+ {click:'Roll'},st(60),{wait:300},{shot:'roll'},st(47),{wait:300},{shot:'roll2'},{click:'Idle'},st(8),{wait:300},{shot:'halt'},st(60),{wait:300},{shot:'halted'},
+ {click:'Roll'},st(50),{click:'Plank Spin'},st(40),{wait:300},{shot:'roll_to_planks'},{click:'Plank Spin'},st(420),
+ {click:'Turn left'},st(40),{wait:300},{shot:'turnL'},{click:'Turn right'},st(40),{wait:300},{shot:'turnR'},{click:'Forward'},st(40),{click:'Hurt'},st(4),{wait:300},{shot:'hurt'},st(40),{click:'Idle'},st(80),
+ {click:'Heavy hit'},st(10),{wait:300},{shot:'heavy'},{click:'Heavy hit'},st(90),
+ {click:'Death'},st(40),{wait:300},{shot:'death_tip'},st(40),{wait:300},{shot:'death_ring'},st(100),{wait:300},{shot:'death'},{click:'Death (press to spawn)'},st(6),{wait:300},{shot:'spawn'},st(100),
+ {click:'Game zoom'},{click:'Plank Spin'},st(46),{wait:300},{shot:'gz_marks'},st(34),{wait:300},{shot:'gz_planks'},st(40),{wait:300},{shot:'gz_spin'},{click:'Plank Spin'},st(90),{wait:300},{shot:'gz_after'},st(260),{click:'Top'},{click:'Plank Spin'},st(104),{wait:300},{shot:'top_planks'},{click:'Plank Spin'},st(380),{click:'Game zoom'},
+ {click:'Crosscut'},st(64),{wait:300},{shot:'gz_lane'},st(26),{wait:300},{shot:'gz_cut'},{click:'Crosscut'},st(200),
+ {click:'Side'},{wait:300},{shot:'side'},{click:'Front'},{wait:300},{shot:'front'},{click:'Top'},{wait:300},{shot:'top'},{click:'Close'},
+ {click:'Hit feel'},{click:'Effects'},{click:'Hero for scale'},{click:'Bones'},{wait:300},{shot:'bones'},{click:'Bones'},{click:'Hit feel'},{click:'Effects'},{click:'Hero for scale'},{click:'0.25×'},{click:'1×'},{click:'Pause'},{click:'Pause'},
+ st(10),{shot:'full',full:true}];

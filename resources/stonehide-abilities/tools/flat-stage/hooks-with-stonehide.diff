@@ -1,0 +1,52 @@
+diff --git a/src/render/enemies/index.js b/src/render/enemies/index.js
+index dfce8f1..a8acaaf 100644
+--- a/src/render/enemies/index.js
++++ b/src/render/enemies/index.js
+@@ -389,12 +389,13 @@ export function createEnemyLayer({ stage, world, bus, cosmetic }) {
+           // ELITE AFFIXES: a Splitting elite's halves are smaller copies.
+           r.build.group.scale.setScalar(e.scale);
+         }
++        if (window.__reviewDummy) window.__reviewDummy(r, e); // REVIEW-ONLY
+         rigs.set(e.id, r);
+         root.add(r.build.group);
+       }
+       const ix = e.px + (e.x - e.px) * alpha;
+       const iz = e.pz + (e.z - e.pz) * alpha;
+-      r.build.group.position.set(ix, 0, iz);
++      r.build.group.position.set(ix, e.reviewY || 0, iz);
+ 
+       // Yaw: shortest-arc smoothing toward the sim facing.
+       const targetYaw = Math.atan2(e.faceX ?? 0, e.faceZ ?? 1);
+diff --git a/src/scenes/arena.js b/src/scenes/arena.js
+index 01fd18c..1015ba0 100644
+--- a/src/scenes/arena.js
++++ b/src/scenes/arena.js
+@@ -78,6 +78,8 @@ import {
+ import { makeFlameSprite, createEmberField } from '../env/flame.js';
+ import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
+ import { variantLayoutRng } from '../env/layout.js';
++import { createReviewStonehideFx } from '../render/critters/reviewStonehideFx.js'; // REVIEW-ONLY
++import { createReviewFlatStage } from '../render/critters/reviewFlatStage.js'; // REVIEW-ONLY
+ import { createAfterimages } from '../render/critters/afterimage.js';
+ import { installBandGuard, bandGuardInfo, guardSubtree } from '../env/bandguard.js';
+ import { compileAsyncSafe } from '../render/precompile.js';
+@@ -651,6 +653,10 @@ export function createArenaScene(stage, toggles, ctx) {
+   // The world froze (the ally layer tells the party's own rigs).
+   bus.on('hitstop', (ev) => healerRig.cue('hitstop', ev));
+   bus.on('room_enter', () => healerRig.cue('spawn'));
++  const reviewSH = /[?&]tripo=1\b/.test(location.search) ? createReviewStonehideFx({ bus, root, world }) : null; // REVIEW-ONLY
++  if (reviewSH) window.__reviewCam = stage.camera; // REVIEW-ONLY: the recorder narrows the view for his clips
++  const reviewFlat = reviewSH && /[?&]flat=1\b/.test(location.search) ? createReviewFlatStage({ stage, getActive: () => active }) : null; // REVIEW-ONLY
++  if (reviewFlat) window.__reviewDummy = reviewFlat.dress; // REVIEW-ONLY
+ 
+   // --- Entity contact shadows: same treatment for every sim body in the arena
+   // (training dummies today, enemies when they land), so nothing ever floats.
+@@ -1706,6 +1712,8 @@ export function createArenaScene(stage, toggles, ctx) {
+     // contact, B2), so it takes the raw dt: the render hold on top would
+     // freeze it at the press and hold it twice.
+     healerRig.update(dt);
++    if (reviewSH) reviewSH.update(dt); // REVIEW-ONLY
++    if (reviewFlat) reviewFlat.update(); // REVIEW-ONLY
+     for (const a of allies) a.update(dt);
+ 
+     // Dash afterimages: one ghost per SMEAR_TICK_OFFSETS entry of dash travel

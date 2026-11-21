@@ -1,0 +1,9 @@
+[
+{"cls":"healer","shots":[{"name":"01-mosslight-dewfall","skill":"dewfall"},{"name":"02-mosslight-guardian-bond","skill":"guardian_bond"},{"name":"03-mosslight-pale-lance","skill":"pale_lance"}]},
+{"cls":"tank","shots":[{"name":"04-stonehide-shoulder-charge","skill":"shoulder_charge"},{"name":"05-stonehide-brutal-cleave","skill":"brutal_cleave"},{"name":"06-stonehide-ground-crack-cooldown","skill":"ground_crack","live":false}]},
+{"cls":"swordsman","shots":[{"name":"07-ashfang-crescent-finisher","skill":"crescent_finisher"},{"name":"08-ashfang-moonfang","skill":"moonfang"}]},
+{"cls":"archer","shots":[{"name":"09-windbriar-volley","skill":"volley"},{"name":"10-windbriar-vault-shot","skill":"vault_shot"},{"name":"11-windbriar-rain-of-arrows","skill":"rain_of_arrows"}]},
+{"cls":"tidecaller","flags":"&rill=1","shots":[{"name":"12-tidecaller-maelstrom","skill":"maelstrom"},{"name":"13-tidecaller-ripple-step","skill":"ripple_step"}]},
+{"cls":"bellwright","flags":"&tolly=1","shots":[{"name":"14-bellwright-hang-bell","skill":"hang_bell"},{"name":"15-bellwright-peal","skill":"peal","bells":[[-2.2,-1.4],[2.0,-1.8]]}]},
+{"cls":"duskwing","flags":"&sable=1","shots":[{"name":"16-duskwing-dusk-dive","skill":"dusk_dive"},{"name":"17-duskwing-echo-screech","skill":"echo_screech"}]}
+]

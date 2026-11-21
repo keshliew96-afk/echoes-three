@@ -1,0 +1,55 @@
+<!doctype html><html><body>
+<script type="importmap">{"imports":{"three":"./three.module.js","three/addons/":"./jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const P=new URLSearchParams(location.search);
+const g=await new GLTFLoader().loadAsync(P.get('f'));const root=g.scene;
+let sm=null;root.traverse(o=>{if(o.isSkinnedMesh&&o.skeleton.bones.some(b=>/^footL$/.test(b.name)))sm=o;});
+const bones=sm.skeleton.bones, bn=bones.map(b=>b.name), SI=sm.geometry.attributes.skinIndex, SW=sm.geometry.attributes.skinWeight, NV=SI.count;
+const J={}; bones.forEach(b=>J[b.name]=b);
+const out={bones:bn.filter(n=>/leg|foot|toe|knee|shin|thigh/i.test(n))};
+// bind pose: the foot's own heel-to-toe line from the mesh
+sm.skeleton.pose(); root.updateMatrixWorld(true);
+const tv=new THREE.Vector3(); const rest={};
+for(const s of ['L','R']){ const fi=bn.indexOf('foot'+s); const pts=[]; for(let v=0;v<NV;v++){ let w=0; for(let k=0;k<4;k++){ if(SI.getComponent(v,k)===fi)w+=SW.getComponent(v,k); } if(w>=0.6){ sm.getVertexPosition(v,tv); tv.applyMatrix4(sm.matrixWorld); pts.push([tv.x,tv.y,tv.z]); } }
+  // only the sole (lowest third) decides the heel-to-toe line
+  // the footprint: every point of this leg and foot that lies below the ankle joint (plus 2 cm) in the bind pose
+  const li=bn.indexOf('leg'+s), ay=J['foot'+s].getWorldPosition(new THREE.Vector3()).y+0.02, sole=[];
+  for(let v=0;v<NV;v++){ let w=0; for(let k=0;k<4;k++){ const bi=SI.getComponent(v,k); if(bi===fi||bi===li)w+=SW.getComponent(v,k); } if(w>=0.6){ sm.getVertexPosition(v,tv); tv.applyMatrix4(sm.matrixWorld); if(tv.y<ay)sole.push([tv.x,tv.y,tv.z]); } }
+  let mx=0,mz=0; sole.forEach(p=>{mx+=p[0];mz+=p[2];}); mx/=sole.length; mz/=sole.length; let sxx=0,szz=0,sxz=0; sole.forEach(p=>{const x=p[0]-mx,z=p[2]-mz; sxx+=x*x;szz+=z*z;sxz+=x*z;});
+  const th=0.5*Math.atan2(2*sxz,szz-sxx); let dx=Math.sin(th), dz=Math.cos(th); if(dz<0){dx=-dx;dz=-dz;}
+  const l1=(sxx+szz)/2+Math.sqrt(((szz-sxx)/2)**2+sxz*sxz), l2=(sxx+szz)/2-Math.sqrt(((szz-sxx)/2)**2+sxz*sxz);
+  // second opinion for round feet: from the ankle joint to the middle of the front half of the sole
+  const ank=J['foot'+s].getWorldPosition(new THREE.Vector3()); let cx=0,cz=0; pts.forEach(p=>{cx+=p[0];cz+=p[2];}); cx/=pts.length; cz/=pts.length;
+  // farthest sole points from the ankle: the toe end
+  const far=sole.map(p=>[Math.hypot(p[0]-ank.x,p[2]-ank.z),p]).sort((a,b)=>b[0]-a[0]).slice(0,Math.max(4,Math.round(sole.length*0.15))); let tx=0,tz=0; far.forEach(([d,p])=>{tx+=p[0]-ank.x;tz+=p[2]-ank.z;});
+  const cen=+((s==='L'?1:-1)*Math.atan2(cx-ank.x,cz-ank.z)*180/Math.PI).toFixed(1), toe=+((s==='L'?1:-1)*Math.atan2(tx,tz)*180/Math.PI).toFixed(1), reach=+(far[0][0]).toFixed(3), cenD=+Math.hypot(cx-ank.x,cz-ank.z).toFixed(3);
+  (out.alt=out.alt||{})[s]={centroid:cen,centroidDist:cenD,toeEnd:toe,reach};
+  const q0=J['foot'+s].getWorldQuaternion(new THREE.Quaternion()), lq0=J['leg'+s].getWorldQuaternion(new THREE.Quaternion());
+  { // heel end and toe end of the footprint, each the middle of the 15% of sole points farthest from the other end
+    const K=Math.max(4,Math.round(sole.length*0.15)); let T=[ank.x+tx/far.length,ank.z+tz/far.length], Hh=[ank.x,ank.z];
+    const farFrom=(c)=>{ const a=sole.map(p=>[Math.hypot(p[0]-c[0],p[2]-c[1]),p]).sort((a,b)=>b[0]-a[0]).slice(0,K); let x=0,z=0; a.forEach(([d,p])=>{x+=p[0];z+=p[2];}); return [x/K,z/K]; };
+    for(let it=0;it<4;it++){ Hh=farFrom(T); T=farFrom(Hh); }
+    if(T[1]<Hh[1]){const q=T;T=Hh;Hh=q;} // refine: the line through the middles of the back third and the front third of the footprint, measured along the line itself
+    for(let it=0;it<6;it++){ let ax=T[0]-Hh[0], az=T[1]-Hh[1]; const al=Math.hypot(ax,az); ax/=al; az/=al; const pr=sole.map(p=>[(p[0]-Hh[0])*ax+(p[2]-Hh[1])*az,p]).sort((a,b)=>a[0]-b[0]); const n3=Math.round(pr.length*0.33);
+      const mid=(arr)=>{let x=0,z=0; arr.forEach(([d,p])=>{x+=p[0];z+=p[2];}); return [x/arr.length,z/arr.length];}; Hh=mid(pr.slice(0,n3)); T=mid(pr.slice(-n3)); }
+    tx=T[0]-Hh[0]; tz=T[1]-Hh[1]; const l=Math.hypot(tx,tz); out.alt[s].heel=Hh; out.alt[s].toe=T; dx=tx/l; dz=tz/l; out.alt[s].ends=+((s==='L'?1:-1)*Math.atan2(dx,dz)*180/Math.PI).toFixed(1); out.alt[s].len=+l.toFixed(3); }   // the heel-to-toe line is taken from the ankle to the toe end (the PCA line is wrong for round feet)
+  rest[s]={dir:new THREE.Vector3(dx,0,dz),q0inv:q0.clone().invert(),lq0inv:lq0.clone().invert(),n:sole.length,ratio:+Math.sqrt(l1/Math.max(l2,1e-9)).toFixed(2),toeOut:+((s==='L'?1:-1)*Math.atan2(dx,dz)*180/Math.PI).toFixed(1)}; }
+out.bind={L:{toeOut:rest.L.toeOut,elong:rest.L.ratio,n:rest.L.n},R:{toeOut:rest.R.toeOut,elong:rest.R.ratio,n:rest.R.n}};
+const mixer=new THREE.AnimationMixer(root); const q=new THREE.Quaternion(), d=new THREE.Vector3(), a=new THREE.Vector3(), b2=new THREE.Vector3(), fw=new THREE.Vector3(0,0,1);
+const want=(P.get('clips')||'idle,walk,walkBack,walkLeft,walkRight,run,runBack,runLeft,runRight').split(',');
+out.clips={};
+for(const clip of g.animations){ if(!want.includes(clip.name))continue; mixer.stopAllAction(); const act=mixer.clipAction(clip); act.play(); const N=Math.round(clip.duration*60); const r={};
+  for(const s of ['L','R']){ let sum=0,max=-1e9,min=1e9,lsum=0,tw=0,cs=0,cn=0; let ylo=1e9; const ys=[],ts=[];
+    for(let i=0;i<N;i++){ mixer.setTime(i/60); root.updateMatrixWorld(true);
+      J['foot'+s].getWorldQuaternion(q); d.set(rest[s].dir.z,0,-rest[s].dir.x).applyQuaternion(q.multiply(rest[s].q0inv)); const yaw=(s==='L'?1:-1)*Math.atan2(-d.z,d.x)*180/Math.PI; // from the foot's side-to-side line: stays true when the foot tips toe-down
+      // the leg's own twist about the vertical, from how it turns the forward axis
+      J['leg'+s].getWorldQuaternion(q); d.copy(fw).applyQuaternion(q.multiply(rest[s].lq0inv)); tw+=(s==='L'?1:-1)*Math.atan2(d.x,d.z)*180/Math.PI;
+      J['leg'+s].getWorldPosition(a); J['foot'+s].getWorldPosition(b2); const lat=(s==='L'?1:-1)*Math.atan2(b2.x-a.x,a.y-b2.y)*180/Math.PI; lsum+=lat;
+      sum+=yaw; max=Math.max(max,yaw); min=Math.min(min,yaw); ys.push(b2.y); ts.push(yaw); ylo=Math.min(ylo,b2.y); }
+    ys.forEach((y,i)=>{ if(y<ylo+0.01){cs+=ts[i];cn++;} });
+    r[s]={toeOutMean:+(sum/N).toFixed(1),toeOutMin:+min.toFixed(1),toeOutMax:+max.toFixed(1),onFloor:+(cs/Math.max(1,cn)).toFixed(1),legOut:+(lsum/N).toFixed(1),legTwist:+(tw/N).toFixed(1)}; }
+  out.clips[clip.name]=r; }
+window.result=out;window.done=true;
+</script></body></html>

@@ -1,0 +1,1926 @@
+{
+ "seeds": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16,
+  17,
+  18,
+  19,
+  20,
+  21,
+  22,
+  23,
+  24,
+  25,
+  26,
+  27,
+  28,
+  29,
+  30,
+  31,
+  32
+ ],
+ "maxDepth": 12,
+ "plain": true,
+ "root": "/home/claude/echoes-three",
+ "curve": [
+  {
+   "depth": 1,
+   "reached": 32,
+   "cleared": 24,
+   "downsPerRun": 6.1
+  },
+  {
+   "depth": 2,
+   "reached": 24,
+   "cleared": 20,
+   "downsPerRun": 5.2
+  },
+  {
+   "depth": 3,
+   "reached": 20,
+   "cleared": 13,
+   "downsPerRun": 6.1
+  },
+  {
+   "depth": 4,
+   "reached": 13,
+   "cleared": 2,
+   "downsPerRun": 10
+  }
+ ],
+ "shares": {
+  "d1to3": [
+   6,
+   20,
+   53,
+   21
+  ],
+  "d4plus": [
+   8,
+   22,
+   34,
+   36
+  ],
+  "d1to4": [
+   6,
+   20,
+   49,
+   25
+  ],
+  "d5plus": [
+   0,
+   0,
+   0,
+   0
+  ]
+ },
+ "results": [
+  {
+   "seed": 1,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 68469,
+   "hash": "9a053637",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 14,
+     "seatDowns": [
+      0,
+      6,
+      8,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 10375,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 30,
+     "seatDowns": [
+      0,
+      4,
+      22,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 10555,
+     "ticks": 19368,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "wyrm",
+     "outcome": "cleared",
+     "downs": 14,
+     "seatDowns": [
+      0,
+      0,
+      6,
+      8
+     ],
+     "minHpFrac": 0,
+     "startTick": 30103,
+     "ticks": 18808,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": "cantor",
+     "outcome": "defeat",
+     "downs": 19,
+     "seatDowns": [
+      1,
+      2,
+      4,
+      12
+     ],
+     "minHpFrac": 0,
+     "startTick": 49091,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 2,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 0,
+   "ticks": 8273,
+   "hash": "9ed6299c",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "defeat",
+     "downs": 11,
+     "seatDowns": [
+      1,
+      2,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 3,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 53847,
+   "hash": "f77b3df3",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.242,
+     "startTick": 0,
+     "ticks": 11794,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.356,
+     "startTick": 11974,
+     "ticks": 15202,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "wyrm",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 27356,
+     "ticks": 12508,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": "colossus",
+     "outcome": "defeat",
+     "downs": 10,
+     "seatDowns": [
+      1,
+      2,
+      4,
+      3
+     ],
+     "minHpFrac": 0,
+     "startTick": 40044,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 4,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 0,
+   "ticks": 10815,
+   "hash": "817f7cb4",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "defeat",
+     "downs": 19,
+     "seatDowns": [
+      1,
+      6,
+      8,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 5,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 67207,
+   "hash": "a8a507f8",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 14,
+     "seatDowns": [
+      0,
+      2,
+      12,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 11275,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 11455,
+     "ticks": 17429,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "lichram",
+     "outcome": "cleared",
+     "downs": 6,
+     "seatDowns": [
+      0,
+      4,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 29064,
+     "ticks": 20899,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 9,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 50143,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 6,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 2,
+   "ticks": 31831,
+   "hash": "96c7b2ff",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      4,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 12686,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "heron",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 12866,
+     "ticks": 11481,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 9,
+     "seatDowns": [
+      1,
+      2,
+      4,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 24527,
+     "ticks": null,
+     "rooms": 5
+    }
+   ]
+  },
+  {
+   "seed": 7,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 0,
+   "ticks": 12914,
+   "hash": "79ae594b",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "defeat",
+     "downs": 13,
+     "seatDowns": [
+      1,
+      2,
+      8,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 8,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 0,
+   "ticks": 7337,
+   "hash": "23351cbd",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "defeat",
+     "downs": 9,
+     "seatDowns": [
+      2,
+      2,
+      4,
+      1
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 9,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 58382,
+   "hash": "8a4014ed",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.276,
+     "startTick": 0,
+     "ticks": 12157,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.088,
+     "startTick": 12337,
+     "ticks": 15604,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "wyrm",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 28121,
+     "ticks": 16739,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": "colossus",
+     "outcome": "defeat",
+     "downs": 13,
+     "seatDowns": [
+      1,
+      4,
+      4,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 45040,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 10,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 1,
+   "ticks": 25689,
+   "hash": "15520d96",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 11845,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "defeat",
+     "downs": 17,
+     "seatDowns": [
+      3,
+      2,
+      6,
+      6
+     ],
+     "minHpFrac": 0,
+     "startTick": 12025,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 11,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 0,
+   "ticks": 8421,
+   "hash": "8da29a6e",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 13,
+     "seatDowns": [
+      1,
+      4,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 12,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 2,
+   "ticks": 43330,
+   "hash": "3c029734",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 14608,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "heron",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.23,
+     "startTick": 14788,
+     "ticks": 14632,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 9,
+     "seatDowns": [
+      1,
+      2,
+      4,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 29600,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 13,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 1,
+   "ticks": 18528,
+   "hash": "3ccbdc04",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.336,
+     "startTick": 0,
+     "ticks": 5995,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 7,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 6175,
+     "ticks": null,
+     "rooms": 5
+    }
+   ]
+  },
+  {
+   "seed": 14,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 2,
+   "ticks": 31426,
+   "hash": "24582ff4",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.128,
+     "startTick": 0,
+     "ticks": 7433,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 6,
+     "seatDowns": [
+      0,
+      0,
+      4,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 7613,
+     "ticks": 13892,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 11,
+     "seatDowns": [
+      1,
+      2,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 21685,
+     "ticks": null,
+     "rooms": 4
+    }
+   ]
+  },
+  {
+   "seed": 15,
+   "outcome": "victory",
+   "stuck": null,
+   "depthsCleared": 4,
+   "ticks": 59904,
+   "hash": "84ca240f",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.348,
+     "startTick": 0,
+     "ticks": 11444,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.027,
+     "startTick": 11624,
+     "ticks": 12326,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "wyrm",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 24130,
+     "ticks": 16766,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": "cantor",
+     "outcome": "cleared",
+     "downs": 10,
+     "seatDowns": [
+      0,
+      2,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 41076,
+     "ticks": 18828,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 16,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 50539,
+   "hash": "f398a9a",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.241,
+     "startTick": 0,
+     "ticks": 9375,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      4,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 9555,
+     "ticks": 14736,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "wyrm",
+     "outcome": "cleared",
+     "downs": 6,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 24471,
+     "ticks": 13546,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 9,
+     "seatDowns": [
+      1,
+      2,
+      4,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 38197,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 17,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 64256,
+   "hash": "26f39ea9",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      4,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 9574,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "heron",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      2,
+      0,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 9754,
+     "ticks": 17020,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "wyrm",
+     "outcome": "cleared",
+     "downs": 8,
+     "seatDowns": [
+      0,
+      0,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 26954,
+     "ticks": 21415,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 11,
+     "seatDowns": [
+      1,
+      4,
+      4,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 48549,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 18,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 0,
+   "ticks": 6498,
+   "hash": "4238701d",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 15,
+     "seatDowns": [
+      1,
+      2,
+      8,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": null,
+     "rooms": 5
+    }
+   ]
+  },
+  {
+   "seed": 19,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 1,
+   "ticks": 24137,
+   "hash": "2c99cd96",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.435,
+     "startTick": 0,
+     "ticks": 9146,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 7,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 9326,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 20,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 2,
+   "ticks": 43318,
+   "hash": "a42865dd",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.153,
+     "startTick": 0,
+     "ticks": 11022,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "heron",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      4,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 11202,
+     "ticks": 18019,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 11,
+     "seatDowns": [
+      2,
+      4,
+      4,
+      1
+     ],
+     "minHpFrac": 0,
+     "startTick": 29401,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 21,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 2,
+   "ticks": 37293,
+   "hash": "9edbf539",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      2,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 10589,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "heron",
+     "outcome": "cleared",
+     "downs": 10,
+     "seatDowns": [
+      0,
+      2,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 10769,
+     "ticks": 13304,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 7,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 24253,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 22,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 2,
+   "ticks": 38026,
+   "hash": "620827e6",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 8,
+     "seatDowns": [
+      0,
+      2,
+      6,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 9270,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 9450,
+     "ticks": 14542,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 9,
+     "seatDowns": [
+      1,
+      2,
+      4,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 24172,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 23,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 0,
+   "ticks": 12218,
+   "hash": "8af1e9ad",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "defeat",
+     "downs": 13,
+     "seatDowns": [
+      1,
+      4,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 24,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 53638,
+   "hash": "835992a0",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 14,
+     "seatDowns": [
+      0,
+      6,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 10342,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      4,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 10522,
+     "ticks": 15804,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "lichram",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      2,
+      0,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 26506,
+     "ticks": 15236,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 7,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 41922,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 25,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 0,
+   "ticks": 8503,
+   "hash": "f40e9132",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "defeat",
+     "downs": 11,
+     "seatDowns": [
+      1,
+      4,
+      2,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 26,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 2,
+   "ticks": 39448,
+   "hash": "c1df8b6f",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 14,
+     "seatDowns": [
+      0,
+      6,
+      6,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 13607,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 13787,
+     "ticks": 14075,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 9,
+     "seatDowns": [
+      2,
+      1,
+      2,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 28042,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 27,
+   "outcome": "victory",
+   "stuck": null,
+   "depthsCleared": 4,
+   "ticks": 49818,
+   "hash": "b5b849d3",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.579,
+     "startTick": 0,
+     "ticks": 10879,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "heron",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.272,
+     "startTick": 11059,
+     "ticks": 10076,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "wyrm",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 21315,
+     "ticks": 10865,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": "colossus",
+     "outcome": "cleared",
+     "downs": 12,
+     "seatDowns": [
+      0,
+      0,
+      6,
+      6
+     ],
+     "minHpFrac": 0,
+     "startTick": 32360,
+     "ticks": 17458,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 28,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 65727,
+   "hash": "d9758b9b",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 10,
+     "seatDowns": [
+      0,
+      0,
+      6,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 0,
+     "ticks": 11839,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.162,
+     "startTick": 12019,
+     "ticks": 13862,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "lichram",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 26061,
+     "ticks": 16081,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": "colossus",
+     "outcome": "defeat",
+     "downs": 9,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 42322,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 29,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 1,
+   "ticks": 22945,
+   "hash": "ad924fe8",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.082,
+     "startTick": 0,
+     "ticks": 13155,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "heron",
+     "outcome": "defeat",
+     "downs": 13,
+     "seatDowns": [
+      2,
+      3,
+      4,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 13335,
+     "ticks": null,
+     "rooms": 8
+    }
+   ]
+  },
+  {
+   "seed": 30,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 56102,
+   "hash": "2ccda217",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.387,
+     "startTick": 0,
+     "ticks": 9399,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      4,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 9579,
+     "ticks": 16619,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "wyrm",
+     "outcome": "cleared",
+     "downs": 3,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      1
+     ],
+     "minHpFrac": 0,
+     "startTick": 26378,
+     "ticks": 17861,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 7,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 44419,
+     "ticks": null,
+     "rooms": 5
+    }
+   ]
+  },
+  {
+   "seed": 31,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 53630,
+   "hash": "4d5e841c",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "stag",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.608,
+     "startTick": 0,
+     "ticks": 11569,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "millwheel",
+     "outcome": "cleared",
+     "downs": 4,
+     "seatDowns": [
+      0,
+      0,
+      4,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 11749,
+     "ticks": 15094,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "lichram",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.033,
+     "startTick": 27023,
+     "ticks": 15950,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 7,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 43153,
+     "ticks": null,
+     "rooms": 6
+    }
+   ]
+  },
+  {
+   "seed": 32,
+   "outcome": "defeat",
+   "stuck": null,
+   "depthsCleared": 3,
+   "ticks": 57011,
+   "hash": "ad400755",
+   "depths": [
+    {
+     "depth": 1,
+     "level": 1,
+     "boss": "thornmother",
+     "outcome": "cleared",
+     "downs": 0,
+     "seatDowns": [
+      0,
+      0,
+      0,
+      0
+     ],
+     "minHpFrac": 0.111,
+     "startTick": 0,
+     "ticks": 13045,
+     "rooms": 8
+    },
+    {
+     "depth": 2,
+     "level": 2,
+     "boss": "heron",
+     "outcome": "cleared",
+     "downs": 2,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      0
+     ],
+     "minHpFrac": 0,
+     "startTick": 13225,
+     "ticks": 15460,
+     "rooms": 8
+    },
+    {
+     "depth": 3,
+     "level": 3,
+     "boss": "lichram",
+     "outcome": "cleared",
+     "downs": 6,
+     "seatDowns": [
+      0,
+      0,
+      2,
+      4
+     ],
+     "minHpFrac": 0,
+     "startTick": 28865,
+     "ticks": 19938,
+     "rooms": 8
+    },
+    {
+     "depth": 4,
+     "level": 4,
+     "boss": null,
+     "outcome": "defeat",
+     "downs": 7,
+     "seatDowns": [
+      1,
+      2,
+      2,
+      2
+     ],
+     "minHpFrac": 0,
+     "startTick": 48983,
+     "ticks": null,
+     "rooms": 4
+    }
+   ]
+  }
+ ]
+}

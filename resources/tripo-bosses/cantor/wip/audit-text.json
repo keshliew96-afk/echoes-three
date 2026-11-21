@@ -1,0 +1,13 @@
+{
+ "AUD_POP0": "The lower robe, which runs on a spring, snapped up to 15 degrees in one frame at the strike of the Hollow Note and the Sung Lance.",
+ "AUD_POP1": "None. The robe's spring catches up over several frames now, so the hem swings at a strike instead of jumping.",
+ "AUD_FLOOR0": "In the death the hips went 0.26 u under the floor as it sank into the heap.",
+ "AUD_FLOOR1": "Only where it sinks into the floor on purpose (the Echo Step, the spawn and the death). In the death the lining inside the heap is 0.15 u under, out of sight under the spread robe.",
+ "AUD_THRU0": "Crossing the hands for the Sung Lance pushed the sleeves 0.14 u into the body. The chest rose 0.11 u into the halo in the Lance, and in the death the notes fell 0.11 u into the chest.",
+ "AUD_THRU1": "The sleeves still press up to 0.09 u into the front of the robe while the hands are crossed, and the hands rest 0.08 u into the chest over the heart, on purpose. The chest touches the halo at the top of the Lance (0.09 u, eight points). In the death the falling notes pass through the hood and chest (up to 0.10 u) and the closed jaw rests 0.05 u into the chest.",
+ "AUD_STR0": "The lining inside the hem tore open near the middle, pulled to 20 times its length as it lay dead and 10 times in the Heart Pulse.",
+ "AUD_STR1": "The lining now follows the hips as far as it lies from the outer robe, so it no longer tears. What is left: a single edge at the very tip of the hem in the death (about 10 times, a few millimetres), and the skin round the heart as the heart swells (7 times, inside the rim).",
+ "AUD_LOOP0": "Clean in every loop.",
+ "AUD_LOOP1": "Clean: idle, glide, back away and both turns join with no jump, and no move stops dead.",
+ "AUD_LOOPS": "0 in every loop."
+}

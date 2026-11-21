@@ -1,0 +1,156 @@
+[
+{
+"name": "S45",
+"cap": "Colossus \u00b7 8 s a stone giant",
+"secs": 10.0,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"hp": {
+"1": 0.8
+},
+"foes": [
+[
+"rotcap",
+1.7,
+0.6,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+1.6,
+-0.7,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+-1.6,
+0.7,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+0.3,
+-1.7,
+{
+"hpMul": 25
+}
+]
+],
+"holdFoes": 10.0,
+"seq": [
+[
+0.5,
+"cast",
+"colossus",
+[
+2,
+0
+]
+],
+[
+1.9,
+"combo"
+],
+[
+3.6,
+"aim",
+[
+-2,
+0.8
+]
+],
+[
+3.8,
+"combo"
+],
+[
+5.2,
+"aim",
+[
+2,
+0
+]
+],
+[
+5.4,
+"cast",
+"heavy_slam",
+[
+2,
+0
+]
+]
+]
+},
+{
+"name": "S45b",
+"cap": "Colossus \u00b7 Bare Claws",
+"secs": 4.2,
+"shield": false,
+"tank": [
+0,
+0
+],
+"aim": [
+2,
+0
+],
+"hp": {
+"1": 0.8
+},
+"foes": [
+[
+"rotcap",
+1.7,
+0.6,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+1.6,
+-0.7,
+{
+"hpMul": 25
+}
+],
+[
+"rotcap",
+-1.6,
+0.8,
+{
+"hpMul": 25
+}
+]
+],
+"holdFoes": 4.2,
+"seq": [
+[
+0.4,
+"cast",
+"colossus",
+[
+2,
+0
+]
+],
+[
+1.8,
+"combo"
+]
+]
+}
+]

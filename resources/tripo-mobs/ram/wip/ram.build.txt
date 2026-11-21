@@ -1,0 +1,10 @@
+idle          {"dur":6,"frames":361,"slide_mm":0,"slideAt":"FR@3.97","reach_mm":0,"reachAt":"FR@3.97","lowest":-0.0036,"loAt":"fHoofL@2.50","under":0,"loopPopDeg":0}
+walk          {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"HL@0.02","reach_mm":0,"reachAt":"HL@0.00","lowest":-0.0091,"loAt":"hHoofL@0.03","under":1,"loopPopDeg":0}
+turnL         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"FL@0.27","reach_mm":0,"reachAt":"HL@0.15","lowest":-0.007,"loAt":"hHoofL@0.03","under":1,"loopPopDeg":0}
+turnR         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"FR@0.02","reach_mm":0,"reachAt":"HR@0.40","lowest":-0.007,"loAt":"hHoofL@0.03","under":1,"loopPopDeg":0}
+slams         {"dur":4.9,"frames":295,"slide_mm":0,"slideAt":"FL@4.60","reach_mm":23.4,"reachAt":"HR@4.32","lowest":-0.0154,"loAt":"hHoofL@2.63","under":2,"loopPopDeg":0}
+block         {"dur":0.75,"frames":46,"slide_mm":0,"slideAt":"FL@0.67","reach_mm":0,"reachAt":"FL@0.67","lowest":0,"loAt":"hHoofL@0.00","under":0,"loopPopDeg":0}
+hurt          {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"FL@0.13","reach_mm":0,"reachAt":"FL@0.13","lowest":0,"loAt":"hHoofL@0.00","under":0,"loopPopDeg":0}
+spawn         {"dur":1.4,"frames":85,"slide_mm":0,"slideAt":"FL@1.07","reach_mm":0,"reachAt":"FL@0.73","lowest":0,"loAt":"hHoofL@0.63","under":0,"loopPopDeg":0}
+death         {"dur":2.2,"frames":133,"slide_mm":0,"slideAt":"FL@0.07","reach_mm":21.7,"reachAt":"FR@0.17","lowest":-0.01,"loAt":"fHoofR@0.63","under":1,"loopPopDeg":0}
+wrote ram.glb 1.20 MB

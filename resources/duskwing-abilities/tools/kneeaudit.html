@@ -1,0 +1,19 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.js","three/addons/":"../node_modules/three/examples/jsm/"}}</script>
+</head><body><canvas id="c" width="320" height="200"></canvas>
+<script type="module">
+import * as W from './dw.js';
+import { DEFS, FORMS } from './defs.js';
+import './ra.js'; import './sa.js'; import './ph.js'; import './co.js';
+await W.loadHim('./duskwing.glb');
+const ids = [...Object.keys(DEFS).map((k) => [k, DEFS[k]]), ...Object.entries(FORMS).flatMap(([f, o]) => Object.keys(o).map((k) => [f + ':' + k, o[k]]))];
+const res = {};
+for (const [id, def] of ids) {
+  if (!def) continue;
+  try { const c = W.addCard(def, document.getElementById('c')); c.build(); const T = c.T || 3; let bend = 0, lift = 0, at = 0;
+    for (let t = 0; t <= T; t += 1 / 30) { const k = W.kneeProbe(c, t); if (k.bend > bend) { bend = k.bend; at = t; } lift = Math.max(lift, k.lift); }
+    res[id] = { T: +T.toFixed(2), bend: +bend.toFixed(1), at: +at.toFixed(2), lift: +lift.toFixed(3) };
+  } catch (e) { res[id] = { err: String(e) }; }
+}
+window.__res = res; window.__ready = true;
+</script></body></html>

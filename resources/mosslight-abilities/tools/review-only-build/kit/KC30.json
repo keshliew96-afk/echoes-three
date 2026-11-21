@@ -1,0 +1,50 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C30",
+  "aim": [
+   3,
+   0
+  ],
+  "slots": [
+   "nova_bloom"
+  ],
+  "allies": [
+   [
+    2.8,
+    0.2,
+    0.35
+   ],
+   [
+    3.8,
+    -1.8,
+    0.6
+   ],
+   [
+    1.8,
+    2.2,
+    0.6
+   ]
+  ],
+  "dummies": [],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=600;e.hp=600;}",
+  "seq": [
+   [
+    0.2,
+    "eval",
+    "for(const [x,z] of [[2.4, 1.4], [3.6, -1.0], [1.6, -1.2], [4.0, 1.6]]) globalThis.__reviewSeedAt(x,z);"
+   ],
+   [
+    0.8,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 7.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C30 \u00b7 Heartbloom opens seeds as flowers that heal"
+ }
+]

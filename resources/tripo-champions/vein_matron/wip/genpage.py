@@ -1,0 +1,250 @@
+# Builds the Vein Matron's review page from the Thornmother's page (the bench, the controls and the play loop are
+# shared; the words, the numbers and the effects are her own). usage: python3 -I genpage.py <thornmother index.html> <out index.html> <tris> <glb MB> <audit json> <under-floor sentence> <views WxH>
+import sys, json
+L = open(sys.argv[1]).read().split('\n'); out = sys.argv[2]; TRIS = sys.argv[3]; MB = sys.argv[4]
+ln = lambda a, b: '\n'.join(L[a - 1:b])          # 1-based, inclusive
+
+HEAD = '<title>Tripo Vein Matron Review</title>\n' + ln(2, 59)
+BODY = r"""
+<div class="wrap">
+  <div>
+    <h1>Vein Matron from Tripo, rigged</h1>
+    <p class="lede">Your export of the Hollow Heart champion, with a skeleton and 11 moves added by hand. Their timings are the game's. Pick a move, drag to turn her, and judge the lash, the pulse and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what she does between attacks, and Going turns her on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death leaves her standing dead where she wilted: press it again and she spawns back in. The bar names the part of the move that is playing, in the game's own words. Enraged is her state under half health: it stays on over every move until you switch it off, and she glides faster. In the Vein Lash the hero stands 5 u off, inside the 7 u lane.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="rage" aria-pressed="false">Enraged</button>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="veinmatron-views.png" alt="The Tripo Vein Matron from the front, her left, the back and her right" width="__VW__" height="__VH__">
+      <p class="note" style="padding-top:12px">She came through whole: nothing doubled and nothing missing. Two things were changed. The four pink veins that hang from her hands were welded to the roots and the gown at their lower ends, so I cut them free at both ends and closed the cuts: now they hang from her hands and swing. A loose splinter of 10 triangles inside the gown was dropped.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>__TRIS__ <small>champion budget 12,000 · 11,643 as sent, 10 dropped with the splinter, 30 added to close the cuts</small></dd></div>
+    <div><dt>Bones</dt><dd>22 <small>hips, spine, chest, head, 2 in the gown, 3 in each arm, 3 in each long vein, 2 in each short vein</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only, as sent</small></dd></div>
+    <div><dt>File</dt><dd>__MB__ MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>3.0 u to the tip of the crown <small>My guess from the game's body radius of 0.7 u, beside a 1 u hero. Say if she should be bigger or smaller.</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>She stands tall over her roots and breathes slowly. The heart on her breast beats. The hands open and close a little, the veins sway under them, and the head tilts once and back.</td><td>6 s loop</td></tr>
+      <tr><td>Walk</td><td>She has no legs, so she glides on her roots. The body leans into it and rises and falls a little, the gown ripples from the waist down, the arms are drawn back and the veins trail behind.</td><td>Game: 1.1 u/s. 2 s loop. Enraged: 1.27 u/s, the same loop played faster.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Turns on the spot, the head leading and the veins swinging wide.</td><td>100° a second (my number: the game turns her instantly)</td></tr>
+      <tr><td>Vein Lash</td><td>She turns her right shoulder back and raises her right arm high behind her head, the long vein trailing down her back, the left arm out for balance. The arm trembles at the top. On the warning's end the shoulder comes round, the arm cuts forward and down, and the vein unrolls along the lane and cracks. The crack runs on down the lane. If it cut the hero, the stolen life runs back up the lane into her heart and the heart flares.</td><td>Game: 0.97 s lane warning (7 u long, 1 u wide, at a hero), the lash 2.5 frames landing on the warning's end, held 3 frames, drink 0.25 s, settle 0.6 s. 13 damage; she heals 3 percent of her health for each hero cut, 6 percent at most. The hero stands 5 u off.</td></tr>
+      <tr><td>Heart Pulse</td><td>She brings both hands up round the heart and bows over it, sinking a little into her gown. The heart beats faster and brighter and her hands tremble. On the warning's end she throws her arms wide and arches back, the veins flung out, and the ring bursts from her. Eight shards fly out all round, the first one straight ahead.</td><td>Game: 1.17 s ring warning (r 2.8 u round herself), the burst 2.5 frames landing on the warning's end, held 3 frames, recoil 0.25 s, settle 0.6 s. 14 damage, then eight shards at 4.6 u/s for 7 u, 7 damage each. The hero stands 2.4 u off.</td></tr>
+      <tr><td>Rage</td><td>She clutches her heart and doubles over it. Then she rears up with her arms flung high in a V, the head thrown back and the veins whipping out, and shakes with it. The Enraged state stays on after it: drawn up, the hands half raised and clawed, the crown and the eyes burning.</td><td>Mine: 1.6 s. The game does not stop her: below half health she glides 15 percent faster and her moves come back 30 percent sooner.</td></tr>
+      <tr><td>Hurt</td><td>The head and chest flinch back and the arms jolt out. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Her roots hold, so she is not thrown back: she bends back from the waist like a tree in a gale, the arms and veins thrown forward. She whips back past upright, catches herself, shakes her head once and straightens.</td><td>1.15 s</td></tr>
+      <tr><td>Spawn</td><td>Grows from the floor bowed low over her roots like a closed bud, the arms hanging. She unfurls, rising and opening her arms, lifts her face, and the heart takes its first beat: it flares and her eyes open.</td><td>Game: grow in 7 frames, then a 1.6 s entrance. The bud and the heartbeat are mine.</td></tr>
+      <tr><td>Death</td><td>The heart cracks: a jolt arches her back and flings her arms out. The glow goes out of the heart, the crown and the eyes. Then she wilts like a cut flower, sinking a little into her gown and folding forward over her roots, the arms hanging and the head bowed to her breast. She stays there, standing and dark.</td><td>2.8 s, then she stays</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>The roots on the floor moving</td><td>0 mm in every move. They are tied to the floor, and the gown bends above them.</td></tr>
+      <tr><td>A hand falling short of the heart (Heart Pulse and Rage)</td><td>__ARM__</td></tr>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns, the enraged state)</td><td>0</td></tr>
+      <tr><td>Lowest point under the floor, the veins included</td><td>__UNDER__</td></tr>
+      <tr><td>Legs</td><td>She has none, so the rule about feet pointing straight ahead does not apply. She glides.</td></tr>
+      <tr><td>The head</td><td>Faces straight ahead at rest. In the Vein Lash the chest twists and the head stays on the hero.</td></tr>
+      <tr><td>The veins</td><td>Each one is cut free at both ends. Its top rides with the hand or the wrist it hangs from, so the cut never opens. They hang under their own weight and swing a beat after the hand. In the Vein Lash the long right vein is driven by hand so it unrolls straight down the lane.</td></tr>
+      <tr><td>The shoulders, the neck and the waist</td><td>Looked at close from the front and the back at the top of the Vein Lash, the roar, the Heart Pulse and the end of the death: no tears, no spikes.</td></tr>
+      <tr><td>The gown</td><td>Two joints. Its bottom stays level whatever the waist does, so the gown leans and ripples without lifting off its roots.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>Death.</strong> She wilts standing, folded over her roots like a dead flower. Two other ways to play it: she sinks down into her roots until only the crown shows, or she topples sideways and the crown shatters on the floor. Say which you prefer.</li>
+        <li><strong>The lash.</strong> Only the right vein lashes. It could be both hands at once, crossing, or left and right in turn each time she casts.</li>
+        <li><strong>The glide.</strong> She slides smoothly. Say if you want her to bob more, or to lean further into it.</li>
+        <li><strong>Rage.</strong> A new 1.6 s roar. The game has no pause at half health. The Enraged button shows the state without the roar.</li>
+        <li><strong>Size.</strong> Drawn 3.0 u to the tip of the crown.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The roots on the floor are one skin with the gown and do not crawl. When she glides they slide on the floor.</li>
+        <li>The hair is one skin with her back and does not swing.</li>
+        <li>The veins are thin flat ribbons in the model. Seen edge on they almost vanish.</li>
+        <li>The long vein is about 1 u long, so the lash itself reaches only about 2 u. The crack down the rest of the lane is drawn by this page.</li>
+        <li>The crystal collar and crown are one skin with the shoulders and head. When she flings her arms up the shoulder crystals bend a little with them.</li>
+        <li>The drink is only violet motes running from the hero to her heart. The shards are plain violet crystal shapes made for this page.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet and magenta for her power. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+"""
+JS_TOP = ln(160, 162) + '\n<script src="veinmatron-model.js"></script>\n<script>\n(function(){\n  const $=id=>document.getElementById(id);\n' + r'''  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=3.0;
+  const VIOLET=0x8F63EE, EMBER=0xFF5A36, DUST=0x8d8478, MAGENTA=0xC64BC0;
+  const LABEL={idle:'Idle',walk:'Walk',turnL:'Turn left',turnR:'Turn right',veinLash:'Vein Lash',heartPulse:'Heart Pulse',rage:'Rage',hurt:'Hurt',heavyHit:'Heavy hit',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['veinLash','heartPulse','rage','heavyHit'];
+  const HOME=3.0, HOME_OF={veinLash:5.0,heartPulse:2.4}; // where the hero stands, in u, in front of her (she keeps 2.0 to 3.8 u off)
+  const WALK=1.1, RAGEWALK=1.1*1.15, TURN=2*Math.PI/3.6, VLT=58/60, HPT=70/60, LANE_L=7, LANE_W=1.0, PULSE_R=2.8, NSH=8, SH_V=4.6, SH_RANGE=7;
+''' + ln(173, 184).replace('blob.scale.set(0.72,1.2,1)', 'blob.scale.set(0.9,0.9,1)') + r'''
+  const VIEWS={Close:{p:[5.6,3.5,8.6],t:[0,1.5,0.8]},'Game zoom':{p:[0,15.5,13.4],t:[0,0.5,3.0]},Side:{p:[13.2,2.1,1.6],t:[0,1.5,1.6]},Front:{p:[3.8,2.3,12.2],t:[0,1.5,0]},Back:{p:[-4.2,3.8,-9.3],t:[0,1.5,0.6]},Top:{p:[0,20,0.4],t:[0,0.4,2.8]}};
+''' + ln(186, 202) + r'''
+  let rage=false, rageW=0, rageAct=null; toggle('rage',()=>rage,v=>rage=v);
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, glowU={value:new THREE.Vector4(0,0,0,0)}, hurtAct=null, shot=null, dummy=null;
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    // the mask marks the face (x), the heart (y) and the crystals of the crown and the collar (z). The eyes are drawn in the
+    // texture, so only the violet texels of the face flare; the heart beats; the crystals burn in the rage. When she dies
+    // all three go dark.
+    mesh.material.onBeforeCompile=sh=>{sh.uniforms.uGlow=glowU;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uGlow;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\nfloat ey=smoothstep(0.1,0.3,min(diffuseColor.r,diffuseColor.b)-diffuseColor.g)*vMask.x;\ntotalEmissiveRadiance+=vec3(0.62,0.35,1.0)*uGlow.x*ey+vec3(0.8,0.3,0.85)*uGlow.y*vMask.y+vec3(0.55,0.32,1.0)*uGlow.w*vMask.z+vec3(0.55)*uGlow.z;');};
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; scene.add(helper);
+    mixer=new THREE.AnimationMixer(model);
+    const UPPER=/^(spine|chest|head|upperarmL|forearmL|handL|upperarmR|forearmR|handR)\.quaternion/; const restC=gltf.animations.find(c=>c.name==='hurt');
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      if(c.name==='rageHold'){const h=new THREE.AnimationClip('rageAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,restC,60); rageAct=mixer.clipAction(h); rageAct.blendMode=THREE.AdditiveAnimationBlendMode; rageAct.setLoop(THREE.LoopRepeat,Infinity); rageAct.setEffectiveWeight(0); rageAct.play(); return;}
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1);
+    makeFx(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,rage,rageW:+rageW.toFixed(2),lane:lane.visible,crack:crack.visible,ring:warn.visible,shards:SHARDS.filter(s=>s.userData.t>=0).length,drink:drinkT,heart:+heartG.toFixed(2),dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,tip:bones.whip3R?pt(bones.whip3R,WTIP).toArray().map(v=>+v.toFixed(2)):null,t:shot&&+shot.action.time.toFixed(3),fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glow:glowU.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+''' + ln(225, 262).replace("sparks(pt(bones.head,[0,0.02,0.2]),6,0xfff4e0,1.6,0.25)", "sparks(pt(bones.head,EYES),6,0xfff4e0,1.6,0.25)").replace('PIV=new THREE.Vector3(0,0,-0.06*U)', 'PIV=new THREE.Vector3(0,0,0)') + '\n\n' + ln(264, 266) + r'''
+
+  // ---- effects (dim on purpose; Ember marks the floor warnings, Violet and magenta are her power)
+  const FXP=[], RINGS=[], SHARDS=[]; let dotTex=null, rune=null, lane=null, laneFill=null, crack=null, warn=null, warnFill=null;
+  let eyes=1, eyesTo=1, heartG=0.3, heartTo=0.3, crystG=0, crystTo=0, dark=0, darkTo=0, drinkT=-1, beat=1.1;
+  const EYES=[0,0.045,0.05], HEART=[0,-0.01,0.09], WTIP=[0,-0.11,0.008];
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<140;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<14;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false});}
+    // the Vein Lash's warning: an Ember lane in front of her that fills along its length; then the crack runs down it
+    const lg=new THREE.PlaneGeometry(1,1); lg.translate(0,-0.5,0);
+    laneFill=new THREE.Mesh(lg,new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false}));
+    lane=new THREE.Group(); const lm=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.7,depthWrite:false});
+    [[-LANE_W/2,0.035,LANE_L,-LANE_L/2],[LANE_W/2,0.035,LANE_L,-LANE_L/2],[0,LANE_W,0.035,-LANE_L],[0,LANE_W,0.035,0]].forEach(([x,w,h,y])=>{const e=new THREE.Mesh(new THREE.PlaneGeometry(w,h),lm); e.position.set(x,y,0); lane.add(e);}); lane.userData.mat=lm;
+    crack=new THREE.Mesh(lg,new THREE.MeshBasicMaterial({color:MAGENTA,transparent:true,opacity:0,depthWrite:false})); crack.userData.t=-1;
+    [lane,laneFill,crack].forEach(m=>{m.rotation.order='YXZ'; m.rotation.x=-Math.PI/2; m.visible=false; fxG.add(m);});
+    // the Heart Pulse's warning: an Ember ring round her that fills
+    warn=new THREE.Mesh(new THREE.RingGeometry(1-0.035*2.5/PULSE_R,1,80),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.7,depthWrite:false})); warnFill=new THREE.Mesh(new THREE.CircleGeometry(1,80),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false}));
+    [warn,warnFill].forEach(m=>{m.rotation.x=-Math.PI/2; m.visible=false; fxG.add(m);}); warn.scale.setScalar(PULSE_R);
+    // the eight shards
+    const sg=new THREE.OctahedronGeometry(0.11,0); sg.scale(0.75,0.75,2.6);
+    for(let i=0;i<NSH;i++){ const m=new THREE.Mesh(sg,new THREE.MeshStandardMaterial({color:VIOLET,roughness:0.55,flatShading:true,emissive:VIOLET,emissiveIntensity:0.22,transparent:true})); m.rotation.order='YXZ'; m.visible=false; m.userData={t:-1}; fxG.add(m); SHARDS.push(m); }
+    const mkRune=(r)=>{const gq=new THREE.Group(); const o=new THREE.Mesh(new THREE.RingGeometry(r*0.94,r,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0.5,depthWrite:false})); const i2=new THREE.Mesh(new THREE.RingGeometry(r*0.62,r*0.66,6),o.material); const i3=new THREE.Mesh(new THREE.RingGeometry(r*0.4,r*0.43,3),o.material); [o,i2,i3].forEach(m=>{m.rotation.x=-Math.PI/2;gq.add(m);}); gq.userData.mat=o.material; gq.position.y=0.013; gq.visible=false; return gq;};
+    rune=mkRune(1.2); fxG.add(rune);
+    RINGS.forEach(r=>scene.add(r.m));
+    // a hero's height, for scale and to take the hit
+    dummy=new THREE.Group(); const dmm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dmm); body.position.y=0.31; const head=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dmm); head.position.y=0.8; dummy.add(body,head); dummy.userData={mat:dmm,z:HOME,x:0,sx:0,kick:0,hold:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+''' + ln(291, 296) + r'''
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); if(lane){lane.visible=laneFill.visible=false;crack.visible=false;crack.userData.t=-1;warn.visible=warnFill.visible=false;rune.visible=false;} SHARDS.forEach(c=>{c.userData.t=-1;c.visible=false;}); drinkT=-1; }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  const heartW=()=>pt(bones.chest,HEART);
+  const underW=()=>pt(bones.hips,[0,0,0]).setY(0.02);
+  let runeT=-1, laneT=-1, warnT=-1;
+  function fxStart(name){
+    crystTo=0; if(lane){lane.visible=laneFill.visible=false;warn.visible=warnFill.visible=false;} laneT=-1; warnT=-1;
+    if(name==='veinLash'){ if(dummy&&showTarget&&Math.abs(dummy.userData.z-HOME_OF.veinLash)>0.3){ dummy.userData.z=HOME_OF.veinLash; dummy.userData.x=0; } lane.userData.o=toFloor(new THREE.Vector3(0,0,0)); lane.userData.yaw=-floorYaw; lane.userData.hit=false; if(fxOn)laneT=0; }
+    if(name==='heartPulse'){ if(dummy&&showTarget&&Math.abs(dummy.userData.z-HOME_OF.heartPulse)>0.3){ dummy.userData.z=HOME_OF.heartPulse; dummy.userData.x=0; } const o=toFloor(new THREE.Vector3(0,0,0)); warn.position.copy(o).setY(0.012); warnFill.position.copy(o).setY(0.011); warnFill.scale.setScalar(0.001); warn.userData.o=o; warn.userData.yaw=-floorYaw; if(fxOn)warnT=0; }
+    if(name==='spawn'){ eyes=0; eyesTo=0; heartG=0; heartTo=0; dark=1; darkTo=1; rage=false; $('rage').setAttribute('aria-pressed','false'); cv.style.filter=''; if(fxOn){runeT=0; rune.position.copy(toFloor(new THREE.Vector3(0,0,0))).setY(0.013);} }
+    if(name==='heavyHit'){ hitFeel(0.55,0.09,0.6); flash=0.5; if(fxOn)sparks(heartW(),12,0xfff4e0,2.4,0.3); }
+    if(name==='death'){ hitFeel(0.5,0.06,0.4); flash=0.4; }
+  }
+  function hitDummy(k){ if(!dummy||!showTarget)return; dummy.userData.kick=k; dummy.userData.hold=Math.max(dummy.userData.hold,0.6); dummy.userData.mat.emissiveIntensity=feel?0.45:0; }
+  function fxContact(name,i){
+    if(name==='veinLash'){ hitFeel(0.8,0.08,0.6); eyes=2.0; heartG=1.0; const u=lane.userData, tip=pt(bones.whip3R,WTIP);
+      if(fxOn){ crack.userData.t=0; crack.position.copy(u.o).setY(0.017); crack.rotation.y=u.yaw; ringAt(tip,{r0:0.1,r1:0.8,dur:0.3,a:0.4,bill:true,col:MAGENTA}); sparks(tip,8,0xd9c8ff,1.8,0.3); }
+      if(dummy&&showTarget){ const p=targetW().applyMatrix4(fxG.matrix.clone().invert()).sub(u.o).applyAxisAngle(Y,-u.yaw); if(Math.abs(p.x)<LANE_W/2+0.25&&p.z>0&&p.z<LANE_L+0.2){ u.hit=true; hitDummy(0.4); if(fxOn)sparks(targetW().setY(0.55),8,0xd9c8ff,2.0,0.3); drinkT=0; } } }
+    if(name==='heartPulse'){ hitFeel(0.9,0.08,0.8); eyes=2.2; heartG=2.4; const o=underW(), hw=heartW();
+      if(fxOn){ ringAt(o,{r0:0.4,r1:PULSE_R,dur:0.3,a:0.5}); ringAt(o,{r0:0.3,r1:PULSE_R*0.72,dur:0.36,a:0.3,delay:0.06,col:MAGENTA}); ringAt(hw,{r0:0.15,r1:1.2,dur:0.35,a:0.35,bill:true,col:MAGENTA}); sparks(hw,10,0xd9c8ff,2.0,0.3);
+        const u=warn.userData; SHARDS.forEach((m,k)=>{ m.userData={t:0,a:k*2*Math.PI/NSH,yaw:u.yaw,o:u.o.clone(),h0:hw.y,hit:false}; m.material.opacity=1; m.visible=true; }); }
+      if(dummy&&showTarget&&targetW().length()<PULSE_R+0.2)hitDummy(0.5); }
+    if(name==='rage'){ hitFeel(0.5,0.06,0.5); rage=true; $('rage').setAttribute('aria-pressed','true'); eyes=2.6; heartG=2.0; crystG=1.6; const h=heartW(); if(fxOn)[0,0.12,0.24].forEach(dl=>ringAt(h,{r0:0.15,r1:1.6,dur:0.6,a:0.3,bill:true,delay:dl,col:dl?VIOLET:MAGENTA})); }
+    if(name==='spawn'){ hitFeel(0.25,0.03,0.3); eyesTo=1; eyes=1.8; heartG=2.0; heartTo=0.3; darkTo=0; if(fxOn){ const h=heartW(); ringAt(h,{r0:0.1,r1:1.1,dur:0.45,a:0.35,bill:true,col:MAGENTA}); ringAt(underW(),{r0:0.3,r1:1.6,dur:0.4,a:0.3}); } }
+    if(name==='heavyHit'){ if(i===1){ hitFeel(0.2,0,0.2); } }
+    if(name==='death'){ if(i===0){ heartG=2.6; if(fxOn){ const h=heartW(); sparks(h,14,0xd9c8ff,2.2,0.35); ringAt(h,{r0:0.1,r1:0.9,dur:0.3,a:0.4,bill:true,col:MAGENTA}); } darkTo=1; heartTo=0; eyesTo=0; }
+      if(i===1){ hitFeel(0.35,0.03,0.3); cv.style.filter='saturate(0.6)'; if(fxOn){ dust(underW(),10,1.6,0.5); ringAt(underW(),{r0:0.4,r1:1.8,dur:0.34,a:0.3,col:DUST}); } } }
+  }
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time;
+    if(n==='veinLash'){ const k=Math.min(1,t/VLT), on=t<VLT; eyesTo=on?1+0.8*k:1;
+      if(laneT>=0&&fxOn){ const u=lane.userData; lane.visible=laneFill.visible=on; lane.rotation.y=laneFill.rotation.y=u.yaw; lane.position.copy(u.o).setY(0.012); laneFill.position.copy(u.o).setY(0.011); laneFill.scale.set(LANE_W,Math.max(0.001,k*LANE_L),1); u.mat.opacity=0.45+0.25*Math.sin(t*24)*k; } }
+    if(n==='heartPulse'){ const k=Math.min(1,t/HPT), on=t<HPT; eyesTo=on?1+1.0*k:1; heartTo=on?0.3+1.4*k:0.3; beat=on?1.1+3.5*k:1.1;
+      if(warnT>=0&&fxOn){ warn.visible=warnFill.visible=on; warnFill.scale.setScalar(Math.max(0.001,k*PULSE_R)); warn.material.opacity=0.45+0.25*Math.sin(t*24)*k; if(on&&t>0.4&&Math.random()<d*14)motes(heartW(),1,0.25,0.3); } }
+    if(n==='rage'){ eyesTo=t>0.34?2.4:1+2*t; crystTo=t>0.34&&t<1.2?1.2:0; heartTo=t<0.34?0.3+3*t:0.6; if(t>0.42&&t<1.1&&fxOn&&Math.random()<d*18)motes(heartW(),1,0.5,0.8); }
+    if(n==='spawn'){ if(t>0.1&&t<0.9&&Math.random()<d*26)motes(new THREE.Vector3(0,0,0),1,1.8,1.4); }
+  }
+  function updateFx(d){
+    eyes+=(eyesTo-eyes)*Math.min(1,d*(eyes>eyesTo?5:12)); heartG+=(heartTo-heartG)*Math.min(1,d*(heartG>heartTo?4:10)); crystG+=(crystTo-crystG)*Math.min(1,d*(crystG>crystTo?3:10)); dark+=(darkTo-dark)*Math.min(1,d*(darkTo>dark?1.6:4)); flash=Math.max(0,flash-d*3.2);
+    if(!(shot&&!shot.done&&shot.name==='heartPulse'))beat=1.1+0.6*rageW;
+    const on=fxOn?1:0; const burn=rageW*(0.9+0.35*Math.sin(clockT*19)*Math.sin(clockT*7.3));
+    const thump=Math.pow(Math.max(0,Math.sin(clockT*beat*Math.PI*2)),10);   // the heartbeat
+    const ex=eyes>=1?0.35*(eyes-1):-0.9*(1-eyes);
+    glowU.value.set(on*(ex+(sel.dead?0:0.6*burn))-0.6*dark,on*(heartG*(0.6+0.4*thump)+0.4*burn)*0.07-0.5*dark,feel?flash:0,on*(crystG+0.7*burn)*0.03-0.3*dark);
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.03)p.s.position.y=0.03; const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    if(runeT>=0){ runeT+=d; const u=runeT/0.95; rune.visible=u<1&&fxOn; rune.rotation.y=runeT*2.2; rune.scale.setScalar(1.15-0.35*u); rune.userData.mat.opacity=0.5*Math.sin(Math.PI*Math.min(1,u)); if(u>=1)runeT=-1; }
+    if(lane&&!(shot&&!shot.done&&shot.name==='veinLash')){ lane.visible=laneFill.visible=false; laneT=-1; }
+    if(warn&&!(shot&&!shot.done&&shot.name==='heartPulse')){ warn.visible=warnFill.visible=false; warnT=-1; }
+    // the crack: a magenta streak that runs from her down the lane in 0.12 s and fades
+    if(crack&&crack.userData.t>=0){ const u=crack.userData; u.t+=d; const run=Math.min(1,u.t/0.12), fade=u.t<0.12?1:1-(u.t-0.12)/0.4; if(fade<=0){u.t=-1;crack.visible=false;} else { crack.visible=fxOn; crack.scale.set(0.24,Math.max(0.001,0.6+run*(LANE_L-0.6)),1); crack.material.opacity=0.55*fade; if(fxOn&&u.t<0.14&&Math.random()<0.6){ const z=0.6+run*(LANE_L-0.6); const w=new THREE.Vector3((Math.random()-0.5)*0.3,0.05,z).applyAxisAngle(Y,lane.userData.yaw).add(lane.userData.o).applyMatrix4(fxG.matrix); sparks(w,1,0xd9c8ff,1.0,0.25); } } }
+    // the drink: violet motes run from the hero back up the lane into her heart, and the heart flares as they arrive
+    if(drinkT>=0&&dummy){ drinkT+=d; if(drinkT>0.08&&drinkT<0.5&&fxOn&&Math.random()<d*40){ const a=targetW().setY(0.6), b=heartW(); puff(a,b.clone().sub(a).multiplyScalar(1/0.45),{life:0.45,s0:0.1,s1:0.06,a:0.5,col:VIOLET}); } if(drinkT>0.5&&drinkT-d<=0.5){ heartG=Math.max(heartG,2.2); if(fxOn)ringAt(heartW(),{r0:0.08,r1:0.6,dur:0.3,a:0.35,bill:true,col:MAGENTA}); } if(drinkT>0.9)drinkT=-1; }
+    // the shards: out of her heart, down to a hero's chest height in the first 1.6 u, then level at 4.6 u/s to 7 u. One that meets the hero breaks on it
+    SHARDS.forEach(m=>{ const u=m.userData; if(u.t<0)return; u.t+=d; const s=0.35+SH_V*u.t; const w=m.position.clone().applyMatrix4(fxG.matrix);
+      if(s>=SH_RANGE){ u.t=-1; m.visible=false; if(fxOn)sparks(w,3,0xd9c8ff,1.2,0.25); return; }
+      const y=0.55+(u.h0-0.55)*Math.pow(Math.max(0,1-s/1.6),2); m.position.set(Math.sin(u.a)*s,y,Math.cos(u.a)*s).applyAxisAngle(Y,u.yaw).add(u.o); m.rotation.set(0,u.yaw+u.a,u.t*9); m.material.opacity=Math.min(1,(SH_RANGE-s)/1.2); m.visible=fxOn;
+      if(!u.hit&&dummy&&showTarget&&u.t>d&&Math.hypot(w.x-dummy.position.x,w.z-dummy.position.z)<0.42){ u.hit=true; u.t=-1; m.visible=false; hitDummy(0.3); hitFeel(0.3,0,0); if(fxOn)sparks(w.setY(0.55),6,0xd9c8ff,1.8,0.25); } });
+    if(dummy){ const u=dummy.userData, home=HOME_OF[sel.action]||HOME; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4); u.x+=u.sx*d; u.sx=Math.max(0,u.sx-u.sx*d*8-d*0.3);
+      if(u.kick>0){ u.z+=u.kick*d*9; u.kick=Math.max(0,u.kick-u.kick*d*9-d*0.2); } else if(u.hold>0)u.hold-=d; else { u.z+=(home-u.z)*Math.min(1,d*3); u.x+=(0-u.x)*Math.min(1,d*3); } dummy.position.z=u.z; dummy.position.x=u.x; }
+  }
+  function footfalls(){}   // she has no feet
+
+''' + ln(355, 384).replace("    mixer.update(md);", "    rageW+=((rage&&!sel.dead?1:0)-rageW)*Math.min(1,md/0.3); if(rageAct)rageAct.setEffectiveWeight(rageW); const fast=1+(RAGEWALK/WALK-1)*rageW; ['walk','turnL','turnR'].forEach(k=>A[k].timeScale=fast);\n    mixer.update(md);").replace("dz+=(A.walk.__w)*WALK*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*md;", "dz+=(A.walk.__w)*WALK*fast*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*fast*md;") + '\n</script>\n'
+page = HEAD + '\n' + BODY + JS_TOP
+aud = json.load(open(sys.argv[5]))
+arm = max(v.get('arm_mm', 0) for v in aud.values())
+VW, VH = sys.argv[7].split('x')
+page = page.replace('__VW__', VW).replace('__VH__', VH).replace('__TRIS__', TRIS).replace('__MB__', MB).replace('__ARM__', '0 mm in every move' if arm < 0.5 else '%.0f mm at worst' % arm).replace('__UNDER__', sys.argv[6])
+bad = [k for k in ('sword', 'THORNS', 'thicket', ' his ', ' him ', 'scythe', 'antler', 'bell', 'staff', 'footL', 'Gravebell', 'Lockkeeper', 'boot', '__TRIS__', '__MB__', '__UNDER__', '__VW__', '__ARM__') if k in page]
+assert 'mixer.update(md);' in page and 'RAGEWALK/WALK' in page and 'WALK*fast*md' in page and "blob.scale.set(0.9,0.9,1)" in page and 'spawn her back in' in page and 'bones.head,EYES),6' in page and 'PIV=new THREE.Vector3(0,0,0)' in page and not bad, bad
+open(out, 'w').write(page); print('wrote', out, len(page))

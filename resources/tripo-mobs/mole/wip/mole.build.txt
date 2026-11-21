@@ -1,0 +1,9 @@
+idle          {"dur":4,"frames":241,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0011,"loAt":"clawL@1.50","under":0,"loopPopDeg":0}
+walk          {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"","reach_mm":11.1,"reachAt":"HL@0.13","lowest":-0.4241,"loAt":"pawR@0.07","under":1232,"loopPopDeg":0}
+turnL         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"HR@0.08","reach_mm":2.9,"reachAt":"HR@0.00","lowest":-0.0164,"loAt":"pawR@0.27","under":4,"loopPopDeg":0}
+turnR         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"HL@0.02","reach_mm":11.7,"reachAt":"HL@0.13","lowest":-0.0141,"loAt":"pawL@0.13","under":3,"loopPopDeg":0}
+emerges       {"dur":11.7,"frames":703,"slide_mm":0,"slideAt":"","reach_mm":58.9,"reachAt":"HL@8.80","lowest":-0.6211,"loAt":"pawR@3.60","under":1435,"loopPopDeg":0,"topMin":-0.046}
+hurt          {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0012,"loAt":"footR@0.07","under":0,"loopPopDeg":0}
+spawn         {"dur":1.3,"frames":79,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0009,"loAt":"clawL@0.00","under":0,"loopPopDeg":0}
+death         {"dur":2.2,"frames":133,"slide_mm":0,"slideAt":"","reach_mm":63.5,"reachAt":"HR@0.83","lowest":-0.0134,"loAt":"armL@0.73","under":2,"loopPopDeg":0}
+wrote mole.glb 1.20 MB

@@ -1,0 +1,35 @@
+[
+ {
+  "name": "dash",
+  "skill": null,
+  "key": "d+Space",
+  "aim": [
+   0,
+   3
+  ],
+  "selfHp": 0.8,
+  "allies": [
+   [
+    -2.6,
+    2.0,
+    1
+   ],
+   [
+    2.6,
+    2.0,
+    1
+   ],
+   [
+    0,
+    2.8,
+    1
+   ]
+  ],
+  "pin": true,
+  "cap": "2 Dash, as the model page \u00b7 0.06 s dip, then 1.8 u in 0.27 s \u00b7 untouchable 0 to 0.35 s (pale blue tint) \u00b7 lands at 0.37 s with a 5% heal, once per 3 s",
+  "leg": "",
+  "secs": 1.8,
+  "fps": 20,
+  "guides": []
+ }
+]

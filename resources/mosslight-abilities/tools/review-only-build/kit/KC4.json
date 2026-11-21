@@ -1,0 +1,57 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C4",
+  "skill": "nova_bloom",
+  "allies": [
+   [
+    0,
+    -1.6,
+    0.6
+   ],
+   [
+    1.2,
+    -2.4,
+    0.65
+   ],
+   [
+    -3.6,
+    2.4,
+    1
+   ]
+  ],
+  "selfHp": 0.75,
+  "secs": 3.6,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "area",
+    "r": 3.0,
+    "c": [
+     0,
+     -1.6
+    ]
+   }
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    1.8,
+    "eval",
+    "const p=E.state().party;E.cmd('setHp',p[1].id,0.3);"
+   ]
+  ],
+  "cap": "Combo \u00b7 Heartbloom blooms early: the Tank drops under 40% at 1.8 s, so the bud blooms at once instead of waiting 4 s"
+ }
+]

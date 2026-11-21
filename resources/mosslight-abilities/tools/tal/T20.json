@@ -1,0 +1,47 @@
+[
+ {
+  "name": "tal_T20",
+  "skill": "mending_bolt",
+  "key": null,
+  "aim": [
+   0,
+   -2.6
+  ],
+  "allies": [
+   [
+    0,
+    -2.2,
+    0.4
+   ],
+   [
+    -1.0,
+    0.8,
+    0.4
+   ],
+   [
+    1.0,
+    0.8,
+    0.4
+   ]
+  ],
+  "pin": true,
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "cap": "T20 Regrowth (Evergreen, tier I) · every heal becomes a HoT worth 150%: Mending Bolt's 22 lands as 6 ticks of 5.5 (33) over 5 s · heal cooldowns 25% longer",
+  "leg": "",
+  "secs": 6.2,
+  "fps": 15,
+  "guides": [
+   {
+    "k": "range",
+    "r": 5.0
+   }
+  ],
+  "pre": 0.3
+ }
+]

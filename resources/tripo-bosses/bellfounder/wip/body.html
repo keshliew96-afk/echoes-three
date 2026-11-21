@@ -1,0 +1,112 @@
+<div class="wrap">
+  <div>
+    <h1>Bellfounder from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the Kiln's founder: a walking brick kiln with a bronze bell for a helmet, an iron door on its chest and slag-dark arms. It now carries the crucible you made, has a skeleton and 12 moves made by hand. Its hands stay on the crucible's handles in every move. It tips the crucible down a lane for the Molten Pour and heaves it overhead to throw a fresh bell for the Bell Drop. For the Firing it sets the crucible down, throws its door open and lets the heat out, then stands grey and quenched. The timings come from the game. Pick a move and drag to turn the view, then judge the weight and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <div class="row" id="casts"><span class="lab">Castings</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what it does between attacks, and Going turns it on the spot. An Action plays over that and repeats until you press it again. Hurt plays on top of anything. Death holds it down; press it again to spawn it back in. The bar names the part of the move that is playing. Castings sets how many it has made: the game makes one at 75, 50 and 25 percent health. Each one burns the heat a little hotter, and from the Third the Bell Drop ring grows to 2.3 u.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="bellfounder-views.png" alt="The Tripo Bellfounder from the front, its left, the back and its right, before rigging" width="1200" height="600">
+      <p class="note" style="padding-top:12px">The body came through in one piece, and the crucible as a second file. It has the bronze bell helmet with violet eye slits and a loop on top, the brick body with bright mortar lines, the arched iron door with glowing bars, slag-dark arms with open palms, brick legs with grey stone boots, and a small bell on a chain at each hip. Its face points straight ahead, so nothing was corrected. Two things were joined that a skeleton needs apart. The upper arms are fused to the body's sides, and each hip bell is fused to the outside of its thigh. I cut both free and capped the cuts. The door is cut free too, so it swings on its hinges. The crucible is scaled to sit in its hands at belly height, with a molten surface added inside.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>28,967 <small>26,579 body and 1,792 crucible as sent, plus the caps on the cuts and the molten surface; boss budget about 28,000</small></dd></div>
+    <div><dt>Bones</dt><dd>26 <small>root, hips, spine, chest, neck, head, the door, the crucible, 4 in each arm down to the fingers, 4 in each leg down to the toes, and the 2 hip bells</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only; the crucible takes one iron colour from it</small></dd></div>
+    <div><dt>File</dt><dd>2.7 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.6 u tall <small>to the loop on its helmet, at the game's scale of 2.6, beside a 1 u hero</small></dd></div>
+    <div><dt>Crucible</dt><dd>0.76 u wide <small>held in both hands at belly height</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>The kiln breathes on a slow beat and the heat in the mortar breathes with it. Its weight rolls from foot to foot. It looks down into the crucible and gives it a slow swirl, looks out left and right, and shrugs to resettle its grip.</td><td>6 s loop</td></tr>
+      <tr><td>Walk</td><td>Short heavy steps on locked feet, the crucible held level in front. The hip bells swing.</td><td>Game: 1.2 u/s. It keeps 3 to 5.5 u from its target.</td></tr>
+      <tr><td>Turn left, turn right</td><td>It turns on the spot in small steps, head first.</td><td>Mine: 70 degrees a second. The game turns it to its target at once.</td></tr>
+      <tr><td>Molten Pour</td><td>While the lane fills it hefts the crucible and braces its left foot forward. On the beat it tips it over the spout, and molten bronze runs down the lane and cools into three pools of slag. Then it rights the crucible and steps back.</td><td>Game: Ember lane 1.4 u wide, 2.5 to 9 u long, for 60 ticks; 14 damage; 3 slag pools of radius 0.8 u that slow by 30 percent for 3 s. Here the hero stands 6 u away.</td></tr>
+      <tr><td>Bell Drop</td><td>The ring fills on the hero while it heaves the crucible over its head. It tips it, a fresh bell flies out on an arc and lands on the beat. It brings the crucible down in front.</td><td>Game: Ember ring of radius 1.9 u on a hero for 64 ticks; 16 damage; 2.3 u from the Third Casting. Here the hero stands 4.2 u away.</td></tr>
+      <tr><td>The Firing</td><td>It bends and sets the crucible on the floor. While the great ring fills it straightens, spreads its arms, and the door swings open on the fire. On the beat the heat bursts out with its arms flung wide. Then it is quenched: grey and sagging, head down, arms hanging, steam rising. It wakes, bends and lifts the crucible again.</td><td>Game: Ember ring of radius 4.4 u round itself for 96 ticks; 20 damage. Then quenched for 90 ticks, taking 30 percent more damage. It comes after each Casting, then every 600 ticks (480 from the Third). Here the hero stands 3 u away.</td></tr>
+      <tr><td>Casting</td><td>It turns to its right and tips a little bronze onto a mould on the floor. On the beat the mould cracks open with gold light.</td><td>Mine: 1.6 s. The game makes a Casting at 75, 50 and 25 percent health, with creatures crawling out of a broken mould, but has no pose for it.</td></tr>
+      <tr><td>Hurt</td><td>The helmet and chest are knocked back. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>It is shoved back 0.25 u, rocks onto its heels with the crucible swinging up, and steps to right itself.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>It grows out of the floor in a crouch over the crucible, straightens and stamps its right foot once. The fire wakes behind the door.</td><td>Game: grow in 7 frames. The rise is mine.</td></tr>
+      <tr><td>Death</td><td>The fire goes out. A jolt throws the helmet back and the crucible slips from its hands. It hits the floor and tips over, spilling bronze. Its legs give and it sits down hard, then slumps forward with its head bowed, its hands on the floor and its door hanging open on the dead hearth.</td><td>2.8 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker follows every point of the model (18,396 of them) through every frame of every move (1,433 frames). It looks for five things. Sizes are in u; it is 2.6 u tall.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>The knees locked straight in the idle, the walk, the Casting and the spawn's stamp, and a straight knee flipped up to 44 degrees in one frame.</td><td>None. The body sits 0.03 u lower in every move, so the knees always keep a little bend.</td></tr>
+      <tr><td>Any part under the floor</td><td>The crucible dipped 0.02 u under the floor as it was set down in the Firing and as it fell in the death. A heel dipped 0.01 u as a step came down.</td><td>The crucible stays on the floor. Two step landings still dip 0.005 u (the end of the Firing and of the Casting), too small to see.</td></tr>
+      <tr><td>One part pushed through another</td><td>The crucible's rim passed through the neck by 0.05 u as it came down from overhead in the Bell Drop. The hanging hands sank 0.05 u into the hips while quenched.</td><td>The crucible now comes down in front, 0.03 u at most where its rim brushes the neck. The hands hang clear except for six frames as it reaches down for the crucible. The fingers grip into the handles by up to 0.04 u, which is how a hand holds a handle.</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>Lifting an arm pulled the brick of its side up into a sheet, because the upper arm was fused to the body. The door and crucible pulled the chest 26 times its size in the Firing, and the hip bells pulled the thighs 11 times.</td><td>The arms, the door and the hip bells are cut free, so the brick holds. The largest pull left is about 6 times on a few small triangles at the elbow and hips, which does not show. In the death the sitting hips fold the brick 13 times where the thighs meet the body; it reads as a crease.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>None.</td><td>None. Every move eases in and out, and the loops meet themselves.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Planted feet sliding</td><td>0 mm in every move.</td></tr>
+      <tr><td>Hands on the handles</td><td>On the handles in every move. They fall short by 7 mm at one step of the walk and by 17 mm for a moment as it lifts the crucible off the floor after the Firing.</td></tr>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns)</td><td>0 degrees.</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model, so nothing was corrected.</td></tr>
+      <tr><td>Feet</td><td>They point straight ahead with the knees straight over them; no splay.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only, because the cloud machine cannot play the page at full speed. The weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ol style="margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:60ch">
+        <li><strong>The brick colour.</strong> Your export's brick is a bright orange red. The game's Kiln brick is darker and smokier. It could stay as it is, or be toned down to match.</li>
+        <li><strong>The arms.</strong> They were fused to its sides, so I cut them free at the shoulder. When an arm lifts high, a grey cap shows where it was cut. A re-export with the arms clear of the body would hide that.</li>
+        <li><strong>The door.</strong> One door on hinges at its left. The game's stand-in has two leaves that part.</li>
+        <li><strong>The crucible's size.</strong> I scaled it to 0.76 u wide so it fits the hands and leaves the door in view. It could be bigger.</li>
+        <li><strong>The crucible's colour.</strong> It takes one iron colour from the body's texture. Its own texture could be carried over instead.</li>
+        <li><strong>The Casting pose.</strong> Mine. The game only shows a broken mould.</li>
+        <li><strong>The death.</strong> It sits and slumps with the crucible tipped beside it. Another way is for it to fall forward onto the crucible.</li>
+        <li><strong>The turn.</strong> Mine, at 70 degrees a second. The game turns it at once.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Rough so far</h2>
+      <ul>
+        <li>The flying bell, the molten stream and the mould are drawn by the page. They are not in the GLB.</li>
+        <li>The hero is a grey stand-in that takes the hit but does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Kiln Gold for the heat and the bronze, and Violet for its eyes. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>

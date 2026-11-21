@@ -1,0 +1,540 @@
+[
+ {
+  "i": 0,
+  "tick": 215,
+  "casts": [],
+  "deaths": 1,
+  "hits": 7,
+  "crits": 0,
+  "b250": 27,
+  "b235": 5206,
+  "blownBlocks": 2,
+  "blocks": [
+   [
+    640,
+    188,
+    58
+   ],
+   [
+    640,
+    220,
+    66
+   ]
+  ]
+ },
+ {
+  "i": 1,
+  "tick": 301,
+  "casts": [],
+  "deaths": 1,
+  "hits": 6,
+  "crits": 0,
+  "b250": 2,
+  "b235": 1968,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 2,
+  "tick": 383,
+  "casts": [],
+  "deaths": 1,
+  "hits": 10,
+  "crits": 3,
+  "b250": 1,
+  "b235": 3299,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 3,
+  "tick": 463,
+  "casts": [],
+  "deaths": 2,
+  "hits": 12,
+  "crits": 0,
+  "b250": 37,
+  "b235": 2178,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 4,
+  "tick": 545,
+  "casts": [],
+  "deaths": 1,
+  "hits": 11,
+  "crits": 0,
+  "b250": 628,
+  "b235": 4519,
+  "blownBlocks": 2,
+  "blocks": [
+   [
+    704,
+    220,
+    75
+   ],
+   [
+    736,
+    220,
+    66
+   ]
+  ]
+ },
+ {
+  "i": 5,
+  "tick": 628,
+  "casts": [],
+  "deaths": 1,
+  "hits": 9,
+  "crits": 0,
+  "b250": 0,
+  "b235": 1937,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 6,
+  "tick": 715,
+  "casts": [],
+  "deaths": 1,
+  "hits": 6,
+  "crits": 1,
+  "b250": 273,
+  "b235": 2232,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 7,
+  "tick": 800,
+  "casts": [],
+  "deaths": 3,
+  "hits": 5,
+  "crits": 1,
+  "b250": 824,
+  "b235": 4684,
+  "blownBlocks": 1,
+  "blocks": [
+   [
+    800,
+    476,
+    91
+   ]
+  ]
+ },
+ {
+  "i": 8,
+  "tick": 886,
+  "casts": [],
+  "deaths": 2,
+  "hits": 5,
+  "crits": 0,
+  "b250": 26,
+  "b235": 3755,
+  "blownBlocks": 2,
+  "blocks": [
+   [
+    736,
+    444,
+    52
+   ],
+   [
+    736,
+    476,
+    63
+   ]
+  ]
+ },
+ {
+  "i": 9,
+  "tick": 970,
+  "casts": [],
+  "deaths": 2,
+  "hits": 5,
+  "crits": 0,
+  "b250": 516,
+  "b235": 3453,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 10,
+  "tick": 1057,
+  "casts": [],
+  "deaths": 1,
+  "hits": 8,
+  "crits": 0,
+  "b250": 802,
+  "b235": 3280,
+  "blownBlocks": 3,
+  "blocks": [
+   [
+    544,
+    348,
+    53
+   ],
+   [
+    576,
+    348,
+    74
+   ],
+   [
+    544,
+    380,
+    55
+   ]
+  ]
+ },
+ {
+  "i": 11,
+  "tick": 1140,
+  "casts": [],
+  "deaths": 2,
+  "hits": 8,
+  "crits": 0,
+  "b250": 492,
+  "b235": 3244,
+  "blownBlocks": 1,
+  "blocks": [
+   [
+    576,
+    348,
+    60
+   ]
+  ]
+ },
+ {
+  "i": 12,
+  "tick": 1218,
+  "casts": [],
+  "deaths": 4,
+  "hits": 15,
+  "crits": 0,
+  "b250": 339,
+  "b235": 3575,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 13,
+  "tick": 1306,
+  "casts": [],
+  "deaths": 0,
+  "hits": 5,
+  "crits": 0,
+  "b250": 172,
+  "b235": 3034,
+  "blownBlocks": 1,
+  "blocks": [
+   [
+    384,
+    540,
+    57
+   ]
+  ]
+ },
+ {
+  "i": 14,
+  "tick": 1394,
+  "casts": [],
+  "deaths": 1,
+  "hits": 4,
+  "crits": 0,
+  "b250": 1080,
+  "b235": 5167,
+  "blownBlocks": 3,
+  "blocks": [
+   [
+    416,
+    188,
+    53
+   ],
+   [
+    448,
+    188,
+    63
+   ],
+   [
+    480,
+    444,
+    80
+   ]
+  ]
+ },
+ {
+  "i": 15,
+  "tick": 1481,
+  "casts": [],
+  "deaths": 1,
+  "hits": 5,
+  "crits": 0,
+  "b250": 418,
+  "b235": 2532,
+  "blownBlocks": 1,
+  "blocks": [
+   [
+    544,
+    412,
+    59
+   ]
+  ]
+ },
+ {
+  "i": 16,
+  "tick": 1568,
+  "casts": [],
+  "deaths": 1,
+  "hits": 4,
+  "crits": 0,
+  "b250": 269,
+  "b235": 3301,
+  "blownBlocks": 1,
+  "blocks": [
+   [
+    672,
+    348,
+    55
+   ]
+  ]
+ },
+ {
+  "i": 17,
+  "tick": 1655,
+  "casts": [],
+  "deaths": 1,
+  "hits": 3,
+  "crits": 0,
+  "b250": 1072,
+  "b235": 4513,
+  "blownBlocks": 2,
+  "blocks": [
+   [
+    768,
+    412,
+    75
+   ],
+   [
+    832,
+    508,
+    88
+   ]
+  ]
+ },
+ {
+  "i": 18,
+  "tick": 1736,
+  "casts": [],
+  "deaths": 2,
+  "hits": 10,
+  "crits": 0,
+  "b250": 608,
+  "b235": 6921,
+  "blownBlocks": 3,
+  "blocks": [
+   [
+    736,
+    348,
+    86
+   ],
+   [
+    768,
+    508,
+    66
+   ],
+   [
+    800,
+    540,
+    97
+   ]
+  ]
+ },
+ {
+  "i": 19,
+  "tick": 1822,
+  "casts": [],
+  "deaths": 2,
+  "hits": 4,
+  "crits": 0,
+  "b250": 642,
+  "b235": 4025,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 20,
+  "tick": 1905,
+  "casts": [],
+  "deaths": 1,
+  "hits": 6,
+  "crits": 0,
+  "b250": 397,
+  "b235": 3239,
+  "blownBlocks": 1,
+  "blocks": [
+   [
+    736,
+    156,
+    89
+   ]
+  ]
+ },
+ {
+  "i": 21,
+  "tick": 1995,
+  "casts": [],
+  "deaths": 0,
+  "hits": 2,
+  "crits": 0,
+  "b250": 266,
+  "b235": 3189,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 22,
+  "tick": 2085,
+  "casts": [],
+  "deaths": 0,
+  "hits": 0,
+  "crits": 0,
+  "b250": 732,
+  "b235": 4519,
+  "blownBlocks": 2,
+  "blocks": [
+   [
+    608,
+    316,
+    53
+   ],
+   [
+    608,
+    348,
+    58
+   ]
+  ]
+ },
+ {
+  "i": 23,
+  "tick": 2172,
+  "casts": [],
+  "deaths": 1,
+  "hits": 1,
+  "crits": 0,
+  "b250": 481,
+  "b235": 5200,
+  "blownBlocks": 1,
+  "blocks": [
+   [
+    544,
+    156,
+    85
+   ]
+  ]
+ },
+ {
+  "i": 24,
+  "tick": 2262,
+  "casts": [],
+  "deaths": 0,
+  "hits": 0,
+  "crits": 0,
+  "b250": 0,
+  "b235": 5297,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 25,
+  "tick": 2338,
+  "casts": [],
+  "deaths": 0,
+  "hits": 0,
+  "crits": 0,
+  "b250": 0,
+  "b235": 1320,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 26,
+  "tick": 2428,
+  "casts": [],
+  "deaths": 0,
+  "hits": 3,
+  "crits": 0,
+  "b250": 436,
+  "b235": 3645,
+  "blownBlocks": 1,
+  "blocks": [
+   [
+    800,
+    412,
+    85
+   ]
+  ]
+ },
+ {
+  "i": 27,
+  "tick": 2512,
+  "casts": [],
+  "deaths": 1,
+  "hits": 5,
+  "crits": 0,
+  "b250": 805,
+  "b235": 4532,
+  "blownBlocks": 0,
+  "blocks": []
+ },
+ {
+  "i": 28,
+  "tick": 2598,
+  "casts": [],
+  "deaths": 1,
+  "hits": 5,
+  "crits": 0,
+  "b250": 1098,
+  "b235": 6016,
+  "blownBlocks": 2,
+  "blocks": [
+   [
+    416,
+    252,
+    59
+   ],
+   [
+    480,
+    316,
+    65
+   ]
+  ]
+ },
+ {
+  "i": 29,
+  "tick": 2683,
+  "casts": [],
+  "deaths": 1,
+  "hits": 3,
+  "crits": 0,
+  "b250": 1101,
+  "b235": 5704,
+  "blownBlocks": 3,
+  "blocks": [
+   [
+    384,
+    316,
+    91
+   ],
+   [
+    416,
+    316,
+    76
+   ],
+   [
+    544,
+    316,
+    59
+   ]
+  ]
+ }
+]

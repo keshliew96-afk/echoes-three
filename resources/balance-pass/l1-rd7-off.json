@@ -1,0 +1,5484 @@
+{
+ "tool": "gntCAMPAIGN-camprun",
+ "mode": "node",
+ "from": 1,
+ "challenge": "standard",
+ "at": "2026-10-05T16:54:57.270Z",
+ "runs": [
+  {
+   "seed": 1,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 12882,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1125,
+       "partyDamageTaken": 15,
+       "downs": 0,
+       "minHpFrac": 0.9210526315789473,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 44.8,
+       "downs": 0,
+       "minHpFrac": 0.7823242105263158,
+       "startTick": 1144
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1319,
+       "partyDamageTaken": 186.7,
+       "downs": 0,
+       "minHpFrac": 0.55,
+       "startTick": 3863
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1928,
+       "partyDamageTaken": 58.2,
+       "downs": 0,
+       "minHpFrac": 0.7090442105263158,
+       "startTick": 5201
+      },
+      {
+       "room": 5,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 162.9,
+       "downs": 0,
+       "minHpFrac": 0.6719915789473685,
+       "startTick": 7148
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1864,
+       "partyDamageTaken": 120.5,
+       "downs": 0,
+       "minHpFrac": 0.8343473684210527,
+       "startTick": 9867
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 11749
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1115,
+       "partyDamageTaken": 754,
+       "downs": 0,
+       "minHpFrac": 0.23367466666666664,
+       "startTick": 11767
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 12882,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 12882,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "spirit_bolt",
+        "sanctuary"
+       ],
+       "sockets": [
+        "mending_bolt:split,multiply,bounce,galvanize,sharpen,-,-,-",
+        "swift_mend:reach,keen,galvanize,bounce,multiply,-,-,-",
+        "spirit_bolt:snare,sharpen,bounce,split,-,-,-,-",
+        "sanctuary:quicken,widen,linger,siphon,widen,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        185,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 1,
+        "hp": 137,
+        "max": 150,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 3,
+        "hp": 66,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 12882,
+     "untilTick": 13062,
+     "hardUntilTick": 13482,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "spirit_bolt",
+        "sanctuary"
+       ],
+       "sockets": [
+        "mending_bolt:split,multiply,bounce,galvanize,sharpen,-,-,-",
+        "swift_mend:reach,keen,galvanize,bounce,multiply,-,-,-",
+        "spirit_bolt:snare,sharpen,bounce,split,-,-,-,-",
+        "sanctuary:quicken,widen,linger,siphon,widen,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 12882,
+       "untilTick": 13062,
+       "minSkipTick": 12912,
+       "hardUntilTick": 13482,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "spirit_bolt",
+         "sanctuary"
+        ],
+        "socketed": 19,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "spirit_bolt",
+           "sanctuary"
+          ],
+          "filled": 19,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "heavy_slam",
+           "whirling_guard",
+           "iron_stance"
+          ],
+          "filled": 13,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "crescent_finisher",
+           "lunge_strike",
+           "riposte"
+          ],
+          "filled": 13,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "pinning_arrow",
+           "vault_shot"
+          ],
+          "filled": 13,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 12882,
+    "dodges": 9,
+    "casts": 55,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 19
+   },
+   "pageErrors": [],
+   "ms": 2919
+  },
+  {
+   "seed": 2,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 11523,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 566,
+       "partyDamageTaken": 6,
+       "downs": 0,
+       "minHpFrac": 0.96,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 907,
+       "partyDamageTaken": 6.6,
+       "downs": 0,
+       "minHpFrac": 0.96,
+       "startTick": 585
+      },
+      {
+       "room": 3,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 63.5,
+       "downs": 0,
+       "minHpFrac": 0.6752105263157895,
+       "startTick": 1511
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1256,
+       "partyDamageTaken": 59.8,
+       "downs": 0,
+       "minHpFrac": 0.845890625,
+       "startTick": 4230
+      },
+      {
+       "room": 5,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 96.4,
+       "downs": 0,
+       "minHpFrac": 0.6100378947368421,
+       "startTick": 5505
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1779,
+       "partyDamageTaken": 160.1,
+       "downs": 0,
+       "minHpFrac": 0.59216,
+       "startTick": 8224
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10021
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1484,
+       "partyDamageTaken": 1078,
+       "downs": 2,
+       "minHpFrac": 0,
+       "startTick": 10039
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 11523,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 11523,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "kindred_shield",
+        "restorative_wave"
+       ],
+       "sockets": [
+        "mending_bolt:detonate,sharpen,bounce,ascend,multiply,-,-,-",
+        "swift_mend:sharpen,bulwark,snare,keen,-,-,-,-",
+        "kindred_shield:split,echo,linger,snare,-,-,-,-",
+        "restorative_wave:bulwark,snare,siphon,widen,widen,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        107,
+        0,
+        8,
+        64
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 1,
+        "hp": 148,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 11523,
+     "untilTick": 11703,
+     "hardUntilTick": 12123,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "kindred_shield",
+        "restorative_wave"
+       ],
+       "sockets": [
+        "mending_bolt:detonate,sharpen,bounce,ascend,multiply,-,-,-",
+        "swift_mend:sharpen,bulwark,snare,keen,-,-,-,-",
+        "kindred_shield:split,echo,linger,snare,-,-,-,-",
+        "restorative_wave:bulwark,snare,siphon,widen,widen,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 11523,
+       "untilTick": 11703,
+       "minSkipTick": 11553,
+       "hardUntilTick": 12123,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "kindred_shield",
+         "restorative_wave"
+        ],
+        "socketed": 18,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "kindred_shield",
+           "restorative_wave"
+          ],
+          "filled": 18,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "taunting_roar",
+           "heavy_slam",
+           "shoulder_charge",
+           "whirling_guard"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "lunge_strike",
+           "riposte",
+           "blade_storm"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "pinning_arrow",
+           "rain_of_arrows"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 11523,
+    "dodges": 12,
+    "casts": 40,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 21
+   },
+   "pageErrors": [],
+   "ms": 1641
+  },
+  {
+   "seed": 3,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 11153,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 616,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 24.9,
+       "downs": 0,
+       "minHpFrac": 0.9127578947368421,
+       "startTick": 635
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1094,
+       "partyDamageTaken": 28.1,
+       "downs": 0,
+       "minHpFrac": 0.9127578947368421,
+       "startTick": 3354
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1315,
+       "partyDamageTaken": 57.5,
+       "downs": 0,
+       "minHpFrac": 0.6206168421052632,
+       "startTick": 4467
+      },
+      {
+       "room": 5,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 74.6,
+       "downs": 0,
+       "minHpFrac": 0.6018800000000001,
+       "startTick": 5801
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1486,
+       "partyDamageTaken": 163.3,
+       "downs": 0,
+       "minHpFrac": 0.62988,
+       "startTick": 8520
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10024
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1111,
+       "partyDamageTaken": 788,
+       "downs": 0,
+       "minHpFrac": 0.25,
+       "startTick": 10042
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 11153,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 11153,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "sanctuary",
+        "dewfall"
+       ],
+       "sockets": [
+        "mending_bolt:bounce,snare,multiply,echo,-,-,-,-",
+        "swift_mend:multiply,reach,bounce,sharpen,-,-,-,-",
+        "sanctuary:galvanize,reach,detonate,widen,-,-,-,-",
+        "dewfall:widen,reach,reach,linger,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        37,
+        495
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 126.5,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 85,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 11153,
+     "untilTick": 11333,
+     "hardUntilTick": 11753,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "sanctuary",
+        "dewfall"
+       ],
+       "sockets": [
+        "mending_bolt:bounce,snare,multiply,echo,-,-,-,-",
+        "swift_mend:multiply,reach,bounce,sharpen,-,-,-,-",
+        "sanctuary:galvanize,reach,detonate,widen,-,-,-,-",
+        "dewfall:widen,reach,reach,linger,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 11153,
+       "untilTick": 11333,
+       "minSkipTick": 11183,
+       "hardUntilTick": 11753,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "sanctuary",
+         "dewfall"
+        ],
+        "socketed": 16,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "sanctuary",
+           "dewfall"
+          ],
+          "filled": 16,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "taunting_roar",
+           "heavy_slam",
+           "shoulder_charge"
+          ],
+          "filled": 10,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "fox_step",
+           "lunge_strike",
+           "riposte"
+          ],
+          "filled": 10,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "vault_shot",
+           "rain_of_arrows"
+          ],
+          "filled": 10,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 11153,
+    "dodges": 9,
+    "casts": 26,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 16
+   },
+   "pageErrors": [],
+   "ms": 1202
+  },
+  {
+   "seed": 4,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 12465,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1076,
+       "partyDamageTaken": 30,
+       "downs": 0,
+       "minHpFrac": 0.6842105263157895,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 974,
+       "partyDamageTaken": 114.9,
+       "downs": 0,
+       "minHpFrac": 0.625,
+       "startTick": 1095
+      },
+      {
+       "room": 3,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 116.3,
+       "downs": 0,
+       "minHpFrac": 0.5886842105263158,
+       "startTick": 2088
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1739,
+       "partyDamageTaken": 199.6,
+       "downs": 0,
+       "minHpFrac": 0.5,
+       "startTick": 4807
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1847,
+       "partyDamageTaken": 115,
+       "downs": 0,
+       "minHpFrac": 0.7402,
+       "startTick": 6565
+      },
+      {
+       "room": 6,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 191,
+       "downs": 0,
+       "minHpFrac": 0.62583,
+       "startTick": 8431
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 11149
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1298,
+       "partyDamageTaken": 1084,
+       "downs": 2,
+       "minHpFrac": 0,
+       "startTick": 11167
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 12465,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 12465,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "kindred_shield",
+        "hearthsong"
+       ],
+       "sockets": [
+        "mending_bolt:reach,split,multiply,siphon,-,-,-,-",
+        "swift_mend:multiply,bulwark,split,-,-,-,-,-",
+        "kindred_shield:multiply,reach,echo,bulwark,-,-,-,-",
+        "hearthsong:detonate,quicken,sharpen,widen,-,-,-,-"
+       ],
+       "bench": [
+        "multiply"
+       ],
+       "wallet": 34,
+       "cooldowns": [
+        196,
+        102,
+        167,
+        109
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 82.2,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 77.8,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 79.6,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 12465,
+     "untilTick": 12645,
+     "hardUntilTick": 13065,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "kindred_shield",
+        "hearthsong"
+       ],
+       "sockets": [
+        "mending_bolt:reach,split,multiply,siphon,-,-,-,-",
+        "swift_mend:multiply,bulwark,split,-,-,-,-,-",
+        "kindred_shield:multiply,reach,echo,bulwark,-,-,-,-",
+        "hearthsong:detonate,quicken,sharpen,widen,-,-,-,-"
+       ],
+       "bench": [
+        "multiply"
+       ],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 12465,
+       "untilTick": 12645,
+       "minSkipTick": 12495,
+       "hardUntilTick": 13065,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "kindred_shield",
+         "hearthsong"
+        ],
+        "socketed": 15,
+        "sockets": 32,
+        "bench": 1,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "kindred_shield",
+           "hearthsong"
+          ],
+          "filled": 15,
+          "sockets": 32,
+          "bench": 1,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "taunting_roar",
+           "heavy_slam",
+           "shoulder_charge"
+          ],
+          "filled": 10,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "crescent_finisher",
+           "fox_step",
+           "lunge_strike"
+          ],
+          "filled": 10,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "vault_shot",
+           "rain_of_arrows"
+          ],
+          "filled": 10,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 12465,
+    "dodges": 10,
+    "casts": 40,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 17
+   },
+   "pageErrors": [],
+   "ms": 1350
+  },
+  {
+   "seed": 5,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 10642,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 656,
+       "partyDamageTaken": 75,
+       "downs": 0,
+       "minHpFrac": 0.625,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 711,
+       "partyDamageTaken": 10,
+       "downs": 0,
+       "minHpFrac": 0.91,
+       "startTick": 675
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 822,
+       "partyDamageTaken": 29.2,
+       "downs": 0,
+       "minHpFrac": 0.9633333333333334,
+       "startTick": 1405
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1207,
+       "partyDamageTaken": 35.5,
+       "downs": 0,
+       "minHpFrac": 0.9277578947368421,
+       "startTick": 2246
+      },
+      {
+       "room": 5,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 191.3,
+       "downs": 0,
+       "minHpFrac": 0.7101166666666665,
+       "startTick": 3472
+      },
+      {
+       "room": 6,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 90.4,
+       "downs": 0,
+       "minHpFrac": 0.6672033333333333,
+       "startTick": 6191
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 8909
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1715,
+       "partyDamageTaken": 973.7,
+       "downs": 4,
+       "minHpFrac": 0,
+       "startTick": 8927
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 10642,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 10642,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "quiet_hearth",
+        "hearthsong"
+       ],
+       "sockets": [
+        "mending_bolt:galvanize,bulwark,multiply,keen,quicken,detonate,-,-",
+        "swift_mend:siphon,keen,multiply,quicken,reach,-,-,-",
+        "quiet_hearth:bulwark,keen,-,-,-,-,-,-",
+        "hearthsong:detonate,keen,bulwark,linger,-,-,-,-"
+       ],
+       "bench": [
+        "multiply"
+       ],
+       "wallet": 34,
+       "cooldowns": [
+        16,
+        27,
+        0,
+        492
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 85,
+        "max": 100,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 1,
+        "hp": 124.9,
+        "max": 150,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 2,
+        "hp": 60.5,
+        "max": 95,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 3,
+        "hp": 71.6,
+        "max": 80,
+        "downed": false,
+        "statuses": 3
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 10642,
+     "untilTick": 10822,
+     "hardUntilTick": 11242,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "quiet_hearth",
+        "hearthsong"
+       ],
+       "sockets": [
+        "mending_bolt:galvanize,bulwark,multiply,keen,quicken,detonate,-,-",
+        "swift_mend:siphon,keen,multiply,quicken,reach,-,-,-",
+        "quiet_hearth:bulwark,keen,-,-,-,-,-,-",
+        "hearthsong:detonate,keen,bulwark,linger,-,-,-,-"
+       ],
+       "bench": [
+        "multiply"
+       ],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 10642,
+       "untilTick": 10822,
+       "minSkipTick": 10672,
+       "hardUntilTick": 11242,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "quiet_hearth",
+         "hearthsong"
+        ],
+        "socketed": 17,
+        "sockets": 32,
+        "bench": 1,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "quiet_hearth",
+           "hearthsong"
+          ],
+          "filled": 17,
+          "sockets": 32,
+          "bench": 1,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "taunting_roar",
+           "heavy_slam",
+           "shoulder_charge",
+           "whirling_guard"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "fox_step",
+           "lunge_strike",
+           "riposte"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "vault_shot",
+           "rain_of_arrows"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 10642,
+    "dodges": 11,
+    "casts": 47,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 19
+   },
+   "pageErrors": [],
+   "ms": 1084
+  },
+  {
+   "seed": 6,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 11759,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1127,
+       "partyDamageTaken": 15,
+       "downs": 0,
+       "minHpFrac": 0.8421052631578947,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 34.8,
+       "downs": 0,
+       "minHpFrac": 0.7548631578947369,
+       "startTick": 1146
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 776,
+       "partyDamageTaken": 110,
+       "downs": 0,
+       "minHpFrac": 0.625,
+       "startTick": 3865
+      },
+      {
+       "room": 4,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 100.6,
+       "downs": 0,
+       "minHpFrac": 0.7473973333333334,
+       "startTick": 4660
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1506,
+       "partyDamageTaken": 75.4,
+       "downs": 0,
+       "minHpFrac": 0.6287831578947368,
+       "startTick": 7379
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1518,
+       "partyDamageTaken": 117.2,
+       "downs": 0,
+       "minHpFrac": 0.5445726315789473,
+       "startTick": 8904
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10440
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1301,
+       "partyDamageTaken": 938,
+       "downs": 2,
+       "minHpFrac": 0,
+       "startTick": 10458
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 11759,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 11759,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "sanctuary",
+        "restorative_wave"
+       ],
+       "sockets": [
+        "mending_bolt:multiply,bounce,split,quicken,bounce,-,-,-",
+        "swift_mend:keen,siphon,galvanize,multiply,-,-,-,-",
+        "sanctuary:widen,echo,bulwark,snare,-,-,-,-",
+        "restorative_wave:widen,bulwark,reach,keen,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        7,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 1,
+        "hp": 133.6,
+        "max": 150,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 11759,
+     "untilTick": 11939,
+     "hardUntilTick": 12359,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "sanctuary",
+        "restorative_wave"
+       ],
+       "sockets": [
+        "mending_bolt:multiply,bounce,split,quicken,bounce,-,-,-",
+        "swift_mend:keen,siphon,galvanize,multiply,-,-,-,-",
+        "sanctuary:widen,echo,bulwark,snare,-,-,-,-",
+        "restorative_wave:widen,bulwark,reach,keen,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 11759,
+       "untilTick": 11939,
+       "minSkipTick": 11789,
+       "hardUntilTick": 12359,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "sanctuary",
+         "restorative_wave"
+        ],
+        "socketed": 17,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "sanctuary",
+           "restorative_wave"
+          ],
+          "filled": 17,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "taunting_roar",
+           "heavy_slam",
+           "whirling_guard"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "crescent_finisher",
+           "lunge_strike",
+           "riposte"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "pinning_arrow",
+           "vault_shot"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 11759,
+    "dodges": 13,
+    "casts": 34,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 20
+   },
+   "pageErrors": [],
+   "ms": 1028
+  },
+  {
+   "seed": 7,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 11541,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 721,
+       "partyDamageTaken": 7.5,
+       "downs": 0,
+       "minHpFrac": 0.9210526315789473,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 98,
+       "downs": 0,
+       "minHpFrac": 0.6659621052631579,
+       "startTick": 740
+      },
+      {
+       "room": 3,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 185.3,
+       "downs": 0,
+       "minHpFrac": 0.635541052631579,
+       "startTick": 3459
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1379,
+       "partyDamageTaken": 75.6,
+       "downs": 0,
+       "minHpFrac": 0.6605960000000001,
+       "startTick": 6178
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1343,
+       "partyDamageTaken": 76.9,
+       "downs": 0,
+       "minHpFrac": 0.594541052631579,
+       "startTick": 7576
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1456,
+       "partyDamageTaken": 164.9,
+       "downs": 0,
+       "minHpFrac": 0.46296210526315795,
+       "startTick": 8938
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10412
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1111,
+       "partyDamageTaken": 788,
+       "downs": 0,
+       "minHpFrac": 0.031578947368421054,
+       "startTick": 10430
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 11541,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 11541,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "mending_tide",
+        "dewfall"
+       ],
+       "sockets": [
+        "mending_bolt:sharpen,multiply,reach,galvanize,quicken,-,-,-",
+        "swift_mend:galvanize,snare,sharpen,bulwark,detonate,-,-,-",
+        "mending_tide:siphon,galvanize,reach,reach,-,-,-,-",
+        "dewfall:bulwark,snare,sharpen,galvanize,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        12,
+        0,
+        0,
+        254
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 1,
+        "hp": 123.2,
+        "max": 150,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 2,
+        "hp": 68.1,
+        "max": 95,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 2
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 11541,
+     "untilTick": 11721,
+     "hardUntilTick": 12141,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "mending_tide",
+        "dewfall"
+       ],
+       "sockets": [
+        "mending_bolt:sharpen,multiply,reach,galvanize,quicken,-,-,-",
+        "swift_mend:galvanize,snare,sharpen,bulwark,detonate,-,-,-",
+        "mending_tide:siphon,galvanize,reach,reach,-,-,-,-",
+        "dewfall:bulwark,snare,sharpen,galvanize,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 11541,
+       "untilTick": 11721,
+       "minSkipTick": 11571,
+       "hardUntilTick": 12141,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "mending_tide",
+         "dewfall"
+        ],
+        "socketed": 18,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "mending_tide",
+           "dewfall"
+          ],
+          "filled": 18,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "heavy_slam",
+           "shoulder_charge",
+           "whirling_guard"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "fox_step",
+           "lunge_strike",
+           "riposte"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "vault_shot",
+           "rain_of_arrows"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 11541,
+    "dodges": 10,
+    "casts": 41,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 20
+   },
+   "pageErrors": [],
+   "ms": 875
+  },
+  {
+   "seed": 8,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 12379,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 540,
+       "partyDamageTaken": 19.5,
+       "downs": 0,
+       "minHpFrac": 0.91,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 43.1,
+       "downs": 0,
+       "minHpFrac": 0.8321515789473685,
+       "startTick": 559
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1129,
+       "partyDamageTaken": 18.1,
+       "downs": 0,
+       "minHpFrac": 0.8313621052631579,
+       "startTick": 3278
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1617,
+       "partyDamageTaken": 159.2,
+       "downs": 0,
+       "minHpFrac": 0.44333052631578945,
+       "startTick": 4426
+      },
+      {
+       "room": 5,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 102.4,
+       "downs": 0,
+       "minHpFrac": 0.717821052631579,
+       "startTick": 6062
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1830,
+       "partyDamageTaken": 90.9,
+       "downs": 0,
+       "minHpFrac": 0.6031405263157896,
+       "startTick": 8781
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10629
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1732,
+       "partyDamageTaken": 1266,
+       "downs": 10,
+       "minHpFrac": 0,
+       "startTick": 10647
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 12379,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 12379,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "bell_toll",
+        "lantern_flurry"
+       ],
+       "sockets": [
+        "mending_bolt:quicken,snare,echo,keen,siphon,-,-,-",
+        "swift_mend:galvanize,resonance,ascend,siphon,detonate,-,-,-",
+        "bell_toll:siphon,linger,detonate,keen,-,-,-,-",
+        "lantern_flurry:echo,bulwark,multiply,bounce,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        44,
+        72,
+        127
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 1,
+        "hp": 45,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 23.5,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 58,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 12379,
+     "untilTick": 12559,
+     "hardUntilTick": 12979,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "bell_toll",
+        "lantern_flurry"
+       ],
+       "sockets": [
+        "mending_bolt:quicken,snare,echo,keen,siphon,-,-,-",
+        "swift_mend:galvanize,resonance,ascend,siphon,detonate,-,-,-",
+        "bell_toll:siphon,linger,detonate,keen,-,-,-,-",
+        "lantern_flurry:echo,bulwark,multiply,bounce,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 12379,
+       "untilTick": 12559,
+       "minSkipTick": 12409,
+       "hardUntilTick": 12979,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "bell_toll",
+         "lantern_flurry"
+        ],
+        "socketed": 18,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "bell_toll",
+           "lantern_flurry"
+          ],
+          "filled": 18,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "heavy_slam",
+           "whirling_guard",
+           "iron_stance",
+           "brutal_cleave"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "fox_step",
+           "lunge_strike",
+           "blade_storm"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "vault_shot",
+           "kestrel_watch"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 12379,
+    "dodges": 25,
+    "casts": 78,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 18
+   },
+   "pageErrors": [],
+   "ms": 869
+  },
+  {
+   "seed": 9,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 12080,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 989,
+       "partyDamageTaken": 19.5,
+       "downs": 0,
+       "minHpFrac": 0.8578947368421053,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 178.1,
+       "downs": 0,
+       "minHpFrac": 0.38421052631578945,
+       "startTick": 1008
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 802,
+       "partyDamageTaken": 33.6,
+       "downs": 0,
+       "minHpFrac": 0.7227789473684211,
+       "startTick": 3727
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1694,
+       "partyDamageTaken": 47.3,
+       "downs": 0,
+       "minHpFrac": 0.5794484210526316,
+       "startTick": 4548
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1993,
+       "partyDamageTaken": 246.6,
+       "downs": 0,
+       "minHpFrac": 0.36699578947368444,
+       "startTick": 6261
+      },
+      {
+       "room": 6,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 228.7,
+       "downs": 0,
+       "minHpFrac": 0.6147536842105263,
+       "startTick": 8273
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10991
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1071,
+       "partyDamageTaken": 997,
+       "downs": 0,
+       "minHpFrac": 0.07333333333333333,
+       "startTick": 11009
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 12080,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 12080,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "restorative_wave",
+        "dewfall"
+       ],
+       "sockets": [
+        "mending_bolt:snare,split,reach,siphon,bounce,multiply,-,-",
+        "swift_mend:bounce,bounce,echo,detonate,siphon,-,-,-",
+        "restorative_wave:quicken,siphon,widen,quicken,-,-,-,-",
+        "dewfall:siphon,widen,galvanize,-,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        27,
+        29,
+        27,
+        45
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 79,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 93.8,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 48,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 12080,
+     "untilTick": 12260,
+     "hardUntilTick": 12680,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "restorative_wave",
+        "dewfall"
+       ],
+       "sockets": [
+        "mending_bolt:snare,split,reach,siphon,bounce,multiply,-,-",
+        "swift_mend:bounce,bounce,echo,detonate,siphon,-,-,-",
+        "restorative_wave:quicken,siphon,widen,quicken,-,-,-,-",
+        "dewfall:siphon,widen,galvanize,-,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 12080,
+       "untilTick": 12260,
+       "minSkipTick": 12110,
+       "hardUntilTick": 12680,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "restorative_wave",
+         "dewfall"
+        ],
+        "socketed": 18,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "restorative_wave",
+           "dewfall"
+          ],
+          "filled": 18,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "taunting_roar",
+           "heavy_slam",
+           "shoulder_charge"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "crescent_finisher",
+           "lunge_strike",
+           "blade_storm"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "vault_shot",
+           "detonating_charge"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 12080,
+    "dodges": 14,
+    "casts": 61,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 18
+   },
+   "pageErrors": [],
+   "ms": 940
+  },
+  {
+   "seed": 10,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 10918,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 703,
+       "partyDamageTaken": 7.5,
+       "downs": 0,
+       "minHpFrac": 0.95,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 681,
+       "partyDamageTaken": 23.2,
+       "downs": 0,
+       "minHpFrac": 0.850544,
+       "startTick": 722
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1058,
+       "partyDamageTaken": 7.3,
+       "downs": 0,
+       "minHpFrac": 0.802144,
+       "startTick": 1422
+      },
+      {
+       "room": 4,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 85.8,
+       "downs": 0,
+       "minHpFrac": 0.683788,
+       "startTick": 2499
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1991,
+       "partyDamageTaken": 86.6,
+       "downs": 0,
+       "minHpFrac": 0.6755210526315789,
+       "startTick": 5218
+      },
+      {
+       "room": 6,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 107.5,
+       "downs": 0,
+       "minHpFrac": 0.7890750000000001,
+       "startTick": 7228
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 9946
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 954,
+       "partyDamageTaken": 654,
+       "downs": 0,
+       "minHpFrac": 0.25,
+       "startTick": 9964
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 10918,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 10918,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "guardian_bond",
+        "nova_bloom"
+       ],
+       "sockets": [
+        "mending_bolt:reach,echo,split,bounce,detonate,-,-,-",
+        "swift_mend:siphon,echo,sharpen,sharpen,-,-,-,-",
+        "guardian_bond:bounce,snare,split,echo,-,-,-,-",
+        "nova_bloom:snare,detonate,multiply,galvanize,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        75,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 147.1,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 10918,
+     "untilTick": 11098,
+     "hardUntilTick": 11518,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "guardian_bond",
+        "nova_bloom"
+       ],
+       "sockets": [
+        "mending_bolt:reach,echo,split,bounce,detonate,-,-,-",
+        "swift_mend:siphon,echo,sharpen,sharpen,-,-,-,-",
+        "guardian_bond:bounce,snare,split,echo,-,-,-,-",
+        "nova_bloom:snare,detonate,multiply,galvanize,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 10918,
+       "untilTick": 11098,
+       "minSkipTick": 10948,
+       "hardUntilTick": 11518,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "guardian_bond",
+         "nova_bloom"
+        ],
+        "socketed": 17,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "guardian_bond",
+           "nova_bloom"
+          ],
+          "filled": 17,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "heavy_slam",
+           "shoulder_charge",
+           "whirling_guard"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "crescent_finisher",
+           "fox_step",
+           "lunge_strike"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "rain_of_arrows",
+           "kestrel_watch"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 10918,
+    "dodges": 12,
+    "casts": 20,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 19
+   },
+   "pageErrors": [],
+   "ms": 859
+  },
+  {
+   "seed": 11,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 10771,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 943,
+       "partyDamageTaken": 13.5,
+       "downs": 0,
+       "minHpFrac": 0.8578947368421053,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 779,
+       "partyDamageTaken": 26.5,
+       "downs": 0,
+       "minHpFrac": 0.6834105263157896,
+       "startTick": 962
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 983,
+       "partyDamageTaken": 28.1,
+       "downs": 0,
+       "minHpFrac": 0.7255157894736842,
+       "startTick": 1760
+      },
+      {
+       "room": 4,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 145.2,
+       "downs": 0,
+       "minHpFrac": 0.2518315789473685,
+       "startTick": 2762
+      },
+      {
+       "room": 5,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 76.7,
+       "downs": 0,
+       "minHpFrac": 0.7071249999999999,
+       "startTick": 5481
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1391,
+       "partyDamageTaken": 34.3,
+       "downs": 0,
+       "minHpFrac": 0.6117736842105262,
+       "startTick": 8200
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 9609
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1144,
+       "partyDamageTaken": 772,
+       "downs": 0,
+       "minHpFrac": 0.12,
+       "startTick": 9627
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 10771,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 10771,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "lantern_flurry",
+        "dewfall"
+       ],
+       "sockets": [
+        "mending_bolt:keen,multiply,bulwark,detonate,split,-,-,-",
+        "swift_mend:multiply,bounce,keen,ascend,detonate,-,-,-",
+        "lantern_flurry:quicken,multiply,keen,echo,bounce,-,-,-",
+        "dewfall:bulwark,quicken,siphon,linger,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        162,
+        79
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 1,
+        "hp": 119,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 85,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 1
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 10771,
+     "untilTick": 10951,
+     "hardUntilTick": 11371,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "lantern_flurry",
+        "dewfall"
+       ],
+       "sockets": [
+        "mending_bolt:keen,multiply,bulwark,detonate,split,-,-,-",
+        "swift_mend:multiply,bounce,keen,ascend,detonate,-,-,-",
+        "lantern_flurry:quicken,multiply,keen,echo,bounce,-,-,-",
+        "dewfall:bulwark,quicken,siphon,linger,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 10771,
+       "untilTick": 10951,
+       "minSkipTick": 10801,
+       "hardUntilTick": 11371,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "lantern_flurry",
+         "dewfall"
+        ],
+        "socketed": 19,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "lantern_flurry",
+           "dewfall"
+          ],
+          "filled": 19,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "heavy_slam",
+           "shoulder_charge",
+           "whirling_guard"
+          ],
+          "filled": 13,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "lunge_strike",
+           "riposte",
+           "blade_storm"
+          ],
+          "filled": 13,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "pinning_arrow",
+           "vault_shot"
+          ],
+          "filled": 13,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 10771,
+    "dodges": 7,
+    "casts": 41,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 19
+   },
+   "pageErrors": [],
+   "ms": 881
+  },
+  {
+   "seed": 12,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 12699,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1185,
+       "partyDamageTaken": 21,
+       "downs": 0,
+       "minHpFrac": 0.7789473684210526,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 47.2,
+       "downs": 0,
+       "minHpFrac": 0.7513599999999999,
+       "startTick": 1204
+      },
+      {
+       "room": 3,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 108,
+       "downs": 0,
+       "minHpFrac": 0.5513599999999999,
+       "startTick": 3923
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1758,
+       "partyDamageTaken": 128.6,
+       "downs": 0,
+       "minHpFrac": 0.5423305263157895,
+       "startTick": 6642
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1381,
+       "partyDamageTaken": 73.9,
+       "downs": 0,
+       "minHpFrac": 0.5473831578947369,
+       "startTick": 8419
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1583,
+       "partyDamageTaken": 37.2,
+       "downs": 0,
+       "minHpFrac": 0.7521983333333334,
+       "startTick": 9819
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 11420
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1261,
+       "partyDamageTaken": 979,
+       "downs": 2,
+       "minHpFrac": 0,
+       "startTick": 11438
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 12699,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 12699,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "guardian_bond",
+        "mending_tide"
+       ],
+       "sockets": [
+        "mending_bolt:bounce,multiply,snare,split,-,-,-,-",
+        "swift_mend:quicken,keen,galvanize,multiply,-,-,-,-",
+        "guardian_bond:galvanize,echo,bulwark,siphon,multiply,-,-,-",
+        "mending_tide:bulwark,detonate,quicken,galvanize,widen,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        22,
+        46,
+        215,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 1,
+        "hp": 127,
+        "max": 150,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 3,
+        "hp": 69,
+        "max": 80,
+        "downed": false,
+        "statuses": 1
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 12699,
+     "untilTick": 12879,
+     "hardUntilTick": 13299,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "guardian_bond",
+        "mending_tide"
+       ],
+       "sockets": [
+        "mending_bolt:bounce,multiply,snare,split,-,-,-,-",
+        "swift_mend:quicken,keen,galvanize,multiply,-,-,-,-",
+        "guardian_bond:galvanize,echo,bulwark,siphon,multiply,-,-,-",
+        "mending_tide:bulwark,detonate,quicken,galvanize,widen,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 12699,
+       "untilTick": 12879,
+       "minSkipTick": 12729,
+       "hardUntilTick": 13299,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "guardian_bond",
+         "mending_tide"
+        ],
+        "socketed": 18,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "guardian_bond",
+           "mending_tide"
+          ],
+          "filled": 18,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "taunting_roar",
+           "heavy_slam",
+           "shoulder_charge"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "fox_step",
+           "lunge_strike",
+           "blade_storm"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "pinning_arrow",
+           "vault_shot"
+          ],
+          "filled": 12,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 12699,
+    "dodges": 13,
+    "casts": 77,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 21
+   },
+   "pageErrors": [],
+   "ms": 906
+  },
+  {
+   "seed": 13,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 11391,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 638,
+       "partyDamageTaken": 18.8,
+       "downs": 0,
+       "minHpFrac": 0.8026315789473685,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 587,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 657
+      },
+      {
+       "room": 3,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 63.5,
+       "downs": 0,
+       "minHpFrac": 0.8026315789473685,
+       "startTick": 1263
+      },
+      {
+       "room": 4,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 147,
+       "downs": 0,
+       "minHpFrac": 0.6780463157894737,
+       "startTick": 3982
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1475,
+       "partyDamageTaken": 132,
+       "downs": 0,
+       "minHpFrac": 0.4838947368421054,
+       "startTick": 6701
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2085,
+       "partyDamageTaken": 282.9,
+       "downs": 0,
+       "minHpFrac": 0.5,
+       "startTick": 8195
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10298
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1075,
+       "partyDamageTaken": 894,
+       "downs": 0,
+       "minHpFrac": 0.2875,
+       "startTick": 10316
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 11391,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 11391,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "nova_bloom",
+        "hearthsong"
+       ],
+       "sockets": [
+        "mending_bolt:sharpen,bounce,echo,galvanize,split,-,-,-",
+        "swift_mend:bounce,multiply,detonate,reach,-,-,-,-",
+        "nova_bloom:bulwark,keen,widen,-,-,-,-,-",
+        "hearthsong:echo,galvanize,siphon,-,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        21,
+        253,
+        347
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 1,
+        "hp": 125.5,
+        "max": 150,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 2
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 11391,
+     "untilTick": 11571,
+     "hardUntilTick": 11991,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "nova_bloom",
+        "hearthsong"
+       ],
+       "sockets": [
+        "mending_bolt:sharpen,bounce,echo,galvanize,split,-,-,-",
+        "swift_mend:bounce,multiply,detonate,reach,-,-,-,-",
+        "nova_bloom:bulwark,keen,widen,-,-,-,-,-",
+        "hearthsong:echo,galvanize,siphon,-,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 11391,
+       "untilTick": 11571,
+       "minSkipTick": 11421,
+       "hardUntilTick": 11991,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "nova_bloom",
+         "hearthsong"
+        ],
+        "socketed": 15,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "nova_bloom",
+           "hearthsong"
+          ],
+          "filled": 15,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "heavy_slam",
+           "shoulder_charge",
+           "whirling_guard",
+           "iron_stance"
+          ],
+          "filled": 9,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "fox_step",
+           "lunge_strike",
+           "riposte"
+          ],
+          "filled": 9,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "pinning_arrow",
+           "vault_shot"
+          ],
+          "filled": 9,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 11391,
+    "dodges": 11,
+    "casts": 38,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 15
+   },
+   "pageErrors": [],
+   "ms": 775
+  },
+  {
+   "seed": 14,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 11477,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 600,
+       "partyDamageTaken": 7.5,
+       "downs": 0,
+       "minHpFrac": 0.95,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1085,
+       "partyDamageTaken": 8.3,
+       "downs": 0,
+       "minHpFrac": 0.95,
+       "startTick": 619
+      },
+      {
+       "room": 3,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 96.2,
+       "downs": 0,
+       "minHpFrac": 0.5933157894736841,
+       "startTick": 1723
+      },
+      {
+       "room": 4,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 133.2,
+       "downs": 0,
+       "minHpFrac": 0.6625815789473685,
+       "startTick": 4442
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1552,
+       "partyDamageTaken": 130.3,
+       "downs": 0,
+       "minHpFrac": 0.6329763157894736,
+       "startTick": 7161
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1365,
+       "partyDamageTaken": 141.2,
+       "downs": 0,
+       "minHpFrac": 0.6640905263157895,
+       "startTick": 8732
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10115
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1344,
+       "partyDamageTaken": 838,
+       "downs": 4,
+       "minHpFrac": 0,
+       "startTick": 10133
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 11477,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 11477,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "mending_tide",
+        "nova_bloom"
+       ],
+       "sockets": [
+        "mending_bolt:split,resonance,keen,ascend,-,-,-,-",
+        "swift_mend:multiply,split,bulwark,galvanize,-,-,-,-",
+        "mending_tide:keen,echo,widen,quicken,-,-,-,-",
+        "nova_bloom:quicken,quicken,widen,echo,-,-,-,-"
+       ],
+       "bench": [
+        "linger"
+       ],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        85,
+        139,
+        174
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 2
+       },
+       {
+        "i": 2,
+        "hp": 92.3,
+        "max": 95,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 3,
+        "hp": 70,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 11477,
+     "untilTick": 11657,
+     "hardUntilTick": 12077,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "mending_tide",
+        "nova_bloom"
+       ],
+       "sockets": [
+        "mending_bolt:split,resonance,keen,ascend,-,-,-,-",
+        "swift_mend:multiply,split,bulwark,galvanize,-,-,-,-",
+        "mending_tide:keen,echo,widen,quicken,-,-,-,-",
+        "nova_bloom:quicken,quicken,widen,echo,-,-,-,-"
+       ],
+       "bench": [
+        "linger"
+       ],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 11477,
+       "untilTick": 11657,
+       "minSkipTick": 11507,
+       "hardUntilTick": 12077,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "mending_tide",
+         "nova_bloom"
+        ],
+        "socketed": 16,
+        "sockets": 32,
+        "bench": 1,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "mending_tide",
+           "nova_bloom"
+          ],
+          "filled": 16,
+          "sockets": 32,
+          "bench": 1,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "heavy_slam",
+           "whirling_guard",
+           "brutal_cleave"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "crescent_finisher",
+           "fox_step",
+           "lunge_strike"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "vault_shot",
+           "rain_of_arrows"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 11477,
+    "dodges": 16,
+    "casts": 92,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 20
+   },
+   "pageErrors": [],
+   "ms": 893
+  },
+  {
+   "seed": 15,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "stopped",
+   "stuck": null,
+   "ticks": 11866,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "cleared",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 752,
+       "partyDamageTaken": 112.5,
+       "downs": 0,
+       "minHpFrac": 0.4375,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1163,
+       "partyDamageTaken": 154.9,
+       "downs": 0,
+       "minHpFrac": 0.5354694736842106,
+       "startTick": 771
+      },
+      {
+       "room": 3,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 67.2,
+       "downs": 0,
+       "minHpFrac": 0.6103115789473684,
+       "startTick": 1953
+      },
+      {
+       "room": 4,
+       "mode": "defend",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 30.1,
+       "downs": 0,
+       "minHpFrac": 0.8433326315789474,
+       "startTick": 4672
+      },
+      {
+       "room": 5,
+       "mode": "kill_all",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1469,
+       "partyDamageTaken": 76.1,
+       "downs": 0,
+       "minHpFrac": 0.7874115789473685,
+       "startTick": 7391
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1491,
+       "partyDamageTaken": 72.1,
+       "downs": 0,
+       "minHpFrac": 0.6911000000000002,
+       "startTick": 8879
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 10388
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 1460,
+       "partyDamageTaken": 1053,
+       "downs": 2,
+       "minHpFrac": 0,
+       "startTick": 10406
+      }
+     ]
+    }
+   ],
+   "transitions": [
+    {
+     "from": 1,
+     "to": 2,
+     "clearTick": 11866,
+     "index": 1,
+     "final": false,
+     "pre": {
+      "tick": 11866,
+      "level": 1,
+      "next": 2,
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "mending_tide",
+        "kindred_shield"
+       ],
+       "sockets": [
+        "mending_bolt:galvanize,bounce,bounce,reach,echo,-,-,-",
+        "swift_mend:echo,galvanize,detonate,snare,-,-,-,-",
+        "mending_tide:galvanize,echo,ascend,sharpen,-,-,-,-",
+        "kindred_shield:sharpen,linger,sharpen,echo,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        8,
+        37,
+        308
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 1,
+        "hp": 146.7,
+        "max": 150,
+        "downed": false,
+        "statuses": 3
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 1
+       },
+       {
+        "i": 3,
+        "hp": 64,
+        "max": 80,
+        "downed": false,
+        "statuses": 1
+       }
+      ],
+      "clears": 1
+     },
+     "clearEvents": 1,
+     "transitTick": 11866,
+     "untilTick": 12046,
+     "hardUntilTick": 12466,
+     "atCard": {
+      "build": {
+       "skills": [
+        "mending_bolt",
+        "swift_mend",
+        "mending_tide",
+        "kindred_shield"
+       ],
+       "sockets": [
+        "mending_bolt:galvanize,bounce,bounce,reach,echo,-,-,-",
+        "swift_mend:echo,galvanize,detonate,snare,-,-,-,-",
+        "mending_tide:galvanize,echo,ascend,sharpen,-,-,-,-",
+        "kindred_shield:sharpen,linger,sharpen,echo,-,-,-,-"
+       ],
+       "bench": [],
+       "wallet": 34,
+       "cooldowns": [
+        0,
+        0,
+        0,
+        0
+       ]
+      },
+      "party": [
+       {
+        "i": 0,
+        "hp": 100,
+        "max": 100,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 1,
+        "hp": 150,
+        "max": 150,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 2,
+        "hp": 95,
+        "max": 95,
+        "downed": false,
+        "statuses": 0
+       },
+       {
+        "i": 3,
+        "hp": 80,
+        "max": 80,
+        "downed": false,
+        "statuses": 0
+       }
+      ],
+      "kinds": {
+       "player": 1,
+       "ally": 3
+      },
+      "entities": 4,
+      "card": {
+       "kind": "clear",
+       "from": 1,
+       "to": 2,
+       "startTick": 11866,
+       "untilTick": 12046,
+       "minSkipTick": 11896,
+       "hardUntilTick": 12466,
+       "summary": {
+        "skills": [
+         "mending_bolt",
+         "swift_mend",
+         "mending_tide",
+         "kindred_shield"
+        ],
+        "socketed": 17,
+        "sockets": 32,
+        "bench": 0,
+        "wallet": 34,
+        "grant": null,
+        "builds": [
+         {
+          "seat": 0,
+          "classId": "healer",
+          "skills": [
+           "mending_bolt",
+           "swift_mend",
+           "mending_tide",
+           "kindred_shield"
+          ],
+          "filled": 17,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 1,
+          "classId": "tank",
+          "skills": [
+           "shield_wall",
+           "taunting_roar",
+           "heavy_slam",
+           "whirling_guard"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 2,
+          "classId": "swordsman",
+          "skills": [
+           "flurry",
+           "crescent_finisher",
+           "lunge_strike",
+           "riposte"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         },
+         {
+          "seat": 3,
+          "classId": "archer",
+          "skills": [
+           "piercing_shot",
+           "volley",
+           "pinning_arrow",
+           "rain_of_arrows"
+          ],
+          "filled": 11,
+          "sockets": 32,
+          "bench": 0,
+          "purse": 34
+         }
+        ]
+       },
+       "leftovers": [],
+       "name": "The Sunken Mill",
+       "fromName": "The Hollow Wood",
+       "elapsedTicks": 0,
+       "canSkip": false,
+       "due": false
+      }
+     }
+    }
+   ],
+   "autopilot": {
+    "ticks": 11866,
+    "dodges": 14,
+    "casts": 50,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 19
+   },
+   "pageErrors": [],
+   "ms": 962
+  },
+  {
+   "seed": 16,
+   "from": 1,
+   "challenge": "standard",
+   "outcome": "defeat",
+   "stuck": null,
+   "ticks": 12051,
+   "levels": [
+    {
+     "level": 1,
+     "outcome": "defeat",
+     "rooms": [
+      {
+       "room": 1,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 1036,
+       "partyDamageTaken": 22.5,
+       "downs": 0,
+       "minHpFrac": 0.8421052631578947,
+       "startTick": 0
+      },
+      {
+       "room": 2,
+       "mode": "defend",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 54.9,
+       "downs": 0,
+       "minHpFrac": 0.7789473684210526,
+       "startTick": 1055
+      },
+      {
+       "room": 3,
+       "mode": "kill_all",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 653,
+       "partyDamageTaken": 30,
+       "downs": 0,
+       "minHpFrac": 0.6319473684210526,
+       "startTick": 3774
+      },
+      {
+       "room": 4,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 1850,
+       "partyDamageTaken": 126,
+       "downs": 0,
+       "minHpFrac": 0.6409133333333333,
+       "startTick": 4446
+      },
+      {
+       "room": 5,
+       "mode": "defend",
+       "layoutId": 2,
+       "act": 1,
+       "ticksToClear": 2700,
+       "partyDamageTaken": 137.9,
+       "downs": 0,
+       "minHpFrac": 0.6470526315789474,
+       "startTick": 6315
+      },
+      {
+       "room": 6,
+       "mode": "kill_all",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": 2018,
+       "partyDamageTaken": 51.5,
+       "downs": 0,
+       "minHpFrac": 0.6749484210526315,
+       "startTick": 9034
+      },
+      {
+       "room": 7,
+       "mode": "shop",
+       "layoutId": 1,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 0,
+       "downs": 0,
+       "minHpFrac": null,
+       "startTick": 11070
+      },
+      {
+       "room": 8,
+       "mode": "boss",
+       "layoutId": 3,
+       "act": 1,
+       "ticksToClear": null,
+       "partyDamageTaken": 696,
+       "downs": 9,
+       "minHpFrac": 0,
+       "startTick": 11088
+      }
+     ]
+    }
+   ],
+   "transitions": [],
+   "autopilot": {
+    "ticks": 12051,
+    "dodges": 15,
+    "casts": 27,
+    "drafts": 6,
+    "doors": 5,
+    "buys": 3,
+    "sockets": 18
+   },
+   "pageErrors": [],
+   "ms": 873
+  }
+ ],
+ "band": {
+  "levels": {
+   "1": {
+    "reached": 16,
+    "cleared": 15,
+    "stuck": 0,
+    "rooms": [
+     {
+      "room": 1,
+      "ticks": 736.5,
+      "damage": 16.9,
+      "n": 16
+     },
+     {
+      "room": 2,
+      "ticks": 1931.5,
+      "damage": 38.95,
+      "n": 16
+     },
+     {
+      "room": 3,
+      "ticks": 1224,
+      "damage": 63.5,
+      "n": 16
+     },
+     {
+      "room": 4,
+      "ticks": 1804,
+      "damage": 93.19999999999999,
+      "n": 16
+     },
+     {
+      "room": 5,
+      "ticks": 1992,
+      "damage": 99.4,
+      "n": 16
+     },
+     {
+      "room": 6,
+      "ticks": 1804.5,
+      "damage": 118.85,
+      "n": 16
+     }
+    ],
+    "boss": {
+     "ticks": 1261,
+     "damage": 938
+    },
+    "rhoTime": 0.543,
+    "rhoDamage": 1,
+    "spikes": {
+     "defendTime": [
+      2700,
+      1256
+     ],
+     "defendDamage": [
+      97.2,
+      59.8
+     ],
+     "bossTime": [
+      1261,
+      1512
+     ],
+     "bossDamage": [
+      938,
+      116.1
+     ]
+    },
+    "maxCombatRoomMedianSec": 33.2,
+    "winsNeeded": 3
+   }
+  },
+  "gates": {
+   "L1.rho>=0.6": false,
+   "L1.clears>=3/16": true,
+   "L1.noStuck": true,
+   "L1.medians<=120s": true,
+   "L1.defend>neighbours": true,
+   "L1.boss>late kill_all (damage)": true
+  }
+ },
+ "carry": {
+  "rows": [
+   {
+    "seed": 1,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 2,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 3,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 4,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 5,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 6,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 7,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 8,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 9,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 10,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 11,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 12,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 13,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 14,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   },
+   {
+    "seed": 15,
+    "from": 1,
+    "to": 2,
+    "skillsCarried": true,
+    "socketsCarried": true,
+    "benchCarried": true,
+    "glintCarried": true,
+    "hpRestored": true,
+    "noneDowned": true,
+    "statusesCleared": true,
+    "cooldownsReset": true,
+    "nothingButPartyOnCard": true,
+    "leftoversSwept": [],
+    "entitiesAtCard": 4,
+    "cardTicks": null,
+    "untilTicks": 180,
+    "kindsAtStart": null
+   }
+  ],
+  "ok": {
+   "skills": true,
+   "sockets": true,
+   "bench": true,
+   "glint": true,
+   "hp": true,
+   "downed": true,
+   "statuses": true,
+   "cooldowns": true,
+   "partyOnly": true,
+   "noLeftovers": true
+  }
+ }
+}

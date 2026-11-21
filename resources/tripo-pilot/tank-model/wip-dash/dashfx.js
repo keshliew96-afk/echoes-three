@@ -1,0 +1,12 @@
+  // ---- the Tank's charge: a stamp as the slab comes up, a faint steel bow wave in front of the slab while he rams, dust at every stomp, a ring off the slab at the shove,
+  // and every foe he meets is thrown aside and stunned for DASH.dummy.stun seconds
+  let bow=null, bowK=0;
+  function makeBow(){ bow=new THREE.Group(); const mk=(geo,op)=>{const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:STEEL,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.userData.op=op; bow.add(m); return m;};
+    mk(new THREE.RingGeometry(0.33,0.36,40),0.34); mk(new THREE.RingGeometry(0.44,0.455,40),0.2); mk(new THREE.CircleGeometry(0.33,32),0.07); bow.position.set(0.04,0.4,0.6); bow.visible=false; dashG.add(bow); }
+  function dashFx(ev){ if(!feel)return;
+    if(ev==='start'){ if(!bow)makeBow(); dring(heroW(0.05,0),DUST,0.16,0.55,0.34,{op:0.3}); for(let i=0;i<5;i++)dpuff(heroW(rnd(0.2),rnd(0.2),0.05),DUST,0.14+Math.random()*0.08,0.5,{op:0.3,vy:0.2,grow:2}); shake=Math.max(shake,0.2); }
+    if(ev==='step'){ shake=Math.max(shake,0.2); for(let i=0;i<4;i++)dpuff(heroW(-0.12+rnd(0.08),rnd(0.16),0.04+Math.random()*0.04),DUST,0.13+Math.random()*0.09,0.5+Math.random()*0.2,{op:0.32,vy:0.22,grow:2.2}); shake=Math.max(shake,0.16); squash=Math.max(squash,0.35); }
+    if(ev==='shove'){ dring(new THREE.Vector3(0.04,0.4,0.74),STEEL,0.3,0.78,0.3,{op:0.36,up:true,parent:dashG,inner:0.9}); for(let i=0;i<8;i++)dpuff(heroW(0.5+rnd(0.1),rnd(0.3),0.05+Math.random()*0.08),DUST,0.14+Math.random()*0.1,0.55+Math.random()*0.2,{op:0.34,vx:dashU[0]*(0.8+Math.random()),vz:dashU[1]*(0.8+Math.random()),vy:0.25,grow:2.4}); shake=Math.max(shake,0.42); squash=Math.max(squash,0.6); }
+  }
+  function dashUpd(t,d){ if(!bow)return; const on=t>=DASH.go[0]-0.03&&t<0.74; bowK+=((on?1:0)-bowK)*Math.min(1,d*(on?16:9)); bow.visible=feel&&bowK>0.02; const pulse=0.85+0.15*Math.sin(clock.elapsedTime*38); bow.children.forEach((m,i)=>{m.material.opacity=m.userData.op*bowK*pulse;}); bow.scale.setScalar(0.9+0.14*bowK); bow.position.z=0.6+(t>0.68&&t<0.8?0.05:0); }
+  function dummyHit(m){ if(!feel)return; const p=m.pos.clone(); p.y=0.4; dpuff(p,0xDCE6EE,0.14,0.16,{grow:3,op:0.6}); dpuff(p,STEEL,0.26,0.28,{grow:2,op:0.3}); for(let i=0;i<6;i++)dpuff(p.clone(),0xDCE6EE,0.035,0.22+Math.random()*0.1,{op:0.7,vx:m.vdir[0]*1.6+rnd(0.9),vy:0.5+rnd(0.6),vz:m.vdir[1]*1.6+rnd(0.9),grow:0.6}); dring(m.pos,DUST,0.1,0.42,0.3,{op:0.3}); shake=Math.max(shake,0.34); hitstop=Math.max(hitstop,0.035); }

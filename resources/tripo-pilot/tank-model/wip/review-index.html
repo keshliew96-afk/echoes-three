@@ -1,0 +1,320 @@
+<title>Tripo Tank Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a review bench. The live model on the left, the model check on the right, facts and notes under. */
+:root{
+  --bg:#f3f2ee; --panel:#fbfaf7; --fg:#23262b; --muted:#666b73; --line:#d9d6cd;
+  --stage:#c9cbc6; --stage2:#b4b7b0; --accent:#2f7d57; --accent-fg:#ffffff; --warn:#9a5b12; --chip:#e8e6df;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0}
+.lede{color:var(--muted);margin:4px 0 0;max-width:65ch}
+.bench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);gap:16px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.pane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,var(--stage),var(--stage2));aspect-ratio:4/3;max-width:100%}
+.stage canvas{transition:filter .6s;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--fg);opacity:.7;pointer-events:none}
+.stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:14px}
+.cur{background:var(--stage2);aspect-ratio:4/3;display:grid;place-items:center}
+.cur video{width:100%;height:100%;object-fit:contain;display:block}
+.cur p{color:var(--fg);opacity:.75;padding:16px;text-align:center;margin:0;font-size:14px}
+.controls{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lab{font-size:12px;color:var(--muted);width:52px;flex:none}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--fg);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+button:disabled{opacity:.38;cursor:not-allowed;border-color:transparent}
+.layers{margin:0 0 0 58px;font-size:13px;font-weight:500;color:var(--accent)}
+.rule{margin:0 0 0 58px;font-size:12px;color:var(--muted);max-width:60ch}
+@media (max-width:480px){.layers,.rule{margin-left:0}}
+.note{font-size:13px;color:var(--muted);padding:0 14px 12px;margin:0}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.facts div{background:var(--panel);padding:12px 14px}
+.facts dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.facts small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.cols ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:60ch}
+.rough{color:var(--warn)}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Badger Tank from Tripo, rigged</h1>
+    <p class="lede">Your Tripo body and shield, with a skeleton and 28 first moves added by hand, on the same review page as the Healer. Pick one move or combine several, and drag to turn him. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way he walks, runs or dashes while he keeps facing the same way. Add one Action for the upper body, and Hurt on top. Tap attack plays one combo hit per press: press again after a hit lands to chain hits 1, 2 and 3. Dash and Downed use the whole body, so they play alone. Press Downed again to revive him. Hit feel adds the short freeze, squash and spark on the shield when a blow lands, and his lean into travel.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="tank-views.png" alt="The Tripo badger from the front, right, back and left, arms out, before rigging" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">He is a badger, the same animal as the Tank in the game. Clips of the Tank that is in the game now are not here yet: the recorder only knows the Healer so far.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,973 <small>body 13,206 + shield 1,767 · budget 15,000</small></dd></div>
+    <div><dt>Bones</dt><dd>22 <small>spine, head, ears, arms, fingers, legs, 3 in the tail</small></dd></div>
+    <div><dt>Textures</dt><dd>2 × 2K <small>body and shield, colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.1 MB <small>one GLB with all 28 moves</small></dd></div>
+    <div><dt>Moves</dt><dd>28 <small>idle, 4 walks, 4 runs, 4 dashes, shield combo and its 3 hits, 4 casts, downed (fall, lie, crawl, revive), hurt, wave, guard</small></dd></div>
+  </dl>
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The model is clean: arms out, empty paws, same outfit from every side. As sent it was 16,249 triangles with the shield, so the body lost 1,276 to fit the budget. His face held up.</li>
+        <li>The shield sits in his left paw by its own grip, as its own piece. His combo follows the game's Tank: a backhand bash, a rising bash, then an overhead slam with both paws.</li>
+        <li>His feet stay on the floor when he crouches or lunges. The legs slide up under the tabard like a hidden knee bend.</li>
+        <li>Every move is now measured for the shield cutting into his body. Where it would, the build moves the shield clear.</li>
+        <li>The four casts are his own: a thrust, a roar, a shield plant and a wide sweep.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The moves are a first pass, checked as still frames only. Timing and weight are yours to judge.</li>
+        <li>He has a spiked shoulder guard on both shoulders. The Tank in the game has one, on the shield side.</li>
+        <li>The tabard below the belt is one stiff piece, and the shoulder guards ride on the upper arms. Nothing sways yet.</li>
+        <li>His right paw reaches for the shield on the slam and the plant but does not grip it. His fingers don't close.</li>
+        <li>His feet can still slide while he walks, and he has no ink outline or flat game colours yet.</li>
+        <li>The four casts stand in for his 11 skills, with no effects.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="tank-model.js"></script>
+<script>
+(function(){
+  const cv=document.getElementById('cv'), stage=cv.parentElement;
+  const ORDER=['idle','walk','run','dash','downed','crawl','spawn'], ORDER2=['tap','combo','castPoint','castBloom','castPlant','castSweep','wave','guard','hurt'];
+  const LABEL={idle:'Idle',walk:'Walk',run:'Run',combo:'Shield combo',dash:'Dash',hurt:'Hurt',wave:'Wave',guard:'Guard',downed:'Downed',crawl:'Crawl',spawn:'Spawn',tap:'Tap attack',castPoint:'Cast: thrust',castBloom:'Cast: roar',castPlant:'Cast: plant',castSweep:'Cast: sweep'};
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){document.getElementById('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(1.5,3,2.5); scene.add(sun);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(0.5,40),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.16}));
+  blob.rotation.x=-Math.PI/2; blob.position.set(0,0.002,0.05); scene.add(blob);
+  const floor=new THREE.GridHelper(12,24,0x5c6159,0x5c6159); floor.material.transparent=true; floor.material.opacity=0.7; floor.position.y=0.001; scene.add(floor);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,60);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=1.2; orbit.maxDistance=14;
+  const VIEWS={Close:{p:[1.5,1.05,2.9],t:[0,0.5,0.1]},'Game zoom':{p:[0,6.2,5.4],t:[0,0.4,0.2]},Side:{p:[3.1,0.6,0.1],t:[0,0.5,0.2]},Back:{p:[-1.0,0.9,-2.8],t:[0,0.5,0]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  let mixer=null, speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, helper=null, model=null;
+  const clock=new THREE.Clock();
+  function group(id,names,onPick,active){const row=document.getElementById(id);const btns=names.map(n=>{const b=document.createElement('button');b.textContent=n.label||n;b.setAttribute('aria-pressed',String((n.key||n)===active));b.addEventListener('click',()=>{btns.forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');onPick(n.key||n);});row.appendChild(b);return b;});}
+
+  // ---- layered moves. Base (idle or walk) drives the legs; one action drives the upper body; hurt is added on top.
+  const UPPER=/^(spine|chest|head|ear|upperarm|forearm|hand|fingers)/, ACTIONS=['combo','castPoint','castBloom','castPlant','castSweep','wave','guard'];
+  const UPPERS=['combo','combo1','combo2','combo3','wave','guard','castPoint','castBloom','castPlant','castSweep'], SYNC=0.76;
+  const sel={base:'idle',dir:'F',action:null,hurt:false,dash:false,downed:false,crawl:false,tap:0};
+  let rising=false, downPhase='fall', tapUntil=0, feel=true;
+  const DIRS={F:'Forward',B:'Backward',L:'Left',R:'Right',FL:'Forward-left',FR:'Forward-right',BL:'Back-left',BR:'Back-right'};
+  const DIRV={F:[0,1],B:[0,-1],L:[1,0],R:[-1,0],FL:[.7,.7],FR:[-.7,.7],BL:[.7,-.7],BR:[-.7,-.7]};
+  const SUF={F:'',B:'Back',L:'Left',R:'Right'};
+  const mixOf=(stem,d,tail)=>d.split('').map(c=>({n:stem+SUF[c]+(tail||''),w:1/d.length,sync:d.length>1&&stem!=='run'}));
+  const CT={combo:[0.26,0.70,1.24],combo1:[0.26],combo2:[0.26],combo3:[0.34],castPoint:[0.23],castBloom:[0.32],castPlant:[0.32],castSweep:[0.32]};
+  const A={}; let running=new Map(), throwAct=null, last='idle';
+  const TR=0.42, TC=1.22; let hand=null, staff=null, glow=null, rootInv=new THREE.Matrix4(), G=new THREE.Matrix4(), dOff=new THREE.Vector3();
+  let hitstop=0, squash=0, flash=0, spawnT=-1; const lean=new THREE.Vector2();
+  const bone=n=>n.split('.')[0];
+  function sub(clip,name,pred){return new THREE.AnimationClip(name,clip.duration,clip.tracks.filter(t=>pred(bone(t.name))).map(t=>t.clone()));}
+  function buildLayers(clips){
+    const by={}; clips.forEach(c=>by[c.name]=c);
+    const noStaff=n=>n!=='weapon';
+    clips.forEach(c=>{if(c.name!=='hurt')A[c.name]=mixer.clipAction(sub(c,c.name,noStaff));});
+    ['walk','walkBack','walkLeft','walkRight','run','runBack','runLeft','runRight'].forEach(d=>{A[d+'Legs']=mixer.clipAction(sub(by[d],d+'Legs',n=>noStaff(n)&&!UPPER.test(n)));});
+    UPPERS.forEach(n=>{A[n+'Up']=mixer.clipAction(sub(by[n],n+'Up',n2=>UPPER.test(n2)));});
+    const h=THREE.AnimationUtils.makeClipAdditive(sub(by.hurt,'hurtAdd',noStaff)); h.duration=1.5;
+    A.hurtAdd=mixer.clipAction(h); A.hurtAdd.blendMode=THREE.AdditiveAnimationBlendMode;
+  }
+  // Start what is wanted, stop what is not, and leave alone what is already playing (so the walk keeps its step).
+  function setPlaying(want){
+    const names=new Set(want.map(w=>w.n));
+    running.forEach((a,n)=>{if(!names.has(n)){a.stop();running.delete(n);}});
+    throwAct=null;
+    want.forEach(w=>{
+      let a=running.get(w.n);
+      if(!a||w.restart){a=A[w.n]; a.reset(); a.setLoop(w.once?THREE.LoopOnce:THREE.LoopRepeat,w.once?1:Infinity); a.clampWhenFinished=!!w.once; a.play(); a.__prev=0; running.set(w.n,a);}
+      a.setEffectiveWeight(w.w==null?1:w.w); a.setEffectiveTimeScale(w.sync?a.getClip().duration/SYNC:1);
+    });
+  }
+  function apply(restartAction){
+    const want=[]; let parts; const dl=DIRS[sel.dir].toLowerCase();
+    if(rising){want.push({n:'revive',once:true}); parts='Whole body: getting up';}
+    else if(sel.downed){
+      if(downPhase==='fall'){want.push({n:'downFall',once:true}); parts='Whole body: falling';}
+      else if(sel.crawl){want.push({n:'downCrawl'}); parts='Whole body: crawling while downed';}
+      else{want.push({n:'downLie'}); parts='Whole body: downed';}
+    }
+    else if(sel.dash){mixOf('dash',sel.dir).forEach(m=>want.push(m)); parts='Whole body: dash '+dl;}
+    else{
+      const act=sel.tap?'combo'+sel.tap:sel.action;
+      if(act){
+        if(sel.base!=='idle'){mixOf(sel.base,sel.dir,'Legs').forEach(m=>want.push(m)); want.push({n:act+'Up',once:!!sel.tap,restart:restartAction}); parts='Legs: '+sel.base+' '+dl+' · Upper body: '+(sel.tap?'combo hit '+sel.tap:LABEL[act].toLowerCase());}
+        else{want.push({n:act,once:!!sel.tap,restart:restartAction}); parts='Whole body: '+(sel.tap?'combo hit '+sel.tap:LABEL[act].toLowerCase());}
+      }else if(sel.base!=='idle'){mixOf(sel.base,sel.dir).forEach(m=>want.push(m)); parts='Whole body: '+sel.base+' '+dl;}
+      else{want.push({n:'idle'}); parts='Whole body: idle';}
+      if(sel.hurt){want.push({n:'hurtAdd'}); parts+=' · Added on top: hurt flinch';}
+    }
+    setPlaying(want);
+    document.getElementById('layers').textContent=parts;
+    document.getElementById('clipname').textContent=sel.downed||rising?(rising?'Revive':sel.crawl?'Downed + Crawl':'Downed'):[sel.dash?'Dash':LABEL[sel.base],!sel.dash&&sel.tap?'Combo hit '+sel.tap:null,!sel.dash&&sel.action?LABEL[sel.action]:null,!sel.dash&&sel.hurt?'Hurt':null].filter(Boolean).join(' + ');
+    cv.style.filter=sel.downed?'saturate(0.3) brightness(0.92)':'none';
+    const lock=sel.downed||rising;
+    Object.entries(dbtn).forEach(([k,b])=>{const off=lock||(!sel.dash&&sel.base==='idle');b.disabled=off;b.setAttribute('aria-pressed',String(!off&&k===sel.dir));b.title=off?'Pick Walk, Run or Dash first.':'';});
+    moving=rising?null:sel.downed?(sel.crawl&&downPhase==='lie'?[0,0.28]:null):sel.dash?DIRV[sel.dir].map(v=>v*2.2):sel.base==='walk'?DIRV[sel.dir]:sel.base==='run'?DIRV[sel.dir].map(v=>v*1.9):null;
+    Object.entries(btn).forEach(([k,b])=>{
+      const pressed=k==='downed'?sel.downed:k==='crawl'?sel.crawl:k==='dash'?sel.dash:k==='hurt'?sel.hurt:(k===sel.base||k===sel.action);
+      let off=false, why='';
+      if(rising){off=true;why='He is getting up.';}
+      else if(k==='crawl'){off=!sel.downed||downPhase!=='lie';why='Crawling only works while he is downed.';}
+      else if(k==='downed'){off=!!(sel.action||sel.hurt||sel.dash||sel.tap);why='Downed uses the whole body, so it plays alone.';}
+      else if(sel.downed){off=true;why='He is downed. Press Downed again to revive him.';}
+      else if(k==='spawn'){off=false;}
+      else if(k==='dash'){off=!!(sel.action||sel.hurt||sel.tap);why='Dash uses the whole body, so it plays alone.';}
+      else if(sel.dash){off=true;why='Dash uses the whole body, so it plays alone.';}
+      else if(k==='tap'){off=!!sel.action;why='Only one upper-body move at a time.';}
+      else if(ACTIONS.includes(k)){off=!!((sel.action&&sel.action!==k)||sel.tap);why='Only one upper-body move at a time.';}
+      b.setAttribute('aria-pressed',String(!!pressed&&!off)); b.disabled=off; b.title=off?why:'';
+    });
+  }
+  const btn={}, dbtn={}; let moving=null;
+  function tapAttack(){
+    const now=performance.now()/1000; let next=1;
+    if(sel.tap){const a=running.get('combo'+sel.tap)||running.get('combo'+sel.tap+'Up'); if(a&&a.time<CT['combo'+sel.tap][0])return; next=sel.tap%3+1;}
+    else if(now<tapUntil&&tapLast){next=tapLast%3+1;}
+    sel.tap=next; tapLast=next; last='combo'; apply(true);
+  }
+  let tapLast=0;
+  function pick(k){
+    if(k==='tap'){tapAttack();return;}
+    if(k==='spawn'){spawnT=0;return;}
+    if(k==='idle'||k==='walk'||k==='run'){sel.base=k;}
+    else if(k==='dash'){sel.dash=!sel.dash;}
+    else if(k==='downed'){if(sel.downed){sel.downed=false;sel.crawl=false;rising=true;}else{sel.downed=true;downPhase='fall';sel.tap=0;}}
+    else if(k==='crawl'){sel.crawl=!sel.crawl;}
+    else if(k==='hurt'){sel.hurt=!sel.hurt;}
+    else{sel.action=sel.action===k?null:k;}
+    last=(k==='dash'&&!sel.dash)||(k==='hurt'&&!sel.hurt)||(ACTIONS.includes(k)&&!sel.action)||k==='crawl'?(k==='crawl'?'downed':sel.base):k;
+    apply();
+  }
+  function driveStaff(){
+    if(!hand||!staff)return;
+    model.updateMatrixWorld(true);
+    rootInv.copy(staff.parent.matrixWorld).invert();
+    const att=new THREE.Matrix4().multiplyMatrices(rootInv,hand.matrixWorld).multiply(G);
+    const ap=new THREE.Vector3(),aq=new THREE.Quaternion(),as=new THREE.Vector3(); att.decompose(ap,aq,as);
+    staff.position.copy(ap);staff.quaternion.copy(aq);
+  }
+  // contact: a short freeze, a squash and a gem flash when a blow or cast lands
+  function watchContacts(){
+    running.forEach((a,n)=>{const key=n.replace(/Up$/,''); const cts=CT[key]; const t=a.time; if(cts&&feel){cts.forEach(c=>{if((a.__prev<c&&t>=c)||(t<a.__prev&&t>=c&&a.__prev>c+0.2&&false)){hitstop=0.07;squash=1;flash=1;}});} a.__prev=t;});
+  }
+  function makeGlow(){
+    const c=document.createElement('canvas');c.width=c.height=128;const x=c.getContext('2d');const g=x.createRadialGradient(64,64,0,64,64,64);
+    g.addColorStop(0,'rgba(255,255,255,1)');g.addColorStop(0.25,'rgba(255,240,200,0.75)');g.addColorStop(1,'rgba(255,226,160,0)');x.fillStyle=g;x.fillRect(0,0,128,128);
+    const m=new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),color:0xFFE9B8,blending:THREE.AdditiveBlending,depthWrite:false,transparent:true,opacity:0});
+    const s=new THREE.Sprite(m); s.position.set(0,0.5,0.22); s.scale.setScalar(0.5); return s;
+  }
+  group('speeds',[{key:1,label:'1×'},{key:0.5,label:'½×'},{key:0.25,label:'¼×'}],k=>{speed=k;},1);
+  group('views',Object.keys(VIEWS),setView,'Close');
+  const bBones=document.getElementById('bones'), bPause=document.getElementById('pause'), bFeel=document.getElementById('feel');
+  bPause.setAttribute('aria-pressed',String(paused));
+  bBones.addEventListener('click',()=>{const on=bBones.getAttribute('aria-pressed')!=='true';bBones.setAttribute('aria-pressed',String(on));if(helper)helper.visible=on;});
+  bPause.addEventListener('click',()=>{paused=!paused;bPause.setAttribute('aria-pressed',String(paused));});
+  bFeel.addEventListener('click',()=>{feel=!feel;bFeel.setAttribute('aria-pressed',String(feel));});
+
+  const bin=Uint8Array.from(atob(window.MODEL_GLB_B64||''),c=>c.charCodeAt(0)).buffer;
+  new THREE.GLTFLoader().parse(bin,'',g=>{
+    model=g.scene; scene.add(model);
+    model.traverse(o=>{if(o.isMesh){o.frustumCulled=false;}});
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; helper.material.depthTest=false; scene.add(helper);
+    hand=model.getObjectByName('handL'); staff=model.getObjectByName('weapon');
+    model.updateMatrixWorld(true);
+    rootInv.copy(staff.parent.matrixWorld).invert();
+    G.copy(hand.matrixWorld).invert().multiply(staff.matrixWorld);
+    glow=makeGlow(); staff.add(glow);
+    mixer=new THREE.AnimationMixer(model); buildLayers(g.animations);
+    const row=document.getElementById('clips');
+    const mk=(r,k)=>{const b=document.createElement('button');b.textContent=LABEL[k];b.addEventListener('click',()=>pick(k));r.appendChild(b);btn[k]=b;};
+    ORDER.forEach(k=>mk(row,k)); const row2=document.getElementById('acts'); ORDER2.forEach(k=>mk(row2,k));
+    mixer.addEventListener('finished',e=>{const n=e.action.getClip().name;
+      if(n==='downFall'&&sel.downed){downPhase='lie';apply();}
+      else if(n==='revive'){rising=false;apply();}
+      else if(/^combo[123](Up)?$/.test(n)&&sel.tap){sel.tap=0;tapUntil=performance.now()/1000+0.4;apply();}});
+    const drow=document.getElementById('dirs');
+    Object.keys(DIRS).forEach(k=>{const b=document.createElement('button');b.textContent=DIRS[k];b.addEventListener('click',()=>{sel.dir=k;apply();});drow.appendChild(b);dbtn[k]=b;});
+    document.getElementById('load').hidden=true; apply();
+    window.__review={sel,pick,A,mixer,staff,hand,running:()=>[...running.keys()],state:()=>({hitstop,squash,flash,lean:[lean.x,lean.y],scale:model.scale.toArray()})};
+  },()=>{document.getElementById('load').textContent='The model file did not load. Reload the page to try again.';});
+
+  function frame(){
+    requestAnimationFrame(frame); const dt=Math.min(clock.getDelta(),0.1), d=dt*speed;
+    if(mixer&&!paused){
+      if(hitstop>0){hitstop-=d;}
+      else{
+        mixer.update(d); watchContacts();
+        if(moving){floor.position.x=((floor.position.x-moving[0]*0.9*d)%0.5+0.5)%0.5;floor.position.z=((floor.position.z-moving[1]*0.9*d)%0.5+0.5)%0.5;}
+      }
+      // lean into the travel, capped at 12 degrees
+      const amt=!feel||sel.downed||rising||!moving?0:sel.dash?0.21:sel.base==='run'?0.17:0.1, k=Math.min(1,d*10);
+      const tx=moving?moving[0]:0, tz=moving?moving[1]:0, len=Math.hypot(tx,tz)||1;
+      lean.x+=((tz/len)*amt-lean.x)*k; lean.y+=((tx/len)*amt-lean.y)*k;
+      model.rotation.x=lean.x; model.rotation.z=-lean.y;
+      // squash on contact, grow-in on spawn
+      squash=Math.max(0,squash-d/0.18); flash=Math.max(0,flash-d/0.3);
+      let s=1; if(spawnT>=0){spawnT+=d; const u=Math.min(1,spawnT/0.5), c1=1.70158, c3=c1+1; s=Math.max(0.001,1+c3*Math.pow(u-1,3)+c1*Math.pow(u-1,2)); if(u>=1)spawnT=-1;}
+      const q=squash*squash; model.scale.set(s*(1+0.07*q),s*(1-0.05*q),s*(1+0.07*q));
+      if(glow){const pulse=0.5+0.5*Math.sin(clock.elapsedTime*2.2); const dim=sel.downed?0.15:1; glow.material.opacity=dim*0.9*flash; glow.scale.setScalar(0.5+0.9*flash);}
+      driveStaff();
+    }
+    orbit.update(); renderer.render(scene,cam);
+  }
+  frame();
+})();
+</script>

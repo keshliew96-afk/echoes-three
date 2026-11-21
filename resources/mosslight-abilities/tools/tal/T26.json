@@ -1,0 +1,43 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "secs": 5.6,
+  "pre": 0.25,
+  "skill": "nova_bloom",
+  "allies": [
+   [
+    -1.2,
+    -0.45,
+    0.6
+   ],
+   [
+    1.2,
+    -0.45,
+    0.6
+   ],
+   [
+    0,
+    1.25,
+    0.6
+   ]
+  ],
+  "seq": [
+   [
+    0.4,
+    "key",
+    "q"
+   ]
+  ],
+  "cap": "T26 Bark (Evergreen, tier III) · anyone she heals takes 10% less damage for 4 s (thin pale ring) · Nova Bloom heals her and the two most hurt allies near her",
+  "live": "(()=>{const E=window.__echoes,w=E.content.world();const n=w.entities().filter(e=>e.partyIndex!==undefined&&e.reviewBarkUntil>E.tick);return 'Bark on '+n.length+(n.length?', '+((n[0].reviewBarkUntil-E.tick)/60).toFixed(1)+' s left':'');})()",
+  "guides": [],
+  "name": "tal_T26",
+  "selfHp": 0.8
+ }
+]

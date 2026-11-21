@@ -1,0 +1,2184 @@
+{
+ "tool": "balance-pass",
+ "root": "/tmp/claude-0/base",
+ "seeds": [
+  1,
+  2,
+  3,
+  4,
+  5,
+  6,
+  7,
+  8,
+  9,
+  10,
+  11,
+  12,
+  13,
+  14,
+  15,
+  16
+ ],
+ "at": "2026-10-05T18:11:51.987Z",
+ "checks": {
+  "evade: at most 1 in 3 globs aimed at an AI seat lands on it": {
+   "ok": false,
+   "got": "549/1512"
+  },
+  "evade: a seed replays to the same event hash": {
+   "ok": true,
+   "got": "c0efd4b6 vs c0efd4b6"
+  },
+  "grave: Open Grave rooms were met": {
+   "ok": true,
+   "got": 19
+  },
+  "grave: moles and broods are at least half of Open Grave's units": {
+   "ok": false,
+   "got": "28%"
+  },
+  "grave: Open Grave favours them over the other layouts": {
+   "ok": false,
+   "got": "28% vs 34%"
+  }
+ },
+ "evade": {
+  "runs": [
+   {
+    "seed": 1,
+    "aimed": [
+     0,
+     31,
+     25,
+     16
+    ],
+    "hit": [
+     0,
+     11,
+     8,
+     12
+    ],
+    "outcome": "cleared",
+    "hash": "c0efd4b6"
+   },
+   {
+    "seed": 2,
+    "aimed": [
+     0,
+     46,
+     38,
+     25
+    ],
+    "hit": [
+     0,
+     7,
+     10,
+     14
+    ],
+    "outcome": "cleared",
+    "hash": "c28bc57c"
+   },
+   {
+    "seed": 3,
+    "aimed": [
+     0,
+     77,
+     38,
+     26
+    ],
+    "hit": [
+     0,
+     38,
+     8,
+     19
+    ],
+    "outcome": "cleared",
+    "hash": "a0635947"
+   },
+   {
+    "seed": 4,
+    "aimed": [
+     0,
+     52,
+     42,
+     25
+    ],
+    "hit": [
+     0,
+     16,
+     9,
+     13
+    ],
+    "outcome": "cleared",
+    "hash": "4afa4df1"
+   },
+   {
+    "seed": 5,
+    "aimed": [
+     0,
+     13,
+     26,
+     14
+    ],
+    "hit": [
+     0,
+     3,
+     6,
+     10
+    ],
+    "outcome": "cleared",
+    "hash": "aad307f5"
+   },
+   {
+    "seed": 6,
+    "aimed": [
+     0,
+     25,
+     31,
+     8
+    ],
+    "hit": [
+     0,
+     10,
+     9,
+     6
+    ],
+    "outcome": "cleared",
+    "hash": "2389ee5f"
+   },
+   {
+    "seed": 7,
+    "aimed": [
+     0,
+     37,
+     23,
+     13
+    ],
+    "hit": [
+     0,
+     17,
+     5,
+     9
+    ],
+    "outcome": "cleared",
+    "hash": "895c61c4"
+   },
+   {
+    "seed": 8,
+    "aimed": [
+     0,
+     19,
+     24,
+     20
+    ],
+    "hit": [
+     0,
+     5,
+     5,
+     13
+    ],
+    "outcome": "cleared",
+    "hash": "9bc6d515"
+   },
+   {
+    "seed": 9,
+    "aimed": [
+     0,
+     36,
+     39,
+     22
+    ],
+    "hit": [
+     0,
+     13,
+     10,
+     12
+    ],
+    "outcome": "cleared",
+    "hash": "c6f716d2"
+   },
+   {
+    "seed": 10,
+    "aimed": [
+     0,
+     49,
+     33,
+     10
+    ],
+    "hit": [
+     0,
+     19,
+     7,
+     8
+    ],
+    "outcome": "cleared",
+    "hash": "78eaae83"
+   },
+   {
+    "seed": 11,
+    "aimed": [
+     0,
+     62,
+     65,
+     18
+    ],
+    "hit": [
+     0,
+     27,
+     24,
+     10
+    ],
+    "outcome": "cleared",
+    "hash": "13bfa03f"
+   },
+   {
+    "seed": 12,
+    "aimed": [
+     0,
+     36,
+     22,
+     20
+    ],
+    "hit": [
+     0,
+     9,
+     4,
+     8
+    ],
+    "outcome": "cleared",
+    "hash": "3e7642f0"
+   },
+   {
+    "seed": 13,
+    "aimed": [
+     0,
+     39,
+     36,
+     26
+    ],
+    "hit": [
+     0,
+     13,
+     11,
+     12
+    ],
+    "outcome": "cleared",
+    "hash": "e4272f8e"
+   },
+   {
+    "seed": 14,
+    "aimed": [
+     0,
+     31,
+     47,
+     15
+    ],
+    "hit": [
+     0,
+     14,
+     7,
+     10
+    ],
+    "outcome": "cleared",
+    "hash": "82794229"
+   },
+   {
+    "seed": 15,
+    "aimed": [
+     0,
+     51,
+     39,
+     21
+    ],
+    "hit": [
+     0,
+     17,
+     9,
+     12
+    ],
+    "outcome": "cleared",
+    "hash": "2c2f5df"
+   },
+   {
+    "seed": 16,
+    "aimed": [
+     0,
+     52,
+     33,
+     16
+    ],
+    "hit": [
+     0,
+     11,
+     10,
+     9
+    ],
+    "outcome": "cleared",
+    "hash": "ff5aa86f"
+   }
+  ],
+  "aimed": [
+   0,
+   656,
+   561,
+   295
+  ],
+  "hit": [
+   0,
+   230,
+   142,
+   177
+  ],
+  "cleared": 16
+ },
+ "grave": {
+  "openGrave": {
+   "rooms": 19,
+   "units": 440,
+   "moleBroodPct": 28,
+   "types": {
+    "crow": 58,
+    "mole": 71,
+    "quillback": 41,
+    "mantis": 42,
+    "moth": 65,
+    "ram": 68,
+    "brood": 52,
+    "gravewisp": 35,
+    "knight": 8
+   },
+   "dmgPerRoom": 791,
+   "downs": 17,
+   "medianClearS": 61.1
+  },
+  "otherBarrow": {
+   "rooms": 74,
+   "units": 1869,
+   "moleBroodPct": 34,
+   "types": {
+    "ram": 231,
+    "brood": 215,
+    "crow": 259,
+    "moth": 251,
+    "mole": 420,
+    "quillback": 163,
+    "mantis": 177,
+    "gravewisp": 106,
+    "knight": 47
+   },
+   "dmgPerRoom": 935,
+   "downs": 46,
+   "medianClearS": 57.3
+  },
+  "cleared": 11,
+  "runs": [
+   {
+    "seed": 1,
+    "outcome": "defeat",
+    "hash": "a4845021",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "crow": 4,
+       "mole": 3,
+       "quillback": 4,
+       "mantis": 1,
+       "moth": 3
+      },
+      "dmg": 140.22875,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1346
+     },
+     {
+      "room": 2,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "ram": 4,
+       "brood": 7,
+       "crow": 5,
+       "moth": 8,
+       "mole": 4,
+       "quillback": 2,
+       "mantis": 1
+      },
+      "dmg": 586.0372874999999,
+      "downs": 0,
+      "start": 1366,
+      "ticks": 2700
+     },
+     {
+      "room": 3,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "crow": 6,
+       "moth": 7,
+       "gravewisp": 2,
+       "brood": 1,
+       "ram": 3,
+       "mantis": 2,
+       "quillback": 1,
+       "mole": 1
+      },
+      "dmg": 530.0088,
+      "downs": 0,
+      "start": 4085,
+      "ticks": 3496
+     },
+     {
+      "room": 4,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "knight": 3,
+       "mole": 4,
+       "moth": 6,
+       "ram": 2,
+       "mantis": 3,
+       "crow": 5,
+       "gravewisp": 5,
+       "quillback": 1,
+       "brood": 2
+      },
+      "dmg": 1141.4335250000008,
+      "downs": 0,
+      "start": 7600,
+      "ticks": 5851
+     },
+     {
+      "room": 5,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "mole": 4,
+       "moth": 5,
+       "mantis": 3,
+       "gravewisp": 4,
+       "brood": 5,
+       "crow": 1,
+       "quillback": 5,
+       "ram": 5
+      },
+      "dmg": 2103.3239999999996,
+      "downs": 2,
+      "start": 13470,
+      "ticks": 4897
+     },
+     {
+      "room": 6,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "mole": 4,
+       "crow": 3,
+       "gravewisp": 5,
+       "mantis": 3,
+       "brood": 3,
+       "knight": 1,
+       "moth": 3,
+       "ram": 1,
+       "quillback": 1
+      },
+      "dmg": 1555.3585000000005,
+      "downs": 10,
+      "start": 18385,
+      "ticks": null
+     }
+    ]
+   },
+   {
+    "seed": 2,
+    "outcome": "cleared",
+    "hash": "682f8990",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "mole": 5,
+       "crow": 7,
+       "moth": 4,
+       "mantis": 4,
+       "quillback": 2
+      },
+      "dmg": 168.7325,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1899
+     },
+     {
+      "room": 2,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "brood": 2,
+       "moth": 2,
+       "mantis": 4,
+       "ram": 1,
+       "mole": 2,
+       "crow": 2,
+       "quillback": 1
+      },
+      "dmg": 270.7914125,
+      "downs": 0,
+      "start": 1919,
+      "ticks": 1969
+     },
+     {
+      "room": 3,
+      "layoutId": 15,
+      "mode": "defend",
+      "types": {
+       "mole": 2,
+       "ram": 7,
+       "crow": 9,
+       "brood": 3,
+       "moth": 2,
+       "gravewisp": 4,
+       "quillback": 1,
+       "mantis": 2
+      },
+      "dmg": 567.1568,
+      "downs": 0,
+      "start": 3907,
+      "ticks": 4676
+     },
+     {
+      "room": 4,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "mantis": 3,
+       "ram": 4,
+       "crow": 2,
+       "mole": 4,
+       "brood": 5,
+       "moth": 5,
+       "knight": 1
+      },
+      "dmg": 902.3656750000002,
+      "downs": 0,
+      "start": 8601,
+      "ticks": 3435
+     },
+     {
+      "room": 5,
+      "layoutId": 9,
+      "mode": "defend",
+      "types": {
+       "mantis": 4,
+       "brood": 7,
+       "mole": 7,
+       "ram": 4,
+       "moth": 4,
+       "crow": 1,
+       "knight": 2,
+       "quillback": 1
+      },
+      "dmg": 1994.5672000000004,
+      "downs": 0,
+      "start": 12055,
+      "ticks": 5282
+     },
+     {
+      "room": 6,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "mantis": 10,
+       "mole": 2,
+       "knight": 2,
+       "moth": 2,
+       "crow": 7,
+       "quillback": 5,
+       "ram": 4
+      },
+      "dmg": 1716.2266875000003,
+      "downs": 0,
+      "start": 17355,
+      "ticks": 6973
+     }
+    ]
+   },
+   {
+    "seed": 3,
+    "outcome": "cleared",
+    "hash": "dab07cc9",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "crow": 5,
+       "moth": 6,
+       "mole": 5,
+       "quillback": 5,
+       "mantis": 3
+      },
+      "dmg": 120.15,
+      "downs": 0,
+      "start": 0,
+      "ticks": 2334
+     },
+     {
+      "room": 2,
+      "layoutId": 9,
+      "mode": "defend",
+      "types": {
+       "mole": 5,
+       "ram": 4,
+       "quillback": 4,
+       "moth": 5,
+       "mantis": 2,
+       "brood": 4,
+       "crow": 2
+      },
+      "dmg": 460.59962500000006,
+      "downs": 0,
+      "start": 2354,
+      "ticks": 2700
+     },
+     {
+      "room": 3,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "crow": 4,
+       "ram": 5,
+       "mantis": 1,
+       "moth": 2,
+       "gravewisp": 1,
+       "mole": 1
+      },
+      "dmg": 229.86935,
+      "downs": 0,
+      "start": 5074,
+      "ticks": 2603
+     },
+     {
+      "room": 4,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "mole": 4,
+       "crow": 2,
+       "knight": 1,
+       "quillback": 4,
+       "moth": 3,
+       "mantis": 1,
+       "brood": 1,
+       "ram": 2
+      },
+      "dmg": 578.709375,
+      "downs": 0,
+      "start": 7696,
+      "ticks": 2766
+     },
+     {
+      "room": 5,
+      "layoutId": 7,
+      "mode": "defend",
+      "types": {
+       "mantis": 3,
+       "ram": 9,
+       "moth": 2,
+       "mole": 7,
+       "brood": 3,
+       "knight": 1,
+       "quillback": 2,
+       "crow": 2,
+       "gravewisp": 3
+      },
+      "dmg": 2352.9458,
+      "downs": 0,
+      "start": 10482,
+      "ticks": 7359
+     },
+     {
+      "room": 6,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "ram": 3,
+       "mole": 4,
+       "brood": 5,
+       "gravewisp": 3,
+       "quillback": 3,
+       "crow": 3,
+       "knight": 2,
+       "moth": 4,
+       "mantis": 1
+      },
+      "dmg": 2152.7892500000007,
+      "downs": 0,
+      "start": 17859,
+      "ticks": 5339
+     }
+    ]
+   },
+   {
+    "seed": 4,
+    "outcome": "defeat",
+    "hash": "fd9c57aa",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "crow": 3,
+       "quillback": 8,
+       "moth": 7,
+       "mole": 4,
+       "mantis": 1
+      },
+      "dmg": 257.74999999999994,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1585
+     },
+     {
+      "room": 2,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "ram": 5,
+       "brood": 3,
+       "quillback": 2,
+       "mantis": 1,
+       "moth": 2,
+       "mole": 4,
+       "crow": 1
+      },
+      "dmg": 483.5726875,
+      "downs": 0,
+      "start": 1605,
+      "ticks": 2493
+     },
+     {
+      "room": 3,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "quillback": 5,
+       "brood": 7,
+       "gravewisp": 2,
+       "moth": 7,
+       "mole": 4,
+       "mantis": 3,
+       "ram": 3,
+       "crow": 1
+      },
+      "dmg": 1564.3296249999999,
+      "downs": 0,
+      "start": 4117,
+      "ticks": 4506
+     },
+     {
+      "room": 4,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "ram": 4,
+       "knight": 1,
+       "mantis": 2,
+       "moth": 6,
+       "mole": 6,
+       "gravewisp": 4,
+       "crow": 3,
+       "quillback": 1,
+       "brood": 3
+      },
+      "dmg": 1360.3356250000008,
+      "downs": 7,
+      "start": 8641,
+      "ticks": null
+     }
+    ]
+   },
+   {
+    "seed": 5,
+    "outcome": "defeat",
+    "hash": "d18a3bd3",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "mole": 7,
+       "mantis": 7,
+       "crow": 4,
+       "moth": 3
+      },
+      "dmg": 334.31874999999997,
+      "downs": 0,
+      "start": 0,
+      "ticks": 2317
+     },
+     {
+      "room": 2,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "mole": 10,
+       "mantis": 1,
+       "moth": 1,
+       "ram": 1,
+       "crow": 1
+      },
+      "dmg": 483.24912500000005,
+      "downs": 0,
+      "start": 2337,
+      "ticks": 1747
+     },
+     {
+      "room": 3,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "mantis": 2,
+       "moth": 5,
+       "quillback": 2,
+       "ram": 3,
+       "brood": 5,
+       "mole": 3,
+       "gravewisp": 3,
+       "crow": 1
+      },
+      "dmg": 982.1392500000001,
+      "downs": 0,
+      "start": 4103,
+      "ticks": 3663
+     },
+     {
+      "room": 4,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "crow": 2,
+       "mole": 6,
+       "ram": 9,
+       "moth": 4,
+       "gravewisp": 3,
+       "quillback": 1,
+       "brood": 4
+      },
+      "dmg": 2125.8344375000024,
+      "downs": 2,
+      "start": 7785,
+      "ticks": 5422
+     },
+     {
+      "room": 5,
+      "layoutId": 9,
+      "mode": "defend",
+      "types": {
+       "gravewisp": 4,
+       "moth": 5,
+       "crow": 3,
+       "ram": 5,
+       "mole": 6,
+       "brood": 5,
+       "quillback": 1,
+       "mantis": 2,
+       "knight": 1
+      },
+      "dmg": 2803.9549999999967,
+      "downs": 2,
+      "start": 13226,
+      "ticks": 7475
+     },
+     {
+      "room": 6,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "crow": 2,
+       "moth": 3,
+       "mole": 11,
+       "ram": 4,
+       "brood": 3,
+       "mantis": 2,
+       "knight": 1,
+       "gravewisp": 2
+      },
+      "dmg": 1350.7840625000006,
+      "downs": 7,
+      "start": 20719,
+      "ticks": null
+     }
+    ]
+   },
+   {
+    "seed": 6,
+    "outcome": "cleared",
+    "hash": "c9a2c6c7",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "moth": 6,
+       "mole": 4,
+       "crow": 8,
+       "mantis": 2
+      },
+      "dmg": 273.475,
+      "downs": 0,
+      "start": 0,
+      "ticks": 2448
+     },
+     {
+      "room": 2,
+      "layoutId": 7,
+      "mode": "defend",
+      "types": {
+       "mole": 6,
+       "ram": 6,
+       "quillback": 3,
+       "brood": 5,
+       "crow": 4,
+       "moth": 4,
+       "mantis": 3
+      },
+      "dmg": 755.5685625,
+      "downs": 0,
+      "start": 2468,
+      "ticks": 3836
+     },
+     {
+      "room": 3,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "crow": 3,
+       "mole": 11,
+       "brood": 4,
+       "quillback": 3,
+       "gravewisp": 1,
+       "moth": 1,
+       "ram": 1
+      },
+      "dmg": 549.921475,
+      "downs": 0,
+      "start": 6322,
+      "ticks": 2303
+     },
+     {
+      "room": 4,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "crow": 5,
+       "mole": 7,
+       "quillback": 3,
+       "brood": 4,
+       "mantis": 5,
+       "moth": 4,
+       "ram": 2,
+       "gravewisp": 2
+      },
+      "dmg": 989.3416500000003,
+      "downs": 0,
+      "start": 8644,
+      "ticks": 4031
+     },
+     {
+      "room": 5,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "knight": 1,
+       "ram": 3,
+       "gravewisp": 4,
+       "brood": 2,
+       "mole": 4,
+       "mantis": 3,
+       "quillback": 6,
+       "moth": 1
+      },
+      "dmg": 1596.3891999999992,
+      "downs": 0,
+      "start": 12693,
+      "ticks": 4315
+     },
+     {
+      "room": 6,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "mole": 4,
+       "knight": 2,
+       "crow": 3,
+       "mantis": 3,
+       "ram": 2,
+       "quillback": 1,
+       "gravewisp": 1,
+       "moth": 4,
+       "brood": 2
+      },
+      "dmg": 1715.355687500001,
+      "downs": 0,
+      "start": 17027,
+      "ticks": 4397
+     }
+    ]
+   },
+   {
+    "seed": 7,
+    "outcome": "defeat",
+    "hash": "866cd743",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "crow": 2,
+       "mole": 9,
+       "moth": 3,
+       "quillback": 2
+      },
+      "dmg": 276.6075000000001,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1454
+     },
+     {
+      "room": 2,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "ram": 2,
+       "mole": 9,
+       "crow": 6,
+       "moth": 3,
+       "mantis": 4,
+       "quillback": 4,
+       "brood": 4
+      },
+      "dmg": 345.0502,
+      "downs": 0,
+      "start": 1474,
+      "ticks": 3319
+     },
+     {
+      "room": 3,
+      "layoutId": 8,
+      "mode": "defend",
+      "types": {
+       "mantis": 2,
+       "mole": 8,
+       "gravewisp": 5,
+       "quillback": 1,
+       "brood": 7,
+       "moth": 5,
+       "crow": 3,
+       "ram": 1
+      },
+      "dmg": 594.9397,
+      "downs": 0,
+      "start": 4811,
+      "ticks": 3839
+     },
+     {
+      "room": 4,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "brood": 5,
+       "ram": 6,
+       "mantis": 4,
+       "moth": 4,
+       "gravewisp": 2,
+       "crow": 4,
+       "quillback": 3,
+       "knight": 1,
+       "mole": 2
+      },
+      "dmg": 1754.4756750000006,
+      "downs": 2,
+      "start": 8668,
+      "ticks": 4800
+     },
+     {
+      "room": 5,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "ram": 4,
+       "knight": 3,
+       "mole": 4,
+       "gravewisp": 5,
+       "quillback": 1,
+       "brood": 2,
+       "moth": 2,
+       "mantis": 2,
+       "crow": 1
+      },
+      "dmg": 1521.2452000000003,
+      "downs": 7,
+      "start": 13488,
+      "ticks": null
+     }
+    ]
+   },
+   {
+    "seed": 8,
+    "outcome": "cleared",
+    "hash": "c6f7c20a",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "mantis": 1,
+       "mole": 3,
+       "moth": 4,
+       "quillback": 3,
+       "crow": 2
+      },
+      "dmg": 130.4375,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1499
+     },
+     {
+      "room": 2,
+      "layoutId": 8,
+      "mode": "defend",
+      "types": {
+       "moth": 3,
+       "brood": 3,
+       "ram": 7,
+       "mole": 6,
+       "mantis": 1,
+       "quillback": 5,
+       "crow": 5
+      },
+      "dmg": 567.4554625000001,
+      "downs": 0,
+      "start": 1519,
+      "ticks": 3770
+     },
+     {
+      "room": 3,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "mole": 5,
+       "ram": 4,
+       "moth": 4,
+       "brood": 3,
+       "crow": 3,
+       "gravewisp": 1,
+       "mantis": 3
+      },
+      "dmg": 739.2695,
+      "downs": 0,
+      "start": 5307,
+      "ticks": 3052
+     },
+     {
+      "room": 4,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "moth": 3,
+       "crow": 6,
+       "mole": 5,
+       "brood": 2,
+       "ram": 3,
+       "quillback": 1,
+       "gravewisp": 3
+      },
+      "dmg": 903.3807499999999,
+      "downs": 0,
+      "start": 8378,
+      "ticks": 4403
+     },
+     {
+      "room": 5,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "mantis": 1,
+       "quillback": 5,
+       "moth": 8,
+       "mole": 4,
+       "brood": 1,
+       "gravewisp": 4,
+       "ram": 5,
+       "crow": 4
+      },
+      "dmg": 1000.4538,
+      "downs": 2,
+      "start": 12801,
+      "ticks": 5328
+     },
+     {
+      "room": 6,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "gravewisp": 2,
+       "crow": 5,
+       "ram": 4,
+       "mantis": 6,
+       "mole": 6,
+       "knight": 2,
+       "brood": 5,
+       "quillback": 1
+      },
+      "dmg": 1229.0377500000009,
+      "downs": 0,
+      "start": 18147,
+      "ticks": 4406
+     }
+    ]
+   },
+   {
+    "seed": 9,
+    "outcome": "cleared",
+    "hash": "cd1cde07",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "mole": 10,
+       "mantis": 1,
+       "quillback": 5,
+       "moth": 3,
+       "crow": 2
+      },
+      "dmg": 313.075,
+      "downs": 0,
+      "start": 0,
+      "ticks": 2013
+     },
+     {
+      "room": 2,
+      "layoutId": 8,
+      "mode": "defend",
+      "types": {
+       "moth": 2,
+       "mantis": 6,
+       "ram": 8,
+       "mole": 7,
+       "crow": 5,
+       "brood": 2,
+       "quillback": 2
+      },
+      "dmg": 837.218075,
+      "downs": 0,
+      "start": 2033,
+      "ticks": 4317
+     },
+     {
+      "room": 3,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "moth": 2,
+       "brood": 1,
+       "ram": 5,
+       "mole": 3,
+       "gravewisp": 1,
+       "crow": 1,
+       "mantis": 1
+      },
+      "dmg": 528.64535,
+      "downs": 0,
+      "start": 6368,
+      "ticks": 2437
+     },
+     {
+      "room": 4,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "crow": 2,
+       "mantis": 2,
+       "mole": 5,
+       "brood": 3,
+       "ram": 6,
+       "gravewisp": 1,
+       "knight": 1,
+       "quillback": 1
+      },
+      "dmg": 1143.00555,
+      "downs": 0,
+      "start": 8824,
+      "ticks": 3462
+     },
+     {
+      "room": 5,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "mole": 7,
+       "moth": 3,
+       "crow": 2,
+       "brood": 2,
+       "mantis": 3,
+       "gravewisp": 3,
+       "quillback": 4,
+       "knight": 2,
+       "ram": 2
+      },
+      "dmg": 1383.0706000000005,
+      "downs": 0,
+      "start": 12305,
+      "ticks": 5070
+     },
+     {
+      "room": 6,
+      "layoutId": 9,
+      "mode": "defend",
+      "types": {
+       "mantis": 4,
+       "gravewisp": 2,
+       "brood": 4,
+       "mole": 5,
+       "crow": 2,
+       "ram": 2,
+       "knight": 4,
+       "quillback": 4,
+       "moth": 2
+      },
+      "dmg": 1480.257125000001,
+      "downs": 2,
+      "start": 17394,
+      "ticks": 4244
+     }
+    ]
+   },
+   {
+    "seed": 10,
+    "outcome": "cleared",
+    "hash": "a5bb635b",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "mole": 6,
+       "moth": 3,
+       "crow": 5,
+       "quillback": 1
+      },
+      "dmg": 130.3,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1453
+     },
+     {
+      "room": 2,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "mole": 7,
+       "brood": 4,
+       "quillback": 3,
+       "mantis": 2,
+       "crow": 2,
+       "moth": 2,
+       "ram": 2
+      },
+      "dmg": 286.43350000000004,
+      "downs": 0,
+      "start": 1473,
+      "ticks": 2555
+     },
+     {
+      "room": 3,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "ram": 3,
+       "brood": 3,
+       "mole": 3,
+       "moth": 3,
+       "gravewisp": 2,
+       "quillback": 1,
+       "mantis": 1
+      },
+      "dmg": 649.0142500000001,
+      "downs": 4,
+      "start": 4048,
+      "ticks": 2523
+     },
+     {
+      "room": 4,
+      "layoutId": 8,
+      "mode": "defend",
+      "types": {
+       "mole": 6,
+       "ram": 3,
+       "mantis": 3,
+       "brood": 3,
+       "gravewisp": 1,
+       "crow": 7,
+       "knight": 2,
+       "quillback": 1,
+       "moth": 1
+      },
+      "dmg": 1167.7385249999995,
+      "downs": 4,
+      "start": 6591,
+      "ticks": 4395
+     },
+     {
+      "room": 5,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "mantis": 4,
+       "moth": 3,
+       "mole": 7,
+       "crow": 3,
+       "brood": 5,
+       "knight": 1,
+       "ram": 1
+      },
+      "dmg": 803.8498499999997,
+      "downs": 0,
+      "start": 11004,
+      "ticks": 3137
+     },
+     {
+      "room": 6,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "mole": 8,
+       "knight": 2,
+       "quillback": 3,
+       "brood": 4,
+       "ram": 6,
+       "crow": 1,
+       "gravewisp": 4,
+       "moth": 3,
+       "mantis": 1
+      },
+      "dmg": 2054.277687500001,
+      "downs": 0,
+      "start": 14160,
+      "ticks": 5391
+     }
+    ]
+   },
+   {
+    "seed": 11,
+    "outcome": "cleared",
+    "hash": "39ae9c7c",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "moth": 2,
+       "crow": 4,
+       "mole": 8,
+       "quillback": 1
+      },
+      "dmg": 125.7875,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1627
+     },
+     {
+      "room": 2,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "mantis": 3,
+       "mole": 3,
+       "crow": 1,
+       "brood": 2,
+       "moth": 2,
+       "quillback": 1,
+       "ram": 2
+      },
+      "dmg": 132.81863750000002,
+      "downs": 0,
+      "start": 1647,
+      "ticks": 1574
+     },
+     {
+      "room": 3,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "brood": 4,
+       "moth": 1,
+       "ram": 1,
+       "mole": 4,
+       "crow": 1,
+       "gravewisp": 3,
+       "mantis": 1
+      },
+      "dmg": 543.86496,
+      "downs": 0,
+      "start": 3240,
+      "ticks": 2289
+     },
+     {
+      "room": 4,
+      "layoutId": 15,
+      "mode": "defend",
+      "types": {
+       "brood": 3,
+       "mole": 5,
+       "knight": 1,
+       "ram": 7,
+       "moth": 6,
+       "mantis": 5,
+       "quillback": 1,
+       "gravewisp": 2,
+       "crow": 2
+      },
+      "dmg": 685.1941906250001,
+      "downs": 0,
+      "start": 5548,
+      "ticks": 4552
+     },
+     {
+      "room": 5,
+      "layoutId": 8,
+      "mode": "defend",
+      "types": {
+       "ram": 7,
+       "mole": 12,
+       "quillback": 2,
+       "brood": 2,
+       "mantis": 5,
+       "gravewisp": 3,
+       "crow": 1
+      },
+      "dmg": 1104.2407799999996,
+      "downs": 0,
+      "start": 10118,
+      "ticks": 4730
+     },
+     {
+      "room": 6,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "mole": 8,
+       "quillback": 4,
+       "knight": 3,
+       "ram": 2,
+       "moth": 2,
+       "mantis": 1,
+       "crow": 3,
+       "gravewisp": 1
+      },
+      "dmg": 1017.0854374999999,
+      "downs": 0,
+      "start": 14866,
+      "ticks": 5266
+     }
+    ]
+   },
+   {
+    "seed": 12,
+    "outcome": "cleared",
+    "hash": "7209b6cc",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "mole": 3,
+       "crow": 6,
+       "moth": 1,
+       "mantis": 3,
+       "quillback": 1
+      },
+      "dmg": 52.275,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1396
+     },
+     {
+      "room": 2,
+      "layoutId": 7,
+      "mode": "defend",
+      "types": {
+       "quillback": 2,
+       "brood": 5,
+       "crow": 4,
+       "ram": 6,
+       "mole": 5,
+       "mantis": 4,
+       "moth": 6
+      },
+      "dmg": 416.44382500000006,
+      "downs": 0,
+      "start": 1416,
+      "ticks": 3328
+     },
+     {
+      "room": 3,
+      "layoutId": 15,
+      "mode": "defend",
+      "types": {
+       "brood": 9,
+       "gravewisp": 5,
+       "ram": 4,
+       "quillback": 4,
+       "crow": 4,
+       "moth": 2,
+       "mantis": 1,
+       "mole": 3
+      },
+      "dmg": 990.3660500000001,
+      "downs": 0,
+      "start": 4762,
+      "ticks": 3663
+     },
+     {
+      "room": 4,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "mole": 8,
+       "ram": 4,
+       "moth": 3,
+       "mantis": 3,
+       "crow": 5,
+       "quillback": 2,
+       "brood": 5
+      },
+      "dmg": 871.2243125000003,
+      "downs": 0,
+      "start": 8443,
+      "ticks": 3067
+     },
+     {
+      "room": 5,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "knight": 2,
+       "moth": 2,
+       "mole": 3,
+       "quillback": 2,
+       "crow": 2,
+       "ram": 3,
+       "brood": 2,
+       "gravewisp": 6,
+       "mantis": 2
+      },
+      "dmg": 1373.3138,
+      "downs": 2,
+      "start": 11529,
+      "ticks": 4325
+     },
+     {
+      "room": 6,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "mantis": 2,
+       "mole": 7,
+       "brood": 2,
+       "crow": 6,
+       "ram": 2,
+       "gravewisp": 1,
+       "moth": 2,
+       "quillback": 1,
+       "knight": 1
+      },
+      "dmg": 1254.8692500000004,
+      "downs": 0,
+      "start": 15873,
+      "ticks": 3924
+     }
+    ]
+   },
+   {
+    "seed": 13,
+    "outcome": "cleared",
+    "hash": "e0bee9fa",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "mole": 4,
+       "mantis": 2,
+       "crow": 3,
+       "quillback": 2,
+       "moth": 3
+      },
+      "dmg": 80.55,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1055
+     },
+     {
+      "room": 2,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "crow": 4,
+       "ram": 4,
+       "mole": 2,
+       "moth": 1,
+       "quillback": 1,
+       "brood": 1
+      },
+      "dmg": 299.63180000000006,
+      "downs": 0,
+      "start": 1075,
+      "ticks": 1755
+     },
+     {
+      "room": 3,
+      "layoutId": 15,
+      "mode": "defend",
+      "types": {
+       "gravewisp": 2,
+       "mole": 6,
+       "brood": 5,
+       "quillback": 2,
+       "ram": 5,
+       "mantis": 4,
+       "moth": 3,
+       "crow": 5
+      },
+      "dmg": 775.3385124999996,
+      "downs": 2,
+      "start": 2849,
+      "ticks": 4633
+     },
+     {
+      "room": 4,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "mantis": 2,
+       "gravewisp": 4,
+       "crow": 9,
+       "brood": 2,
+       "quillback": 3,
+       "ram": 5,
+       "knight": 1,
+       "mole": 3,
+       "moth": 1
+      },
+      "dmg": 864.0560500000001,
+      "downs": 0,
+      "start": 7500,
+      "ticks": 2700
+     },
+     {
+      "room": 5,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "crow": 5,
+       "gravewisp": 3,
+       "mantis": 2,
+       "mole": 9,
+       "knight": 1,
+       "quillback": 3,
+       "brood": 4,
+       "ram": 2,
+       "moth": 3
+      },
+      "dmg": 1534.4887,
+      "downs": 2,
+      "start": 10219,
+      "ticks": 5389
+     },
+     {
+      "room": 6,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "moth": 2,
+       "crow": 4,
+       "quillback": 4,
+       "mole": 2,
+       "gravewisp": 4,
+       "ram": 4,
+       "brood": 3,
+       "mantis": 1
+      },
+      "dmg": 1371.3622500000006,
+      "downs": 0,
+      "start": 15627,
+      "ticks": 5430
+     }
+    ]
+   },
+   {
+    "seed": 14,
+    "outcome": "cleared",
+    "hash": "394eca19",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "mole": 7,
+       "moth": 2,
+       "crow": 4,
+       "mantis": 1
+      },
+      "dmg": 230.83125,
+      "downs": 0,
+      "start": 0,
+      "ticks": 1462
+     },
+     {
+      "room": 2,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "quillback": 3,
+       "crow": 1,
+       "moth": 3,
+       "mole": 2,
+       "mantis": 1,
+       "ram": 2,
+       "brood": 3
+      },
+      "dmg": 248.057,
+      "downs": 0,
+      "start": 1482,
+      "ticks": 1509
+     },
+     {
+      "room": 3,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "ram": 7,
+       "mole": 8,
+       "quillback": 5,
+       "brood": 3,
+       "moth": 2,
+       "crow": 5,
+       "gravewisp": 1,
+       "mantis": 1
+      },
+      "dmg": 760.2076999999999,
+      "downs": 0,
+      "start": 3010,
+      "ticks": 5029
+     },
+     {
+      "room": 4,
+      "layoutId": 8,
+      "mode": "defend",
+      "types": {
+       "moth": 10,
+       "quillback": 2,
+       "ram": 5,
+       "mole": 2,
+       "crow": 6,
+       "mantis": 2,
+       "brood": 3,
+       "knight": 1,
+       "gravewisp": 1
+      },
+      "dmg": 1232.7699906250002,
+      "downs": 0,
+      "start": 8057,
+      "ticks": 4930
+     },
+     {
+      "room": 5,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "knight": 3,
+       "mantis": 5,
+       "ram": 7,
+       "mole": 3,
+       "brood": 6,
+       "gravewisp": 1,
+       "quillback": 1
+      },
+      "dmg": 2171.367000000001,
+      "downs": 2,
+      "start": 13005,
+      "ticks": 5263
+     },
+     {
+      "room": 6,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "mole": 6,
+       "moth": 6,
+       "brood": 4,
+       "mantis": 4,
+       "quillback": 1,
+       "knight": 1,
+       "ram": 1,
+       "crow": 1
+      },
+      "dmg": 1492.6461250000002,
+      "downs": 4,
+      "start": 18287,
+      "ticks": 3190
+     }
+    ]
+   },
+   {
+    "seed": 15,
+    "outcome": "cleared",
+    "hash": "be667c17",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "quillback": 3,
+       "mantis": 2,
+       "moth": 3,
+       "mole": 7,
+       "crow": 5
+      },
+      "dmg": 86.2375,
+      "downs": 0,
+      "start": 0,
+      "ticks": 2138
+     },
+     {
+      "room": 2,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "moth": 6,
+       "brood": 4,
+       "ram": 5,
+       "mole": 2,
+       "quillback": 1,
+       "crow": 2
+      },
+      "dmg": 335.633625,
+      "downs": 0,
+      "start": 2158,
+      "ticks": 2217
+     },
+     {
+      "room": 3,
+      "layoutId": 8,
+      "mode": "defend",
+      "types": {
+       "crow": 5,
+       "moth": 4,
+       "ram": 6,
+       "mole": 9,
+       "brood": 3,
+       "mantis": 1,
+       "quillback": 3
+      },
+      "dmg": 698.5214374999999,
+      "downs": 0,
+      "start": 4394,
+      "ticks": 4275
+     },
+     {
+      "room": 4,
+      "layoutId": 9,
+      "mode": "defend",
+      "types": {
+       "moth": 4,
+       "mole": 4,
+       "brood": 7,
+       "mantis": 4,
+       "gravewisp": 5,
+       "crow": 3,
+       "ram": 2,
+       "quillback": 3
+      },
+      "dmg": 829.0064437499998,
+      "downs": 0,
+      "start": 8687,
+      "ticks": 5278
+     },
+     {
+      "room": 5,
+      "layoutId": 15,
+      "mode": "kill_all",
+      "types": {
+       "ram": 7,
+       "mole": 3,
+       "moth": 2,
+       "mantis": 3,
+       "crow": 3,
+       "brood": 2,
+       "gravewisp": 1
+      },
+      "dmg": 998.8950999999996,
+      "downs": 0,
+      "start": 13983,
+      "ticks": 4296
+     },
+     {
+      "room": 6,
+      "layoutId": 7,
+      "mode": "kill_all",
+      "types": {
+       "mole": 4,
+       "brood": 3,
+       "knight": 3,
+       "moth": 4,
+       "mantis": 2,
+       "ram": 4,
+       "crow": 5,
+       "quillback": 2,
+       "gravewisp": 3
+      },
+      "dmg": 2075.456093750001,
+      "downs": 0,
+      "start": 18299,
+      "ticks": 7731
+     }
+    ]
+   },
+   {
+    "seed": 16,
+    "outcome": "defeat",
+    "hash": "3c94c56b",
+    "rooms": [
+     {
+      "room": 1,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "moth": 6,
+       "mantis": 3,
+       "crow": 3,
+       "mole": 6,
+       "quillback": 4
+      },
+      "dmg": 324.8375,
+      "downs": 0,
+      "start": 0,
+      "ticks": 2315
+     },
+     {
+      "room": 2,
+      "layoutId": 14,
+      "mode": "defend",
+      "types": {
+       "brood": 3,
+       "mole": 7,
+       "crow": 5,
+       "quillback": 5,
+       "moth": 6,
+       "ram": 3,
+       "mantis": 3
+      },
+      "dmg": 483.75569,
+      "downs": 0,
+      "start": 2335,
+      "ticks": 3425
+     },
+     {
+      "room": 3,
+      "layoutId": 9,
+      "mode": "kill_all",
+      "types": {
+       "brood": 3,
+       "moth": 6,
+       "mole": 7,
+       "crow": 4,
+       "gravewisp": 2,
+       "ram": 1,
+       "quillback": 1
+      },
+      "dmg": 471.44861374999994,
+      "downs": 0,
+      "start": 5778,
+      "ticks": 2399
+     },
+     {
+      "room": 4,
+      "layoutId": 8,
+      "mode": "kill_all",
+      "types": {
+       "moth": 4,
+       "brood": 4,
+       "crow": 3,
+       "mole": 5,
+       "quillback": 2,
+       "ram": 4,
+       "mantis": 1
+      },
+      "dmg": 681.8041056250001,
+      "downs": 0,
+      "start": 8196,
+      "ticks": 2995
+     },
+     {
+      "room": 5,
+      "layoutId": 7,
+      "mode": "defend",
+      "types": {
+       "crow": 4,
+       "gravewisp": 3,
+       "brood": 8,
+       "ram": 5,
+       "moth": 2,
+       "mantis": 3,
+       "mole": 5,
+       "quillback": 2
+      },
+      "dmg": 1335.7565399999999,
+      "downs": 0,
+      "start": 11210,
+      "ticks": 4320
+     },
+     {
+      "room": 6,
+      "layoutId": 14,
+      "mode": "kill_all",
+      "types": {
+       "ram": 2,
+       "brood": 4,
+       "moth": 2,
+       "mantis": 2,
+       "mole": 9,
+       "knight": 1,
+       "crow": 2,
+       "quillback": 1,
+       "gravewisp": 1
+      },
+      "dmg": 1248.7203468750001,
+      "downs": 0,
+      "start": 15548,
+      "ticks": 3412
+     }
+    ]
+   }
+  ]
+ }
+}

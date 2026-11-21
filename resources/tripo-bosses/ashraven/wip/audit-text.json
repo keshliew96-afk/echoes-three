@@ -1,0 +1,13 @@
+{
+ "AUD_POP0": "At the dive's landing the tail jumped 46 degrees in one frame and the left foot 34 degrees as the legs swung down to land.",
+ "AUD_POP1": "The legs come down over five frames now and the foot does not pop. What is left is the tail and the inner flight feathers turning up to 24 degrees in the frame the wings are thrown up to brake, inside the game's 2.5-frame landing.",
+ "AUD_FLOOR0": "The left foot swung 0.17 u under the floor on its way to land after the dive, and the tail went 0.08 u under in the Omen's caw.",
+ "AUD_FLOOR1": "Only the tips of the talons as they push off: 0.02 u at the dive's take-off and 0.01 u in each hop.",
+ "AUD_THRU0": "With the talons tucked in flight the feet sat 0.14 u inside the belly and thighs. The raised wings pressed 0.11 u into the mask in the Wing Gust and the Omen. The tail passed 0.05 u through the legs in each hop.",
+ "AUD_THRU1": "The tucked feet hang clear of the belly, and the wings are raised less high. Still there: a raised wing's leading edge touches the side of the mask in the Gust, the Omen and the Enrage (up to 0.09 u, a handful of points); the beak goes 0.08 u into the wing it preens, on purpose; the nape feathers fold into the back of the mask by up to 0.12 u when the head is thrown back or lies on the floor; the tail brushes the legs in each hop (0.04 u); the feathered thighs press together while the legs are tucked.",
+ "AUD_STR0": "Points that sit on top of each other at a seam had different weights and pulled apart: up to 0.24 u across the belly as it lay dead, 0.13 u on the back under the wings in the Heavy hit, and 0.06 u at the rim of the mask in the idle.",
+ "AUD_STR1": "Seams share their weights now, the skin under each wing follows the body, and the belly stays with the hips. The worst stretch left is 0.13 u at the throat when the head lies turned on the floor, which reads as the neck stretching.",
+ "AUD_LOOP0": "The hop loop jumped 1.6 degrees where it restarts.",
+ "AUD_LOOP1": "Under 1.5 degrees in the hop and under 0.7 degrees in the turns, from the springs in the tail and hackles. The idle loops cleanly.",
+ "AUD_LOOPS": "Idle 0. Hop 1.5 degrees, turns 0.6 and 0.7 degrees, all from the springs in the tail and hackles."
+}

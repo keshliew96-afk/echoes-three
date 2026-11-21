@@ -1,0 +1,67 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S51",
+  "aim": [
+   0,
+   -1.5
+  ],
+  "skill": "restorative_wave",
+  "allies": [
+   [
+    -2.6,
+    -1.6,
+    0.35
+   ],
+   [
+    2.6,
+    1.8,
+    0.9
+   ],
+   [
+    3.6,
+    -2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    -3.4,
+    -2.6
+   ],
+   [
+    -1.8,
+    -2.9
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    2.2,
+    "eval",
+    "const B=[[-3.4, -2.6], [-1.8, -2.9]];let k=0;for(const e of w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id)){const b=B[k++];if(b){e.x=b[0];e.z=b[1];e.px=b[0];e.pz=b[1];}}"
+   ],
+   [
+    3.8,
+    "eval",
+    "const B=[[-3.4, -2.6], [-1.8, -2.9]];let k=0;for(const e of w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id)){const b=B[k++];if(b){e.x=b[0];e.z=b[1];e.px=b[0];e.pz=b[1];}}"
+   ],
+   [
+    5.4,
+    "eval",
+    "const B=[[-3.4, -2.6], [-1.8, -2.9]];let k=0;for(const e of w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id)){const b=B[k++];if(b){e.x=b[0];e.z=b[1];e.px=b[0];e.pz=b[1];}}"
+   ]
+  ],
+  "secs": 8.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ')+' \u00b7 dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ');})()",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "cap": "S51 Oakling"
+ }
+]

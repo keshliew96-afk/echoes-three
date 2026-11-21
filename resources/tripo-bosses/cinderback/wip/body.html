@@ -1,0 +1,109 @@
+<div class="wrap">
+  <div>
+    <h1>Cinderback from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the Kiln's warden: the great fire salamander, long and low, with sooty hide, live coals down its back, gold-tipped gill stalks and a violet brow scale. It now has a skeleton, an opening mouth and 12 moves made by hand. It prowls with an S through its body. For the Magma Dive it noses into the floor and swims under it to the ring, then bursts up and lies spent and dull. It coils its tail and whips it round for the Tail Lash, and rears with its throat white-hot to spit three gobbets of fire. The timings come from the game. Pick a move and drag to turn the view, then judge the weight and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Prowl sets what it does between attacks, and Going turns it on the spot. An Action plays over that and repeats until you press it again. Hurt plays on top of anything. Death holds it down; press it again to spawn it back in. The bar names the part of the move that is playing. Anything under the floor is hidden, as in the game.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="cinderback-views.png" alt="The Tripo Cinderback from above, its left side, the front and three quarters, before rigging" width="1520" height="400">
+      <p class="note" style="padding-top:12px">It came through in one piece with clean limbs: four splayed legs with five-toed feet clear of the body, a long tapering tail, three rows of glowing coals down its back, six gill stalks with gold tips behind the head, ember eyes, a violet brow scale and a pale chin and belly. Its head points straight down its length, so nothing was corrected. The mouth was closed, so I cut it open along the line of the lips, gave it a hinged jaw and painted the inside a dark red that heats up for the spit.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>28,684 <small>27,654 as sent, plus the inside of the mouth; boss budget about 28,000</small></dd></div>
+    <div><dt>Bones</dt><dd>30 <small>root, hips, spine, chest, neck, head, the jaw, a gill bone on each side, 5 in the tail, 4 in each leg down to the toes</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.5 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.4 u long <small>nose to tail tip, 0.56 u tall at the back, at the game's scale of 2.4, beside a 1 u hero</small></dd></div>
+    <div><dt>Mouth</dt><dd>opens 40° <small>on the jaw bone, wide for the spit and the roar</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>Low on its belly, it breathes and the coals breathe with it. The tail sweeps slowly, the gills flick, it tastes the air with a small jaw open and looks left and right.</td><td>6 s loop</td></tr>
+      <tr><td>Prowl</td><td>A salamander's walk: diagonal legs step together while an S runs through its body and tail. Feet stay planted while they carry it.</td><td>Game: 1.5 u/s.</td></tr>
+      <tr><td>Turn left, turn right</td><td>It swings round on the spot, head first, the body bending after it.</td><td>Mine: 90 degrees a second. The game turns it to its target at once.</td></tr>
+      <tr><td>Magma Dive</td><td>The ring fills under the hero. It digs with its snout, noses into the floor and slides under, tail last. A dim glow runs under the floor to the ring, which cracks gold just before it bursts up through it on the beat with its mouth open. It slams down and lies spent: sprawled and dull grey, coals out. Then it gathers itself and the coals come back.</td><td>Game: Ember ring of radius 2.0 u on the hero for 76 ticks, under the floor for the last 46; 16 damage; a slag pool of radius 1.4 u that slows by 30 percent for 3 s; spent for 60 ticks (40 when enraged), taking 25 percent more damage. Here the hero stands 4 u away.</td></tr>
+      <tr><td>Tail Lash</td><td>While the cone fills it coils its tail round to its right, braced on its legs. On the beat it whips it across behind itself to its left, where the hero stands, and the hero is thrown. It settles and the tail swings back.</td><td>Game: when a hero is inside 2.8 u; Ember cone of radius 3.2 u and half-angle 65 degrees for 48 ticks; 12 damage and a 1.8 u throw over 8 ticks. The game aims the cone at the nearest hero and lashes first at a hero on its flank, so here the hero stands 2.2 u away at its left side.</td></tr>
+      <tr><td>Ember Spit</td><td>It rears up on its hind legs and the inside of its mouth heats white-gold. It spits three gobbets of fire on high arcs, each landing on its own ring and leaving a small pool of slag. It drops back onto its front feet.</td><td>Game: from half health; three Ember rings of radius 1.1 u, one on each hero it can see, landing at 60, 72 and 84 ticks; 9 damage each; pools of radius 0.9 u. Here the hero stands 5 u away and the other two rings stand in for heroes beside it.</td></tr>
+      <tr><td>Enrage</td><td>It rises on its front legs with its mouth wide in a roar and the coals flare. Then it slaps both front feet down.</td><td>Mine: 1.8 s. The game enrages it under 40 percent health but has no pose for it.</td></tr>
+      <tr><td>Hurt</td><td>The head and chest are knocked back. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>It is shoved back 0.25 u, its feet skidding with it, then plants its front feet again.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>It grows out of the floor snout first, the way it bursts from a dive, comes down on its front feet and shakes the slag off its back. The coals wake.</td><td>Game: grow in 7 frames. The rise is mine.</td></tr>
+      <tr><td>Death</td><td>A jolt throws its head up. It thrashes, its legs give and it drops onto its belly, then slumps with its head on the floor and its tail curling in. The coals fade out.</td><td>2.6 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker follows every point of the model through every frame of every move. It looks for five things. Sizes are in u; it is 2.4 u long.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>A front elbow flipped in one frame as the dive slammed down, and the legs flipped in the enrage and the death, where a foot was asked to reach further than the leg is long. In the Tail Lash the shoulders jumped sideways at the strike.</td><td>None you would see. The feet now only reach where the leg can, a held-up foot stays inside the leg's length, and the body is balanced against the tail at the strike. One small hind-leg turn of 9 degrees is left in the heavy hit.</td></tr>
+      <tr><td>Any part under the floor</td><td>The tail sank through the floor as the body dipped. A hind foot dug its edge in, because it turned on its heel. The belly dipped through in the slam and the death.</td><td>The tail stays on the floor in every move and the feet sit flat. Two moments still dip 0.01 u: one hind foot at a step of the prowl, and the chest as the enrage slaps down. The dive and the spawn go under the floor on purpose, and the page hides that part.</td></tr>
+      <tr><td>One part pushed through another</td><td>The legs sprawl out from the body, so the upper arm and the hand meet the chest's skin as the leg folds.</td><td>The hands brush the chest by up to 0.04 u as the front legs fold under, and the hind toes come up under the thigh by 0.05 u as the knee bends. Both are hidden under the body from the game's camera.</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>None on the body. Cutting the mouth open stretched the lips when the jaw dropped.</td><td>The lips are cut along their own line, so the jaw opens clean. The biggest pull is 14 times on a few small triangles at the hips, under the floor in the dive and as it grows in at the spawn. Everything else stays under 9 times, which does not show.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>None.</td><td>None. Every move eases in and out, and the loops meet themselves.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Planted feet sliding</td><td>4 mm at most, on one front foot in the prowl. 0 mm in every other move.</td></tr>
+      <tr><td>Feet reaching their marks</td><td>On their marks, except a front foot that falls 33 mm short while it swings in the enrage and 73 mm short while it flails loose in the death.</td></tr>
+      <tr><td>Loops that jump when they restart (idle, prowl, both turns)</td><td>0 degrees.</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model, so nothing was corrected.</td></tr>
+      <tr><td>Feet</td><td>Splayed out to the sides, the way a salamander stands. Its toes point forward on the front feet and out on the hind feet.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only, because the cloud machine cannot play the page at full speed. The weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ol style="margin:8px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:6px;max-width:60ch">
+        <li><strong>The coals.</strong> Your export has three rows of coals down its back. The game's stand-in has two. It could stay as it is.</li>
+        <li><strong>The mouth.</strong> It was closed, so I cut it open and made the inside. A re-export with the mouth a little open would give Tripo's own teeth and tongue.</li>
+        <li><strong>The spent pose.</strong> It lies sprawled flat with its chin down and goes grey. It could instead lie on its side or roll half over.</li>
+        <li><strong>The Ember Spit's rear.</strong> Mine: it stands up on its hind legs. It could instead lift only its head and chest.</li>
+        <li><strong>The gills.</strong> The three stalks on each side move together on one bone. Each stalk could get its own if you want them to flick one by one.</li>
+        <li><strong>The enrage, the death and the turn.</strong> Mine. The game turns it at once and has no pose for the enrage.</li>
+      </ol>
+    </div>
+    <div>
+      <h2>Rough so far</h2>
+      <ul>
+        <li>The gobbets, the glow under the floor and the slag pools are drawn by the page. They are not in the GLB.</li>
+        <li>The hero is a grey stand-in that takes the hit but does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Kiln Gold for the heat and the fire, and Violet for its brow. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>

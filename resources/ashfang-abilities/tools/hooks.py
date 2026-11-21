@@ -1,0 +1,20 @@
+import re
+R='/home/user/echoes-three/'
+def sub(f, old, new, cnt=1):
+    p=R+f; s=open(p).read()
+    assert s.count(old)==cnt, (f, old, s.count(old))
+    s=s.replace(old,new); open(p,'w').write(s)
+sub('src/main.js','  stage.render();\n','  if (!globalThis.__reviewSkipDraw) stage.render(); // REVIEW-ONLY\n')
+sub('src/render/enemies/index.js','        rigs.set(e.id, r);\n','        if (window.__reviewDummy) window.__reviewDummy(r, e); // REVIEW-ONLY\n        rigs.set(e.id, r);\n')
+sub('src/render/enemies/index.js','r.build.group.position.set(ix, 0, iz);','r.build.group.position.set(ix, e.reviewY || 0, iz);')
+sub('src/scenes/arena.js',"import { createAfterimages } from '../render/critters/afterimage.js';\n","import { createAfterimages } from '../render/critters/afterimage.js';\nimport { createReviewAshfangFx } from '../render/critters/reviewAshfangFx.js'; // REVIEW-ONLY\nimport { createReviewFlatStage } from '../render/critters/reviewFlatStage.js'; // REVIEW-ONLY\n")
+sub('src/scenes/arena.js',"  bus.on('room_enter', () => healerRig.cue('spawn'));\n","  bus.on('room_enter', () => healerRig.cue('spawn'));\n  const reviewAF = /[?&]tripo=1\\b/.test(location.search) ? createReviewAshfangFx({ bus, root, world, stage }) : null; // REVIEW-ONLY\n  if (reviewAF) window.__reviewCam = stage.camera; // REVIEW-ONLY\n  const reviewFlat = reviewAF && /[?&]flat=1\\b/.test(location.search) ? createReviewFlatStage({ stage, getActive: () => active }) : null; // REVIEW-ONLY\n  if (reviewFlat) window.__reviewDummy = reviewFlat.dress; // REVIEW-ONLY\n")
+sub('src/scenes/arena.js',"    healerRig.update(dt);\n","    healerRig.update(dt);\n    if (reviewAF) reviewAF.update(dt); // REVIEW-ONLY\n    if (reviewFlat) reviewFlat.update(); // REVIEW-ONLY\n")
+sub('src/sim/allies.js',"    registry.all().filter((e) => e.faction === 'hostile' && e.hittable && e.hp > 0);","    globalThis.__reviewQuietAllies ? [] : registry.all().filter((e) => e.faction === 'hostile' && e.hittable && e.hp > 0); // REVIEW-ONLY")
+sub('src/sim/world.js',"// @gnt:M4b IMPORTS end\n","import { installAshfangReview } from './reviewAshfang.js'; // REVIEW-ONLY\n// @gnt:M4b IMPORTS end\n")
+sub('src/sim/world.js',"  function step(tick, snapshot, seatInputs) {\n","  const reviewAF = typeof location !== 'undefined' && /[?&]tripo=1\\b/.test(location.search) ? installAshfangReview({ registry, events, combat, getTick: () => currentTick }) : null; // REVIEW-ONLY\n  function step(tick, snapshot, seatInputs) {\n")
+sub('src/sim/world.js',"    discretePhase(snapshot);\n","    discretePhase(snapshot);\n    if (reviewAF) reviewAF.step(tick); // REVIEW-ONLY\n")
+sub('src/render/critters/index.js',"import { Color, Group, Vector3 } from 'three';\n","import { attachTripoFox, tripoOn } from './tripoFox.js'; // REVIEW-ONLY\nimport { Color, Group, Vector3 } from 'three';\n")
+sub('src/render/critters/index.js',"  const built = build(rig, trackAccent);\n","  const built = build(rig, trackAccent);\n  const tr = tripoOn() && classId === 'swordsman' ? attachTripoFox({ yawGroup, rig, group }) : null; // REVIEW-ONLY\n  if (tr && typeof window !== 'undefined') {\n    (window.__tripoFoxRigs ||= []).push(tr);\n    window.__tripoFoxCue = (k, ev) => window.__tripoFoxRigs.forEach((r) => r.cue(k, ev));\n  }\n")
+sub('src/render/critters/index.js',"    const P = driver.update(dt);\n","    if (tr) tr.update(dt); // REVIEW-ONLY\n    const P = driver.update(dt);\n")
+print('ok')

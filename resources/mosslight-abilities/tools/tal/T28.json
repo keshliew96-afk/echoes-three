@@ -1,0 +1,51 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3.5
+  ],
+  "pin": true,
+  "fps": 15,
+  "secs": 4.0,
+  "pre": 0.25,
+  "skill": "swift_mend",
+  "allies": [
+   [
+    0,
+    -3.55,
+    0.4
+   ],
+   [
+    -2.8,
+    2.4,
+    1
+   ],
+   [
+    2.8,
+    2.4,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.4,
+    "key",
+    "q"
+   ]
+  ],
+  "cap": "T28 Long Reach (Spring, tier IV) · heal skills reach 20% farther · Swift Mend: 3.84 u instead of 3.2 u, so the Tank at 3.55 u is in range",
+  "leg": "dashed: new reach 3.84 u · gold: today's 3.2 u",
+  "guides": [
+   {
+    "k": "range",
+    "r": 3.84
+   },
+   {
+    "k": "area",
+    "r": 3.2
+   }
+  ],
+  "name": "tal_T28"
+ }
+]

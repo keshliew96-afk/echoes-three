@@ -1,0 +1,15 @@
+ok   the Level Select opens from camp
+ok   the Daily card follows Endless (card 8 of 9), open, on screen (DAILY · Oct 19 The Daily Descent The same run for every player today, with a fixed relic and curse. Go deeper than the r)
+ok   the day's screen shows {"day":"2026-10-19","omen":{"relic":"grave_coin","curse":"withering"},"relic":"Grave Coin","curse":"Withering","rows":5}
+ok   the day's run is live at Level I ({"daily":{"key":"2026-10-19"},"act":1})
+ok   the HUD plate reads {"sub":"DAILY · ROOM 1/8 · CLEAR THE CLEARING"}
+ok   the run is posted: {"key":"2026-10-19","depth":3,"ticks":785,"won":false,"state":"posted","rank":6,"total":6,"best":true}
+ok   the end card reads "THE DAILY DESCENT ENDS" / SCORE330 · New best!DAILYMonday, October 19BOARD#6 of 6 todayDEPTH REACHEDLevel I · 3 rooms · 0:13LEVELS CLEARED0 / 5FURTHEST LEVELI · The Hollow WoodROOMS CLEA
+ok   the day screen opens again from camp
+ok   the player's row is marked: {"me":"6KeshLevel I · 3 rooms0:13","best":"Your counted run today: Level I · 3 rooms in 0:13 · A new descent in 8 h 11 min"}
+ok   the day's screen offers practice now: {"go":"Practice run","once":"Practice runs stay off the board.","practice":true,"counted":"done"}
+ok   a practice run is live and says so: {"daily":{"key":"2026-10-19","practice":true},"sub":"DAILY PRACTICE · ROOM 1/8 · CLEAR THE CLEARING"}
+ok   the practice run stays off the board: {"last":{"key":"2026-10-19","depth":5,"ticks":165,"won":false,"state":"practice"},"best":{"depth":3,"ticks":785,"won":false,"counted":"done"},"totalBefore":6,"totalAfter":6,"summary":"SCORE500 · New best!DAILYMonday, October 19BOARDPractice run · not on the boardDEPTH REACHEDLevel I · 5 rooms · 0:03LEVELS CLEARED0 / 5FURTHEST LEVELI · The Hol"}
+ok   no page errors ()
+
+all checks pass

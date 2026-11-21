@@ -1,0 +1,113 @@
+<div class="wrap">
+  <div>
+    <h1>Vein Weaver from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the Heart's third boss, the one that comes in Level IV once the Hollow Cantor and the Geode Colossus have fallen, with a skeleton and 12 moves added by hand. She walks on eight locked feet in two sets of four, as the game's rig walks her, and casts her binding thread from the spinnerets at the tip of her abdomen, over her back and down the lane. The veins over her abdomen beat with her heart. Her timings are the game's. Pick a move, drag to turn her, and judge the weight and the hit. Nothing in the game has changed.</p>
+    <p class="note"><strong>Eight legs, not six.</strong> Your export has six legs. The game's Vein Weaver has eight, so I copied her back pair, turned each copy 48 degrees further back and set it in the gap behind, as I proposed. If you would rather have six, or re-export her from Tripo with eight, say so and I will rig that instead.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what she does between attacks, and Going turns her on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death holds her down: press it again and she spawns back in. The bar names the part of the move that is playing, in the game's own words. Enraged is her state under 40 percent health: the veins burn, the heart beats faster and the crystals on her legs light. It stays on over every move until you switch it off; the Enrage action switches it on.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="rage" aria-pressed="false">Enraged</button>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="veinweaver-views.png" alt="The Tripo Vein Weaver from the front, her left, the back and her right, before rigging, with six legs" width="1600" height="500">
+      <p class="note" style="padding-top:12px">It came through whole, in one piece: the dark crimson body, the violet abdomen with its veins and crystal spires, the cluster of violet eyes, two hooked fangs, the spinnerets at the tail, and six legs with a violet crystal at each knee and each tip. She stands exactly on the floor and her face points straight ahead, so nothing was corrected. The one change is the added back pair of legs.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>29,210 <small>27,246 as sent, plus 1,964 for the added pair (each copy thinned to half); boss budget about 28,000</small></dd></div>
+    <div><dt>Bones</dt><dd>39 <small>body, head, abdomen, spinnerets, two fangs, and 4 in each of the 8 legs (femur, tibia, tarsus, tip)</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.7 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>1.7 u tall <small>to the tip of the tallest spire, at the game's scale of 2.4, beside a 1 u hero</small></dd></div>
+    <div><dt>Width</dt><dd>2.4 u <small>leg tip to leg tip; the game's body radius is 0.85 u</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>She breathes through the abdomen, which swells with each heartbeat, sways a little on her legs and works her fangs. The front legs lift and tap the floor in turn, tasting the threads.</td><td>4 s loop</td></tr>
+      <tr><td>Walk</td><td>An alternating tetrapod, as the game's rig walks her: four legs step together (left 1, right 2, left 3, right 4) while the other four hold, then they swap. The body glides level with a small bob on each set, and the abdomen swings a little against it.</td><td>Game: 1.25 u/s. One stride of 0.5 u every 0.4 s.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Turns on the spot in the same two sets of four, the head leading and the abdomen trailing.</td><td>Mine: 90 degrees a second. The game turns her to her target at once.</td></tr>
+      <tr><td>Bind</td><td>While the lane fills she draws back off it, tips her abdomen up so the spinnerets point over her back, and lifts her two front legs. On the beat the front legs whip down, she lunges, and the thread shoots from the spinnerets over her head and down the lane. A hero it catches is bound: a ring of thread round them. She hauls the thread in hand over hand, her front legs reaching and pulling in turn, and the hero is dragged in to the end of the leash. Then she settles.</td><td>Game: Ember lane 0.9 u wide and up to 8 u long for 44 ticks; 9 damage; bound 2.5 s on a 3.6 u leash (3.0 enraged). Cast 2.5 frames, held 3 frames, haul 0.45 s (the game's draw), settle. Here the hero stands 6 u away.</td></tr>
+      <tr><td>Heartbeat Slam</td><td>She rears up on her back legs with the front four raised and her fangs spread, while the ring fills and the veins brighten. On the beat she drops and slams the front four down wide, the heart beats, the ring bursts and four vein patches spread out round her. She steps her front legs back in one by one.</td><td>Game: Ember ring of radius 2.8 u round herself for 60 ticks; 18 damage; four vein patches on a 2.1 u ring, radius 0.7 u, 4 s, 40 percent slow. Slam 2.5 frames, held 3 frames, settle. Here the hero stands 2.2 u away.</td></tr>
+      <tr><td>Brood Sacs</td><td>Unwarned: the abdomen swells and lifts as she loads it, a heave, and she flicks it up over her back and dips her head. Three egg sacs fly from the spinnerets, one onto the hero and one to either side, each falling into its Ember ring and bursting into a web.</td><td>Game: no warning; the game's rig loads it over the last 30 ticks, heaves 1.5 frames, throws 2.5 frames. Then three Ember rings of radius 1.1 u for 64 ticks, on the hero and 2.2 u to either side; 10 damage; webs 4 s, 50 percent slow.</td></tr>
+      <tr><td>Enrage</td><td>She rears and drums the air with her front legs, left, right, left, right, her fangs clattering and the abdomen shaking, then slams down. The Enraged state stays on after it.</td><td>Mine: 2 s. The game has no pose for it: the veins burn and the heart quickens.</td></tr>
+      <tr><td>Hurt</td><td>The head is knocked aside, the fangs flare and the abdomen jolts. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Shoved back 0.3 u: the head snaps aside, the body is thrown back, and she scrambles back on all eight legs in two quick sets, braces with her fangs spread and squares up.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>She grows out of the floor curled up with her legs folded under her. The legs unfold and plant one after another, she rises, rears with her front legs up and slams them down once.</td><td>Game: grow in 7 frames. The unfold and the slam are mine.</td></tr>
+      <tr><td>Death</td><td>The veins go dark. A jolt rears her up with her front legs thrown up, she lurches to one side, her legs give one after another and she drops onto her belly. Then all eight legs curl in under her, the way a dead spider's do, and the abdomen sags.</td><td>2.8 s, then she stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker takes every point of the model (17,778 of them) through every frame of every move (1,075 frames) and looks for five things. Sizes are in u; she is 1.7 u tall.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>Hauling the thread in the Bind, the right front leg jumped 47 degrees as its haul started and again as it went back to the floor.</td><td>Only on the strike, where the move is meant to be fast: the front legs and the back shins turn 11 to 43 degrees in the frame the Heartbeat Slam, the Enrage and the Spawn come down. Elsewhere nothing over 10 degrees.</td></tr>
+      <tr><td>Any part under the floor</td><td>In five moves (the Heartbeat Slam, the Enrage, the heavy hit, the Spawn and the Death) the whole body sank out of sight, down to 12 u under the floor: the legs could not reach, and lowering a spider whose hips sit level with her ankles only puts the feet further out. In the Bind and the Brood Sacs the abdomen dipped 0.23 u into the floor, because it was tipped the wrong way.</td><td>Only the fangs, by 0.03 u, for one frame as she drops onto her belly in the death. The body never drops to reach a foot now; each pose is set so all eight feet reach, and the abdomen tips up.</td></tr>
+      <tr><td>One part pushed through another</td><td>In both turns the front legs crossed into the middle legs, up to 0.06 u. In the Spawn the folded back legs went 0.04 u into the abdomen. In the death the third and fourth legs curled into each other, 0.08 u.</td><td>The turns step faster with shorter sweeps, and the folded back legs tuck out from under the abdomen, so both are clean. In the death the third and fourth legs still touch, up to 0.08 u at the knees, as all eight curl in.</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>The waist between the body and the abdomen stretched to 6 times its size as she flicked the abdomen over her back in the Brood Sacs and swelled it in the Heartbeat Slam.</td><td>The flick is smaller (35 degrees) and the swell is about half, so the waist holds. The checker still names one sliver of skin at the top of the right front leg (0.3 mm across as modelled) that grows to 13 mm when the leg lifts; it cannot be seen.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>The walk took one frame further than the front legs reach and the leg snapped back.</td><td>None. Every move eases in and out, and the loops meet themselves.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Planted feet</td><td>0 mm of sliding on any planted foot, in any move. A foot raised in the air falls short of where it is aimed by up to 0.07 u in the Heartbeat Slam's rear, where the leg is at full stretch.</td></tr>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns)</td><td>0 degrees.</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model: the eyes and fangs mirror each other about the middle line, so nothing was corrected.</td></tr>
+      <tr><td>Hard parts</td><td>The crystal spires ride the abdomen, the leg crystals ride their own segment and the fangs are rigid, so no crystal bends. The bend is at the hips, knees and ankles of each leg, the waist and the neck.</td></tr>
+      <tr><td>Feet</td><td>The legs keep the model's spread. A spider's legs splay by nature, so the no-splay rule for humanoids does not apply.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>The legs.</strong> Eight, made by copying her back pair (my pick, the game's count), six as you sent her, or a Tripo re-export with eight.</li>
+        <li><strong>The thread's path.</strong> It leaves the spinnerets at her tail, arcs over her back and head and goes down the lane. The game's rig shoots it the same way. It could come from her fangs instead, which reads faster but is not how spiders spin.</li>
+        <li><strong>The haul.</strong> She pulls the thread in hand over hand with her front legs. The game only pulls the hero in.</li>
+        <li><strong>The enrage.</strong> The drumming and the slam are mine; the game only burns the veins and quickens the heart.</li>
+        <li><strong>The death.</strong> Belly down with her legs curled under her. She could flip onto her back instead, legs curled up, which reads as dead faster from the game's camera.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Rough so far</h2>
+      <ul>
+        <li>The added legs are copies, so they carry the same crystals and wear as the back pair.</li>
+        <li>She is about 1,200 triangles over the boss budget because of the added pair.</li>
+        <li>The crystal spires do not move on their own, and the abdomen's swell is a scale, not a breath.</li>
+        <li>The thread is a thin line, the same width at every zoom.</li>
+        <li>The hero is a grey stand-in that does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for her power, pale silk for the webs. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>

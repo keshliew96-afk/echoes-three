@@ -1,0 +1,120 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C17",
+  "aim": [
+   0,
+   -3
+  ],
+  "slots": [
+   "quiet_hearth"
+  ],
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    0.2,
+    -6.2
+   ]
+  ],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=900;e.hp=900;e.boss=true;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    0.6,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    0.8,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    1.0,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    1.2000000000000002,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    1.4,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    1.6,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    1.8000000000000003,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    2.0,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    2.2,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    2.4,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    2.6,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    2.8000000000000003,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    3.0000000000000004,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ],
+   [
+    3.2,
+    "eval",
+    "for(const e of w.entities()) if(e.kind==='dummy'){e.z+=0.3;}"
+   ]
+  ],
+  "secs": 3.8,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C17 \u00b7 A boss tramples the hedge"
+ }
+]

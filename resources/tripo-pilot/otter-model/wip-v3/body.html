@@ -1,0 +1,106 @@
+<div class="wrap">
+  <div>
+    <h1>Otter Tidecaller from Tripo, rigged</h1>
+    <p class="lede">Version 3: she has no hit combo. Hold attack and she shoots a steady stream of water; after 5 seconds of stream she stops and throws a small tsunami that rolls away from her. While the stream flows she casts with her free left paw and the staff keeps streaming. Pick one move or combine several, and drag to turn her. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="layers" id="gauge"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way she walks, runs or dashes while she keeps facing the same way. Add one Action for the upper body, and Hurt on top. Hold attack is a switch on this page: press it once to hold and again to let go, or hold the Space bar. The line above counts the 5 seconds. Press a cast while holding: her left paw makes the cast once and the stream never stops. Press a cast without holding for the full staff motion. Dash and Downed use the whole body, so they play alone. Press Downed again to revive her. Hit feel adds the freeze, the kick, the camera shake, the water and the dust.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="otter-views.png" alt="The Tripo otter from the front, right, back and left, arms out, before rigging" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">The body is as you sent it, thinned a little to fit the budget. The satchel and the sash are part of the body, so they move with her trunk.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,981 <small>body 13,045 + staff 1,936 · budget 15,000</small></dd></div>
+    <div><dt>Bones</dt><dd>21 <small>spine, head, arms, fingers, legs, four in the tail</small></dd></div>
+    <div><dt>Textures</dt><dd>2 × 2K <small>body and staff, colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.6 MB <small>one GLB with all 30 moves at 60 frames a second</small></dd></div>
+    <div><dt>Moves</dt><dd>30 <small>idle, 4 walks, 4 runs, 4 dashes, water stream, tsunami, 4 casts, 4 left-paw casts, ripple step, downed (fall, lie, crawl, revive), hurt, wave</small></dd></div>
+  </dl>
+
+  <h2>The body and the staff</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Part</th><th>As it came</th><th>What was done</th></tr></thead>
+    <tbody>
+      <tr><td>Body</td><td>14,119 triangles, one piece, arms out, nothing broken; the thick tail lies on the floor and curls to her left</td><td>thinned to 13,045 triangles to make room for the staff; no visible change in the four views. The tail has four bones so it can drag, swing and slap</td></tr>
+      <tr><td>Reed staff</td><td>1,936 triangles, sound, with the shell at the top and a blue wrap low on the shaft</td><td>kept as it is, scaled to nine tenths so the shell sits just above her head, and held in her right paw at the blue wrap</td></tr>
+    </tbody></table></div>
+
+  <h2>Her moves</h2>
+  <p class="note"><strong>The rule for all of it:</strong> water, not steel. Nothing snaps: each move swells, breaks and washes back. Her weight sits low over her short legs, her trunk rolls into every swing, and the tail follows a beat late like a rudder.</p>
+  <p class="note"><strong>Idle.</strong> She stands easy with the staff upright beside her, sways a little as if on a slow current, looks about, and the tail tip stirs on the floor.</p>
+  <p class="note"><strong>Walk and run.</strong> The walk is a rolling waddle with the staff carried upright. In the run she leans in and levels the staff forward, and the tail streams behind.</p>
+  <p class="note"><strong>Basic attack: the held stream.</strong> While attack is held she levels the staff, drops low behind it with her right shoulder forward and her free paw steadying it, and the water runs from the shell in one unbroken stream (2.6 m on this page; the game sets the range). She shivers a little with the recoil and her tail sways. A soft ball of water at the shell swells as the 5 seconds fill, so you can read how close the tsunami is. Over Walk or Run her legs keep going and only her upper body holds the stream. When she lets go, the tail of the stream flies on and the count empties.</p>
+  <p class="note"><strong>The tsunami, my proposal for the motion: the pull and the heave</strong> (1.6 s, the wave leaves at 0.68 s). She cuts the stream and hauls the staff back over her right shoulder as if dragging the whole stream back to her, and the water balls up over the shell. She rises on her toes with the staff high and her tail lifted, hangs a beat, then heaves the staff over and down with her whole weight: her tail slaps the floor, her free paw shoves forward, and a low wave with a pale curling crest stands up in front of her and rolls 3 m straight ahead. It keeps one fixed width, about 1.3 m as in your two red lines, and does not fan out. If she is still holding, the stream starts again from zero.</p>
+  <p class="note"><strong>Two kinds of cast.</strong> <em>Not streaming:</em> the full staff motions below. <em>While streaming:</em> the staff stays levelled and the stream keeps flowing, and only her empty left paw casts. Torrent: the paw is drawn up by her cheek and thrown forward. Call the water: the paw is flung up and out and stirs once. Whirlpool: the paw is lifted and slapped down ahead of her as she dips. Crashing wave: the paw is flung wide and swept across her front. The water of each cast leaves from the paw, a little smaller. The 5 seconds keep counting through a left-paw cast, because the stream is still flowing. Two things are still my guesses: the count empties when she lets go, and a started tsunami always finishes.</p>
+  <p class="note"><strong>Casts.</strong> <em>Torrent</em> (0.44 s): she winds the staff back and pushes the shell straight out, and a stream leaves it; this covers riverbolt, torrent and undertow. <em>Call the water</em> (0.60 s): the staff goes up high and stirs a circle overhead, and rain comes down around her; for rain squall, bubble ward and tidepool. <em>Whirlpool</em> (0.40 s): she plants the butt on the floor ahead and a pool stays there for a moment; for whirlpool and maelstrom. <em>Crashing wave</em> (0.46 s): a wide level sweep that sends a wave rolling out ahead; for breaker and crashing wave. <em>Ripple step</em>: she throws herself forward on her belly and slides, the staff held back along her side.</p>
+  <p class="note"><strong>Effects.</strong> Deep Cobalt for the water and Sea Foam for its crest, the Tidecaller's two colours in the game, and River Pebble for the dust. The stream is two thin crossed ribbons with a pale core and a few drops where it ends; the tsunami is a see-through wave with a pale crest and a little foam left on the floor behind it. All of it is dim and switches off with Hit feel. The stream does not freeze or shake the camera; the tsunami, the whirlpool and the crashing wave do.</p>
+
+  <h2>Measured, 13 November</h2>
+  <p class="note">Every frame of all 30 moves (60 a second) was measured, and the poses were checked as still frames from the front, the side, above and behind. The cloud machine cannot play it at full speed, so the speed and the weight are yours to judge.</p>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured in every frame</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Staff cutting into her body (the build's own check)</td><td>0 in all 30 moves</td></tr>
+      <tr><td>Staff arm stretched past its reach</td><td>never by more than a hair: the paw stays on the grip</td></tr>
+      <tr><td>Shell against her head</td><td>21 cm or more from the centre of her head, which is about 5 cm off her cheek at the closest (dash, hurt, and the whirlpool plant): tight, look at these</td></tr>
+      <tr><td>Staff against her trunk and satchel</td><td>22 cm or more from the middle of her trunk, which is just outside her fur: she is 40 cm wide, so the staff always travels close to her side</td></tr>
+      <tr><td>Staff against her legs and her tail</td><td>29 cm or more</td></tr>
+      <tr><td>Staff against her free arm</td><td>36 cm or more</td></tr>
+      <tr><td>Tail under the floor</td><td>0; it rests on the floor and lifts when her hips sink</td></tr>
+      <tr><td>Feet under the floor</td><td>0</td></tr>
+      <tr><td>Feet crossing</td><td>never closer than 23 cm</td></tr>
+      <tr><td>Loops that jump on restart</td><td>0</td></tr>
+      <tr><td>The new moves</td><td>stream: staff 25 cm or more from the centre of her head, feet planted 29 cm apart, no jerks or stops. Tsunami: nothing cuts through; the tail touches the floor on the slap</td></tr>
+      <tr><td>Page tests</td><td>hold, 5 second count, tsunami, stream again; a cast while holding uses the left paw, the stream stays on and the count keeps going; a cast without holding uses the staff; the same over Walk; dash while holding; Space bar; Hit feel off hides the water; no page errors</td></tr>
+    </tbody></table></div>
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The staff stays in her paw and clear of her head, belly, satchel and tail through every move.</li>
+        <li>The four casts and the ripple step cover her 11 skills in the game.</li>
+        <li>The tail drags behind every turn, lifts when she sinks so it never goes through the floor, and slaps down as the tsunami leaves.</li>
+        <li>Her feet stay on the floor when she drops her weight.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>Her arms are very short (about 19 cm of reach on a body 40 cm wide), so the staff cannot swing far across her front or behind her. The sweeps come mostly from turning her trunk.</li>
+        <li>Only her right paw holds the staff. Her left paw cannot reach it across her belly, so there are no two-handed moves.</li>
+        <li>She has no knees, so sinking low is a lean and a drop of the hips. Her fingers don't close round the staff, and the satchel and sash are stiff.</li>
+        <li>Her feet can slide while she walks, the moves play in place (the ripple step does not carry her forward), and she has no ink outline or flat game colours yet.</li>
+        <li>The page has no enemies, so the stream runs to a fixed range and the knock-back is not shown. Damage per second, range, the wave's size and the knock-back are yours to set, and all of this is a new mechanic that needs your go before it enters the game.</li>
+        <li>The Torrent cast now looks much like the basic stream (a stronger push of the same water). Say if it should become something else.</li>
+        <li>Her left arm is about 19 cm long, so the left-paw casts are small gestures; her head, chest and hips move with them so they read.</li>
+        <li>I only saw the stream, the wave and the left-paw casts as stills.</li>
+        <li>Dash, the downed moves, Hurt and Wave use the other heroes' timing with her tail added; they were not designed for her from scratch.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+

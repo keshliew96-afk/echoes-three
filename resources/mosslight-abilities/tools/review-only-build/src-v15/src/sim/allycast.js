@@ -1,0 +1,1312 @@
+// The ally cast pipeline (docs/gauntlet/PLAN.md §16.3, BUILD_BRIEF §25.2).
+// Owner: PARTY.
+//
+// ONE function delivers every ally class skill — an AI-held seat's cast
+// (target-based), a human seat's press (aim-based, lag-compensated
+// selection), an Echo recast (the recorded delivery, never a cast) and the
+// Riposte / Parry counter — so the four characters share the Healer's build
+// model. Its `deliver` is also the Healer's (sim/skills.js hands it her kit
+// context: AUDIT D2, docs/CODE_HEALTH.md "One cast path"):
+//   1. def = seatBuild.resolveDef(baseDef)  (the §15.4 pipeline; an EMPTY
+//      build returns baseDef itself, so an unbuilt ally casts exactly as the
+//      v0.5.150 kit did: same events, same RNG draws — the ?room= goldens);
+//   2. the cast-time mods (sim/partytech.js castMods: Resonance ×2, combo /
+//      Momentum / Steady Aim pct, Lethality / Heartseeker / Execute /
+//      Concussive / Anchor / Skewer / Scatter per instance);
+//   3. the displacement (dash / vault / Pursuit before the delivery, the
+//      Disengage hop after it) — swept like the §5 dodge; an AI seat's is
+//      target-based and leash-capped, a human seat's is AIM-based and uses
+//      the dodge machinery (dashVel / dashTicksLeft) so the guest predicts
+//      it exactly like a dodge (seatDisplacement(), shared with
+//      net/predict.js);
+//   4. the §6 delivery with `source: def.id` on every instance;
+//   5. `skill_cast` (with its classId) — byte-identical to v0.5.150 for an empty build; new keys
+//      only when set (echo, resonance, combo, dash, vault, parry).
+//
+// Sim discipline: no DOM, no render imports, no wall clock; the only RNG is
+// the combat pipeline's own crit roll per instance, in resolution order.
+import { TICK_HZ, KNOCKBACK } from '../core/constants.js';
+import { clampPlacement, countFinal, fanDirections, selectDirect, selectNova, selectArc, selectAreaDamage, isHealable, createSkillBolts } from './shapes.js';
+import { sweptStep } from './movement.js';
+import { CLASS_TECH, AI_ENGAGE } from '../data/classes.js';
+import { isBlinded } from './status.js';
+import { ZONE_CADENCE_TICKS } from './zones.js';
+
+const r2 = (v) => Math.round(v * 100) / 100;
+const secTicks = (s) => Math.round(s * TICK_HZ);
+export const CD_FLOOR_TICKS = secTicks(0.5); // §6 cooldown floor
+const BOLT_RADIUS = 0.05;
+const DASH_STOP_FRAC = 0.8; // a dash stops with its target inside 0.8 × the delivery's reach
+
+export const cdTicksOf = (def) => Math.max(CD_FLOOR_TICKS, secTicks(def.cd ?? 0));
+// §7 range test per delivery shape (nova: burst radius; the rest: reach /
+// travel / placement range).
+export const shapeRange = (def) => (def.shape === 'nova' || def.shape === 'aura' ? def.area : def.range);
+
+function unit(dx, dz, fx = 0, fz = 1) {
+  const l = Math.hypot(dx, dz);
+  if (l > 1e-6) return { x: dx / l, z: dz / l };
+  const fl = Math.hypot(fx, fz);
+  return fl > 1e-6 ? { x: fx / fl, z: fz / fl } : { x: 0, z: 1 };
+}
+
+// THE DUSKWING: Deep Dive — a dash or a vault goes farther, per copy (a
+// socketed technique, so the guest's predictor sees the same list).
+function deepDiveU(techs) {
+  if (!Array.isArray(techs) || !techs.includes('deep_dive')) return 0;
+  return techs.filter((x) => x === 'deep_dive').length * CLASS_TECH.deepDiveU;
+}
+
+// ---------------------------------------------------------------------------
+// seatDisplacement — the HUMAN-seat rule (BUILD_BRIEF §25.2, PLAN §16.5). A
+// pure function of the seat's own input: its position, its aim point at the
+// press, the resolved skill and the socketed techniques. Hostile positions
+// never enter it, so the guest's predictor (net/predict.js) computes the SAME
+// displacement from the same frame and never mispredicts it.
+//   phase 'pre'  — Shoulder Charge / Fox Step dash, Pursuit, Vault Shot vault
+//   phase 'post' — the Disengage hop (after a skill without a vault)
+// Returns { vx, vz, ticks, iframes, cause } (u per tick) | null.
+export function seatDisplacement(body, def, techs, aim, phase = 'pre') {
+  const face = { x: body.faceX ?? 0, z: body.faceZ ?? 1 };
+  const ax = aim ? aim.x - body.x : 0;
+  const az = aim ? aim.z - body.z : 0;
+  const toAim = unit(ax, az, face.x, face.z);
+  const aimDist = Math.hypot(ax, az);
+  const has = (id) => Array.isArray(techs) && techs.includes(id);
+  const deep = deepDiveU(techs);
+  if (phase === 'pre') {
+    if (def.vault) {
+      const dist = def.vault.dist + (has('disengage') ? CLASS_TECH.disengageVaultBonusU : 0) + deep;
+      const ticks = Math.max(1, def.vault.ticks | 0);
+      return { vx: (-toAim.x * dist) / ticks, vz: (-toAim.z * dist) / ticks, ticks, iframes: !!def.vault.iframes, cause: 'vault' };
+    }
+    let dash = null;
+    if (def.dash) dash = { dist: def.dash.dist + (has('pursuit') ? CLASS_TECH.pursuitFoxBonusU : 0) + deep, speed: def.dash.speed, iframes: !!def.dash.iframes, cause: 'dash' };
+    else if (has('pursuit') && !def.parry && (def.shape === 'melee_arc' || def.shape === 'nova'))
+      dash = { dist: CLASS_TECH.pursuitDashU, speed: 10, iframes: true, cause: 'pursuit' }; // Fox Step's dash rules
+    if (!dash) return null;
+    const reach = shapeRange(def) || 0;
+    const len = Math.min(dash.dist, Math.max(0, aimDist - DASH_STOP_FRAC * reach));
+    if (!(len > 0.02)) return null;
+    const perTick = dash.speed / TICK_HZ;
+    const ticks = Math.max(1, Math.ceil(len / perTick));
+    return { vx: (toAim.x * len) / ticks, vz: (toAim.z * len) / ticks, ticks, iframes: dash.iframes, cause: dash.cause };
+  }
+  if (phase === 'post' && has('disengage') && !def.vault && def.shape !== 'aura') {
+    const ticks = CLASS_TECH.disengageTicks;
+    const dist = CLASS_TECH.disengageU;
+    return { vx: (-toAim.x * dist) / ticks, vz: (-toAim.z * dist) / ticks, ticks, iframes: true, cause: 'disengage' };
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// ctx (from sim/allies.js): registry, events, combat, getTick, bolts,
+// enemiesInArc, enemiesInNova, face, hostiles, party, rewound,
+// compensatedAim, isIframed, leashAnchor, leashRadius, tech() (the party
+// technique module), build(seat) (the seat build system).
+export function createAllyCaster(ctx) {
+  const { registry, events, combat, getTick, bolts, enemiesInArc, enemiesInNova, face, hostiles, party, rewound, compensatedAim, isIframed } = ctx;
+  // Heal recipients: the seats, then the escort's pilgrim.
+  const healables = () =>
+    registry
+      .all()
+      .filter(isHealable)
+      .sort((p, q) => (p.partyIndex ?? 9) - (q.partyIndex ?? 9));
+  const tech = () => (typeof ctx.tech === 'function' ? ctx.tech() : null);
+  const buildOf = (seat) => (typeof ctx.build === 'function' ? ctx.build(seat) : null);
+  let castSeq = 0; // per-cast id (Heartseeker's first instance per target, Flow once per cast)
+
+  // Scatter shards: a bolt spent at max range bursts (technique output).
+  const scatterShards = createSkillBolts({
+    registry,
+    events,
+    owner: 'scatter_shards',
+    onImpact: (tick, bolt, target) => {
+      const len = Math.hypot(bolt.vx, bolt.vz);
+      const t = registry.byId(target.id);
+      if (!t) return;
+      const T = tech();
+      const hit = () =>
+        combat.applyDamage(t, bolt.power, {
+          delivery: 'skill',
+          shape: 'projectile',
+          dirX: len > 1e-9 ? bolt.vx / len : 0,
+          dirZ: len > 1e-9 ? bolt.vz / len : 0,
+          attacker: bolt.sourceId,
+          source: `${bolt.skill}:scatter`,
+        });
+      if (T) T.suppressed(bolt.seat ?? null, hit);
+      else hit();
+    },
+  });
+
+  // ---------------------------------------------------------- displacement --
+  // AI seats: target-based, leash-capped. Returns the same shape as
+  // seatDisplacement() or null.
+  function aiDisplacement(a, def, techs, target, phase, lunge = false) {
+    const has = (id) => Array.isArray(techs) && techs.includes(id);
+    const anchor = typeof ctx.leashAnchor === 'function' ? ctx.leashAnchor() : null;
+    // fix-M4a-r5: the seat's own ring (a melee seat's vanguard ring in a
+    // campaign, AI_ENGAGE) — a number for every seat before.
+    const R = typeof ctx.leashRadius === 'function' ? ctx.leashRadius(a) : ctx.leashRadius ?? Infinity;
+    const clampEnd = (ex, ez) => {
+      if (!anchor) return { x: ex, z: ez };
+      const dx = ex - anchor.x;
+      const dz = ez - anchor.z;
+      const d = Math.hypot(dx, dz);
+      if (d <= R || d < 1e-6) return { x: ex, z: ez };
+      const s = R / d;
+      return { x: anchor.x + dx * s, z: anchor.z + dz * s };
+    };
+    const nearestHostile = (maxD = Infinity) => {
+      let best = null;
+      let bd = maxD * maxD;
+      for (const e of hostiles()) {
+        const d2 = (e.x - a.x) ** 2 + (e.z - a.z) ** 2;
+        if (d2 < bd || (d2 === bd && best && e.id < best.id)) {
+          bd = d2;
+          best = e;
+        }
+      }
+      return best;
+    };
+    const build = (dirx, dirz, dist, ticksOrSpeed, bySpeed, iframes, cause) => {
+      const e = clampEnd(a.x + dirx * dist, a.z + dirz * dist);
+      const len = Math.hypot(e.x - a.x, e.z - a.z);
+      if (!(len > 0.02)) return null;
+      const ticks = bySpeed ? Math.max(1, Math.ceil(len / (ticksOrSpeed / TICK_HZ))) : Math.max(1, ticksOrSpeed | 0);
+      return { vx: (e.x - a.x) / ticks, vz: (e.z - a.z) / ticks, ticks, iframes, cause };
+    };
+    if (phase === 'pre') {
+      if (def.vault) {
+        const dist = def.vault.dist + (has('disengage') ? CLASS_TECH.disengageVaultBonusU : 0) + deepDiveU(techs);
+        const h = nearestHostile();
+        const away = h ? unit(a.x - h.x, a.z - h.z, -(a.faceX ?? 0), -(a.faceZ ?? 1)) : unit(-(a.faceX ?? 0), -(a.faceZ ?? 1));
+        return build(away.x, away.z, dist, def.vault.ticks, false, !!def.vault.iframes, 'vault');
+      }
+      let dash = null;
+      if (def.dash) dash = { dist: def.dash.dist + (has('pursuit') ? CLASS_TECH.pursuitFoxBonusU : 0) + deepDiveU(techs), speed: def.dash.speed, iframes: !!def.dash.iframes, cause: 'dash' };
+      else if (has('pursuit') && !def.parry && (def.shape === 'melee_arc' || def.shape === 'nova'))
+        dash = { dist: CLASS_TECH.pursuitDashU, speed: 10, iframes: true, cause: 'pursuit' };
+      // fix-M4a-r5 (GP.8): an overdue melee delivery cast at a hostile just
+      // out of reach closes the gap first (AI seats in a campaign only).
+      else if (lunge && !def.parry && (def.shape === 'melee_arc' || def.shape === 'nova'))
+        dash = { dist: AI_ENGAGE.lungeU, speed: AI_ENGAGE.lungeSpeed, iframes: false, cause: 'lunge' };
+      if (!dash || !target) return null;
+      const d = Math.hypot(target.x - a.x, target.z - a.z);
+      const reach = shapeRange(def) || 0;
+      const len = Math.min(dash.dist, Math.max(0, d - DASH_STOP_FRAC * reach));
+      const dir = unit(target.x - a.x, target.z - a.z, a.faceX ?? 0, a.faceZ ?? 1);
+      return build(dir.x, dir.z, len, dash.speed, true, dash.iframes, dash.cause);
+    }
+    if (phase === 'post' && has('disengage') && !def.vault) {
+      const h = nearestHostile(CLASS_TECH.disengageRangeU);
+      if (!h) return null;
+      const away = unit(a.x - h.x, a.z - h.z, -(a.faceX ?? 0), -(a.faceZ ?? 1));
+      return build(away.x, away.z, CLASS_TECH.disengageU, CLASS_TECH.disengageTicks, false, true, 'disengage');
+    }
+    return null;
+  }
+
+  // Start a displacement on a body. Human seats ride the dodge machinery
+  // (dashVel / dashTicksLeft, stepped per input frame by sim/remote.js — the
+  // guest predicts it the same way); AI seats ride `skillDash`, stepped by
+  // stepDashes() in the ally continuous phase.
+  function startDisplacement(a, disp, def, tick, human, tag) {
+    if (human) {
+      a.dashVel = { x: disp.vx, z: disp.vz };
+      a.dashTicksLeft = disp.ticks;
+      a.dashIframes = !!disp.iframes;
+      a.dashing = true;
+      if (disp.iframes) a.iframeUntilTick = tick + 1;
+    } else {
+      a.skillDash = { vx: disp.vx, vz: disp.vz, ticksLeft: disp.ticks, iframes: !!disp.iframes };
+      if (disp.iframes) a.iframeUntilTick = tick + 1;
+    }
+    const x1 = a.x + disp.vx * disp.ticks;
+    const z1 = a.z + disp.vz * disp.ticks;
+    events.emit(tick, 'ally_dash', {
+      seat: a.partyIndex,
+      id: a.id,
+      skill: def.id,
+      x0: r2(a.x),
+      z0: r2(a.z),
+      x1: r2(x1),
+      z1: r2(z1),
+      ticks: disp.ticks,
+      cause: disp.cause,
+      ...(tag || {}),
+    });
+  }
+
+  // AI continuous phase: advance every AI skill dash one swept step. A wall
+  // ends it. Returns true when this body is mid-displacement (steering
+  // suspended this tick).
+  function stepDash(a, tick) {
+    const sd = a.skillDash;
+    if (!sd) return false;
+    if (sd.ticksLeft > 0) {
+      const { hit } = sweptStep(a, sd.vx, sd.vz, a.radius);
+      sd.ticksLeft -= 1;
+      if (hit) sd.ticksLeft = 0;
+      if (sd.iframes) a.iframeUntilTick = tick + 1;
+      a.moving = true;
+      const l = Math.hypot(sd.vx, sd.vz);
+      if (l > 1e-6 && !a.pendingCast) face(a, sd.vx, sd.vz);
+    }
+    if (sd.ticksLeft <= 0) a.skillDash = null;
+    return true;
+  }
+  const displacing = (a) => !!(a.skillDash && a.skillDash.ticksLeft > 0) || (a.dashTicksLeft > 0 && a.dashIframes !== undefined);
+
+  // --------------------------------------------------------------- casting --
+  // cast(a, baseDef, slot, tick, how) — a PRIMARY cast.
+  //   how.mode 'ai':    { target }          (the AI's chosen target)
+  //   how.mode 'human': { f, tag, d }       (the seat's input frame + aim dir)
+  // Starts the cooldown; either delivers now, or starts the pre-delivery
+  // displacement and delivers when it ends (runPending()).
+  function cast(a, baseDef, slot, tick, how) {
+    const seat = a.partyIndex;
+    const build = buildOf(seat);
+    const def = build ? build.resolveDef(baseDef) : baseDef;
+    const T = tech();
+    const techs = build ? build.tech.liveTechs(baseDef.id) : [];
+    const human = how.mode === 'human';
+    const aim = human ? (how.f && how.f.aim ? { x: how.f.aim.x, z: how.f.aim.z } : { x: a.x + how.d.x, z: a.z + how.d.z }) : null;
+    // Riposte: the cast IS the parry window (the counter delivers later).
+    if (def.parry) {
+      if (T) T.openParry(a, def, slot, tick, { rec: null, tag: how.tag ?? null, primary: true, cast: true, human });
+      return true;
+    }
+    const disp = human ? seatDisplacement(a, def, techs, aim, 'pre') : aiDisplacement(a, def, techs, how.target, 'pre', !!how.lunge);
+    if (disp) {
+      a.pendingCast = {
+        slot,
+        skill: baseDef.id,
+        targetId: human ? null : how.target ? how.target.id : null,
+        aim: aim ? { x: aim.x, z: aim.z } : null,
+        tag: how.tag ?? null,
+        dispCause: disp.cause,
+        viewTick: human && how.f ? how.f.viewTick ?? null : null,
+      };
+      // THE TIDECALLER: Ripple Step's puddle lands where the vault began.
+      if (def.atOrigin) a.pendingCast.origin = { x: a.x, z: a.z };
+      startDisplacement(a, disp, def, tick, human, how.tag);
+      return true;
+    }
+    deliverPrimary(a, baseDef, def, slot, tick, how, null);
+    return true;
+  }
+
+  // The deferred delivery of a displaced cast (AI: once the dash ended; human:
+  // once dashTicksLeft reached 0). Called from the seat's discrete slot.
+  function runPending(a, tick, how = null) {
+    const p = a.pendingCast;
+    if (!p) return false;
+    if (displacing(a)) return false;
+    a.pendingCast = null;
+    const baseDef = ctx.skillDef(p.skill);
+    if (!baseDef) return false;
+    const build = buildOf(a.partyIndex);
+    const def = build ? build.resolveDef(baseDef) : baseDef;
+    if (!(a.hp > 0)) return false;
+    let h;
+    if (p.aim) {
+      const d = unit(p.aim.x - a.x, p.aim.z - a.z, a.faceX ?? 0, a.faceZ ?? 1);
+      h = { mode: 'human', f: how && how.f ? how.f : { aim: p.aim, viewTick: p.viewTick }, tag: p.tag, d };
+    } else {
+      let target = p.targetId != null ? registry.byId(p.targetId) : null;
+      if (!target || !(target.hp > 0)) target = registry.byId(a.targetId) || null;
+      h = { mode: 'ai', target: target && target.hp > 0 ? target : null };
+      if (!h.target) {
+        // The target died mid-dash: the delivery swings at the facing.
+        h = { mode: 'ai', target: null, facing: { x: a.faceX ?? 0, z: a.faceZ ?? 1 } };
+      }
+    }
+    if (p.origin) h.origin = p.origin;
+    deliverPrimary(a, baseDef, def, p.slot, tick, h, p.dispCause);
+    return true;
+  }
+
+  function deliverPrimary(a, baseDef, def, slot, tick, how, dispCause) {
+    const T = tech();
+    const castId = (castSeq += 1);
+    const human = how.mode === 'human';
+    // Current (a Tidecaller node) counts the soaked around where the cast lands.
+    const at = human ? (how.f && how.f.aim ? how.f.aim : null) : how.target ? { x: how.target.x, z: how.target.z } : null;
+    const M = T ? T.castMods(a, baseDef, def, tick, { echo: false, at }) : null;
+    const power = M && M.power !== undefined ? M.power : def.power;
+    let d;
+    if (human) d = how.d;
+    else if (how.target) d = unit(how.target.x - a.x, how.target.z - a.z);
+    else d = unit(how.facing ? how.facing.x : a.faceX ?? 0, how.facing ? how.facing.z : a.faceZ ?? 1);
+    const extra = {};
+    if (M && M.resonance) extra.resonance = true;
+    if (M && M.combo) extra.combo = M.combo;
+    if (dispCause === 'dash' || dispCause === 'pursuit') extra.dash = true;
+    if (dispCause === 'vault') extra.vault = true;
+    const cast = deliver(a, def, power, {
+      slot,
+      tick,
+      human,
+      target: human ? null : how.target,
+      f: how.f ?? null,
+      tag: how.tag ?? null,
+      d,
+      echo: null,
+      castId,
+      M,
+      extra,
+      origin: how.origin ?? null,
+    });
+    // MORE CLASS SKILLS: `selfStatus` (Blade Dance, Feather Fan) lands on the
+    // caster with the cast (never on an echo or a counter).
+    if (def.selfStatus && combat.status && a.hp > 0) combat.status.apply(a, def.selfStatus.kind, def.selfStatus.mag, def.selfStatus.ticks, tick, a.id);
+    if (T) T.afterCast(a, baseDef, def, { slot, tick, cast, castId, human, aim: human && how.f ? how.f.aim : null, target: human ? null : how.target, tag: how.tag ?? null, M });
+    return cast;
+  }
+
+  // An Echo recast (sim/nodes.js echoCast): the recorded DELIVERY at `power`
+  // — never the dash / vault, never a parry window, never a cast (no combo /
+  // Momentum / Flow / Resonance).
+  function echo(seat, rec, def, power) {
+    const a = party().find((m) => m.partyIndex === seat);
+    if (!a || !(a.hp > 0)) return null;
+    const T = tech();
+    const c = rec.cast || {};
+    const castId = (castSeq += 1);
+    const M = T ? T.castMods(a, def, def, getTick(), { echo: true }) : null;
+    const d = unit(c.dx ?? a.faceX ?? 0, c.dz ?? a.faceZ ?? 1);
+    const target = c.target != null ? registry.byId(c.target) : null;
+    return deliver(a, def, power, {
+      slot: c.slot ?? -1,
+      tick: getTick(),
+      human: false,
+      target: target && target.hp > 0 ? target : null,
+      f: null,
+      tag: null,
+      d,
+      echo: c,
+      castId,
+      M,
+      extra: { echo: true },
+    });
+  }
+
+  // The Riposte / Parry-node counter (sim/partytech.js onParry): one arc
+  // toward the attacker. Riposte: its full arc at resolved power; the Parry
+  // node: ONE melee_arc instance at 50% on the attacker.
+  function counter(a, def, attacker, { single = false, frac = 1, tag = null } = {}) {
+    const tick = getTick();
+    const T = tech();
+    const castId = (castSeq += 1);
+    const d = unit(attacker.x - a.x, attacker.z - a.z, a.faceX ?? 0, a.faceZ ?? 1);
+    face(a, d.x, d.z);
+    a.castLeftTicks = Math.max(a.castLeftTicks ?? 0, 24);
+    const M = T ? T.castMods(a, def, def, tick, { echo: true, counter: true }) : null;
+    const power = (M && M.power !== undefined ? M.power : def.power) * frac;
+    if (single) {
+      events.emit(tick, 'parry_counter', { seat: a.partyIndex, id: a.id, skill: def.id, attackerId: attacker.id, single: true, x: r2(a.x), z: r2(a.z), dx: r2(d.x), dz: r2(d.z) });
+      hitList(a, def, power, [attacker], 'melee_arc', M, castId, false, `${def.id}:parry`);
+      return;
+    }
+    events.emit(tick, 'parry_counter', { seat: a.partyIndex, id: a.id, skill: def.id, attackerId: attacker.id, x: r2(a.x), z: r2(a.z), dx: r2(d.x), dz: r2(d.z) });
+    return deliver(a, { ...def, parry: undefined }, power, { slot: -1, tick, human: false, target: attacker, f: null, tag, d, echo: null, castId, M, extra: { counter: true } });
+  }
+
+  // --------------------------------------------------------------- delivery --
+  // One damage instance per target (arc / nova / counter), then the skill's
+  // own status on the hostiles hit. `srcLabel` overrides the source (a
+  // technique counter).
+  // SECRET ROOMS: the shut cracked wall a melee arc reaches, measured to the
+  // nearest point of its slab (its collider is a long, thin box).
+  function wallInArc(a, dirX, dirZ, reach, halfAngleDeg) {
+    const w = registry.all().find((e) => e.kind === 'secret_wall' && e.shut && e.hittable && e.hp > 0);
+    if (!w || !w.collider) return null;
+    const ux = Math.cos(w.yaw ?? 0);
+    const uz = -Math.sin(w.yaw ?? 0);
+    const along = Math.max(-w.collider.hx, Math.min(w.collider.hx, (a.x - w.x) * ux + (a.z - w.z) * uz));
+    const px = w.x + ux * along;
+    const pz = w.z + uz * along;
+    const dx = px - a.x;
+    const dz = pz - a.z;
+    const d = Math.hypot(dx, dz);
+    if (d > reach + w.collider.hz + (a.radius ?? 0.3)) return null;
+    if (d < 1e-4) return w;
+    const alen = Math.hypot(dirX, dirZ) || 1;
+    const half = (Math.min(180, Math.max(0, halfAngleDeg)) * Math.PI) / 180;
+    return (dx / d) * (dirX / alen) + (dz / d) * (dirZ / alen) >= Math.cos(half) ? w : null;
+  }
+
+  function hitList(a, def, power, targets, shape, M, castId, echoFlag, srcLabel = null) {
+    const T = tech();
+    const seat = a.partyIndex;
+    let landed = 0; // THE DUSKWING: Frenzy counts the enemies the cast reached
+    for (const t of targets) {
+      if (!registry.byId(t.id) || !(t.hp > 0)) continue;
+      const tl = Math.hypot(t.x - a.x, t.z - a.z) || 1;
+      const opts = { delivery: 'skill', shape, dirX: (t.x - a.x) / tl, dirZ: (t.z - a.z) / tl, attacker: a.id, source: srcLabel ?? def.id };
+      if (def.critBonus) opts.critBonus = def.critBonus;
+      let p = power;
+      // MORE CLASS SKILLS: `pull` (Earthen Grasp) drags the enemy in.
+      if (def.pull) opts.kbDist = -def.pull;
+      // THE TIDECALLER: `push` (Breaker) is the strike's own knockback.
+      if (def.push) opts.kbDist = def.push;
+      const crashed = def.crash ? crashOn(t) : false;
+      if (crashed) p *= CLASS_TECH.crashMul;
+      // THE BELLWRIGHT: a swing with the ring bonus (Tuned) lands harder in a ring.
+      const rung = def.ringBonus && !srcLabel ? ringOf(a.id, t) : null;
+      if (rung) p *= def.ringMul ?? CLASS_TECH.ringMul;
+      // THE DUSKWING: Ambush — harder on a blinded enemy.
+      if (def.ambush && t.faction === 'hostile' && isBlinded(t, getTick())) p *= CLASS_TECH.ambushMul;
+      if (M) {
+        if (M.critMul) opts.critMul = M.critMul;
+        if (M.kbScale !== undefined) opts.kbScale = M.kbScale;
+        if (M.kbDist !== undefined) opts.kbDist = M.kbDist;
+        if (M.execute && t.faction === 'hostile' && t.hp <= t.maxHp * CLASS_TECH.executeFrac) p *= CLASS_TECH.executeMul;
+        if (M.crush && crushable(t)) p *= CLASS_TECH.crushMul;
+        if (M.heartseeker && T && T.firstHit(castId, t.id)) opts.forceCrit = true;
+      }
+      let r;
+      if (T && !srcLabel) r = T.instance({ seat, castId, echo: echoFlag, skill: def.id }, () => combat.applyDamage(t, p, opts));
+      else if (T && srcLabel) r = T.suppressed(seat, () => combat.applyDamage(t, p, opts));
+      else r = combat.applyDamage(t, p, opts);
+      if (crashed) spendSoak(a.id, t, def.id, castId, !!(M && M.riptide));
+      if (rung) ringHit(seat, def.id, t, rung, !!def.sympathy, getTick());
+      if (def.frenzy || def.eclipse) {
+        if (t.faction === 'hostile' && !(r && (r.immune || r.blocked))) landed += 1;
+        if (def.eclipse && t.faction === 'hostile' && !(t.hp > 0)) eclipseBurst(a, t, getTick());
+      }
+    }
+    applySkillStatus(a, def, targets);
+    if (def.frenzy && landed >= CLASS_TECH.frenzyHits && combat.status && a.hp > 0) {
+      const tick = getTick();
+      combat.status.apply(a, 'haste', CLASS_TECH.frenzyHaste, CLASS_TECH.frenzyTicks, tick, a.id);
+      events.emit(tick, 'dusk_frenzy', { seat, id: a.id, skill: def.id, n: landed, x: r2(a.x), z: r2(a.z) });
+    }
+  }
+
+  // THE DUSKWING's nodes on one of his skills (docs/DUSKWING.md): the
+  // resolved def with what they change. A skill with none of them comes back
+  // as the very same object, so every other class's cast is untouched. Deep
+  // Dive rides the displacement, Thirst and Vampire his Night Hunger
+  // (sim/duskwing.js).
+  function duskDef(a, def) {
+    if (a.classId !== 'duskwing' || a.partyIndex === undefined) return def;
+    const b = buildOf(a.partyIndex);
+    const techs = b ? b.tech.liveTechs(def.id) : [];
+    if (techs.length === 0) return def;
+    const has = (id) => techs.includes(id);
+    const strike = def.archetype === 'damage' && def.shape !== 'aura';
+    if (!strike) return def;
+    const out = { ...def };
+    let any = false;
+    const set = (k, v) => {
+      out[k] = v;
+      any = true;
+    };
+    // Gloom blinds, Echolocate marks: a second status on what it hits.
+    const extras = [];
+    if (has('gloom') && !(def.status && def.status.kind === 'blind')) extras.push({ kind: 'blind', mag: 1, ticks: CLASS_TECH.gloomTicks });
+    if (has('echolocate') && !(def.status && def.status.kind === 'exposed')) extras.push({ kind: 'exposed', mag: CLASS_TECH.echolocateMag, ticks: CLASS_TECH.echolocateTicks });
+    if (extras.length) set('extraStatus', extras);
+    if (has('ambush') && def.shape !== 'projectile') set('ambush', true);
+    if (def.shape === 'nova' || def.shape === 'melee_arc') {
+      if (has('frenzy')) set('frenzy', true);
+      if (has('eclipse')) set('eclipse', true);
+    }
+    return any ? out : def;
+  }
+  // Eclipse: an enemy felled bursts into darkness round where it fell.
+  function eclipseBurst(a, t, tick) {
+    const S = combat.status;
+    const R2 = CLASS_TECH.eclipseU * CLASS_TECH.eclipseU;
+    const hit = [];
+    for (const e of [...hostiles()].sort((p, q) => p.id - q.id)) {
+      if (e.id === t.id || !(e.hp > 0) || (e.x - t.x) ** 2 + (e.z - t.z) ** 2 > R2) continue;
+      if (S && S.apply(e, 'blind', 1, CLASS_TECH.eclipseTicks, tick, a.id)) hit.push(e.id);
+    }
+    events.emit(tick, 'dusk_eclipse', { seat: a.partyIndex, id: a.id, target: t.id, hit, x: r2(t.x), z: r2(t.z) });
+  }
+
+  // THE TIDECALLER (docs/TIDECALLER.md): a Crash skill on a soaked enemy
+  // deals +60% and spends the soak. Only her Crash skills ever ask, so every
+  // other cast is untouched.
+  function crashOn(t) {
+    const S = combat.status;
+    return !!(S && t && t.faction === 'hostile' && S.magnitude(t, 'soaked', getTick()) > 0);
+  }
+  function spendSoak(attackerId, t, skill, castId = null, riptide = false) {
+    const S = combat.status;
+    if (S && t && t.status) S.clear(t, 'soaked');
+    const src = registry.byId(attackerId);
+    // Riptide (a Tidecaller node): the Crash also stuns (never a boss: the
+    // status rules refuse it).
+    let stun = false;
+    if (riptide && S && t.hp > 0) stun = !!S.apply(t, 'stun', 1, CLASS_TECH.riptideTicks, getTick(), attackerId);
+    events.emit(getTick(), 'crash', { seat: src ? src.partyIndex : null, skill, target: t.id, x: r2(t.x), z: r2(t.z), ...(castId !== null && castId !== undefined ? { castId } : {}), ...(stun ? { stun: true } : {}) });
+  }
+
+  // THE TIDECALLER's nodes on a soaking skill: Wellspring lengthens the soak
+  // (+2 s per copy), Spring Tide drenches an enemy that is already soaked.
+  function tideStatus(seat, skillId, st) {
+    if (!st || st.kind !== 'soaked') return st;
+    const b = buildOf(seat);
+    const techs = b ? b.tech.liveTechs(skillId) : [];
+    if (techs.length === 0) return st;
+    const well = techs.filter((x) => x === 'wellspring').length;
+    const drench = techs.includes('spring_tide');
+    if (!well && !drench) return st;
+    return { ...st, ticks: st.ticks + well * CLASS_TECH.wellspringTicks, ...(drench ? { drench: true } : {}) };
+  }
+  function tideDef(a, def) {
+    if (!def.status || def.status.kind !== 'soaked' || a.partyIndex === undefined) return def;
+    const st = tideStatus(a.partyIndex, def.id, def.status);
+    return st === def.status ? def : { ...def, status: st };
+  }
+  // A status from a skill: a drenching soak on an enemy already soaked lands
+  // as the drench (a 30% slow for the new soak's length).
+  function soakApply(t, st, tick, src) {
+    const S = combat.status;
+    if (!S || !st) return null;
+    if (st.kind === 'soaked' && st.drench && S.magnitude(t, 'soaked', tick) > 0) return S.apply(t, 'soaked', CLASS_TECH.drenchMag, st.ticks, tick, src);
+    return S.apply(t, st.kind, st.mag, st.ticks, tick, src);
+  }
+  // Deluge (a Tidecaller node) and nothing else: a short puddle that soaks
+  // whatever stands in it (no damage), like the Dive puddle.
+  function spawnPuddle(x, z, sourceId, tick) {
+    const zone = registry.spawn({
+      kind: 'zone',
+      skill: 'deluge',
+      classId: 'tidecaller',
+      x,
+      z,
+      px: x,
+      pz: z,
+      radius: CLASS_TECH.delugeRadius,
+      power: 0,
+      sourceId,
+      puddle: true,
+      every: 6, // soak check every 0.1 s
+      ticksDone: 0,
+      totalTicks: 1,
+      untilTick: tick + CLASS_TECH.delugeTicks,
+      nextTickTick: tick,
+    });
+    events.emit(tick, 'zone_spawn', { id: zone.id, skill: 'deluge', classId: 'tidecaller', x: r2(x), z: r2(z), radius: zone.radius, totalTicks: 1, puddle: true });
+  }
+  // Bubble Ward (her guard): a bubble bursts when its shield is spent, when
+  // it runs out, or when its bearer goes down, soaking the enemies near it.
+  // The bubble rides its bearer (`bubble`, saved with the body).
+  function bubbleStep(tick) {
+    const S = combat.status;
+    for (const m of party()) {
+      const b = m.bubble;
+      if (!b) continue;
+      const sh = m.status && m.status.shield;
+      const holding = !!sh && sh.untilTick > tick && sh.mag > 1e-6;
+      if (holding && tick < b.untilTick && m.hp > 0) continue;
+      delete m.bubble;
+      const st = tideStatus(b.seat, 'bubble_ward', { kind: 'soaked', mag: CLASS_TECH.soakMag, ticks: CLASS_TECH.soakTicks });
+      const r2max = CLASS_TECH.bubbleBurstU * CLASS_TECH.bubbleBurstU;
+      const hit = [];
+      for (const e of hostiles()) {
+        if ((e.x - m.x) ** 2 + (e.z - m.z) ** 2 > r2max) continue;
+        if (S && soakApply(e, st, tick, b.src)) hit.push(e.id);
+      }
+      events.emit(tick, 'bubble_burst', { seat: b.seat, id: m.id, x: r2(m.x), z: r2(m.z), hit, broken: holding ? false : tick < b.untilTick });
+    }
+  }
+  // Bubble Ward's one recipient: the living member in reach that most
+  // enemies are after (the Tank last, it has shields of its own), then the
+  // most hurt, then the lowest seat.
+  function threatened(a, range, count) {
+    const r2max = range * range;
+    const hs = hostiles();
+    const rows = party()
+      .filter((m) => m.hp > 0 && (m.id === a.id || (m.x - a.x) ** 2 + (m.z - a.z) ** 2 <= r2max))
+      .map((m) => ({ m, n: hs.filter((e) => e.targetId === m.id).length, tank: m.classId === 'tank' ? 1 : 0, f: m.hp / (m.maxHp || 1) }));
+    rows.sort((p, q) => p.tank - q.tank || q.n - p.n || p.f - q.f || p.m.partyIndex - q.m.partyIndex);
+    return rows.slice(0, Math.max(1, Math.floor(count ?? 1))).map((r) => r.m);
+  }
+
+  // THE BELLWRIGHT (docs/BELLWRIGHT.md): the bells a Bellwright has hung
+  // (her zones flagged `bell`), oldest first; the bell whose ring holds an
+  // enemy (the nearest, when rings overlap); and the cap, which retires her
+  // oldest bells past CLASS_TECH.bellCap.
+  function bellsOf(sourceId) {
+    const out = [];
+    for (const z of registry.all()) if (z.kind === 'zone' && z.bell && z.sourceId === sourceId) out.push(z);
+    return out.sort((p, q) => p.id - q.id);
+  }
+  function ringOf(sourceId, t) {
+    let best = null;
+    let bd = Infinity;
+    for (const z of bellsOf(sourceId)) {
+      const d2v = (t.x - z.x) ** 2 + (t.z - z.z) ** 2;
+      if (d2v <= z.radius * z.radius && d2v < bd) {
+        bd = d2v;
+        best = z;
+      }
+    }
+    return best;
+  }
+  function capBells(sourceId, tick, cap = CLASS_TECH.bellCap) {
+    const bells = bellsOf(sourceId);
+    for (let i = 0; i < bells.length - cap; i++) {
+      events.emit(tick, 'zone_expire', { id: bells[i].id, skill: bells[i].skill, replaced: true, classId: bells[i].classId });
+      registry.despawn(bells[i].id);
+    }
+  }
+
+  // THE BELLWRIGHT's nodes on one of her skills (docs/BELLWRIGHT.md): the
+  // resolved def with what they change. A skill with none of them comes back
+  // as the very same object, so every other class's cast is untouched.
+  function bellDef(a, def) {
+    if (a.classId !== 'bellwright' || a.partyIndex === undefined) return def;
+    const b = buildOf(a.partyIndex);
+    const techs = b ? b.tech.liveTechs(def.id) : [];
+    if (techs.length === 0) return def;
+    const n = (id) => techs.filter((x) => x === id).length;
+    const out = { ...def };
+    let any = false;
+    const set = (k, v) => {
+      out[k] = v;
+      any = true;
+    };
+    if (def.bell) {
+      // Bronze: +2 s on the bell, per copy. Clangour: each toll slows 15% more.
+      // Belfry: while she hangs with this skill, four bells.
+      if (n('bronze')) set('durationSec', def.durationSec + n('bronze') * CLASS_TECH.bronzeSec);
+      if (n('clangour') && def.status && def.status.kind === 'slow') set('status', { ...def.status, mag: def.status.mag + CLASS_TECH.clangourMag });
+      if (n('belfry')) set('bellCap', CLASS_TECH.belfryCap);
+    }
+    // Tuned: a bolt or a swing that lacked it lands harder in a ring too.
+    if (n('tuned') && !def.ringBonus && def.archetype === 'damage' && (def.shape === 'projectile' || def.shape === 'melee_arc')) set('ringBonus', true);
+    if (out.ringBonus) {
+      if (n('resound')) set('ringMul', CLASS_TECH.resoundMul); // +90% instead of +50%
+      if (n('sympathy')) set('sympathy', true); // the bell it lands in tolls at once
+    }
+    if (def.peal && n('aftertone')) set('aftertone', true); // each bell rung tolls twice more
+    if (def.archetype === 'guard' && n('cloister')) set('cloister', true); // +50% shield in a ring
+    return any ? out : def;
+  }
+  // Sympathy: a ring hit tolls that bell at once (an extra toll, its next one
+  // a second after this), at most once a second per bell.
+  function sympathyToll(z, tick) {
+    if (!z || !registry.byId(z.id)) return;
+    if (tick - (z.sympathyTick ?? -Infinity) < CLASS_TECH.sympathyGapTicks) return;
+    if (z.nextTickTick <= tick + 1) return; // it tolls this beat anyway
+    z.sympathyTick = tick;
+    z.nextTickTick = tick + 1;
+    z.totalTicks += 1;
+    events.emit(tick, 'bell_sympathy', { id: z.id, x: r2(z.x), z: r2(z.z) });
+  }
+  // Tuned on a passive (the Hum): the ring multiplier its pulse uses on an
+  // enemy inside one of her rings, 0 when the node is not there.
+  function tunedPulse(seat, skillId) {
+    const b = buildOf(seat);
+    const techs = b ? b.tech.liveTechs(skillId) : [];
+    if (!techs.includes('tuned')) return 0;
+    return techs.includes('resound') ? CLASS_TECH.resoundMul : CLASS_TECH.ringMul;
+  }
+  // A ring hit's own beat: the event, then Sympathy.
+  function ringHit(seat, skill, t, z, sympathy, tick) {
+    events.emit(tick, 'bell_ring_hit', { seat, skill, target: t.id, bell: z.id, x: r2(t.x), z: r2(t.z) });
+    if (sympathy) sympathyToll(z, tick);
+  }
+
+  // Crush: a stunned or taunted enemy takes x1.5.
+  function crushable(t) {
+    const S = combat.status;
+    if (!S || !t || t.faction !== 'hostile') return false;
+    const tick = getTick();
+    return S.isStunned(t, tick) || S.tauntSource(t, tick) !== null;
+  }
+
+  function applySkillStatus(a, def, targets) {
+    const st = def.status;
+    if ((!st && !def.extraStatus) || def.archetype === 'guard') return;
+    const S = combat.status;
+    if (!S) return;
+    const tick = getTick();
+    for (const t of targets) {
+      if (!t || !(t.hp > 0) || t.faction !== 'hostile') continue;
+      // THE DUSKWING: Gloom's blind and Echolocate's mark ride along.
+      if (def.extraStatus) for (const x of def.extraStatus) S.apply(t, x.kind, x.mag, x.ticks, tick, a.id);
+      if (!st) continue;
+      if (st.kind === 'taunt') {
+        const T = tech();
+        if (T && !T.mayTaunt(a, t)) continue;
+      }
+      soakApply(t, st, tick, a.id);
+    }
+  }
+
+  // deliver(a, def, power, c) — the §6 delivery of one cast, for EVERY kit
+  // (AUDIT D2): the hero kits' casts, their Echo recasts and the Healer's
+  // (sim/skills.js fire / echo). c = { slot, tick, human, target, f, tag, d,
+  // echo (the recorded cast | null), castId, M, extra }, and for the Healer's
+  // kit c.healer = { record, bolts, override, isIframed } (her cast record
+  // layout, her bolt subsystem, her heal-target override, her i-frame rule).
+  // Returns the cast record; it is emitted as `skill_cast` unless
+  // c.emit === false (the Healer's Echo replays emit `echo_recast` instead).
+  //
+  // One rule set, by what the skill is: heals (direct, nova, arc, bolt, zone)
+  // reach the healables (the seats and the escort's pilgrim); guards shield
+  // the seats; damage strikes through hitList. Two kit rules stay, because
+  // they decide who gets hit: a hero's damage arc and nova pick live
+  // hostiles by centre (enemiesInArc / enemiesInNova), the Healer's damage
+  // nova strikes every damageable body its reach touches (breakables too,
+  // shapes.selectAreaDamage); and each kit keeps its own cast record layout.
+  function deliver(a, def0, power, c) {
+    const { tick, human, target, f, tag, echo, castId, M, extra } = c;
+    const H = c.healer ?? null;
+    const def = duskDef(a, bellDef(a, tideDef(a, def0)));
+    let d = c.d;
+    const T = tech();
+    const heal = def.archetype === 'heal';
+    const iframed = H ? H.isIframed : isIframed;
+    const st = def.status ?? null;
+    if (!H) {
+      face(a, d.x, d.z);
+      a.castLeftTicks = Math.max(a.castLeftTicks ?? 0, 24);
+    }
+    const cast = H
+      ? H.record
+      : {
+          id: a.id,
+          partyIndex: a.partyIndex,
+          classId: a.classId,
+          skill: def.id,
+          slot: c.slot,
+          shape: def.shape,
+          power: power === def.power ? def.power : r2(power),
+          cd: def.cd,
+          target: target ? target.id : null,
+          x: r2(a.x),
+          z: r2(a.z),
+          dx: r2(d.x),
+          dz: r2(d.z),
+          ...(tag || {}),
+        };
+    // The record goes out before the cast's effects land (its extra keys,
+    // then `more`, last).
+    const emit = (more = null) => {
+      Object.assign(cast, extra);
+      if (more) more();
+      if (c.emit !== false) events.emit(tick, 'skill_cast', cast);
+    };
+    const sel = (fn) => (human && f && typeof rewound === 'function' ? rewound(f, fn) : fn());
+    // A heal lands on each target, then the skill's status on each (Quiet
+    // Hearth's ward, Swift Mend's haste ...).
+    const mend = (targets) => {
+      const critBonus = def.critBonus ?? 0;
+      for (const t of targets) combat.applyHeal(t, power, { healer: a.id, source: def.id, critBonus });
+      if (st && combat.status) for (const t of targets) if (t.hp > 0) combat.status.apply(t, st.kind, st.mag, st.ticks, tick, a.id);
+    };
+    const recorded = () => (echo && Array.isArray(echo.targets) ? echo.targets.map((id) => registry.byId(id)).filter((m) => m && m.hp > 0) : null);
+    // REVIEW-ONLY (never committed): the druid kit's placed and latched skills (Mending Sapling,
+    // Sapping Vine) carry shape 'review'; world.js answers the cast record (and an Echo replay).
+    if (def.shape === 'review') {
+      emit(() => Object.assign(cast, { power: r2(power), echo: !!echo }));
+      if (typeof globalThis.__reviewCast === 'function') globalThis.__reviewCast(a, def, power, !!echo);
+      return cast;
+    }
+
+    // --- heal, direct (Swift Mend, Lantern Ward): the neediest healables in
+    // range, or the Healer's override target.
+    if (def.shape === 'direct' && heal) {
+      let targets;
+      let overrideMode = null;
+      if (echo) targets = (echo.targets ?? []).map((id) => registry.byId(id)).filter((t) => t && t.hp > 0);
+      else {
+        const r = selectDirect({ caster: a, party: healables(), range: def.range, count: def.count, override: H ? H.override : null, isIframed: iframed });
+        targets = r.targets;
+        overrideMode = r.overrideMode;
+      }
+      cast.targets = targets.map((t) => t.id);
+      if (H && !echo) cast.override = overrideMode;
+      emit();
+      mend(targets);
+      return cast;
+    }
+
+    // --- guard (Shield Wall): shields on the neediest party members.
+    if (def.archetype === 'guard') {
+      let recips = recorded();
+      if (!recips) recips = def.pick === 'threat' ? threatened(a, def.range, def.count) : selectDirect({ caster: a, party: party(), range: def.range, count: def.count, isIframed }).targets;
+      cast.targets = recips.map((m) => m.id);
+      emit();
+      const S = combat.status;
+      const ticks = def.status ? def.status.ticks : 240;
+      for (const m of recips) {
+        if (!S) break;
+        // THE BELLWRIGHT: Cloister — +50% on a member inside one of her rings.
+        const pw = def.cloister && ringOf(a.id, m) ? power * CLASS_TECH.cloisterMul : power;
+        const rec = S.apply(m, 'shield', pw, ticks, tick, a.id);
+        if (rec) rec.skill = def.id;
+        // THE TIDECALLER: Bubble Ward's bubble bursts when this shield ends.
+        if (rec && def.burstSoak) m.bubble = { src: a.id, seat: a.partyIndex, untilTick: rec.untilTick };
+        // MORE CLASS SKILLS: `grant` (Rallying Cry) — a second status on each.
+        if (def.grant) S.apply(m, def.grant.kind, def.grant.mag, def.grant.ticks, tick, a.id);
+      }
+      if (T) T.guardApplied(a, def, recips, power, { echo: !!echo, castId });
+      return cast;
+    }
+
+    // --- heal, arc (Restorative Wave): the healables in the wedge.
+    if (def.shape === 'melee_arc' && heal) {
+      const targets = selectArc({ caster: a, party: healables(), aimX: d.x, aimZ: d.z, reach: def.range, halfAngleDeg: def.area, count: def.count, isIframed: iframed });
+      cast.targets = targets.map((t) => t.id);
+      cast.dx = r2(d.x);
+      cast.dz = r2(d.z);
+      emit();
+      mend(targets);
+      return cast;
+    }
+
+    if (def.shape === 'melee_arc') {
+      const targets = sel(() => enemiesInArc(a, d.x, d.z, def.range, def.area, def.count));
+      cast.reach = def.range;
+      cast.halfAngle = def.area;
+      cast.targets = targets.map((t) => t.id);
+      emit();
+      hitList(a, def, power, targets, def.shape, M, castId, !!echo);
+      // SECRET ROOMS: a guest's swing that reaches a shut cracked wall
+      // strikes it too (the run decides whether the blow opens it).
+      const wall = human ? wallInArc(a, d.x, d.z, def.range, def.area) : null;
+      if (wall) combat.applyDamage(wall, power, { delivery: 'skill', shape: def.shape, dirX: d.x, dirZ: d.z, attacker: a.id, source: def.id });
+      return cast;
+    }
+
+    // --- heal, nova (Healing Nova and kin): the healables round the caster.
+    if (def.shape === 'nova' && heal) {
+      const targets = selectNova({ caster: a, party: healables(), radius: def.area, count: def.count, isIframed: iframed });
+      cast.targets = targets.map((t) => t.id);
+      emit();
+      mend(targets);
+      return cast;
+    }
+
+    // THE TIDECALLER: the Maelstrom — the room dragged in now, the burst a
+    // beat later where she cast it (a one-tick zone that crashes).
+    if (def.shape === 'nova' && def.delaySec) {
+      const R = def.drawArea ?? def.area;
+      const dragMul = M && M.dragMul ? M.dragMul : 1;
+      const drawn = [];
+      for (const e of [...hostiles()].sort((p, q) => p.id - q.id)) {
+        const dx = e.x - a.x;
+        const dz = e.z - a.z;
+        const d = Math.hypot(dx, dz);
+        if (d > R || d < 1e-3 || e.boss === true || e.kind === 'stag' || !e.knockbackable) continue;
+        const L = Math.min((def.drawIn ?? 0) * dragMul, d);
+        if (!(L > 0)) continue;
+        e.kbVx = (-dx / d) * (L / KNOCKBACK.durationTicks);
+        e.kbVz = (-dz / d) * (L / KNOCKBACK.durationTicks);
+        e.kbTicks = KNOCKBACK.durationTicks;
+        drawn.push(e.id);
+      }
+      const delayTicks = Math.max(1, secTicks(def.delaySec));
+      let cx = a.x;
+      let cz = a.z;
+      if (echo && Number.isFinite(echo.zx)) {
+        cx = echo.zx;
+        cz = echo.zz;
+      }
+      const spec = {
+        kind: 'zone',
+        skill: def.id,
+        classId: a.classId,
+        x: cx,
+        z: cz,
+        px: cx,
+        pz: cz,
+        radius: def.area,
+        power,
+        count: def.count,
+        crash: true,
+        burst: true,
+        sourceId: a.id,
+        ticksDone: 0,
+        totalTicks: 1,
+        nextTickTick: tick + delayTicks,
+      };
+      const zm = boltMods(def, M, castId, !!echo);
+      if (zm) spec.mods = zm;
+      const zone = registry.spawn(spec);
+      cast.radius = def.area;
+      cast.drawArea = R;
+      cast.delayTicks = delayTicks;
+      cast.drawn = drawn;
+      cast.targets = [];
+      cast.zone = zone.id;
+      cast.zx = r2(cx);
+      cast.zz = r2(cz);
+      emit();
+      events.emit(tick, 'zone_spawn', { id: zone.id, skill: def.id, classId: a.classId, x: r2(cx), z: r2(cz), radius: def.area, totalTicks: 1, burst: true, delayTicks, ...(tag || {}) });
+      return cast;
+    }
+
+    // THE BELLWRIGHT: the Peal rings every bell she has hung at once (round
+    // herself when none hang). Each enemy is struck once, by its nearest
+    // bell; each bell strikes at most `count`.
+    if (def.shape === 'nova' && def.peal) {
+      const bells = bellsOf(a.id);
+      const centres = bells.length ? bells.map((z) => ({ id: z.id, x: z.x, z: z.z })) : [{ id: null, x: a.x, z: a.z }];
+      const R2 = def.area * def.area;
+      const owner = new Map(); // enemy id -> [centre index, d2]
+      const hs = [...hostiles()].sort((p, q) => p.id - q.id);
+      for (const e of hs) {
+        centres.forEach((c, i) => {
+          const d2v = (e.x - c.x) ** 2 + (e.z - c.z) ** 2;
+          if (d2v > R2) return;
+          const cur = owner.get(e.id);
+          if (!cur || d2v < cur[1]) owner.set(e.id, [i, d2v]);
+        });
+      }
+      const targets = [];
+      centres.forEach((c, i) => {
+        const mine = hs.filter((e) => owner.get(e.id)?.[0] === i).sort((p, q) => owner.get(p.id)[1] - owner.get(q.id)[1] || p.id - q.id);
+        targets.push(...mine.slice(0, Math.max(1, Math.floor(def.count ?? 6))));
+      });
+      cast.radius = def.area;
+      cast.bells = centres.map((c) => ({ id: c.id, x: r2(c.x), z: r2(c.z) }));
+      cast.targets = targets.map((t) => t.id);
+      emit();
+      hitList(a, def, power, targets, def.shape, M, castId, !!echo);
+      // The Carillon rings every bell back to its full length; Aftertone
+      // gives each bell rung two more tolls.
+      if (bells.length && (def.rehang || def.aftertone)) {
+        for (const z of bells) {
+          if (!registry.byId(z.id)) continue;
+          if (def.rehang) z.totalTicks = Math.max(z.totalTicks, z.ticksDone + (z.fullTicks ?? z.totalTicks));
+          if (def.aftertone) z.totalTicks += CLASS_TECH.aftertoneTolls;
+          events.emit(tick, 'bell_rehang', { id: z.id, left: z.totalTicks - z.ticksDone, x: r2(z.x), z: r2(z.z) });
+        }
+      }
+      return cast;
+    }
+
+    if (def.shape === 'nova') {
+      // (the kit rule above: the Healer's nova strikes by body reach,
+      // breakables too; a hero's live hostiles by centre)
+      const targets = H
+        ? selectAreaDamage({ entities: registry.all(), x: a.x, z: a.z, radius: def.area, count: def.count, isIframed: iframed })
+        : sel(() => enemiesInNova(a, def.area, def.count));
+      if (H) {
+        cast.targets = targets.map((t) => t.id);
+        cast.area = def.area;
+      } else {
+        cast.radius = def.area;
+        cast.targets = targets.map((t) => t.id);
+      }
+      emit();
+      hitList(a, def, power, targets, def.shape, M, castId, !!echo);
+      return cast;
+    }
+
+    if (def.shape === 'projectile') {
+      if (human && f && !echo) {
+        d = compensatedAim(f, a, d);
+        cast.dx = r2(d.x);
+        cast.dz = r2(d.z);
+      }
+      if (H) {
+        cast.dx = r2(d.x);
+        cast.dz = r2(d.z);
+      } else cast.count = countFinal(def.count);
+      emit();
+      const mods = H ? null : boltMods(def, M, castId, !!echo);
+      const boltSys = H ? H.bolts : bolts;
+      for (const fd of fanDirections(d.x, d.z, def.count)) {
+        const spec = {
+          x: a.x,
+          z: a.z,
+          dirX: fd.x,
+          dirZ: fd.z,
+          speed: def.speed,
+          range: def.range,
+          radius: BOLT_RADIUS,
+          power,
+          skill: def.id,
+          heal,
+          sourceId: a.id,
+          critBonus: def.critBonus ?? 0,
+        };
+        const pierce = (def.pierce ?? 1) + (M && M.pierceAdd ? M.pierceAdd : 0);
+        if (pierce > 1) spec.hits = pierce;
+        if (mods) spec.mods = mods;
+        boltSys.spawn(tick, spec);
+      }
+      return cast;
+    }
+
+    // ground_aoe — AI: at the target; human (and the Healer): at the aim
+    // point; echo: the recorded placement. Clamped to the (resolved)
+    // placement range.
+    let pos;
+    if (echo && H) pos = { x: echo.x, z: echo.z };
+    else if (echo && Number.isFinite(echo.zx)) pos = { x: echo.zx, z: echo.zz };
+    else if (def.atOrigin && c.origin) pos = { x: c.origin.x, z: c.origin.z };
+    else if (H) pos = clampPlacement(a, a.aim, def.range);
+    else if (human) pos = clampPlacement(a, f && f.aim ? { x: f.aim.x, z: f.aim.z } : { x: a.x + d.x, z: a.z + d.z }, def.range);
+    else if (target) pos = clampPlacement(a, { x: target.x, z: target.z }, def.range);
+    else pos = clampPlacement(a, { x: a.x + d.x * def.range, z: a.z + d.z * def.range }, def.range);
+    const totalTicks = Math.round(secTicks(def.durationSec) / ZONE_CADENCE_TICKS);
+    const spots = M && M.scatter ? scatterSpots(pos, d) : [{ x: pos.x, z: pos.z }];
+    const frac = M && M.scatter ? CLASS_TECH.scatterZoneFrac : 1;
+    const zones = [];
+    for (const s of spots) {
+      const spec = {
+        kind: 'zone',
+        skill: def.id,
+        ...(H ? {} : { classId: a.classId }),
+        x: s.x,
+        z: s.z,
+        px: s.x,
+        pz: s.z,
+        radius: def.area * frac,
+        power: power * frac,
+        sourceId: a.id,
+        ticksDone: 0,
+        totalTicks,
+        nextTickTick: tick + ZONE_CADENCE_TICKS, // §6: first tick 1.0 s after placement
+      };
+      // The Healer's damage zone (Rootsnare, Dawn Brand) strikes by body reach
+      // (sim/zones.js); its status and crit bonus ride along.
+      if (H && !heal) spec.damage = true;
+      const zm = H ? null : boltMods(def, M, castId, !!echo);
+      if (zm) spec.mods = zm;
+      if (def.status) spec.applies = { kind: def.status.kind, mag: def.status.mag, ticks: def.status.ticks, ...(def.status.drench ? { drench: true } : {}) };
+      if (H && def.critBonus > 0) spec.critBonus = def.critBonus;
+      // THE TIDECALLER: Undertow and Whirlpool pull their occupants in
+      // (Undercurrent: 40% farther); Whirlpool and Rain Squall also slow.
+      if (def.drag) spec.drag = def.drag * (M && M.dragMul ? M.dragMul : 1);
+      if (def.also) spec.also = { kind: def.also.kind, mag: def.also.mag, ticks: def.also.ticks };
+      // THE BELLWRIGHT: a hung bell (its full length kept for the Carillon).
+      if (def.bell) {
+        spec.bell = true;
+        spec.fullTicks = totalTicks;
+        if (def.bellSize) spec.bellSize = def.bellSize;
+      }
+      // THE DUSKWING: Gloom / Echolocate and Ambush on a zone of his.
+      if (def.extraStatus) spec.extras = def.extraStatus.map((x) => ({ kind: x.kind, mag: x.mag, ticks: x.ticks }));
+      if (def.ambush) spec.ambush = true;
+      zones.push(registry.spawn(spec));
+    }
+    const z0 = zones[0];
+    cast.zone = z0.id;
+    if (H) {
+      cast.x = r2(pos.x);
+      cast.z = r2(pos.z);
+    } else {
+      cast.zx = r2(pos.x);
+      cast.zz = r2(pos.z);
+      cast.radius = def.area;
+    }
+    emit(() => {
+      if (zones.length > 1) cast.zones = zones.map((z) => z.id);
+    });
+    for (const z of zones) {
+      if (H) {
+        const ev = { id: z.id, skill: def.id, x: r2(z.x), z: r2(z.z), radius: def.area };
+        if (!heal) ev.damage = true;
+        if (echo) ev.echo = true;
+        events.emit(tick, 'zone_spawn', ev);
+        continue;
+      }
+      events.emit(tick, 'zone_spawn', {
+        id: z.id,
+        skill: def.id,
+        classId: a.classId,
+        x: r2(z.x),
+        z: r2(z.z),
+        radius: z.radius,
+        totalTicks: z.totalTicks,
+        ...(z.bell ? { bell: true } : {}),
+        ...(z.bellSize ? { bellSize: z.bellSize } : {}),
+        ...(tag || {}),
+      });
+    }
+    if (def.bell) capBells(a.id, tick, def.bellCap); // THE BELLWRIGHT: at most three bells (Belfry: four), her oldest goes
+    return cast;
+  }
+
+  // 3 zones in a triangle 0.8 u around the aim point, one toward the aim.
+  function scatterSpots(pos, d) {
+    const base = Math.atan2(d.z, d.x);
+    const out = [];
+    for (let i = 0; i < 3; i++) {
+      const ang = base + (i * 2 * Math.PI) / 3;
+      out.push({ x: pos.x + Math.cos(ang) * CLASS_TECH.scatterOffsetU, z: pos.z + Math.sin(ang) * CLASS_TECH.scatterOffsetU });
+    }
+    return out;
+  }
+
+  // The per-instance modifiers a bolt / zone carries (plain data; null when
+  // nothing is set, so an unbuilt ally's bolt is the v0.5.150 object).
+  function boltMods(def, M, castId, echoFlag) {
+    const m = {};
+    let any = false;
+    const put = (k, v) => {
+      m[k] = v;
+      any = true;
+    };
+    if (def.status && def.shape === 'projectile') put('applies', { kind: def.status.kind, mag: def.status.mag, ticks: def.status.ticks, ...(def.status.drench ? { drench: true } : {}) });
+    if (M) {
+      if (M.critMul) put('critMul', M.critMul);
+      if (M.kbScale !== undefined) put('kbScale', M.kbScale);
+      if (M.kbDist !== undefined) put('kbDist', M.kbDist);
+      if (M.execute) put('execute', true);
+      if (M.heartseeker) put('heartseeker', true);
+      if (M.scatter && def.shape === 'projectile') put('scatter', true);
+      if (M.crush) put('crush', true);
+      if (M.longshot && def.shape === 'projectile') put('longshot', true);
+      // THE TIDECALLER's nodes riding a bolt or zone.
+      if (M.riptide) put('riptide', true);
+      if (M.deluge && def.shape === 'projectile') put('deluge', true);
+    }
+    if (def.critBonus) put('critBonus', def.critBonus);
+    if (def.crash && def.shape === 'projectile') put('crash', true); // THE TIDECALLER: a crashing bolt
+    // THE BELLWRIGHT: the Clapper and the Knell (Resound: a bigger bonus;
+    // Sympathy: the bell tolls).
+    if (def.ringBonus && def.shape === 'projectile') put('ring', def.ringMul ?? true);
+    if (def.sympathy && def.shape === 'projectile') put('sympathy', true);
+    if (!any) return null;
+    put('castId', castId);
+    if (echoFlag) put('echo', true);
+    return m;
+  }
+
+  // Ally kit bolt impact with modifiers (sim/allies.js routes a bolt that
+  // carries `mods` here; a plain bolt keeps the v0.5.150 path).
+  function boltImpact(tick, bolt, t) {
+    const m = bolt.mods || {};
+    const len = Math.hypot(bolt.vx, bolt.vz);
+    const opts = {
+      delivery: 'skill',
+      shape: 'projectile',
+      dirX: len > 1e-9 ? bolt.vx / len : 0,
+      dirZ: len > 1e-9 ? bolt.vz / len : 0,
+      attacker: bolt.sourceId,
+      source: bolt.skill,
+    };
+    if (m.critBonus) opts.critBonus = m.critBonus;
+    if (m.critMul) opts.critMul = m.critMul;
+    if (m.kbScale !== undefined) opts.kbScale = m.kbScale;
+    if (m.kbDist !== undefined) opts.kbDist = m.kbDist;
+    let p = bolt.power;
+    if (m.execute && t.faction === 'hostile' && t.hp <= t.maxHp * CLASS_TECH.executeFrac) p *= CLASS_TECH.executeMul;
+    if (m.crush && crushable(t)) p *= CLASS_TECH.crushMul;
+    // Longshot: the farther the bolt flew, the harder it lands.
+    if (m.longshot) p *= 1 + Math.min(CLASS_TECH.longshotMax, (bolt.traveled ?? 0) * CLASS_TECH.longshotPerU);
+    const T = tech();
+    const src = registry.byId(bolt.sourceId);
+    const seat = src ? src.partyIndex : null;
+    if (m.heartseeker && T && T.firstHit(m.castId, t.id)) opts.forceCrit = true;
+    const crashed = m.crash ? crashOn(t) : false;
+    if (crashed) p *= CLASS_TECH.crashMul;
+    // THE BELLWRIGHT: the Clapper lands harder inside one of her bells' rings.
+    const rung = m.ring ? ringOf(bolt.sourceId, t) : null;
+    if (rung) p *= typeof m.ring === 'number' ? m.ring : CLASS_TECH.ringMul;
+    const r = T ? T.instance({ seat, castId: m.castId ?? -1, echo: !!m.echo, skill: bolt.skill }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
+    if (rung) ringHit(seat, bolt.skill, t, rung, !!m.sympathy, tick);
+    if (crashed) spendSoak(bolt.sourceId, t, bolt.skill, m.castId ?? null, !!m.riptide);
+    if (m.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) soakApply(t, m.applies, tick, bolt.sourceId);
+    // Deluge: the bolt leaves a puddle where it first lands.
+    if (m.deluge && !bolt.delugeDone) {
+      bolt.delugeDone = true;
+      spawnPuddle(t.x, t.z, bolt.sourceId, tick);
+    }
+    return r;
+  }
+
+  // A spent ally bolt (max range, no hit) with Scatter bursts into 3 shards.
+  function boltExpire(tick, bolt) {
+    const m = bolt.mods;
+    if (m && m.deluge && !bolt.delugeDone) {
+      bolt.delugeDone = true;
+      spawnPuddle(bolt.x, bolt.z, bolt.sourceId, tick);
+    }
+    if (!m || !m.scatter) return;
+    const base = Math.atan2(bolt.vz, bolt.vx);
+    const src = registry.byId(bolt.sourceId);
+    const shards = [];
+    for (const k of [-1, 0, 1]) {
+      const ang = base + (k * CLASS_TECH.scatterShardDeg * Math.PI) / 180;
+      const b = scatterShards.spawn(tick, {
+        x: bolt.x,
+        z: bolt.z,
+        dirX: Math.cos(ang),
+        dirZ: Math.sin(ang),
+        speed: Math.hypot(bolt.vx, bolt.vz) * TICK_HZ,
+        range: CLASS_TECH.scatterShardRangeU,
+        radius: BOLT_RADIUS,
+        power: bolt.power * CLASS_TECH.scatterShardFrac,
+        skill: bolt.skill,
+        heal: false,
+        sourceId: bolt.sourceId,
+        tech: 'scatter',
+      });
+      b.seat = src ? src.partyIndex : null;
+      shards.push(b.id);
+    }
+    events.emit(tick, 'scatter_burst', { seat: src ? src.partyIndex : null, skill: bolt.skill, shards, x: r2(bolt.x), z: r2(bolt.z) });
+  }
+
+  // Ally zone tick instance with modifiers (sim/zones.js).
+  function zoneHit(z, t, opts) {
+    const m = z.mods || {};
+    if (m.critBonus) opts.critBonus = m.critBonus;
+    if (m.critMul) opts.critMul = m.critMul;
+    if (m.kbScale !== undefined) opts.kbScale = m.kbScale;
+    if (m.kbDist !== undefined) opts.kbDist = m.kbDist;
+    let p = z.power;
+    if (m.execute && t.faction === 'hostile' && t.hp <= t.maxHp * CLASS_TECH.executeFrac) p *= CLASS_TECH.executeMul;
+    if (m.crush && crushable(t)) p *= CLASS_TECH.crushMul;
+    const T = tech();
+    const src = registry.byId(z.sourceId);
+    const seat = src ? src.partyIndex : null;
+    if (m.heartseeker && T && T.firstHit(m.castId, t.id)) opts.forceCrit = true;
+    // THE TIDECALLER: the Maelstrom's burst is a Crash.
+    const crashed = z.crash ? crashOn(t) : false;
+    if (crashed) p *= CLASS_TECH.crashMul;
+    if (z.ambush && t.faction === 'hostile' && isBlinded(t, getTick())) p *= CLASS_TECH.ambushMul;
+    const r = T ? T.instance({ seat, castId: m.castId ?? -1, echo: !!m.echo, skill: z.skill, zone: z.id }, () => combat.applyDamage(t, p, opts)) : combat.applyDamage(t, p, opts);
+    if (crashed) spendSoak(z.sourceId, t, z.skill, m.castId ?? null, !!m.riptide);
+    if (z.applies && t.hp > 0 && t.faction === 'hostile' && combat.status) soakApply(t, z.applies, getTick(), z.sourceId);
+    if (z.also && t.hp > 0 && t.faction === 'hostile' && combat.status) combat.status.apply(t, z.also.kind, z.also.mag, z.also.ticks, getTick(), z.sourceId);
+    if (z.extras && t.hp > 0 && t.faction === 'hostile' && combat.status) for (const x of z.extras) combat.status.apply(t, x.kind, x.mag, x.ticks, getTick(), z.sourceId);
+    return r;
+  }
+
+  return {
+    // Save (PLAN §16.6): the per-cast id counter (bolt / zone mods key on it).
+    getSeq: () => castSeq,
+    setSeq: (n) => {
+      castSeq = Number.isFinite(n) ? n : 0;
+    },
+    cast,
+    runPending,
+    stepDash,
+    displacing,
+    echo,
+    counter,
+    deliver,
+    boltImpact,
+    boltExpire,
+    zoneHit,
+    tideStatus,
+    soakApply,
+    tunedPulse,
+    ringOf,
+    ringHit,
+    bubbleStep,
+    scatterShards,
+    startDisplacement,
+    aiDisplacement,
+    cdTicksOf,
+  };
+}

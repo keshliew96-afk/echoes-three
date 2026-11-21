@@ -1,0 +1,100 @@
+<div class="wrap">
+  <div>
+    <h1>Hare Archer from Tripo, rigged</h1>
+    <p class="lede">Your Tripo hare, bow and arrow, rigged and given an archer's moves: poised, side-on behind the bow, every shot a reach to the quiver, a nock, a draw and a loose. Pick one move or combine several, and drag to turn her. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way she walks, runs or dashes while she keeps facing the same way. Add one Action for the upper body, and Hurt on top. Tap attack plays one shot per press: press again after a shot leaves to chain shots 1, 2 and 3. Dash and Downed use the whole body, so they play alone. Press Downed again to revive her. Hit feel adds the freeze, the kick, the camera shake, the arrow streaks and the dust.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="hare-views.png" alt="The Tripo hare from the front, right, back and left, arms out, before rigging" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">The body is as you sent it, thinned a little to fit the budget. The quiver and its arrows are part of the body, so they stay on her back.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,994 <small>body 12,649 + bow 1,759 + string 16 + arrow 570 · budget 15,000 · the combo's last shot shows three arrows for a third of a second: 16,134 then</small></dd></div>
+    <div><dt>Bones</dt><dd>22 <small>spine, head, two in each ear, arms, fingers, legs, tail</small></dd></div>
+    <div><dt>Textures</dt><dd>3 × 2K <small>body, bow and arrow, colour only</small></dd></div>
+    <div><dt>File</dt><dd>3.1 MB <small>one GLB with all 28 moves at 60 frames a second</small></dd></div>
+    <div><dt>Moves</dt><dd>28 <small>idle, 4 walks, 4 runs, 4 dashes, bow combo and its 3 shots, 4 casts, vault shot, downed (fall, lie, crawl, revive), hurt, wave</small></dd></div>
+  </dl>
+
+  <h2>The bow, the string and the arrow</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Part</th><th>As it came</th><th>What was done</th></tr></thead>
+    <tbody>
+      <tr><td>Bow string</td><td>broken in the middle, and part of the bow's solid mesh, so it could never bend</td><td>cut off the bow (59 triangles) and replaced with a new string tied to the same two tips. The new string bends: it pulls back to a point when she draws and snaps forward and settles when she looses</td></tr>
+      <tr><td>Bow</td><td>1,818 triangles, sound</td><td>kept as it is, without the old string: 1,759 triangles</td></tr>
+      <tr><td>Arrow</td><td>1,952 triangles, nothing broken, but thick: more a short spear than an arrow</td><td>thinned to 570 triangles so the whole hero fits the budget, shape unchanged. It shows on the string only between the nock and the loose</td></tr>
+      <tr><td>Body</td><td>14,510 triangles, one piece, arms out</td><td>thinned to 12,649 triangles to make room for the bow and the arrow; no visible change in the four views</td></tr>
+    </tbody></table></div>
+
+  <h2>Her moves</h2>
+  <p class="note"><strong>The rule for all of it:</strong> poised, precise and springy. She stands side-on behind the bow with the arrow's line running past the front of her chest. The bow is held close while she nocks and pushed out as she draws, and the loose is the accent: the string snaps, the bow kicks, the draw paw flies back, and her long ears whip after it.</p>
+  <p class="note"><strong>Idle.</strong> At ease but listening: the bow hangs in her left paw, her weight shifts from foot to foot, her nose lifts to test the air, and each ear turns on its own to a sound.</p>
+  <p class="note"><strong>Walk and run.</strong> The walk is a light, springy step up on her toes with the bow carried still. The run is a bounding run, far forward, with the ears laid back and streaming.</p>
+  <p class="note"><strong>Bow combo, three shots in 1.5 seconds.</strong> Shot 1 (0.22 s) is a snap shot off a half draw. Shot 2 (0.54 s) follows at once: her paw is already back at the quiver while the first arrow flies. Shot 3 (1.00 s) is the finisher: she lays the bow over flat, takes three arrows at once, sinks behind a full draw and holds a beat, then looses all three in a spread, and the recoil hops her back half a step.</p>
+  <p class="note"><strong>Casts.</strong> <em>Power shot</em> (0.62 s): the bow comes up high, she draws slowly as it lowers onto the target, holds, and looses with a jade streak; this covers piercing shot, pinning arrow and the charged shots. <em>Sky volley</em> (0.52 s): she leans back, aims high and looses; the arrows come down ahead of her a moment later; for volley and rain of arrows. <em>Trap</em> (0.42 s): she drops low and presses it onto the floor ahead with her free paw, the bow held back out of the way; for barbed trap and the marks. <em>Feather fan</em> (0.36 s): the bow is laid over flat and a fan of five leaves it level. It now looks close to the combo's last shot; say if you want it changed. <em>Vault shot</em> (0.36 s): she springs straight back off both feet and shoots at the top of the hop.</p>
+  <p class="note"><strong>Dash: a somersault and three homing arrows (13 November).</strong> She crouches deep (0.11 s) and pushes off hard (0.15 s). On the way up she turns one tight forward somersault (0.20 to 0.48 s), and while she is upside down her free paw takes three arrows from the quiver. She opens out at the top of the jump, 0.75 u up, side-on with the bow laid flat and all three arrows on the string, draws (0.57 s) and looses (0.60 s). The three arrows leave in a spread and bend in on the nearest foe; on this page a practice post stands for it and counts the hits. She lands at 0.75 s, sinks right down and the floor shakes. The jump covers 2.6 u and she cannot be hit until she lands. This is new compared with the game today and needs your go and the freeze lifted before it enters it.</p>
+  <p class="note"><strong>Effects.</strong> Feather Bone for the arrows and Wind Jade for the wind on a strong shot, the Archer's two colours in the game. A pale streak for each arrow, a few motes off the string, a little dust under fast feet, a jade ring where the trap sits. All of them are dim and switch off with Hit feel. The two snap shots barely freeze and do not shake the camera; the full draw and the power shot do.</p>
+
+  <h2>Measured, 12 November</h2>
+  <p class="note">Every frame of all 28 moves (60 a second) was measured, and the poses were checked as still frames from the front, the side, above and behind. The cloud machine cannot play it at full speed, so the speed and the snap are yours to judge.</p>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured in every frame</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Bow cutting into her body (the build's own check)</td><td>0 in all 28 moves</td></tr>
+      <tr><td>Draw paw on the string while she draws</td><td>within 3 cm in every draw; within 1 cm in the combo</td></tr>
+      <tr><td>Bow against the floor</td><td>7 cm or more while standing; it lies on the floor only when she is downed</td></tr>
+      <tr><td>Bow against her legs</td><td>6 cm or more; closest as it swings over flat for the feather fan</td></tr>
+      <tr><td>Bow against her head</td><td>8 cm from the centre of her head at the closest (vault shot, as the bow comes up), which is about where her cheek is: tight, look at this one</td></tr>
+      <tr><td>Bow against her trunk and her draw arm</td><td>11 cm or more</td></tr>
+      <tr><td>Draw elbow</td><td>passes 3 cm from the base of her neck when she reaches back for the quiver; the feather mantle covers it in the stills, but look at it from behind</td></tr>
+      <tr><td>Feet under the floor</td><td>0 (1 mm at most)</td></tr>
+      <tr><td>Feet crossing</td><td>never closer than 10 cm</td></tr>
+      <tr><td>Loops that jump on restart</td><td>0</td></tr>
+    </tbody></table></div>
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The string really bends and the arrow really sits on it: the draw paw is solved onto the string in every frame, wherever the bow is.</li>
+        <li>The four casts and the vault shot cover her 11 skills in the game.</li>
+        <li>Ears and tail trail the body and settle after she stops; the head and the draw arm follow the trunk a few hundredths of a second late.</li>
+        <li>Her feet stay on the floor when she sinks into the full draw or drops to set the trap.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The arrow is thick, as it came. It reads at game zoom, but a thinner arrow would look more like the ones in her quiver.</li>
+        <li>The arrows in the quiver are part of her body, so none leaves the quiver when she reaches for one: her paw goes to the quiver and the arrow appears on the string.</li>
+        <li>Her draw is short (about 15 cm on a 40 cm bow), because her arms are short and her chest is deep. A longer draw would put her paw inside her chest.</li>
+        <li>She has no knees, so sinking low is a lean and a drop of the hips. Her fingers don't close round the bow or the string, and the skirt is one stiff piece.</li>
+        <li>Her feet can slide while she walks, the moves play in place (the vault does not carry her back), and she has no ink outline or flat game colours yet.</li>
+        <li>The downed moves, Hurt and Wave use the fox's timing with her ears added; they were not designed for her from scratch.</li>
+      </ul>
+    </div>
+  </div>
+</div>

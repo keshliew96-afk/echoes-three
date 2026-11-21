@@ -1,0 +1,236 @@
+# Builds the Hollow Choir's review page from the Thornmother's page (the bench, the controls and the play loop are
+# shared; the words, the numbers and the effects are its own). usage: python3 -I genpage.py <thornmother index.html> <out index.html> <tris> <glb MB> <audit json> <under-floor sentence> <views WxH>
+import sys
+L = open(sys.argv[1]).read().split('\n'); out = sys.argv[2]; TRIS = sys.argv[3]; MB = sys.argv[4]
+ln = lambda a, b: '\n'.join(L[a - 1:b])          # 1-based, inclusive
+
+HEAD = '<title>Tripo Hollow Choir Review</title>\n' + ln(2, 59)
+BODY = r"""
+<div class="wrap">
+  <div>
+    <h1>Hollow Choir from Tripo, rigged</h1>
+    <p class="lede">Your export of the Hollow Heart champion, with a floating skeleton and 11 moves added by hand. Its timings are the game's. Pick a move, drag to turn it, and judge the float and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what it does between attacks (it has no legs, so its walk is a drift), and Going turns it on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death leaves it standing on the floor as a dead crystal: press it again and it spawns back in. The bar names the part of the move that is playing, in the game's own words. Enraged is its state under half health: it stays on over every move until you switch it off, and it drifts faster.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="rage" aria-pressed="false">Enraged</button>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="hollowchoir-views.png" alt="The Tripo Hollow Choir from the front, its left, the back and its right" width="__VW__" height="__VH__">
+      <p class="note" style="padding-top:12px">All three faces came through: the front one singing, and one at each side, about 80 degrees round. Nothing was doubled and nothing had to be removed, so you do not need to generate it again. It has no legs: the body runs down into a pillar and a cluster of crystals, so it floats. I cut the head free at the neck and closed both sides of the cut, so the head can turn all the way round and bring each face to the front.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>__TRIS__ <small>champion budget 12,000 · 11,790 as sent, 58 added to close the cut at the neck</small></dd></div>
+    <div><dt>Bones</dt><dd>16 <small>hips, spine, chest, head, 3 in each arm, 2 in the pillar, 2 in the cape, 1 in each strip of the stole</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only, as sent</small></dd></div>
+    <div><dt>File</dt><dd>__MB__ MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.8 u tall <small>floating 0.2 u over the floor, so the top of the crown stands at 3.0 u. My guess from the game's body radius of 0.75 u, beside a 1 u hero. Say if it should be bigger or smaller.</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>It hangs in the air and hums: a slow rise and fall, the arms breathing open and shut, the pillar swaying under it. Each voice takes its turn: the head turns to bring the left face to the front, back to the middle, then the right face.</td><td>6 s loop</td></tr>
+      <tr><td>Walk</td><td>A drift. It leans into the move with the front face held level, the arms swept a little back, and the pillar, the stole and the cape trailing behind it. It has no legs, so your no 外八 rule has nothing to check here.</td><td>Game: 1.0 u/s. 2 s loop. Enraged: 1.15 u/s, the same drift played faster.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Banks into the turn, the head leading, the pillar swinging round after it.</td><td>100° a second (my number: the game turns it instantly)</td></tr>
+      <tr><td>Shard Hymn</td><td>It rises and leans back, the hands come together before the chest and the front face lifts to sing. Then it lunges and throws both arms forward and apart, and five shards fly out in a fan. It drifts back and settles.</td><td>Game: gathers for the 1.0 s cone warning (r 6 u, 28° each side), cast 2.5 frames landing on the warning's end, held 3 frames, recoil 0.2 s, settle 0.6 s. Five shards 12° apart fly at 5.4 u/s for 8.5 u. The hero stands 4.5 u off.</td></tr>
+      <tr><td>Discord</td><td>It rises, the arms come up and out, and the head begins to turn, faster and faster, until the three faces blur into one: two full turns. Then the head stops dead on the front face, the arms are thrown out and down, the whole body drops, and the ring bursts round it.</td><td>Game: winds up for the 1.2 s ring warning (r 3.2 u round itself), burst 2.5 frames landing on the warning's end, held 3 frames, recoil 0.2 s, settle 0.6 s. The hero stands 2.6 u off.</td></tr>
+      <tr><td>Rage</td><td>It folds its arms across its chest, bows and sinks. Then it shoots up with the arms thrown wide and high, and each voice screams in turn: the head snaps to the left face, to the right face, and back to the front. The Enraged state stays on after it: drawn up, the arms half raised, the head twitching, the heart burning.</td><td>Mine: 1.6 s. The game does not stop it: below half health it glows, drifts 15 percent faster and its moves come back 30 percent sooner.</td></tr>
+      <tr><td>Hurt</td><td>The chest and the head flinch away and the arms jolt. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Knocked back through the air with the body tipped back, the arms flung up and the pillar swinging forward under it. It dips almost to the floor, catches itself, the head shakes once and it floats back to its place.</td><td>1.15 s</td></tr>
+      <tr><td>Spawn</td><td>Grows from the floor standing like a crystal, arms folded and the heads bowed. Then it lifts off, unfolds its arms, raises its faces and sings its first note.</td><td>Game: grow in 7 frames, then a 1.6 s entrance. The folded arms and the first note are mine.</td></tr>
+      <tr><td>Death</td><td>The song breaks. A jolt, the float falters and it drops: the crystals at its foot strike the floor and it stands there. Then the body sags forward and to one side, the arms fall and hang, and the head rolls onto its shoulder. It ends standing, a dead crystal: the heart goes out and the colour drains from it.</td><td>2.6 s, then it stays standing</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns, the enraged state)</td><td>0</td></tr>
+      <tr><td>Lowest point of the body under the floor</td><td>__UNDER__</td></tr>
+      <tr><td>The float</td><td>The foot crystals hang 0.15 to 0.2 u over the floor in the idle and the walk. The lowest they come while it floats is 0.05 u, in the drop of the Discord burst and in the dip of the heavy hit.</td></tr>
+      <tr><td>The three faces</td><td>Each side face sits 80 degrees round from the front one. The idle and the rage turn the head exactly that far, so a face ends looking straight ahead.</td></tr>
+      <tr><td>The neck</td><td>Cut along the groove under the jaws, both sides closed. Looked at from the front, the back and the side with the head turned 80 degrees and in the middle of the spin: no gap and no wrung skin.</td></tr>
+      <tr><td>The arms</td><td>Each arm leaves the body at one clean ring under the shoulder plate and touches nothing else. Looked at from below with the arms raised wide: no torn skin.</td></tr>
+      <tr><td>The cloth and the pillar</td><td>The two strips of the stole, the cape (two joints) and the pillar (two joints) run as springs. They trail the body and swing after it stops.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the float, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>The spinning head.</strong> In the Discord wind-up the head turns two full rounds and stops on the front face. Say if that is too strange, and it will only shake from face to face.</li>
+        <li><strong>Rage.</strong> A new 1.6 s scream. The game has no pause at half health, only the glow. The Enraged button shows the state without the scream.</li>
+        <li><strong>Death.</strong> It drops, stands and goes grey. Say if it should topple over, or shatter (the pieces would be a new effect).</li>
+        <li><strong>Backing away.</strong> In the game it backs off when a hero comes close. This page shows only the forward drift. Say if you want a backward drift as its own move.</li>
+        <li><strong>Shards.</strong> The five shards are plain violet crystal shapes made for this page. Say if you want a shard model from Tripo for the game.</li>
+        <li><strong>Float height and size.</strong> It floats 0.2 u up and is drawn 2.8 u tall.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The mouths are sculpted and cannot open or shut: the front face always sings, the side faces are always half open.</li>
+        <li>The stole and the cape are one skin with the body. They swing on their joints but do not ripple.</li>
+        <li>The fingers are one piece, so the hands cannot close.</li>
+        <li>When the head tips far back, the crown comes down onto the crystals on its back and can pass a little into them.</li>
+        <li>The crown, the shoulder crystals and the back crystals are fixed and do not move by themselves.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for its power. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+"""
+JS_TOP = ln(160, 162) + '\n<script src="hollowchoir-model.js"></script>\n<script>\n(function(){\n  const $=id=>document.getElementById(id);\n' + r'''  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=2.8;
+  const VIOLET=0x8F63EE, EMBER=0xFF5A36, DUST=0x8d8478;
+  const LABEL={idle:'Idle',walk:'Walk',turnL:'Turn left',turnR:'Turn right',shardHymn:'Shard Hymn',discord:'Discord',rage:'Rage',hurt:'Hurt',heavyHit:'Heavy hit',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['shardHymn','discord','rage','heavyHit'];
+  const HOME=4.3, HOME_OF={shardHymn:4.5,discord:2.6}; // where the hero stands, in u, in front of it (it keeps 3.2 to 5.4 u off)
+  const WALK=1.0, RAGEWALK=1.0*1.15, TURN=2*Math.PI/3.6, HYT=1.0, CONE_R=6.0, CONE_A=28*Math.PI/180, NSH=5, SH_GAP=12*Math.PI/180, SH_V=5.4, SH_RANGE=8.5, DCT=1.2, RING_R=3.2;
+''' + ln(173, 184).replace('blob.scale.set(0.72,1.2,1)', 'blob.scale.set(0.58,0.58,1)') + r'''
+  const VIEWS={Close:{p:[6.2,3.0,6.4],t:[0,1.35,1.3]},'Game zoom':{p:[0,12.4,11.2],t:[0,0.5,2.4]},Side:{p:[11.2,1.9,1.2],t:[0,1.5,1.2]},Front:{p:[0.8,2.2,11.6],t:[0,1.55,0]},Back:{p:[-3.6,3.4,-8.4],t:[0,1.45,0.6]},Top:{p:[0,19,0.4],t:[0,0.4,2.6]}};
+''' + ln(186, 202) + r'''
+  let rage=false, rageW=0, rageAct=null; toggle('rage',()=>rage,v=>rage=v);
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, glowU={value:new THREE.Vector4(0,0,0,0)}, drainU={value:0}, hurtAct=null, shot=null, dummy=null;
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    // the mask marks the head (x), the mark on its chest where the heart shows (y) and all the crystal (z). The head lights when
+    // it sings, the heart beats and flares, the crystal takes a faint charge; in death the crystal goes grey and the cloth keeps its colour
+    mesh.material.onBeforeCompile=sh=>{sh.uniforms.uGlow=glowU; sh.uniforms.uDrain=drainU;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uGlow;\nuniform float uDrain;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3(0.6,0.35,1.0)*(uGlow.x*vMask.x+uGlow.y*vMask.y)+vec3(0.42,0.26,1.0)*uGlow.w*vMask.z+vec3(0.55)*uGlow.z;\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(0.3,0.5,0.2)))*0.5,uDrain*vMask.z);');};
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; scene.add(helper);
+    mixer=new THREE.AnimationMixer(model);
+    const UPPER=/^(spine|chest|head|upperarmL|forearmL|handL|upperarmR|forearmR|handR)\./; const restC=gltf.animations.find(c=>c.name==='hurt');
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      if(c.name==='rageHold'){const h=new THREE.AnimationClip('rageAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,restC,60); rageAct=mixer.clipAction(h); rageAct.blendMode=THREE.AdditiveAnimationBlendMode; rageAct.setLoop(THREE.LoopRepeat,Infinity); rageAct.setEffectiveWeight(0); rageAct.play(); return;}
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1);
+    makeFx(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,rage,rageW:+rageW.toFixed(2),shards:SHARDS.filter(s=>s.userData.t>=0).length,cone:cone.visible,disc:disc.visible,drain:+drain.toFixed(2),dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,t:shot&&+shot.action.time.toFixed(3),fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glow:glowU.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+''' + ln(225, 262).replace("sparks(pt(bones.head,[0,0.02,0.2]),6,0xfff4e0,1.6,0.25)", "sparks(pt(bones.head,FACE_PT),6,0xd9c8ff,1.6,0.25)").replace('spawn her back in', 'spawn it back in').replace('PIV=new THREE.Vector3(0,0,-0.06*U)', 'PIV=new THREE.Vector3(0,0,0)') + '\n\n' + ln(264, 266) + r'''
+
+  // ---- effects (dim on purpose; Ember marks the floor warnings, Violet is its power)
+  const FXP=[], RINGS=[], SHARDS=[]; let dotTex=null, cone=null, coneRim=null, rune=null, disc=null, discRim=null;
+  let voice=0, voiceTo=0, heart=0.15, heartTo=0.15, charge=0, chargeTo=0, drain=0, drainTo=0;
+  const FACE_PT=[0,0.085,0.07], HEART=[0,0.03,0.07], FOOT=[0,-0.2,0], PALM=[0.03,-0.01,0.04];
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<120;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<14;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false});}
+    // the Shard Hymn's warning: a narrow Ember cone in front of it that fills; then five shards fly down it in a fan
+    const T0=1.5*Math.PI-CONE_A, TL=2*CONE_A;
+    cone=new THREE.Mesh(new THREE.CircleGeometry(1,32,T0,TL),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false}));
+    coneRim=new THREE.Mesh(new THREE.RingGeometry(0.99,1,32,1,T0,TL),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.7,depthWrite:false}));
+    [cone,coneRim].forEach(m=>{m.rotation.order='YXZ'; m.rotation.x=-Math.PI/2; m.visible=false; fxG.add(m);}); coneRim.scale.setScalar(CONE_R);
+    const sg=new THREE.OctahedronGeometry(0.11,0); sg.scale(0.75,0.75,2.6);
+    for(let i=0;i<NSH;i++){ const m=new THREE.Mesh(sg,new THREE.MeshStandardMaterial({color:VIOLET,roughness:0.55,flatShading:true,emissive:VIOLET,emissiveIntensity:0.22,transparent:true})); m.rotation.order='YXZ'; m.visible=false; m.userData={t:-1}; fxG.add(m); SHARDS.push(m); }
+    // Discord's warning: an Ember ring round itself that fills; then a Violet burst runs out to its edge
+    disc=new THREE.Mesh(new THREE.CircleGeometry(1,64),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false}));
+    discRim=new THREE.Mesh(new THREE.RingGeometry(0.985,1,64),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.7,depthWrite:false}));
+    [disc,discRim].forEach(m=>{m.rotation.x=-Math.PI/2; m.visible=false; fxG.add(m);}); discRim.scale.setScalar(RING_R);
+    const mkRune=(r)=>{const gq=new THREE.Group(); const o=new THREE.Mesh(new THREE.RingGeometry(r*0.94,r,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0.5,depthWrite:false})); const i2=new THREE.Mesh(new THREE.RingGeometry(r*0.62,r*0.66,6),o.material); const i3=new THREE.Mesh(new THREE.RingGeometry(r*0.4,r*0.43,3),o.material); [o,i2,i3].forEach(m=>{m.rotation.x=-Math.PI/2;gq.add(m);}); gq.userData.mat=o.material; gq.position.y=0.013; gq.visible=false; return gq;};
+    rune=mkRune(1.2); fxG.add(rune);
+    RINGS.forEach(r=>scene.add(r.m));
+    // a hero's height, for scale and to take the hit
+    dummy=new THREE.Group(); const dmm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dmm); body.position.y=0.31; const head=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dmm); head.position.y=0.8; dummy.add(body,head); dummy.userData={mat:dmm,z:HOME,x:0,sx:0,kick:0,hold:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+''' + ln(291, 296) + r'''
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); if(cone){cone.visible=coneRim.visible=false;rune.visible=false;disc.visible=discRim.visible=false;} SHARDS.forEach(c=>{c.userData.t=-1;c.visible=false;}); }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  const footW=()=>pt(bones.tail2,FOOT).setY(0.02);
+  const handsW=()=>pt(bones.handL,PALM).add(pt(bones.handR,[-PALM[0],PALM[1],PALM[2]])).multiplyScalar(0.5);
+  let runeT=-1, coneT=-1, discT=-1;
+  function fxStart(name){
+    voiceTo=0; chargeTo=0; heartTo=0.15; if(cone){cone.visible=coneRim.visible=false;disc.visible=discRim.visible=false;} coneT=-1; discT=-1;
+    if(name==='shardHymn'){ if(dummy&&showTarget&&Math.abs(dummy.userData.z-HOME_OF.shardHymn)>0.3){ dummy.userData.z=HOME_OF.shardHymn; dummy.userData.x=0; } cone.userData.o=toFloor(new THREE.Vector3(0,0,0)); cone.userData.yaw=-floorYaw; if(fxOn)coneT=0; }
+    if(name==='discord'){ if(dummy&&showTarget&&Math.abs(dummy.userData.z-HOME_OF.discord)>0.3){ dummy.userData.z=HOME_OF.discord; dummy.userData.x=0; } disc.userData.o=toFloor(new THREE.Vector3(0,0,0)); if(fxOn)discT=0; }
+    if(name==='spawn'){ drain=0; drainTo=0; heart=0; rage=false; $('rage').setAttribute('aria-pressed','false'); cv.style.filter=''; if(fxOn){runeT=0; rune.position.copy(toFloor(new THREE.Vector3(0,0,0))).setY(0.013);} }
+    if(name==='heavyHit'){ hitFeel(0.55,0.09,0.6); flash=0.5; if(fxOn)sparks(pt(bones.chest,HEART),12,0xd9c8ff,2.4,0.3); }
+  }
+  function fxContact(name,i){
+    if(name==='shardHymn'){ hitFeel(0.7,0.07,0.8); voice=1.0; heart=1.0; if(fxOn){ const u=cone.userData, o=handsW(); SHARDS.forEach((m,k)=>{ m.userData={t:0,a:(k-(NSH-1)/2)*SH_GAP,yaw:u.yaw,o:u.o.clone(),h0:o.y,hit:false}; m.material.opacity=1; m.visible=true; }); ringAt(o,{r0:0.2,r1:1.3,dur:0.3,a:0.35,bill:true}); } }
+    if(name==='discord'){ hitFeel(0.9,0.08,1); voice=1.0; heart=1.0; if(fxOn){ const w=new THREE.Vector3(0,0.02,0); ringAt(w,{r0:0.4,r1:RING_R,dur:0.28,a:0.5}); ringAt(w,{r0:0.3,r1:RING_R*0.8,dur:0.34,a:0.3,delay:0.05}); dust(w,10,2.4,0.5); const h=pt(bones.head,FACE_PT); [0,0.08].forEach(dl=>ringAt(h,{r0:0.2,r1:1.6,dur:0.5,a:0.3,bill:true,delay:dl})); }
+      if(dummy&&showTarget&&targetW().length()<RING_R+0.2)hitDummy(0.45); }
+    if(name==='rage'){ hitFeel(0.5,0.06,0.5); rage=true; $('rage').setAttribute('aria-pressed','true'); voice=1.2; heart=1.2; const h=pt(bones.head,FACE_PT); if(fxOn)[0,0.2,0.46].forEach(dl=>ringAt(h,{r0:0.15,r1:1.5,dur:0.6,a:0.3,bill:true,delay:dl})); }
+    if(name==='spawn'){ hitFeel(0.3,0.04,0.3); voice=0.8; heart=0.8; if(fxOn)ringAt(pt(bones.head,FACE_PT),{r0:0.15,r1:1.4,dur:0.5,a:0.3,bill:true}); }
+    if(name==='heavyHit'&&i===1){ hitFeel(0.2,0,0.2); if(fxOn)dust(footW(),4,0.9,0.4); }
+    if(name==='death'){ if(i===0){ hitFeel(0.5,0,0.4); if(fxOn){ const f=footW(); dust(f,9,1.6,0.6); ringAt(f,{r0:0.1,r1:1.0,dur:0.26,a:0.4}); sparks(f.clone().setY(0.25),8,0xd9c8ff,2.0,0.35); } } else { hitFeel(0.25,0,0.2); } }
+  }
+  function hitDummy(k){ if(!dummy||!showTarget)return; dummy.userData.kick=k; dummy.userData.hold=Math.max(dummy.userData.hold,0.6); dummy.userData.mat.emissiveIntensity=feel?0.45:0; }
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time;
+    if(n==='shardHymn'){ const k=Math.min(1,t/HYT), on=t<HYT; voiceTo=on?0.5*k:0; heartTo=on?0.15+0.6*k:0.15; chargeTo=on?k:0;
+      if(coneT>=0&&fxOn){ const u=cone.userData; cone.visible=coneRim.visible=on; cone.rotation.y=coneRim.rotation.y=u.yaw; cone.position.copy(u.o).setY(0.011); coneRim.position.copy(u.o).setY(0.012); cone.scale.setScalar(Math.max(0.001,k*CONE_R)); coneRim.material.opacity=0.45+0.25*Math.sin(t*24)*k; }
+      if(on&&t>0.3&&Math.random()<d*16)motes(handsW(),1,0.25,0.4); }
+    if(n==='discord'){ const k=Math.min(1,t/DCT), on=t<DCT; voiceTo=on?0.6*k:0; heartTo=on?0.15+0.6*k:0.15; chargeTo=on?k:0;
+      if(discT>=0&&fxOn){ const u=disc.userData; disc.visible=discRim.visible=on; disc.position.copy(u.o).setY(0.011); discRim.position.copy(u.o).setY(0.012); disc.scale.setScalar(Math.max(0.001,k*RING_R)); discRim.material.opacity=0.45+0.25*Math.sin(t*24)*k; }
+      if(on&&t>0.4&&Math.random()<d*18)motes(pt(bones.head,[0,0.1,0]),1,0.5,0.6); }
+    if(n==='rage'){ const on=t>0.34&&t<1.25; voiceTo=on?1.0:0.3*Math.min(1,t/0.34)*(t<0.34?1:0); heartTo=on?1.0:0.15; if(on&&Math.random()<d*18)motes(pt(bones.head,[0,0.1,0]),1,0.5,0.9); }
+    if(n==='spawn'){ if(t>0.1&&t<0.9&&Math.random()<d*26)motes(new THREE.Vector3(0,0,0),1,1.6,1.4); }
+    if(n==='death'){ heartTo=t<0.12?0.8:0; voiceTo=0; drainTo=t>META.death.contact[0]?1:0; }
+  }
+  function updateFx(d){
+    voice+=(voiceTo-voice)*Math.min(1,d*(voice>voiceTo?5:12)); heart+=(heartTo-heart)*Math.min(1,d*(heart>heartTo?4:12)); charge+=(chargeTo-charge)*Math.min(1,d*(charge>chargeTo?4:10)); drain+=(drainTo-drain)*Math.min(1,d*1.8); flash=Math.max(0,flash-d*3.2);
+    const on=fxOn?1:0, alive=sel.dead?0:1; const burn=alive*rageW*(0.9+0.35*Math.sin(clockT*19)*Math.sin(clockT*7.3)); const beat=alive*0.06*Math.sin(clockT*2.1);
+    glowU.value.set(on*(0.22*voice+0.1*burn),on*(0.5*heart+beat+0.4*burn),feel?flash:0,on*0.05*charge); drainU.value=drain;
+    // its shadow follows it over the floor and shrinks as it rises
+    if(bones.hips){ const h=pt(bones.hips,[0,0,0]); const hh=Math.max(0,Math.min(0.2,h.y/U-0.46)); blob.position.set(h.x,0.004,h.z); blob.scale.set(0.66-1.3*hh,0.66-1.3*hh,1); blob.material.opacity=0.2-0.45*hh; }
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.03)p.s.position.y=0.03; const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    if(runeT>=0){ runeT+=d; const u=runeT/0.95; rune.visible=u<1&&fxOn; rune.rotation.y=runeT*2.2; rune.scale.setScalar(1.15-0.35*u); rune.userData.mat.opacity=0.5*Math.sin(Math.PI*Math.min(1,u)); if(u>=1)runeT=-1; }
+    if(cone&&!(shot&&!shot.done&&shot.name==='shardHymn')){ cone.visible=coneRim.visible=false; coneT=-1; }
+    if(disc&&!(shot&&!shot.done&&shot.name==='discord')){ disc.visible=discRim.visible=false; discT=-1; }
+    // the shards: out of its hands, down to a hero's chest height in the first 1.6 u, then level at 5.4 u/s to 8.5 u. One that meets the hero breaks on it
+    SHARDS.forEach(m=>{ const u=m.userData; if(u.t<0)return; u.t+=d; const s=0.35+SH_V*u.t; const w=m.position.clone().applyMatrix4(fxG.matrix);
+      if(s>=SH_RANGE){ u.t=-1; m.visible=false; if(fxOn)sparks(w,3,0xd9c8ff,1.2,0.25); return; }
+      const y=0.55+(u.h0-0.55)*Math.pow(Math.max(0,1-s/1.6),2); m.position.set(Math.sin(u.a)*s,y,Math.cos(u.a)*s).applyAxisAngle(Y,u.yaw).add(u.o); m.rotation.set(0,u.yaw+u.a,u.t*9); m.material.opacity=Math.min(1,(SH_RANGE-s)/1.2); m.visible=fxOn;
+      if(!u.hit&&dummy&&showTarget&&u.t>d&&Math.hypot(w.x-dummy.position.x,w.z-dummy.position.z)<0.42){ u.hit=true; u.t=-1; m.visible=false; hitDummy(0.3); hitFeel(0.3,0,0); if(fxOn)sparks(w.setY(0.55),6,0xd9c8ff,1.8,0.25); } });
+    if(dummy){ const u=dummy.userData, home=HOME_OF[sel.action]||HOME; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4); u.x+=u.sx*d; u.sx=Math.max(0,u.sx-u.sx*d*8-d*0.3); if(u.kick>0){ u.z+=u.kick*d*9; u.kick=Math.max(0,u.kick-u.kick*d*9-d*0.2); } else if(u.hold>0)u.hold-=d; else { u.z+=(home-u.z)*Math.min(1,d*3); u.x+=(0-u.x)*Math.min(1,d*3); } dummy.position.z=u.z; dummy.position.x=u.x; }
+  }
+  // it has no feet: while it floats, a few motes of light fall from the crystals at its foot
+  let dripT=0;
+  function footfalls(){ if(!fxOn||sel.dead||clockT-dripT<0.26)return; dripT=clockT; if(shot&&!shot.done&&shot.name==='spawn'&&shot.action.time<0.5)return;
+    puff(pt(bones.tail2,[(Math.random()-0.5)*0.07,-0.16,(Math.random()-0.5)*0.07]),new THREE.Vector3(0,-0.3,0),{life:0.6,s0:0.06,s1:0.02,a:0.3,col:VIOLET}); }
+
+''' + ln(355, 384).replace("    mixer.update(md);", "    rageW+=((rage&&!sel.dead?1:0)-rageW)*Math.min(1,md/0.3); if(rageAct)rageAct.setEffectiveWeight(rageW); const fast=1+(RAGEWALK/WALK-1)*rageW; ['walk','turnL','turnR'].forEach(k=>A[k].timeScale=fast);\n    mixer.update(md);").replace("dz+=(A.walk.__w)*WALK*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*md;", "dz+=(A.walk.__w)*WALK*fast*md; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*fast*md;") + '\n</script>\n'
+page = HEAD + '\n' + BODY + JS_TOP
+VW, VH = sys.argv[7].split('x')
+page = page.replace('__VW__', VW).replace('__VH__', VH).replace('__TRIS__', TRIS).replace('__MB__', MB).replace('__UNDER__', sys.argv[6] if len(sys.argv) > 6 else '')
+assert 'mixer.update(md);' in page and 'RAGEWALK/WALK' in page and 'WALK*fast*md' in page and "blob.scale.set(0.58,0.58,1)" in page and 'spawn it back in' in page and 'FACE_PT),6,0xd9c8ff' in page and 'sword' not in page and 'THORNS' not in page and 'thicket' not in page and ' her ' not in page and ' his ' not in page, [k for k in ('sword', 'THORNS', 'thicket', ' her ', ' his ') if k in page]
+open(out, 'w').write(page); print('wrote', out, len(page))

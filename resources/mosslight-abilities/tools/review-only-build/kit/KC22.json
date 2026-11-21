@@ -1,0 +1,62 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C22",
+  "aim": [
+   3,
+   0
+  ],
+  "slots": [
+   "pale_lance"
+  ],
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    -3.2,
+    -2.4,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    4.6,
+    -0.4
+   ],
+   [
+    5.4,
+    0.5
+   ]
+  ],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=600;e.hp=600;}",
+  "seq": [
+   [
+    0.3,
+    "rdown"
+   ],
+   [
+    1.1,
+    "rup"
+   ],
+   [
+    6.2,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 8.2,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C22 \u00b7 Sower seeds, then Rootspear"
+ }
+]

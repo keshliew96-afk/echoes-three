@@ -1,0 +1,1 @@
+[{"name": "C8", "cap": "Thorn slam \u00b7 Iron Briar, then Badger Toss a foe into it", "secs": 3.6, "tank": [1.2, 0], "aim": [-1.8, 0], "foes": [["rotcap", 0.75, 0.1, {"hpMul": 20}], ["rotcap", -2.1, 0.6, {"hpMul": 20}]], "holdFoes": 1.0, "seq": [[0.3, "cast", "iron_briar", [-1.8, 0]], [1.0, "cast", "badger_toss", [-1.8, 0]]]}]

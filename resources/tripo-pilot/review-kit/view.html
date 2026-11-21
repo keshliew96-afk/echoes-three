@@ -1,0 +1,22 @@
+<!doctype html><html><body style="margin:0;background:#888">
+<script type="importmap">{"imports":{"three":"./three.module.js","three/addons/":"./jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const P=new URLSearchParams(location.search);
+const W=innerWidth,H=innerHeight;
+const r=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true});r.setSize(W,H);document.body.appendChild(r.domElement);
+r.setScissorTest(true);
+const sc=new THREE.Scene();sc.background=new THREE.Color(0xbbbbbb);
+sc.add(new THREE.HemisphereLight(0xffffff,0x666666,2.2));const d=new THREE.DirectionalLight(0xffffff,1.5);d.position.set(1,2,2);sc.add(d);
+const g=await new GLTFLoader().loadAsync(P.get('f')||'model.glb');sc.add(g.scene);
+if(P.get('wire')) g.scene.traverse(o=>{if(o.isMesh){o.material.wireframe=true}});
+if(P.get('vc')) g.scene.traverse(o=>{if(o.isMesh){o.material=new THREE.MeshBasicMaterial({vertexColors:true})}});
+const cy=+(P.get('cy')||0.5), half=+(P.get('half')||0.55);
+const views=[[0,0,3],[3,0,0],[0,0,-3],[-3,0,0]];
+const n=views.length, vw=W/n;
+views.forEach((p,i)=>{const a=vw/H;const c=new THREE.OrthographicCamera(-half*a,half*a,half,-half,0.1,10);
+ c.position.set(p[0],cy,p[2]);c.lookAt(0,cy,0);
+ r.setViewport(i*vw,0,vw,H);r.setScissor(i*vw,0,vw,H);r.render(sc,c);});
+window.done=true;
+</script></body></html>

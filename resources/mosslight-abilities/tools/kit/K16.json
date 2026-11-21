@@ -1,0 +1,48 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S16",
+  "skill": "lantern_ward",
+  "allies": [
+   [
+    -1.6,
+    -1.2,
+    0.5
+   ],
+   [
+    1.8,
+    -0.8,
+    0.45
+   ],
+   [
+    -3.6,
+    2.5,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    0.4,
+    -3.0
+   ]
+  ],
+  "secs": 14.5,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "cap": "S16 Firefly Swarm (was Wild Growth) \u00b7 tiny wisps fly to the most hurt ally (Moss 5 a second, 3 s), then sting the nearest foe (5 a second, 3 s), then ally, then foe: 4 stops",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ]
+ }
+]

@@ -1,0 +1,53 @@
+[
+ {
+  "name": "basic",
+  "skill": null,
+  "key": "hold-right",
+  "aim": [
+   0,
+   -3
+  ],
+  "allies": [
+   [
+    -2.6,
+    2.0,
+    1
+   ],
+   [
+    2.6,
+    2.0,
+    1
+   ],
+   [
+    0,
+    2.8,
+    1
+   ]
+  ],
+  "pin": true,
+  "cap": "1 Basic attack, latest version \u00b7 darker green bolts \u00b7 hits 1 and 2: 8 each \u00b7 hit 3: the gem grows and glows as it flies out, shoots the nearest foe for 3 a bolt, and shrinks back on return",
+  "leg": "dashed: cast range \u00b7 gold: area (guides, not in the game)",
+  "secs": 4.2,
+  "fps": 20,
+  "dummies": [
+   [
+    -1.2,
+    -3.6
+   ],
+   [
+    0,
+    -3.4
+   ],
+   [
+    1.2,
+    -3.6
+   ]
+  ],
+  "guides": [
+   {
+    "k": "range",
+    "r": 5.0
+   }
+  ]
+ }
+]

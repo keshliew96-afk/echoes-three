@@ -1,0 +1,10 @@
+idle          {"dur":4.8,"frames":289,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0003,"loAt":"toeR@1.80","under":0,"loopPopDeg":0}
+walk          {"dur":0.46,"frames":29,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"HR@0.07","lowest":-0.0027,"loAt":"shinL@0.03","under":0,"loopPopDeg":0}
+turnL         {"dur":0.46,"frames":29,"slide_mm":0,"slideAt":"HR@0.17","reach_mm":0,"reachAt":"HL@0.40","lowest":-0.001,"loAt":"toeR@0.27","under":0,"loopPopDeg":0}
+turnR         {"dur":0.46,"frames":29,"slide_mm":0,"slideAt":"HL@0.05","reach_mm":0,"reachAt":"HL@0.18","lowest":-0.0004,"loAt":"toeR@0.27","under":0,"loopPopDeg":0}
+sweeps        {"dur":5.250000000000001,"frames":316,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0071,"loAt":"footL@4.50","under":1,"loopPopDeg":0}
+tosses        {"dur":5.65,"frames":340,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0048,"loAt":"footL@4.27","under":1,"loopPopDeg":0}
+hurt          {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0002,"loAt":"toeR@0.00","under":0,"loopPopDeg":0}
+spawn         {"dur":1.3,"frames":79,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0002,"loAt":"toeR@0.00","under":0,"loopPopDeg":0}
+death         {"dur":2.2,"frames":133,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"HL@0.68","lowest":-0.0115,"loAt":"shinL@0.80","under":1,"loopPopDeg":0}
+wrote miller.glb 1.36 MB

@@ -1,0 +1,70 @@
+diff --git a/src/scenes/arena.js b/src/scenes/arena.js
+index 01fd18c..7891f83 100644
+--- a/src/scenes/arena.js
++++ b/src/scenes/arena.js
+@@ -78,6 +78,8 @@ import {
+ import { makeFlameSprite, createEmberField } from '../env/flame.js';
+ import { COOL, EMBER_GLOW, mix } from '../env/colors.js';
+ import { variantLayoutRng } from '../env/layout.js';
++import { createReviewPathsFx } from '../render/critters/reviewPathsFx.js'; // REVIEW-ONLY
++import * as REVIEW_THREE from 'three'; // REVIEW-ONLY: the flat review floor
+ import { createAfterimages } from '../render/critters/afterimage.js';
+ import { installBandGuard, bandGuardInfo, guardSubtree } from '../env/bandguard.js';
+ import { compileAsyncSafe } from '../render/precompile.js';
+@@ -651,6 +653,24 @@ export function createArenaScene(stage, toggles, ctx) {
+   // The world froze (the ally layer tells the party's own rigs).
+   bus.on('hitstop', (ev) => healerRig.cue('hitstop', ev));
+   bus.on('room_enter', () => healerRig.cue('spawn'));
++  bus.on('review_dash_heal', (ev) => healerRig.cue('dashHeal', ev)); // REVIEW-ONLY (never committed)
++  bus.on('intent', (ev) => ev.kind === 'dodge' && healerRig.cue('dashStart', ev)); // REVIEW-ONLY
++  // REVIEW-ONLY (Kesh 11-17, "a flat square floor"): ?flat=1 hides the room and stands the fight on
++  // a plain grey floor with a 1 u grid, lit like the model review page.
++  const reviewFlat = /[?&]tripo=1\b/.test(location.search) && /[?&]flat=1\b/.test(location.search);
++  const flatRig = reviewFlat ? (() => {
++    const T = REVIEW_THREE, g = new T.Group();
++    const plane = new T.Mesh(new T.PlaneGeometry(60, 60), new T.MeshLambertMaterial({ color: 0x9a9d96 }));
++    plane.rotation.x = -Math.PI / 2; plane.position.y = -0.003;
++    const grid = new T.GridHelper(60, 60, 0x5c6159, 0x5c6159);
++    grid.material.transparent = true; grid.material.opacity = 0.55; grid.position.y = 0.001;
++    const hemi = new T.HemisphereLight(0xffffff, 0x8a8f96, 0.9);
++    const sun = new T.DirectionalLight(0xffffff, 0.75); sun.position.set(3, 8, 5);
++    g.add(plane, grid, hemi, sun);
++    stage.scene.add(g);
++    return g;
++  })() : null;
++  const reviewPaths = /[?&]tripo=1\b/.test(location.search) ? createReviewPathsFx({ bus, root, world, tip: (out) => healerRig.pointWorld('tip', out) }) : null; // REVIEW-ONLY
+ 
+   // --- Entity contact shadows: same treatment for every sim body in the arena
+   // (training dummies today, enemies when they land), so nothing ever floats.
+@@ -1629,6 +1649,13 @@ export function createArenaScene(stage, toggles, ctx) {
+   function update(elapsedSec, alpha = 1) {
+     // The graybox inside runs first: player rig, bolts, dummies, juice, camera.
+     inner.update(elapsedSec, alpha);
++    if (flatRig) { // REVIEW-ONLY: keep the room hidden and only the flat floor's lights on
++      if (active) active.group.visible = false;
++      flies.visible = false;
++      stage.scene.fog = null;
++      if (!stage.scene.background || stage.scene.background.getHex?.() !== 0xb4b7b0) stage.scene.background = new REVIEW_THREE.Color(0xb4b7b0);
++      for (const o of stage.scene.children) if (o.isLight && o.parent === stage.scene) o.visible = false;
++    }
+ 
+     // Prop/wall ink is expanded in clip space, so it needs the live canvas size
+     // to stay a constant 2 px (same contract as the critters' ink).
+@@ -1706,6 +1733,7 @@ export function createArenaScene(stage, toggles, ctx) {
+     // contact, B2), so it takes the raw dt: the render hold on top would
+     // freeze it at the press and hold it twice.
+     healerRig.update(dt);
++    if (reviewPaths) reviewPaths.update(dt); // REVIEW-ONLY
+     for (const a of allies) a.update(dt);
+ 
+     // Dash afterimages: one ghost per SMEAR_TICK_OFFSETS entry of dash travel
+@@ -1718,7 +1746,8 @@ export function createArenaScene(stage, toggles, ctx) {
+     // fade clock, so a mid-dash frame shows the same >=3-ghost trail at any
+     // render rate.
+     if (smearWarmFrames > 0 && --smearWarmFrames === 0) afterimages.clear();
+-    if (p.dashTicksLeft > 0) {
++    if (p.dashTicksLeft > 0 && !/[?&]tripo=1\b/.test(location.search)) {
++      // REVIEW-ONLY guard above: the model page's dash shows a pale blue tint, not afterimages.
+       // The trail is a pure FUNCTION of how far into the dash the body is: at
+       // `elapsed` ticks travelled, silhouettes are frozen at elapsed minus each
+       // SMEAR_TICK_OFFSETS entry, back along the locked dash direction, each

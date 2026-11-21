@@ -1,0 +1,15 @@
+19|Swift Mend pressed nonstop on three hurt allies: its cooldown reads 2.0 s instead of 2.5 s (top right).
+20|Mending Bolt on the hurt Tank lands as a HoT: a vine ring at his feet shrinks over 5 s while six green ticks pay the heal.
+21|Her basic attack and Lantern Flurry on dummies: dark green motes fly to the gem, which grows as Sap fills (top right), then pours a Bright Heal stream into the hurt Tank beside her.
+22|Swift Mend pressed nonstop: its cooldown reads 2.25 s instead of 2.5 s (top right). With Quick Sprout it would be 1.75 s; with Regrowth the +25% becomes +15%.
+23|Mending Bolt on the hurt Tank: the 22 lands at once, then a vine ring runs 4 s while 4 small ticks add 20% more. With Regrowth the 20% joins the HoT instead.
+24|The same fight as Reap with Rich Sap alone: the gem fills a third as fast (10%), then pours the same way.
+25|Swift Mend pressed twice in a row on two hurt allies, then again when one charge has come back. The charge pips are top right.
+26|Nova Bloom heals her and the two most hurt allies near her: each wears Bark's thin pale ring for 4 s. How many wear it, and the time left, are top right.
+27|Hit 3 throws the staff beside the hurt Tank. Its bolts on the dummies fill the gem with Sap, and the planted staff pours into the Tank, who stands outside her own reach (dashed) but inside the staff's (gold).
+28|The hurt Tank stands at 3.55 u: outside today's 3.2 u (gold) but inside Long Reach's 3.84 u (dashed), so Swift Mend reaches him.
+29|Three hurt allies at about 1.5 u: outside today's 1.4 u (gold) but inside Wide Canopy's 1.68 u (dashed), so Nova Bloom heals all three.
+30|The room starts at 0.5 s with 15 Sap in the gem and no damage dealt: the gem pours it into the hurt Tank at 2.2 u, inside the 2.4 u reach ring.
+31|Four heal casts on Q, E, C and X, then Swift Mend as the 5th: it lands again by itself 1 s later at half strength. The count is top right.
+32|Nova Bloom heals her and two hurt allies; then each wears a vine ring for 6 s and regrows 1% of their maximum health a second (Tank 1.5, Mosslight 1, Archer 0.8). Health is top right.
+33|Boars at low health charge in; she and the party fell them, and each kill stores 3 Sap. The gem pours it into the hurt Tank beside her, who wears the game's Inspired chevrons.

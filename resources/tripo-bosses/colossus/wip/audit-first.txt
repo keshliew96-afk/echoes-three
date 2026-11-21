@@ -1,0 +1,100 @@
+idle      floor clean
+          spine into head               58.1 mm at 4.07  (37 verts, 232 frames)
+          head into spine                7.8 mm at 3.68  (1 verts, 67 frames)
+          stretch x6.75 at 3.05 on fistL
+walk      floor clean
+          spine into head               50.7 mm at 0.38  (8 verts, 39 frames)
+          thighR into armR               9.9 mm at 0.22  (2 verts, 8 frames)
+          head into spine                8.2 mm at 0.03  (1 verts, 12 frames)
+          stretch x15.73 at 0.53 on thighR
+turnL     floor thighL -37mm@0.38, shinL -34mm@0.38, thighR -21mm@0.38, shinR -21mm@0.38
+          spine into head               52.1 mm at 0.63  (69 verts, 39 frames)
+          footL into hips               50.7 mm at 0.38  (71 verts, 3 frames)
+          footR into hips               43.9 mm at 0.38  (76 verts, 3 frames)
+          hips into footR               42.3 mm at 0.38  (41 verts, 3 frames)
+          hips into footL               37.7 mm at 0.38  (47 verts, 3 frames)
+          thighR into armR               8.4 mm at 0.17  (3 verts, 11 frames)
+          head into spine                6.4 mm at 0.63  (1 verts, 39 frames)
+          snaps: footR 97 deg@0.40 (beside 19), footL 94 deg@0.40 (beside 12), shinL 92 deg@0.40 (beside 7), shinR 92 deg@0.35 (beside 11), shinR 86 deg@0.40 (beside 7)
+          stretch x24.04 at 0.38 on thighR
+turnR     floor thighR -39mm@0.07, shinR -35mm@0.07, thighL -25mm@0.07, shinL -23mm@0.07
+          footL into hips               50.7 mm at 0.05  (59 verts, 3 frames)
+          footR into hips               48.0 mm at 0.07  (48 verts, 3 frames)
+          hips into footL               41.7 mm at 0.07  (46 verts, 3 frames)
+          hips into footR               38.3 mm at 0.07  (31 verts, 3 frames)
+          spine into head               35.0 mm at 0.02  (64 verts, 39 frames)
+          snaps: footL 99 deg@0.08 (beside 19), footR 96 deg@0.08 (beside 11), shinL 93 deg@0.03 (beside 10), shinR 92 deg@0.08 (beside 6), shinL 86 deg@0.08 (beside 6)
+          stretch x26.64 at 0.08 on chest
+fissure   floor clean
+          spine into foreR              58.2 mm at 0.90  (209 verts, 19 frames)
+          foreR into head               55.8 mm at 0.98  (23 verts, 17 frames)
+          spine into head               55.4 mm at 1.13  (44 verts, 83 frames)
+          chest into fistR              55.3 mm at 0.40  (17 verts, 7 frames)
+          foreR into spine              50.9 mm at 0.32  (27 verts, 16 frames)
+          footR into hips               32.9 mm at 0.85  (20 verts, 30 frames)
+          thighR into armR              31.2 mm at 0.45  (2 verts, 12 frames)
+          hips into footR               25.6 mm at 0.85  (6 verts, 26 frames)
+          snaps: fistR 156 deg@0.90 (beside 46), shinL 75 deg@0.35 (beside 2), shinR 70 deg@0.88 (beside 11), shinR 67 deg@0.35 (beside 2), shinL 66 deg@0.88 (beside 15)
+          stretch x52.43 at 0.68 on chest
+rain      floor clean
+          spine into head               46.6 mm at 1.03  (9 verts, 59 frames)
+          foreR into spine              24.5 mm at 0.98  (8 verts, 3 frames)
+          thighR into armR              23.9 mm at 0.95  (3 verts, 6 frames)
+          spine into foreR              16.1 mm at 0.48  (1 verts, 6 frames)
+          spine into foreL              14.5 mm at 0.48  (3 verts, 6 frames)
+          thighL into armL               7.9 mm at 0.97  (3 verts, 4 frames)
+          foreL into spine               7.2 mm at 0.97  (2 verts, 1 frames)
+          snaps: armR 156 deg@0.55 (beside 21), armL 156 deg@0.55 (beside 21), fistR 148 deg@0.55 (beside 14), fistL 148 deg@0.55 (beside 14), foreR 64 deg@0.55 (beside 11)
+          stretch x66.47 at 0.55 on chest
+burst     floor clean
+          spine into head               59.2 mm at 1.55  (124 verts, 167 frames)
+          thighR into armR              38.6 mm at 0.98  (5 verts, 154 frames)
+          thighL into armL              25.7 mm at 1.28  (1 verts, 44 frames)
+          head into spine               11.0 mm at 1.73  (2 verts, 47 frames)
+          snaps: toeR 37 deg@0.98 (beside 5), toeL 37 deg@0.98 (beside 5), thighR 26 deg@1.00 (beside 7), thighL 26 deg@1.00 (beside 7)
+          stretch x24.48 at 2.23 on chest
+enrage    floor clean
+          spine into head               58.0 mm at 1.50  (37 verts, 114 frames)
+          thighR into armR              16.7 mm at 1.55  (2 verts, 21 frames)
+          thighL into armL              14.3 mm at 1.55  (1 verts, 22 frames)
+          spine into foreR              12.5 mm at 0.82  (5 verts, 5 frames)
+          spine into foreL              10.6 mm at 0.63  (5 verts, 4 frames)
+          foreL into spine              10.5 mm at 0.63  (8 verts, 4 frames)
+          foreR into spine               8.0 mm at 0.82  (4 verts, 3 frames)
+          armR into thighR               7.5 mm at 1.25  (1 verts, 8 frames)
+          snaps: shinR 81 deg@1.50 (beside 3), shinL 81 deg@1.50 (beside 3), foreR 56 deg@1.48 (beside 10), foreL 56 deg@1.48 (beside 10), thighR 39 deg@1.50 (beside 1)
+          stretch x39.83 at 1.45 on chest
+hurt      floor clean
+          spine into head               57.4 mm at 0.15  (9 verts, 21 frames)
+          stretch x7.04 at 0.05 on head
+heavyHit  floor thighR -11mm@0.12, footL -8mm@0.28
+          spine into head               58.2 mm at 0.52  (36 verts, 53 frames)
+          footR into hips               35.1 mm at 0.12  (60 verts, 6 frames)
+          footL into hips               34.9 mm at 0.12  (34 verts, 7 frames)
+          footR into spine              32.5 mm at 0.12  (8 verts, 1 frames)
+          shinR into armR               26.9 mm at 0.10  (2 verts, 1 frames)
+          thighR into armR              26.6 mm at 0.08  (11 verts, 5 frames)
+          shinR into chest              25.2 mm at 0.10  (4 verts, 1 frames)
+          hips into footR               21.8 mm at 0.10  (9 verts, 2 frames)
+          snaps: shinL 108 deg@0.13 (beside 8), thighL 78 deg@0.13 (beside 7), foreR 61 deg@0.13 (beside 0), foreL 56 deg@0.13 (beside 6), shinR 54 deg@0.13 (beside 6)
+          stretch x24.09 at 0.12 on thighR
+spawn     floor clean
+          spine into head               57.1 mm at 1.00  (103 verts, 86 frames)
+          thighR into armR              23.6 mm at 0.93  (3 verts, 26 frames)
+          thighL into armL              14.4 mm at 1.00  (1 verts, 24 frames)
+          footL into hips                8.1 mm at 0.00  (2 verts, 12 frames)
+          hips into footR                7.1 mm at 0.17  (1 verts, 11 frames)
+          footR into hips                7.0 mm at 0.00  (1 verts, 10 frames)
+          snaps: toeR 37 deg@0.93 (beside 5), toeL 37 deg@0.93 (beside 5), thighR 29 deg@0.95 (beside 3), thighL 29 deg@0.95 (beside 3), shinR 16 deg@0.77 (beside 2)
+          stretch x29.20 at 0.90 on chest
+death     floor clean
+          spine into head               57.9 mm at 1.13  (23 verts, 164 frames)
+          footL into hips               47.0 mm at 0.83  (62 verts, 139 frames)
+          footR into hips               41.5 mm at 0.83  (73 verts, 136 frames)
+          thighR into armR              37.6 mm at 1.17  (5 verts, 162 frames)
+          hips into footR               35.2 mm at 1.27  (9 verts, 60 frames)
+          hips into footL               25.8 mm at 1.18  (12 verts, 55 frames)
+          thighL into armL              16.2 mm at 1.07  (1 verts, 11 frames)
+          head into spine               10.7 mm at 1.87  (8 verts, 69 frames)
+          snaps: shinR 107 deg@0.07 (beside 13), shinL 107 deg@0.07 (beside 13), shinR 80 deg@0.03 (beside 13), shinL 80 deg@0.03 (beside 13), footR 74 deg@0.07 (beside 10)
+          stretch x39.29 at 1.65 on chest

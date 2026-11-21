@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.js","three/addons/":"../node_modules/three/examples/jsm/"}}</script>
+<style>body{margin:0;background:#222} canvas{display:block}</style></head><body>
+<canvas id="c" width="640" height="400"></canvas>
+<script type="module">
+import * as W from './tc.js';
+const q = new URLSearchParams(location.search);
+let DEFS = {}, FORMS = {};
+try { const m = await import('./defs.js'); DEFS = m.DEFS; FORMS = m.FORMS; for (const f of ['fl.js', 'su.js', 'bu.js', 'co.js']) { try { await import('./' + f); } catch (e) { if (!String(e).includes('Failed to fetch')) console.error(e); } } } catch (e) { if (!String(e).includes('Failed to fetch')) console.error(e); }
+await W.loadHim('./otter.glb');
+const id = q.get('id') || 'B';
+let def;
+if (q.get('clip')) { const c = q.get('clip'); const T = W.him.clips[c].T; def = { T: T + 0.5, seq: [[0.2, c]], her: { x: 0, z: 0, face: +(q.get('face') || 90) }, cam: { x: 0, z: 0, w: 3.2, y: 0.5 }, noAuto: true }; }
+else def = id.includes(':') ? FORMS[id.split(':')[0]][id.split(':')[1]] : DEFS[id];
+const card = W.addCard(def, document.getElementById('c'));
+window.__card = card; window.__W = W; window.__ready = true;
+</script></body></html>

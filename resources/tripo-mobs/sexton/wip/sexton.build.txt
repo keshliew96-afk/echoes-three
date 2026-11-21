@@ -1,0 +1,10 @@
+idle          {"dur":4.4,"frames":265,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0002,"loAt":"toeR@1.63","under":0,"loopPopDeg":0}
+walk          {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"","reach_mm":7.3,"reachAt":"HL@0.02","lowest":-0.0001,"loAt":"toeR@0.23","under":0,"loopPopDeg":0}
+turnL         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"HL@0.17","reach_mm":0,"reachAt":"HL@0.17","lowest":0,"loAt":"toeR@0.27","under":0,"loopPopDeg":0}
+turnR         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"HR@0.05","reach_mm":0,"reachAt":"HL@0.18","lowest":0,"loAt":"toeR@0.47","under":0,"loopPopDeg":0}
+dig           {"dur":1.24,"frames":75,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"HL@0.05","lowest":-0.0001,"loAt":"footL@0.53","under":0,"loopPopDeg":0}
+spring        {"dur":3.1,"frames":187,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"toeR@0.00","under":0,"loopPopDeg":0}
+hurt          {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"toeR@0.00","under":0,"loopPopDeg":0}
+spawn         {"dur":1.2,"frames":73,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0,"loAt":"toeR@0.00","under":0,"loopPopDeg":0}
+death         {"dur":2.2,"frames":133,"slide_mm":0,"slideAt":"","reach_mm":109.2,"reachAt":"HR@1.27","lowest":0.0015,"loAt":"spade@0.67","under":0,"loopPopDeg":0}
+wrote sexton.glb 1.16 MB

@@ -1,0 +1,75 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 10,
+  "pre": 0.25,
+  "name": "kit_C23",
+  "aim": [
+   3,
+   0
+  ],
+  "slots": [],
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    -3.2,
+    -2.4,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    4.6,
+    -1.0
+   ],
+   [
+    4.8,
+    1.0
+   ],
+   [
+    -4.2,
+    0.4
+   ]
+  ],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=3000;e.hp=3000;}globalThis.__reviewPouch=true;",
+  "seq": [
+   [
+    0.3,
+    "rdown"
+   ],
+   [
+    1.1,
+    "rup"
+   ],
+   [
+    7.0,
+    "rdown"
+   ],
+   [
+    7.8,
+    "rup"
+   ],
+   [
+    13.8,
+    "rdown"
+   ],
+   [
+    14.6,
+    "rup"
+   ]
+  ],
+  "secs": 20.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C23 \u00b7 Sower in a 20 s fight, no skills: pouch seeds every 8 s and turret seeds"
+ }
+]

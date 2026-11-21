@@ -1,0 +1,47 @@
+[
+ {
+  "name": "path_evergreen",
+  "skill": "mending_bolt",
+  "key": null,
+  "aim": [
+   0,
+   -2.6
+  ],
+  "allies": [
+   [
+    0,
+    -2.2,
+    0.4
+   ],
+   [
+    -1.0,
+    0.8,
+    0.4
+   ],
+   [
+    1.0,
+    0.8,
+    0.4
+   ]
+  ],
+  "pin": true,
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "cap": "Evergreen keystone, Regrowth (T19) \u00b7 every heal becomes a 5 s heal over time worth 150%: Mending Bolt's 22 lands as 6 ticks of 5.5 (33) \u00b7 heal cooldowns 25% longer",
+  "leg": "",
+  "secs": 6.2,
+  "fps": 15,
+  "guides": [
+   {
+    "k": "range",
+    "r": 5.0
+   }
+  ],
+  "pre": 0.3
+ }
+]

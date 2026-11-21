@@ -1,0 +1,64 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C15",
+  "aim": [
+   3,
+   0
+  ],
+  "slots": [
+   "mending_tide",
+   "pale_lance"
+  ],
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    -3.2,
+    -2.4,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    5.4,
+    -2.0
+   ]
+  ],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}globalThis.__reviewSprout=new Set(['mending_tide','pale_lance']);",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    1.3,
+    "aim",
+    [
+     5.4,
+     -2.0
+    ]
+   ],
+   [
+    1.5,
+    "key",
+    "e"
+   ]
+  ],
+  "secs": 4.2,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C15 \u00b7 Sprout node on Dew Wave and Rootspear"
+ }
+]

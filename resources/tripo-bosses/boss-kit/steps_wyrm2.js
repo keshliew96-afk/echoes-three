@@ -1,0 +1,5 @@
+const TOP=`(()=>{let m=null;let o=__review.bones.head;while(o.parent)o=o.parent;o.traverse(c=>{if(c.isSkinnedMesh)m=c;});m.updateMatrixWorld(true);m.skeleton.update();const v=new THREE_V(),n=m.geometry.attributes.position.count;let hi=-9;for(let i=0;i<n;i+=3){v.fromBufferAttribute(m.geometry.attributes.position,i);m.boneTransform(i,v);v.applyMatrix4(m.matrixWorld);if(v.y>hi)hi=v.y;}return hi;})()`;
+const to=(t)=>({eval:`(()=>{let g=0;while(!(__review.state().shot==='emerge'&&__review.state().t>=${t})&&g++<2000)__review.step(1/60);const s=__review.state();return JSON.stringify({t:s.t,shot:s.shot,top:${TOP}.toFixed(3)});})()`});
+module.exports=[{wait:2500},{eval:'window.THREE_V=__review.bones.head.position.constructor;1',log:false},{eval:'__review.pause(true)',log:false},{click:'Burrow Strike'},
+ to(0.3),{shot:'w_under'},to(0.75),to(0.85),to(0.88),{shot:'w_late'},to(0.9),{shot:'w_burst'},to(0.95),to(1.02),{shot:'w_top'},to(1.1),to(1.6),{shot:'w_exposed'},{click:'Burrow Strike'},
+ to(3.1)];

@@ -1,0 +1,76 @@
+[
+ {
+  "key": null,
+  "aim": [
+   3,
+   0
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S21",
+  "skill": "pale_lance",
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    1.6,
+    0.2
+   ],
+   [
+    3.0,
+    -0.3
+   ],
+   [
+    4.3,
+    0.25
+   ],
+   [
+    2.4,
+    1.9
+   ]
+  ],
+  "secs": 2.6,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(400-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "guides": [
+   {
+    "k": "area",
+    "rect": true,
+    "c": [
+     0,
+     0
+    ],
+    "dir": [
+     1,
+     0
+    ],
+    "len": 7.0,
+    "w": 1.4
+   }
+  ],
+  "cap": "S21 Rootspear (was Briar Lance) \u00b7 the row shows for 0.4 s, then root spears burst along it: 28 to every foe in the row, 7 u long, 1.4 u wide \u00b7 the dummy off the row is missed",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ]
+ }
+]

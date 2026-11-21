@@ -1,0 +1,31 @@
+
+> echoes-three@0.2.0 test
+> node tools/test.mjs
+
+ok   test-safety-net-probe.mjs (2.1 s) — the safety net checks itself
+ok   gntM2-goldens.mjs (8.6 s) — the nine goldens against tools/goldens.json
+ok   i18n-extract.mjs --check (0.7 s) — every language has every key
+ok   data-xcheck-probe.mjs (0.2 s) — every id a data table names exists
+ok   gntM4b-layoutcheck.mjs (0.2 s) — layout placements clear the spawn ring and entries
+ok   save-determinism-probe.mjs (3.6 s) — a captured run plays on hash for hash
+ok   gntM2-nodetrip.mjs (5.6 s) — save round trips at several moments
+ok   save-safety-probe.mjs (0.6 s) — cloud loads, newer profiles, deed facts
+ok   server-hardening-probe.mjs (16.7 s) — server limits and backpressure
+ok   gntfixM5a1-unit.mjs (0.1 s) — link quality meter and snapshot header
+ok   gntfixM5a4-unit.mjs (8.7 s) — protocol v3 forms
+ok   team-lobbyunit.mjs (0.1 s) — co-op team pick in the lobby
+ok   player-build-gating-probe.mjs (0.2 s) — harness params and debug API gating
+ok   gameplay-bugs-probe.mjs (194.0 s) — Daily boss credit, room leftovers, shrine curses
+ok   lineup-probe.mjs (1.0 s) — the party lineup
+ok   class-skills-probe.mjs (1.4 s) — class skills
+ok   champions-probe.mjs (7.3 s) — champion rooms
+ok   vaults-probe.mjs (6.0 s) — keys and vaults
+ok   hazards-shrines-probe.mjs (4.4 s) — hazards and shrines
+ok   relics6-probe.mjs (1.3 s) — relics batch six
+ok   vow-ranks-probe.mjs (5.0 s) — vow ranks
+ok   act6-probe.mjs (3.4 s) — the Ember Kiln
+ok   kiln-bosses-probe.mjs (3.4 s) — the Kiln's bosses and the Level V fork
+ok   endless-probe.mjs (2.4 s) — Endless
+ok   daily-probe.mjs (0.8 s) — the Daily Descent
+
+all 25 probes passed in 4.6 min

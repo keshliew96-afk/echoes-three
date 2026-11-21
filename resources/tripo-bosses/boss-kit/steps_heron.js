@@ -1,0 +1,15 @@
+const st=(n)=>({eval:'for(let i=0;i<'+n+';i++)__review.step(1/60);JSON.stringify(__review.state())'});
+module.exports=[{wait:2500},{eval:'JSON.stringify(__review.state())'},{shot:'idle'},
+ {eval:'__review.pause(true)',log:false},
+ {click:'Bill Spear'},st(44),{wait:300},{shot:'spear_coil'},st(8),{wait:300},{shot:'spear_go'},st(12),{wait:300},{shot:'spear_hit'},st(14),{wait:300},{shot:'spear_dash'},st(10),{wait:300},{shot:'spear_land'},st(30),{wait:300},{shot:'spear_settle'},
+ {click:'Bill Spear'},st(90),{wait:300},{shot:'after_spear'},
+ {click:'Bill Flurry'},st(30),{wait:300},{shot:'peck_aim'},st(7),{wait:300},{shot:'peck_1'},st(10),{wait:300},{shot:'peck_2'},st(8),{wait:300},{shot:'peck_wind3'},st(4),{wait:300},{shot:'peck_3'},st(16),{wait:300},{shot:'peck_tall'},{click:'Bill Flurry'},st(60),
+ {click:'Wingbeat'},st(38),{wait:300},{shot:'wing_up'},st(8),{wait:300},{shot:'wing_hit'},st(40),{click:'Wingbeat'},st(60),
+ {click:'Submerge and Surface'},st(5),{wait:300},{shot:'sub_plunge'},st(8),{wait:300},{shot:'sub_over'},st(6),{wait:300},{shot:'sub_dart'},st(8),{wait:300},{shot:'sub_sink'},st(23),{wait:300},{shot:'sub_under'},st(50),{wait:300},{shot:'sub_rise'},st(24),{wait:300},{shot:'sub_bill'},st(16),{wait:300},{shot:'sub_burst'},st(40),{click:'Submerge and Surface'},st(70),
+ {click:'Game zoom'},{click:'Bill Spear'},st(46),{wait:300},{shot:'gz_lane'},st(22),{wait:300},{shot:'gz_dash'},{click:'Bill Spear'},st(110),
+ {click:'Submerge and Surface'},st(100),{wait:300},{shot:'gz_ring'},{click:'Submerge and Surface'},st(120),
+ {click:'Close'},{click:'Walk'},st(30),{wait:300},{shot:'walk'},{click:'Turn left'},st(30),{click:'Turn right'},st(20),{click:'Forward'},st(20),{click:'Hurt'},st(4),{wait:300},{shot:'hurt'},{click:'Heavy hit'},st(8),{wait:300},{shot:'heavy'},{click:'Heavy hit'},st(80),
+ {click:'Idle'},{click:'Death'},st(70),{wait:300},{shot:'death_mid'},st(110),{wait:300},{shot:'death'},{click:'Death (press to spawn)'},st(34),{wait:300},{shot:'spawn'},st(90),
+ {click:'Side'},{wait:300},{shot:'side'},{click:'Front'},{click:'Back'},{wait:300},{shot:'back'},{click:'Top'},{wait:300},{shot:'top'},{click:'Close'},
+ {click:'Hit feel'},{click:'Effects'},{click:'Hero for scale'},{click:'Bones'},{wait:300},{shot:'bones'},{click:'Bones'},{click:'Hit feel'},{click:'Effects'},{click:'Hero for scale'},{click:'0.25×'},{click:'1×'},{click:'Pause'},{click:'Pause'},
+ st(10),{shot:'full',full:true}];

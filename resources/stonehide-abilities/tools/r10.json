@@ -1,0 +1,1 @@
+[{"name": "S51", "cap": "Wall slam \u00b7 his dash knocks a foe into a stone of his Stone Ring", "secs": 3.6, "tank": [-2.4, -1.5], "aim": [2, -1.5], "foes": [["rotcap", 0.3, -1.9]], "holdFoes": 1.45, "seq": [[0.3, "cast", "stone_ring", [0, -1.5]], [1.0, "dash", [1, 0]]], "setup": "__SH.set({})"}]

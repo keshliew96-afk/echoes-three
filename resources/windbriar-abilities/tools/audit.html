@@ -1,0 +1,26 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"./three/build/three.module.js","three/addons/":"./three/examples/jsm/"}}</script></head><body>
+<canvas id="c" width="320" height="200"></canvas>
+<script type="module">
+import * as W from './wb.js';
+import { DEFS, FORMS } from './defs.js';
+await W.loadHer('./windbriar.glb');
+const all = []; for (const k of Object.keys(DEFS)) all.push([k, DEFS[k]]); for (const f of ['de', 'vo', 'ga']) for (const k of Object.keys(FORMS[f])) if (FORMS[f][k]) all.push([f + ':' + k, FORMS[f][k]]);
+const out = []; const cv = document.getElementById('c');
+for (const [id, def] of all) { let card; try { card = W.addCard(def, cv); card.build(); } catch (e) { out.push({ id, err: String(e) }); continue; }
+  const n = card.n, T = card.T, tr = card.trk; const P = (nm, f) => [tr[nm][f * 3], tr[nm][f * 3 + 1], tr[nm][f * 3 + 2]];
+  const base = Math.min(P('footL', 0)[1], P('footR', 0)[1]); let slide = { footL: 0, footR: 0 }, pen = 0, pop = 0, popT = 0, headMin = 9;
+  for (let f = 0; f < n - 1; f++) { const ry = tr.root[f * 4 + 3];
+    for (const ft of ['footL', 'footR']) { const a = P(ft, f), b = P(ft, f + 1); if (a[1] < base + 0.035 && b[1] < base + 0.035 && ry < 0.02) { const d = Math.hypot(b[0] - a[0], b[2] - a[2]); if (d * 60 > 0.4) slide[ft] += d; } pen = Math.min(pen, a[1] - base); }
+    const h0 = P('hips', f), h1 = P('hips', f + 1); const d = Math.hypot(h1[0] - h0[0], h1[1] - h0[1], h1[2] - h0[2]); if (d > pop) { pop = d; popT = f / 60; } headMin = Math.min(headMin, P('head', f)[1]); }
+  const sk = []; { let cur = null; for (let f = 0; f < n - 1; f++) { const ry = tr.root[f * 4 + 3]; let d = 0; for (const ft of ['footL', 'footR']) { const a = P(ft, f), b = P(ft, f + 1); if (a[1] < base + 0.035 && b[1] < base + 0.035 && ry < 0.02) { const x = Math.hypot(b[0] - a[0], b[2] - a[2]); if (x * 60 > 0.6) d = Math.max(d, x); } }
+    if (d > 0) { if (cur && f - cur.f1 <= 2) { cur.f1 = f; cur.d += d; } else { cur = { f0: f, f1: f, d }; sk.push(cur); } } } }
+  const skate = sk.filter((x) => x.d > 0.2).sort((a, b) => b.d - a.d).slice(0, 4).map((x) => [+(x.f0 / 60).toFixed(2), +(x.f1 / 60).toFixed(2), +x.d.toFixed(2)]);
+  const rk = def.root || []; let unsorted = 0; for (let i = 1; i < rk.length; i++) if (rk[i].t < rk[i - 1].t) unsorted++; let rot = [0, 0, ''];
+  { const R = card.rootK; for (let i = 1; i < R.length; i++) for (const c of ['pitch', 'roll', 'spin']) { const dt = R[i].t - R[i - 1].t, r = Math.abs(R[i][c] - R[i - 1][c]) / Math.max(dt, 1e-3); if (r > rot[0]) rot = [Math.round(r), R[i - 1].t, c]; } }
+  const reach = []; let lastHit = 0, firstHit = 99;
+  card.dum.forEach((dm, i) => dm.hits.forEach((h) => { lastHit = Math.max(lastHit, h.t); firstHit = Math.min(firstHit, h.t); if (!h.melee) return; const f = Math.min(n - 1, Math.round(h.t * 60)); const p = card.dumPos(dm, h.t); let best = 9; for (const nm of ['footL', 'footR', 'tipA', 'tipB', 'handR', 'hips']) { const q = P(nm, f); best = Math.min(best, Math.hypot(q[0] - p.x, q[2] - p.z)); } if (best > 0.7) reach.push([+h.t.toFixed(2), i, +best.toFixed(2)]); }));
+  out.push({ id, T, seq: (def.seq || []).map((s) => s[1]).join(','), slideL: +slide.footL.toFixed(2), slideR: +slide.footR.toFixed(2), pen: +pen.toFixed(3), headMin: +headMin.toFixed(2), pop: +(pop * 60).toFixed(1), popT: +popT.toFixed(2), reach, unsorted, rot, skate, lift: card.lift ? +Math.max(...card.lift).toFixed(2) : 0, tailDead: +(T - lastHit).toFixed(1), firstHit: +firstHit.toFixed(2) });
+  W.cardsList().pop(); W.scene.remove(card.grp); }
+window.__gait = W.her.gait; window.__audit = out; window.__ready = true;
+</script></body></html>

@@ -1,0 +1,102 @@
+<div class="wrap">
+  <div>
+    <h1>Beetle Bellwright from Tripo, rigged</h1>
+    <p class="lede">Your Tripo beetle and her bell mallet, rigged and given a bell-ringer's moves: every blow is one clean stroke that bounces, and the bell on her back swings and answers the hard ones. Pick one move or combine several, and drag to turn her. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way she walks, runs or dashes while she keeps facing the same way. Add one Action for the upper body, and Hurt on top. Tap attack plays one hit per press: press again after a hit lands to chain hits 1, 2 and 3. Dash and Downed use the whole body, so they play alone. Press Downed again to revive her. Hit feel adds the freeze, the kick, the camera shake, the ringing notes and the dust.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="beetle-views.png" alt="The Tripo beetle from the front, right, back and left, arms out, before rigging" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">The body is as you sent it, thinned a little to fit the budget. The pack frame, the pole, the bell and both tuning forks are part of the body.</p>
+    </section>
+  </div>
+
+    <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,945 <small>body 13,025 + mallet 1,920 · budget 15,000</small></dd></div>
+    <div><dt>Bones</dt><dd>23 <small>spine, head, arms, fingers, legs, two antennae, two wing cases, the pole and the bell</small></dd></div>
+    <div><dt>Textures</dt><dd>2 × 2K <small>body and mallet, colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.5 MB <small>one GLB with all 28 moves at 60 frames a second</small></dd></div>
+    <div><dt>Moves</dt><dd>28 <small>idle, 4 walks, 4 runs, 4 dashes, mallet combo and its 3 hits, 4 casts, wing hop, downed (fall, sit, scoot, revive), hurt, wave</small></dd></div>
+  </dl>
+
+  <h2>The body, the bell and the mallet</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Part</th><th>As it came</th><th>What was done</th></tr></thead>
+    <tbody>
+      <tr><td>Body</td><td>14,236 triangles, one piece, arms out. Every thin part came out whole: the hooked pole, the link, the bell and its clapper, both feathery antennae and the tuning fork</td><td>thinned to 13,025 triangles to make room for the mallet; the thin parts are still whole after thinning</td></tr>
+      <tr><td>Bell</td><td>fused to the pole's hook as part of the body</td><td>given its own bone at the hook, so it swings. It swings by itself whenever she moves and keeps ringing after she stops, and the hard strokes throw it wide. The link is skinned between the hook and the bell, so it may stretch a little when the bell swings far; I could not judge that from stills, so look at it</td></tr>
+      <tr><td>Antennae and wing-case cape</td><td>part of the body</td><td>one bone in each antenna and one in each half of the cape. The antennae trail and twitch; the cape halves lift and open like wing cases in the dash and the wing hop</td></tr>
+      <tr><td>Tuning forks</td><td>one hangs at her left hip in front, and a second one came out on the back of the cape</td><td>left as they are; the front one moves with her hips, the back one with the cape. Say if the second one should go</td></tr>
+      <tr><td>Bell mallet</td><td>1,920 triangles, sound</td><td>kept as it is, sized to 36 cm, held in her right paw at the wrap</td></tr>
+    </tbody></table></div>
+
+  <h2>Her moves</h2>
+  <p class="note"><strong>The rule for all of it:</strong> she is a bell-ringer. Every blow is a strike on a bell: a clean wind, one stroke, and the mallet bounces off and is left to ring. She is round and very short in the arm, so the blow comes from her whole body rocking, and her own bell answers.</p>
+  <p class="note"><strong>Idle.</strong> Patient and a little proud: she breathes in her belly, rocks from boot to boot, glances up at her bell, and her antennae feel the air one at a time.</p>
+  <p class="note"><strong>Walk and run.</strong> The walk is a round waddle with the bell swinging out of time with her steps. The run is a hurrying trot, head down, with the wing cases lifted off her back.</p>
+  <p class="note"><strong>Mallet combo, three hits in 1.6 seconds, a bigger bell each time.</strong> She never hits the enemy: she hits a bell, and the note does the damage. A copy of her bell fades in where each stroke will land. Hit 1 (0.22 s): a small bell ahead, tapped. Hit 2 (0.56 s): a middle bell at her right front, struck backhand so it rocks sideways. Hit 3 (1.02 s): a great bell fades in overhead, drops to the floor in front of her as she rises, and she tolls it with her whole weight; a ring runs out along the floor and the bell on her back answers. Each bell fades out after it rings.</p>
+  <p class="note"><strong>Casts.</strong> <em>Clapper</em> (0.36 s): a bell fades in ahead and one long stroke sends it flying forward, ringing as it goes; this covers clapper, knell and tuning fork. <em>Peal</em> (0.50 s): she lifts the mallet like a conductor and rocks side to side; on each of the three beats a small bell fades in around her and rings, and any bell she has hung rings with them; for peal, hum, vesper chime and carillon. <em>Hang a bell</em> (0.40 s): a bell fades in and settles on the floor ahead as she sets it down, she gives it one soft tap, and it stays for about three seconds; for hang bell and great bell. <em>Bell swing</em> (0.44 s): a big bell fades in at her right and her stroke swings it across her front in an arc to her left. <em>Wing hop</em>: she crouches, the wing cases snap open, and she springs up and lands with a bounce.</p>
+  <p class="note"><strong>Dash and downed.</strong> In the dash her wing cases open and she buzzes forward with her boots tucked. When downed she sits down hard with her legs out and her head hung, and scoots along on her seat; lying flat would have put the pole and the bell through the floor.</p>
+  <p class="note"><strong>Effects.</strong> The summoned bells are copies of the bell on her back (476 triangles each, up to three at once in the peal), fading in over about a tenth of a second and out over a fifth. Bell Brass for a struck note and Verdigris for her own bell answering, the Bellwright's two colours in the game, and Old Bronze for the dust. Each struck bell gives one thin ring that opens and fades. All of it is dim and switches off with Hit feel, which leaves the bare moves.</p>
+
+  <h2>Measured, 12 November</h2>
+  <p class="note">Every frame of all 28 moves (60 a second) was measured, and the poses were checked as still frames from the front, the side, above and behind. The cloud machine cannot play it at full speed, so the speed, the weight and how the bell swings are yours to judge.</p>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured in every frame</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Mallet cutting into her body (the build's own check)</td><td>0 in all 28 moves</td></tr>
+      <tr><td>Mallet against her head</td><td>the mallet's middle line stays 28 cm or more from the centre of her head, which leaves about 5 cm between the mallet's ball and her face at the closest (the peal and the bell swing)</td></tr>
+      <tr><td>Mallet against her belly</td><td>24 cm or more from the middle of her trunk, which is about 2 cm off her belly at the closest (the bell swing, as the mallet crosses her front): tight, look at this one</td></tr>
+      <tr><td>Mallet against the floor</td><td>the ball stops about 2 cm above the floor on the toll; it never goes under</td></tr>
+      <tr><td>Mallet against her own bell and the pole</td><td>40 cm or more: it never comes near them</td></tr>
+      <tr><td>Bell against her head and cap</td><td>31 cm or more from the centre of her head, about 7 cm clear at the widest swing</td></tr>
+      <tr><td>Mallet against her legs and her free arm</td><td>20 cm or more</td></tr>
+      <tr><td>Feet under the floor</td><td>0</td></tr>
+      <tr><td>Feet crossing</td><td>never closer than 21 cm</td></tr>
+      <tr><td>Loops that jump on restart</td><td>0</td></tr>
+    </tbody></table></div>
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The bell really swings from its hook, and it stays clear of her head and her cap in every move.</li>
+        <li>The four casts and the wing hop cover her 11 skills in the game.</li>
+        <li>The wing cases, the antennae and the bell all trail her body and settle after she stops.</li>
+        <li>The mallet stays in her paw and clear of her face, belly and cape.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>Her arms are very short (about 16 cm of reach on a body 40 cm wide), so the strokes are short and the summoned bells have to come in close to her.</li>
+        <li>The summoned bells are placed by the page at fixed spots, not by the mallet: at full speed the mallet should meet each bell within a few centimetres, but I only saw that in stills. They are a new mechanic compared with the game today, where only hang bell places a bell.</li>
+        <li>The wing cases are stiff: each half turns as one piece from the shoulder, so they open but do not bend.</li>
+        <li>The pole and the pack frame do not flex, and the pole stands right behind her cap, as it came: when she tips her head far back the brim can touch the pole.</li>
+        <li>She has no knees or elbows to speak of, her fingers don't close round the mallet, and the neckerchief is stiff.</li>
+        <li>Her feet can slide while she walks, the moves play in place (the wing hop does not carry her forward), and she has no ink outline or flat game colours yet.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+

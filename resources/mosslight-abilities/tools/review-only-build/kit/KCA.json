@@ -1,0 +1,60 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_CA",
+  "aim": [
+   0,
+   -3
+  ],
+  "slots": [
+   "lantern_flurry",
+   "mending_tide"
+  ],
+  "allies": [
+   [
+    0.5,
+    -1.4,
+    0.6
+   ],
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    0.9,
+    "key",
+    "e"
+   ]
+  ],
+  "secs": 5.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ')+' \u00b7 dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ');})()",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "dummies": [
+   [
+    -2.8,
+    -4.6
+   ],
+   [
+    2.4,
+    -4.8
+   ]
+  ],
+  "cap": "C5 \u00b7 Scatter Seeds, then Dew Wave"
+ }
+]

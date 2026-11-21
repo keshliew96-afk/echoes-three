@@ -1,0 +1,16 @@
+const st=(n)=>({eval:'for(let i=0;i<'+n+';i++)__review.step(1/60);JSON.stringify(__review.state())'});
+module.exports=[{wait:2500},{eval:'JSON.stringify(__review.state())'},{shot:'idle'},
+ {eval:'__review.pause(true)',log:false},
+ {click:'Carrion Dive'},st(20),{wait:300},{shot:'dive_up'},st(14),{wait:300},{shot:'dive_hang'},st(10),{wait:300},{shot:'dive_skim'},st(7),{wait:300},{shot:'dive_land'},st(24),{wait:300},{shot:'dive_preen'},{click:'Carrion Dive'},st(120),
+ {click:'Game zoom'},{click:'Carrion Dive'},st(30),{wait:300},{shot:'dive_zoom_lane'},st(16),{wait:300},{shot:'dive_zoom_skim'},st(40),{wait:300},{shot:'dive_zoom_after'},{click:'Carrion Dive'},st(150),
+ {click:'Wing Gust'},st(30),{wait:300},{shot:'gust_mantle'},st(12),{wait:300},{shot:'gust_beat'},st(16),{wait:300},{shot:'gust_blown'},{click:'Wing Gust'},st(90),
+ {click:'Close'},{click:'Wing Gust'},st(38),{wait:300},{shot:'gust_close'},{click:'Wing Gust'},st(90),
+ {click:'Game zoom'},{click:'Omen'},st(30),{wait:300},{shot:'omen_follow'},st(45),{wait:300},{shot:'omen_crows'},st(10),{wait:300},{shot:'omen_caw'},{click:'Omen'},st(90),
+ {click:'Close'},{click:'Omen'},st(84),{wait:300},{shot:'omen_close'},{click:'Omen'},st(90),
+ {click:'Enrage'},st(40),{wait:300},{shot:'enrage'},{click:'Enrage'},st(100),{wait:300},{shot:'raged_idle'},
+ {click:'Game zoom'},{click:'Omen'},st(110),{wait:300},{shot:'raged_ash'},{click:'Omen'},st(60),{click:'Close'},
+ {click:'Walk'},st(30),{wait:300},{shot:'raged_hop'},{click:'Turn left'},st(30),{click:'Turn right'},st(20),{click:'Forward'},st(20),{click:'Enraged'},st(30),{wait:300},{shot:'hop'},{click:'Hurt'},st(4),{click:'Heavy hit'},st(6),{wait:300},{shot:'heavy'},{click:'Heavy hit'},st(80),
+ {click:'Idle'},{click:'Death'},st(60),{wait:300},{shot:'death_mid'},st(120),{wait:300},{shot:'death'},{click:'Death (press to spawn)'},st(4),{wait:300},{shot:'spawn0'},st(66),{wait:300},{shot:'spawn'},st(60),
+ {click:'Side'},{click:'Front'},{click:'Back'},{click:'Top'},{wait:300},{shot:'top'},{click:'Close'},
+ {click:'Hit feel'},{click:'Effects'},{click:'Hero for scale'},{click:'Bones'},{wait:300},{shot:'bones'},{click:'Bones'},{click:'Hit feel'},{click:'Effects'},{click:'Hero for scale'},{click:'0.25×'},{click:'1×'},{click:'Pause'},{click:'Pause'},
+ st(10),{shot:'full',full:true}];

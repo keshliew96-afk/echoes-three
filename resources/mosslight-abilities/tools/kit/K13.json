@@ -1,0 +1,52 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S13",
+  "skill": "nova_bloom",
+  "allies": [
+   [
+    0,
+    -1.6,
+    0.5
+   ],
+   [
+    1.2,
+    -2.4,
+    0.65
+   ],
+   [
+    -3.6,
+    2.4,
+    1
+   ]
+  ],
+  "selfHp": 0.75,
+  "secs": 6.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "area",
+    "r": 3.0,
+    "c": [
+     0,
+     -1.6
+    ]
+   }
+  ],
+  "cap": "S13 Heartbloom (was Nova Bloom) \u00b7 a bud on the most hurt ally heals 4 a second for 4 s, then blooms: a wisp heals 12 to everyone within 3 u of them, Mosslight too",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ]
+ }
+]

@@ -1,0 +1,55 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -2.6
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "skill": "dewfall",
+  "allies": [
+   [
+    -1.3,
+    -2.3,
+    0.5
+   ],
+   [
+    1.3,
+    -2.3,
+    0.5
+   ],
+   [
+    0,
+    -3.9,
+    0.5
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 5.6,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 4.0
+   },
+   {
+    "k": "area",
+    "r": 2.2,
+    "c": [
+     0,
+     -2.6
+    ]
+   }
+  ],
+  "cap": "S17 Dewfall (kept) \u00b7 a circle of dew, radius 2.2 u (was 1.5), placed up to 4 u away \u00b7 allies inside heal 7 a second for 5 s",
+  "name": "kit_S17"
+ }
+]

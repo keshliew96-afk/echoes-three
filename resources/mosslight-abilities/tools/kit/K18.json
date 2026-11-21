@@ -1,0 +1,47 @@
+[
+ {
+  "key": null,
+  "aim": [
+   2.9,
+   -0.6
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "skill": "sanctuary",
+  "allies": [
+   [
+    1.6,
+    -0.9,
+    0.4
+   ],
+   [
+    3.6,
+    -2.6,
+    0.55
+   ],
+   [
+    -3.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 7.2,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 4.0
+   }
+  ],
+  "cap": "S18 Mending Sapling \u00b7 a sapling grows where she aims, up to 4 u away, for 8 s \u00b7 every 2 s a mote heals 8 to the most hurt ally within 4.5 u (was 3) of it",
+  "name": "kit_S18"
+ }
+]

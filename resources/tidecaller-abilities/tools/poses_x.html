@@ -1,0 +1,17 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.js","three/addons/":"../node_modules/three/examples/jsm/"}}</script></head><body>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const gl = await new GLTFLoader().loadAsync('./otter.glb');
+const s = gl.scene; const B=['hips','spine','chest','head','legL','footL','legR','footR','tail1','tail2','tail3','tail4','upperarmR','forearmR','handR','fingersR','upperarmL','forearmL','handL','fingersL'];
+const rest={}, restP={}; for(const n of B){ const o=s.getObjectByName(n); rest[n]=o.quaternion.clone(); restP[n]=o.position.clone(); }
+const mixer=new THREE.AnimationMixer(s); const out={};
+const want = JSON.parse(decodeURIComponent(location.hash.slice(1)));
+for(const [cn, times] of Object.entries(want)){ const c=gl.animations.find(a=>a.name===cn); mixer.stopAllAction(); mixer.clipAction(c).play(); out[cn]={};
+ for(const t of times){ mixer.setTime(t); const r={}; for(const n of B){ const o=s.getObjectByName(n); const d=rest[n].clone().invert().multiply(o.quaternion); const e=new THREE.Euler().setFromQuaternion(d,'XYZ'); const v=[e.x,e.y,e.z].map(x=>Math.round(x*180/Math.PI)); if(v.some(x=>Math.abs(x)>=2)) r[n]=v; }
+  const hp=s.getObjectByName('hips').position; r._hips=[hp.x-restP.hips.x,hp.y-restP.hips.y,hp.z-restP.hips.z].map(x=>+x.toFixed(3));
+  for(const n of ['handR','handL','legL','legR']){ const p=s.getObjectByName(n).position; const d=[p.x-restP[n].x,p.y-restP[n].y,p.z-restP[n].z]; if(d.some(x=>Math.abs(x)>0.003)) r['@'+n]=d.map(x=>+x.toFixed(3)); }
+  out[cn][t]=r; } }
+window.__out=out;
+</script></body></html>

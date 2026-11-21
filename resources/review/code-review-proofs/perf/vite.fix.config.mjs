@@ -1,0 +1,2 @@
+export default { root: '/home/claude/echoes-three', base: './', cacheDir: '/tmp/claude-0/-home-claude-echoes-three/db360b6f-576b-5949-b9b6-1f5418a172e2/scratchpad/perf-review/vitecache2', build: { target: 'es2022', outDir: '/tmp/claude-0/-home-claude-echoes-three/db360b6f-576b-5949-b9b6-1f5418a172e2/scratchpad/perf-review/distfix', emptyOutDir: true,
+  rolldownOptions: { output: { codeSplitting: { groups: [{ name: 'three', test: /[\\/]node_modules[\\/]three[\\/]/ }, { name: 'net', test: /[\\/]src[\\/]net[\\/]/ }] } } }, chunkSizeWarningLimit: 1300 } };

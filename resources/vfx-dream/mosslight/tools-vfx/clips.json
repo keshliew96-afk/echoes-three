@@ -1,0 +1,280 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 30,
+  "pre": 0.25,
+  "slots": [
+   "swift_mend"
+  ],
+  "allies": [
+   [
+    0,
+    -1.8,
+    0.4
+   ],
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 2.6,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 3.2
+   }
+  ],
+  "cap": "S10 Swiftleaf (replaces Swift Mend) \u00b7 heals the neediest ally within 3.2 u for 14, or 21 on an ally with Moss \u00b7 14 first, then Mossgrowth, then 21",
+  "name": "v_swiftleaf",
+  "dummies": [
+   [
+    1.8,
+    -3.4
+   ],
+   [
+    -1.6,
+    -3.6
+   ]
+  ],
+  "setup": "for(const e of w.entities()) if(e.faction==='hostile'&&e.hittable){e.maxHp=400;e.hp=400;}",
+  "earlyHp": 400,
+  "every": "for(const e of w.entities()) if(e.partyIndex>0){e.nextBasicTick=1e9;e.cds=[1e9,1e9,1e9,1e9];}"
+ },
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 30,
+  "pre": 0.25,
+  "allies": [
+   [
+    -0.35,
+    -1.2,
+    0.5
+   ],
+   [
+    0.45,
+    -2.4,
+    0.5
+   ],
+   [
+    -0.3,
+    -3.6,
+    0.5
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 4.2,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "area",
+    "rect": true,
+    "c": [
+     0,
+     0
+    ],
+    "dir": [
+     0,
+     -1
+    ],
+    "len": 4.0,
+    "w": 1.6
+   }
+  ],
+  "cap": "S12 Dew Wave (was Dew Fan) \u00b7 a lane of dew 4 u long and 1.6 u wide along her aim heals up to 4 allies in it for 12 each",
+  "name": "v_dewwave",
+  "dummies": [
+   [
+    0.9,
+    -4.6
+   ],
+   [
+    -0.8,
+    -5.0
+   ]
+  ],
+  "setup": "for(const e of w.entities()) if(e.faction==='hostile'&&e.hittable){e.maxHp=400;e.hp=400;}",
+  "earlyHp": 400,
+  "slots": [
+   "mending_tide"
+  ],
+  "every": "for(const e of w.entities()) if(e.partyIndex>0){e.nextBasicTick=1e9;e.cds=[1e9,1e9,1e9,1e9];}",
+  "settle": 10000
+ },
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 30,
+  "pre": 0.25,
+  "name": "v_wispfall",
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    -2.0,
+    -1.5
+   ],
+   [
+    2.2,
+    -1.2
+   ],
+   [
+    0.5,
+    -3.2
+   ],
+   [
+    -1.2,
+    2.0
+   ]
+  ],
+  "secs": 3.4,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(400-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "guides": [
+   {
+    "k": "area",
+    "r": 4.5
+   }
+  ],
+  "cap": "S22 Wispfall (was Gem Flash) \u00b7 for 5 s a white-gold wisp dives every 0.5 s on the nearest foe within 4.5 u that the last dive did not hit: 7 within 0.9 u",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "slots": [
+   "bell_toll"
+  ],
+  "earlyHp": 400,
+  "every": "for(const e of w.entities()) if(e.partyIndex>0){e.nextBasicTick=1e9;e.cds=[1e9,1e9,1e9,1e9];}",
+  "settle": 12000
+ },
+ {
+  "key": null,
+  "aim": [
+   3,
+   0
+  ],
+  "pin": true,
+  "fps": 30,
+  "pre": 0.25,
+  "name": "v_rootspear",
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    1.6,
+    0.2
+   ],
+   [
+    3.0,
+    -0.3
+   ],
+   [
+    4.3,
+    0.25
+   ],
+   [
+    2.4,
+    1.9
+   ]
+  ],
+  "secs": 2.2,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(400-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "guides": [
+   {
+    "k": "area",
+    "rect": true,
+    "c": [
+     0,
+     0
+    ],
+    "dir": [
+     1,
+     0
+    ],
+    "len": 7.0,
+    "w": 1.4
+   }
+  ],
+  "cap": "S21 Rootspear (was Briar Lance) \u00b7 the row shows for 0.4 s, then root spears burst along it: 28 to every foe in the row, 7 u long, 1.4 u wide \u00b7 the dummy off the row is missed",
+  "setup": "for(const e of w.entities()) if(e.faction==='hostile'&&e.hittable){e.maxHp=400;e.hp=400;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "slots": [
+   "pale_lance"
+  ],
+  "earlyHp": 400,
+  "every": "for(const e of w.entities()) if(e.partyIndex>0){e.nextBasicTick=1e9;e.cds=[1e9,1e9,1e9,1e9];}"
+ }
+]

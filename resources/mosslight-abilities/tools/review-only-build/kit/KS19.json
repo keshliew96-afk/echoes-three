@@ -1,0 +1,42 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S19",
+  "aim": [
+   0,
+   -3
+  ],
+  "slots": [
+   "warding_aura"
+  ],
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    1.6,
+    "eval",
+    "const L=globalThis.__reviewGladeWisps||[];const x=L.find(q=>q.state==='wait');if(x)x.until=0;"
+   ]
+  ],
+  "secs": 3.6,
+  "cap": "S19 Glade Wisps \u00b7 a wisp nobody needed becomes a seed"
+ }
+]

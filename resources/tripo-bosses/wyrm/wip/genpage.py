@@ -1,0 +1,464 @@
+# Builds the Barrow Wyrm's review page. The bench (CSS, controls, hit feel, effect pools) is the Mire King page's; the text, the
+# effects and the body are the Wyrm's own: the page lays the baked straight body along the trail the Wyrm has travelled, down the
+# hole it dived into and up the hole it comes out of (kit/wyrm.mjs has the bake side of that).
+# Run: python3 -I genpage.py   (writes <scratch>/wyrmreview/index.html; reads the base page and out/wyrm.meta.json)
+import json, os
+S = '/tmp/claude-0/-home-user/3399cd1e-6e54-5b9a-920b-98ad4a8057aa/scratchpad'
+HERE = os.path.dirname(os.path.abspath(__file__))
+base = open(S + '/toadreview/index.html').read()
+css = base[:base.index('<div class="wrap">')].replace('<title>Tripo Mire King Review</title>', '<title>Tripo Barrow Wyrm Review</title>')
+assert 'Barrow Wyrm' in css
+META = json.load(open(os.path.join(HERE, 'out', 'wyrm.meta.json')))
+SK = json.load(open(os.path.join(HERE, 'out', 'skel.json')))
+FRAMES = sum(len(m['lf']) for m in META.values())
+
+BODY = r'''<div class="wrap">
+  <div>
+    <h1>Barrow Wyrm from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 2</span></h1>
+    <p class="lede">Your export of the Level III boss, built the way you picked (A): the skull, the frill, the horns and the first stretch of neck are your Tripo model, and the body behind them is a chain of slate scale rings made here in the model's own colours. It is 8 u long on 32 joints and it follows the path it has travelled. A snake has no feet to lock, so its rule is the snake's: any part lying on the floor only ever moves along its own line. It dives into a hole it breaks in the floor and comes up out of another. Its timings are the game's. Pick a move, drag to turn it, and judge the weight and the hit. Nothing in the game has changed.</p>
+    <p class="note"><strong>Changed 14 Nov, your ask:</strong> in the Burrow Strike nothing of it shows while the Ember ring fills. The head stays under the floor until the ring is full, then breaks out on the burst and shoots up its full 3.3 u in 0.12 s.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Slither sets what it does between attacks. Going turns it: a snake cannot turn on the spot, so it travels round a small circle. An Action plays over that and repeats until you press it again. Burrow Strike is one press for three parts: the dive, the tunnel and the burst. Hurt plays on top of anything. Death holds it down: press it again and it spawns back in. The bar names the part of the move that is playing, in the game's own words. Enraged is the game's state under half health: the cracks down its body burn (in the game its Ash Breath also comes round 30% sooner).</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="rage" aria-pressed="false">Enraged</button>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="wyrm-views.png" alt="The Tripo Barrow Wyrm from the front, its left, the back and its right, before rigging: a reared neck on a short coiled body" width="900" height="1050">
+      <p class="note" style="padding-top:12px">It came through whole: a reared neck on a short body sculpted in one fixed coil, 27,834 triangles. A sculpted coil cannot be straightened to slither or burrow, so I kept the head and neck down to just under the second collar band and built the rest. The eyes sit square (0.2° of turn between them, 1.4° of tilt). The mouth was sealed; it is cut open along the teeth.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>22,666 <small>boss budget 28,000 · your head and neck, the inside of the mouth, and the built body with its spikes</small></dd></div>
+    <div><dt>Bones</dt><dd>36 <small>root, hips, head, jaw and 32 joints down the body, one every 0.25 u</small></dd></div>
+    <div><dt>Texture</dt><dd>1 sheet <small>2048 × 2560, colour only: your head's sheet with the body's tiles, bands, belly and mouth painted under it</small></dd></div>
+    <div><dt>File</dt><dd>3.3 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>8.1 u long <small>0.92 u across at its thickest, which is the game wyrm's thickness; about 2.8 u to the horn tips when it rears, beside a 1 u hero</small></dd></div>
+    <div><dt>Body</dt><dd>Built here <small>slate tiles, pewter bands, a taupe belly, pale spikes and violet cracks, matched to your concept picture. See what is rough.</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>Reared like a cobra and never quite still. It breathes down the whole neck and sways. Once a loop it looks to its left, later it clacks its jaw twice, and the tip of its tail lifts and flicks.</td><td>6 s loop</td></tr>
+      <tr><td>Slither</td><td>The neck comes down out of its rear: the first of it lies along the floor and the rest climbs to a head carried low and forward. One wave runs down the body. The wave is not played on the body: the page lays the body along the winding line the Wyrm has actually travelled, so every ring passes through the same spot on the floor as the one before it. The moves only play while it moves.</td><td>1.5 u/s, as the game. One wave is 2.6 u long and 0.2 u to each side.</td></tr>
+      <tr><td>Turn left, turn right</td><td>The head leads into the turn, the neck curves after it, and the body follows round a small circle.</td><td>72° a second round a circle of 0.9 u (my numbers: the game turns it instantly)</td></tr>
+      <tr><td>Ash Breath</td><td>It rears back and up, drawing more neck out of its coil, and the jaw opens as it fills. Then the head whips down over its own coiled neck, jaw wide, and it pours ash along the floor, sweeping the cone from side to side while the head trembles. It lifts back into its stance.</td><td>Game: an Ember cone of 4.2 u, 32° to each side, shown for 54 ticks. Draw for those 54 ticks, strike 2.5 frames, held 3 frames, pour 0.5 s, settle. 14 damage. The hero stands 4.0 u out, the game's breath range.</td></tr>
+      <tr><td>Burrow Strike</td><td><strong>The dive.</strong> It rears with a roar and plunges: the head goes over in an arc and breaks into the floor 2.8 u ahead, and the whole body pours along the same arc and down the same hole after it. <strong>The tunnel.</strong> A mound runs under the floor to the hero. <strong>The burst.</strong> The floor swells under an Ember ring, and nothing of it shows until the ring is full. Then it bursts out and 3.3 u of it shoots straight up, jaw wide. It topples forward and lies along the floor panting. Then it gathers itself back up. The rest of its body is still down the hole and comes out as it moves off.</td><td>Game: tunnels at 3.4 u/s, then an Ember ring of 1.9 u for 54 ticks that bursts for 16 damage, then it lies exposed for 90 ticks. Dive 1.5 s (mine; the game hides it at once). The head breaks the floor on the burst and is at full height 0.12 s later. Here the hero stands 6.5 u out and it comes up 0.55 u short of them.</td></tr>
+      <tr><td>Enrage <em>(pose is mine)</em></td><td>It coils its neck down into an S, then rears to its full height, drawing neck out, and roars at the roof. The cracks down its body light and stay lit.</td><td>The game marks enrage (under half health) with no pose. 1.5 s, the roar at 0.5 s.</td></tr>
+      <tr><td>Hurt</td><td>The head snaps back and rolls, the jaw drops, and the top of the neck kinks. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>The head is thrown back over its own neck, the neck swings wide, sways forward and across, and it squares up again.</td><td>1.2 s</td></tr>
+      <tr><td>Spawn</td><td>Grows from the floor lying flat, then rears up into its stance, leaning back past upright, with a short roar.</td><td>Game: grow in 7 frames, then stand. The rear and the roar are mine. 1.5 s.</td></tr>
+      <tr><td>Death</td><td>It rears back from the blow and shudders while the cracks blaze. Then it falls: the neck goes down from its foot upward and the head lands last, on its side, jaw slack. The light goes out of the cracks and the eyes, and it turns to ash where it lies.</td><td>3.0 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">The checker takes every point of the model (14,268 of them) through every frame of every move (__FRAMES__ frames) and looks for four things. Sizes are in u.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>Four folds. Whenever the head came low and close to the body, the neck had more length than room, looped, and flipped over: 176° in one frame in the Heavy hit and in the Spawn, a twisted collar through the Ash Breath's settle, and a neck rolled belly-up in every step of the Slither.</td><td>None of those. Low necks are now given as a climb along their own length, so the neck is always exactly as long as the room it has; the Ash Breath strikes over a coil. Two fast turns are left on purpose: the Ash Breath's strike turns the head 47° and the middle of the neck 32° in one frame (it is the 2.5-frame strike), and the tail tip turns 10° as it goes down the dive hole.</td></tr>
+      <tr><td>Any part under the floor</td><td>The neck sagged up to 0.30 u into the floor in the Slither, the Ash Breath and the Spawn.</td><td>Nothing, in any move. A neck that sags now lies on the floor. The only parts under the floor are there on purpose: the body down its hole in the Burrow Strike.</td></tr>
+      <tr><td>The body sliding on the floor</td><td>None.</td><td>None: 0 mm in every move. The part on the floor moves only along its own line.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>0 loop jumps.</td><td>The same.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>The body on the floor moving sideways off its line</td><td>0 mm in every move</td></tr>
+      <tr><td>The neck stretched further than it is long</td><td>0 mm: the head is never asked to be further from the body than the neck reaches</td></tr>
+      <tr><td>Loops that jump when they restart (idle, slither, both turns)</td><td>0</td></tr>
+      <tr><td>Lowest point of the body under the floor</td><td>None outside the Burrow Strike</td></tr>
+      <tr><td>Head facing straight</td><td>0.2° of turn between the eyes and 1.4° of tilt, measured on the model. The mouth corners sit 4° apart, which is the sculpt's uneven jaw line, not a turned head.</td></tr>
+      <tr><td>Seen coming out of the floor</td><td>Nothing above the floor until the ring is full. The head breaks the floor on the burst and reaches its full 3.3 u 0.12 s later (your ask, 14 Nov).</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge. The way the body follows its trail and its hole is made by this page and has only been seen as stills too.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>Body length.</strong> 8 u is my pick: long enough to read as a wyrm at game zoom and to leave a tail down the hole. Say if it should be shorter or longer.</li>
+        <li><strong>The slither's head.</strong> I carry it low and forward, like a snake travelling. The other way keeps it reared like the idle while the body moves under it.</li>
+        <li><strong>Turning.</strong> It goes round a circle of 0.9 u at 72° a second. The game turns it instantly. A snake that spins on the spot looks wrong, so I would keep the circle.</li>
+        <li><strong>After the burst.</strong> Only the neck comes out; the rest of the body stays down the hole and follows as it moves off. The other way brings the whole body out before it can move.</li>
+        <li><strong>The dive.</strong> The game hides it the instant it burrows. The 1.5 s dive is mine, so the player sees where it went.</li>
+        <li><strong>Enrage.</strong> The game has no pose for it. The coil and roar are mine: keep, shorten or drop.</li>
+        <li><strong>The death.</strong> It turns to grey ash and lies there. Say if the ash should crumble away to nothing.</li>
+        <li><strong>Where it comes up.</strong> 0.55 u short of the hero, so the two do not stand inside each other on this page. The game lets it come up within 0.4 u.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The built body is plain: tiles, bands and spikes on a smooth tube. It has none of the chips and wear your sculpted head has, and the join sits under the second collar band.</li>
+        <li>Where the body goes through the floor it is cut off flat, and a dark hole with rubble is drawn round the cut. The floor itself does not break.</li>
+        <li>The tunnel is a mound and a line of cracks drawn for this page.</li>
+        <li>In a tight bend (the turn, the corner into a hole) the rings on the inside of the bend bunch and the spikes fan.</li>
+        <li>The neck's foot is steered to meet the trail, so in a hard turn the first rings of the neck shear a little rather than bend.</li>
+        <li>While the Burrow Strike is under the floor, and until its ring bursts, the other buttons wait.</li>
+        <li>Pressing another Action while the body is still half down its hole pulls the neck to its new pose quickly.</li>
+        <li>The inside of the mouth is a plain pocket of mine, violet at the lips and dark at the back.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for its power, grey for its ash. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+'''.replace('__FRAMES__', f'{FRAMES:,}')
+
+JS = r'''
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="wyrm-model.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=4.0;
+  const VIOLET=0x8F63EE, EMBER=0xFF5A36, DUST=0x8d8478, ASH=0x4f4c55, PIT=0x121016, RUBBLE=0x4a453e;
+  const LABEL={idle:'Idle',walk:'Slither',turnL:'Turn left',turnR:'Turn right',breath:'Ash Breath',burrow:'Burrow Strike',emerge:'Burrow Strike',enrage:'Enrage',hurt:'Hurt',heavyHit:'Heavy hit',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['breath','burrow','enrage','heavyHit'];
+  const NEAR=4.0, FAR=6.5, SHORT=0.55; let HOME=NEAR; // where the hero stands, in u, in front of it: inside the breath's cone; far enough for a tunnel; how far short of them it comes up
+  const WALK=1.5, TURN=72*Math.PI/180, RT=0.9, CONE_R=4.2, CONE_A=32*Math.PI/180, RING_R=1.9, TUNNEL_V=3.4;
+  const NB=__NB__, STEPU=__STEP__, LENU=__LEN__, YC0=0.47, RHO=0.9, WLEN=2.6, WAMP=0.2, FADE=1.6; // the body: joints, their spacing, its length; how high its middle rides; the corner into a hole; the slither's wave
+  const HOLEZ=META.burrow.cues.hole[0]+0.1, TUN=(FAR-SHORT-HOLEZ)/TUNNEL_V;
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){$('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2)); renderer.localClippingEnabled=true;
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(2.5,6,4.5); scene.add(sun);
+  // the floor: a grid that wraps, and a group for things that lie on the floor and stay where they fell
+  const gridG=new THREE.Group(), fxG=new THREE.Group(); gridG.matrixAutoUpdate=false; fxG.matrixAutoUpdate=false; scene.add(gridG,fxG);
+  const grid=new THREE.GridHelper(64,64,0x4a4f48,0x4a4f48); grid.material.transparent=true; grid.material.opacity=0.85; grid.position.y=0.002; gridG.add(grid);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,160);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=2.5; orbit.maxDistance=44;
+  const VIEWS={Close:{p:[9.6,4.6,9.2],t:[0,1.1,0.2]},'Game zoom':{p:[0,17.5,14.5],t:[0,0.4,0.6]},Side:{p:[19,2.6,0.6],t:[0,1.4,0.6]},Front:{p:[1.0,2.3,15],t:[0,1.5,0]},Back:{p:[-5.5,5.0,-13.5],t:[0,1.0,-1.0]},Top:{p:[0,27,0.4],t:[0,0,0.0]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  // ---- controls
+  function group(id,names,onPick,active,multi){const row=$(id);const btns={};names.forEach(n=>{const b=document.createElement('button');b.textContent=LABEL[n]||n;b.dataset.k=n;b.setAttribute('aria-pressed',String(n===active));b.onclick=()=>onPick(n,b);row.appendChild(b);btns[n]=b;});return btns;}
+  const sel={base:'idle',going:'Forward',action:null,dead:false};
+  let rage=false, rageW=0;
+  let speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, feel=true, fxOn=true, showTarget=true, helper=null;
+  const B={};
+  B.moves=group('moves',['idle','walk','spawn','death'],k=>pick(k),'idle');
+  B.dirs=group('dirs',['Forward','Turn left','Turn right'],k=>{if(sel.dead)return;sel.going=k;if(sel.base!=='walk')sel.base='walk';refresh();},'Forward');
+  B.acts=group('acts',[...ACTIONS,'hurt'],k=>pick(k),null);
+  B.speeds=group('speeds',['0.1×','0.25×','0.5×','1×'],(k)=>{speed=parseFloat(k);Object.values(B.speeds).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'1×');
+  B.views=group('views',Object.keys(VIEWS),k=>{setView(k);Object.values(B.views).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'Close');
+  const toggle=(id,get,set)=>{const b=$(id);b.onclick=()=>{set(!get());b.setAttribute('aria-pressed',String(get()));};b.setAttribute('aria-pressed',String(get()));};
+  toggle('feel',()=>feel,v=>feel=v); toggle('fx',()=>fxOn,v=>{fxOn=v;if(!v)clearFx();}); toggle('target',()=>showTarget,v=>{showTarget=v;if(dummy)dummy.visible=v;});
+  toggle('rage',()=>rage,v=>{rage=v;});
+  toggle('bones',()=>!!(helper&&helper.visible),v=>{if(helper)helper.visible=v;}); toggle('pause',()=>paused,v=>paused=v);
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, CH=[], glowU={value:new THREE.Vector4(0,0.1,0,0.3)}, ashU={value:0}, hurtAct=null, shot=null, dummy=null;
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    for(let k=0;k<NB;k++)CH.push(bones['c'+k]);
+    mesh.material.clippingPlanes=[new THREE.Plane(new THREE.Vector3(0,1,0),0)]; mesh.material.clipShadows=true; /* what is under the floor is not drawn, and casts no shadow */
+    mesh.material.onBeforeCompile=sh=>{sh.uniforms.uGlow=glowU; sh.uniforms.uAsh=ashU;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uGlow;\nuniform float uAsh;')
+        .replace('#include <map_fragment>','#include <map_fragment>\nfloat vio=clamp((diffuseColor.b-max(diffuseColor.r,diffuseColor.g)-0.1)*4.0,0.0,1.0);\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(dot(diffuseColor.rgb,vec3(0.3333))*0.7+0.13),uAsh);')
+        .replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\ntotalEmissiveRadiance+=vec3(0.55,0.3,1.0)*uGlow.x*vMask.x*vio+vec3(0.5,0.25,0.95)*uGlow.y*vMask.y+vec3(0.55)*uGlow.z+vec3(0.62,0.4,1.0)*uGlow.w*vMask.z;');};
+    { const hg=new THREE.BufferGeometry(); hg.setAttribute('position',new THREE.BufferAttribute(new Float32Array((NB+2)*3),3));
+      helper=new THREE.Group(); helper.add(new THREE.Line(hg,new THREE.LineBasicMaterial({color:0x35c8a8,depthTest:false,transparent:true})));
+      helper.add(new THREE.Points(hg,new THREE.PointsMaterial({color:0x1d6cff,size:7,sizeAttenuation:false,depthTest:false,transparent:true})));
+      helper.children.forEach(o=>{o.renderOrder=20;o.frustumCulled=false;}); helper.visible=false; scene.add(helper);
+      helper.sync=()=>{ const pa=hg.attributes.position, v=new THREE.Vector3(); [bones.jaw,bones.head,...CH].forEach((bn,i)=>{ if(i===0)v.set(0,-0.03,0.22).applyMatrix4(bn.matrixWorld); else bn.getWorldPosition(v); pa.setXYZ(i,v.x,v.y,v.z); }); pa.needsUpdate=true; }; }
+    mixer=new THREE.AnimationMixer(model);
+    const UPPER=/^(head|jaw|c[0-8])\./;
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1); A.walk.timeScale=0; /* the slither plays by distance travelled, not by time */
+    makeFx(); resetTrail(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,t:shot&&+shot.action.time.toFixed(3),tunnel:tunnel?+tunnel.k.toFixed(2):null,lf:+st.lf.toFixed(2),a0:+st.a0.toFixed(2),path:+pathL.toFixed(2),hole:!!hole,D:+dist.toFixed(2),rage:[rage,+rageW.toFixed(2)],headY:+bones.head.getWorldPosition(new THREE.Vector3()).y.toFixed(2),seen:mesh.visible,tele:[coneT.visible,ringT.visible],holes:HOLES.filter(h=>h.t>=0).length,ash:+ashU.value.toFixed(2),dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glow:glowU.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit,
+      spine:()=>CH.map(b=>b.getWorldPosition(new THREE.Vector3()).toArray().map(v=>+v.toFixed(2)))};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+  // ---- what plays
+  function baseName(){return sel.dead?null:sel.base==='walk'?(sel.going==='Forward'?'walk':sel.going==='Turn left'?'turnL':'turnR'):'idle';}
+  function startShot(name,hold){ if(!A[name])return; if(shot){shot.action.__w=0;shot.action.setEffectiveWeight(0);}
+    const a=A[name]; a.reset(); a.paused=false; a.__w=1; a.setEffectiveWeight(1); Object.entries(A).forEach(([k,x])=>{if(x!==a){x.__w=Math.min(x.__w,0.0);x.setEffectiveWeight(x.__w);}});
+    shot={name,action:a,prev:0,hold:!!hold||name==='burrow',done:false,gap:0,tz:0}; fxStart(name); }
+  const busyUnder=()=>!!tunnel||(shot&&!shot.done&&(shot.name==='burrow'||(shot.name==='emerge'&&shot.action.time<META.emerge.contact[0])));
+  function pick(k){
+    if(!mixer||busyUnder())return;
+    if(k==='idle'||k==='walk'){ if(sel.dead)return; sel.base=k; }
+    else if(k==='spawn'){ sel.dead=false; sel.action=null; startShot('spawn'); }
+    else if(k==='death'){ if(sel.dead){ sel.dead=false; startShot('spawn'); } else { sel.dead=true; sel.action=null; startShot('death',true); } }
+    else if(k==='hurt'){ if(sel.dead)return; hurtAct.reset(); hurtAct.setEffectiveWeight(1); hurtAct.play(); hitFeel(0.3,0.04,0.5); flash=0.35; if(fxOn)sparks(muzzle(),6,0xfff4e0,1.6,0.25); }
+    else { if(sel.dead)return; sel.action=sel.action===k?null:k; if(sel.action&&(!shot||shot.done||(shot.name!==k&&!(k==='burrow'&&shot.name==='emerge'))))startShot(k); }
+    refresh();
+  }
+  function refresh(){
+    Object.values(B.moves).forEach(b=>{const k=b.dataset.k; b.setAttribute('aria-pressed',String(k==='death'?sel.dead:k==='spawn'?!!(shot&&shot.name==='spawn'&&!shot.done):!sel.dead&&sel.base===k)); b.disabled=sel.dead&&(k==='idle'||k==='walk'); b.textContent=k==='death'&&sel.dead?'Death (press to spawn)':LABEL[k];});
+    Object.values(B.dirs).forEach(b=>{b.setAttribute('aria-pressed',String(sel.base==='walk'&&!sel.dead&&b.dataset.k===sel.going)); b.disabled=sel.dead;});
+    Object.values(B.acts).forEach(b=>{b.setAttribute('aria-pressed',String(sel.action===b.dataset.k)); b.disabled=sel.dead;});
+  }
+  // the Burrow Strike's bar runs through all three parts
+  const CHAIN=(()=>{const b=META.burrow,e=META.emerge,o=b.dur+TUN; return {dur:o+e.dur,phases:[...b.phases,['tunnels',b.dur],...e.phases.map(p=>[p[0],p[1]+o])]};})();
+  function showPhase(){
+    const el=$('layers'), ph=$('phases'), tag=$('clipname'); const bn=baseName();
+    if(tunnel||(shot&&!shot.done)){ const chain=tunnel||shot.name==='burrow'||shot.name==='emerge'; const m=chain?CHAIN:META[shot.name], t=tunnel?META.burrow.dur+tunnel.k*TUN:shot.name==='emerge'?META.burrow.dur+TUN+shot.action.time:shot.action.time; let cur=''; m.phases.forEach(p=>{if(t>=p[1])cur=p[0];});
+      const nm=chain?'burrow':shot.name; el.textContent=LABEL[nm]+(cur?' · '+cur:'')+' · '+t.toFixed(2)+' s'; tag.textContent=LABEL[nm];
+      if(ph.dataset.name!==nm){ph.dataset.name=nm; ph.innerHTML=m.phases.map((p,i)=>{const e=i+1<m.phases.length?m.phases[i+1][1]:m.dur;return '<span style="--w:'+Math.max(0.04,(e-p[1])).toFixed(3)+'">'+p[0]+'</span>';}).join('')+'<i></i>'; ph.hidden=!m.phases.length;}
+      const spans=ph.querySelectorAll('span'); m.phases.forEach((p,i)=>spans[i]&&spans[i].classList.toggle('on',p[0]===cur)); const mk=ph.querySelector('i'); if(mk)mk.style.left=(100*Math.min(1,t/m.dur)).toFixed(1)+'%';
+    } else { el.textContent=sel.dead?'Down. Press Death again to spawn it back in.':(LABEL[bn]||'')+(sel.action?' · '+LABEL[sel.action]+' repeats':''); tag.textContent=sel.dead?'Death':LABEL[bn]||''; ph.hidden=true; ph.dataset.name=''; }
+  }
+
+  // ---- floor motion: the floor moves under it, it stays in the middle of the stage
+  const floorPos=new THREE.Vector3(); let floorYaw=0;
+  function moveFloor(dz,dyaw){ // it moves forward dz and turns left dyaw: the floor does the opposite
+    floorPos.z-=dz; if(dyaw){ floorPos.applyAxisAngle(Y,-dyaw); floorYaw-=dyaw; }
+    fxG.matrix.makeRotationY(floorYaw).setPosition(floorPos);
+    const l=floorPos.clone().applyAxisAngle(Y,-floorYaw); l.x-=Math.round(l.x); l.z-=Math.round(l.z); l.applyAxisAngle(Y,floorYaw); gridG.matrix.makeRotationY(floorYaw).setPosition(l);
+  }
+  const Y=new THREE.Vector3(0,1,0), tmp=new THREE.Vector3(), tmp2=new THREE.Vector3();
+  const pt=(bone,v)=>tmp.set(v[0],v[1],v[2]).applyMatrix4(bone.matrixWorld).clone();
+  const toFloor=(w)=>w.clone().applyMatrix4(fxG.matrix.clone().invert());
+  const smooth=(x)=>{x=Math.max(0,Math.min(1,x));return x*x*(3-2*x);};
+
+  // ---- the body on its path. The bake lays the body straight along -z behind the root; here it is laid along the trail the
+  // Wyrm has travelled (points on the floor, newest first), and past the trail's end down the hole it came out of: a corner
+  // of radius RHO, then straight down. In front of the anchor (the body's point at the root) the neck is the bake's own.
+  let trail=[], hole=null, dist=0, tunnel=null; const st={lf:2.4,a0:0};
+  const pth=[], cum=[]; let pathL=0, holeA0=0; const endDir=new THREE.Vector3(0,0,-1), Cc=new THREE.Vector3();
+  const waveX=()=>-WAMP*Math.cos(2*Math.PI*dist/WLEN);
+  function resetTrail(){ trail=[]; hole=null; for(let d=0;d<=LENU+2;d+=0.05)trail.push(toFloor(new THREE.Vector3(-WAMP*Math.cos(2*Math.PI*(dist-d)/WLEN),0,-d))); }
+  function trailStep(){ const a=toFloor(tmp2.set(waveX(),0,0)); a.y=0; trail[0].copy(a); if(trail[0].distanceTo(trail[1])>0.06)trail.splice(1,0,a.clone());
+    let L=0; for(let i=1;i<trail.length;i++)L+=trail[i].distanceTo(trail[i-1]);
+    if(hole){ if(L>LENU+0.4){ hole=null; holeClose(1); } } else while(trail.length>4&&L-trail[trail.length-1].distanceTo(trail[trail.length-2])>LENU+1.5){ L-=trail[trail.length-1].distanceTo(trail[trail.length-2]); trail.pop(); } }
+  function lfNow(){ let w=0,l=0,a=0; for(const k in A){ const x=A[k]; if(x.__w<=0.001)continue; const m=META[k], f=Math.min(m.lf.length-1,Math.max(0,x.time*60)), i=Math.floor(f), j=Math.min(m.lf.length-1,i+1), u=f-i; w+=x.__w; l+=x.__w*(m.lf[i]+(m.lf[j]-m.lf[i])*u); a+=x.__w*(m.a0[i]+(m.a0[j]-m.a0[i])*u); } if(w>0){st.lf=l/w; st.a0=Math.max(0,a/w);} }
+  const _a=new THREE.Vector3(), _b=new THREE.Vector3();
+  function ptAt(s,out){ s=Math.max(0,Math.min(pathL,s)); let i=1; while(i<cum.length-1&&cum[i]<s)i++; const f=(s-cum[i-1])/Math.max(1e-6,cum[i]-cum[i-1]); return out.copy(pth[i-1]).lerp(pth[i],Math.max(0,Math.min(1,f))); }
+  function dirAt(s,out){ const a=Math.max(0,s-0.14), b=Math.min(pathL,s+0.14); if(b-a<0.03)return out.copy(endDir); ptAt(b,out).sub(ptAt(a,_a)); return out.lengthSq()>1e-8?out.normalize():out.copy(endDir); }
+  function buildPath(){ const M=fxG.matrix; pth.length=0; cum.length=0; let L=0;
+    trail.forEach((q,i)=>{ const p=q.clone().applyMatrix4(M); p.y=0; if(i>0)L+=p.distanceTo(pth[i-1]); pth.push(p); cum.push(L); }); pathL=L;
+    if(L>0.25)ptAt(L,endDir).sub(ptAt(L-0.25,_a)).normalize(); else if(hole)endDir.copy(hole.dir).applyAxisAngle(Y,floorYaw); else endDir.set(0,0,-1);
+    holeA0=st.a0*(1-smooth(L/0.4)); _b.copy(Y).multiplyScalar(Math.cos(holeA0)).addScaledVector(endDir,Math.sin(holeA0)); Cc.copy(pth[pth.length-1]).setY(YC0).addScaledVector(_b,-RHO); }
+  const Sv=new THREE.Vector3(), Nv=new THREE.Vector3(), Tv=new THREE.Vector3(), Gv=new THREE.Vector3(), Pv=new THREE.Vector3(), Qv=new THREE.Quaternion(), _m=new THREE.Matrix4(), _m0=new THREE.Matrix4().makeBasis(new THREE.Vector3(-1,0,0),new THREE.Vector3(0,1,0),new THREE.Vector3(0,0,-1));
+  function place(s,xk,yk){ // a joint s along the body behind the anchor, with the bake's own sideways and upward offsets
+    if(s<=pathL||!hole){ ptAt(s,Gv); if(s>pathL)Gv.addScaledVector(endDir,s-pathL); dirAt(Math.min(s,pathL),Tv); Nv.copy(Y); Sv.crossVectors(Nv,Tv); Pv.copy(Gv).setY(yk); }
+    else { const s2=s-pathL, phi=holeA0+s2/RHO; Sv.crossVectors(Y,endDir);
+      if(phi<Math.PI/2){ Nv.copy(Y).multiplyScalar(Math.cos(phi)).addScaledVector(endDir,Math.sin(phi)); Tv.copy(endDir).multiplyScalar(Math.cos(phi)).addScaledVector(Y,-Math.sin(phi)); Pv.copy(Cc).addScaledVector(Nv,RHO+yk-YC0); }
+      else { Nv.copy(endDir); Tv.copy(Y).negate(); Pv.copy(Cc).addScaledVector(endDir,RHO+yk-YC0).addScaledVector(Y,-(s2-RHO*(Math.PI/2-holeA0))); } }
+    Pv.addScaledVector(Sv,-xk); _m.makeBasis(Sv,Nv,Tv).multiply(_m0); Qv.setFromRotationMatrix(_m); }
+  const BK=[]; const NP=[], TH=[]; for(let k=0;k<NB;k++){NP.push(new THREE.Vector3());TH.push(0);} const prevB=new THREE.Vector3(), prevP=new THREE.Vector3(), cur=new THREE.Vector3(), dv=new THREE.Vector3(), qy=new THREE.Quaternion();
+  function deform(){
+    lfNow(); buildPath(); const Lf=st.lf; let kf=-1;
+    for(let k=NB-1;k>=0;k--){ const s=k*STEPU-Lf, bn=CH[k]; if(s>=0){ place(s,bn.position.x*U,bn.position.y*U); bn.position.copy(Pv).divideScalar(U); bn.quaternion.premultiply(Qv); } else if(kf<0)kf=k; }
+    const hd=bones.head; if(Lf<=0){ place(-Lf,hd.position.x*U,hd.position.y*U); hd.position.copy(Pv).divideScalar(U); hd.quaternion.premultiply(Qv); return; }
+    if(kf<0)return;
+    // the neck: its foot stands on the trail and heads the way the trail heads; that eases out up the neck so the head stays the bake's
+    dirAt(0,Tv); const h0=Math.atan2(-Tv.x,-Tv.z)*(1-smooth(holeA0/0.6)), fade=Math.min(FADE,Lf);
+    prevB.set(0,YC0,0); prevP.set(pth[0].x,YC0,pth[0].z); let sp=0;
+    for(let k=kf;k>=0;k--){ const sg=Lf-k*STEPU; cur.copy(CH[k].position).multiplyScalar(U); dv.copy(cur).sub(prevB).applyAxisAngle(Y,h0*(1-smooth((sg+sp)/2/fade))); NP[k].copy(prevP).add(dv); TH[k]=h0*(1-smooth(sg/fade)); prevB.copy(cur); prevP.copy(NP[k]); sp=sg; }
+    const ex=NP[0].x-CH[0].position.x*U, ez=NP[0].z-CH[0].position.z*U;
+    for(let k=kf;k>=0;k--){ const u=(Lf-k*STEPU)/Lf, g=smooth(u), bn=CH[k]; NP[k].x-=ex*g; NP[k].z-=ez*g; bn.position.copy(NP[k]).divideScalar(U);
+      qy.setFromAxisAngle(Y,TH[k]+Math.max(-0.4,Math.min(0.4,-ex*6*u*(1-u)/Lf))); bn.quaternion.premultiply(qy); }
+  }
+
+  // ---- hit feel: freeze, squash (the game's boss contact squash: 11% wider, 5% shorter), shake, flash
+  let hitstop=0, squash=0, shake=0, flash=0; const shakeV=new THREE.Vector3();
+  function hitFeel(sh,stop,sq){ if(!feel)return; hitstop=Math.max(hitstop,stop); squash=Math.max(squash,sq); shake=Math.max(shake,sh); }
+
+  // ---- effects (dim on purpose; Ember marks the floor warnings, Violet is its power, grey is its ash)
+  const FXP=[], RINGS=[], HOLES=[], MARKS=[]; let dotTex=null, ringT=null, ringF=null, coneT=null, rune=null, mound=null;
+  let cracks=0.3, cracksTo=0.3, maw=0.15, mawTo=0.15, eyes=1, eyesTo=1, ashTo=0;
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<240;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<12;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false});}
+    // the floor warnings: one Ember ring with a fill that grows to it (the burst) and one Ember cone (Ash Breath)
+    ringT=new THREE.Mesh(new THREE.RingGeometry(0.965,1,72),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.7,depthWrite:false})); ringF=new THREE.Mesh(new THREE.CircleGeometry(1,72),new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false}));
+    ringT.rotation.x=ringF.rotation.x=-Math.PI/2; ringT.position.y=0.012; ringF.position.y=0.011; ringT.visible=ringF.visible=false; fxG.add(ringT,ringF);
+    coneT=new THREE.Group(); const t0=-Math.PI/2-CONE_A, tl=2*CONE_A; const em=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.6,depthWrite:false}), fm=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false});
+    const cf=new THREE.Mesh(new THREE.CircleGeometry(1,40,t0,tl),fm), co=new THREE.Mesh(new THREE.RingGeometry(0.991,1,40,1,t0,tl),em); cf.rotation.x=co.rotation.x=-Math.PI/2; co.scale.setScalar(CONE_R); co.position.y=0.001; coneT.add(cf,co);
+    [-1,1].forEach(sg=>{ const eg=new THREE.PlaneGeometry(0.035,CONE_R); eg.translate(0,CONE_R/2,0); const e=new THREE.Mesh(eg,em); e.rotation.x=-Math.PI/2; const h=new THREE.Group(); h.rotation.y=Math.PI+sg*CONE_A; h.position.y=0.001; h.add(e); coneT.add(h); });
+    coneT.userData={fill:cf,fm,em}; coneT.position.y=0.011; coneT.visible=false; fxG.add(coneT);
+    // a hole in the floor: a dark pit with rubble round its rim (0: where it dives, 1: where it comes up)
+    for(let i=0;i<2;i++){ const g2=new THREE.Group(); const pm=new THREE.MeshBasicMaterial({color:PIT,transparent:true,opacity:0,depthWrite:false}), rm=new THREE.MeshStandardMaterial({color:RUBBLE,roughness:1,transparent:true,opacity:1});
+      const pit=new THREE.Mesh(new THREE.CircleGeometry(1,40),pm); pit.rotation.x=-Math.PI/2; g2.add(pit); const rocks=new THREE.Group();
+      for(let k=0;k<11;k++){ const a=k/11*Math.PI*2+(Math.random()-0.5)*0.3, r=1.02+Math.random()*0.16; const rk=new THREE.Mesh(new THREE.DodecahedronGeometry(0.07+Math.random()*0.07,0),rm); rk.position.set(Math.cos(a)*r,0.03,Math.sin(a)*r); rk.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3); rocks.add(rk); }
+      g2.add(rocks); g2.visible=false; fxG.add(g2); HOLES.push({g:g2,pm,rm,rocks,t:-1,shut:-1,sx:1,sz:1}); }
+    // the tunnel: a mound that runs under the floor and the cracks it leaves
+    mound=new THREE.Group(); const md0=new THREE.Mesh(new THREE.SphereGeometry(1,20,10,0,Math.PI*2,0,Math.PI/2),new THREE.MeshStandardMaterial({color:0x2e2b27,roughness:1})); md0.scale.set(0.55,0.17,0.8); mound.add(md0);
+    for(let k=0;k<9;k++){ const a=k/9*Math.PI*2, r=0.25+Math.random()*0.3; const rk=new THREE.Mesh(new THREE.DodecahedronGeometry(0.06+Math.random()*0.06,0),new THREE.MeshStandardMaterial({color:RUBBLE,roughness:1})); rk.position.set(Math.cos(a)*r,0.1,Math.sin(a)*r*1.3); rk.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3); mound.add(rk); } mound.visible=false; fxG.add(mound);
+    for(let i=0;i<16;i++){ const m=new THREE.Mesh(new THREE.CircleGeometry(1,7),new THREE.MeshBasicMaterial({color:PIT,transparent:true,opacity:0,depthWrite:false})); m.rotation.x=-Math.PI/2; m.visible=false; fxG.add(m); MARKS.push({m,t:-1}); }
+    // the spawn's rune ring
+    const mkRune=(r)=>{const gq=new THREE.Group(); const o=new THREE.Mesh(new THREE.RingGeometry(r*0.94,r,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0.5,depthWrite:false})); const i2=new THREE.Mesh(new THREE.RingGeometry(r*0.62,r*0.66,6),o.material); const i3=new THREE.Mesh(new THREE.RingGeometry(r*0.4,r*0.43,3),o.material); [o,i2,i3].forEach(m=>{m.rotation.x=-Math.PI/2;gq.add(m);}); gq.userData.mat=o.material; gq.position.y=0.013; gq.visible=false; return gq;};
+    rune=mkRune(1.7); fxG.add(rune);
+    RINGS.forEach(r=>scene.add(r.m));
+    // a hero's height, for scale and to take the hit
+    dummy=new THREE.Group(); const dm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dm); body.position.y=0.31; const head=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dm); head.position.y=0.8; dummy.add(body,head); dummy.userData={mat:dm,z:HOME,x:0,sx:0,kick:0,hold:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+  function puff(pos,vel,o){ if(!fxOn)return; const p=FXP.find(p=>p.life<=0); if(!p)return; p.life=o.life||0.5; p.age=0; p.v.copy(vel); p.g=o.g||0; p.s0=o.s0||0.1; p.s1=o.s1||0.3; p.a=o.a||0.4; p.drag=o.drag||0; p.floor=!!o.floor; p.s.material.color.setHex(o.col||DUST); p.s.material.blending=THREE.NormalBlending; p.s.position.copy(pos); if(p.floor){fxG.add(p.s);p.s.position.copy(toFloor(pos));}else scene.add(p.s); p.s.visible=true; }
+  function dust(pos,n,spd,up){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(tmp2.copy(pos).setY(0.05),new THREE.Vector3(Math.cos(a)*spd*(0.5+Math.random()),up*(0.4+Math.random()*0.6),Math.sin(a)*spd*(0.5+Math.random())),{life:0.55+Math.random()*0.3,s0:0.16,s1:0.55,a:0.22,drag:3,floor:true});} }
+  function sparks(pos,n,col,spd,life){ if(col===0xfff4e0)col=0xe9dcc0; if(col===0xd9c8ff)col=0xa98cf5; for(let i=0;i<n;i++){const v=new THREE.Vector3(Math.random()-0.5,Math.random()-0.2,Math.random()-0.5).normalize().multiplyScalar(spd*(0.4+Math.random()*0.8)); puff(pos,v,{life:life*(0.6+Math.random()*0.6),s0:0.1,s1:0.02,a:0.5,col,g:-2.5,drag:2});} }
+  function motes(pos,n,spread,rise,col){ for(let i=0;i<n;i++){ puff(tmp2.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*spread,Math.random()*0.2,(Math.random()-0.5)*spread)),new THREE.Vector3((Math.random()-0.5)*0.2,rise*(0.5+Math.random()),(Math.random()-0.5)*0.2),{life:0.9+Math.random()*0.7,s0:0.07,s1:0.02,a:0.38,col:col||VIOLET}); } }
+  function ringAt(pos,o){ if(!fxOn)return; const r=RINGS.find(r=>r.t<0); if(!r)return; r.t=0; r.dur=o.dur||0.5; r.r0=o.r0||0.1; r.r1=o.r1||1; r.a=o.a||0.4; r.bill=!!o.bill; r.delay=o.delay||0; r.m.material.color.setHex(o.col||VIOLET);
+    if(r.bill){scene.add(r.m); r.m.position.copy(pos);} else {fxG.add(r.m); r.m.position.copy(toFloor(pos)).setY(0.016); r.m.rotation.set(-Math.PI/2,0,0);} r.m.visible=false; }
+  function holeOpen(i,w,sx,sz){ const h=HOLES[i]; h.t=0; h.shut=-1; h.sx=sx; h.sz=sz; h.g.position.copy(toFloor(w)).setY(0.006+0.001*i); h.g.rotation.y=-floorYaw; h.g.visible=true; h.pm.opacity=0; h.rm.opacity=1; h.rocks.scale.setScalar(1); }
+  function holeClose(i){ const h=HOLES[i]; if(h.t>=0&&h.shut<0)h.shut=0; }
+  function hideTele(){ if(ringT){ringT.visible=ringF.visible=coneT.visible=false;} tele=null; }
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); hideTele(); if(rune)rune.visible=false; MARKS.forEach(m=>{m.t=-1;m.m.visible=false;}); if(mound)mound.visible=false; }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  const muzzle=()=>pt(bones.head,[0,-0.02,0.3]);
+  const spineW=(k)=>CH[k].getWorldPosition(new THREE.Vector3());
+  let runeT=-1, tele=null;
+  const cue=(n,k,i)=>{const c=META[n].cues; return c&&c[k]?c[k][i||0]:0;};
+  function placeHero(z){ HOME=z; if(dummy){ const u=dummy.userData; u.z=z; u.x=0; u.kick=0; u.sx=0; u.hold=0; dummy.position.set(0,0,z); } }
+  function fxStart(name){
+    hideTele(); if(name!=='emerge')HOME=NEAR;
+    if(name==='breath'){ placeHero(NEAR); tele={kind:'cone',dur:META.breath.contact[0],at:toFloor(new THREE.Vector3(0,0,0)),yaw:-floorYaw}; }
+    if(name==='burrow'){ placeHero(FAR); }
+    if(name==='emerge'){ HOME=FAR; tele={kind:'ring',r:RING_R,dur:META.emerge.contact[0],at:toFloor(new THREE.Vector3(waveX(),0,0))}; }
+    if(name==='enrage'){ rage=true; $('rage').setAttribute('aria-pressed','true'); }
+    if(name==='spawn'){ placeHero(NEAR); cracks=0; eyes=0; ashTo=0; ashU.value=0; if(fxOn){runeT=0; rune.position.copy(toFloor(new THREE.Vector3(0,0,0))).setY(0.013);} }
+    if(name==='death'){ rage=false; $('rage').setAttribute('aria-pressed','false'); if(dummy){dummy.userData.sx=8;dummy.userData.hold=1e9;} hitFeel(0.5,0.07,0.4); flash=0.5; if(fxOn)sparks(muzzle(),10,0xfff4e0,2.2,0.3); }
+    if(name==='heavyHit'){ hitFeel(0.55,0.09,0.6); flash=0.5; if(fxOn)sparks(muzzle(),12,0xfff4e0,2.4,0.3); }
+  }
+  // the tunnel: it is under the floor, the floor runs on to where it will come up, and a mound runs from the dive hole to that spot
+  function startTunnel(){ const from=toFloor(new THREE.Vector3(0,0,HOLEZ)), to=toFloor(new THREE.Vector3(0,0,FAR-SHORT)); mesh.visible=false; holeClose(0);
+    tunnel={t:0,k:0,dur:from.distanceTo(to)/TUNNEL_V,total:FAR-SHORT,from,to,last:0}; }
+  function endTunnel(){ tunnel=null; mound.visible=false; mesh.visible=true; const a=toFloor(new THREE.Vector3(waveX(),0,0)); a.y=0; trail=[a,a.clone()]; hole={dir:new THREE.Vector3(0,0,-1).applyAxisAngle(Y,-floorYaw)}; startShot('emerge'); }
+  function fxContact(name,i){
+    if(name==='breath'){ hideTele(); hitFeel(0.6,0.07,0.4); if(fxOn){ ringAt(muzzle(),{r0:0.2,r1:1.0,dur:0.25,a:0.45,bill:true}); dust(new THREE.Vector3(0,0,1.6),6,1.6,0.5); }
+      if(dummy&&showTarget){ const p=targetW(); if(p.length()<CONE_R+0.2&&Math.abs(Math.atan2(p.x,p.z))<CONE_A+0.05){ if(fxOn)sparks(p.clone().setY(0.5),10,0xfff4e0,2.6,0.3); hitDummy(0.3); dummy.userData.hold=1.3; } } }
+    if(name==='emerge'){ if(i===0){ hideTele(); hitFeel(1,0.1,0.8); const c=new THREE.Vector3(waveX(),0,0);
+        if(fxOn){ ringAt(c,{r0:0.5,r1:RING_R,dur:0.34,a:0.5}); for(let k=0;k<12;k++){const a=k/12*Math.PI*2; dust(new THREE.Vector3(c.x+Math.cos(a)*0.8,0,Math.sin(a)*0.8),2,2.6,1.0);} sparks(c.clone().setY(0.3),14,0x8d8478,4.2,0.5); sparks(muzzle(),8,0xd9c8ff,2.4,0.3); }
+        if(dummy&&showTarget&&targetW().distanceTo(c)<RING_R+0.2){ if(fxOn)sparks(targetW().setY(0.5),12,0xfff4e0,3.0,0.3); hitDummy(0.25); dummy.userData.sx=9; dummy.userData.hold=2.4; } }
+      else { hitFeel(0.5,0.04,0.4); if(fxOn)[0,3,6,9].forEach(k=>dust(spineW(k),3,1.3,0.5)); } }
+    if(name==='enrage'){ hitFeel(0.7,0.06,0.5); if(fxOn){ ringAt(muzzle(),{r0:0.3,r1:2.2,dur:0.5,a:0.45,bill:true}); ringAt(new THREE.Vector3(0,0,0.3),{r0:0.4,r1:2.4,dur:0.4,a:0.4}); sparks(muzzle(),8,0xd9c8ff,2.2,0.3); } }
+    if(name==='spawn'){ hitFeel(0.25,0.02,0.2); if(fxOn)ringAt(muzzle(),{r0:0.2,r1:1.5,dur:0.45,a:0.35,bill:true}); }
+    if(name==='death'){ hitFeel(0.7,0.05,0.5); if(fxOn)[0,2,4,6,8,10].forEach(k=>dust(spineW(k),3,1.5,0.5)); }
+  }
+  function hitDummy(k){ if(!dummy||!showTarget)return; dummy.userData.kick=k; dummy.userData.hold=Math.max(dummy.userData.hold,0.6); dummy.userData.mat.emissiveIntensity=feel?0.45:0; }
+  const fwd=new THREE.Vector3();
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time, m=META[n];
+    if(tele&&fxOn){ const k=Math.min(1,t/tele.dur), pulse=0.03*Math.sin(t*24)*k;
+      if(tele.kind==='ring'){ ringT.visible=ringF.visible=true; ringT.position.x=ringF.position.x=tele.at.x; ringT.position.z=ringF.position.z=tele.at.z; ringT.scale.setScalar(tele.r); ringF.scale.setScalar(Math.max(0.001,tele.r*k)); ringT.material.opacity=0.45+0.25*k+pulse*3; ringF.material.opacity=0.1+0.08*k; }
+      else { coneT.visible=true; coneT.position.x=tele.at.x; coneT.position.z=tele.at.z; coneT.rotation.y=tele.yaw; const u=coneT.userData; u.fill.scale.setScalar(Math.max(0.001,CONE_R*k)); u.fm.opacity=0.1+0.1*k+pulse; u.em.opacity=0.45+0.25*k; } }
+    if(n==='breath'){ const dr=cue('breath','draw',0), de=cue('breath','draw',1), hit=m.contact[0], pe=cue('breath','pour',1);
+      mawTo=t<dr?0.15:t<hit?0.3+1.2*Math.min(1,(t-dr)/(de-dr)):t<pe?1.6:0.15; cracksTo=t<pe?0.3+0.7*Math.min(1,t/de):0.3; eyesTo=t<pe?1.7:1; if(dummy&&t<pe+0.2)dummy.userData.hold=Math.max(dummy.userData.hold,0.3);
+      if(fxOn&&t>dr&&t<de&&Math.random()<d*30){ const mz=muzzle(), q=mz.clone().add(new THREE.Vector3((Math.random()-0.5)*1.4,(Math.random()-0.3)*0.9,0.5+Math.random()*0.9)); puff(q,mz.clone().sub(q).multiplyScalar(3.2),{life:0.3,s0:0.07,s1:0.02,a:0.45,col:VIOLET}); }
+      if(fxOn&&t>=hit&&t<pe){ fwd.set(0,0,1).applyQuaternion(bones.head.getWorldQuaternion(new THREE.Quaternion())); const hy=Math.atan2(fwd.x,fwd.z), mz=muzzle(); const nP=Math.floor(d*120+Math.random());
+        const nB=(shot.prev<hit?16:0)+nP; for(let i=0;i<nB;i++){ const a=Math.max(-CONE_A,Math.min(CONE_A,(Math.random()<0.5?hy*1.4:0)+(Math.random()-0.5)*(Math.random()<0.5?0.5:1.9*CONE_A))), r=mz.z*0.9+Math.random()*(CONE_R+0.15-mz.z*0.9); const v=new THREE.Vector3(Math.sin(a)*r-mz.x,0.12-mz.y,Math.cos(a)*r-mz.z).multiplyScalar(2.4); const ember=Math.random()<0.22;
+          puff(mz,v,ember?{life:0.5+Math.random()*0.3,s0:0.08,s1:0.03,a:0.5,col:0xa98cf5,drag:2.4}:{life:0.85+Math.random()*0.5,s0:0.34,s1:1.4,a:0.74,col:ASH,drag:2.4}); } } }
+    if(n==='burrow'){ const r0=cue('burrow','roar',0), r1=cue('burrow','roar',1); mawTo=t>r0&&t<m.contact[0]?1.2:0.15; cracksTo=0.3+0.5*Math.min(1,t/r1); eyesTo=1.6; if(dummy)dummy.userData.hold=0.5;
+      if(shot.prev<r0&&t>=r0&&fxOn)ringAt(muzzle(),{r0:0.2,r1:1.4,dur:0.4,a:0.35,bill:true});
+      const hy=bones.head.getWorldPosition(tmp).y; if(!shot.holed&&t>0.3&&hy<0.3){ shot.holed=true; const c=new THREE.Vector3(0,0,HOLEZ); holeOpen(0,c,0.72,0.72); hitFeel(0.55,0.05,0.3); if(fxOn){ for(let k=0;k<10;k++){const a=k/10*Math.PI*2; dust(new THREE.Vector3(Math.cos(a)*0.6,0,HOLEZ+Math.sin(a)*0.6),2,2.2,0.9);} sparks(c.clone().setY(0.2),12,0x8d8478,3.6,0.45); ringAt(c,{r0:0.4,r1:1.5,dur:0.3,a:0.4}); } }
+      if(shot.holed&&fxOn&&Math.random()<d*26){ const a=Math.random()*6.283; dust(new THREE.Vector3(Math.cos(a)*0.65,0,HOLEZ+Math.sin(a)*0.65),1,1.2,0.6); } }
+    if(n==='emerge'){ const seen=cue('emerge','seen',0), hit=m.contact[0], e0=cue('emerge','exposed',0), e1=cue('emerge','exposed',1), c=new THREE.Vector3(waveX(),0,0);
+      if(dummy&&t<hit)dummy.userData.hold=0.5; mawTo=t>seen&&t<e0?1.3:0.15; eyesTo=t<e0?1.7:t<e1?0.6:1; cracksTo=t<hit?0.9:t<e1?0.12:0.3;
+      if(t<seen){ const k=t/seen; if(fxOn&&Math.random()<d*(8+30*k)){ const a=Math.random()*6.283, r=Math.random()*0.7; dust(new THREE.Vector3(c.x+Math.cos(a)*r,0,Math.sin(a)*r),1,0.6+k,0.3+0.5*k); } if(feel)shake=Math.max(shake,0.12+0.2*k); }
+      if(shot.prev<seen&&t>=seen){ holeOpen(1,new THREE.Vector3(c.x,0,-0.45),0.74,1.0); hitFeel(0.4,0,0); if(fxOn){ sparks(c.clone().setY(0.2),10,0x8d8478,3.4,0.45); for(let k=0;k<8;k++){const a=k/8*Math.PI*2; dust(new THREE.Vector3(c.x+Math.cos(a)*0.5,0,Math.sin(a)*0.5),2,2.0,0.9);} } }
+      if(t>e0&&t<e1&&fxOn&&Math.random()<d*5)puff(muzzle(),new THREE.Vector3(0,0.3,0.7),{life:0.5,s0:0.1,s1:0.4,a:0.3,col:ASH,drag:2}); }
+    if(n==='enrage'){ const r0=cue('enrage','roar',0), r1=cue('enrage','roar',1); cracksTo=t<r0?0.3+1.2*t/r0:1.6; mawTo=t>r0&&t<r1?1.5:0.15; eyesTo=1.8; if(fxOn&&t>r0&&t<r1&&Math.random()<d*18)motes(spineW(Math.floor(Math.random()*20)),1,0.6,1.0); }
+    if(n==='spawn'){ if(t>0.1&&t<0.9&&Math.random()<d*26)motes(new THREE.Vector3(0,0,-1.5+Math.random()*3),1,2.2,1.4); mawTo=t>0.7&&t<1.05?1.2:0.15; }
+    if(n==='death'){ const b0=cue('death','blaze',0), b1=cue('death','blaze',1), as=cue('death','ash',0);
+      cracksTo=t<b0?0.6:t<b1?1.5+0.5*Math.sin(t*40):t<as?0.5:0; eyesTo=t<b1?1.6:t<as?0.5:0; mawTo=t<b1?0.9:0; ashTo=t>=as?1:0;
+      if(fxOn&&t>b0&&t<b1&&Math.random()<d*16)motes(spineW(Math.floor(Math.random()*24)),1,0.5,0.9);
+      if(fxOn&&t>=as&&Math.random()<d*22){ const q=spineW(Math.floor(Math.random()*NB)); if(q.y>0.05)puff(q.add(new THREE.Vector3((Math.random()-0.5)*0.5,0.2,(Math.random()-0.5)*0.5)),new THREE.Vector3((Math.random()-0.5)*0.3,0.5+Math.random()*0.5,(Math.random()-0.5)*0.3),{life:1.0+Math.random()*0.8,s0:0.1,s1:0.34,a:0.4,col:ASH}); } }
+  }
+  function updateFx(d){
+    const busy=(shot&&!shot.done)||tunnel; if(!busy){ cracksTo=sel.dead?0:0.3; mawTo=sel.dead?0:0.15; eyesTo=sel.dead?0:1; hideTele(); }
+    const rg=sel.dead?0:rageW;
+    cracks+=(cracksTo+0.9*rg-cracks)*Math.min(1,d*6); maw+=(mawTo+0.3*rg-maw)*Math.min(1,d*6); eyes+=(eyesTo+0.9*rg-eyes)*Math.min(1,d*6); flash=Math.max(0,flash-d*3.2); ashU.value+=(ashTo-ashU.value)*Math.min(1,d*1.6);
+    const on=fxOn?1:0; const breathe=0.08*Math.sin(clockT*(2.1+5*rg));
+    glowU.value.set(on*Math.max(0,cracks+breathe*(cracks>0.05?1:0))*1.25,on*maw*0.3,feel?flash:0,on*0.3*Math.min(2.4,eyes));
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.03)p.s.position.y=0.03; const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    HOLES.forEach(h=>{ if(h.t<0)return; h.t+=d; const g=Math.min(1,h.t/0.12), e=1-(1-g)*(1-g); let k=1; if(h.shut>=0){ h.shut+=d; k=Math.max(0,1-h.shut/0.9); if(h.shut>3.2){h.t=-1;h.g.visible=false;return;} }
+      h.g.children[0].scale.set(h.sx*(0.3+0.7*e)*(0.25+0.75*k),h.sz*(0.3+0.7*e)*(0.25+0.75*k),1); h.pm.opacity=0.88*k; h.rocks.scale.set(h.sx*(0.5+0.5*e),1,h.sz*(0.5+0.5*e)); h.rm.opacity=h.shut<0?1:Math.max(0,Math.min(1,(3.2-h.shut)/0.8)); h.g.visible=true; });
+    MARKS.forEach(q=>{ if(q.t<0)return; q.t+=d; const u=q.t/2.6; if(u>=1){q.t=-1;q.m.visible=false;return;} q.m.visible=fxOn; q.m.material.opacity=0.5*(1-u); });
+    if(runeT>=0){ runeT+=d; const u=runeT/0.95; rune.visible=u<1&&fxOn; rune.rotation.y=runeT*2.2; rune.scale.setScalar(1.15-0.35*u); rune.userData.mat.opacity=0.5*Math.sin(Math.PI*Math.min(1,u)); if(u>=1)runeT=-1; }
+    if(dummy){ const u=dummy.userData; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4);
+      u.x+=u.sx*d; u.sx=Math.max(0,u.sx-u.sx*d*8-d*0.3); if(u.kick>0){ u.z+=u.kick*d*9; u.kick=Math.max(0,u.kick-u.kick*d*9-d*0.2); } else if(u.hold>0)u.hold-=d; else { u.z+=(HOME-u.z)*Math.min(1,d*3); u.x+=(0-u.x)*Math.min(1,d*3); } dummy.position.z=u.z; dummy.position.x=u.x; }
+  }
+
+  // ---- the loop
+  let clockT=0, last=performance.now();
+  function tick(d){
+    if(!mixer)return; clockT+=d;
+    const stopped=hitstop>0; if(stopped){hitstop-=d;} const md=stopped?0:d;
+    // weights: the shot owns the body while it plays, then the base fades back in
+    const bn=baseName();
+    if(shot&&!shot.done){ const a=shot.action, m=META[shot.name]; if(a.time>=Math.min(m.dur,a.getClip().duration)-1e-3){ shot.done=true; if(shot.name==='spawn')refresh(); if(shot.name==='burrow')startTunnel(); } }
+    if(shot&&shot.done&&!shot.hold&&sel.action&&!sel.dead){ shot.gap+=md; if(shot.gap>0.7)startShot(sel.action); }
+    Object.entries(A).forEach(([k,a])=>{ let to=0; if(shot&&shot.action===a)to=(shot.done&&!shot.hold)?0:1; else if(k===bn)to=(shot&&(!shot.done||shot.hold))?0:1;
+      const tau=(shot&&shot.action===a)?0.18:(to>a.__w?0.18:0.12); a.__w+=(to-a.__w)*Math.min(1,md/tau); if(Math.abs(to-a.__w)<0.002)a.__w=to; a.setEffectiveWeight(a.__w); });
+    rageW+=((rage&&!sel.dead?1:0)-rageW)*Math.min(1,md/0.3);
+    // how far it travels this frame; the slither's clip is set from the distance, so it only plays while it moves
+    let dz=A.walk.__w*WALK*md+(A.turnL.__w+A.turnR.__w)*RT*TURN*md, dyaw=(A.turnL.__w-A.turnR.__w)*TURN*md;
+    if(tunnel){ tunnel.t+=md; const k=Math.min(1,tunnel.t/tunnel.dur), step=tunnel.total*(k-tunnel.k); tunnel.k=k; dz=step; dyaw=0; if(dummy){ dummy.userData.z-=step; dummy.userData.hold=0.5; } }
+    else dist+=dz;
+    A.walk.time=(((dist/WLEN-0.25)%1)+1)%1*META.walk.dur;
+    /* the mixer only writes a joint when its value changes, so the page's own placing is taken off again before it runs */
+    if(BK.length)BK.forEach(o=>{o.b.position.copy(o.p);o.b.quaternion.copy(o.q);}); else [...CH,bones.head].forEach(b=>BK.push({b,p:new THREE.Vector3(),q:new THREE.Quaternion()}));
+    mixer.update(md);
+    BK.forEach(o=>{o.p.copy(o.b.position);o.q.copy(o.b.quaternion);});
+    if(dz||dyaw)moveFloor(dz,dyaw);
+    if(tunnel){ const p=tunnel.from.clone().lerp(tunnel.to,tunnel.k); mound.visible=fxOn; mound.position.copy(p); mound.rotation.y=-floorYaw; const w=p.clone().applyMatrix4(fxG.matrix);
+      if(fxOn&&Math.random()<md*40)dust(w.clone().add(new THREE.Vector3((Math.random()-0.5)*0.8,0,(Math.random()-0.5)*0.8)),1,1.0,0.6); if(feel)shake=Math.max(shake,0.14);
+      const dd=tunnel.from.distanceTo(p); if(dd-tunnel.last>0.34){ tunnel.last=dd; const q=MARKS.find(q=>q.t<0); if(q){ q.t=0; q.m.position.copy(p).setY(0.007); q.m.scale.setScalar(0.2+Math.random()*0.16); q.m.rotation.z=Math.random()*3; } }
+      if(tunnel.k>=1)endTunnel(); }
+    else trailStep();
+    if(mesh.visible)deform();
+    // contacts
+    if(shot){ const m=META[shot.name], t=shot.action.time; m.contact.forEach((c,i)=>{ if(c>0&&shot.prev<c&&t>=c&&shot.name!=='burrow')fxContact(shot.name,i); }); fxOngoing(md); shot.prev=t; }
+    squash=Math.max(0,squash-d*7); const sq=feel?squash:0; model.scale.set(U*(1+0.11*sq),U*(1-0.05*sq),U*(1+0.11*sq));
+    model.updateMatrixWorld(true);
+    if(fxOn&&dz>0&&!tunnel&&pathL>1&&Math.random()<md*7){ const k=10+Math.floor(Math.random()*18), q=spineW(k); if(q.y>0.1)dust(q,1,0.5,0.25); }
+    updateFx(stopped?d*0.25:d); showPhase();
+  }
+  function frame(now){
+    requestAnimationFrame(frame); const raw=Math.min(0.05,(now-last)/1000); last=now;
+    if(!paused)tick(raw*speed);
+    orbit.update(); shake=Math.max(0,shake-raw*3.2); const sk=feel?shake*shake*0.09:0; shakeV.set((Math.random()-0.5)*sk,(Math.random()-0.5)*sk,(Math.random()-0.5)*sk); cam.position.add(shakeV);
+    if(helper&&helper.visible)helper.sync();
+    renderer.render(scene,cam); cam.position.sub(shakeV);
+  }
+  moveFloor(0,0); requestAnimationFrame(frame);
+})();
+</script>
+'''
+JS = JS.replace('__NB__', str(SK['chain']['n'])).replace('__STEP__', repr(SK['chain']['step'] * 4.0)).replace('__LEN__', repr(round(SK['chain']['end'] * 4.0, 3)))
+out = S + '/wyrmreview/index.html'
+open(out, 'w').write(css + BODY + JS)
+print('wrote', out, len(css + BODY + JS), 'frames', FRAMES)

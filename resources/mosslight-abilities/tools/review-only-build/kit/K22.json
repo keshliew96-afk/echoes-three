@@ -1,0 +1,66 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S22",
+  "skill": "bell_toll",
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    -2.0,
+    -1.5
+   ],
+   [
+    2.2,
+    -1.2
+   ],
+   [
+    0.5,
+    -3.2
+   ],
+   [
+    -1.2,
+    2.0
+   ]
+  ],
+  "secs": 5.9,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(400-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "guides": [
+   {
+    "k": "area",
+    "r": 4.5
+   }
+  ],
+  "cap": "S22 Wispfall",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ]
+ }
+]

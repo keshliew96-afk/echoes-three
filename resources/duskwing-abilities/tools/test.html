@@ -1,0 +1,16 @@
+<!doctype html><html><head><meta charset="utf-8">
+<script type="importmap">{"imports":{"three":"../node_modules/three/build/three.module.js","three/addons/":"../node_modules/three/examples/jsm/"}}</script>
+<style>body{margin:0;background:#222} canvas{display:block}</style></head><body>
+<canvas id="c" width="640" height="400"></canvas>
+<script type="module">
+import * as W from './dw.js';
+import { DEFS, FORMS } from './defs.js';
+import './ra.js';
+import './sa.js';
+import './ph.js';
+import './co.js';
+await W.loadHim('./duskwing.glb');
+const id = new URLSearchParams(location.search).get('id') || 'B';
+const card = W.addCard(id.includes(':') ? FORMS[id.split(':')[0]][id.split(':')[1]] : DEFS[id], document.getElementById('c'));
+window.__card = card; window.__W = W; window.__ready = true;
+</script></body></html>

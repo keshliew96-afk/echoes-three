@@ -1,0 +1,26 @@
+idle      floor clean
+          stretch x3.24 at 2.30 on head
+walk      floor clean
+          stretch x2.98 at 0.07 on chL
+turnL     floor clean
+          stretch x1.98 at 0.00 on head
+turnR     floor clean
+          stretch x1.98 at 0.00 on hips
+pendulum  floor clean
+          stretch x2.35 at 1.38 on chL
+sweep     floor clean
+          stretch x3.90 at 0.67 on handR
+toll      floor clean
+          chest into handR              39.0 mm at 1.42  (22 verts, 35 frames)
+          stretch x6.16 at 0.83 on handR
+enrage    floor clean
+          chR into shR                  44.9 mm at 1.15  (4 verts, 1 frames)
+          stretch x8.13 at 1.15 on handL
+hurt      floor clean
+          stretch x2.91 at 0.05 on chest
+heavyHit  floor clean
+          stretch x2.48 at 0.05 on handR
+spawn     floor hips -420mm@0.00, pend -175mm@0.00, spine -160mm@0.00, chL -20mm@0.00
+          stretch x5.06 at 0.00 on chL
+death     floor clean
+          stretch x6.15 at 0.83 on handL

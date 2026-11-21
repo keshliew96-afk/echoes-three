@@ -1,0 +1,120 @@
+idle      floor clean
+          cru into fingR                25.9 mm at 5.52  (5 verts, 361 frames)
+          spine into foreL              23.6 mm at 1.90  (16 verts, 339 frames)
+          cru into handL                23.3 mm at 0.12  (15 verts, 361 frames)
+          foreR into hips               20.0 mm at 2.08  (2 verts, 78 frames)
+          cru into handR                18.2 mm at 5.22  (17 verts, 361 frames)
+          foreL into hips               15.8 mm at 1.97  (2 verts, 181 frames)
+          cru into door                 14.8 mm at 2.02  (7 verts, 71 frames)
+          armR into hips                14.6 mm at 2.10  (2 verts, 45 frames)
+          stretch x5.42 at 1.85 on foreL
+walk      floor clean
+          cru into fingR                26.0 mm at 0.28  (3 verts, 41 frames)
+          cru into handL                23.3 mm at 0.00  (15 verts, 41 frames)
+          armL into hips                20.5 mm at 0.08  (3 verts, 15 frames)
+          cru into handR                20.5 mm at 0.25  (26 verts, 41 frames)
+          spine into foreL              17.9 mm at 0.07  (10 verts, 27 frames)
+          cru into foreR                14.3 mm at 0.27  (4 verts, 22 frames)
+          door into foreL               14.2 mm at 0.60  (18 verts, 24 frames)
+          foreL into hips               12.2 mm at 0.45  (2 verts, 9 frames)
+          stretch x6.80 at 0.58 on hips
+turnL     floor clean
+          cru into fingR                25.8 mm at 0.18  (6 verts, 37 frames)
+          cru into handL                18.6 mm at 0.00  (14 verts, 37 frames)
+          cru into handR                16.8 mm at 0.43  (15 verts, 37 frames)
+          foreR into hips               13.9 mm at 0.10  (1 verts, 4 frames)
+          spine into foreL              11.7 mm at 0.38  (4 verts, 37 frames)
+          handL into cru                 9.4 mm at 0.20  (5 verts, 37 frames)
+          handR into cru                 9.1 mm at 0.60  (1 verts, 37 frames)
+          cru into foreR                 9.0 mm at 0.23  (1 verts, 6 frames)
+          stretch x5.41 at 0.42 on hips
+turnR     floor clean
+          cru into fingR                25.9 mm at 0.57  (5 verts, 37 frames)
+          cru into handL                23.3 mm at 0.00  (15 verts, 37 frames)
+          cru into handR                17.9 mm at 0.60  (19 verts, 37 frames)
+          spine into foreL              13.2 mm at 0.38  (4 verts, 37 frames)
+          armL into hips                12.6 mm at 0.48  (1 verts, 6 frames)
+          cru into foreR                10.8 mm at 0.52  (1 verts, 32 frames)
+          handR into cru                 9.1 mm at 0.60  (1 verts, 37 frames)
+          handL into cru                 8.9 mm at 0.57  (4 verts, 37 frames)
+          stretch x5.36 at 0.52 on foreR
+pour      floor clean
+          cru into fingR                50.2 mm at 1.50  (53 verts, 124 frames)
+          door into cru                 30.7 mm at 0.37  (44 verts, 75 frames)
+          cru into door                 28.4 mm at 0.40  (26 verts, 62 frames)
+          cru into fingL                26.4 mm at 1.65  (4 verts, 104 frames)
+          cru into handL                26.3 mm at 1.45  (34 verts, 124 frames)
+          foreR into hips               25.2 mm at 0.25  (6 verts, 27 frames)
+          spine into foreL              23.3 mm at 0.22  (30 verts, 49 frames)
+          cru into handR                22.6 mm at 1.37  (36 verts, 124 frames)
+          stretch x6.34 at 1.75 on hips
+bell      floor clean
+          cru into neck                 53.1 mm at 1.20  (13 verts, 30 frames)
+          cru into chest                34.7 mm at 1.28  (27 verts, 14 frames)
+          cru into fingR                34.5 mm at 0.48  (16 verts, 115 frames)
+          cru into handR                31.5 mm at 0.67  (31 verts, 115 frames)
+          cru into handL                28.7 mm at 1.22  (32 verts, 115 frames)
+          door into cru                 27.3 mm at 1.55  (32 verts, 57 frames)
+          chest into cru                23.7 mm at 1.28  (37 verts, 13 frames)
+          cru into door                 21.5 mm at 1.32  (17 verts, 55 frames)
+          stretch x6.25 at 0.42 on foreL
+firing    floor footR -5mm@4.27
+          hips into handR               45.5 mm at 3.32  (98 verts, 88 frames)
+          hips into handL               42.0 mm at 3.33  (60 verts, 88 frames)
+          foreR into spine              39.5 mm at 3.33  (33 verts, 10 frames)
+          handR into spine              38.0 mm at 3.33  (10 verts, 15 frames)
+          cru into fingR                36.8 mm at 0.18  (24 verts, 90 frames)
+          foreR into hips               34.8 mm at 3.35  (37 verts, 53 frames)
+          hips into foreL               33.4 mm at 3.08  (14 verts, 23 frames)
+          hbL into foreL                32.7 mm at 3.08  (18 verts, 62 frames)
+          stretch x5.76 at 0.18 on thighR
+casting   floor footR -5mm@1.52
+          cru into fingR                37.6 mm at 0.47  (60 verts, 97 frames)
+          armL into hips                32.7 mm at 1.05  (16 verts, 86 frames)
+          foreL into hips               30.1 mm at 1.08  (12 verts, 89 frames)
+          spine into foreL              30.0 mm at 1.05  (57 verts, 97 frames)
+          door into cru                 29.7 mm at 1.12  (38 verts, 87 frames)
+          cru into door                 27.7 mm at 0.80  (28 verts, 83 frames)
+          cru into fingL                26.3 mm at 1.15  (3 verts, 77 frames)
+          cru into handL                23.3 mm at 0.05  (15 verts, 97 frames)
+          stretch x5.55 at 0.40 on foreL
+hurt      floor clean
+          cru into fingR                25.8 mm at 0.00  (8 verts, 26 frames)
+          cru into handL                18.6 mm at 0.00  (13 verts, 26 frames)
+          spine into foreL              17.6 mm at 0.05  (9 verts, 26 frames)
+          cru into handR                16.8 mm at 0.08  (17 verts, 26 frames)
+          foreL into hips               13.2 mm at 0.05  (2 verts, 6 frames)
+          spine into foreR              10.3 mm at 0.05  (2 verts, 5 frames)
+          handL into cru                 9.1 mm at 0.03  (4 verts, 26 frames)
+          handR into cru                 9.1 mm at 0.42  (1 verts, 26 frames)
+          stretch x5.38 at 0.05 on foreL
+heavyHit  floor clean
+          cru into fingR                36.6 mm at 0.03  (21 verts, 67 frames)
+          cru into handL                23.3 mm at 0.02  (15 verts, 67 frames)
+          spine into foreL              20.8 mm at 0.12  (18 verts, 65 frames)
+          armR into hips                18.4 mm at 0.03  (2 verts, 7 frames)
+          foreL into hips               17.2 mm at 0.07  (3 verts, 21 frames)
+          cru into handR                17.1 mm at 0.22  (9 verts, 67 frames)
+          foreR into hips               15.4 mm at 0.13  (2 verts, 9 frames)
+          cru into door                 15.4 mm at 0.20  (6 verts, 18 frames)
+          stretch x5.49 at 0.07 on foreL
+spawn     floor clean
+          cru into fingR                36.0 mm at 0.25  (23 verts, 97 frames)
+          cru into handL                23.3 mm at 0.00  (14 verts, 97 frames)
+          armL into hips                20.4 mm at 0.17  (5 verts, 42 frames)
+          armR into hips                18.6 mm at 0.70  (2 verts, 40 frames)
+          spine into foreL              18.5 mm at 0.70  (9 verts, 97 frames)
+          cru into handR                18.4 mm at 1.00  (17 verts, 97 frames)
+          cru into door                 16.8 mm at 0.20  (3 verts, 41 frames)
+          foreR into hips               15.8 mm at 0.93  (2 verts, 43 frames)
+          stretch x5.76 at 0.75 on thighR
+death     floor clean
+          hips into footL               37.9 mm at 1.12  (16 verts, 107 frames)
+          cru into fingR                25.8 mm at 0.00  (8 verts, 16 frames)
+          cru into handL                23.3 mm at 0.02  (15 verts, 15 frames)
+          spine into foreL              20.5 mm at 0.12  (18 verts, 16 frames)
+          cru into handR                16.9 mm at 0.05  (12 verts, 15 frames)
+          foreL into hips               16.7 mm at 0.07  (3 verts, 14 frames)
+          footL into spine              16.4 mm at 1.58  (4 verts, 81 frames)
+          spine into foreR              16.0 mm at 0.12  (9 verts, 15 frames)
+          stretch x12.67 at 1.60 on hips

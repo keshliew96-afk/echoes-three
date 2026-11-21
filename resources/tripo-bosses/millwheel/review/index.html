@@ -1,0 +1,547 @@
+<title>Tripo Millwheel Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600&display=swap">
+<style>
+/* Layout: a review bench, the same one the hero pages use. The live model on the left, the model as sent on the right, facts and notes under. */
+:root{
+  --bg:#f3f2ee; --panel:#fbfaf7; --fg:#23262b; --muted:#666b73; --line:#d9d6cd;
+  --stage:#c9cbc6; --stage2:#b4b7b0; --accent:#2f7d57; --accent-fg:#ffffff; --warn:#9a5b12; --chip:#e8e6df; --phase:#7a5fc4;
+  --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#17191c; --panel:#1f2226; --fg:#e8e9ea; --muted:#9aa0a8; --line:#33383f;
+  --stage:#3a3e43; --stage2:#2b2e33; --accent:#6fcf9a; --accent-fg:#10231a; --warn:#e0a45a; --chip:#2a2e34; --phase:#b79cf0; color-scheme:dark}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 48px}
+.wrap{max-width:1120px;margin:0 auto;display:flex;flex-direction:column;gap:24px}
+h1{font-family:var(--display);font-size:28px;font-weight:600;margin:0;text-wrap:balance}
+h2{font-family:var(--display);font-size:17px;font-weight:600;margin:0}
+.lede{color:var(--muted);margin:4px 0 0;max-width:65ch}
+.bench{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,1.25fr);gap:16px;align-items:start}
+@media (max-width:820px){.bench{grid-template-columns:minmax(0,1fr)}}
+.pane{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;min-width:0}
+.pane header{display:flex;justify-content:space-between;align-items:baseline;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.tag{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.stage{position:relative;background:radial-gradient(ellipse at 50% 70%,var(--stage),var(--stage2));aspect-ratio:4/3;max-width:100%}
+.stage canvas{transition:filter .9s;display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+.stage .hint{position:absolute;left:12px;bottom:10px;font-size:12px;color:var(--fg);opacity:.7;pointer-events:none}
+.stage .load{position:absolute;inset:0;display:grid;place-items:center;color:var(--fg);font-size:14px}
+.sent img{display:block;width:100%;height:auto}
+.controls{display:flex;flex-direction:column;gap:10px;padding:12px 14px}
+.row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.row .lab{font-size:12px;color:var(--muted);width:52px;flex:none}
+button{font:inherit;font-size:13px;font-weight:500;color:var(--fg);background:var(--chip);border:1px solid transparent;border-radius:999px;padding:5px 12px;cursor:pointer}
+button:hover{border-color:var(--muted)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+button:disabled{opacity:.38;cursor:not-allowed;border-color:transparent}
+.layers{margin:0 0 0 58px;font-size:13px;font-weight:500;color:var(--accent);min-height:1.5em}
+.rule{margin:0 0 0 58px;font-size:12px;color:var(--muted);max-width:62ch}
+.phases{margin:0 0 0 58px;display:flex;gap:2px;height:22px;position:relative;max-width:520px}
+.phases span{flex:var(--w) 1 0;min-width:0;background:var(--chip);font-size:11px;line-height:22px;text-align:center;color:var(--muted);overflow:hidden;white-space:nowrap;border-radius:3px}
+.phases span.on{background:var(--phase);color:var(--panel)}
+.phases i{position:absolute;top:-2px;bottom:-2px;width:2px;background:var(--fg);left:0;border-radius:1px}
+@media (max-width:480px){.layers,.rule,.phases{margin-left:0}}
+.note{font-size:13px;color:var(--muted);padding:0 14px 12px;margin:0}
+.wrap>.note{padding:0;max-width:78ch}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin:0}
+.facts div{background:var(--panel);padding:12px 14px}
+.facts dt{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.facts dd{margin:2px 0 0;font-family:var(--display);font-size:20px;font-variant-numeric:tabular-nums}
+.facts small{display:block;font-family:var(--body);font-size:12px;color:var(--muted)}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:24px}
+.cols ul{margin:8px 0 0;padding-left:18px;display:flex;flex-direction:column;gap:6px;max-width:60ch}
+.rough{color:var(--warn)}
+.audit{overflow-x:auto;margin:0}.audit table{border-collapse:collapse;width:100%;font-size:14px;font-variant-numeric:tabular-nums}.audit th,.audit td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}.audit th{font-weight:600}
+</style>
+
+<div class="wrap">
+  <div>
+    <h1>Millwheel from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 5</span></h1>
+    <p class="lede">Your export of the second Level II boss, rigged as what it is: a wheel with no legs. It rolls on the ends of its twelve pegs, and the peg on the floor is its foot: it stays where it is while the wheel pivots over it, then the next peg takes the weight. The two iron brackets on the axle hang free and swing like pendulums with every lurch. Its timings are the game's. Pick a move, drag to turn it, and judge the weight and the hit. Nothing in the game has changed.</p>
+    <p class="note"><strong>Changed 13 Nov, your ask:</strong> Cog Shards is gone. In its place is the Plank Spin: the wheel jumps, lies down flat and spins, its twelve planks fly off one by one, each plank spins where it lands, and the planks fade away while the wheel grows new ones and stands up.</p>
+    <p class="note"><strong>Changed 14 Nov, your ask:</strong> the wheel no longer grows new planks. Each socket stays empty while its plank spins on the floor. When the plank's 4 s are up, an Ember path lights from the plank to its socket, and the plank flies back down it, hitting anyone on the path, and snaps home. The wheel lies flat until all twelve are back, then stands up.</p>
+    <p class="note"><strong>Changed 14 Nov, version 5, your answer:</strong> each wall hit now shakes loose 1 to 3 planks at random, the ones that struck the wall. If no plank is left on the wheel, a wall hit shakes none loose. A new plank lands clear of any already lying there.</p>
+    <p class="note"><strong>Version 4, your ask:</strong> when the Crosscut hits the wall, the planks that struck it shake loose. Each falls off on its own, tumbling, bounces once, lies flat on an Ember mark that shows where it will come to rest, and spins there just like a Plank Spin plank: 4 s in its Violet ring, then the Ember path home, the flight back that hurts, and the snap into its socket. The wheel fights on with the gaps; it drops onto its rim where a socket is empty.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Roll sets what it does between attacks, and Going turns it on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death holds it down: press it again and it spawns back in. A wheel can only change what it is doing while a peg is flat on the floor, so from a roll a move waits for the next peg (0.28 s at most), and Idle makes it rock to a stop. The grey slab is a stand-in for the room's far wall, drawn see-through so it does not hide the slam.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="millwheel-views.png" alt="The Tripo Millwheel from the front, its left, the back and its right, before rigging" width="810" height="864">
+      <p class="note" style="padding-top:12px">It came through whole: twelve pegs, the rim with its iron straps, the cog ring inside it, eight spokes, the hub plates with their violet lights, and both brackets. It was 9% narrower than it was tall, so I made it round: a wheel that is not round cannot roll. I also turned it a quarter turn so it rolls forward.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>26,102 <small>boss budget 30,000 · 26,080 as sent, the rest close the two brackets where I cut them off the axle</small></dd></div>
+    <div><dt>Bones</dt><dd>16 <small>the root, the wheel, one for each bracket, and one for each of the twelve planks so a plank can leave the wheel</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.5 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.59 u across <small>peg tips 1.29 u from the hub, as the game's wheel (1.3 u), beside a 1 u hero</small></dd></div>
+    <div><dt>Ground per peg</dt><dd>0.67 u <small>twelve pegs a turn, so one turn is 8.08 u and takes 3.37 s at the game's 2.4 u/s</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>It never quite stands still. It rocks on the flat of one peg and creaks from side to side. Once a loop it gets restless, rolls on to the next peg, waits, and rolls back. Then it shivers on the spot. The brackets sway the whole time.</td><td>6 s loop</td></tr>
+      <tr><td>Roll</td><td>One whole turn of the wheel. It surges a little over each peg, wobbles from side to side, and the brackets are dragged round a little by the turning axle and bounce on every peg. Each peg lands with a puff of dust.</td><td>2.4 u/s, as the game. 3.37 s a turn, a peg every 0.28 s.</td></tr>
+      <tr><td>Stop <em>(plays by itself)</em></td><td>Coming out of a roll it arrives on a peg still moving, rocks on over the front edge of that peg, falls back flat with a clunk and rocks once more, smaller.</td><td>0.7 s. Mine: the game stops it instantly.</td></tr>
+      <tr><td>Turn left, turn right</td><td>A wheel turns by leaning. It tips toward the inside of the turn and swivels on the peg it stands on, rocking between the back and front edges of that peg.</td><td>120° a second (my number: the game turns it instantly)</td></tr>
+      <tr><td>Plank Spin <em>(your move, 13 Nov)</em></td><td>It rocks back, jumps, turns onto its side in the air and lands flat on the end of its axle with a thud, leaning on its rim. It grinds round, faster and faster, and rises level like a spinning top while the cog ring heats up. Then the planks fly off the rim one at a time, in a shuffled order, each to its own Ember mark, tumbling as they go. A plank that lands keeps spinning on the spot inside a Violet ring. The bare wheel winds down and lies still on its rim. As each plank slows, an Ember path lights from it to its empty socket; the plank lifts, flies back down the path spinning, hitting anyone on it, and snaps into its socket with a jolt. With all twelve home, it kicks itself upright in the air and lands on a peg.</td><td>All mine until the game has the move. Flat at 0.5 s; the first plank leaves at 48 ticks (0.8 s, the old Cog Shards warning) and the last at 1.66 s; each flies 0.42 s and lands 2.0 to 5.4 u from the hub; it spins there for 4 s inside a 0.55 u ring. The wheel makes two whole turns at up to 1.5 turns a second, is still at 2.3 s. Each path shows 0.5 s before its plank lifts; the plank flies back in 0.42 s down a path 0.6 u wide, and the planks snap home between 5.64 and 6.50 s. Upright at 7.07 s, settled at 7.67 s. On this page the first plank always lands on the hero, so its path back runs through the hero's spot.</td></tr>
+      <tr><td>Crosscut</td><td>It rocks back, forward and further back while the lane fills, the hub lights rising. It bursts off the peg and really rolls: eight pegs down the lane with sparks off every one. It hits the far wall, jumps, tips and drops, and 1 to 3 of the planks that struck the wall, picked at random, shake loose and fall, tumbling, to either side. Then it is dizzy: it teeters round like a dropped coin with its lights flickering, and steadies.</td><td>Game: rock for the 66-tick lane (1.6 u wide), burst 2.5 frames, 9 u/s to the far wall (here 5.39 u in 0.60 s: eight whole pegs), slam 2.5 frames, held 3 frames, dizzy 75 ticks, settle 0.45 s. Mine: the loose planks fall for about 0.8 s, then spin 4 s, light their path 0.5 s and fly home in 0.42 s, as in the Plank Spin. The hero stands 3.2 u down the lane and the rim reaches them 0.20 s into the cut.</td></tr>
+      <tr><td>Hurt</td><td>It jolts back on its peg and tips, and the brackets fly apart. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Thrown back one whole peg, teetering and twisting as it goes, then it rocks and squares up.</td><td>1.1 s. It goes back 0.67 u, not the game's 0.3 u: see the open choices.</td></tr>
+      <tr><td>Spawn</td><td>Grows from the floor rocked forward, drops onto its peg with two clunks, wobbles and settles.</td><td>Game: grow in 7 frames, then stand. The clunks and the wobble are mine.</td></tr>
+      <tr><td>Death</td><td>The turn goes out of it. It teeters, tips over onto its side, and rings round on its rim like a dropped lid, lower and faster, until it lies still, propped on the end of its axle and the edge of its rim. The brackets fall to the floor and the lights go out.</td><td>2.8 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">The same checker as the wolf and the heron: every point of the model (16,524 of them) through every frame of every move (1,736 frames). Sizes are in u; the wheel is 2.59 u across.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found while building</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>In the Plank Spin the brackets snapped 32° in the frame it left the floor.</td><td>None. The swing now carries through the jump.</td></tr>
+      <tr><td>Any part under the floor</td><td>When the wheel leaned, the edge of the peg it stood on went 0.01 to 0.02 u into the floor. Lying dead, it floated on the end of its axle.</td><td>Nothing, in any move. A leaning wheel now stands on the edge of its peg, and the dead wheel rests on its axle end and its rim.</td></tr>
+      <tr><td>One part pushed through another</td><td>The brackets turn about the axle beside the wheel, so they cannot reach it. Nothing found.</td><td>None.</td></tr>
+      <tr><td>A plank leaving the wheel</td><td>The planks and the rim are one skin, so a plank that flew off would have torn a hole in the rim.</td><td>Each plank has its own joint at the face of the rim. When a plank flies, its joint closes it into its socket and a copy of that same plank does the flying. The empty socket shows as the iron strap with nothing in it. The socket stays empty until that plank flies back; the joint opens it again in the frame the plank arrives, with a small overshoot, so the plank seems to snap in.</td></tr>
+      <tr><td>The wheel's turn from one move into the next</td><td>Each move was written starting upright, so the wheel snapped back to the same peg every time a move began.</td><td>The page carries the turn. A move starts on whichever peg is down, and a roll picks up from where the wheel stands.</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>0 loop jumps.</td><td>0 loop jumps. The idle pauses twice on purpose, either side of its restless roll.</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>The peg on the floor sliding along the floor (the legless rule: its locked foot)</td><td>0 mm in the idle, the roll, the turns and the stop. 3 mm at most in the Crosscut. In the Plank Spin it is off its pegs from the jump until it lands again.</td></tr>
+      <tr><td>The same peg lifting as the wheel leans onto its edge</td><td>Up to 12 mm (hurt, heavy hit, death). This is the peg rolling onto its edge, not a slide.</td></tr>
+      <tr><td>Loops that jump when they restart (idle, roll, both turns)</td><td>0</td></tr>
+      <tr><td>Lowest point of the model under the floor</td><td>None. The deepest is 3 mm, in the death.</td></tr>
+      <tr><td>Roundness</td><td>The twelve peg tips are 1.29 to 1.30 u from the hub after rounding.</td></tr>
+      <tr><td>Brackets</td><td>Run as pendulums on the axle: shaken by every lurch, dragged a little by the turning axle, and settling after it stops.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>Moves start on a peg.</strong> An attack, a hit or a death waits until a peg is flat on the floor: up to 0.28 s out of a roll, and up to 0.6 s if you catch the idle in its restless roll. That is the price of a peg that never slides. Say if a hit should land at once and let the wheel jump.</li>
+        <li><strong>The stop.</strong> Rocking to rest out of a roll is mine. Say if it should stop dead as the game does.</li>
+        <li><strong>Heavy hit distance.</strong> 0.67 u, one whole peg, so it ends standing on a peg. The game's 0.3 u would leave it between two.</li>
+        <li><strong>Plank Spin numbers.</strong> You gave the move; the numbers are mine: all twelve planks fly, each lands at a random distance 2.0 to 5.4 u out, spins for 4 s in a 0.55 u ring, then flies back to its socket. Say if fewer should fly, if they should go further, or stay longer. It is a new mechanic, so it reaches the game only after the freeze.</li>
+        <li><strong>The spinning wheel itself.</strong> It does not hurt anyone while it lies spinning; only the planks do. Say if standing beside it should hurt too.</li>
+        <li><strong>The path back.</strong> Mine: the path lights 0.5 s before the plank lifts, is 0.6 u wide, and the plank takes 0.42 s to fly home. The wheel lies flat for about 4.4 s waiting for its planks, the party's window to hit it. Say if the warning should be longer, the hit softer, or the wait shorter (a shorter spin on the floor brings them home sooner).</li>
+        <li><strong>The Crosscut's loose planks.</strong> Your rule: every wall hit shakes loose 1 to 3 planks at random, and none once no plank is left on the wheel. Where they land is mine: one to each side of the wheel and the third further out and back on one side, moved along if a plank already lies there. It is a new mechanic, so it reaches the game only after the freeze.</li>
+        <li><strong>The cut's length.</strong> 5.39 u, eight whole pegs. In the game it runs to whatever wall is there; the rig can run any whole number of pegs.</li>
+        <li><strong>The cog ring.</strong> It is one piece with the rim, so it glows when the wheel winds up and does not spin by itself. A spinning ring would need it as its own Tripo piece.</li>
+        <li><strong>What glows.</strong> The game's wheel glows along its spokes. Here the cog ring and the hub lights glow, because that is what your model has.</li>
+        <li><strong>How it lies dead.</strong> On its side, propped on the axle end and the rim, brackets on the floor.</li>
+        <li><strong>Turn speed.</strong> 120° a second is my number, the same as the wolf and the heron.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>Pressing a second Action while one is playing cuts straight to it, and the wheel can jump up to half a peg at that instant.</li>
+        <li>A flying plank is the wheel's own plank end, drawn 1.8 times longer, as if the part inside the rim came out with it.</li>
+        <li>The planks leave in the same shuffled order every time; only where they land changes. They fly straight to their marks and do not bounce. The Crosscut's loose planks do bounce, once; each fall is worked out the moment it hits the wall, so its mark is exact.</li>
+        <li>With planks out, the wheel still rolls; at an empty socket it sinks onto its rim, by about 0.24 u with three gone in a row, more with more gone, and rises again on the next plank. It does not lurch or slow there.</li>
+        <li>Lying flat it stands on the end of its axle, so the rim rides 0.28 u off the floor with one bracket under it.</li>
+        <li>The pegs do not flex or chip, and the moss does not move.</li>
+        <li>The brackets swing as stiff pieces.</li>
+        <li>The far wall and the hero are grey stand-ins. The hero is knocked aside by the cut and stands still while the wheel is dizzy.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for its power, pale dust and sparks for wood and iron on stone. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="millwheel-model.js"></script>
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const cv=$('cv'), stage=cv.parentElement, META=window.MODEL_META, U=2.58673;
+  const VIOLET=0x8F63EE, EMBER=0xFF5A36, DUST=0x8d8478;
+  const LABEL={idle:'Idle',walk:'Roll',turnL:'Turn left',turnR:'Turn right',halt:'Stop',planks:'Plank Spin',crosscut:'Crosscut',hurt:'Hurt',heavyHit:'Heavy hit',spawn:'Spawn',death:'Death'};
+  const ACTIONS=['planks','crosscut','heavyHit'];
+  const NEAR=2.6, LANE=3.2; let HOME=NEAR; // where the hero stands, in u, in front of it: clear of the spinning wheel, and further down the lane for the Crosscut
+  const WALK=2.4, TURN=2*Math.PI/3.0, STEPA=Math.PI/6, RIM=1.294, LOOPS=['idle','walk','turnL','turnR'], XA=new THREE.Vector3(1,0,0);
+  const PK={rim:0.40665,tip:0.50007,flight:0.42,near:2.0,far:5.4,life:4.0,path:0.5,lane:0.6,ring:0.55,stretch:1.8,lead:-0.3}; // the planks: where they sit on the wheel (model units) and how they fly
+  let renderer; try{renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});}catch(e){$('load').textContent='This browser could not start 3D. Try another browser.';return;}
+  renderer.outputEncoding=THREE.sRGBEncoding; renderer.setPixelRatio(Math.min(devicePixelRatio||1,2));
+  const scene=new THREE.Scene();
+  scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f96,0.9));
+  const sun=new THREE.DirectionalLight(0xffffff,0.75); sun.position.set(2.5,6,4.5); scene.add(sun);
+  // the floor: a grid that wraps, and a group for things that lie on the floor and stay where they fell
+  const gridG=new THREE.Group(), fxG=new THREE.Group(); gridG.matrixAutoUpdate=false; fxG.matrixAutoUpdate=false; scene.add(gridG,fxG);
+  const grid=new THREE.GridHelper(48,48,0x4a4f48,0x4a4f48); grid.material.transparent=true; grid.material.opacity=0.85; grid.position.y=0.002; gridG.add(grid);
+  const blob=new THREE.Mesh(new THREE.CircleGeometry(1,40),new THREE.MeshBasicMaterial({color:0x000000,transparent:true,opacity:0.17,depthWrite:false}));
+  blob.rotation.x=-Math.PI/2; blob.scale.set(0.3,1.2,1); blob.position.set(0,0.004,0); scene.add(blob);
+  const cam=new THREE.PerspectiveCamera(32,4/3,0.05,120);
+  const orbit=new THREE.OrbitControls(cam,cv); orbit.enablePan=false; orbit.enableDamping=true; orbit.minDistance=2.5; orbit.maxDistance=30;
+  const VIEWS={Close:{p:[6.4,2.7,6.6],t:[0,1.25,0.9]},'Game zoom':{p:[0,11.6,10.2],t:[0,0.9,1.2]},Side:{p:[13,2.0,1.0],t:[0,1.3,1.0]},Front:{p:[1.2,2.0,13],t:[0,1.3,0]},Back:{p:[-5.4,3.4,-9],t:[0,1.3,0.6]},Top:{p:[0,17,0.4],t:[0,0.4,1.0]}};
+  function setView(n){const v=VIEWS[n];cam.position.set(...v.p);orbit.target.set(...v.t);orbit.update();}
+  function size(){const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;renderer.setSize(w,h,false);cam.aspect=w/h;cam.updateProjectionMatrix();}
+  new ResizeObserver(size).observe(stage); size(); setView('Close');
+
+  // ---- controls
+  function group(id,names,onPick,active,multi){const row=$(id);const btns={};names.forEach(n=>{const b=document.createElement('button');b.textContent=LABEL[n]||n;b.dataset.k=n;b.setAttribute('aria-pressed',String(n===active));b.onclick=()=>onPick(n,b);row.appendChild(b);btns[n]=b;});return btns;}
+  const sel={base:'idle',going:'Forward',action:null,dead:false};
+  let speed=1, paused=matchMedia('(prefers-reduced-motion: reduce)').matches, feel=true, fxOn=true, showTarget=true, helper=null;
+  const B={};
+  B.moves=group('moves',['idle','walk','spawn','death'],k=>pick(k),'idle');
+  B.dirs=group('dirs',['Forward','Turn left','Turn right'],k=>{sel.going=k;if(sel.base!=='walk'&&!sel.dead)sel.base='walk';refresh();},'Forward');
+  B.acts=group('acts',[...ACTIONS,'hurt'],k=>pick(k),null);
+  B.speeds=group('speeds',['0.1×','0.25×','0.5×','1×'],(k)=>{speed=parseFloat(k);Object.values(B.speeds).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'1×');
+  B.views=group('views',Object.keys(VIEWS),k=>{setView(k);Object.values(B.views).forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.k===k)));},'Close');
+  const toggle=(id,get,set)=>{const b=$(id);b.onclick=()=>{set(!get());b.setAttribute('aria-pressed',String(get()));};b.setAttribute('aria-pressed',String(get()));};
+  toggle('feel',()=>feel,v=>feel=v); toggle('fx',()=>fxOn,v=>{fxOn=v;if(!v)clearFx();}); toggle('target',()=>showTarget,v=>{showTarget=v;if(dummy)dummy.visible=v;});
+  toggle('bones',()=>!!(helper&&helper.visible),v=>{if(helper)helper.visible=v;}); toggle('pause',()=>paused,v=>paused=v);
+
+  // ---- model
+  let model=null, mixer=null, mesh=null, A={}, bones={}, PX={}, glowU={value:new THREE.Vector4(0,0.25,0,0.3)}, hurtAct=null, shot=null, dummy=null;
+  const bin=atob(window.MODEL_GLB_B64); const buf=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++)buf[i]=bin.charCodeAt(i);
+  new THREE.GLTFLoader().parse(buf.buffer,'',gltf=>{
+    model=gltf.scene; model.scale.setScalar(U); scene.add(model);
+    model.traverse(o=>{if(o.isBone)bones[o.name]=o; if(o.isSkinnedMesh){mesh=o;o.frustumCulled=false;}});
+    mesh.material.onBeforeCompile=sh=>{sh.uniforms.uGlow=glowU;
+      sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nattribute vec3 _mask;\nvarying vec3 vMask;').replace('#include <begin_vertex>','#include <begin_vertex>\nvMask=_mask;');
+      sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vMask;\nuniform vec4 uGlow;').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\nfloat lk=0.1+0.9*smoothstep(0.05,0.2,diffuseColor.b-diffuseColor.g); totalEmissiveRadiance+=vec3(0.42,0.26,1.0)*uGlow.x*vMask.x*lk+vec3(0.5,0.24,0.95)*uGlow.y*vMask.y+vec3(0.55)*uGlow.z;');};
+    helper=new THREE.SkeletonHelper(model); helper.visible=false; scene.add(helper);
+    mixer=new THREE.AnimationMixer(model);
+    // the wheel's turn about its axle is taken out of every move here; the page puts it back, carried from move to move
+    ['hips','armL','armR'].forEach(n=>{const o=new THREE.Object3D(); o.name=n+'P'; model.add(o); PX[n]=o;});
+    const UPPER=/^(hips|hipsP|armLP|armRP)\./; const qa=new THREE.Quaternion(), qb=new THREE.Quaternion();
+    gltf.animations.forEach(c=>{
+      c.tracks=c.tracks.filter(t=>!(t.name==='root.position')&&!(t.name==='root.scale'&&c.name!=='spawn'));
+      c.tracks.forEach(t=>{ const m=/^(hips|armL|armR)\.quaternion$/.exec(t.name); if(!m)return; const arm=m[1]!=='hips';
+        for(let i=0;i<t.times.length;i++){ const r=rollAt(c.name,t.times[i]); qa.fromArray(t.values,i*4); qb.setFromAxisAngle(XA,arm?r:-r); if(arm)qa.premultiply(qb); else qa.multiply(qb); qa.toArray(t.values,i*4); }
+        t.name=m[1]+'P.quaternion'; });
+      if(c.name==='hurt'){const h=new THREE.AnimationClip('hurtAdd',c.duration,c.tracks.filter(t=>UPPER.test(t.name)).map(t=>t.clone())); THREE.AnimationUtils.makeClipAdditive(h,0,h,60); hurtAct=mixer.clipAction(h); hurtAct.blendMode=THREE.AdditiveAnimationBlendMode; hurtAct.setLoop(THREE.LoopOnce,1); hurtAct.clampWhenFinished=false; return;}
+      const a=mixer.clipAction(c); const loop=META[c.name].loop; a.setLoop(loop?THREE.LoopRepeat:THREE.LoopOnce,loop?Infinity:1); a.clampWhenFinished=true; a.setEffectiveWeight(0); a.__w=0; a.play(); if(!loop)a.paused=true; A[c.name]=a;});
+    A.idle.__w=1; A.idle.setEffectiveWeight(1);
+    makeFx(); $('load').hidden=true; refresh();
+    window.__review={sel,pick,A,META,bones,state:()=>({shot:shot&&shot.name,hipY:+bones.hips.getWorldPosition(new THREE.Vector3()).y.toFixed(3),tele:[MARKS.filter(q=>q.visible).length,laneT.visible],roll:+(roll*180/Math.PI).toFixed(1),owner,curB,queued:queued&&queued.name,wall:+wallK.toFixed(2),cc:[ccOut(),ccLast,PLK.filter(q=>q.st==='fall').length,+ccDrop_.toFixed(4),CCS.map((v,k)=>v>=0?k+'@'+PLK[k].b.x.toFixed(2)+','+PLK[k].b.z.toFixed(2)+':'+PLK[k].st:'').filter(Boolean).join(' ')],planks:[PLK.filter(q=>q.st==='fly').length,PLK.filter(q=>q.st==='spin').length,PLK.filter(q=>q.st==='back').length,RLANES.filter(g=>g.visible).length,+plkErr.toFixed(3)],dummy:dummy?[+dummy.position.x.toFixed(2),+dummy.position.z.toFixed(2)]:null,t:shot&&+shot.action.time.toFixed(3),fx:FXP.filter(p=>p.life>0).length,rings:RINGS.filter(r=>r.t>=0).length,glow:glowU.value.toArray().map(v=>+v.toFixed(2)),floor:[+floorPos.x.toFixed(2),+floorPos.z.toFixed(2),+floorYaw.toFixed(2)],weights:Object.fromEntries(Object.entries(A).filter(([k,a])=>a.__w>0.01).map(([k,a])=>[k,+a.__w.toFixed(2)]))}),setSpeed:v=>speed=v,step:(dt)=>tick(dt),pause:v=>paused=v,cam,orbit};
+  },e=>{$('load').textContent='The model could not be read.';});
+
+  // ---- what plays
+  function baseName(){return sel.dead?null:sel.base==='walk'?(sel.going==='Forward'?'walk':sel.going==='Turn left'?'turnL':'turnR'):'idle';}
+  function startShot(name,hold,soft){ if(!A[name])return; if(shot){shot.action.__w=0;shot.action.setEffectiveWeight(0);}
+    const a=A[name]; a.reset(); a.paused=false; a.__w=soft?0:1; a.setEffectiveWeight(a.__w); if(!soft)Object.entries(A).forEach(([k,x])=>{if(x!==a){x.__w=Math.min(x.__w,0.0);x.setEffectiveWeight(x.__w);}});
+    queued=null; own(name);
+    shot={name,action:a,prev:0,hold:!!hold,done:false,gap:0,tz:0,soft:!!soft}; fxStart(name); }
+  // a move asked for while another plays cuts in at once; otherwise it waits for a peg to be flat on the floor
+  function go(name,hold){ if(shot&&!shot.done)startShot(name,hold); else queued={name,hold:!!hold}; }
+  function pick(k){
+    if(!mixer)return;
+    if(k==='idle'||k==='walk'){ if(sel.dead)return; sel.base=k; }
+    else if(k==='spawn'){ sel.dead=false; sel.action=null; cv.style.filter=''; startShot('spawn'); }
+    else if(k==='death'){ if(sel.dead){ sel.dead=false; cv.style.filter=''; startShot('spawn'); } else { sel.dead=true; sel.action=null; go('death',true); } }
+    else if(k==='hurt'){ if(sel.dead)return; hurtAct.reset(); hurtAct.setEffectiveWeight(1); hurtAct.play(); hitFeel(0.3,0.04,0.5); flash=0.35; if(fxOn)sparks(pt(bones.hips,[0.13,0.02,0.04]),6,0xfff4e0,1.6,0.25); }
+    else { if(sel.dead)return; sel.action=sel.action===k?null:k; if(sel.action&&(!shot||shot.done||shot.name!==k))go(k); else if(!sel.action)queued=null; }
+    refresh();
+  }
+  function refresh(){
+    Object.values(B.moves).forEach(b=>{const k=b.dataset.k; b.setAttribute('aria-pressed',String(k==='death'?sel.dead:k==='spawn'?!!(shot&&shot.name==='spawn'&&!shot.done):!sel.dead&&sel.base===k)); b.disabled=sel.dead&&(k==='idle'||k==='walk'); b.textContent=k==='death'&&sel.dead?'Death (press to spawn)':LABEL[k];});
+    Object.values(B.dirs).forEach(b=>{b.setAttribute('aria-pressed',String(sel.base==='walk'&&!sel.dead&&b.dataset.k===sel.going)); b.disabled=sel.dead;});
+    Object.values(B.acts).forEach(b=>{b.setAttribute('aria-pressed',String(sel.action===b.dataset.k)); b.disabled=sel.dead;});
+  }
+  function showPhase(){
+    const el=$('layers'), ph=$('phases'), tag=$('clipname'); const bn=baseName();
+    if(shot&&!shot.done){ const m=META[shot.name], t=shot.action.time; let cur=''; m.phases.forEach(p=>{if(t>=p[1])cur=p[0];});
+      el.textContent=LABEL[shot.name]+(cur?' · '+cur:'')+' · '+t.toFixed(2)+' s'; tag.textContent=LABEL[shot.name];
+      if(ph.dataset.name!==shot.name){ph.dataset.name=shot.name; ph.innerHTML=m.phases.map((p,i)=>{const e=i+1<m.phases.length?m.phases[i+1][1]:m.dur;return '<span style="--w:'+Math.max(0.04,(e-p[1])).toFixed(3)+'">'+p[0]+'</span>';}).join('')+'<i></i>'; ph.hidden=!m.phases.length;}
+      const spans=ph.querySelectorAll('span'); m.phases.forEach((p,i)=>spans[i]&&spans[i].classList.toggle('on',p[0]===cur)); const mk=ph.querySelector('i'); if(mk)mk.style.left=(100*Math.min(1,t/m.dur)).toFixed(1)+'%';
+    } else { el.textContent=sel.dead?'Down. Press Death again to spawn it back in.':(LABEL[bn]||'')+(queued?' · '+LABEL[queued.name]+' starts on the next peg':sel.action?' · '+LABEL[sel.action]+' repeats':''); tag.textContent=sel.dead?'Death':LABEL[bn]||''; ph.hidden=true; ph.dataset.name=''; }
+  }
+
+  // ---- floor motion: the floor moves under it, it stays in the middle of the stage
+  const floorPos=new THREE.Vector3(); let floorYaw=0; const PIV=new THREE.Vector3(0,0,0); // it swivels on the peg it stands on
+  function moveFloor(dz,dyaw){ // it moves forward dz and turns left dyaw: the floor does the opposite
+    floorPos.z-=dz; if(dyaw){ floorPos.sub(PIV).applyAxisAngle(Y,-dyaw).add(PIV); floorYaw-=dyaw; }
+    fxG.matrix.makeRotationY(floorYaw).setPosition(floorPos);
+    const l=floorPos.clone().applyAxisAngle(Y,-floorYaw); l.x-=Math.round(l.x); l.z-=Math.round(l.z); l.applyAxisAngle(Y,floorYaw); gridG.matrix.makeRotationY(floorYaw).setPosition(l);
+  }
+  const Y=new THREE.Vector3(0,1,0), tmp=new THREE.Vector3(), tmp2=new THREE.Vector3();
+  const pt=(bone,v)=>tmp.set(v[0],v[1],v[2]).applyMatrix4(bone.matrixWorld).clone();
+  const toFloor=(w)=>w.clone().applyMatrix4(fxG.matrix.clone().invert());
+
+  // ---- hit feel: freeze, squash (the game's boss contact squash: 11% wider, 5% shorter), shake, flash
+  let hitstop=0, squash=0, shake=0, flash=0; const shakeV=new THREE.Vector3();
+  function hitFeel(sh,stop,sq){ if(!feel)return; hitstop=Math.max(hitstop,stop); squash=Math.max(squash,sq); shake=Math.max(shake,sh); }
+
+  // ---- effects (dim on purpose; Ember marks the floor warnings, Violet is its power, pale dust and sparks are wood and iron on stone)
+  const CC_G=12, CCS=new Array(12).fill(-1), CCR=new Array(12).fill(-1); // the Crosscut's loose planks (Kesh, 14 Nov): CCS 0 while a plank is off the wheel, CCR when it came home
+  const FXP=[], RINGS=[], PLK=[], MARKS=[], RLANES=[]; let dotTex=null, laneT=null, rune=null, wall=null, plkErr=0, plkAt=[];
+  let lamps=0.35, lampsTo=0.35, cog=0.12, cogTo=0.12, wallK=0, wallTo=0;
+  const clamp01=v=>Math.max(0,Math.min(1,v));
+  function makeFx(){
+    const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); const gr=g.createRadialGradient(32,32,0,32,32,32); gr.addColorStop(0,'rgba(255,255,255,1)'); gr.addColorStop(0.4,'rgba(255,255,255,0.55)'); gr.addColorStop(1,'rgba(255,255,255,0)'); g.fillStyle=gr; g.fillRect(0,0,64,64); dotTex=new THREE.CanvasTexture(c);
+    for(let i=0;i<140;i++){const s=new THREE.Sprite(new THREE.SpriteMaterial({map:dotTex,transparent:true,depthWrite:false,opacity:0})); s.visible=false; scene.add(s); FXP.push({s,life:0,age:0,v:new THREE.Vector3(),g:0,s0:0.1,s1:0.2,a:0.5,floor:false});}
+    for(let i=0;i<12;i++){const m=new THREE.Mesh(new THREE.RingGeometry(0.93,1,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false,side:THREE.DoubleSide})); m.visible=false; RINGS.push({m,t:-1,dur:0.5,r0:0.1,r1:1,a:0.4,bill:false});}
+    // the floor warnings: twelve Ember marks, one where each plank will land (Plank Spin), and one Ember lane (Crosscut)
+    for(let k=0;k<12;k++){ const mk=new THREE.Group(); const em=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.6,depthWrite:false}), ef=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.14,depthWrite:false});
+      const mr=new THREE.Mesh(new THREE.RingGeometry(0.93,1,40),em), mf=new THREE.Mesh(new THREE.CircleGeometry(1,40),ef); mr.rotation.x=mf.rotation.x=-Math.PI/2; mk.add(mr,mf); mk.userData={fill:mf,em}; mk.scale.setScalar(PK.ring); mk.visible=false; fxG.add(mk); MARKS.push(mk); }
+    laneT=new THREE.Group(); const lfM=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.16,depthWrite:false}), leM=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0.6,depthWrite:false});
+    const lf=new THREE.Mesh(new THREE.PlaneGeometry(1,1),lfM); lf.rotation.x=-Math.PI/2; const edge=(w,l,x,z)=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(w,l),leM); m.rotation.x=-Math.PI/2; m.position.set(x,0.001,z); laneT.add(m); return m;};
+    laneT.add(lf); laneT.userData={lf,lfM,leM,eL:edge(0.022,1,-0.489,0),eR:edge(0.022,1,0.489,0),eF:edge(1,0.035,0,0)}; laneT.scale.x=1.6; laneT.position.y=0.013; laneT.visible=false; fxG.add(laneT);
+    // the paths back: an Ember lane from each plank to its empty socket, lit before the plank flies home (Kesh, 14 Nov)
+    for(let k=0;k<12;k++){ const g=new THREE.Group(); const fM=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0,depthWrite:false}), eM=new THREE.MeshBasicMaterial({color:EMBER,transparent:true,opacity:0,depthWrite:false});
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(1,1),fM); f.rotation.x=-Math.PI/2; g.add(f); const eL=new THREE.Mesh(new THREE.PlaneGeometry(0.03,1),eM), eR=new THREE.Mesh(new THREE.PlaneGeometry(0.03,1),eM);
+      [eL,eR].forEach((m,i)=>{ m.rotation.x=-Math.PI/2; m.position.set((i?1:-1)*(PK.lane/2-0.015),0.001,0); g.add(m); }); g.position.y=0.014+0.0003*k; g.visible=false; g.userData={f,fM,eM,eL,eR}; fxG.add(g); RLANES.push(g); }
+    // the room's far wall, for the Crosscut to end against
+    wall=new THREE.Mesh(new THREE.BoxGeometry(3.6,1.1,0.4),new THREE.MeshStandardMaterial({color:0x4d4b47,roughness:1,transparent:true,opacity:0,depthWrite:false,emissive:0xffffff,emissiveIntensity:0})); wall.visible=false; fxG.add(wall);
+    buildPlanks();
+    // the spawn's rune ring
+    const mkRune=(r)=>{const gq=new THREE.Group(); const o=new THREE.Mesh(new THREE.RingGeometry(r*0.94,r,64),new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0.5,depthWrite:false})); const i2=new THREE.Mesh(new THREE.RingGeometry(r*0.62,r*0.66,6),o.material); const i3=new THREE.Mesh(new THREE.RingGeometry(r*0.4,r*0.43,3),o.material); [o,i2,i3].forEach(m=>{m.rotation.x=-Math.PI/2;gq.add(m);}); gq.userData.mat=o.material; gq.position.y=0.013; gq.visible=false; return gq;};
+    rune=mkRune(1.5); fxG.add(rune);
+    RINGS.forEach(r=>scene.add(r.m));
+    // a hero's height, for scale and to take the hit
+    dummy=new THREE.Group(); const dm=new THREE.MeshStandardMaterial({color:0x6b645c,roughness:1,emissive:0xffffff,emissiveIntensity:0}); const body=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.24,0.62,16),dm); body.position.y=0.31; const head=new THREE.Mesh(new THREE.SphereGeometry(0.2,16,12),dm); head.position.y=0.8; dummy.add(body,head); dummy.userData={mat:dm,z:HOME,x:0,sx:0,kick:0,hold:0}; dummy.position.set(0,0,HOME); scene.add(dummy);
+  }
+  // the twelve planks, each cut out of the model as its own piece (the plank's end beyond the rim, closed where it left the socket),
+  // laid flat: its length along z, its width along x. The wheel keeps its own planks; these copies do the flying.
+  function buildPlanks(){ const g=mesh.geometry, P=g.attributes.position, N=g.attributes.normal, UV=g.attributes.uv, SI=g.attributes.skinIndex, ix=g.index.array, sk=mesh.skeleton.bones, rc=(PK.rim+PK.tip)/2;
+    for(let k=0;k<12;k++){ const bi=sk.indexOf(bones['peg'+k]), a=k*Math.PI/6, ca=Math.cos(a), sa=Math.sin(a), cy=0.5-rc*ca, cz=rc*sa; const map=new Map(), pos=[], nor=[], uv=[], tri=[], weld=new Map(), wid=[], edge=new Map();
+      const vtx=(i)=>{ if(map.has(i))return map.get(i); const x=P.getX(i), y=P.getY(i)-cy, z=P.getZ(i)-cz, nx=N.getX(i), ny=N.getY(i), nz=N.getZ(i); const j=pos.length/3;
+        pos.push(x*U,(y*sa+z*ca)*U,(-y*ca+z*sa)*PK.stretch*U); nor.push(nx,ny*sa+nz*ca,-ny*ca+nz*sa); uv.push(UV.getX(i),UV.getY(i)); map.set(i,j);
+        const key=Math.round(P.getX(i)*2e4)+','+Math.round(P.getY(i)*2e4)+','+Math.round(P.getZ(i)*2e4); if(!weld.has(key))weld.set(key,j); wid.push(weld.get(key)); return j; };
+      for(let t=0;t<ix.length;t+=3){ const i0=ix[t], i1=ix[t+1], i2=ix[t+2]; if(SI.getX(i0)!==bi||SI.getX(i1)!==bi||SI.getX(i2)!==bi)continue; const v=[vtx(i0),vtx(i1),vtx(i2)]; tri.push(v[0],v[1],v[2]);
+        for(let e=0;e<3;e++){ const p=v[e], q=v[(e+1)%3], kf=wid[p]+'>'+wid[q], kb=wid[q]+'>'+wid[p]; if(edge.has(kb))edge.delete(kb); else edge.set(kf,[p,q]); } }
+      if(edge.size){ let sx=0, sy=0, sz=0, n=0, u0=0, v0=0; edge.forEach(([p])=>{ sx+=pos[p*3]; sy+=pos[p*3+1]; sz+=pos[p*3+2]; u0=uv[p*2]; v0=uv[p*2+1]; n++; }); const c=pos.length/3; pos.push(sx/n,sy/n,sz/n); nor.push(0,0,-1); uv.push(u0,v0); edge.forEach(([p,q])=>tri.push(q,p,c)); } // the end that was in the socket
+      const bg=new THREE.BufferGeometry(); bg.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); bg.setAttribute('normal',new THREE.Float32BufferAttribute(nor,3)); bg.setAttribute('uv',new THREE.Float32BufferAttribute(uv,2)); bg.setIndex(tri); bg.computeBoundingBox();
+      const mat=new THREE.MeshStandardMaterial({map:mesh.material.map,roughness:mesh.material.roughness,metalness:0,transparent:true}); const pm=new THREE.Mesh(bg,mat); const grp=new THREE.Group(); grp.add(pm);
+      const rm=new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false}), fm=new THREE.MeshBasicMaterial({color:VIOLET,transparent:true,opacity:0,depthWrite:false});
+      const ring=new THREE.Mesh(new THREE.RingGeometry(0.92,1,40),rm), fill=new THREE.Mesh(new THREE.CircleGeometry(1,40),fm); ring.rotation.x=fill.rotation.x=-Math.PI/2; ring.scale.setScalar(PK.ring); fill.scale.setScalar(PK.ring); ring.position.y=0.012+0.0004*k; fill.position.y=0.011+0.0004*k; grp.add(ring,fill);
+      grp.visible=false; fxG.add(grp); PLK.push({g:grp,m:pm,mat,rm,fm,st:'off',t:0,a:new THREE.Vector3(),b:new THREE.Vector3(),h:0.6,thick:-bg.boundingBox.min.y,spin:0,tris:tri.length/3}); } }
+  function plankThrow(k){ if(!fxOn||!plkAt[k])return; const q=PLK[k], from=pt(bones['peg'+k],[0,0,0]), hub=hubW(); q.a.copy(toFloor(from)); q.b.copy(plkAt[k]); q.h=0.35+Math.random()*0.5; q.t=0; q.st='fly'; q.spin=Math.atan2(from.x-hub.x,from.z-hub.z)-floorYaw; q.g.visible=true; q.m.visible=true; q.mat.opacity=1; q.rm.opacity=q.fm.opacity=0; q.g.position.copy(q.a); q.m.rotation.set(0,q.spin,0);
+    const want=k*Math.PI/6-roll-META.planks.cues.yaw[k], got=Math.atan2(from.z-hub.z,from.x-hub.x); let e=Math.abs(want-got)%(2*Math.PI); if(e>Math.PI)e=2*Math.PI-e; plkErr=Math.max(plkErr,e);
+    sparks(from,4,0xfff4e0,2.2,0.22); hitFeel(0.1,0,0); }
+  function plankLand(k){ const q=PLK[k]; q.st='spin'; q.t=0; MARKS[k].visible=false; const c=q.b.clone().applyMatrix4(fxG.matrix); dust(c,4,1.2,0.4); hitFeel(0.14,0,0);
+    if(dummy&&showTarget&&targetW().distanceTo(c)<PK.ring+0.25){ sparks(targetW().setY(0.5),10,0xfff4e0,2.8,0.3); ringAt(targetW().setY(0.5),{r0:0.15,r1:0.8,dur:0.24,a:0.45,bill:true}); hitFeel(0.5,0.05,0.3); hitDummy(0.95); dummy.userData.hold=PK.life+0.4; } }
+  // the Crosscut (Kesh, 14 Nov): each wall hit shakes loose 1 to 3 planks at random, the ones that struck the wall; with no plank left on
+  // the wheel it shakes none loose (Kesh, 14 Nov, Version 5). Each one
+  // falls on its own, worked out ahead from how it is knocked and how it tumbles, so its Ember mark is where it comes to rest; it
+  // bounces once, lies flat, spins like a Plank Spin plank and flies home down its path.
+  const ccOut=()=>CCS.filter(v=>v>=0).length;
+  function ccFree(k){ CCS[k]=CCR[k]=-1; bones['peg'+k].scale.setScalar(1); }
+  function ccReset(){ for(let k=0;k<12;k++)if(CCS[k]>=0){ const q=PLK[k]; q.st='off'; q.g.visible=false; RLANES[k].visible=false; MARKS[k].visible=false; ccFree(k); } }
+  function ccDrop(){ if(!fxOn||!PLK.length)return; let n=1+Math.floor(Math.random()*3); model.updateMatrixWorld(true); const hub=hubW(), qf=fxG.getWorldQuaternion(new THREE.Quaternion()).invert();
+    const ax=new THREE.Vector3(1,0,0).applyQuaternion(bones.hips.getWorldQuaternion(new THREE.Quaternion())).normalize(), rc=(PK.rim+PK.tip)/2*U;
+    const pick=[]; for(let k=0;k<12;k++){ if(CCS[k]>=0||PLK[k].st!=='off')continue; const d=pt(bones['peg'+k],[0,0,0]).sub(hub).normalize(); pick.push([d.z+0.25*d.y,k,d]); } pick.sort((a,b)=>b[0]-a[0]); n=Math.min(n,pick.length); ccLast=n; if(n<=0)return;
+    const taken=PLK.filter(q=>q.st!=='off').map(q=>q.b.clone().applyMatrix4(fxG.matrix)); // rest spots of planks already down, so a new one lands clear of them
+    const s0=Math.random()<0.5?1:-1; pick.slice(0,n).forEach(([,k,d],j)=>{ const q=PLK[k], side=j===0?s0:j===1?-s0:(Math.random()<0.5?1:-1), r=()=>Math.random();
+      const yv=new THREE.Vector3().crossVectors(d,ax).normalize(), Q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(ax,yv,d)).premultiply(qf);
+      const p=toFloor(hub.clone().addScaledVector(d,rc)), far=j===2, p0=hub.clone().addScaledVector(d,rc), vy=1.8+0.4*r(), T=(vy+Math.sqrt(vy*vy+2*CC_G*Math.max(0,p0.y-0.15)))/CC_G; // aimed: one each side, the third further out and back
+      let ox=side*(far?2.0+0.3*r():1.1+0.2*r()), oz=(far?-0.5:0.45)+0.2*r(); for(let g=0;g<6&&taken.some(t=>Math.hypot(hub.x+ox-t.x,hub.z+oz-t.z)<0.9);g++){ ox+=side*0.6; oz+=(g%2?0.5:-0.5); }
+      taken.push(new THREE.Vector3(hub.x+ox,0,hub.z+oz));
+      const v=new THREE.Vector3((hub.x+ox-p0.x)/T,vy,(hub.z+oz-p0.z)/T).applyQuaternion(qf);
+      const w=ax.clone().multiplyScalar((6+4*r())*(r()<0.5?1:-1)).addScaledVector(yv,3*r()-1.5).addScaledVector(d,4*r()-2).applyQuaternion(qf);
+      const bb=q.m.geometry.boundingBox, C=[]; for(let i=0;i<8;i++)C.push(new THREE.Vector3(i&1?bb.max.x:bb.min.x,i&2?bb.max.y:bb.min.y,i&4?bb.max.z:bb.min.z));
+      const dt=1/120, tr=[], c=new THREE.Vector3(), dq=new THREE.Quaternion(); let bounce=-1, rest=-1;
+      for(let i=0;i<360;i++){ tr.push([p.clone(),Q.clone()]); p.addScaledVector(v,dt); v.y-=CC_G*dt; const wl=w.length(); if(wl>1e-4){ dq.setFromAxisAngle(c.copy(w).divideScalar(wl),wl*dt); Q.premultiply(dq); }
+        let lo=1e9; C.forEach(e=>{ lo=Math.min(lo,c.copy(e).applyQuaternion(Q).y); }); if(p.y+lo>0||v.y>0)continue; p.y=-lo;
+        if(bounce<0){ bounce=tr.length*dt; v.y=-0.35*v.y; v.x*=0.55; v.z*=0.55; w.multiplyScalar(0.45); } else { rest=tr.length; break; } }
+      const zl=new THREE.Vector3(0,0,1).applyQuaternion(Q); let yaw=Math.atan2(zl.x,zl.z); if(Math.hypot(zl.x,zl.z)<0.2)yaw=Math.atan2(v.x,v.z);
+      const flat=new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),yaw), y0=q.thick+0.02; // it settles flat in 0.1 s, sliding a little
+      for(let i=1;i<=12;i++){ const u=i/12, e=u*(2-u); tr.push([new THREE.Vector3(p.x+v.x*0.05*e,p.y+(y0-p.y)*e,p.z+v.z*0.05*e),Q.clone().slerp(flat,e)]); }
+      q.tr=tr; q.bt=bounce; q.b.copy(tr[tr.length-1][0]).setY(0); q.spin=yaw; q.st='fall'; q.t=0; q.g.visible=true; q.m.visible=true; q.mat.opacity=1; q.rm.opacity=q.fm.opacity=0; q.g.position.copy(tr[0][0]); q.m.position.set(0,0,0); q.m.quaternion.copy(tr[0][1]);
+      CCS[k]=0; bones['peg'+k].scale.setScalar(1e-3); MARKS[k].position.copy(q.b).setY(0.013+0.0004*k); sparks(hub.clone().addScaledVector(d,rc),4,0xfff4e0,2.2,0.22); }); }
+  // the empty sockets: the wheel's planks come back in with a snap, and a socket with no plank that comes round under the hub lets
+  // the wheel down onto its rim there
+  function ccPegs(){ if(!ccOut())return; for(let k=0;k<12;k++){ if(CCS[k]<0)continue; let s=1e-3; if(CCR[k]>=0){ const u=Math.min(1,(clockT-CCR[k])/0.12); if(u>=1){ ccFree(k); continue; } s=Math.max(1e-3,1-Math.pow(1-u,3)+0.25*Math.sin(Math.PI*u)*(1-u)); } bones['peg'+k].scale.setScalar(s); }
+    model.updateMatrixWorld(true); const hub=hubW(); let hF=PK.rim, hN=PK.rim;
+    for(let k=0;k<12;k++){ const c=-pt(bones['peg'+k],[0,0,0]).sub(hub).normalize().y, full=PK.tip*c, s=CCS[k]<0?1:Math.min(1,bones['peg'+k].scale.x); hF=Math.max(hF,full); hN=Math.max(hN,PK.rim+s*(full-PK.rim)); }
+    ccDrop_=hF-hN; if(ccDrop_>1e-5){ const ps=bones.hips.parent.getWorldScale(new THREE.Vector3()).y; bones.hips.position.y-=ccDrop_*model.scale.y/ps; } }
+  let ccDrop_=0, ccLast=-1;
+  function puff(pos,vel,o){ if(!fxOn)return; const p=FXP.find(p=>p.life<=0); if(!p)return; p.life=o.life||0.5; p.age=0; p.v.copy(vel); p.g=o.g||0; p.s0=o.s0||0.1; p.s1=o.s1||0.3; p.a=o.a||0.4; p.drag=o.drag||0; p.floor=!!o.floor; p.s.material.color.setHex(o.col||DUST); p.s.material.blending=THREE.NormalBlending; p.s.position.copy(pos); if(p.floor){fxG.add(p.s);p.s.position.copy(toFloor(pos));}else scene.add(p.s); p.s.visible=true; }
+  function dust(pos,n,spd,up,col){ for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2; puff(tmp2.copy(pos).setY(0.05),new THREE.Vector3(Math.cos(a)*spd*(0.5+Math.random()),up*(0.4+Math.random()*0.6),Math.sin(a)*spd*(0.5+Math.random())),{life:0.55+Math.random()*0.3,s0:0.16,s1:0.55,a:0.22,drag:3,floor:true,col});} }
+  function sparks(pos,n,col,spd,life){ if(col===0xfff4e0)col=0xe9dcc0; if(col===0xd9c8ff)col=0xa98cf5; for(let i=0;i<n;i++){const v=new THREE.Vector3(Math.random()-0.5,Math.random()-0.2,Math.random()-0.5).normalize().multiplyScalar(spd*(0.4+Math.random()*0.8)); puff(pos,v,{life:life*(0.6+Math.random()*0.6),s0:0.1,s1:0.02,a:0.5,col,g:-2.5,drag:2});} }
+  function motes(pos,n,spread,rise){ for(let i=0;i<n;i++){ puff(tmp2.copy(pos).add(new THREE.Vector3((Math.random()-0.5)*spread,Math.random()*0.2,(Math.random()-0.5)*spread)),new THREE.Vector3((Math.random()-0.5)*0.2,rise*(0.5+Math.random()),(Math.random()-0.5)*0.2),{life:0.9+Math.random()*0.7,s0:0.07,s1:0.02,a:0.38,col:VIOLET}); } }
+  function ringAt(pos,o){ if(!fxOn)return; const r=RINGS.find(r=>r.t<0); if(!r)return; r.t=0; r.dur=o.dur||0.5; r.r0=o.r0||0.1; r.r1=o.r1||1; r.a=o.a||0.4; r.bill=!!o.bill; r.delay=o.delay||0; r.m.material.color.setHex(o.col||VIOLET); r.m.material.blending=THREE.NormalBlending;
+    if(r.bill){scene.add(r.m); r.m.position.copy(pos);} else {fxG.add(r.m); r.m.position.copy(toFloor(pos)).setY(0.02); r.m.rotation.set(-Math.PI/2,0,0);} r.m.visible=false; }
+  function hideTele(){ if(laneT)laneT.visible=false; MARKS.forEach(q=>q.visible=false); tele=null; }
+  function clearFx(){ FXP.forEach(p=>{p.life=0;p.s.visible=false;}); RINGS.forEach(r=>{r.t=-1;r.m.visible=false;}); PLK.forEach(q=>{q.st='off';q.g.visible=false;}); RLANES.forEach(g=>g.visible=false); for(let k=0;k<12;k++)if(CCS[k]>=0)ccFree(k); hideTele(); if(rune)rune.visible=false; }
+  const targetW=()=>new THREE.Vector3(dummy.position.x,0,dummy.position.z);
+  const hubW=()=>pt(bones.hips,[0,0,0]);
+  const under=()=>hubW().setY(0); // the floor under the hub: where the peg stands
+  const here=()=>toFloor(new THREE.Vector3(0,0,0));
+  let runeT=-1, tele=null;
+  function fxStart(name){
+    hideTele(); HOME=name==='crosscut'?LANE:name==='death'?3.4:NEAR; const m=META[name]; // the hero steps back from the death: the wheel falls onto its side
+    if(name==='planks'){ ccReset(); if(dummy){ const u=dummy.userData; u.sx=0; u.kick=0; u.hold=0; } plkErr=0; // where each plank will land: flung out from where its peg is when it leaves, a little ahead of the spin; the first one onto the hero
+      plkAt=META.planks.cues.throw.map((tt,k)=>{ if(tt===Math.min(...META.planks.cues.throw))return toFloor(new THREE.Vector3(0,0,NEAR)).setY(0); const b=k*Math.PI/6-roll-META.planks.cues.yaw[k]+PK.lead, r=PK.near+Math.random()*(PK.far-PK.near); return toFloor(new THREE.Vector3(Math.cos(b)*r,0,Math.sin(b)*r)).setY(0); });
+      MARKS.forEach((mk,k)=>mk.position.copy(plkAt[k]).setY(0.013+0.0004*k)); }
+    if(name==='crosscut'){ if(dummy){ const u=dummy.userData; u.sx=0; u.kick=0; u.hold=0; } const len=m.travel[m.travel.length-1]+RIM; tele={kind:'lane',len,t0:0,dur:m.cues.go[0],at:here(),yaw:-floorYaw};
+      wall.position.copy(toFloor(new THREE.Vector3(0,0.55,len+0.2))); wall.rotation.y=-floorYaw; wallTo=1; }
+    if(name==='spawn'){ lamps=0; cog=0; cv.style.filter=''; if(fxOn){runeT=0; rune.position.copy(here()).setY(0.013);} }
+    if(name==='heavyHit'){ hitFeel(0.55,0.09,0.6); flash=0.5; if(fxOn)sparks(pt(bones.hips,[0.13,0.02,0.05]),12,0xfff4e0,2.4,0.3); }
+  }
+  function fxContact(name,i){
+    const kind=(META[name].kinds||[])[i];
+    if(kind==='flat'){ hitFeel(0.7,0.06,0.7); if(fxOn){ const p=under(); dust(p,14,2.2,0.7); ringAt(p,{r0:0.5,r1:2.1,dur:0.45,a:0.3,col:DUST}); } }
+    if(kind==='cut'){ if(dummy&&showTarget&&Math.abs(dummy.position.x)<0.8+0.24){ const d=targetW(); hitFeel(0.8,0.07,0.5); if(fxOn){ sparks(d.clone().setY(0.55),10,0xfff4e0,3.0,0.3); ringAt(d.clone().setY(0.55),{r0:0.15,r1:0.9,dur:0.24,a:0.45,bill:true}); }
+        hitDummy(0.12); dummy.userData.sx=10; dummy.userData.hold=META[name].dur-shot.action.time+0.3; } } // knocked out of the lane, and it waits there while the wheel is dizzy
+    if(kind==='slam'){ hitFeel(1,0.1,1); flash=0.35; wall.material.emissiveIntensity=feel?0.15:0; if(name==='crosscut')ccDrop();
+      if(fxOn){ const p=new THREE.Vector3(0,0,RIM); dust(p,14,2.4,0.9); sparks(p.clone().setY(1.0),14,0xfff4e0,3.2,0.35); ringAt(p.clone().setY(1.2),{r0:0.2,r1:1.5,dur:0.3,a:0.4,bill:true}); for(let k=0;k<6;k++)puff(new THREE.Vector3((Math.random()-0.5)*2.4,1.3+Math.random()*0.3,RIM+0.1),new THREE.Vector3((Math.random()-0.5)*0.6,0.4,-0.6*Math.random()),{life:0.8,s0:0.12,s1:0.3,a:0.25,g:-3,drag:1}); } }
+    if(kind==='clunk'){ hitFeel(0.2,0,0.25); if(fxOn)dust(under(),5,1.0,0.4); }
+    if(kind==='thud'){ if(i===0){ hitFeel(0.6,0.04,0.5); if(fxOn){ const p=under(); dust(p,12,1.9,0.7); ringAt(p,{r0:0.4,r1:1.9,dur:0.5,a:0.3,col:DUST}); } } else { hitFeel(0.25,0,0.15); if(fxOn)dust(under(),6,1.2,0.4); cv.style.filter='saturate(0.45)'; } }
+  }
+  function hitDummy(k){ if(!dummy||!showTarget)return; dummy.userData.kick=k; dummy.userData.hold=Math.max(dummy.userData.hold,0.6); dummy.userData.mat.emissiveIntensity=feel?0.45:0; }
+  function fxOngoing(d){
+    if(!shot||shot.done)return; const n=shot.name, t=shot.action.time, m=META[n], cu=m.cues||{}; const cross=(c)=>shot.prev<c&&t>=c;
+    if(tele&&fxOn){ const k=clamp01((t-tele.t0)/tele.dur), pulse=0.03*Math.sin(t*24)*k;
+      { const u=laneT.userData, L=tele.len; laneT.visible=true; laneT.position.x=tele.at.x; laneT.position.z=tele.at.z; laneT.rotation.y=tele.yaw; u.lf.scale.set(1,Math.max(0.001,L*k),1); u.lf.position.z=L*k/2; u.eL.scale.y=u.eR.scale.y=L; u.eL.position.z=u.eR.position.z=L/2; u.eF.position.z=L; u.lfM.opacity=0.1+0.1*k+pulse; u.leM.opacity=0.4+0.3*k; } }
+    if(n==='planks'){ const [s0,s1]=cu.spin, w0=cu.warn[0], sp=t<s0?0:t<cu.warn[1]?(t-s0)/(cu.warn[1]-s0):t<s1-0.55?1:Math.max(0,(s1-t)/0.55); cogTo=0.12+1.0*sp; lampsTo=0.35+0.7*sp; if(dummy&&t<cu.throw[0]+PK.flight)dummy.userData.hold=0.3;
+      MARKS.forEach((mk,k)=>{ const land=cu.throw[k]+PK.flight, on=fxOn&&t>=w0&&PLK[k].st!=='spin'&&t<land+0.05; mk.visible=on; if(on){ const u=clamp01((t-w0)/(land-w0)); mk.userData.fill.scale.setScalar(Math.max(0.001,u)); mk.userData.em.opacity=0.4+0.3*u+0.06*Math.sin(t*24)*u; } });
+      cu.throw.forEach((c,k)=>{ if(cross(c))plankThrow(k); });
+      if(cross(cu.kick[0])&&fxOn)dust(under(),8,1.6,0.6);
+      if(fxOn&&sp>0.05&&t<s1&&Math.random()<d*(10+26*(1-sp))){ const a=Math.random()*Math.PI*2, h=under(); dust(h.add(new THREE.Vector3(Math.cos(a)*RIM*0.8,0,Math.sin(a)*RIM*0.8)),1,0.9,0.3); } } // it grinds round on its rim until it rises level
+    if(n==='crosscut'){ const go=cu.go[0], wl=cu.wall[0], dz=cu.dizzy; lampsTo=t<go?0.35+0.9*Math.min(1,t/go):t<wl?1.25:t<dz[1]?(Math.sin(t*31)>0.2?0.5:0.08):0.35; cogTo=t>go-0.3&&t<wl?0.9:0.12;
+      if(cross(go)){ hideTele(); hitFeel(0.3,0,0.3); if(fxOn)dust(under(),8,1.8,0.6); }
+      if(t>go&&t<wl&&fxOn){ if(Math.random()<d*60)puff(new THREE.Vector3((Math.random()-0.5)*0.3,0.06,-0.3),new THREE.Vector3((Math.random()-0.5)*0.5,0.3,0),{life:0.5+Math.random()*0.3,s0:0.22,s1:0.6,a:0.2,drag:2,floor:true}); }
+      if(t>dz[0]+0.1&&t<dz[1]&&fxOn){ const h=hubW(), a=t*7.5; for(let k=0;k<2;k++)puff(new THREE.Vector3(h.x+Math.cos(a+k*Math.PI)*0.5,h.y+RIM+0.3,h.z+Math.sin(a+k*Math.PI)*0.5),new THREE.Vector3(0,0,0),{life:0.2,s0:0.13,s1:0.03,a:0.5,col:0xe9dcc0}); } // seeing stars
+      if(t>dz[1])wallTo=0; }
+    if(n==='spawn'){ lampsTo=t>0.4?0.35:0; cogTo=t>0.4?0.12:0; if(t>0.1&&t<0.9&&Math.random()<d*26)motes(new THREE.Vector3(0,0,0),1,1.8,1.4); }
+    if(n==='death'){ const [dn,fl]=m.contact; lampsTo=t>1.9?0:0.35*(1-t/1.9)*(Math.sin(t*40)>-0.3?1:0.3); cogTo=0;
+      if(t>dn&&t<fl&&fxOn&&Math.random()<d*16){ const a=Math.random()*Math.PI*2, h=under(); dust(h.add(new THREE.Vector3(Math.cos(a)*1.1,0,Math.sin(a)*1.1)),1,0.5,0.3); } } // it rings round on its rim
+  }
+  function updateFx(d){
+    const busy=shot&&!shot.done; if(!busy){ lampsTo=sel.dead?0:0.35; cogTo=sel.dead?0:0.12; hideTele(); wallTo=0; }
+    lamps+=(lampsTo-lamps)*Math.min(1,d*6); cog+=(cogTo-cog)*Math.min(1,d*5); flash=Math.max(0,flash-d*3.2);
+    const on=fxOn?1:0; const breathe=0.06*Math.sin(clockT*2.1);
+    glowU.value.set(on*Math.max(0,lamps+breathe*(lamps>0.05?1:0))*0.75,on*cog*0.26,feel?flash:0,0);
+    FXP.forEach(p=>{ if(p.life<=0)return; p.age+=d; const u=p.age/p.life; if(u>=1){p.life=0;p.s.visible=false;return;} p.v.y+=p.g*d; p.v.multiplyScalar(Math.max(0,1-p.drag*d)); p.s.position.addScaledVector(p.v,d); if(p.s.position.y<0.03)p.s.position.y=0.03; const s=p.s0+(p.s1-p.s0)*u; p.s.scale.setScalar(s); p.s.material.opacity=p.a*(1-u)*(u<0.1?u*10:1); });
+    RINGS.forEach(r=>{ if(r.t<0)return; r.t+=d; const u=(r.t-r.delay)/r.dur; if(u<0){r.m.visible=false;return;} if(u>=1){r.t=-1;r.m.visible=false;return;} r.m.visible=true; const e=1-(1-u)*(1-u); r.m.scale.setScalar(r.r0+(r.r1-r.r0)*e); r.m.material.opacity=r.a*(1-u); if(r.bill)r.m.quaternion.copy(cam.quaternion); });
+    if(runeT>=0){ runeT+=d; const u=runeT/0.95; rune.visible=u<1&&fxOn; rune.rotation.y=runeT*2.2; rune.scale.setScalar(1.15-0.35*u); rune.userData.mat.opacity=0.5*Math.sin(Math.PI*Math.min(1,u)); if(u>=1)runeT=-1; }
+    // the planks: each flies to its mark tumbling, then spins there inside a Violet ring, slows and fades
+    PLK.forEach((q,k)=>{ if(q.st==='off')return; q.t+=d; if(!fxOn){ q.st='off'; q.g.visible=false; if(CCS[k]>=0)ccFree(k); return; }
+      if(q.st==='fall'){ const f=q.t*120, i=Math.min(q.tr.length-1,Math.floor(f)), j=Math.min(q.tr.length-1,i+1), e=f-i; q.g.position.lerpVectors(q.tr[i][0],q.tr[j][0],e); q.m.quaternion.slerpQuaternions(q.tr[i][1],q.tr[j][1],e);
+        const all=(q.tr.length-1)/120, mk=MARKS[k], u=clamp01(q.t/all); mk.visible=true; mk.userData.fill.scale.setScalar(Math.max(0.001,u)); mk.userData.em.opacity=0.4+0.3*u+0.06*Math.sin(q.t*24)*u;
+        if(q.bt>0&&q.t-d<q.bt&&q.t>=q.bt){ dust(q.g.position.clone().setY(0).applyMatrix4(fxG.matrix),3,0.9,0.35); hitFeel(0.1,0,0.08); }
+        if(Math.random()<d*20)puff(q.g.position.clone().applyMatrix4(fxG.matrix),new THREE.Vector3(0,0.1,0),{life:0.25,s0:0.12,s1:0.04,a:0.18});
+        if(q.t>=all){ q.g.position.copy(q.b).setY(0); q.m.position.set(0,q.thick+0.02,0); q.m.rotation.set(0,q.spin,0); plankLand(k); } return; }
+      if(q.st==='fly'){ const u=Math.min(1,q.t/PK.flight); q.g.position.lerpVectors(q.a,q.b,u); q.g.position.y=q.a.y*(1-u)+(q.thick+0.02)*u+q.h*4*u*(1-u); q.spin+=d*26; q.m.rotation.set(0.5*Math.sin(u*Math.PI),q.spin,0);
+        if(Math.random()<d*30)puff(q.g.position.clone().applyMatrix4(fxG.matrix),new THREE.Vector3(0,0.1,0),{life:0.25,s0:0.14,s1:0.04,a:0.2});
+        if(u>=1){ q.g.position.copy(q.b).setY(0); q.m.position.y=q.thick+0.02; q.m.rotation.set(0,q.spin,0); plankLand(k); } else q.m.position.y=0; }
+      else if(q.st==='spin'){ const u=q.t/PK.life, out=clamp01((PK.life-q.t)/0.7), inn=clamp01(q.t/0.15);
+        if(u>=1){ q.st='back'; q.t=0; q.hit=false; q.a.copy(q.g.position).setY(q.thick+0.02); q.m.position.y=0; q.h=0.5+Math.random()*0.3; q.rm.opacity=q.fm.opacity=0; dust(q.b.clone().applyMatrix4(fxG.matrix),3,0.9,0.4); return; }
+        q.spin+=d*19*(0.25+0.75*out); q.m.rotation.y=q.spin; q.rm.opacity=0.85*out*inn*(0.8+0.2*Math.sin(q.t*9+k)); q.fm.opacity=0.17*out*inn;
+        if(q.t>PK.life-PK.path)pathAt(k,(q.t-PK.life+PK.path)/PK.path);
+        if(Math.random()<d*5*out){ const a=Math.random()*Math.PI*2; dust(q.b.clone().add(new THREE.Vector3(Math.cos(a)*0.3,0,Math.sin(a)*0.3)).applyMatrix4(fxG.matrix),1,0.6,0.25); } }
+      else { // back: pulled home down its path, faster as it goes, spinning down into the way it sits in its socket
+        const u=Math.min(1,q.t/PK.flight), e=u*u, sw=pt(bones['peg'+k],[0,0,0]), tg=toFloor(sw), hub=hubW(); pathAt(k,1);
+        q.g.position.lerpVectors(q.a,tg,e); q.g.position.y=q.a.y*(1-e)+tg.y*e+q.h*4*u*(1-u);
+        const ang=Math.atan2(sw.x-hub.x,sw.z-hub.z)-floorYaw, dw=Math.atan2(Math.sin(q.spin-ang),Math.cos(q.spin-ang)); q.m.rotation.set(0.5*Math.sin(u*Math.PI),ang+(dw+4*Math.PI)*(1-u)*(1-u),0);
+        if(Math.random()<d*30)puff(q.g.position.clone().applyMatrix4(fxG.matrix),new THREE.Vector3(0,0.1,0),{life:0.25,s0:0.14,s1:0.04,a:0.2});
+        const w=q.g.position.clone().applyMatrix4(fxG.matrix); if(dummy&&showTarget&&!q.hit&&w.y<1.3&&targetW().distanceTo(w.clone().setY(0))<PK.lane/2+0.24){ q.hit=true; sparks(targetW().setY(0.5),10,0xfff4e0,2.8,0.3); ringAt(targetW().setY(0.5),{r0:0.15,r1:0.8,dur:0.24,a:0.45,bill:true}); hitFeel(0.5,0.05,0.3); hitDummy(0.95); }
+        if(u>=1){ q.st='off'; q.g.visible=false; RLANES[k].visible=false; if(CCS[k]>=0)CCR[k]=clockT; sparks(sw,5,0xfff4e0,1.8,0.22); dust(under(),2,0.8,0.3); hitFeel(0.16,0.02,0.1); } } });
+  // a plank's path home: from where it spins to the floor under its socket, filling from the plank's end over the warning
+  function pathAt(k,f){ const g=RLANES[k], q=PLK[k], u=g.userData; if(!fxOn){ g.visible=false; return; } const tg=toFloor(pt(bones['peg'+k],[0,0,0])), dx=tg.x-q.b.x, dz=tg.z-q.b.z, L=Math.max(0.3,Math.hypot(dx,dz));
+    g.visible=true; g.position.x=q.b.x; g.position.z=q.b.z; g.rotation.y=Math.atan2(dx,dz); f=clamp01(f); u.f.scale.set(PK.lane,Math.max(0.001,L*f),1); u.f.position.z=L*f/2; u.eL.scale.y=u.eR.scale.y=L; u.eL.position.z=u.eR.position.z=L/2;
+    u.fM.opacity=0.1+0.1*f+0.03*Math.sin(clockT*24)*f; u.eM.opacity=0.4+0.3*f; }
+    // the wall stays whatever Effects says: the Crosscut makes no sense without it
+    wallK+=(wallTo-wallK)*Math.min(1,d*(wallTo>wallK?5:2.5)); wall.visible=wallK>0.01; wall.material.opacity=0.5*wallK; wall.material.emissiveIntensity=Math.max(0,wall.material.emissiveIntensity-d*2.5);
+    if(dummy){ const u=dummy.userData; u.mat.emissiveIntensity=Math.max(0,u.mat.emissiveIntensity-d*4);
+      u.x+=u.sx*d; u.sx=Math.max(0,u.sx-u.sx*d*8-d*0.3); if(u.kick>0){ u.z+=u.kick*d*9; u.kick=Math.max(0,u.kick-u.kick*d*9-d*0.2); } else if(u.hold>0)u.hold-=d;
+      else { const wide=u.z<1.7?1.3:0; u.z+=(HOME-u.z)*Math.min(1,d*3); u.x+=(wide-u.x)*Math.min(1,d*(wide?5:3)); } // it walks back round the wheel, not through it
+      dummy.position.z=u.z; dummy.position.x=u.x; }
+    // its shadow: long and thin under a standing wheel, round under one that lies down, lighter when it hops
+    const h=hubW(), lie=Math.abs(tmp2.set(1,0,0).applyQuaternion(bones.hips.getWorldQuaternion(qS)).y), k=clamp01((h.y-RIM-0.03)/0.3); blob.position.set(h.x,0.004,h.z); blob.scale.set(0.3+0.95*lie,1.2,1); blob.material.opacity=0.17*(1-0.4*k);
+  }
+  const qS=new THREE.Quaternion();
+  // a puff of dust as each peg lands (sparks in the Crosscut)
+  let pegPrev=null;
+  function pegfalls(){ const k=Math.round(roll/STEPA); if(pegPrev!==null&&k!==pegPrev&&fxOn&&hubW().y<RIM+0.07){ const p=under(); if(shot&&!shot.done&&shot.name==='crosscut')sparks(p.setY(0.05),3,0xfff4e0,2.4,0.22); else dust(p,2,0.4,0.25); } pegPrev=k; }
+
+  // ---- the roll. A wheel's turn is carried from one move into the next: the move that owns the wheel says how far it has turned,
+  // counted on from where the last one left it. Moves change over only while a peg is flat on the floor, so no peg ever slides.
+  let roll=0, rollFix=0, owner='idle', curB='idle', queued=null, idleTz=0; const base={}, qR=new THREE.Quaternion();
+  function rollAt(name,t){ const r=META[name].roll; const f=Math.min(r.length-1,Math.max(0,t*60)); const i=Math.floor(f), j=Math.min(r.length-1,i+1); return r[i]+(r[j]-r[i])*(f-i); }
+  function own(n){ const r=rollAt(n,A[n].time); base[n]=STEPA*Math.round((roll-r)/STEPA); rollFix=roll-(base[n]+r); owner=n; pegPrev=null; } // whole pegs, so a peg is always down; what is left over eases out
+  const isFlat=()=>{ const f=roll/STEPA; return Math.abs(f-Math.round(f))*STEPA<0.04; };
+  function walkSync(){ const v=((roll%STEPA)+STEPA)%STEPA; let lo=0, hi=META.walk.dur/12*1.3; for(let i=0;i<24;i++){ const m=(lo+hi)/2; if(rollAt('walk',m)<v)lo=m; else hi=m; } A.walk.time=(lo+hi)/2; } // the roll waits at the same place on its peg as the wheel is now
+  function walkToFlat(md){ // true when the rolling wheel comes onto the flat of a peg within this step; the step is cut short there
+    const a=A.walk, D=META.walk.dur, t0=a.time, t1=t0+md*a.timeScale; const R=(t)=>t>D?rollAt('walk',t-D)+2*Math.PI:rollAt('walk',t);
+    const goal=(Math.floor(R(t0)/STEPA+1e-4)+1)*STEPA; if(R(t1)<goal)return false;
+    let lo=t0, hi=t1; for(let i=0;i<20;i++){ const m=(lo+hi)/2; if(R(m)<goal)lo=m; else hi=m; }
+    moveFloor((hi-t0)*WALK,0); a.time=hi>D?hi-D:hi; roll=base.walk+rollAt('walk',a.time); return true; }
+  function applyRoll(){ const hr=hurtAct&&hurtAct.isRunning()?rollAt('hurt',hurtAct.time):0; qR.setFromAxisAngle(XA,roll+hr); bones.hips.quaternion.copy(PX.hips.quaternion).multiply(qR); qR.invert(); bones.armL.quaternion.copy(qR).multiply(PX.armL.quaternion); bones.armR.quaternion.copy(qR).multiply(PX.armR.quaternion); }
+
+  // ---- the loop
+  let clockT=0, last=performance.now();
+  function travelAt(name,t){ const tr=META[name].travel; if(!tr)return 0; const f=Math.min(tr.length-1,Math.max(0,t*60)); const i=Math.floor(f), j=Math.min(tr.length-1,i+1); return tr[i]+(tr[j]-tr[i])*(f-i); }
+  function tick(d){
+    if(!mixer)return; clockT+=d;
+    const stopped=hitstop>0; if(stopped){hitstop-=d;} const md=stopped?0:d;
+    const want=baseName();
+    if(shot&&!shot.done){ const a=shot.action, m=META[shot.name]; if(a.time>=m.dur-1e-3){ shot.done=true; if(shot.name==='spawn')refresh(); } }
+    if(shot&&shot.done&&!shot.hold&&sel.action&&!sel.dead&&!queued){ shot.gap+=md; if(shot.gap>0.7)queued={name:sel.action,hold:false}; }
+    const busy=!!(shot&&(!shot.done||shot.hold));
+    // a base move that is not showing waits where the wheel is: the roll at the same place on its peg, the others at their start
+    LOOPS.forEach(n=>{ const a=A[n]; if(n===owner&&!busy)return; if(a.__w<0.002){ if(n==='walk')walkSync(); else a.time=0; } });
+    if(busy){ if(want)curB=want; }
+    else { if(owner!==curB)own(curB);
+      const sw=queued?1:(want&&want!==curB?2:0);
+      if(sw&&md>0){ const ok=(sw===2&&want==='walk')||isFlat()||(curB==='walk'&&walkToFlat(md));
+        if(ok){ if(sw===1)startShot(queued.name,queued.hold,true); else if(curB==='walk'&&want==='idle'){ curB='idle'; startShot('halt',false,true); } else { curB=want; own(curB); } } } }
+    // weights: the shot owns the body while it plays, then the base fades back in
+    const live=!!(shot&&(!shot.done||shot.hold)), quick=live&&shot.soft;
+    Object.entries(A).forEach(([k,a])=>{ let to=0; if(shot&&shot.action===a)to=(shot.done&&!shot.hold)?0:1; else if(k===curB)to=live?0:1;
+      const tau=quick?0.05:(shot&&shot.action===a)?0.18:(to>a.__w?0.18:0.12); a.__w+=(to-a.__w)*Math.min(1,md/tau); if(Math.abs(to-a.__w)<0.002)a.__w=to; a.setEffectiveWeight(a.__w); });
+    LOOPS.forEach(n=>{ A[n].timeScale=(n===owner&&!live)?(n==='walk'?A.walk.__w:1):0; }); // only the move that owns the wheel runs; the roll spins up with its weight
+    const tw=A.walk.time;
+    mixer.update(md);
+    rollFix*=Math.exp(-md/0.04); roll=(base[owner]||0)+rollAt(owner,A[owner].time)+rollFix; applyRoll(); ccPegs();
+    // root motion and floor: the floor moves exactly as far as the wheel has rolled
+    let dz=0, dyaw=0; dyaw+=(A.turnL.__w-A.turnR.__w)*TURN*md;
+    if(owner==='walk'&&!live){ let dt=A.walk.time-tw; if(dt<-1)dt+=META.walk.dur; dz+=dt*WALK; }
+    if(owner==='idle'&&!live){ const tz=travelAt('idle',A.idle.time), dd=tz-idleTz; idleTz=tz; dz+=dd; if(dummy&&dd)dummy.userData.z-=dd; } else idleTz=0;
+    if(shot&&!shot.done){ const tz=travelAt(shot.name,shot.action.time); const dd=tz-shot.tz; shot.tz=tz; dz+=dd; if(dummy&&dd)dummy.userData.z-=dd; }
+    if(dz||dyaw)moveFloor(dz,dyaw);
+    // contacts
+    if(shot){ const m=META[shot.name], t=shot.action.time; m.contact.forEach((c,i)=>{ if(c>0&&shot.prev<c&&t>=c)fxContact(shot.name,i); }); fxOngoing(md); shot.prev=t; }
+    squash=Math.max(0,squash-d*7); const sq=feel?squash:0; model.scale.set(U*(1+0.11*sq),U*(1-0.05*sq),U*(1+0.11*sq));
+    model.updateMatrixWorld(true); pegfalls(); updateFx(stopped?d*0.25:d); showPhase();
+  }
+  function frame(now){
+    requestAnimationFrame(frame); const raw=Math.min(0.05,(now-last)/1000); last=now;
+    if(!paused)tick(raw*speed);
+    orbit.update(); shake=Math.max(0,shake-raw*3.2); const sk=feel?shake*shake*0.09:0; shakeV.set((Math.random()-0.5)*sk,(Math.random()-0.5)*sk,(Math.random()-0.5)*sk); cam.position.add(shakeV);
+    renderer.render(scene,cam); cam.position.sub(shakeV);
+  }
+  moveFloor(0,0); requestAnimationFrame(frame);
+})();
+</script>

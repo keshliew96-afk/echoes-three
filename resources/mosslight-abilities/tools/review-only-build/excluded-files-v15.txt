@@ -1,0 +1,6 @@
+public/review/
+src/render/critters/tripoHealer.js
+review-view.html
+review-throw.html
+src/render/critters/reviewPathsFx.js
+src/sim/reviewTalents.js

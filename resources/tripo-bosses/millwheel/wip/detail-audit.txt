@@ -1,0 +1,22 @@
+idle      floor clean
+          stretch x1.00 at 3.45 on peg5
+walk      floor clean
+          stretch x1.00 at 1.72 on peg5
+turnL     floor clean
+          stretch x1.00 at 0.25 on peg5
+turnR     floor clean
+          stretch x1.00 at 0.10 on peg5
+halt      floor clean
+          stretch x1.00 at 0.08 on peg5
+planks    floor clean
+          stretch x42.21 at 1.98 on hips
+crosscut  floor clean
+          stretch x1.00 at 3.30 on peg5
+hurt      floor clean
+          stretch x1.00 at 0.10 on peg5
+heavyHit  floor clean
+          stretch x1.00 at 0.60 on peg5
+spawn     floor clean
+          stretch x1.00 at 0.03 on peg5
+death     floor clean
+          stretch x1.00 at 1.83 on peg5

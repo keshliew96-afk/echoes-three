@@ -1,0 +1,15 @@
+FAIL a seat-0 frame carries rally, mark and heal target 3 ([{"kind":"dodge"}]); any other seat's frame drops them (["dodge"]) {"p0":[{"kind":"dodge"}],"pk":["dodge"]}
+FAIL two heal-target presses drained in one tick keep the first ally index []
+PASS the session is up: the host on the Archer, the guest on the Healer ([{"role":"host","seat":3},{"role":"guest","seat":0}])
+FAIL the guest Healer's R, Tab and F2 reach the host's sim ([]) []
+FAIL the host's tabs mark its own Archer "you" and the guest's Healer with the guest's name (["you","AI","AI","Host"]) ["you","AI","AI","Host"]
+FAIL the host's UI can neither decide nor move the guest's Healer card ({"pick":{"ok":true,"seat":0,"choice":"leave"},"replace":null,"take":{"type":"skill","id":"warding_aura"}}) {"hostTry":{"pick":{"ok":true,"seat":0,"choice":"leave"},"replace":null,"take":{"type":"skill","id":"warding_aura"}},"card0":null}
+FAIL the guest takes its own Healer card on its own page ({"clicked":false,"dis":null} -> {"phase":"relic","card0":null}) {"gTake":{"clicked":false,"dis":null},"after":{"phase":"relic","card0":null}}
+FAIL the guest's auto-fill of its own Healer build goes to the host (false); the host's own call on it is refused ({"socketed":[],"bench":0,"upgraded":0}) {"gFill":false,"hFill":{"socketed":[],"bench":0,"upgraded":0}}
+FAIL the guest's "Socket my new nodes" change mid-session reaches the host ([false,false,false,false]) [false,false,false,false]
+FAIL the guest Healer buys from its own purse, the run wallet (500 -> 500; false) {"w0":500,"w1":500,"gBuy":false}
+PASS the host's Advance waits on the guest Healer ({"countdown":true,"leaveTick":3961,"waiting":[0]})
+FAIL the guest's Done lets the party leave at once (still in the shop after 12 s), not after the countdown {"left":false}
+PASS 0 desyncs over 107 snapshot hash checks
+PASS no page errors on either page
+4/14 checks pass

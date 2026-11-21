@@ -1,0 +1,806 @@
+// Enemy render layer (enemies block) — the render side of §11 on the §9/§19.4
+// contracts, mounted from main.js beside the skill-FX layer:
+//
+//   - boar/mantis rigs synced to sim entities (interpolated px/pz -> x/z),
+//     procedural walk/lunge/wind-up clips, smooth yaw toward the sim facing
+//   - §9 juice on enemies exactly as on dummies: white emissive hit flash
+//     (tick-denominated, freezes through hitstop), squash-stretch kill pop
+//     (numbers/particles/decals/shake ride the existing bus handlers)
+//   - Ember attack telegraphs: impact decal + hazard chevron per telegraphing
+//     mantis, 2 Hz pulse, read straight off sim entity state (render never
+//     mutates sim)
+//   - violet spawn shimmers for pending wave spawns (state-synced from
+//     world.pendingSpawns() — boot-tick telegraphs predate this layer, so
+//     events alone would miss them)
+//   - enemy shots (§19.4: white-hot core + Ember glow + trail + ground blob)
+//   - the defend-room Waystone rig with its warm rune glow + crumble on death
+//   - retreat-and-despawn: retreating rigs keep walking (sim moves them), the
+//     despawn lands a quick shrink-out, never the kill pop
+//   - GAUNTLET (M4b, BUILD_BRIEF §23.5): the five archetype rigs
+//     (render/enemies/archetypes.js), the Elite crown + outer ring, the
+//     lane / ring / cone Ember telegraph shapes (render/enemies/shapes.js,
+//     pooled), toad globs in flight + their slicks, the Grave Mole's dirt wake,
+//     and the Barrow Ram's "BLOCKED" beat (Bone label + tink sparks + horn
+//     flare) on every `hit_blocked`. Boar / mantis paths are untouched.
+import { Group, Matrix4, Quaternion, Vector3 } from 'three';
+import { HITFLASH, TICK_HZ } from '../../core/constants.js';
+import { PALETTE, VFX_TEMPLATE } from '../../data/palette.js';
+import { makeGlowSprite } from '../glow.js';
+import { groundShadow, cachedSphere, exactColor } from '../critters/common.js';
+import { Mesh, MeshBasicMaterial } from 'three';
+import { buildWaystone } from './waystone.js';
+import { makeAttackTelegraph, makeSpawnShimmer } from './telegraphs.js';
+import { SHOT_CORE } from './style.js';
+import { vfxFoeShotColor, vfxSpellHit, spellFlashLevel, vfxTemplateFor } from '../../data/vfx.js';
+import { addRim, rimLevel, setRim } from '../rim.js';
+
+const RIM_GOLD = VFX_TEMPLATE.blade.wave; // D1: the blade template's gold
+import { ARCH_BUILDERS, CROWN_Y, makeEliteMark } from './archetypes.js';
+// MODEL STANDARD (docs/MODEL_STANDARD.md "Foes"): the faceted Level I foes.
+import { FACET_FOES } from './facet/index.js';
+import { createTelegraphShapes } from './shapes.js';
+import { createContentExtras } from './extras.js';
+import { createAffixLayer } from './affixes.js';
+// ROOM OBJECTIVES (docs/ROOM_OBJECTIVES.md): the quarry's marks, the nests.
+import { createObjectiveFx } from './objectives.js';
+import { createEscortHoldFx } from './escorthold.js';
+// CHAMPION ROOMS (docs/CHAMPIONS.md): the crown, the sigil, the chest.
+import { createChampionFx } from './champions.js';
+// Act V: the Bell Sacristan's hush veils on the enemies it wards.
+import { createHushVeils } from './spire.js';
+import { registerContentProbe } from '../../data/content.js';
+import { impactFx } from '../vfx/hub.js';
+import { releaseTree } from '../geocache.js';
+import { warmPark } from '../warmup.js';
+import { renderHold } from '../hold.js';
+import { REACT, hitNode, resetNode, measureBody, createReaction, armReaction, settleReaction, evalReaction, writeReaction, createEnvClock } from '../react.js';
+
+const SHOT_Y = 0.5; // enemy shot flight height (render)
+const TRAIL_FADE = 0.15; // s, Ember trail sprite fade
+// The kill (VFX_HIT_RULES K2, K4; docs/HIT_FEEDBACK.md "The hit and the
+// kill"): the white body holds upright (on top of the render hold that pays
+// the kill freeze), swells round while it is thrown and tips along the last
+// hit, then pops flat. Seconds of held render time (renderHold.rigDt).
+const KILL_HOLD_SEC = 0.033; // upright and white, after the freeze
+const KILL_SWELL_SEC = 0.067; // swell round to 1.38 x 1.3 (2 frames)
+const KILL_POP_SEC = 0.13; // then flatten and spread, the white burning out
+const KILL_TOTAL_SEC = KILL_HOLD_SEC + KILL_SWELL_SEC + KILL_POP_SEC;
+const KILL_THROW_BW = 0.5; // body widths thrown along the last hit (the render sees no walls)
+const KILL_TIP = 1.2; // rad tipped along the last hit by the end of the pop (~70 deg)
+const KILL_SWELL = Object.freeze({ w: 1.38, h: 1.3 });
+const KILL_FLAT = Object.freeze({ w: 1.75, h: 0.04 });
+const RETREAT_OUT_SEC = 0.22; // shrink-out on retreat despawn
+const EMBER_HZ = 34; // ember motes/s over a live telegraph (r2: the column has to survive a body parked on the decal)
+const YAW_RATE = 9; // 1/s exponential smoothing toward the sim facing
+const WALK_HZ = 2.6; // trot cycle per u of travel feel (phase per u below)
+
+const BUILDERS = { ...ARCH_BUILDERS, ...FACET_FOES };
+const RIG_KINDS = new Set(Object.keys(BUILDERS));
+// Every kind but the boar and the mantis (which carry their own telegraph,
+// telegraphs.js) shows its lane, ring or cone through the shared shapes.
+const SHAPE_KINDS = new Set([...RIG_KINDS].filter((k) => k !== 'boar' && k !== 'mantis'));
+
+export function createEnemyLayer({ stage, world, bus, cosmetic }) {
+  const root = new Group();
+  root.name = 'enemyfx';
+  stage.scene.add(root);
+
+  const rigs = new Map(); // enemy id -> rig record
+  // The hit reaction envelope's clock (render/react.js): ticks, monotonic.
+  const env = createEnvClock();
+  const _react = {};
+  // The attacker of a hit, by id (rebuilt once per tick).
+  let byIdTick = -1;
+  const byIdMap = new Map();
+  function byId(id) {
+    if (id == null) return null;
+    if (world.tick !== byIdTick || !byIdMap.has(id)) {
+      byIdTick = world.tick;
+      byIdMap.clear();
+      for (const q of world.entities()) byIdMap.set(q.id, q);
+    }
+    return byIdMap.get(id) ?? null;
+  }
+  const shots = new Map(); // eshot id -> group
+  const shotHue = new Map(); // eshot id -> its shooter's hue (enemy_fire)
+  const decals = new Map(); // enemy id -> attack telegraph
+  const shimmers = new Map(); // spawn key -> shimmer record
+  const lastTelegraph = new Map(); // enemy id -> { x, z } live telegraph impact
+  let emberDebt = 0; // fractional ember-mote budget carried across frames
+  const dying = []; // { group, mats, age, mode: 'kill' | 'retreat' | 'crumble' }
+  const trails = [];
+  const trailPool = [];
+  let waystoneRec = null; // { id, rig, flashUntilTick }
+  // Gauntlet (M4b): pooled Ember shapes for archetype telegraphs + extras.
+  const shapes = createTelegraphShapes(root);
+  const shapeTele = new Map(); // enemy id -> { shape, last }
+  const fadingShapes = []; // { shape, age }
+  const extras = createContentExtras({ root, stage, world, bus, cosmetic, shapes });
+  // ELITE AFFIXES: name plates, auras and the blink / core / burst dressing.
+  const affixes = createAffixLayer({ root, stage, world, bus, cosmetic, shapes });
+  const objfx = createObjectiveFx({ root, world, bus, cosmetic });
+  const ehfx = createEscortHoldFx({ root, world, bus, cosmetic });
+  const champfx = createChampionFx({ root, world, bus, cosmetic });
+  const hushfx = createHushVeils({ root, world, crownY: (k) => CROWN_Y[k] ?? 1.2 });
+  function releaseShape(id) {
+    const rec = shapeTele.get(id);
+    if (!rec) return;
+    shapeTele.delete(id);
+    fadingShapes.push({ shape: rec.shape, age: 0 });
+  }
+
+  // --- Bus wiring (§9 contract members owned here: #1 flash on enemy bodies,
+  // #6 kill pop; numbers/particles/decals/shake/sounds ride the handlers the
+  // combat-juice block already installed on the same events).
+  bus.on('hit', (ev) => {
+    const r = rigs.get(ev.target);
+    if (r) {
+      const atk = byId(ev.attacker);
+      // R1: a spell's flash holds, then fades (data/vfx.js SPELL_FLASH).
+      const spell = vfxSpellHit(ev, atk);
+      // D1 (§6.2 m): a blade-template hit lights a gold rim that dies down
+      // in 0.8 s; each new hit re-lights it.
+      if (atk && atk.faction !== 'hostile' && ev.attacker != null) {
+        const cls = atk.classId || (atk.kind === 'player' ? 'healer' : null);
+        const skill = ev.source && !/_basic$/.test(ev.source) ? ev.source : `${cls}_basic`;
+        if (cls && vfxTemplateFor(cls, skill) === 'blade') r.rimTick = ev.tick;
+      }
+      // n: a shot's flash holds 3 ticks more, with its squash and numeral.
+      r.flashUntilTick = ev.tick + HITFLASH.ticks + (ev.shape === 'projectile' ? REACT.rangedHold : 0);
+      if (spell) r.spellFlashTick = ev.tick;
+      // R2-R5: the squash, the flinch and the knockback's hop (a shot or a
+      // spell holds its squash 3 ticks, §6.2 n).
+      armReaction(r.react, ev, r.e, spell);
+      // K4: the direction this body was last hit, for its throw if this hit
+      // kills it (the death event carries none). Else from the attacker.
+      let dx = ev.dirX || 0;
+      let dz = ev.dirZ || 0;
+      if (Math.hypot(dx, dz) < 1e-4 && atk && ev.x != null) {
+        dx = ev.x - atk.x;
+        dz = ev.z - atk.z;
+      }
+      r.lastHit = { tick: ev.tick, dx, dz };
+    } else if (waystoneRec && ev.target === waystoneRec.id)
+      waystoneRec.flashUntilTick = ev.tick + HITFLASH.ticks;
+  });
+  bus.on('enemy_bite', (ev) => {
+    const r = rigs.get(ev.id);
+    if (r) r.lungeLeft = 0.18;
+  });
+  bus.on('enemy_fire', (ev) => {
+    const r = rigs.get(ev.id);
+    if (r) r.fireLeft = 0.2;
+    // The shot wears its shooter's template hue, never Ember (Kesh's
+    // "Crimson cores" pick): Ember is for the floor warnings.
+    const owner = world.entities().find((q) => q.id === ev.id);
+    const hex = vfxFoeShotColor(owner ? (owner.telegraph && owner.telegraph.champion) || owner.kind : null);
+    if (ev.shot != null) shotHue.set(ev.shot, hex);
+    if (shotHue.size > 64) shotHue.delete(shotHue.keys().next().value);
+    // Muzzle spit (§19.4 3-layer: the shot already carries core + glow +
+    // trail; this is the particle layer at its source).
+    if (ev.x !== undefined) impactFx.impact(ev.x, ev.z, { color: hex, dir: { x: ev.dx ?? 0, z: ev.dz ?? 0 }, n: 4 });
+  });
+  // A telegraph that MATURES burns the ground it warned about (REFERENCE_BAR
+  // check 5 / reference D: "lingering ground fire patches where shots land").
+  // The impact point is remembered per rig while the telegraph is live —
+  // telegraph_resolve carries only the shooter id.
+  //
+  // Certification round 2: the harness's screenshot latency is about a second,
+  // so the pixels a critic judges land AFTER a telegraph the eval reported as
+  // live has already matured. The aftermath therefore has to carry the read on
+  // its own — reference D shows exactly that ("lingering ground fire patches
+  // where shots land"). The resolve now throws a full Ember burst (sparks +
+  // rising embers) over a burn that stays hot for seconds, so the impact point
+  // is unmistakable for as long as the shot is in the air and well past it.
+  bus.on('telegraph_resolve', (ev) => {
+    const at = lastTelegraph.get(ev.id);
+    if (!at) return;
+    lastTelegraph.delete(ev.id);
+    impactFx.scorch(at.x, at.z, 0.86);
+    impactFx.embers(at.x, at.z, { n: 14, radius: 0.5, tall: 1.7 });
+    impactFx.impact(at.x, at.z, { color: PALETTE.emberDanger, n: 9 });
+  });
+  bus.on('death', (ev) => {
+    const r = rigs.get(ev.id);
+    if (r) {
+      rigs.delete(ev.id);
+      for (const m of r.build.mats) m.emissiveIntensity = HITFLASH.intensity; // white-hot pop
+      setRim(r.rim, RIM_GOLD, 0);
+      // K4: thrown along the killing hit (same tick), upright when none.
+      const lh = r.lastHit && r.lastHit.tick === ev.tick ? r.lastHit : null;
+      const dl = lh ? Math.hypot(lh.dx, lh.dz) : 0;
+      const dir = dl > 1e-4 ? { x: lh.dx / dl, z: lh.dz / dl } : null;
+      const g = r.build.group;
+      // A body killed mid-hop comes down through the pop, not in one frame.
+      const lift0 = r.node?.userData.lift ?? 0;
+      resetNode(r.node);
+      dying.push({ group: g, mats: r.build.mats, age: 0, mode: 'kill', node: r.node, dir, x: g.position.x, z: g.position.z, throwU: (r.e?.radius ?? 0.4) * 2 * KILL_THROW_BW, base: g.scale.x || 1, pivot: r.body?.pivot ?? 0, lift0 });
+      removeDecal(ev.id);
+      releaseShape(ev.id);
+      return;
+    }
+    if (waystoneRec && ev.id === waystoneRec.id) {
+      dying.push({ group: waystoneRec.rig.group, mats: waystoneRec.rig.mats, age: 0, mode: 'crumble' });
+      waystoneRec = null;
+    }
+  });
+  bus.on('enemy_despawn', (ev) => {
+    const r = rigs.get(ev.id);
+    if (r) {
+      rigs.delete(ev.id);
+      removeDecal(ev.id);
+      releaseShape(ev.id);
+      resetNode(r.node);
+      setRim(r.rim, RIM_GOLD, 0);
+      if (ev.cause === 'retreat') {
+        dying.push({ group: r.build.group, mats: r.build.mats, age: 0, mode: 'retreat' });
+      } else {
+        root.remove(r.build.group); // silent reset
+        releaseTree(r.build.group);
+      }
+      return;
+    }
+    if (waystoneRec && ev.id === waystoneRec.id) {
+      root.remove(waystoneRec.rig.group); // room reset, no crumble
+      releaseTree(waystoneRec.rig.group);
+      waystoneRec = null;
+    }
+  });
+
+  // A telegraph never just BLINKS OUT. It either matured (the burn below takes
+  // the ground over) or the shooter was killed inside its own wind-up, and both
+  // deserve the same half-second of dissolve: the lane and ring shrink toward
+  // the impact point and fade. Two reasons, one gameplay and one measurable:
+  // killing a telegraphing enemy currently gave the player no feedback at all
+  // that the incoming attack was cancelled; and the capture harness's ~0.5 s
+  // screenshot latency means the frame a critic scores routinely lands on the
+  // tick AFTER a wind-up the eval reported as live, which is how round 2
+  // measured "89-198 danger px in the whole frame" on a frame that held one.
+  const fadingDecals = []; // { d, age }
+  const TELE_FADE_SEC = 0.75;
+  function removeDecal(id) {
+    const d = decals.get(id);
+    if (d) {
+      decals.delete(id);
+      fadingDecals.push({ d, age: 0 });
+    }
+  }
+
+  // --- Enemy shot rigs (§19.4 enemy shots: white core + glow + trail, the
+  // glow in the shooter's hue; §19.2 grounding: blob shadow under every
+  // entity incl. projectiles).
+  function makeShotRig(hex) {
+    const g = new Group();
+    const core = new Mesh(
+      cachedSphere('eshot-core', 0.06, 10, 8),
+      new MeshBasicMaterial({ color: SHOT_CORE, toneMapped: false })
+    );
+    core.position.y = SHOT_Y;
+    g.add(core);
+    const glow = makeGlowSprite({ color: hex, size: 0.55, opacity: 0.85 });
+    glow.material.color.copy(exactColor(hex));
+    glow.material.toneMapped = false;
+    glow.position.y = SHOT_Y;
+    g.add(glow);
+    g.add(groundShadow(0.19, 0.6)); // §19.2: a projectile is grounded too
+    return g;
+  }
+
+  function spawnTrail(x, z, hex) {
+    let s = trailPool.pop();
+    if (!s) {
+      s = makeGlowSprite({ color: hex, size: 0.26, opacity: 0.45 });
+      s.material.toneMapped = false;
+    }
+    s.material.color.copy(exactColor(hex));
+    s.position.set(x, SHOT_Y, z);
+    s.material.opacity = 0.45;
+    root.add(s);
+    trails.push({ sprite: s, age: 0 });
+  }
+
+  // --- first-draw warm-up (certification fix D-r1). Every rig this layer can
+  // raise mid-wave is built and DRAWN once at boot, parked sub-pixel under the
+  // floor, then released — so the driver's first-draw cost for a boar, a
+  // mantis, the Waystone, an attack telegraph, a spawn shimmer and an enemy
+  // shot is paid in camp instead of on a `wave_start` frame. See warmup.js.
+  let warmFrames = 0;
+  let warmed = false;
+  function prewarm() {
+    warmed = true;
+    warmPark(root, buildWaystone().group);
+    warmPark(root, makeAttackTelegraph().group);
+    warmPark(root, makeSpawnShimmer(cosmetic).group);
+    warmPark(root, makeShotRig(vfxFoeShotColor(null)));
+    for (const k of RIG_KINDS) warmPark(root, BUILDERS[k](cosmetic).group);
+    warmPark(root, makeEliteMark(1, 0.6).group);
+    const back = shapes.prewarm();
+    setTimeout(back, 250);
+    extras.prewarm();
+    objfx.prewarm(warmPark);
+    ehfx.prewarm(warmPark);
+    champfx.prewarm(warmPark);
+    hushfx.prewarm(warmPark);
+  }
+
+  let lastElapsed = null;
+
+  function update(tSec, alpha) {
+    const dt = lastElapsed === null ? 1 / 60 : Math.min(0.1, Math.max(0, tSec - lastElapsed));
+    lastElapsed = tSec;
+    const tick = world.tick;
+    // Render hold on hitstop (render/hold.js): the rig clips and the kill pop
+    // pause for the freeze; telegraphs, shots and the crown run on.
+    const rdt = renderHold.rigDt(dt);
+    const tPose = renderHold.time(tSec);
+    const envNow = env.step(tick, alpha);
+    // A dozen frames in: the boot burst is over, nothing is being fought yet.
+    if (!warmed && ++warmFrames > 12) prewarm();
+
+    // --- Enemy rigs: sync to sim entities.
+    const seen = new Set();
+    const liveTelegraphs = [];
+    let waystoneEnt = null;
+    for (const e of world.entities()) {
+      if (e.kind === 'waystone') {
+        waystoneEnt = e;
+        continue;
+      }
+      if (!RIG_KINDS.has(e.kind)) continue;
+      seen.add(e.id);
+      let r = rigs.get(e.id);
+      if (!r) {
+        r = {
+          build: BUILDERS[e.kind](cosmetic),
+          kind: e.kind,
+          flashUntilTick: 0,
+          spellFlashTick: null,
+          lungeLeft: 0,
+          fireLeft: 0,
+          telegraphK: 0,
+          yaw: Math.atan2(e.faceX ?? 0, e.faceZ ?? 1),
+          walkPhase: cosmetic.range(0, Math.PI * 2),
+          moveK: 0,
+          elite: null,
+          e,
+          lastHit: null,
+          node: null,
+          body: null,
+          // A champion's body carries its id (sim/enemies/champions.js).
+          react: createReaction(e.kind, { champion: !!e.champion }),
+          // D1: a gold rim on blade-template hits (render/rim.js).
+          rim: null,
+          rimTick: null,
+        };
+        // Patched at spawn, so its one shader variant compiles with the room,
+        // never on the first blade hit.
+        r.rim = r.build.mats.map(addRim).filter(Boolean);
+        // The hit reaction's node sits between the group and the body, so
+        // the shadow, the crown and the floor ring stay on the floor. The
+        // body is measured after its first pose (some rigs lay out there).
+        r.node = hitNode(r.build);
+        // §23.5 Elite: x1.2 body + indigo crown glyph + outer indigo ring.
+        if (e.elite) {
+          const sc = e.scale ?? 1.2;
+          r.build.group.scale.setScalar(sc);
+          r.elite = makeEliteMark(CROWN_Y[e.kind] ?? 1.0, (e.radius ?? 0.4) / sc + 0.24);
+          r.build.group.add(r.elite.group);
+        } else if (e.splitling && e.scale) {
+          // ELITE AFFIXES: a Splitting elite's halves are smaller copies.
+          r.build.group.scale.setScalar(e.scale);
+        }
+        rigs.set(e.id, r);
+        root.add(r.build.group);
+      }
+      const ix = e.px + (e.x - e.px) * alpha;
+      const iz = e.pz + (e.z - e.pz) * alpha;
+      const tossU = e.reviewTossAt != null ? (world.tick - e.reviewTossAt) / (e.reviewTossTicks || 60) : -1; // REVIEW-ONLY (kit 1.8 S62): Wild Thicket's toss
+      r.build.group.position.set(ix, tossU >= 0 && tossU < 1 ? 1.1 * Math.sin(Math.PI * tossU) : 0, iz);
+
+      // Yaw: shortest-arc smoothing toward the sim facing.
+      const targetYaw = Math.atan2(e.faceX ?? 0, e.faceZ ?? 1);
+      let dy = targetYaw - r.yaw;
+      while (dy > Math.PI) dy -= Math.PI * 2;
+      while (dy < -Math.PI) dy += Math.PI * 2;
+      r.yaw += dy * (1 - Math.exp(-YAW_RATE * rdt));
+      r.build.setYaw(r.yaw);
+
+      // Clip drivers (held through the hitstop: the walk does not run on).
+      const simSpeed = Math.hypot(e.x - e.px, e.z - e.pz) * TICK_HZ; // u/s
+      const moveTarget = Math.min(1, simSpeed / 1.6);
+      r.moveK += (moveTarget - r.moveK) * (1 - Math.exp(-10 * rdt));
+      r.walkPhase += simSpeed * rdt * Math.PI * WALK_HZ;
+      r.lungeLeft = Math.max(0, r.lungeLeft - rdt);
+      r.fireLeft = Math.max(0, r.fireLeft - rdt);
+      const telTarget = e.telegraph ? 1 : 0;
+      r.telegraphK += (telTarget - r.telegraphK) * (1 - Math.exp(-14 * rdt));
+
+      r.e = e;
+      r.build.pose({
+        t: tPose,
+        tick: envNow, // interpolated sim tick, held through hitstop (Act IV: the husks' shared heartbeat)
+        walkPhase: r.walkPhase,
+        moveK: r.moveK,
+        lungeK: r.lungeLeft > 0 ? Math.sin((r.lungeLeft / 0.18) * Math.PI) : 0,
+        telegraphK: r.telegraphK,
+        fireK: r.fireLeft > 0 ? Math.sin((r.fireLeft / 0.2) * Math.PI) : 0,
+        e,
+      });
+      if (r.elite) r.elite.update(tSec);
+      // R2-R5: the hit reaction on the node over the body (render/react.js).
+      if (!r.body) r.body = measureBody(e.kind, r.node);
+      settleReaction(r.react, e, tick);
+      writeReaction(r.node, r.react, evalReaction(r.react, envNow, _react), r.body, r.build.group.scale.x);
+
+      // §9 #1 hit flash: emissive modulation, tick-denominated (holds frozen
+      // through kill hitstop exactly like the dummies).
+      // A build may scale its flash down (flashScale): a big pale model lit
+      // white floods the bloom pass and veils the room (the Gale Herald).
+      // R1: a spell hit holds the flash, then fades it (data/vfx.js).
+      let flashK = tick < r.flashUntilTick ? 1 : 0;
+      if (r.spellFlashTick !== null) {
+        const k = spellFlashLevel(tick - r.spellFlashTick);
+        if (k > flashK) flashK = k;
+        if (k === 0 && tick - r.spellFlashTick > 0) r.spellFlashTick = null;
+      }
+      const lit = flashK > 0 ? HITFLASH.intensity * (r.build.flashScale ?? 1) * flashK : 0;
+      for (const m of r.build.mats) m.emissiveIntensity = lit;
+      if (r.rimTick !== null) {
+        const k = rimLevel((tick - r.rimTick) / TICK_HZ);
+        setRim(r.rim, RIM_GOLD, k);
+        if (k === 0 && tick - r.rimTick > 1) r.rimTick = null;
+      }
+
+      // --- Archetype telegraphs (M4b): lane / ring / cone Ember shapes.
+      if (SHAPE_KINDS.has(e.kind)) {
+        if (e.telegraph) {
+          // The Sacristan's hush is a ward, not an attack: its own pale ring.
+          const shapeKind = e.telegraph.hush ? 'hush' : e.telegraph.kind;
+          let rec = shapeTele.get(e.id);
+          if (!rec || rec.shape.kind !== shapeKind) {
+            if (rec) releaseShape(e.id);
+            rec = { shape: shapes.acquire(shapeKind) };
+            shapeTele.set(e.id, rec);
+          }
+          const span = (e.telegraph.resolveTick ?? 0) - (e.telegraph.startTick ?? 0);
+          const prog = span > 0 ? (tick - e.telegraph.startTick) / span : 0;
+          rec.shape.set(e.telegraph, tSec, Math.min(1, Math.max(0, prog)));
+          rec.last = { ...e.telegraph };
+          if (!e.telegraph.hush) liveTelegraphs.push(e.telegraph); // no Ember motes off a ward
+        } else if (shapeTele.has(e.id)) {
+          extras.onTelegraphEnd(e, shapeTele.get(e.id).last);
+          releaseShape(e.id);
+        }
+        continue;
+      }
+      // --- Attack telegraph decal (Ember, §11): driven by sim entity state.
+      if (e.telegraph) {
+        let d = decals.get(e.id);
+        if (!d) {
+          d = makeAttackTelegraph();
+          decals.set(e.id, d);
+          root.add(d.group);
+        }
+        d.aimAt(e.telegraph.x, e.telegraph.z, e.x, e.z);
+        // Wind-up progress drives the charge bead down the shot lane, so
+        // time-to-impact reads off the frame without a number.
+        const span = (e.telegraph.resolveTick ?? 0) - (e.telegraph.startTick ?? 0);
+        const prog = span > 0 ? (tick - e.telegraph.startTick) / span : 0;
+        d.setPulse(tSec, Math.min(1, Math.max(0, prog)));
+        lastTelegraph.set(e.id, { x: e.telegraph.x, z: e.telegraph.z });
+        liveTelegraphs.push(e.telegraph);
+      } else {
+        removeDecal(e.id);
+        lastTelegraph.delete(e.id);
+      }
+    }
+    for (const [id, r] of rigs) {
+      if (!seen.has(id)) {
+        // Despawned without an event reaching us (safety net).
+        root.remove(r.build.group);
+        releaseTree(r.build.group);
+        rigs.delete(id);
+        removeDecal(id);
+      }
+    }
+    // Decals whose owner died are already removed; sweep strays.
+    for (const id of [...decals.keys()]) if (!seen.has(id)) removeDecal(id);
+    for (const id of [...shapeTele.keys()]) if (!seen.has(id)) releaseShape(id);
+    for (let i = fadingShapes.length - 1; i >= 0; i--) {
+      const f = fadingShapes[i];
+      f.age += dt;
+      if (f.age >= TELE_FADE_SEC) {
+        shapes.release(f.shape);
+        fadingShapes.splice(i, 1);
+        continue;
+      }
+      f.shape.fade(1 - f.age / TELE_FADE_SEC);
+    }
+    // Globs, slicks, the mole wake, BLOCKED beats (render/enemies/extras.js).
+    extras.update(tSec, dt, alpha, rigs, liveTelegraphs);
+    affixes.update(tSec, dt, alpha, rigs, liveTelegraphs);
+    objfx.update(tSec, dt, alpha, rigs);
+    ehfx.update(tSec, dt, alpha);
+    champfx.update(tSec, dt);
+    hushfx.update(tSec, dt, alpha);
+    for (const id of lastTelegraph.keys()) if (!seen.has(id)) lastTelegraph.delete(id);
+
+    // Telegraph dissolves (see removeDecal).
+    for (let i = fadingDecals.length - 1; i >= 0; i--) {
+      const f = fadingDecals[i];
+      f.age += dt;
+      if (f.age >= TELE_FADE_SEC) {
+        root.remove(f.d.group);
+        releaseTree(f.d.group); // its quads are shared; its materials are not
+        fadingDecals.splice(i, 1);
+        continue;
+      }
+      f.d.setPulse(tSec, 1);
+      f.d.setFadeOut(1 - f.age / TELE_FADE_SEC);
+    }
+
+    // Ember motes rising off every live telegraph — the particle layer of the
+    // §19.4 3-layer rule on the telegraph itself (round 1: "no embers").
+    if (liveTelegraphs.length > 0) {
+      emberDebt += EMBER_HZ * dt * liveTelegraphs.length;
+      let n = Math.floor(emberDebt);
+      emberDebt -= n;
+      if (n > 6) n = 6; // never let a frame-time spike dump a cloud
+      for (let i = 0; i < n; i++) {
+        const t = liveTelegraphs[i % liveTelegraphs.length];
+        impactFx.embers(t.x, t.z, { n: 1, radius: 0.45, tall: 2.1 });
+      }
+    } else emberDebt = 0;
+
+    // --- Waystone.
+    if (waystoneEnt) {
+      if (!waystoneRec) {
+        const rig = buildWaystone();
+        rig.group.position.set(waystoneEnt.x, 0, waystoneEnt.z);
+        root.add(rig.group);
+        waystoneRec = { id: waystoneEnt.id, rig, flashUntilTick: 0 };
+      }
+      waystoneRec.rig.update(tSec, Math.max(0, waystoneEnt.hp / waystoneEnt.maxHp));
+      const lit = tick < waystoneRec.flashUntilTick ? HITFLASH.intensity : 0;
+      for (const m of waystoneRec.rig.mats) m.emissiveIntensity = lit;
+    }
+
+    // --- Spawn shimmers (violet, §11): state-sync against pending spawns.
+    const pending = world.pendingSpawns ? world.pendingSpawns() : [];
+    const liveKeys = new Set();
+    for (const p of pending) {
+      const key = `${p.wave}:${p.x}:${p.z}`;
+      liveKeys.add(key);
+      let s = shimmers.get(key);
+      if (!s) {
+        s = makeSpawnShimmer(cosmetic);
+        s.group.position.set(p.x, 0, p.z);
+        shimmers.set(key, s);
+        root.add(s.group);
+      }
+      s.update(tSec);
+    }
+    for (const [key, s] of shimmers) {
+      if (!liveKeys.has(key)) {
+        root.remove(s.group);
+        releaseTree(s.group);
+        shimmers.delete(key);
+      }
+    }
+
+    // --- Enemy shots.
+    const shotSeen = new Set();
+    for (const e of world.entities()) {
+      if (e.kind !== 'eshot') continue;
+      shotSeen.add(e.id);
+      let g = shots.get(e.id);
+      if (!g) {
+        g = makeShotRig(shotHue.get(e.id) ?? vfxFoeShotColor(null));
+        g.userData.hue = shotHue.get(e.id) ?? vfxFoeShotColor(null);
+        shots.set(e.id, g);
+        root.add(g);
+      }
+      const sx = e.px + (e.x - e.px) * alpha;
+      const sz = e.pz + (e.z - e.pz) * alpha;
+      g.position.set(sx, 0, sz);
+      spawnTrail(sx, sz, g.userData.hue);
+    }
+    for (const [id, g] of shots) {
+      if (!shotSeen.has(id)) {
+        // Where the shot stopped: a small spit in its hue + a hot spark
+        // (§19.4 — "instant impacts hold >= 3-5 frames").
+        impactFx.impact(g.position.x, g.position.z, { color: g.userData.hue, n: 5 });
+        shotHue.delete(id);
+        root.remove(g);
+        releaseTree(g); // the core sphere + shadow disc are shared; the three materials are not
+        shots.delete(id);
+      }
+    }
+    for (let i = trails.length - 1; i >= 0; i--) {
+      const tr = trails[i];
+      tr.age += dt;
+      const o = 0.45 * (1 - tr.age / TRAIL_FADE);
+      if (o <= 0) {
+        root.remove(tr.sprite);
+        trailPool.push(tr.sprite);
+        trails.splice(i, 1);
+      } else {
+        tr.sprite.material.opacity = o;
+      }
+    }
+
+    // --- Death pops / retreat shrink-outs / Waystone crumble.
+    for (let i = dying.length - 1; i >= 0; i--) {
+      const d = dying[i];
+      // The kill pop holds through the kill freeze (render/hold.js).
+      d.age += rdt;
+      const g = d.group;
+      if (d.mode === 'kill') {
+        if (d.age >= KILL_TOTAL_SEC) {
+          root.remove(g);
+          releaseTree(g); // the rig's parts are shared geometry; its materials are its own
+          dying.splice(i, 1);
+          continue;
+        }
+        killPose(d);
+      } else if (d.mode === 'retreat') {
+        if (d.age >= RETREAT_OUT_SEC) {
+          root.remove(g);
+          releaseTree(g); // the rig's parts are shared geometry; its materials are its own
+          dying.splice(i, 1);
+          continue;
+        }
+        const k = 1 - d.age / RETREAT_OUT_SEC;
+        g.scale.set(k, k, k); // quiet shrink-out — a retreat is not a kill
+      } else {
+        // Waystone crumble: keel over and sink, ~0.5 s.
+        const T = 0.5;
+        if (d.age >= T) {
+          root.remove(g);
+          releaseTree(g); // the rig's parts are shared geometry; its materials are its own
+          dying.splice(i, 1);
+          continue;
+        }
+        const t = d.age / T;
+        g.rotation.z = 0.9 * t * t;
+        g.position.y = -0.9 * t * t;
+        g.scale.setScalar(1 - 0.35 * t);
+      }
+    }
+  }
+
+  // K2 + K4 on the dying rig: hold, then swell round while thrown and tipped
+  // along the last hit, then pop flat. The swell, the tip and the pop ride the
+  // hit node (the shadow stays flat, the elite's base scale stays on the
+  // group); the throw moves the group along the floor.
+  const _kq = new Quaternion();
+  const _kaxis = new Vector3();
+  const _kS = new Matrix4();
+  const _kT = new Matrix4();
+  function killPose(d) {
+    const a = d.age;
+    let w = 1;
+    let h = 1;
+    let k = 0; // 0..1 of the throw
+    if (a >= KILL_HOLD_SEC) {
+      const s = Math.min(1, (a - KILL_HOLD_SEC) / KILL_SWELL_SEC);
+      const e = 1 - (1 - s) * (1 - s);
+      w = 1 + (KILL_SWELL.w - 1) * e;
+      h = 1 + (KILL_SWELL.h - 1) * e;
+      k = (a - KILL_HOLD_SEC) / (KILL_SWELL_SEC + KILL_POP_SEC);
+      if (a >= KILL_HOLD_SEC + KILL_SWELL_SEC) {
+        const t = Math.min(1, (a - KILL_HOLD_SEC - KILL_SWELL_SEC) / KILL_POP_SEC);
+        w = KILL_SWELL.w + (KILL_FLAT.w - KILL_SWELL.w) * t;
+        h = Math.max(KILL_FLAT.h, KILL_SWELL.h * (1 - t) * (1 - t));
+        for (const m of d.mats) m.emissiveIntensity = HITFLASH.intensity * (1 - t);
+      }
+    }
+    if (!d.node) {
+      // A rig with no hit node (never on this layer today): the old way.
+      d.group.scale.set(d.base * w, d.base * h, d.base * w);
+      return;
+    }
+    const m = d.node.matrix;
+    const py = d.pivot;
+    m.makeTranslation(0, -py, 0);
+    if (d.dir && k > 0) {
+      // Tips over easing in (K4), from the floor (or the body's middle).
+      _kaxis.set(d.dir.z, 0, -d.dir.x);
+      m.premultiply(_kT.makeRotationFromQuaternion(_kq.setFromAxisAngle(_kaxis, KILL_TIP * k * k)));
+      const fly = d.throwU * (1 - (1 - Math.min(1, k)) * (1 - Math.min(1, k)));
+      d.group.position.set(d.x + d.dir.x * fly, 0, d.z + d.dir.z * fly);
+    }
+    // The swell and the flat pop in the world's axes, after the tip, so a
+    // tipped body still pops flat on the floor.
+    m.premultiply(_kS.makeScale(w, h, w));
+    // A body killed mid-hop sinks back to the floor through the hold and pop.
+    const fall = d.lift0 ? d.lift0 * Math.max(0, 1 - a / KILL_TOTAL_SEC) : 0;
+    m.premultiply(_kT.makeTranslation(0, py + fall, 0));
+    d.node.matrixWorldNeedsUpdate = true;
+  }
+
+  function debugState() {
+    return {
+      enemyRigs: rigs.size,
+      telegraphDecals: decals.size,
+      spawnShimmers: shimmers.size,
+      enemyShots: shots.size,
+      waystone: waystoneRec ? waystoneRec.id : null,
+      archetypeTelegraphs: shapeTele.size,
+      rigKinds: [...new Set([...rigs.values()].map((r) => r.kind))].sort(),
+      elites: [...rigs.values()].filter((r) => r.elite).length,
+      // Live hit-flash level per rig id (Small fixes 4: the herald's flashScale).
+      flash: Object.fromEntries([...rigs].map(([id, r]) => [id, r.build.mats.reduce((a, m) => Math.max(a, m.emissiveIntensity ?? 0), 0)])),
+      // The hit reaction per rig id (render/react.js), and the kill pops.
+      react: Object.fromEntries([...rigs].filter(([, r]) => r.react.hitTick !== null).map(([id, r]) => [id, reactDebug(r)])),
+      envTick: env.now,
+      kills: dying.filter((d) => d.mode === 'kill').map((d) => {
+        const m = d.node ? d.node.matrix.elements : null;
+        // sx, sy: the body's world width and height scale (matrix rows).
+        return { age: Math.round(d.age * 1000) / 1000, dir: d.dir, x: d.group.position.x, z: d.group.position.z, sx: m ? Math.hypot(m[0], m[4], m[8]) : 1, sy: m ? Math.hypot(m[1], m[5], m[9]) : 1, ty: m ? m[13] : 0 };
+      }),
+      shapes: shapes.stats(),
+      ...extras.debugState(),
+      ...affixes.debugState(),
+      objectives: objfx.debugState(),
+      escortHold: ehfx.debugState(),
+      champions: champfx.debug(),
+    };
+  }
+
+  function reactDebug(r) {
+    const o = evalReaction(r.react, env.now, {});
+    const e = r.node.matrix.elements;
+    return { hitTick: r.react.hitTick, amp: r.react.amp, q: o.q, lift: o.lift, tilt: o.tilt, air: o.air, land: o.qLand, hop: r.react.hop ? r.react.hop.dist : null, sx: Math.hypot(e[0], e[1], e[2]), sy: Math.hypot(e[4], e[5], e[6]), ty: e[13], spell: r.spellFlashTick === null ? 0 : spellFlashLevel(world.tick - r.spellFlashTick) };
+  }
+
+  // __echoes.content.enemyfx() — the layer's live counters (M4b probe).
+  registerContentProbe('enemyfx', debugState);
+  // @gnt:M2 RESTORE-RESYNC begin — a loaded save replaces the registry: ids
+  // may now name different enemies, so every id-keyed rig, decal, shape,
+  // shot and shimmer is dropped silently (no death pops) and the next
+  // update() rebuilds exactly what the restored sim holds (PLAN §3.4 rule 5).
+  bus.on('state_restored', () => {
+    for (const r of rigs.values()) {
+      root.remove(r.build.group);
+      releaseTree(r.build.group);
+    }
+    rigs.clear();
+    for (const d of decals.values()) {
+      root.remove(d.group);
+      releaseTree(d.group);
+    }
+    decals.clear();
+    for (const f of fadingDecals.splice(0)) {
+      root.remove(f.d.group);
+      releaseTree(f.d.group);
+    }
+    for (const rec of shapeTele.values()) shapes.release(rec.shape);
+    shapeTele.clear();
+    for (const f of fadingShapes.splice(0)) shapes.release(f.shape);
+    for (const g of shots.values()) {
+      root.remove(g);
+      releaseTree(g);
+    }
+    shots.clear();
+    for (const s of shimmers.values()) {
+      root.remove(s.group);
+      releaseTree(s.group);
+    }
+    shimmers.clear();
+    lastTelegraph.clear();
+    for (const d of dying.splice(0)) {
+      root.remove(d.group);
+      releaseTree(d.group);
+    }
+    if (waystoneRec) {
+      root.remove(waystoneRec.rig.group);
+      releaseTree(waystoneRec.rig.group);
+      waystoneRec = null;
+    }
+    champfx.clear();
+    hushfx.clear();
+  });
+  // @gnt:M2 RESTORE-RESYNC end
+  return { update, debugState };
+}

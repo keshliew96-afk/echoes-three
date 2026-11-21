@@ -1,0 +1,189 @@
+{
+ "lance": {
+  "floor": {},
+  "through": {
+   "elL into spine": {
+    "deep_mm": 38.9,
+    "at": 0.85,
+    "verts": 95,
+    "frames": 55
+   },
+   "elR into spine": {
+    "deep_mm": 38.1,
+    "at": 0.817,
+    "verts": 107,
+    "frames": 56
+   },
+   "chest into halo": {
+    "deep_mm": 35.9,
+    "at": 0.933,
+    "verts": 8,
+    "frames": 7
+   },
+   "elR into hips": {
+    "deep_mm": 33.4,
+    "at": 0.6,
+    "verts": 42,
+    "frames": 48
+   },
+   "handR into chest": {
+    "deep_mm": 33.3,
+    "at": 0.85,
+    "verts": 29,
+    "frames": 22
+   },
+   "handL into chest": {
+    "deep_mm": 32.5,
+    "at": 0.8,
+    "verts": 52,
+    "frames": 23
+   },
+   "elL into hips": {
+    "deep_mm": 29.8,
+    "at": 0.533,
+    "verts": 30,
+    "frames": 45
+   },
+   "hips into shR": {
+    "deep_mm": 28.8,
+    "at": 0.133,
+    "verts": 8,
+    "frames": 17
+   },
+   "spine into elR": {
+    "deep_mm": 28.8,
+    "at": 0.95,
+    "verts": 44,
+    "frames": 58
+   },
+   "spine into elL": {
+    "deep_mm": 28.6,
+    "at": 0.95,
+    "verts": 64,
+    "frames": 57
+   },
+   "hips into shL": {
+    "deep_mm": 23.4,
+    "at": 0.183,
+    "verts": 6,
+    "frames": 20
+   },
+   "hips into elL": {
+    "deep_mm": 20.6,
+    "at": 0.5,
+    "verts": 5,
+    "frames": 39
+   },
+   "hips into elR": {
+    "deep_mm": 18.3,
+    "at": 0.167,
+    "verts": 11,
+    "frames": 29
+   },
+   "notes into chest": {
+    "deep_mm": 16.7,
+    "at": 1.033,
+    "verts": 2,
+    "frames": 8
+   },
+   "handR into spine": {
+    "deep_mm": 15.5,
+    "at": 0.667,
+    "verts": 2,
+    "frames": 8
+   },
+   "halo into chest": {
+    "deep_mm": 12.2,
+    "at": 0.9,
+    "verts": 1,
+    "frames": 1
+   },
+   "shL into hips": {
+    "deep_mm": 10.1,
+    "at": 0.417,
+    "verts": 3,
+    "frames": 6
+   },
+   "chest into handL": {
+    "deep_mm": 9.3,
+    "at": 0.817,
+    "verts": 2,
+    "frames": 12
+   },
+   "chest into handR": {
+    "deep_mm": 7.4,
+    "at": 0.817,
+    "verts": 1,
+    "frames": 9
+   },
+   "notes into neck": {
+    "deep_mm": 6.4,
+    "at": 0.933,
+    "verts": 1,
+    "frames": 2
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   6.28,
+   0.95,
+   "chest"
+  ]
+ },
+ "death": {
+  "floor": {
+   "hips": [
+    -62.8,
+    1.45
+   ],
+   "robe": [
+    -12.9,
+    1.45
+   ]
+  },
+  "through": {
+   "notes into chest": {
+    "deep_mm": 40.3,
+    "at": 1.2,
+    "verts": 9,
+    "frames": 8
+   },
+   "notes into neck": {
+    "deep_mm": 22.7,
+    "at": 1.433,
+    "verts": 15,
+    "frames": 20
+   },
+   "jaw into chest": {
+    "deep_mm": 19.4,
+    "at": 1.9,
+    "verts": 7,
+    "frames": 87
+   },
+   "jaw into heart": {
+    "deep_mm": 12.9,
+    "at": 2.0,
+    "verts": 6,
+    "frames": 40
+   },
+   "mote1 into elL": {
+    "deep_mm": 11.5,
+    "at": 1.117,
+    "verts": 2,
+    "frames": 8
+   },
+   "chest into jaw": {
+    "deep_mm": 7.6,
+    "at": 2.0,
+    "verts": 1,
+    "frames": 38
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   9.71,
+   2.0,
+   "robe"
+  ]
+ }
+}

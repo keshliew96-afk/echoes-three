@@ -1,0 +1,112 @@
+{
+ "idle": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   3.45,
+   "peg5"
+  ]
+ },
+ "walk": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   1.717,
+   "peg5"
+  ]
+ },
+ "turnL": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   0.25,
+   "peg5"
+  ]
+ },
+ "turnR": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   0.1,
+   "peg5"
+  ]
+ },
+ "halt": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   0.083,
+   "peg5"
+  ]
+ },
+ "planks": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   42.21,
+   1.983,
+   "hips"
+  ]
+ },
+ "crosscut": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   3.3,
+   "peg5"
+  ]
+ },
+ "hurt": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   0.1,
+   "peg5"
+  ]
+ },
+ "heavyHit": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   0.6,
+   "peg5"
+  ]
+ },
+ "spawn": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   0.033,
+   "peg5"
+  ]
+ },
+ "death": {
+  "floor": {},
+  "through": {},
+  "snaps": [],
+  "stretch": [
+   1.0,
+   1.833,
+   "peg5"
+  ]
+ }
+}

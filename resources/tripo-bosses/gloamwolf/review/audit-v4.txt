@@ -1,0 +1,109 @@
+idle      floor clean
+          tail3 into hShinR             25.8 mm at 5.33  (8 verts, 47 frames)
+          hShinL into tail2             24.8 mm at 2.53  (2 verts, 56 frames)
+          tail3 into hShinL             12.6 mm at 2.08  (2 verts, 19 frames)
+          hShinR into tail2             11.0 mm at 5.75  (3 verts, 14 frames)
+          tail2 into hShinL             10.9 mm at 1.93  (2 verts, 4 frames)
+          stretch x5.70 at 0.50 on head
+walk      floor clean
+          fForeL into spine             31.5 mm at 0.42  (30 verts, 16 frames)
+          fForeR into spine             29.0 mm at 0.13  (11 verts, 8 frames)
+          tail2 into hShinR             26.0 mm at 0.48  (24 verts, 6 frames)
+          hCannonR into tail3           11.9 mm at 0.45  (8 verts, 3 frames)
+          hShinL into tail2             11.5 mm at 0.12  (1 verts, 2 frames)
+          tail2 into hCannonR            9.3 mm at 0.47  (1 verts, 1 frames)
+          tail2 into hShinL              8.3 mm at 0.18  (4 verts, 1 frames)
+          stretch x16.41 at 0.42 on fUpperL
+turnL     floor clean
+          tail2 into hShinR             14.5 mm at 0.37  (12 verts, 3 frames)
+          fForeL into spine             13.1 mm at 0.35  (5 verts, 5 frames)
+          fForeR into spine              7.6 mm at 0.15  (1 verts, 2 frames)
+          tail2 into hCannonR            6.1 mm at 0.33  (1 verts, 1 frames)
+          stretch x11.73 at 0.35 on fUpperL
+turnR     floor clean
+          hCannonR into hShinL          11.7 mm at 0.07  (2 verts, 4 frames)
+          fForeR into spine             11.0 mm at 0.12  (1 verts, 2 frames)
+          fForeL into spine             10.2 mm at 0.38  (3 verts, 3 frames)
+          tail2 into hShinL              9.6 mm at 0.02  (3 verts, 3 frames)
+          stretch x11.07 at 0.35 on fUpperL
+pounce    floor clean
+          fForeR into spine             56.1 mm at 0.62  (78 verts, 2 frames)
+          fForeL into spine             51.7 mm at 0.62  (75 verts, 2 frames)
+          tail2 into hShinL             33.3 mm at 0.75  (65 verts, 7 frames)
+          tail3 into hShinL             30.6 mm at 0.73  (2 verts, 3 frames)
+          neck1 into fCannonL           29.3 mm at 0.58  (19 verts, 1 frames)
+          tail2 into hShinR             29.1 mm at 0.75  (11 verts, 7 frames)
+          fCannonR into neck1           29.0 mm at 0.60  (15 verts, 1 frames)
+          hShinR into tail2             27.7 mm at 0.73  (10 verts, 8 frames)
+          snaps: hCannonL 57 deg@0.70 (beside 16), hCannonR 57 deg@0.70 (beside 16), hShinL 56 deg@0.70 (beside 14), hShinR 55 deg@0.70 (beside 14), hHoofR 32 deg@0.88 (beside 9)
+          stretch x30.16 at 0.47 on fUpperL
+rend      floor clean
+          fForeL into spine             37.6 mm at 0.75  (2 verts, 6 frames)
+          chest into fCannonR           20.4 mm at 0.28  (16 verts, 21 frames)
+          hShinR into tail2             19.1 mm at 0.10  (2 verts, 4 frames)
+          earR into neck1               16.6 mm at 0.65  (9 verts, 5 frames)
+          fCannonR into neck1           16.4 mm at 0.30  (11 verts, 9 frames)
+          earL into neck1               13.3 mm at 0.67  (7 verts, 10 frames)
+          neck1 into fCannonR           12.4 mm at 0.38  (1 verts, 3 frames)
+          hShinL into tail2             11.5 mm at 1.10  (4 verts, 5 frames)
+          snaps: fHoofR 47 deg@0.78 (beside 14), fUpperR 35 deg@0.63 (beside 9), fHoofL 12 deg@0.47 (beside 3)
+          stretch x18.14 at 0.68 on fUpperL
+howl      floor fHoofL -4mm@1.03
+          maneF into head               47.7 mm at 1.12  (50 verts, 26 frames)
+          maneF into earL               13.8 mm at 1.43  (4 verts, 19 frames)
+          maneF into earR               11.0 mm at 1.33  (2 verts, 9 frames)
+          hShinL into tail2              7.7 mm at 0.80  (1 verts, 2 frames)
+          snaps: fForeR 14 deg@1.00 (beside 3), fForeR 13 deg@0.83 (beside 2), fForeL 12 deg@0.92 (beside 1), fForeL 12 deg@1.27 (beside 0), fForeL 12 deg@0.80 (beside 3)
+          stretch x10.01 at 0.75 on hCannonR
+call      floor clean
+          hShinL into tail2             22.6 mm at 1.23  (3 verts, 5 frames)
+          hShinR into tail2             19.8 mm at 0.03  (3 verts, 2 frames)
+          maneF into head               18.4 mm at 0.67  (5 verts, 2 frames)
+          earL into neck1                8.4 mm at 0.67  (1 verts, 16 frames)
+          stretch x8.94 at 0.75 on hCannonR
+enrage    floor clean
+          fForeR into spine             20.6 mm at 0.70  (4 verts, 18 frames)
+          hShinR into tail2             18.3 mm at 0.13  (3 verts, 5 frames)
+          tail3 into hShinR             13.8 mm at 1.67  (5 verts, 10 frames)
+          fForeL into spine             12.5 mm at 1.28  (6 verts, 10 frames)
+          hCannonR into tail3           10.8 mm at 1.55  (2 verts, 2 frames)
+          tail2 into hShinR              9.4 mm at 1.57  (1 verts, 2 frames)
+          maneR into hips                8.4 mm at 1.23  (2 verts, 3 frames)
+          hShinR into tail3              7.4 mm at 1.58  (2 verts, 2 frames)
+          stretch x11.25 at 1.28 on fUpperL
+rageHold  floor clean
+          stretch x7.17 at 0.23 on head
+hurt      floor clean
+          hShinR into tail2             29.0 mm at 0.23  (3 verts, 2 frames)
+          hShinL into tail2             24.7 mm at 0.33  (3 verts, 8 frames)
+          tail3 into hShinL             14.9 mm at 0.38  (2 verts, 7 frames)
+          earL into neck1                8.4 mm at 0.17  (2 verts, 5 frames)
+          tail3 into hShinR              7.8 mm at 0.42  (2 verts, 3 frames)
+          stretch x10.81 at 0.17 on head
+heavyHit  floor fHoofL -9mm@0.05, tail3 -5mm@0.07, fHoofR -4mm@0.05
+          hShinL into tail2             23.2 mm at 0.15  (5 verts, 8 frames)
+          tail3 into hShinL             23.0 mm at 0.23  (17 verts, 7 frames)
+          hShinR into tail2             22.7 mm at 0.07  (4 verts, 5 frames)
+          tail3 into hShinR             22.5 mm at 0.12  (3 verts, 10 frames)
+          tail2 into hShinR             22.3 mm at 0.07  (13 verts, 4 frames)
+          hShinR into tail3             15.2 mm at 0.08  (8 verts, 5 frames)
+          hCannonR into tail3           14.7 mm at 0.07  (6 verts, 4 frames)
+          hCannonR into tail2           12.4 mm at 0.07  (10 verts, 7 frames)
+          snaps: fHoofL 33 deg@0.22 (beside 7), fHoofL 29 deg@0.03 (beside 8), fHoofR 21 deg@0.03 (beside 4)
+          stretch x11.33 at 0.30 on fUpperL
+spawn     floor clean
+          fForeR into spine             23.1 mm at 0.00  (6 verts, 20 frames)
+          fForeL into spine             20.2 mm at 0.12  (10 verts, 25 frames)
+          hShinL into tail2             18.7 mm at 1.43  (1 verts, 3 frames)
+          hShinR into tail2             12.2 mm at 1.42  (3 verts, 8 frames)
+          stretch x13.62 at 0.00 on fUpperL
+death     floor clean
+          hCannonR into hips            51.8 mm at 1.33  (4 verts, 79 frames)
+          hHoofR into hips              45.9 mm at 2.50  (1 verts, 59 frames)
+          hHoofR into hThighR           45.6 mm at 1.35  (6 verts, 78 frames)
+          hips into hCannonR            34.7 mm at 2.23  (22 verts, 40 frames)
+          earR into neck1               31.6 mm at 2.17  (17 verts, 54 frames)
+          fCannonL into head            24.8 mm at 1.07  (5 verts, 2 frames)
+          neck1 into fCannonL           23.5 mm at 1.02  (4 verts, 97 frames)
+          fCannonR into chest           22.6 mm at 1.32  (12 verts, 12 frames)
+          stretch x15.46 at 2.27 on hCannonR

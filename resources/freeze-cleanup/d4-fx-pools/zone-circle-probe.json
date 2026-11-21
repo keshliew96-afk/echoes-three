@@ -1,0 +1,63 @@
+[
+  {
+    "name": "Sanctuary given to the Healer",
+    "ok": true,
+    "info": {
+      "slot": 0
+    }
+  },
+  {
+    "name": "Sanctuary cast spawned a zone",
+    "ok": true,
+    "info": {
+      "zoneId": 25
+    }
+  },
+  {
+    "name": "Sanctuary: every live zone shows one live circle at its exact radius, none kept after",
+    "ok": true,
+    "info": {
+      "samples": 9,
+      "zones": [
+        "zone:sanctuary"
+      ],
+      "bad": []
+    }
+  },
+  {
+    "name": "the Sanctuary circle stayed for the zone's whole life (about 4 s)",
+    "ok": true,
+    "info": {
+      "first": 299,
+      "last": 485
+    }
+  },
+  {
+    "name": "Sanctuary (a Healer heal) wears the magic circle",
+    "ok": true,
+    "info": {
+      "id": 25,
+      "radius": 1,
+      "live": true,
+      "face": "magic"
+    }
+  },
+  {
+    "name": "hero kit zones: every live zone shows one live circle at its exact radius, none kept after",
+    "ok": true,
+    "info": {
+      "samples": 46,
+      "zones": [
+        "azone:rain_of_arrows",
+        "azone:ground_crack",
+        "azone:caltrops"
+      ],
+      "bad": []
+    }
+  },
+  {
+    "name": "no console errors",
+    "ok": true,
+    "info": []
+  }
+]

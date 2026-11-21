@@ -1,0 +1,117 @@
+<div class="wrap">
+  <div>
+    <h1>Fox Swordsman from Tripo, rigged</h1>
+    <p class="lede">Your Tripo body and sword, brought to the same level as the mouse Healer and reworked to move like a swordsman: light, quick and low, the blade leading. Pick one move or combine several, and drag to turn him. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way he walks, runs or dashes while he keeps facing the same way. Add one Action for the upper body, and Hurt on top. Blade Storm and hit 4 of the combo spin him, and they keep the spin over walking legs. Tap attack plays one combo hit per press: press again after a hit lands to chain hits 1, 2, 3 and 4. Dash and Downed use the whole body, so they play alone. Press Downed again to revive him. Hit feel adds the freeze, the squash, the camera shake, the dust, cracks and sparks, and his lean into travel.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="fox-views.png" alt="The Tripo fox from the front, right, back and left, arms out, before rigging, with the stray fur removed" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">The loose tuft of fur you boxed is gone. Nothing else on the model changed.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,980 <small>body 13,188 + sword 1,792 · budget 15,000</small></dd></div>
+    <div><dt>Bones</dt><dd>24 <small>spine, head, ears, arms, fingers, legs, 5 in the tail</small></dd></div>
+    <div><dt>Textures</dt><dd>2 × 2K <small>body and sword, colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.6 MB <small>one GLB with all 31 moves at 60 frames a second</small></dd></div>
+    <div><dt>Moves</dt><dd>31 <small>idle, 4 walks, 4 runs, 4 dashes, Blade Storm, sword combo and its 4 hits, 5 casts, downed (fall, lie, crawl, revive), hurt, wave, flourish</small></dd></div>
+  </dl>
+
+  <h2>Audit against the Healer's level, 12 November</h2>
+  <p class="note">The fox was measured the way the Healer and the Tank were, moved onto the same build, and then every move was checked against one question: does it move like a swordsman? The numbers are from the model file and the poses were checked as still frames. The cloud machine cannot play it at full speed, so the speed and the snap are still yours to judge.</p>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured</th><th>Before</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>Frames stored per second</td><td>30</td><td>60</td></tr>
+      <tr><td>Loops that jumped when they restarted</td><td>1 (idle 3.5°)</td><td>0</td></tr>
+      <tr><td>Stop-and-go dips inside a move</td><td>17 over 29 moves</td><td>16 over 31 moves</td></tr>
+      <tr><td>Sharp corners inside a loop (a foot leaving the floor)</td><td>walk, all runs</td><td>0 in the walks; the runs still have a few</td></tr>
+      <tr><td>Moves where the sword cut into his body</td><td>0</td><td>0</td></tr>
+      <tr><td>Switching from one move to another</td><td>one-frame snap</td><td>blends over 0.07 to 0.16 s</td></tr>
+      <tr><td>Ears and tail</td><td>moved only where a pose said so</td><td>five tail bones and both ears trail the body and settle after it stops</td></tr>
+      <tr><td>Head, free arm and sword arm</td><td>all moved at the same instant</td><td>follow the trunk a few hundredths of a second late; a cut carries past its target and settles</td></tr>
+      <tr><td>Where the blade points</td><td>wherever the arm angles put it</td><td>set directly at every key pose of the combo, the casts and the run, and measured: within 1° of the line asked for</td></tr>
+      <tr><td>Sword paw on its mark in the combo</td><td>not measured</td><td>within 1 cm at the four hits, up to 7 cm short at the far side of the spin</td></tr>
+    </tbody></table></div>
+
+  <h2>Detailed audit, Version 10</h2>
+  <p class="note">The motion design is unchanged. Every frame of all 31 moves (60 a second) was measured for things the eye misses in a strip of stills: how close the blade comes to the floor, the tail, the legs, the free arm, the trunk and the head; whether either paw sinks into the trunk; whether the feet go under the floor or cross each other. The first run raised 23 flags. They were fixed and measured again.</p>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured in every frame</th><th>Found</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>Free arm at rest</td><td>my free-arm fix in Version 6 also turned his rest pose, so the arm stuck out sideways in idle, the walks, the runs and the strafes</td><td>hangs at his side; out only where a move swings it</td></tr>
+      <tr><td>Sword paw sinking into his trunk</td><td>combo hit 1 (4 cm from the spine), the spin (5 cm), crescent recovery (6.5 cm)</td><td>never closer than 9 cm; the spin now turns about his trunk, not about his feet</td></tr>
+      <tr><td>Free paw or elbow sinking into his trunk</td><td>none after Version 6</td><td>never closer than 13 cm in any standing move</td></tr>
+      <tr><td>Blade against the tail</td><td>combo landing 10.6 cm from the tail's centre line (the tail is about that thick); single hit 3 5.7 cm</td><td>16 cm or more everywhere</td></tr>
+      <tr><td>Blade against the floor</td><td>single hit 3 dipped to 2.4 cm on its way back</td><td>8 cm or more while standing</td></tr>
+      <tr><td>Blade against his face</td><td>hit 1 passed 8 cm from his muzzle, crescent 6.4 cm on recovery</td><td>10 cm or more, except the edge-draw salute, where the blade stands 6.7 cm before his muzzle on purpose</td></tr>
+      <tr><td>Blade against his legs</td><td>forward dash 9.3 cm</td><td>19 cm or more; in the dash the blade now trails behind him as it does in the run</td></tr>
+      <tr><td>Single hits of the tap chain</td><td>each single hit carried on into the next hit's blade path while the body went back to rest, so the blade wandered</td><td>each ends on its own hit and settles</td></tr>
+      <tr><td>Feet crossing in the strafes</td><td>walk left and right: feet passed 3 cm apart, the legs went through each other; run left and right 5.7 cm</td><td>the lead leg steps out and the trail leg closes without crossing: never under 11 cm</td></tr>
+      <tr><td>Feet under the floor</td><td>0</td><td>0 (2 mm at most)</td></tr>
+      <tr><td>Side dashes</td><td>the free arm was pulled across his body</td><td>both arms fling away from the dash</td></tr>
+      <tr><td>Loops that jump on restart</td><td>0</td><td>0</td></tr>
+      <tr><td>Stop-and-go dips</td><td>walk back had 2 from a hard foot corner</td><td>walk back 0; the ones left are held poses on purpose (salute, wave, flourish, cast holds)</td></tr>
+      <tr><td>Sword cutting into his body (the build's own check)</td><td>0</td><td>0 in all 31 moves</td></tr>
+    </tbody></table></div>
+  <p class="note">Left as they are: when he lies downed his paws rest beside his head, which the measurement flags but is the pose; and in the idle guard his sword paw sits 6 cm from where it was aimed, with the blade on its line.</p>
+
+  <h2>Second review, 12 November</h2>
+  <p class="note">Every move was looked at again from the front, the side and above. Six things did not hold up and were rebuilt.</p>
+  <p class="note"><strong>1. Idle was still just standing.</strong> It is a guard now: sword side forward, feet staggered, weight low, the blade held out in front with its point up, the free arm back. <strong>2. The combo had no footwork.</strong> The arms cut but the legs and trunk barely moved. Hit 1 now has a long step in with the trunk thrown down behind the cut, hit 2 comes up onto his toes behind the rising blade, and the spin tucks its legs. <strong>3. The combo's finish was upright.</strong> He now lands in a deep, wide lunge with the blade swept round behind him and the free arm forward. <strong>4. The crescent had no step.</strong> It has the same step and drop as hit 1. <strong>5. The riposte's block crossed his face.</strong> The blade now sits across his chest with its point past his left ear. <strong>6. Caltrops read as a wave and edge draw looked at the sky.</strong> The caltrops are scattered low along the floor from a deep lean with the blade tucked back, and in edge draw he keeps his eyes on the enemy.</p>
+  <p class="note"><strong>Version 6: the free arm.</strong> You saw his free hand vanish in the spin. The arm was being turned into his body instead of out, in the spin and in most other moves, so it sank into his chest. It now swings out from his side everywhere: wide in the spin and Blade Storm, back for balance in the cuts and the lunge.</p>
+  <p class="note">Looked at and left alone: walk, run, the lunge, Blade Storm, the strafes, dash, hurt, flourish and the downed moves.</p>
+
+  <h2>What changed, move by move</h2>
+  <p class="note"><strong>The rule for all of it:</strong> a short load, a fast release, a quick recovery. The blade leads and the body follows it, he lands low and holds the finish, and the tail and the free arm throw the other way for balance.</p>
+  <p class="note"><strong>Idle.</strong> An on-guard stance instead of standing straight: sword side forward, feet staggered, the blade out in front with its point drifting in a small circle, a quick breath, the tail swishing, ears turning one at a time.</p>
+  <p class="note"><strong>Walk and run.</strong> The walk is light and up on his toes; the blade is carried still while the free arm and the tail swing. The run is a low sprint: far forward over his feet, ears flat, the tail streaming, and the blade now trails behind him pointing back instead of sticking out in front.</p>
+  <p class="note"><strong>Sword combo, four hits in the same 1.6 seconds (Version 7).</strong> Cut, cut, thrust, spin, with no stop between them: each finish is the next hit's load. Hit 1 (0.14 s) is a forehand cut down across the front with a long step in. Hit 2 (0.32 s) whips the blade straight back up as a rising backhand, up on his toes. Hit 3 (0.50 s) is new: from the top of the backhand he snaps the grip back to his shoulder and stabs straight out in a short lunge. Hit 4 (0.82 s) is the spin cut: the thrust's recoil throws him into a full turn with the blade out level and the free arm flung wide, the blade cuts through the front on the way round, and he lands in a deep lunge and holds it before a small flick of the point. The last cut lands at the same moment as before (0.82 s, was 0.80) and the whole combo is still 1.6 s.</p>
+  <p class="note"><strong>Casts.</strong> <em>Lunge</em> (0.22 s): the blade is drawn back to his hip and driven straight out, level, in a long low lunge; a thin streak runs down the thrust. <em>Edge draw</em> (0.36 s): the blade comes up before his face in a salute and is thrust to the sky, his free arm straight down at his side as if standing to attention, and a crimson edge sits on the blade for a moment. <em>Caltrops</em> (0.28 s): he drops low and flings them underhand off the free paw; six land ahead of him and stay a moment. <em>Crescent</em> (0.30 s): he winds the blade far back and cuts one wide level arc from right to left; a crimson crescent travels out along the floor. <em>Riposte</em> (block at 0.10 s, answer at 0.44 s): the blade snaps up across his body to catch a blow, he sways back under it, then answers standing tall with a whipping backhand slash at neck height from left to right. It no longer ends in a thrust, so the lunge is his only stab: the lunge is low and long, the riposte is upright and wide.</p>
+  <p class="note"><strong>Blade Storm.</strong> The three-turn spin you asked for is unchanged, but it no longer needs Idle: it keeps spinning over walking or running legs.</p>
+  <p class="note"><strong>Effects.</strong> Fox Crimson for the edge and Moon Silver for steel, the Swordsman's two colours in the game. A thin arc where each cut passes, silver sparks at a contact, a little dust under fast feet. All of them are dim and switch off with Hit feel. The trail behind the blade shows only in the combo, the lunge, the riposte, the crescent and Blade Storm. The two fast cuts barely freeze and do not shake the camera; the spin cut and the lunge do.</p>
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The five casts cover his 11 skills in the game: lunge for the dashing strikes, edge draw for the stances and the crimson edge, caltrops, crescent for the arcs and wakes, riposte for the counter, plus Blade Storm.</li>
+        <li>His feet stay on the floor when he drops low or lunges. The legs slide up under the kilt like a hidden knee bend.</li>
+        <li>Every frame of every move is measured for the sword cutting into his body, and all 31 measure clear.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>He has no knees, so "low" is a lean and a drop of the hips, not a real crouch. The lunge and the landing after the spin would gain the most from a knee.</li>
+        <li>When the combo's spin plays over walking legs, the legs keep walking forward under a body that is turning. It reads at game zoom, but it is a shortcut.</li>
+        <li>The kilt is one stiff piece and the scarf does not sway. His fingers don't close round the grip.</li>
+        <li>His feet can still slide while he walks, the moves play in place (the lunge does not carry him forward), and he has no ink outline or flat game colours yet.</li>
+        <li>Dash, the downed moves, Hurt, Wave and Flourish were moved to the new build but not redesigned.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,22 @@
+import { build } from './sim.mjs';
+import { memStorage } from './memstore.mjs';
+const R = '/home/claude/echoes-three/src/save/';
+const { buildFile, clonePlain } = await import(R + 'codec.js');
+const { createSaveStorage, PROFILE_KEY } = await import(R + 'storage.js');
+const { applyBundle, makeBundle } = await import(R + 'cloud.js');
+const s = build({ seed: 3 }); s.world.runSystem().startCampaign({ level: 1 }); s.stepN(200);
+const tree = s.io.capture();
+const fileFor = (id, at) => buildFile({ slot: { id, kind: 'manual', name: id }, meta: { act: 1 }, state: tree, game: 'test', createdAt: at, savedAt: at }).text;
+const local = {};
+for (const id of ['manual-1','manual-2','manual-3']) local['echoes.save.v1.' + id] = fileFor(id, '2026-10-19T10:00:00Z');
+local[PROFILE_KEY] = JSON.stringify({ v: 1, records: { runs: 50 }, meta: { embers: 900 } });
+const ls = memStorage(local);
+const store = createSaveStorage({ storage: ls });
+// Cloud bundle holding only auto-1; this device's quota refuses that write.
+const bundle = { kind: 'echoes-cloud', v: 1, game: 'x', savedAt: '2026-10-01T00:00:00Z', profile: JSON.stringify({ v: 1, records: { runs: 3 } }), slots: { 'auto-1': fileFor('auto-1', '2026-10-01T00:00:00Z') } };
+ls.failKey = (k) => k.startsWith('echoes.save.v1.auto-1');
+console.log('before:', [...ls._m.keys()].filter(k=>k.startsWith('echoes.save')).join(' '));
+const r = applyBundle(store, bundle);
+console.log('applyBundle ->', r, 'frozen', store.frozen);
+console.log('after :', [...ls._m.keys()].filter(k=>k.startsWith('echoes.save')).join(' ') || '(no slot keys)');
+console.log('profile runs still', JSON.parse(ls.getItem(PROFILE_KEY)).records.runs);

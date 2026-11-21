@@ -1,0 +1,47 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "skill": "warding_aura",
+  "allies": [
+   [
+    -1.8,
+    -1.0,
+    1
+   ],
+   [
+    2.6,
+    1.2,
+    1
+   ],
+   [
+    -4.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    6.0,
+    "eval",
+    "const p=E.state().party;E.cmd('setHp',p[1].id,0.5);E.cmd('setHp',p[2].id,0.6);E.cmd('setHp',p[3].id,0.5);"
+   ]
+  ],
+  "secs": 9.5,
+  "live": "(()=>{const w=window.__echoes.content.world();const L=globalThis.__reviewGladeWisps||[];return 'waiting '+L.filter(x=>x.state==='wait').length+' \u00b7 flying '+L.filter(x=>x.state==='fly').length+' \u00b7 '+w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 4.0
+   }
+  ],
+  "cap": "S19 Glade Wisps (passive, replaces Glade) \u00b7 a wisp forms every 2.5 s and circles her (at most 3, each waits 10 s) \u00b7 when an ally within 4 u is hurt, a wisp flies to the most hurt one and heals 10",
+  "name": "kit_S19"
+ }
+]

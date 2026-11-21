@@ -1,0 +1,506 @@
+<title>Echoes Cast Modes</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: one column review sheet. The try-it field sits first (the thing under review), then the shapes, every hero's skills, the rules and the numbered choices. */
+:root{
+  --bg:#EDEFE9; --paper:#FAFBF7; --ink:#1D221E; --muted:#59625A; --line:#D3D8CF;
+  --accent:#2F6A8C; --accent-soft:#DCE9F0; --rec:#2E6B3B; --rec-bg:#DCEEDC; --warn:#8A5A00; --warn-bg:#F6E8C8;
+  --chip:#E4E8E0; --chip-on:#1D221E; --chip-on-ink:#FAFBF7;
+  --display:"Space Grotesk","Segoe UI",system-ui,sans-serif;
+  --body:Inter,"Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141714; --paper:#1B1F1B; --ink:#E5EAE3; --muted:#9FA99F; --line:#313830;
+  --accent:#8CC3E3; --accent-soft:#1D2E38; --rec:#93D49B; --rec-bg:#1E3522; --warn:#F0C065; --warn-bg:#3A2D12;
+  --chip:#262C26; --chip-on:#E5EAE3; --chip-on-ink:#141714; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141714; --paper:#1B1F1B; --ink:#E5EAE3; --muted:#9FA99F; --line:#313830;
+  --accent:#8CC3E3; --accent-soft:#1D2E38; --rec:#93D49B; --rec-bg:#1E3522; --warn:#F0C065; --warn-bg:#3A2D12;
+  --chip:#262C26; --chip-on:#E5EAE3; --chip-on-ink:#141714; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.55 var(--body)}
+.wrap{max-width:1040px;margin:0 auto;padding-block:28px 72px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:44px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0;line-height:1.15}
+h1{font-size:clamp(30px,5vw,44px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:700}
+h3{font-size:17px;font-weight:700}
+p{margin:0;max-width:70ch}
+.eyebrow{font:600 12px/1.2 var(--body);letter-spacing:.09em;text-transform:uppercase;color:var(--muted)}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+kbd{font:600 12px/1 var(--mono);padding:3px 6px;border:1px solid var(--line);border-bottom-width:2px;border-radius:5px;background:var(--paper);white-space:nowrap}
+section{display:flex;flex-direction:column;gap:14px}
+.lede{color:var(--muted);max-width:72ch}
+header{display:flex;flex-direction:column;gap:12px}
+.status{display:flex;flex-wrap:wrap;gap:8px}
+.pill{font:600 12px/1 var(--body);padding:6px 10px;border-radius:999px;background:var(--chip);color:var(--ink)}
+.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.pill.ok{background:var(--rec-bg);color:var(--rec)}
+
+/* the field */
+.field{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row .lab{font:600 12px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);min-width:64px}
+button.seg{font:500 13px/1 var(--body);padding:8px 11px;border-radius:8px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+button.seg[aria-pressed="true"]{background:var(--chip-on);color:var(--chip-on-ink);border-color:var(--chip-on)}
+button.seg:focus-visible,select:focus-visible,.stage:focus-visible,.slot:focus-visible,.chipbtn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.stage{position:relative;border-radius:10px;overflow:hidden;background:#24331f;outline:none;touch-action:none}
+.stage canvas{display:block;width:100%;height:auto;aspect-ratio:16/9;cursor:crosshair}
+.stage .hint{position:absolute;inset:auto 0 0 0;padding:8px 12px;font:500 13px/1.4 var(--body);color:#F4EFE6;background:linear-gradient(transparent,rgba(10,12,9,.82));pointer-events:none}
+.stage .focus{position:absolute;inset:0;display:grid;place-items:center;background:rgba(10,12,9,.55);color:#F4EFE6;font:600 15px/1.4 var(--body);pointer-events:none;text-align:center;padding:16px}
+.slots{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.slot{border:1px solid var(--line);border-radius:9px;padding:8px 9px;background:var(--bg);display:flex;flex-direction:column;gap:6px;cursor:pointer;min-width:0}
+.slot[aria-selected="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.slot .top{display:flex;gap:8px;align-items:center;min-width:0}
+.slot .nm{font:600 13px/1.25 var(--body);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.slot .cd{font:500 12px/1 var(--mono);color:var(--muted)}
+.slot select{font:500 12px/1 var(--body);padding:5px;border-radius:6px;border:1px solid var(--line);background:var(--paper);color:var(--ink);width:100%}
+.press{display:none;gap:8px}
+.press button{flex:1;font:700 16px/1 var(--mono);padding:14px 0;border-radius:9px;border:1px solid var(--line);background:var(--chip);color:var(--ink);touch-action:none}
+@media (pointer:coarse){.press{display:flex}}
+.pool{display:flex;flex-wrap:wrap;gap:6px}
+.chipbtn{font:500 12.5px/1 var(--body);padding:7px 9px;border-radius:7px;border:1px solid var(--line);background:var(--chip);color:var(--ink);cursor:pointer}
+.chipbtn .k{font:600 10.5px/1 var(--mono);color:var(--muted);margin-left:5px}
+.chipbtn[data-on="true"]{border-color:var(--accent);color:var(--accent)}
+.small{font-size:13px;color:var(--muted)}
+
+/* shapes gallery */
+.gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden;display:flex;flex-direction:column}
+.card canvas{display:block;width:100%;height:auto;aspect-ratio:4/3;background:#24331f}
+.card .tx{padding:10px 12px 12px;display:flex;flex-direction:column;gap:5px}
+.card .who{font-size:12.5px;color:var(--muted)}
+.count{font:600 12px/1 var(--mono);color:var(--accent)}
+
+/* tables */
+details{background:var(--paper);border:1px solid var(--line);border-radius:10px}
+details+details{margin-top:8px}
+summary{cursor:pointer;padding:12px 14px;font:600 15px/1.3 var(--body);display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+summary .small{font-weight:400}
+.tw{overflow-x:auto;padding:0 6px 10px}
+table{border-collapse:collapse;width:100%;font-size:13.5px;min-width:640px}
+th,td{text-align:left;padding:7px 8px;border-top:1px solid var(--line);vertical-align:top}
+th{font:600 11.5px/1.2 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+td.mono{white-space:nowrap;font-size:12.5px}
+.tag{font:600 11.5px/1 var(--body);padding:3px 7px;border-radius:5px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.tag.pass{background:var(--chip);color:var(--muted)}
+
+/* rules */
+.rules{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.rule{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.rule ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.modes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.mode{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:14px 16px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.mode .n{font:700 28px/1 var(--display);color:var(--accent)}
+@media (max-width:760px){.rules,.modes{grid-template-columns:minmax(0,1fr)}.slots{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* choices */
+ol.choices{margin:0;padding-left:22px;display:flex;flex-direction:column;gap:14px}
+ol.choices>li{padding-left:4px}
+ol.choices>li>b{font-family:var(--display);font-size:16px}
+ol.alpha{list-style:lower-alpha;margin:6px 0 0;padding-left:20px;display:flex;flex-direction:column;gap:3px}
+.rec{font:600 11px/1 var(--body);padding:3px 6px;border-radius:5px;background:var(--rec-bg);color:var(--rec);margin-left:6px;white-space:nowrap}
+.shots{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
+.shots figure{margin:0;background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.shots img{display:block;width:100%;height:auto}
+.shots figcaption{padding:8px 12px;font-size:13px;color:var(--muted)}
+@media (prefers-reduced-motion:reduce){*{scroll-behavior:auto}}
+</style>
+
+<div class="wrap">
+<header>
+  <span class="eyebrow">Echoes · design review · controls</span>
+  <h1>Cast modes for every skill</h1>
+  <p class="lede">Your ask: every skill of every hero aims with the pointer, in the three ways League of Legends casts. Mode 1 shows the skill's area on <kbd>Q</kbd> and casts on a left click. Mode 2 shows the area while you hold <kbd>Q</kbd> and casts when you let go. Mode 3 casts the moment you press, with no area shown. Mode 3 is how the game casts today.</p>
+  <div class="status"><span class="pill warn">Design only: the game is unchanged (feature freeze)</span><span class="pill">7 heroes · 85 skills · 75 with a press · 14 shapes</span><span class="pill ok">Sim, co-op wire and goldens untouched by the plan</span></div>
+</header>
+
+<section id="try">
+  <div><span class="eyebrow">Try it</span><h2>The field</h2></div>
+  <p class="small">Click the field, then move with <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> and aim with the mouse. Skills are on <kbd>Q</kbd> <kbd>E</kbd> <kbd>C</kbd> <kbd>X</kbd>, left click casts in mode 1, <kbd>Space</kbd> dodges, and <kbd>Esc</kbd> cancels. The numbers are the game's own (ranges, areas, the 12° fan, the dash stop rule, cooldowns). The shapes are drawn flat here; the stills further down show them in a real room. On a phone, use the four buttons under the field and tap to aim.</p>
+  <div class="field">
+    <div class="row" id="heroRow"><span class="lab">Hero</span></div>
+    <div class="row" id="modeRow"><span class="lab">Mode</span></div>
+    <div class="stage" id="stage" tabindex="0" aria-label="Try-it field: click, then use the keys">
+      <canvas id="cv" width="960" height="540"></canvas>
+      <div class="hint" id="hint">…</div>
+      <div class="focus" id="focusMsg">Click the field to play</div>
+    </div>
+    <div class="press" id="press"></div>
+    <div class="slots" id="slots"></div>
+    <div class="row"><span class="lab">Skills</span><span class="small">Pick a slot above, then a skill below to put it there. Every skill of this hero is listed.</span></div>
+    <div class="pool" id="pool"></div>
+    <div class="row">
+      <span class="lab">Options</span>
+      <label class="small"><input type="checkbox" id="optCd" checked> Cooldowns on</label>
+      <label class="small"><input type="checkbox" id="optAgain" checked> Mode 1: same key again casts (off: it cancels)</label>
+      <label class="small"><input type="checkbox" id="optRight" checked> Mode 1: a right click cancels</label>
+    </div>
+  </div>
+</section>
+
+<section id="modes">
+  <div><span class="eyebrow">The ask, as built here</span><h2>The three modes</h2></div>
+  <div class="modes">
+    <div class="mode"><span class="n">1</span><h3>Normal cast</h3><p>Press <kbd>Q</kbd>: the area shows and follows the pointer. Left click casts. <kbd>Esc</kbd>, <kbd>Space</kbd> (the dodge) or a right click cancels. Pressing another skill key swaps to that skill.</p></div>
+    <div class="mode"><span class="n">2</span><h3>Quick cast with indicator</h3><p>Hold <kbd>Q</kbd>: the area shows while held. Let go to cast where the pointer is. A quick tap still casts at once, so this mode never feels slower than mode 3. <kbd>Space</kbd> or <kbd>Esc</kbd> while holding cancels.</p></div>
+    <div class="mode"><span class="n">3</span><h3>Quick cast</h3><p>Press <kbd>Q</kbd> and the skill goes out at the pointer that same frame. No area. This is the game today, so nothing changes for a player who keeps it.</p></div>
+  </div>
+</section>
+
+<section id="shapes">
+  <div><span class="eyebrow">Indicator shapes</span><h2>Fourteen shapes cover all 85 skills</h2></div>
+  <p class="lede">Each skill's shape comes straight from its data (shape, range, area, count, dash, vault), so a node that widens or lengthens a skill also grows its indicator. The white area is what the skill hits; the dashed ring is how far it can reach; green rings mark the allies a heal will land on.</p>
+  <div class="gal" id="gal"></div>
+</section>
+
+<section id="shots">
+  <div><span class="eyebrow">In the game</span><h2>Seen in a real room</h2></div>
+  <p class="lede" id="shotsLede">Stills from a review-only build: a local copy of the game that lays the indicator on the floor of a real Level I room, four seconds into the first wave, at normal play zoom, aimed at the nearest foes. Nothing is cast and the pointer is not drawn. Seen only in software GL in the cloud (1 to 30 fps), so colour and feel still need your laptop. Not pushed anywhere.</p>
+  <p class="small">What the shots taught: the white reads apart from the foes' Ember telegraphs (shot 3 has both), but it catches the room's bloom and glows more than a guide should; the build would draw it outside the bloom pass. The first cooldown grey looked almost white under the room's bloom, so cooldown is now a dashed edge with no fill (shot 6). The first ally-pick ring hid inside the heroes' own foot rings, so it is now a wider green ring with a mark above (shot 2). Short cones such as Brutal Cleave (0.95 u) are small at play zoom; that is their true reach.</p>
+  <div class="shots" id="shotGrid"><figure><img src="shots/01-mosslight-dewfall.jpg" alt="Mosslight · Dewfall: ground circle (radius 1.5 u) inside its 4 u reach" loading="lazy" width="1600" height="900"><figcaption>Mosslight · Dewfall: ground circle (radius 1.5 u) inside its 4 u reach</figcaption></figure>
+<figure><img src="shots/02-mosslight-guardian-bond.jpg" alt="Mosslight · Guardian Bond: ally pick, 3.4 u reach; green rings on the two it will heal" loading="lazy" width="1600" height="900"><figcaption>Mosslight · Guardian Bond: ally pick, 3.4 u reach; green rings on the two it will heal</figcaption></figure>
+<figure><img src="shots/03-mosslight-pale-lance.jpg" alt="Mosslight · Pale Lance: line, 6 u, through up to 3 foes" loading="lazy" width="1600" height="900"><figcaption>Mosslight · Pale Lance: line, 6 u, through up to 3 foes</figcaption></figure>
+<figure><img src="shots/04-stonehide-shoulder-charge.jpg" alt="Stonehide · Shoulder Charge: dash up to 2.4 u, then the cone" loading="lazy" width="1600" height="900"><figcaption>Stonehide · Shoulder Charge: dash up to 2.4 u, then the cone</figcaption></figure>
+<figure><img src="shots/05-stonehide-brutal-cleave.jpg" alt="Stonehide · Brutal Cleave: cone, reach 0.95 u, half-angle 80°" loading="lazy" width="1600" height="900"><figcaption>Stonehide · Brutal Cleave: cone, reach 0.95 u, half-angle 80°</figcaption></figure>
+<figure><img src="shots/06-stonehide-ground-crack-cooldown.jpg" alt="Stonehide · Ground Crack on cooldown: the same circle in Bone grey" loading="lazy" width="1600" height="900"><figcaption>Stonehide · Ground Crack on cooldown: the same circle in Bone grey</figcaption></figure>
+<figure><img src="shots/07-ashfang-crescent-finisher.jpg" alt="Ashfang · Crescent Finisher: cone, reach 1 u, half-angle 70°" loading="lazy" width="1600" height="900"><figcaption>Ashfang · Crescent Finisher: cone, reach 1 u, half-angle 70°</figcaption></figure>
+<figure><img src="shots/08-ashfang-moonfang.jpg" alt="Ashfang · Moonfang: dash up to 3.2 u, then the cone" loading="lazy" width="1600" height="900"><figcaption>Ashfang · Moonfang: dash up to 3.2 u, then the cone</figcaption></figure>
+<figure><img src="shots/09-windbriar-volley.jpg" alt="Windbriar · Volley: three bolts 12° apart, 4.8 u" loading="lazy" width="1600" height="900"><figcaption>Windbriar · Volley: three bolts 12° apart, 4.8 u</figcaption></figure>
+<figure><img src="shots/10-windbriar-vault-shot.jpg" alt="Windbriar · Vault Shot: the shot, plus the 1.6 u hop back" loading="lazy" width="1600" height="900"><figcaption>Windbriar · Vault Shot: the shot, plus the 1.6 u hop back</figcaption></figure>
+<figure><img src="shots/11-windbriar-rain-of-arrows.jpg" alt="Windbriar · Rain of Arrows: ground circle (1.4 u) inside 5 u" loading="lazy" width="1600" height="900"><figcaption>Windbriar · Rain of Arrows: ground circle (1.4 u) inside 5 u</figcaption></figure>
+<figure><img src="shots/12-tidecaller-maelstrom.jpg" alt="Tidecaller · Maelstrom: pull from 3 u, burst 1.6 u a second later" loading="lazy" width="1600" height="900"><figcaption>Tidecaller · Maelstrom: pull from 3 u, burst 1.6 u a second later</figcaption></figure>
+<figure><img src="shots/13-tidecaller-ripple-step.jpg" alt="Tidecaller · Ripple Step: hop 2.6 u away from the pointer, pool where it began" loading="lazy" width="1600" height="900"><figcaption>Tidecaller · Ripple Step: hop 2.6 u away from the pointer, pool where it began</figcaption></figure>
+<figure><img src="shots/14-bellwright-hang-bell.jpg" alt="Bellwright · Hang Bell: ground circle with the bell, inside 4 u" loading="lazy" width="1600" height="900"><figcaption>Bellwright · Hang Bell: ground circle with the bell, inside 4 u</figcaption></figure>
+<figure><img src="shots/15-bellwright-peal.jpg" alt="Bellwright · Peal with two bells hung: a ring round each bell" loading="lazy" width="1600" height="900"><figcaption>Bellwright · Peal with two bells hung: a ring round each bell</figcaption></figure>
+<figure><img src="shots/16-duskwing-dusk-dive.jpg" alt="Duskwing · Dusk Dive: dive up to 3.6 u, then the ring; here the foes are close, so the dive stops short (the game's own stop rule)" loading="lazy" width="1600" height="900"><figcaption>Duskwing · Dusk Dive: dive up to 3.6 u, then the ring; here the foes are close, so the dive stops short (the game's own stop rule)</figcaption></figure>
+<figure><img src="shots/17-duskwing-echo-screech.jpg" alt="Duskwing · Echo Screech: long narrow cone, 2.6 u, half-angle 35°" loading="lazy" width="1600" height="900"><figcaption>Duskwing · Echo Screech: long narrow cone, 2.6 u, half-angle 35°</figcaption></figure>
+</div>
+</section>
+
+<section id="heroes">
+  <div><span class="eyebrow">Every hero</span><h2>What the pointer does, skill by skill</h2></div>
+  <p class="lede">Today's pools, as the game rolls them. Mosslight's new kit from her ability review uses the same shapes (Seed Bolt and Thorn Volley are lines, Mending Sapling a ground circle, Swiftleaf and Mossgrowth ally picks, Glade Wisps a passive). Sapping Vine would add one shape: a lock on the foe nearest the pointer, within 4 u.</p>
+  <div id="tables"></div>
+</section>
+
+<section id="rules">
+  <div><span class="eyebrow">The rules</span><h2>How it behaves</h2></div>
+  <div class="rules">
+    <div class="rule"><h3>Settings</h3><ul>
+      <li>Settings ▸ Controls gets a <b>Cast mode</b> row (1, 2 or 3) for all skills.</li>
+      <li>Under it, one override per key (<kbd>Q</kbd> <kbd>E</kbd> <kbd>C</kbd> <kbd>X</kbd>): "Same as all", 1, 2 or 3, the way League sets it per key. Per key rather than per skill, because skills change every run and the key is what the hand learns.</li>
+      <li>Saved with the key binds, per browser. Ten languages for the new rows.</li>
+    </ul></div>
+    <div class="rule"><h3>While a skill is armed</h3><ul>
+      <li>You keep moving and the basic attack keeps working.</li>
+      <li>The dodge always wins: <kbd>Space</kbd> dodges and drops the armed skill (your dash rule: top priority).</li>
+      <li>A skill on cooldown still shows, greyed, with its time left. Casting it is refused with today's "not ready" nudge. If it comes off cooldown while held, it turns white and casts on release.</li>
+      <li>A page opening (reward, doors, pause), being downed or stunned drops it.</li>
+      <li>Ground skills clamp to their reach the way the game already does: the circle stops at the edge of the dashed ring.</li>
+    </ul></div>
+    <div class="rule"><h3>Gamepad</h3><ul>
+      <li>Its own Cast mode row. Default: hold a skill button to aim with the right stick, let go to cast; a tap casts at once with today's aim assist. That is mode 2 on a pad.</li>
+      <li>Ground skills: how far the right stick is pushed sets the distance (full tilt = full reach). With the stick at rest the aim goes to the nearest foe, as today.</li>
+      <li>Mode 1 on a pad: the same button again casts; <kbd>LT</kbd> (the dodge) cancels. <kbd>RT</kbd> stays the attack.</li>
+    </ul></div>
+    <div class="rule"><h3>Co-op and AI</h3><ul>
+      <li>Only you see your indicator, as in League. Teammates see the cast when it goes out, as now.</li>
+      <li>Each player picks their own mode, like their keys. Host and guests can differ.</li>
+      <li>The cast press is sent on the frame you confirm, with that frame's aim, which every input frame already carries. The wire, the lag compensation and the replay stay the same.</li>
+      <li>AI seats and the autopilot have no indicator and cast as they do today.</li>
+    </ul></div>
+    <div class="rule"><h3>Old profiles</h3><ul>
+      <li>A profile without the new setting plays exactly as today (mode 3) until the player changes it. New profiles get the default you pick (choice 1).</li>
+      <li>No deed, record or counter is touched.</li>
+    </ul></div>
+    <div class="rule"><h3>How it would be built (after the freeze lifts)</h3><ul>
+      <li>One input change: <code>src/core/input.js</code> holds a skill press until it is confirmed, then queues the same <code>skill_N</code> press as today. The sim never learns which mode you use, so the nine goldens stay identical.</li>
+      <li>One indicator module in <code>src/render/skillfx/</code>, fed by a pure "which shape is this skill" function over the live skill numbers.</li>
+      <li>Settings rows in <code>src/app/controls.js</code> and the Controls tab; <code>docs/CONTROLS.md</code>; one probe (<code>tools/cast-modes-probe.mjs</code>); one draft PR under the slice rules.</li>
+    </ul></div>
+  </div>
+</section>
+
+<section id="choices">
+  <div><span class="eyebrow">For you</span><h2>Open choices</h2></div>
+  <p class="lede">Answer with the numbers and letters, for example "1a 2a 3a". Where I recommend one, it is the one the field above uses.</p>
+  <ol class="choices">
+    <li><b>Default for new profiles</b><ol class="alpha">
+      <li>Mode 2, quick cast with indicator<span class="rec">recommended</span>. A tap casts at once, so it is never slower than today, and a new player who holds the key sees the area.</li>
+      <li>Mode 1, normal cast. Every skill needs two presses; with cooldowns from 2.5 s that is a lot of clicking.</li>
+      <li>Mode 3, quick cast, as today.</li></ol></li>
+    <li><b>Old profiles</b><ol class="alpha">
+      <li>Keep mode 3, what they play today<span class="rec">recommended</span>. Your ask does not name old profiles, and the house rule is to leave them as they are.</li>
+      <li>Move them to the new default too.</li></ol></li>
+    <li><b>Per-key override</b><ol class="alpha">
+      <li>One row for all skills, plus an override per key (Q E C X)<span class="rec">recommended</span>.</li>
+      <li>One row only.</li>
+      <li>An override per skill (85 skills, most seen once a run).</li></ol></li>
+    <li><b>Mode 1: pressing the same key again</b><ol class="alpha">
+      <li>Casts at the pointer (a double tap is a quick cast)<span class="rec">recommended</span>.</li>
+      <li>Cancels.</li></ol></li>
+    <li><b>Mode 1: right mouse (your attack button)</b><ol class="alpha">
+      <li>A fresh right click cancels the armed skill and attacks, the League habit<span class="rec">recommended</span>.</li>
+      <li>Right mouse only attacks; the skill stays armed.</li></ol></li>
+    <li><b>Ally heals and shields (9 skills: Swift Mend, Guardian Bond, Kindred Shield, Lantern Ward, Shield Wall, Rallying Cry, Bubble Ward, Vesper Chime, Tuning Fork)</b><ol class="alpha">
+      <li>Keep the game's own pick (lowest health in reach, or the ally most foes chase; F1–F4 still forces one). The indicator rings who will get it<span class="rec">recommended</span>. No rule changes.</li>
+      <li>The ally under the pointer gets it. This changes a rule in the sim and the goldens, so it would be its own ask.</li></ol></li>
+    <li><b>Passive skills (10, such as Warding Aura, Iron Stance, Hum)</b><ol class="alpha">
+      <li>Holding the key shows the passive's field; nothing casts<span class="rec">recommended</span>.</li>
+      <li>The key does nothing, as today.</li></ol></li>
+    <li><b>The tonic or bomb on G</b><ol class="alpha">
+      <li>Bombs follow the cast mode too, with a ground circle where they land<span class="rec">recommended</span>. Tonics drink at once in every mode.</li>
+      <li>Skills only.</li></ol></li>
+    <li><b>Gamepad</b><ol class="alpha">
+      <li>Its own row; default hold to aim, tap to cast; stick tilt sets a ground skill's distance<span class="rec">recommended</span>.</li>
+      <li>The pad always casts at once, as today.</li></ol></li>
+    <li><b>Indicator colour</b><ol class="alpha">
+      <li>Parchment white for every shape, Bone grey while on cooldown, Bright Heal rings on the allies a heal will land on<span class="rec">recommended</span>. Never Ember or Violet, which mean enemy danger and the gods.</li>
+      <li>Each hero's own glow colour as a thin edge on the white.</li></ol></li>
+    <li><b>Teammates' indicators in co-op</b><ol class="alpha">
+      <li>Only you see yours<span class="rec">recommended</span>.</li>
+      <li>Teammates see a faint copy. That needs a change to the co-op wire.</li></ol></li>
+    <li><b>When to build it</b><ol class="alpha">
+      <li>Wait for the freeze lift, then one draft PR (input, indicator, settings, ten languages, probe)<span class="rec">recommended</span>.</li>
+      <li>Lift the freeze for this one slice now.</li></ol></li>
+  </ol>
+</section>
+</div>
+
+<script>
+const DATA = [{"cls":"healer","name":"Mosslight","animal":"Healer mouse","skills":[{"id":"mending_bolt","name":"Mending Bolt","ab":"MB","k":"line","arch":"heal","heal":true,"range":5,"area":0,"count":1,"cd":3.5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"swift_mend","name":"Swift Mend","ab":"SM","k":"allies","arch":"heal","heal":true,"range":3.2,"area":null,"count":1,"cd":2.5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"nova_bloom","name":"Nova Bloom","ab":"NB","k":"self_ring","arch":"heal","heal":true,"range":null,"area":1.4,"count":3,"cd":7,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"sanctuary","name":"Sanctuary","ab":"SA","k":"ground","arch":"heal","heal":true,"range":3.8,"area":1,"count":null,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"spirit_bolt","name":"Spirit Bolt","ab":"SB","k":"line","arch":"damage","heal":false,"range":4.8,"area":0,"count":1,"cd":4,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"warding_aura","name":"Warding Aura","ab":"WA","k":"passive","arch":"passive","heal":false,"range":null,"area":0.9,"count":null,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"guardian_bond","name":"Guardian Bond","ab":"GB","k":"allies","arch":"heal","heal":true,"range":3.4,"area":null,"count":2,"cd":6,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"restorative_wave","name":"Restorative Wave","ab":"RW","k":"cone","arch":"heal","heal":true,"range":1.1,"area":55,"count":4,"cd":5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"lantern_flurry","name":"Lantern Flurry","ab":"LF","k":"fan","arch":"damage","heal":false,"range":4.6,"area":0,"count":3,"cd":5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"pale_lance","name":"Pale Lance","ab":"PL","k":"line","arch":"damage","heal":false,"range":6,"area":0,"count":1,"cd":6,"pierce":3,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"bell_toll","name":"Bell Toll","ab":"BT","k":"self_ring","arch":"damage","heal":false,"range":null,"area":1.6,"count":5,"cd":8,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"rootsnare","name":"Rootsnare","ab":"RS","k":"ground","arch":"damage","heal":false,"range":4.2,"area":1.3,"count":null,"cd":10,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"dewfall","name":"Dewfall","ab":"DF","k":"ground","arch":"heal","heal":true,"range":4,"area":1.5,"count":null,"cd":11,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"kindred_shield","name":"Kindred Shield","ab":"KS","k":"allies","arch":"heal","heal":true,"range":3.6,"area":null,"count":1,"cd":8,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"mending_tide","name":"Mending Tide","ab":"MT","k":"cone","arch":"heal","heal":true,"range":1.8,"area":70,"count":4,"cd":4,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"hearthsong","name":"Hearthsong","ab":"HS","k":"self_ring","arch":"heal","heal":true,"range":null,"area":2,"count":4,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"quiet_hearth","name":"Quiet Hearth","ab":"QH","k":"passive","arch":"passive","heal":false,"range":null,"area":1.2,"count":null,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"lantern_ward","name":"Lantern Ward","ab":"LW","k":"allies","arch":"heal","heal":true,"range":3.8,"area":null,"count":4,"cd":10,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"dawn_brand","name":"Dawn Brand","ab":"DB","k":"ground","arch":"damage","heal":false,"range":4.5,"area":1.2,"count":null,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false}]},{"cls":"tank","name":"Stonehide","animal":"Tank badger","skills":[{"id":"heavy_slam","name":"Heavy Slam","ab":"HS","k":"cone","arch":"damage","heal":false,"range":1,"area":40,"count":3,"cd":5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"brutal_cleave","name":"Brutal Cleave","ab":"BC","k":"cone","arch":"damage","heal":false,"range":0.95,"area":80,"count":6,"cd":4,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"ground_crack","name":"Ground Crack","ab":"GC","k":"ground","arch":"damage","heal":false,"range":2.6,"area":0.9,"count":null,"cd":8,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"whirling_guard","name":"Whirling Guard","ab":"WG","k":"self_ring","arch":"damage","heal":false,"range":null,"area":1.3,"count":5,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"taunting_roar","name":"Taunting Roar","ab":"TR","k":"self_ring","arch":"damage","heal":false,"range":null,"area":2,"count":6,"cd":10,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"shield_wall","name":"Shield Wall","ab":"SW","k":"allies","arch":"guard","heal":false,"range":3,"area":null,"count":2,"cd":10,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"shoulder_charge","name":"Shoulder Charge","ab":"SC","k":"dash_cone","arch":"damage","heal":false,"range":0.9,"area":60,"count":3,"cd":7,"pierce":null,"dash":2.4,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"iron_stance","name":"Iron Stance","ab":"IS","k":"passive","arch":"passive","heal":false,"range":null,"area":1.3,"count":null,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"earthshatter","name":"Earthshatter","ab":"ES","k":"cone","arch":"damage","heal":false,"range":1.8,"area":22,"count":4,"cd":11,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"rallying_cry","name":"Rallying Cry","ab":"RC","k":"allies","arch":"guard","heal":false,"range":3.5,"area":null,"count":4,"cd":12,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"earthen_grasp","name":"Earthen Grasp","ab":"EG","k":"self_ring","arch":"damage","heal":false,"range":null,"area":2.3,"count":6,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false}]},{"cls":"swordsman","name":"Ashfang","animal":"Fox swordsman","skills":[{"id":"flurry","name":"Flurry","ab":"FL","k":"cone","arch":"damage","heal":false,"range":0.8,"area":60,"count":6,"cd":3,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"lunge_strike","name":"Lunge Strike","ab":"LS","k":"cone","arch":"damage","heal":false,"range":1.3,"area":30,"count":2,"cd":4,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"blade_storm","name":"Blade Storm","ab":"BS","k":"self_ring","arch":"damage","heal":false,"range":null,"area":1,"count":5,"cd":7,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"caltrops","name":"Caltrops","ab":"CT","k":"ground","arch":"damage","heal":false,"range":2,"area":0.7,"count":null,"cd":6.5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"fox_step","name":"Fox Step","ab":"FS","k":"dash_cone","arch":"damage","heal":false,"range":0.8,"area":50,"count":3,"cd":5,"pierce":null,"dash":2,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"crescent_finisher","name":"Crescent Finisher","ab":"CF","k":"cone","arch":"damage","heal":false,"range":1,"area":70,"count":5,"cd":6,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"riposte","name":"Riposte","ab":"RP","k":"cone","arch":"damage","heal":false,"range":0.9,"area":90,"count":3,"cd":8,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"razor_wake","name":"Razor Wake","ab":"RZ","k":"passive","arch":"passive","heal":false,"range":null,"area":0.9,"count":3,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"moonfang","name":"Moonfang","ab":"MF","k":"dash_cone","arch":"damage","heal":false,"range":1,"area":45,"count":4,"cd":7,"pierce":null,"dash":3.2,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"blade_dance","name":"Blade Dance","ab":"BD","k":"self_ring","arch":"damage","heal":false,"range":null,"area":1.3,"count":6,"cd":6,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"crimson_edge","name":"Crimson Edge","ab":"CE","k":"passive","arch":"passive","heal":false,"range":null,"area":1.5,"count":1,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false}]},{"cls":"archer","name":"Windbriar","animal":"Rabbit archer","skills":[{"id":"piercing_shot","name":"Piercing Shot","ab":"PS","k":"line","arch":"damage","heal":false,"range":5.5,"area":0,"count":1,"cd":3,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"volley","name":"Volley","ab":"VO","k":"fan","arch":"damage","heal":false,"range":4.8,"area":0,"count":3,"cd":4.5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"detonating_charge","name":"Detonating Charge","ab":"DC","k":"ground","arch":"damage","heal":false,"range":4.2,"area":0.85,"count":null,"cd":7,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"sundering_nova","name":"Sundering Nova","ab":"SN","k":"self_ring","arch":"damage","heal":false,"range":null,"area":1.1,"count":4,"cd":8,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"vault_shot","name":"Vault Shot","ab":"VS","k":"shot_vault","arch":"damage","heal":false,"range":4.5,"area":0,"count":1,"cd":6,"pierce":null,"dash":null,"vault":1.6,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"pinning_arrow","name":"Pinning Arrow","ab":"PA","k":"line","arch":"damage","heal":false,"range":5,"area":0,"count":1,"cd":7,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"rain_of_arrows","name":"Rain of Arrows","ab":"RA","k":"ground","arch":"damage","heal":false,"range":5,"area":1.4,"count":null,"cd":11,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"kestrel_watch","name":"Kestrel Watch","ab":"KW","k":"passive","arch":"passive","heal":false,"range":null,"area":4,"count":1,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"hunters_mark","name":"Hunter's Mark","ab":"HM","k":"line","arch":"damage","heal":false,"range":6.5,"area":0,"count":1,"cd":6,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"barbed_trap","name":"Barbed Trap","ab":"BA","k":"ground","arch":"damage","heal":false,"range":3.6,"area":0.75,"count":null,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"feather_fan","name":"Feather Fan","ab":"FF","k":"fan","arch":"damage","heal":false,"range":3.2,"area":0,"count":5,"cd":5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false}]},{"cls":"tidecaller","name":"Tide Caller","animal":"Otter","skills":[{"id":"riverbolt","name":"Riverbolt","ab":"RB","k":"line","arch":"damage","heal":false,"range":5,"area":0,"count":1,"cd":2.5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"undertow","name":"Undertow","ab":"UT","k":"ground","arch":"damage","heal":false,"range":3.5,"area":1,"count":null,"cd":8,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"breaker","name":"Breaker","ab":"BK","k":"self_ring","arch":"damage","heal":false,"range":null,"area":1.4,"count":5,"cd":8,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"tidepool","name":"Tidepool","ab":"TP","k":"passive","arch":"passive","heal":false,"range":null,"area":2.5,"count":2,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"torrent","name":"Torrent","ab":"TO","k":"line","arch":"damage","heal":false,"range":5.5,"area":0,"count":1,"cd":6,"pierce":12,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"whirlpool","name":"Whirlpool","ab":"WP","k":"ground","arch":"damage","heal":false,"range":4,"area":1.4,"count":null,"cd":12,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"ripple_step","name":"Ripple Step","ab":"RI","k":"hop_puddle","arch":"damage","heal":false,"range":0,"area":0.8,"count":null,"cd":7,"pierce":null,"dash":null,"vault":2.6,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"bubble_ward","name":"Bubble Ward","ab":"BW","k":"allies","arch":"guard","heal":false,"range":4,"area":null,"count":1,"cd":11,"pierce":null,"dash":null,"vault":null,"pick":"threat","drawArea":null,"delay":null,"campaign":false},{"id":"crashing_wave","name":"Crashing Wave","ab":"CW","k":"cone","arch":"damage","heal":false,"range":2.2,"area":50,"count":6,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"rain_squall","name":"Rain Squall","ab":"SQ","k":"ground","arch":"damage","heal":false,"range":5,"area":1.8,"count":null,"cd":14,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"maelstrom","name":"Maelstrom","ab":"MA","k":"pull_ring","arch":"damage","heal":false,"range":null,"area":1.6,"count":8,"cd":16,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":3,"delay":1,"campaign":false}]},{"cls":"bellwright","name":"Bellwright","animal":"Beetle","skills":[{"id":"hang_bell","name":"Hang Bell","ab":"HB","k":"bell","arch":"damage","heal":false,"range":4,"area":1.3,"count":null,"cd":5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"peal","name":"Peal","ab":"PE","k":"bells","arch":"damage","heal":false,"range":null,"area":1.5,"count":6,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"clapper","name":"Clapper","ab":"CL","k":"line","arch":"damage","heal":false,"range":4.8,"area":0,"count":1,"cd":2.5,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"hum","name":"Hum","ab":"HU","k":"passive","arch":"passive","heal":false,"range":null,"area":2.2,"count":3,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"great_bell","name":"Great Bell","ab":"GR","k":"bell","arch":"damage","heal":false,"range":4,"area":1.9,"count":null,"cd":14,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"knell","name":"Knell","ab":"KN","k":"line","arch":"damage","heal":false,"range":5.5,"area":0,"count":1,"cd":7,"pierce":12,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"bell_swing","name":"Bell Swing","ab":"SG","k":"cone","arch":"damage","heal":false,"range":1.9,"area":60,"count":5,"cd":8,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"wing_hop","name":"Wing Hop","ab":"WH","k":"hop_puddle","arch":"damage","heal":false,"range":0,"area":1,"count":null,"cd":8,"pierce":null,"dash":null,"vault":2.4,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"vesper_chime","name":"Vesper Chime","ab":"VC","k":"allies","arch":"guard","heal":false,"range":4,"area":null,"count":2,"cd":11,"pierce":null,"dash":null,"vault":null,"pick":"threat","drawArea":null,"delay":null,"campaign":false},{"id":"tuning_fork","name":"Tuning Fork","ab":"TF","k":"allies","arch":"guard","heal":false,"range":3,"area":null,"count":4,"cd":12,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"carillon","name":"Carillon","ab":"CA","k":"bells","arch":"damage","heal":false,"range":null,"area":1.8,"count":8,"cd":18,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false}]},{"cls":"duskwing","name":"Duskwing","animal":"Bat","skills":[{"id":"dusk_dive","name":"Dusk Dive","ab":"DV","k":"dash_ring","arch":"damage","heal":false,"range":null,"area":1.2,"count":5,"cd":6,"pierce":null,"dash":3.6,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"blood_bite","name":"Bloodbite","ab":"BI","k":"cone","arch":"damage","heal":false,"range":0.95,"area":40,"count":2,"cd":4,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"nightfall","name":"Nightfall","ab":"NF","k":"self_ring","arch":"damage","heal":false,"range":null,"area":2,"count":8,"cd":11,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"night_wings","name":"Night Wings","ab":"NW","k":"passive","arch":"passive","heal":false,"range":null,"area":1.3,"count":3,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"echo_screech","name":"Echo Screech","ab":"EC","k":"cone","arch":"damage","heal":false,"range":2.6,"area":35,"count":6,"cd":9,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"talon_rake","name":"Talon Rake","ab":"TK","k":"cone","arch":"damage","heal":false,"range":1.2,"area":75,"count":5,"cd":6,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"bat_swarm","name":"Bat Swarm","ab":"BR","k":"ground","arch":"damage","heal":false,"range":4.5,"area":1.3,"count":null,"cd":10,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"shadow_veil","name":"Shadow Veil","ab":"SV","k":"self_ring","arch":"damage","heal":false,"range":null,"area":1.2,"count":4,"cd":12,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"flit","name":"Flit","ab":"FT","k":"hop_puddle","arch":"damage","heal":false,"range":0,"area":1.1,"count":null,"cd":7,"pierce":null,"dash":null,"vault":2.8,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"blood_scent","name":"Blood Scent","ab":"SE","k":"passive","arch":"passive","heal":false,"range":null,"area":2.6,"count":2,"cd":null,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false},{"id":"blood_moon","name":"Blood Moon","ab":"BM","k":"self_ring","arch":"damage","heal":false,"range":null,"area":2.4,"count":10,"cd":18,"pierce":null,"dash":null,"vault":null,"pick":null,"drawArea":null,"delay":null,"campaign":false}]}];
+const GLOW = {healer:'#E8A23D',tank:'#9DB8CF',swordsman:'#E8577A',archer:'#5ED3C0',tidecaller:'#3F7FE6',bellwright:'#F5D06B',duskwing:'#E0509E'};
+const DEFAULT_KIT = {healer:['mending_bolt','swift_mend','dewfall','mending_tide'],tank:['heavy_slam','shoulder_charge','ground_crack','taunting_roar'],
+  swordsman:['lunge_strike','fox_step','caltrops','blade_storm'],archer:['piercing_shot','volley','vault_shot','rain_of_arrows'],
+  tidecaller:['riverbolt','ripple_step','whirlpool','maelstrom'],bellwright:['hang_bell','peal','clapper','bell_swing'],duskwing:['dusk_dive','echo_screech','flit','bat_swarm']};
+const KIND = {
+  line:{t:'Line',d:'A bolt toward the pointer. It always flies its full range, so the line has a fixed length.'},
+  fan:{t:'Fan',d:'Several bolts 12° apart, centred on the pointer.'},
+  cone:{t:'Cone',d:'A swing toward the pointer: reach and half-angle from the data.'},
+  dash_cone:{t:'Dash, then cone',d:'Dashes toward the pointer (stopping short so the target sits in reach), then swings.'},
+  dash_ring:{t:'Dive, then ring',d:'Dives toward the pointer, then bursts round where it lands.'},
+  self_ring:{t:'Ring round the hero',d:'A burst round the hero. The pointer does not move it; the area still shows.'},
+  pull_ring:{t:'Pull, then burst',d:'Drags foes in from the outer ring, bursts in the inner one a second later.'},
+  ground:{t:'Ground circle',d:'Lands at the pointer, held inside its reach (the dashed ring).'},
+  bell:{t:'Hang a bell',d:'A ground circle that leaves a bell; at most three hang at once.'},
+  bells:{t:'Ring the bells',d:'Rings round every hung bell, or round the hero when none hangs.'},
+  hop_puddle:{t:'Hop back, leave a pool',d:'Hops away from the pointer; the pool or bell stays where the hop began.'},
+  shot_vault:{t:'Shoot and hop back',d:'Fires toward the pointer and hops back the other way.'},
+  allies:{t:'Ally pick',d:'No aim: the game picks who it lands on. The ring shows its reach, green rings show who gets it.'},
+  passive:{t:'Passive',d:'No press. Holding the key would show its field (choice 7).'}
+};
+const ALL = {}; DATA.forEach(h=>h.skills.forEach(s=>{s.cls=h.cls;ALL[s.id]=s;}));
+const S = 48; // px per u on the field
+const W = 960, H = 540;
+const C_LIVE='rgba(244,239,230,0.9)', F_LIVE='rgba(244,239,230,0.17)', C_CD='rgba(201,194,179,0.42)', F_CD='rgba(201,194,179,0.0)', HEAL='#5FE873';
+let cdDash=false; const CDD=[0.14,0.12];
+const st = {cls:'healer', mode:2, slots:DEFAULT_KIT.healer.slice(), perSlot:[null,null,null,null], sel:0, ready:[0,0,0,0],
+  hero:{x:0,z:1.2}, aim:{x:0,z:-2.5}, keys:new Set(), armed:null, flashes:[], bells:[], disp:null, dodge:null, msg:'', msgT:0, focus:false, attackT:0};
+const foes=[[-1.4,-3.0],[0.2,-3.6],[1.6,-2.8],[3.8,-0.6],[-4.2,-1.2],[2.6,-4.8],[-2.6,-5.0]].map(([x,z])=>({x,z}));
+const allies=[{x:-2.6,z:2.2,hp:.35,cls:'tank'},{x:2.4,z:1.6,hp:.8,cls:'archer'},{x:0.6,z:3.6,hp:.6,cls:'swordsman'}];
+const KEYS=['KeyQ','KeyE','KeyC','KeyX'], CAPS=['Q','E','C','X'];
+const effMode = i => st.perSlot[i] ?? st.mode;
+const norm=(x,z)=>{const l=Math.hypot(x,z);return l>1e-6?{x:x/l,z:z/l,l}:{x:0,z:-1,l:0};};
+
+// ---------- drawing (world units, z down the screen) ----------
+function tf(ctx,scale,ox,oz){ctx.setTransform(scale,0,0,scale,ox,oz);}
+function circle(ctx,x,z,r,edge,fill,dash,lw){ctx.beginPath();ctx.arc(x,z,r,0,Math.PI*2);if(fill){ctx.fillStyle=fill;ctx.fill();}ctx.setLineDash(dash||(cdDash?CDD:[]));ctx.strokeStyle=edge;ctx.lineWidth=lw;ctx.stroke();ctx.setLineDash([]);}
+function wedge(ctx,x,z,dir,r,halfDeg,edge,fill,lw){const a0=Math.atan2(dir.z,dir.x),h=Math.min(Math.PI,halfDeg*Math.PI/180);ctx.beginPath();ctx.moveTo(x,z);ctx.arc(x,z,r,a0-h,a0+h);ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.setLineDash(cdDash?CDD:[]);ctx.strokeStyle=edge;ctx.lineWidth=lw;ctx.stroke();ctx.setLineDash([]);}
+function bar(ctx,x,z,dir,len,w,edge,fill,lw,head){const px=-dir.z,pz=dir.x,hw=w/2,ex=x+dir.x*len,ez=z+dir.z*len;ctx.beginPath();ctx.moveTo(x+px*hw,z+pz*hw);ctx.lineTo(ex+px*hw,ez+pz*hw);
+  if(head){ctx.lineTo(ex+px*hw*2.2,ez+pz*hw*2.2);ctx.lineTo(ex+dir.x*w*1.6,ez+dir.z*w*1.6);ctx.lineTo(ex-px*hw*2.2,ez-pz*hw*2.2);}
+  ctx.lineTo(ex-px*hw,ez-pz*hw);ctx.lineTo(x-px*hw,z-pz*hw);ctx.closePath();ctx.fillStyle=fill;ctx.fill();ctx.setLineDash(cdDash?CDD:[]);ctx.strokeStyle=edge;ctx.lineWidth=lw;ctx.stroke();ctx.setLineDash([]);}
+function arrow(ctx,x,z,dir,len,edge,lw){if(len<0.05)return;const ex=x+dir.x*len,ez=z+dir.z*len,px=-dir.z,pz=dir.x;ctx.setLineDash([0.18,0.12]);ctx.beginPath();ctx.moveTo(x,z);ctx.lineTo(ex,ez);ctx.strokeStyle=edge;ctx.lineWidth=lw*1.4;ctx.stroke();ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(ex+dir.x*0.22,ez+dir.z*0.22);ctx.lineTo(ex-dir.x*0.12+px*0.17,ez-dir.z*0.12+pz*0.17);ctx.lineTo(ex-dir.x*0.12-px*0.17,ez-dir.z*0.12-pz*0.17);ctx.closePath();ctx.fillStyle=edge;ctx.fill();}
+function bellGlyph(ctx,x,z,col){ctx.beginPath();ctx.moveTo(x-0.16,z+0.12);ctx.quadraticCurveTo(x-0.15,z-0.2,x,z-0.2);ctx.quadraticCurveTo(x+0.15,z-0.2,x+0.16,z+0.12);ctx.closePath();ctx.fillStyle=col;ctx.fill();}
+function clampTo(P,aim,r){const d=norm(aim.x-P.x,aim.z-P.z);return d.l<=r?{x:aim.x,z:aim.z}:{x:P.x+d.x*r,z:P.z+d.z*r};}
+function dashLen(s,aimDist,reach){return Math.min(s.dash,Math.max(0,aimDist-0.8*reach));}
+function picks(s,P,heroes){const elig=heroes.filter(m=>m.self||Math.hypot(m.x-P.x,m.z-P.z)<=s.range);
+  if(s.pick==='threat'){const n=m=>foes.filter(f=>Math.hypot(f.x-m.x,f.z-m.z)<2.6).length;elig.sort((a,b)=>(a.cls==='tank')-(b.cls==='tank')||n(b)-n(a)||a.hp-b.hp);}
+  else elig.sort((a,b)=>a.hp-b.hp||(b.self?1:0)-(a.self?1:0));
+  return elig.slice(0,Math.max(1,s.count||1));}
+// draw one skill's indicator. o: {P, aim, live, alpha, lw, heroes, bells, passiveShow}
+function drawInd(ctx,s,o){
+  const P=o.P, d=norm(o.aim.x-P.x,o.aim.z-P.z), live=o.live, lw=o.lw;
+  const a=o.alpha??1; ctx.save(); ctx.globalAlpha=a; cdDash=!live;
+  const E=live?C_LIVE:C_CD, F=live?(o.flash?'rgba(244,239,230,0.42)':F_LIVE):F_CD;
+  switch(s.k){
+    case 'line': bar(ctx,P.x,P.z,d,s.range,0.32,E,F,lw,true); if(s.pierce>1){for(let i=1;i<=3;i++){const t=s.range*i/4,cx=P.x+d.x*t,cz=P.z+d.z*t,px=-d.z,pz=d.x;ctx.beginPath();ctx.moveTo(cx-d.x*0.1+px*0.12,cz-d.z*0.1+pz*0.12);ctx.lineTo(cx+d.x*0.06,cz+d.z*0.06);ctx.lineTo(cx-d.x*0.1-px*0.12,cz-d.z*0.1-pz*0.12);ctx.strokeStyle=E;ctx.lineWidth=lw;ctx.stroke();}} break;
+    case 'fan': {const n=s.count,base=Math.atan2(d.z,d.x),st12=12*Math.PI/180;for(let i=0;i<n;i++){const ang=base+(i-(n-1)/2)*st12;bar(ctx,P.x,P.z,{x:Math.cos(ang),z:Math.sin(ang)},s.range,0.2,E,F,lw,true);}break;}
+    case 'cone': wedge(ctx,P.x,P.z,d,s.range,s.area,E,F,lw); break;
+    case 'dash_cone': {const L=dashLen(s,d.l,s.range);arrow(ctx,P.x,P.z,d,L,E,lw);wedge(ctx,P.x+d.x*L,P.z+d.z*L,d,s.range,s.area,E,F,lw);circle(ctx,P.x,P.z,s.dash,'rgba(244,239,230,0.35)',null,[0.16,0.14],lw*0.8);break;}
+    case 'dash_ring': {const L=dashLen(s,d.l,s.area);arrow(ctx,P.x,P.z,d,L,E,lw);circle(ctx,P.x+d.x*L,P.z+d.z*L,s.area,E,F,null,lw);circle(ctx,P.x,P.z,s.dash,'rgba(244,239,230,0.35)',null,[0.16,0.14],lw*0.8);break;}
+    case 'self_ring': circle(ctx,P.x,P.z,s.area,E,F,null,lw); break;
+    case 'pull_ring': circle(ctx,P.x,P.z,s.drawArea,E,F_CD,[0.2,0.14],lw); circle(ctx,P.x,P.z,s.area,E,F,null,lw);
+      ctx.fillStyle=E;ctx.font='600 0.32px Inter, sans-serif';ctx.textAlign='center';ctx.fillText('1 s',P.x,P.z-s.area-0.12); break;
+    case 'ground': case 'bell': {circle(ctx,P.x,P.z,s.range,'rgba(244,239,230,0.45)',null,[0.2,0.14],lw*0.8);const c=clampTo(P,o.aim,s.range);circle(ctx,c.x,c.z,s.area,E,F,null,lw);if(s.k==='bell')bellGlyph(ctx,c.x,c.z,E);break;}
+    case 'bells': {const bs=o.bells&&o.bells.length?o.bells:[P];for(const b of bs)circle(ctx,b.x,b.z,s.area,E,F,null,lw);break;}
+    case 'hop_puddle': {arrow(ctx,P.x,P.z,{x:-d.x,z:-d.z},s.vault,E,lw);circle(ctx,P.x,P.z,s.area,E,F,null,lw);if(s.id==='wing_hop')bellGlyph(ctx,P.x,P.z,E);break;}
+    case 'shot_vault': bar(ctx,P.x,P.z,d,s.range,0.32,E,F,lw,true); arrow(ctx,P.x,P.z,{x:-d.x,z:-d.z},s.vault,E,lw); break;
+    case 'allies': {circle(ctx,P.x,P.z,s.range,'rgba(244,239,230,0.55)',F_CD,[0.2,0.14],lw*0.8);
+      for(const m of picks(s,P,o.heroes)){circle(ctx,m.x,m.z,0.62,live?HEAL:C_CD,null,null,lw*2.6);const tz=m.z-0.95;ctx.beginPath();ctx.moveTo(m.x-0.2,tz-0.22);ctx.lineTo(m.x,tz);ctx.lineTo(m.x+0.2,tz-0.22);ctx.strokeStyle=live?HEAL:C_CD;ctx.lineWidth=lw*2.6;ctx.stroke();} break;}
+    case 'passive': if(o.passiveShow) circle(ctx,P.x,P.z,s.area,'rgba(201,194,179,0.6)','rgba(201,194,179,0.06)',[0.16,0.12],lw); break;
+  }
+  cdDash=false; ctx.restore();
+}
+function drawFloor(ctx,w,h,scale,ox,oz){ctx.setTransform(1,0,0,1,0,0);const g=ctx.createRadialGradient(w/2,h*0.45,40,w/2,h/2,w*0.7);g.addColorStop(0,'#3d5a2e');g.addColorStop(1,'#22331c');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
+  tf(ctx,scale,ox,oz);ctx.strokeStyle='rgba(255,255,255,0.045)';ctx.lineWidth=1/scale;const xr=w/scale/2+1,zr=h/scale/2+1;
+  for(let x=Math.floor(-xr-ox/scale+w/scale/2);x<=xr+2;x++){ctx.beginPath();ctx.moveTo(x,-zr-5);ctx.lineTo(x,zr+5);ctx.stroke();}
+  for(let z=Math.floor(-zr-2);z<=zr+2;z++){ctx.beginPath();ctx.moveTo(-xr-5,z);ctx.lineTo(xr+5,z);ctx.stroke();}}
+function drawBody(ctx,x,z,r,col,ring){ctx.beginPath();ctx.ellipse(x,z+0.08,r*1.05,r*0.55,0,0,Math.PI*2);ctx.fillStyle='rgba(0,0,0,0.3)';ctx.fill();ctx.beginPath();ctx.arc(x,z,r,0,Math.PI*2);ctx.fillStyle=col;ctx.fill();ctx.lineWidth=0.05;ctx.strokeStyle=ring||'#221F1B';ctx.stroke();}
+function drawFoe(ctx,f){drawBody(ctx,f.x,f.z,0.3,'#3a2f2a','#120f0d');ctx.fillStyle='#B8141F';ctx.beginPath();ctx.arc(f.x-0.09,f.z-0.06,0.045,0,7);ctx.arc(f.x+0.09,f.z-0.06,0.045,0,7);ctx.fill();}
+function drawAlly(ctx,m){drawBody(ctx,m.x,m.z,0.3,GLOW[m.cls],'#221F1B');ctx.fillStyle='rgba(0,0,0,0.6)';ctx.fillRect(m.x-0.4,m.z-0.56,0.8,0.1);ctx.fillStyle=HEAL;ctx.fillRect(m.x-0.4,m.z-0.56,0.8*m.hp,0.1);}
+
+// ---------- field ----------
+const cv=document.getElementById('cv'), ctx=cv.getContext('2d');
+const OX=W/2, OZ=H/2;
+function toWorld(ev){const r=cv.getBoundingClientRect();return {x:((ev.clientX-r.left)/r.width*W-OX)/S,z:((ev.clientY-r.top)/r.height*H-OZ)/S};}
+function heroesList(){return [{x:st.hero.x,z:st.hero.z,hp:.9,cls:st.cls,self:true},...allies];}
+function say(t){st.msg=t;st.msgT=performance.now();}
+function now(){return performance.now();}
+function cdLeft(i){return Math.max(0,(st.ready[i]-now())/1000);}
+function armedText(){if(!st.armed)return '';const s=ALL[st.slots[st.armed.slot]];const c=CAPS[st.armed.slot];
+  return st.armed.how===1?`${c} ${s.name} armed: left click casts${document.getElementById('optAgain').checked?', '+c+' again casts':', '+c+' again cancels'}, Esc or Space cancels`:`Holding ${c} ${s.name}: let go to cast, Space or Esc cancels`;}
+function press(i){
+  if(!st.slots[i])return; const m=effMode(i);
+  if(m===3){cast(i);return;}
+  if(m===2){st.armed={slot:i,how:2};return;}
+  if(st.armed&&st.armed.slot===i&&st.armed.how===1){if(document.getElementById('optAgain').checked)cast(i);else{st.armed=null;say('Cancelled');}return;}
+  st.armed={slot:i,how:1};
+}
+function release(i){if(st.armed&&st.armed.slot===i&&st.armed.how===2)cast(i);}
+function cancel(why){if(st.armed){st.armed=null;say(why);}}
+function cast(i){
+  const s=ALL[st.slots[i]]; const keep=st.armed;
+  if(s.k==='passive'){say(`${s.name} is a passive: no press`);if(keep&&keep.how===2)st.armed=null;return;}
+  if(document.getElementById('optCd').checked&&cdLeft(i)>0){say(`${s.name} is not ready (${cdLeft(i).toFixed(1)} s)`);if(keep&&keep.how===2)st.armed=null;return;}
+  const P={x:st.hero.x,z:st.hero.z}, aim={...st.aim};
+  st.flashes.push({s,P,aim,t:now(),bells:st.bells.map(b=>({...b}))});
+  const d=norm(aim.x-P.x,aim.z-P.z);
+  let move=null;
+  if(s.k==='dash_cone')move={dx:d.x*dashLen(s,d.l,s.range),dz:d.z*dashLen(s,d.l,s.range)};
+  if(s.k==='dash_ring')move={dx:d.x*dashLen(s,d.l,s.area),dz:d.z*dashLen(s,d.l,s.area)};
+  if(s.k==='hop_puddle'||s.k==='shot_vault')move={dx:-d.x*s.vault,dz:-d.z*s.vault};
+  if(move)st.disp={from:P,dx:move.dx,dz:move.dz,t:now(),dur:200};
+  if(s.k==='bell'){st.bells.push({...clampTo(P,aim,s.range),until:now()+(s.id==='great_bell'?6000:8000)});while(st.bells.length>3)st.bells.shift();}
+  if(s.id==='wing_hop'){st.bells.push({x:P.x,z:P.z,until:now()+4000});while(st.bells.length>3)st.bells.shift();}
+  st.ready[i]=now()+(s.cd||0)*1000; st.armed=null; say(`${CAPS[i]} ${s.name} cast`);
+}
+function dodge(){const k=st.keys;let x=(k.has('KeyD')?1:0)-(k.has('KeyA')?1:0),z=(k.has('KeyS')?1:0)-(k.has('KeyW')?1:0);if(!x&&!z){const d=norm(st.aim.x-st.hero.x,st.aim.z-st.hero.z);x=d.x;z=d.z;}const d=norm(x,z);
+  st.disp={from:{...st.hero},dx:d.x*1.8,dz:d.z*1.8,t:now(),dur:250};if(st.armed){st.armed=null;say('Dodge: the armed skill is dropped');}else say('Dodge');}
+const stage=document.getElementById('stage');
+stage.addEventListener('focus',()=>{st.focus=true;document.getElementById('focusMsg').hidden=true;});
+stage.addEventListener('blur',()=>{st.focus=false;st.keys.clear();if(st.armed&&st.armed.how===2)st.armed=null;document.getElementById('focusMsg').hidden=false;});
+stage.addEventListener('keydown',e=>{
+  if(['KeyW','KeyA','KeyS','KeyD','Space','KeyQ','KeyE','KeyC','KeyX','Escape','Tab'].includes(e.code)&&e.code!=='Tab')e.preventDefault();
+  if(e.repeat)return; st.keys.add(e.code);
+  const i=KEYS.indexOf(e.code); if(i>=0)press(i);
+  if(e.code==='Space')dodge();
+  if(e.code==='Escape')cancel('Cancelled');
+});
+stage.addEventListener('keyup',e=>{st.keys.delete(e.code);const i=KEYS.indexOf(e.code);if(i>=0)release(i);});
+cv.addEventListener('pointermove',e=>{st.aim=toWorld(e);});
+cv.addEventListener('pointerdown',e=>{stage.focus();st.aim=toWorld(e);
+  if(e.button===0){if(st.armed&&st.armed.how===1)cast(st.armed.slot);}
+  if(e.button===2){st.attackT=now();if(st.armed&&st.armed.how===1&&document.getElementById('optRight').checked)cancel('Right click: cancelled');}});
+cv.addEventListener('contextmenu',e=>e.preventDefault());
+
+function frame(){
+  const t=now(); const dt=Math.min(0.05,(t-(frame.last||t))/1000); frame.last=t;
+  if(st.disp){const p=Math.min(1,(t-st.disp.t)/st.disp.dur);st.hero.x=st.disp.from.x+st.disp.dx*p;st.hero.z=st.disp.from.z+st.disp.dz*p;if(p>=1)st.disp=null;}
+  else{const k=st.keys;let x=(k.has('KeyD')?1:0)-(k.has('KeyA')?1:0),z=(k.has('KeyS')?1:0)-(k.has('KeyW')?1:0);if(x||z){const d=norm(x,z);st.hero.x+=d.x*3*dt;st.hero.z+=d.z*3*dt;}}
+  st.hero.x=Math.max(-9.5,Math.min(9.5,st.hero.x));st.hero.z=Math.max(-5.2,Math.min(5.2,st.hero.z));
+  st.bells=st.bells.filter(b=>b.until>t);
+  drawFloor(ctx,W,H,S,OX,OZ);
+  // bells
+  for(const b of st.bells){ctx.save();ctx.globalAlpha=0.9;circle(ctx,b.x,b.z,1.3,'rgba(245,208,107,0.5)','rgba(245,208,107,0.05)',null,0.03);bellGlyph(ctx,b.x,b.z,'#F5D06B');ctx.restore();}
+  // flashes
+  st.flashes=st.flashes.filter(f=>t-f.t<450);
+  for(const f of st.flashes){drawInd(ctx,f.s,{P:f.P,aim:f.aim,live:true,flash:true,alpha:1-(t-f.t)/450,lw:0.04,heroes:heroesList(),bells:f.bells});}
+  // armed indicator
+  if(st.armed){const i=st.armed.slot,s=ALL[st.slots[i]];const live=!(document.getElementById('optCd').checked&&cdLeft(i)>0);
+    drawInd(ctx,s,{P:st.hero,aim:st.aim,live,lw:0.035,heroes:heroesList(),bells:st.bells,passiveShow:true});
+    if(!live){ctx.fillStyle='rgba(244,239,230,0.85)';ctx.font='600 0.34px Inter, sans-serif';ctx.textAlign='center';ctx.fillText(cdLeft(i).toFixed(1)+' s',st.hero.x,st.hero.z+0.9);}}
+  for(const f of foes)drawFoe(ctx,f);
+  for(const m of allies)drawAlly(ctx,m);
+  drawBody(ctx,st.hero.x,st.hero.z,0.34,GLOW[st.cls],'#F4EFE6');
+  const hd=norm(st.aim.x-st.hero.x,st.aim.z-st.hero.z);ctx.beginPath();ctx.arc(st.hero.x+hd.x*0.5,st.hero.z+hd.z*0.5,0.07,0,7);ctx.fillStyle='#F4EFE6';ctx.fill();
+  if(t-st.attackT<160){ctx.beginPath();ctx.moveTo(st.hero.x+hd.x*0.5,st.hero.z+hd.z*0.5);ctx.lineTo(st.hero.x+hd.x*1.6,st.hero.z+hd.z*1.6);ctx.strokeStyle='rgba(244,239,230,0.7)';ctx.lineWidth=0.05;ctx.stroke();}
+  // cursor mark
+  ctx.strokeStyle='rgba(244,239,230,0.8)';ctx.lineWidth=0.03;ctx.beginPath();ctx.arc(st.aim.x,st.aim.z,0.12,0,7);ctx.stroke();
+  // hint
+  const hint=document.getElementById('hint');
+  hint.textContent=st.armed?armedText():(t-st.msgT<1400&&st.msg?st.msg:`Mode ${st.mode}${st.perSlot.some(v=>v!==null)?' (with key overrides)':''} · Q E C X cast · Space dodge · Esc cancel`);
+  // slot cds
+  document.querySelectorAll('.slot').forEach((el,i)=>{const c=el.querySelector('.cd');const left=cdLeft(i);c.textContent=(st.armed&&st.armed.slot===i?'armed · ':'')+(document.getElementById('optCd').checked&&left>0?left.toFixed(1)+' s':'ready');});
+  requestAnimationFrame(frame);
+}
+
+// ---------- controls UI ----------
+const HERO_LABEL={healer:'Mosslight',tank:'Stonehide',swordsman:'Ashfang',archer:'Windbriar',tidecaller:'Tidecaller',bellwright:'Bellwright',duskwing:'Duskwing'};
+function segRow(rowId,items,get,set){const row=document.getElementById(rowId);items.forEach(([v,l])=>{const b=document.createElement('button');b.className='seg';b.type='button';b.textContent=l;b.dataset.v=v;b.onclick=()=>{set(v);sync();};row.appendChild(b);});}
+segRow('heroRow',DATA.map(h=>[h.cls,HERO_LABEL[h.cls]]),()=>st.cls,v=>{st.cls=v;st.slots=DEFAULT_KIT[v].slice();st.ready=[0,0,0,0];st.armed=null;st.bells=[];st.sel=0;});
+segRow('modeRow',[[1,'1 Normal cast'],[2,'2 Quick cast + indicator'],[3,'3 Quick cast (today)']],()=>st.mode,v=>{st.mode=+v;st.armed=null;});
+function sync(){
+  document.querySelectorAll('#heroRow .seg').forEach(b=>b.setAttribute('aria-pressed',b.dataset.v===st.cls));
+  document.querySelectorAll('#modeRow .seg').forEach(b=>b.setAttribute('aria-pressed',+b.dataset.v===st.mode));
+  const sl=document.getElementById('slots');sl.innerHTML='';
+  st.slots.forEach((id,i)=>{const s=ALL[id];const el=document.createElement('div');el.className='slot';el.tabIndex=0;el.setAttribute('role','button');el.setAttribute('aria-selected',st.sel===i);
+    el.innerHTML=`<div class="top"><kbd>${CAPS[i]}</kbd><span class="nm">${s.name}</span></div><span class="small">${KIND[s.k].t}</span><span class="cd">ready</span>`;
+    const se=document.createElement('select');se.id='ov'+i;se.setAttribute('aria-label','Cast mode for '+CAPS[i]);[['','Same as all'],['1','Mode 1'],['2','Mode 2'],['3','Mode 3']].forEach(([v,l])=>{const o=document.createElement('option');o.value=v;o.textContent=l;se.appendChild(o);});
+    se.value=st.perSlot[i]===null?'':String(st.perSlot[i]);se.onclick=e=>e.stopPropagation();se.onchange=()=>{st.perSlot[i]=se.value===''?null:+se.value;st.armed=null;};
+    el.appendChild(se);el.onclick=()=>{st.sel=i;sync();};sl.appendChild(el);});
+  const pool=document.getElementById('pool');pool.innerHTML='';
+  DATA.find(h=>h.cls===st.cls).skills.forEach(s=>{const b=document.createElement('button');b.type='button';b.className='chipbtn';b.dataset.on=st.slots.includes(s.id);b.innerHTML=`${s.name}<span class="k">${KIND[s.k].t}</span>`;
+    b.onclick=()=>{const j=st.slots.indexOf(s.id);if(j>=0&&j!==st.sel){st.slots[j]=st.slots[st.sel];}st.slots[st.sel]=s.id;st.ready[st.sel]=0;st.armed=null;sync();};pool.appendChild(b);});
+}
+// touch buttons
+const pr=document.getElementById('press');CAPS.forEach((c,i)=>{const b=document.createElement('button');b.type='button';b.textContent=c;b.onpointerdown=e=>{e.preventDefault();press(i);};b.onpointerup=()=>release(i);b.onpointercancel=()=>release(i);pr.appendChild(b);});
+sync(); requestAnimationFrame(frame);
+
+// ---------- gallery ----------
+const REP={line:'pale_lance',fan:'volley',cone:'brutal_cleave',dash_cone:'shoulder_charge',dash_ring:'dusk_dive',self_ring:'taunting_roar',pull_ring:'maelstrom',ground:'rain_of_arrows',bell:'hang_bell',bells:'peal',hop_puddle:'ripple_step',shot_vault:'vault_shot',allies:'guardian_bond',passive:'warding_aura'};
+const gal=document.getElementById('gal');
+Object.keys(KIND).forEach(k=>{const who=[];DATA.forEach(h=>h.skills.forEach(s=>{if(s.k===k)who.push(s.name);}));
+  const card=document.createElement('div');card.className='card';const c=document.createElement('canvas');c.width=460;c.height=345;card.appendChild(c);
+  const tx=document.createElement('div');tx.className='tx';tx.innerHTML=`<h3>${KIND[k].t} <span class="count">${who.length}</span></h3><p class="small">${KIND[k].d}</p><span class="who">${who.join(', ')}</span>`;card.appendChild(tx);gal.appendChild(card);
+  const g=c.getContext('2d'),sc=30,ox=230,oz=200;drawFloor(g,460,345,sc,ox,oz);const s=ALL[REP[k]];const P={x:0,z:1.6};
+  const aim=k==='ground'||k==='bell'?{x:1.2,z:-1.8}:k==='dash_cone'||k==='dash_ring'?{x:0.6,z:-3.4}:{x:0.4,z:-3};
+  const hs=[{x:0,z:1.6,hp:.9,cls:'healer',self:true},{x:-2.2,z:0.4,hp:.3,cls:'tank'},{x:2.6,z:2.4,hp:.7,cls:'archer'},{x:1.0,z:-0.8,hp:.55,cls:'swordsman'}];
+  const bells=k==='bells'?[{x:-2.6,z:-1.6},{x:2.4,z:-2.2}]:[];
+  for(const b of bells){circle(g,b.x,b.z,1.3,'rgba(245,208,107,0.5)',null,null,0.04);bellGlyph(g,b.x,b.z,'#F5D06B');}
+  drawInd(g,s,{P,aim,live:true,lw:0.05,heroes:hs,bells,passiveShow:true});
+  if(k==='allies')hs.slice(1).forEach(m=>drawAlly(g,m));
+  drawBody(g,P.x,P.z,0.34,GLOW[s.cls],'#F4EFE6');
+  if(k!=='self_ring'&&k!=='pull_ring'&&k!=='bells'&&k!=='allies'&&k!=='passive'){g.strokeStyle='rgba(244,239,230,0.85)';g.lineWidth=0.04;g.beginPath();g.arc(aim.x,aim.z,0.14,0,7);g.stroke();}
+  g.setTransform(1,0,0,1,0,0);g.fillStyle='rgba(244,239,230,0.85)';g.font='600 15px Inter, sans-serif';g.fillText(s.name,12,24);
+});
+
+// ---------- tables ----------
+const AIM={line:s=>`Fires toward the pointer; flies its full ${s.range} u${s.pierce>1?', through up to '+s.pierce+' foes':''}`,
+  fan:s=>`${s.count} bolts 12° apart toward the pointer, ${s.range} u`,
+  cone:s=>`Swings toward the pointer`,
+  dash_cone:s=>`Dashes up to ${s.dash} u toward the pointer, stops with the target in reach, then swings`,
+  dash_ring:s=>`Dives up to ${s.dash} u toward the pointer, then bursts`,
+  self_ring:s=>`Bursts round the hero; the pointer does not move it`,
+  pull_ring:s=>`Drags foes in from ${s.drawArea} u, bursts ${s.delay} s later round the hero`,
+  ground:s=>`Lands at the pointer, held inside ${s.range} u`,
+  bell:s=>`Hangs a bell at the pointer, inside ${s.range} u`,
+  bells:s=>`Rings round every hung bell; round the hero when none hangs`,
+  hop_puddle:s=>`Hops ${s.vault} u away from the pointer; leaves its ${s.id==='wing_hop'?'bell':'pool'} where it began`,
+  shot_vault:s=>`Fires toward the pointer, ${s.range} u, and hops ${s.vault} u back`,
+  allies:s=>s.pick==='threat'?`No aim: the ally most foes are chasing within ${s.range} u (the tank last)`:`No aim: the ${s.count>1?s.count+' allies':'ally'} with the least health within ${s.range} u (F1–F4 forces one)`,
+  passive:s=>`Passive: no press`};
+function nums(s){const p=[];if(s.k==='cone'||s.k==='dash_cone')p.push(`reach ${s.range} u`,`half-angle ${s.area}°`);
+  else{if(s.range&&!['line','fan','shot_vault','allies'].includes(s.k))p.push(`reach ${s.range} u`);if(s.area&&!['line','fan','shot_vault','allies'].includes(s.k))p.push(`radius ${s.area} u`);}
+  if(s.cd)p.push(`cd ${s.cd} s`);return p.join(' · ');}
+const tb=document.getElementById('tables');
+DATA.forEach((h,hi)=>{const d=document.createElement('details');if(hi===0)d.open=true;const act=h.skills.filter(s=>s.k!=='passive').length;
+  d.innerHTML=`<summary>${HERO_LABEL[h.cls]}<span class="small">${h.animal} · ${h.skills.length} skills, ${act} with a press</span></summary>`;
+  const w=document.createElement('div');w.className='tw';let r='<table><thead><tr><th>Skill</th><th>Shape</th><th>What the pointer does</th><th>Numbers</th></tr></thead><tbody>';
+  h.skills.forEach(s=>{r+=`<tr><td>${s.name}</td><td><span class="tag${s.k==='passive'?' pass':''}">${KIND[s.k].t}</span></td><td>${AIM[s.k](s)}</td><td class="mono">${nums(s)}</td></tr>`;});
+  w.innerHTML=r+'</tbody></table>';d.appendChild(w);tb.appendChild(d);});
+</script>

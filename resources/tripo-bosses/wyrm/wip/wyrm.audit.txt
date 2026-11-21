@@ -1,0 +1,27 @@
+idle      floor clean
+          stretch x7.95 at 4.55 on head
+walk      floor clean
+          stretch x10.08 at 0.82 on c1
+turnL     floor clean
+          stretch x9.86 at 0.37 on c1
+turnR     floor clean
+          stretch x9.88 at 0.87 on c1
+breath    floor clean
+          snaps: head 47 deg@0.88 (beside 10), c9 32 deg@0.87 (beside 6), c10 17 deg@0.87 (beside 2)
+          stretch x31.87 at 0.90 on head
+burrow    floor head -2752mm@1.50, jaw -2746mm@1.50, c1 -2442mm@1.50, c0 -2365mm@1.50
+          snaps: c31 10 deg@1.02 (beside 0)
+          stretch x24.28 at 0.35 on head
+emerge    floor c3 -6mm@0.00
+          snaps: c6 94 deg@0.77 (beside 0), c9 94 deg@0.80 (beside 0), c7 94 deg@0.78 (beside 0), c5 94 deg@0.77 (beside 0), c10 92 deg@0.82 (beside 0)
+          stretch x30.37 at 0.90 on head
+enrage    floor clean
+          stretch x31.87 at 0.73 on head
+hurt      floor clean
+          stretch x10.36 at 0.05 on head
+heavyHit  floor clean
+          stretch x18.12 at 0.08 on head
+spawn     floor clean
+          stretch x27.35 at 0.85 on head
+death     floor clean
+          stretch x31.87 at 0.45 on head

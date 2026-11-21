@@ -1,0 +1,41 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "skill": "warding_aura",
+  "allies": [
+   [
+    -1.15,
+    -0.5,
+    0.5
+   ],
+   [
+    1.15,
+    -0.5,
+    0.5
+   ],
+   [
+    0,
+    2.3,
+    0.5
+   ]
+  ],
+  "seq": [],
+  "secs": 4.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' · ');})()",
+  "guides": [
+   {
+    "k": "area",
+    "r": 1.5
+   }
+  ],
+  "cap": "S19 Glade (passive, replaces Warding Aura) · allies within 1.5 u of her heal 3 a second · no press · the Archer outside the ring gets nothing",
+  "name": "kit_S19"
+ }
+]

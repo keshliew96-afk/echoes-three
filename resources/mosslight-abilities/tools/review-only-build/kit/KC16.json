@@ -1,0 +1,57 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C16",
+  "aim": [
+   2.2,
+   0
+  ],
+  "slots": [
+   "kindred_shield"
+  ],
+  "allies": [
+   [
+    2.2,
+    0,
+    0.95
+   ],
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -3.2,
+    -2.4,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    3.4,
+    "eval",
+    "for(const [,x] of (globalThis.__reviewWisps||new Map()))x.until=0;"
+   ],
+   [
+    3.9,
+    "move",
+    0,
+    [
+     3.4,
+     1.1
+    ]
+   ]
+  ],
+  "secs": 5.2,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'wisps '+w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.reviewWisp||0)).join(' \u00b7 ');})()",
+  "cap": "C16 \u00b7 Mercy Bell: a fading wisp leaves a seed"
+ }
+]

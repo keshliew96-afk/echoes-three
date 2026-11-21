@@ -1,0 +1,41 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S18",
+  "aim": [
+   2.9,
+   -0.6
+  ],
+  "skill": "sanctuary",
+  "allies": [
+   [
+    1.6,
+    -0.9,
+    0.4
+   ],
+   [
+    3.6,
+    -2.6,
+    0.55
+   ],
+   [
+    -3.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 9.4,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "cap": "S18 Mending Sapling"
+ }
+]

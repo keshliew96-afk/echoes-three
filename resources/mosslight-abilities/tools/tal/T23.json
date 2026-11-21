@@ -1,0 +1,47 @@
+[
+ {
+  "name": "tal_T23",
+  "skill": "mending_bolt",
+  "key": null,
+  "aim": [
+   0,
+   -2.6
+  ],
+  "allies": [
+   [
+    0,
+    -2.2,
+    0.4
+   ],
+   [
+    -1.0,
+    0.8,
+    0.4
+   ],
+   [
+    1.0,
+    0.8,
+    0.4
+   ]
+  ],
+  "pin": true,
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ],
+  "cap": "T23 Deep Roots (Evergreen, tier II) · every heal leaves 20% more as an afterglow: Mending Bolt lands its 22 at once, then 4 ticks of 1.1 over 4 s (vine ring)",
+  "leg": "",
+  "secs": 6.2,
+  "fps": 15,
+  "guides": [
+   {
+    "k": "range",
+    "r": 5.0
+   }
+  ],
+  "pre": 0.3
+ }
+]

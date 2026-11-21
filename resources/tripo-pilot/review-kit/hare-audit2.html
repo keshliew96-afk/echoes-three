@@ -1,0 +1,45 @@
+<!doctype html><html><body>
+<script type="importmap">{"imports":{"three":"./three.module.js","three/addons/":"./jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+const P=new URLSearchParams(location.search);
+const g=await new GLTFLoader().loadAsync(P.get('f'));const root=g.scene; const only=P.get('only');
+const J={};let sm=null;root.traverse(o=>{J[o.name]=o;if(o.isSkinnedMesh&&o.skeleton.bones.some(b=>b.name==='earL'))sm=o;});
+const mixer=new THREE.AnimationMixer(root);
+const bones=sm.skeleton.bones.map(b=>b.name), SI=sm.geometry.attributes.skinIndex, SW=sm.geometry.attributes.skinWeight, NV=SI.count;
+const cls=(n)=>/^head/.test(n)?'head':/^ear/.test(n)?'ear'+n.replace(/\d/,'').slice(-1):/^(leg|foot)L/.test(n)?'legL':/^(leg|foot)R/.test(n)?'legR':/^(hand|fingers)R/.test(n)?'pawR':/^(hand|fingers)L/.test(n)?'pawL':/R$/.test(n)?'armR':/L$/.test(n)?'armL':/^tail/.test(n)?'tail':'torso';
+const C={}; const dom=new Array(NV);
+for(let v=0;v<NV;v++){let bi=SI.getX(v),bw=SW.getX(v); if(SW.getY(v)>bw){bi=SI.getY(v);bw=SW.getY(v);} if(SW.getZ(v)>bw){bi=SI.getZ(v);bw=SW.getZ(v);} const c=cls(bones[bi]); dom[v]=bw; (C[c]=C[c]||[]).push(v);}
+const firm=(c,w=0.85,step=1)=>C[c].filter((v,i)=>dom[v]>=w&&i%step===0);
+const F={}; for(const c in C)F[c]=firm(c,0.9,c==='torso'||c==='head'?2:1);
+// the quiver and its arrows are part of the body, on her back right: the torso verts behind her spine, right of centre and above the waist (taken in the rest pose)
+root.updateMatrixWorld(true); {const tv=new THREE.Vector3(); F.quiver=F.torso.filter(v=>{sm.getVertexPosition(v,tv); tv.applyMatrix4(sm.matrixWorld); return tv.z<-0.075&&tv.y>0.42;}); F.trunk=F.torso.filter(v=>!F.quiver.includes(v));}
+// the bow and the arrow are rigid meshes: their verts go after the body's in the same array
+const bowM=J.weapon, arrM=J.arrow, bp=bowM.geometry.attributes.position, ap=arrM.geometry.attributes.position, NB=bp.count, NA=ap.count, NV0=NV;
+F.bow=[]; for(let i=0;i<NB;i++)F.bow.push(NV0+i); F.arrow=[]; for(let i=0;i<NA;i+=2)F.arrow.push(NV0+NB+i);
+const pos=new Float32Array((NV+NB+NA)*3), tv=new THREE.Vector3();
+const skin=()=>{for(let v=0;v<NV;v++){sm.getVertexPosition(v,tv); tv.applyMatrix4(sm.matrixWorld); pos[v*3]=tv.x;pos[v*3+1]=tv.y;pos[v*3+2]=tv.z;}
+ for(let i=0;i<NB;i++){tv.fromBufferAttribute(bp,i).applyMatrix4(bowM.matrixWorld); const v=NV0+i; pos[v*3]=tv.x;pos[v*3+1]=tv.y;pos[v*3+2]=tv.z;}
+ for(let i=0;i<NA;i++){tv.fromBufferAttribute(ap,i).applyMatrix4(arrM.matrixWorld); const v=NV0+NB+i; pos[v*3]=tv.x;pos[v*3+1]=tv.y;pos[v*3+2]=tv.z;}};
+const dmin=(A,B)=>{let m=1e9;for(const a of A){const ax=pos[a*3],ay=pos[a*3+1],az=pos[a*3+2];for(const b of B){const dx=ax-pos[b*3],dy=ay-pos[b*3+1],dz=az-pos[b*3+2],d=dx*dx+dy*dy+dz*dz;if(d<m)m=d;}}return Math.sqrt(m);};
+const pmin=(p,B)=>{let m=1e9;for(const b of B){const dx=p.x-pos[b*3],dy=p.y-pos[b*3+1],dz=p.z-pos[b*3+2],d=dx*dx+dy*dy+dz*dz;if(d<m)m=d;}return Math.sqrt(m);};
+const ymin=(A)=>{let m=1e9;for(const a of A)if(pos[a*3+1]<m)m=pos[a*3+1];return m;};
+const PAIRS=[['bow','head'],['bow','earL'],['bow','earR'],['bow','trunk'],['bow','quiver'],['bow','legL'],['bow','legR'],['bow','armR'],['bow','tail'],['earL','earR'],['earL','quiver'],['earR','quiver'],['earL','trunk'],['earR','trunk'],['earR','pawR'],['earR','armR'],['earL','pawR'],['pawR','head'],['armR','head'],['pawR','trunk'],['legL','legR'],['armL','head'],['tail','legL'],['tail','legR']];
+const APAIRS=[['arrow','head'],['arrow','earL'],['arrow','earR'],['arrow','trunk'],['arrow','armL']];
+const out={}; const want=(P.get('at')||'').split(';').filter(Boolean).map(s=>s.split(':')); const atOut=[];
+// bind (rest) values first
+root.updateMatrixWorld(true); skin(); const bind={}; for(const [a,b] of PAIRS)bind[a+'-'+b]=+dmin(F[a],F[b]).toFixed(3);  out.__bind=bind;
+for(const clip of g.animations){ if(only&&!only.split(',').includes(clip.name))continue; mixer.stopAllAction();const act=mixer.clipAction(clip);act.play();
+ const m={}; const lo=(k,v,t)=>{if(!(k in m)||v<m[k][0])m[k]=[+v.toFixed(3),+t.toFixed(2)];}; const hi=(k,v,t)=>{if(!(k in m)||v>m[k][0])m[k]=[+v.toFixed(3),+t.toFixed(2)];};
+ const N=Math.round(clip.duration*60); let prev=null;
+ for(let i=0;i<=N;i++){const t=Math.min(i/60,clip.duration-1e-4);mixer.setTime(t);root.updateMatrixWorld(true);skin();
+  for(const [a,b] of PAIRS)lo(a+'-'+b,dmin(F[a],F[b]),t);
+  if(arrM.scale.x>0.5&&arrM.visible)for(const [a,b] of APAIRS)lo(a+'-'+b,dmin(F[a],F[b]),t);
+  for(const c of ['legL','legR','torso','pawR','pawL','head','earL','earR','tail'])lo('y-'+c,ymin(C[c]),t); lo('y-bow',ymin(F.bow),t);
+  const cur={head:J.head.getWorldPosition(new THREE.Vector3())}; if(prev){hi('headSpeed',cur.head.distanceTo(prev.head)*60,t);} prev=cur; const ball=cur.head;
+  for(const [c,tt] of want)if(c===clip.name&&Math.abs(t-+tt)<1/120)atOut.push({clip:c,t:+tt,ball:ball.toArray().map(v=>+v.toFixed(3))});
+ }
+ out[clip.name]=m;}
+out.__at=atOut; window.result=out;window.done=true;
+</script></body></html>

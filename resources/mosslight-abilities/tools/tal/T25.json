@@ -1,0 +1,67 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "secs": 5.6,
+  "pre": 0.25,
+  "skill": "swift_mend",
+  "allies": [
+   [
+    -1.4,
+    -0.8,
+    0.3
+   ],
+   [
+    1.4,
+    -0.8,
+    0.3
+   ],
+   [
+    0,
+    -2.0,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    0.7,
+    "key",
+    "q"
+   ],
+   [
+    1.4,
+    "key",
+    "q"
+   ],
+   [
+    3.3,
+    "key",
+    "q"
+   ],
+   [
+    3.7,
+    "key",
+    "q"
+   ]
+  ],
+  "cap": "T25 Twin Buds (Spring, tier III) · each heal skill holds 2 charges, refilled one at a time on its cooldown · Swift Mend pressed twice in a row, then again as one charge comes back",
+  "live": "(()=>{const s=(window.__echoes.state().skills||[])[0];const c=s&&s.charges!=null?s.charges:2;return 'Swift Mend charges '+'●'.repeat(c)+'○'.repeat(2-c);})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 3.2
+   }
+  ],
+  "name": "tal_T25"
+ }
+]

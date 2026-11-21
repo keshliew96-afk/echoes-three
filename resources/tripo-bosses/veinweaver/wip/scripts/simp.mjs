@@ -1,0 +1,11 @@
+// usage: node simp.mjs in.glb out.glb ratio
+import { NodeIO } from '@gltf-transform/core';
+import { ALL_EXTENSIONS } from '@gltf-transform/extensions';
+import { weld, simplify } from '@gltf-transform/functions';
+import { MeshoptSimplifier } from 'meshoptimizer';
+await MeshoptSimplifier.ready;
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS);
+const doc = await io.read(process.argv[2]);
+await doc.transform(weld(), simplify({ simplifier: MeshoptSimplifier, ratio: +process.argv[4], error: 0.002, lockBorder: false }));
+for (const m of doc.getRoot().listMeshes()) for (const p of m.listPrimitives()) console.log('tris', p.getIndices().getCount() / 3, 'verts', p.getAttribute('POSITION').getCount());
+await io.write(process.argv[3], doc);

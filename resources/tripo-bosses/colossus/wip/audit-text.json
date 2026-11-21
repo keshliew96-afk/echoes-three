@@ -1,0 +1,15 @@
+{
+ "AUD_FRAMES": "1,210",
+ "AUD_POP0": "In both turns the legs flipped about 95 degrees in one frame. The Fissure fist twisted 156 degrees as it came down, the arms twisted 156 degrees as it punched the ceiling in the Geode Rain, and the shins snapped about 107 degrees at the start of the heavy hit and the death.",
+ "AUD_POP1": "Only on the strike, where the move is meant to be fast: the Fissure fist turns 81 degrees in the frame it lands, the forearms 64 degrees as the Geode Rain is thrown and 58 degrees at the Enrage slam. Elsewhere the largest is 10 degrees, a shoulder in the turns.",
+ "AUD_FLOOR0": "In both turns the legs folded under the body and went 0.10 u under the floor. In the heavy hit a shin went 0.03 u under and a heel 0.02 u as it stepped back.",
+ "AUD_FLOOR1": "None, in any move. A step back now lands flat instead of on the heel.",
+ "AUD_THRU0": "Raising the Fissure fist drove the forearm 0.15 u into the body and the head, and in the turns and the heavy hit the feet went 0.09 to 0.13 u up into the hips.",
+ "AUD_THRU1": "The chin rests on the top of the geode as it was modelled, up to 0.15 u when the head dips. The elbows touch the thighs (0.03 to 0.07 u) when it crouches. In the death the heels tuck 0.12 u under the hips as it kneels and the right elbow presses 0.13 u into the thigh on the floor.",
+ "AUD_STR0": "The crystals on the shoulders tore away from the body, pulled to 66 times their length as it punched the ceiling and 52 times in the Fissure.",
+ "AUD_STR1": "The shoulder crystals now move with the arm, so they no longer tear. What is left: the elbow skin stretches up to 16 times on a few short edges when a fist goes high, and one tiny triangle on the right thigh reads up to 25 times but is a fraction of a millimetre across.",
+ "AUD_LOOP0": "The walk loop jumped 4.5 degrees when it restarted, because a stride was not a whole number of frames.",
+ "AUD_LOOP1": "Clean: idle, walk and both turns join with no jump, and no move stops dead.",
+ "AUD_PLANT": "0 mm of slide in every move: a planted fist or foot holds still while it carries weight. When a move rears it up, a fist lets go of the floor instead of pulling the body down.",
+ "AUD_LOOPS": "0 degrees in idle, walk and both turns."
+}

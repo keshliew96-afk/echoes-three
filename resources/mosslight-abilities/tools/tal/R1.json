@@ -1,0 +1,63 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "relic_mercy_bell",
+  "skill": "nova_bloom",
+  "allies": [
+   [
+    -1.2,
+    -0.45,
+    1
+   ],
+   [
+    1.2,
+    -0.45,
+    1
+   ],
+   [
+    0,
+    1.25,
+    1
+   ]
+  ],
+  "selfHp": 1,
+  "seq": [
+   [
+    0.4,
+    "key",
+    "q"
+   ],
+   [
+    1.7,
+    "eval",
+    "const t=E.state().party[1];E.cmd('hitOnce',t.id);"
+   ],
+   [
+    2.6,
+    "eval",
+    "const t=E.state().party[1];E.cmd('hitOnce',t.id);"
+   ],
+   [
+    3.4,
+    "eval",
+    "const t=E.state().party[2];E.cmd('hitOnce',t.id);"
+   ],
+   [
+    4.3,
+    "eval",
+    "const t=E.state().party[1];E.cmd('hitOnce',t.id);"
+   ]
+  ],
+  "secs": 5.6,
+  "guides": [],
+  "cap": "Mercy Bell, her class relic, your new version · her overheal summons a nature wisp that circles the healed ally and stores it (up to 20% of their maximum health, 8 s) · when that ally is hit, the wisp heals them",
+  "live": "(()=>{const w=window.__echoes.content.world();return 'wisps '+w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.reviewWisp||0)).join(' · ');})()"
+ }
+]

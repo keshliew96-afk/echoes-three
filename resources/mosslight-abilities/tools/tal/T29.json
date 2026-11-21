@@ -1,0 +1,51 @@
+[
+ {
+  "key": null,
+  "aim": [
+   0,
+   -3
+  ],
+  "pin": true,
+  "fps": 15,
+  "secs": 4.0,
+  "pre": 0.25,
+  "skill": "nova_bloom",
+  "allies": [
+   [
+    -1.1,
+    -1.05,
+    0.45
+   ],
+   [
+    1.1,
+    -1.05,
+    0.45
+   ],
+   [
+    0,
+    1.55,
+    0.45
+   ]
+  ],
+  "seq": [
+   [
+    0.4,
+    "key",
+    "q"
+   ]
+  ],
+  "cap": "T29 Wide Canopy (Evergreen, tier IV) · area heals 20% wider · Nova Bloom: 1.68 u instead of 1.4 u, so allies standing at 1.5 u are healed",
+  "leg": "dashed: new area 1.68 u · gold: today's 1.4 u",
+  "guides": [
+   {
+    "k": "range",
+    "r": 1.68
+   },
+   {
+    "k": "area",
+    "r": 1.4
+   }
+  ],
+  "name": "tal_T29"
+ }
+]

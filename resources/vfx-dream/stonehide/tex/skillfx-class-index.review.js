@@ -1,0 +1,538 @@
+// Class-skill VFX (BUILD_BRIEF §25.2 / §25.3, PLAN §16.11). Owner: PARTY.
+// The render side of the 12 new class skills, the class passives, the class
+// techniques and the taunt status, on the §19.4 layering contract: every
+// effect is >= 3 layers (a hard core, a soft glow, particles) and reads by
+// SHAPE as well as colour.
+//
+// Colour law (§19.1 / §25.2, binding): player-side damage = parchment-white
+// core + Hearth Amber glow; stun = Bone ring (skillfx/content.js draws the
+// status glyphs); slow = Signal Blue ink ring (content.js); shield = the
+// Parchment hex rim + pale shell (content.js) — THIS layer adds the flying
+// Warm Grey plate glyph of Shield Wall and the Iron Stance hex field; a
+// class's accent appears only as a thin trim or ring, never a fill. Never
+// Ember (enemy threats only), never violet, never Bright Heal (no ally skill
+// heals).
+//
+// Pieces (all event- or state-driven, render-only):
+//   taunt        "!" plate above every enemy with a live taunt + a 0.3 s
+//                parchment tether to the taunter when applied
+//   roar         parchment shockwave ring + a thin Tank-accent inner band
+//   shield wall  a Warm Grey plate glyph flies Tank → each recipient (0.25 s)
+//   iron stance  a faint Warm Grey hex ring at 1.3 u riding the Tank while
+//                equipped; a pulse flickers it
+//   dash / vault / hop  a Bone dust / parchment speed-line trail along the path
+//   crescent     1-3 parchment bands by combo stack; combo pips over the fox
+//   riposte      a crossed-blades glyph over the fox while its parry is open;
+//                a spark + the counter arc on a block
+//   razor wake   3 parchment blade glints orbiting the fox at 0.9 u
+//   pinning      a Bone stake glyph on the pinned target
+//   rain         falling parchment streaks inside the zone's translucent blob
+//   kestrel      a small kestrel glyph circling the hare; a streak per pulse
+//   techniques   Provoke / Brace / Tremor / Anchor / Retaliate / Aegis / Flow /
+//                Scatter pulses: a small glyph flash at the body they touched
+import {
+  AdditiveBlending,
+  CanvasTexture,
+  CircleGeometry,
+  Color,
+  Group,
+  Mesh,
+  MeshBasicMaterial,
+  PlaneGeometry,
+  RingGeometry,
+  Sprite,
+  SpriteMaterial,
+  SRGBColorSpace,
+} from 'three';
+import { PALETTE } from '../../../data/palette.js';
+import { vfxClassStyle } from '../../../data/vfx.js';
+import { makeGlowSprite } from '../../glow.js';
+import { createFxPool } from '../../fxpool.js';
+import { warmPark } from '../../warmup.js';
+
+const AMBER = PALETTE.hearthAmber;
+const PARCH = PALETTE.parchment;
+const BONE = PALETTE.bone;
+const GREY = PALETTE.warmGrey;
+const INK = PALETTE.voidCharcoal;
+const MOTE_CAP = 200;
+// VFX redesign (docs/gauntlet/design-VFX.md): the persistent class pieces this
+// layer keeps wear their class signature — Iron Stance's hex field in Forge
+// Steel, Razor Wake's orbiting blades in Fox Crimson / Moon Silver.
+const TANK = vfxClassStyle('tank');
+const SWORD = vfxClassStyle('swordsman');
+
+function add(color, opacity) {
+  return new MeshBasicMaterial({ color: new Color(color), transparent: true, opacity, blending: AdditiveBlending, depthWrite: false });
+}
+function flat(color, opacity) {
+  return new MeshBasicMaterial({ color: new Color(color), transparent: true, opacity, depthWrite: false });
+}
+
+// ------------------------------------------------------------ glyph atlas --
+const glyphs = new Map();
+function glyphTexture(id) {
+  if (glyphs.has(id)) return glyphs.get(id);
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const g = c.getContext('2d');
+  g.lineCap = 'round';
+  g.lineJoin = 'round';
+  const inked = (col, w) => {
+    g.strokeStyle = INK;
+    g.lineWidth = w + 8;
+    g.stroke();
+    g.strokeStyle = col;
+    g.lineWidth = w;
+    g.stroke();
+  };
+  if (id === 'taunt') {
+    // A Parchment "!" plate (shape channel — never Ember).
+    g.fillStyle = INK;
+    g.beginPath();
+    g.roundRect(34, 14, 60, 100, 16);
+    g.fill();
+    g.strokeStyle = PARCH;
+    g.lineWidth = 6;
+    g.stroke();
+    g.fillStyle = PARCH;
+    g.fillRect(56, 30, 16, 50);
+    g.beginPath();
+    g.arc(64, 96, 9, 0, Math.PI * 2);
+    g.fill();
+  } else if (id === 'plate') {
+    // Shield Wall's Warm Grey plate.
+    g.beginPath();
+    g.moveTo(30, 22);
+    g.lineTo(98, 22);
+    g.lineTo(98, 72);
+    g.quadraticCurveTo(98, 100, 64, 112);
+    g.quadraticCurveTo(30, 100, 30, 72);
+    g.closePath();
+    g.fillStyle = GREY;
+    g.fill();
+    inked(PARCH, 5);
+  } else if (id === 'blades') {
+    // Riposte: crossed blades.
+    g.beginPath();
+    g.moveTo(26, 102);
+    g.lineTo(102, 26);
+    inked(PARCH, 8);
+    g.beginPath();
+    g.moveTo(26, 26);
+    g.lineTo(102, 102);
+    inked(PARCH, 8);
+    g.beginPath();
+    g.moveTo(16, 88);
+    g.lineTo(40, 112);
+    inked(BONE, 6);
+    g.beginPath();
+    g.moveTo(88, 112);
+    g.lineTo(112, 88);
+    inked(BONE, 6);
+  } else if (id === 'stake') {
+    // Pinning Arrow: a Bone stake.
+    g.beginPath();
+    g.moveTo(64, 14);
+    g.lineTo(64, 96);
+    inked(BONE, 9);
+    g.beginPath();
+    g.moveTo(44, 96);
+    g.lineTo(64, 118);
+    g.lineTo(84, 96);
+    g.closePath();
+    g.fillStyle = BONE;
+    g.fill();
+    g.beginPath();
+    g.moveTo(50, 26);
+    g.lineTo(64, 14);
+    g.lineTo(78, 26);
+    inked(PARCH, 5);
+  } else if (id === 'kestrel') {
+    // A small kestrel silhouette (Parchment body, Bone wing tips).
+    g.beginPath();
+    g.moveTo(12, 64);
+    g.quadraticCurveTo(40, 44, 58, 58);
+    g.lineTo(64, 40);
+    g.lineTo(70, 58);
+    g.quadraticCurveTo(88, 44, 116, 64);
+    g.quadraticCurveTo(88, 62, 72, 70);
+    g.lineTo(64, 100);
+    g.lineTo(56, 70);
+    g.quadraticCurveTo(40, 62, 12, 64);
+    g.closePath();
+    g.fillStyle = PARCH;
+    g.fill();
+    g.strokeStyle = INK;
+    g.lineWidth = 4;
+    g.stroke();
+  } else if (id === 'pip') {
+    g.beginPath();
+    g.moveTo(64, 20);
+    g.lineTo(100, 64);
+    g.lineTo(64, 108);
+    g.lineTo(28, 64);
+    g.closePath();
+    g.fillStyle = PARCH;
+    g.fill();
+    g.strokeStyle = INK;
+    g.lineWidth = 8;
+    g.stroke();
+  } else if (id === 'hexring') {
+    g.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * Math.PI * 2 + Math.PI / 6;
+      const x = 64 + Math.cos(a) * 56;
+      const y = 64 + Math.sin(a) * 56;
+      if (i === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.closePath();
+    g.strokeStyle = GREY;
+    g.lineWidth = 5;
+    g.stroke();
+  } else if (id === 'streak') {
+    const grd = g.createLinearGradient(64, 0, 64, 128);
+    grd.addColorStop(0, 'rgba(244,239,230,0)');
+    grd.addColorStop(1, 'rgba(244,239,230,1)');
+    g.fillStyle = grd;
+    g.fillRect(58, 0, 12, 128);
+  } else if (id === 'spark') {
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      g.beginPath();
+      g.moveTo(64 + Math.cos(a) * 12, 64 + Math.sin(a) * 12);
+      g.lineTo(64 + Math.cos(a) * (i % 2 ? 40 : 58), 64 + Math.sin(a) * (i % 2 ? 40 : 58));
+      g.strokeStyle = PARCH;
+      g.lineWidth = 7;
+      g.stroke();
+    }
+  } else {
+    // A generic technique rune: a ringed dot.
+    g.beginPath();
+    g.arc(64, 64, 40, 0, Math.PI * 2);
+    inked(PARCH, 6);
+    g.beginPath();
+    g.arc(64, 64, 12, 0, Math.PI * 2);
+    g.fillStyle = AMBER;
+    g.fill();
+  }
+  const t = new CanvasTexture(c);
+  t.colorSpace = SRGBColorSpace;
+  glyphs.set(id, t);
+  return t;
+}
+function glyphSprite(id, size, opacity = 1) {
+  const s = new Sprite(new SpriteMaterial({ map: glyphTexture(id), transparent: true, depthWrite: false, depthTest: false, toneMapped: false, opacity }));
+  s.scale.set(size, size, 1);
+  s.renderOrder = 23;
+  return s;
+}
+
+export function createClassFx({ stage, world, bus, cosmetic }) {
+  const root = new Group();
+  root.name = 'skillfx-class';
+  stage.scene.add(root);
+  const byId = (id) => {
+    for (const e of world.entities()) if (e.id === id) return e;
+    return null;
+  };
+  const seatBody = (seat) => {
+    for (const e of world.entities()) if (e.kind === 'ally' && e.partyIndex === seat) return e;
+    return null;
+  };
+  const lerp = (e, a) => ({ x: e.px !== undefined ? e.px + (e.x - e.px) * a : e.x, z: e.pz !== undefined ? e.pz + (e.z - e.pz) * a : e.z });
+  const P = () => (typeof world.partySystem === 'function' ? world.partySystem() : null);
+  const owns = (seat, id) => {
+    const p = P();
+    const s = p ? p.slots(seat) : null;
+    return !!(s && s.includes(id));
+  };
+
+  // ----------------------------------------------------------- primitives --
+  const live = []; // { obj, age, life, step(k, obj), done() }
+  function track(obj, life, step) {
+    root.add(obj);
+    live.push({ obj, age: 0, life, step });
+  }
+  // Motes: the shared pool (src/render/fxpool.js) with this layer's look.
+  const fx = createFxPool({
+    root,
+    cosmetic,
+    caps: { motes: MOTE_CAP },
+    defaults: { motes: { color: PARCH, count: 6, y: 0.3, yJitter: 0.15, spread: 0.35, vy: [0.4, 1.1], life: [0.35, 0.7], size: [0.05, 0.12], drift: 0.2 } },
+  });
+  const spawnMotes = fx.motes;
+  function glyphPop(id, x, y, z, { size = 0.5, life = 0.5, rise = 0.25 } = {}) {
+    const s = glyphSprite(id, size);
+    s.position.set(x, y, z);
+    track(s, life, (k, o) => {
+      o.position.y = y + rise * k;
+      o.material.opacity = k < 0.7 ? 1 : 1 - (k - 0.7) / 0.3;
+    });
+  }
+  function line(x0, z0, x1, z1, { color = PARCH, width = 0.06, life = 0.3, opacity = 0.9, y = 0.5 } = {}) {
+    const len = Math.hypot(x1 - x0, z1 - z0);
+    if (len < 1e-3) return;
+    const m = new Mesh(new PlaneGeometry(1, 1), add(color, opacity));
+    m.rotation.x = -Math.PI / 2;
+    m.rotation.z = -Math.atan2(z1 - z0, x1 - x0);
+    m.position.set((x0 + x1) / 2, y, (z0 + z1) / 2);
+    m.scale.set(len, width, 1);
+    track(m, life, (k, o) => {
+      o.material.opacity = opacity * (1 - k);
+    });
+  }
+
+  // ---------------------------------------------------------- persistent --
+  // Taunt plates (one per taunted enemy), the Iron Stance hex field, the
+  // Razor Wake glints, the Kestrel glyph, the parry blades, combo pips.
+  const tauntPlates = new Map(); // enemy id -> sprite
+  const stanceMesh = new Mesh(new CircleGeometry(1.3, 36), flat(TANK.glow, 0.06));
+  stanceMesh.rotation.x = -Math.PI / 2;
+  const stance = new Group();
+  stance.add(stanceMesh);
+  const stanceRim = new Mesh(new RingGeometry(1.24, 1.3, 6), add(TANK.glow, 0.5));
+  stanceRim.rotation.x = -Math.PI / 2;
+  stanceRim.rotation.z = Math.PI / 6;
+  stance.add(stanceRim);
+  stance.visible = false;
+  root.add(stance);
+  let stanceFlick = 0;
+  const glints = [0, 1, 2].map(() => {
+    const s = makeGlowSprite({ color: SWORD.glow, size: 0.14, opacity: 0.95 });
+    s.visible = false;
+    root.add(s);
+    return s;
+  });
+  const glintCores = [0, 1, 2].map(() => {
+    const m = new Mesh(new PlaneGeometry(0.16, 0.05), add(SWORD.second, 0.9));
+    m.visible = false;
+    root.add(m);
+    return m;
+  });
+  const kestrel = glyphSprite('kestrel', 0.34);
+  kestrel.visible = false;
+  root.add(kestrel);
+  const blades = glyphSprite('blades', 0.46);
+  blades.visible = false;
+  root.add(blades);
+  const pips = [0, 1].map(() => {
+    const s = glyphSprite('pip', 0.16);
+    s.visible = false;
+    root.add(s);
+    return s;
+  });
+
+  // ------------------------------------------------------------ bus wiring --
+  bus.on('skill_cast', (ev) => {
+    if (!ev.classId) return; // a hero kit's cast (the Healer's carries no classId)
+    switch (ev.skill) {
+      // taunting_roar: the roar's shockwave is the Tank's nova recipe in
+      // render/vfx/signature.js (VFX redesign); the taunt plates stay here.
+      case 'shield_wall': {
+        const a = byId(ev.id);
+        for (const tid of ev.targets || []) {
+          const t = byId(tid);
+          if (!a || !t) continue;
+          const s = glyphSprite('plate', 0.36);
+          const x0 = a.x;
+          const z0 = a.z;
+          track(s, 0.3, (k, o) => {
+            const tt = byId(tid) || t;
+            o.position.set(x0 + (tt.x - x0) * k, 0.9 + Math.sin(k * Math.PI) * 0.4, z0 + (tt.z - z0) * k);
+            o.material.opacity = k < 0.85 ? 1 : 1 - (k - 0.85) / 0.15;
+          });
+          spawnMotes(t.x, t.z, { count: 6, spread: 0.3, color: TANK.glow });
+        }
+        break;
+      }
+      // crescent_finisher / vault_shot / pinning_arrow / rain_of_arrows: the
+      // strokes, release flashes and arrow rain are the class recipes in
+      // render/vfx/signature.js (VFX redesign).
+      default:
+        break;
+    }
+  });
+  // ally_dash: the dash wake is the class recipe in render/vfx/signature.js
+  // (VFX redesign: the Tank's steel wake + dust, the fox's silver line, the
+  // hare's wind lines + feathers).
+  bus.on('parry_counter', (ev) => {
+    // The crossed-cut + glint is the Swordsman's recipe (render/vfx/
+    // signature.js); this layer keeps the spark glyph — the parry's SHAPE.
+    const a = byId(ev.id);
+    const x = a ? a.x : ev.x;
+    const z = a ? a.z : ev.z;
+    glyphPop('spark', x + (ev.dx ?? 0) * 0.4, 0.7, z + (ev.dz ?? 0) * 0.4, { size: 0.55, life: 0.3, rise: 0.05 });
+  });
+  bus.on('hit_blocked', (ev) => {
+    if (!ev.parry) return;
+    const t = byId(ev.targetId);
+    if (t) spawnMotes(t.x, t.z, { count: 10, spread: 0.25, color: SWORD.second, y: 0.6 });
+  });
+  bus.on('aura_pulse', (ev) => {
+    if (ev.seat === undefined) return;
+    // Iron Stance keeps its hex field flicker; the pulse ring, Razor Wake's
+    // cuts and Kestrel Watch's strike lines are the class recipes in
+    // render/vfx/signature.js (VFX redesign).
+    if (ev.skill === 'iron_stance') stanceFlick = 0.4;
+    else if (ev.skill === 'razor_wake') {
+      for (const id of ev.hit || []) {
+        const e = byId(id);
+        if (e) glyphPop('spark', e.x, 0.55, e.z, { size: 0.36, life: 0.22, rise: 0 });
+      }
+    }
+  });
+  bus.on('status_apply', (ev) => {
+    if (ev.status !== 'taunt') return;
+    const e = byId(ev.id);
+    const src = ev.src != null ? byId(ev.src) : null;
+    if (e && src && !globalThis.__reviewNoTauntLine) line(src.x, src.z, e.x, e.z, { color: PARCH, width: 0.04, life: 0.3, opacity: 0.85, y: 0.8 }); // REVIEW-ONLY flag: Colossus draws its own gold beams
+  });
+  bus.on('technique_pulse', (ev) => {
+    if (ev.seat === undefined) return;
+    const glyph = { provoke: 'taunt', tremor: 'spark', retaliate: 'spark', aegis: 'hexring', brace: 'plate', flow: 'pip' }[ev.node];
+    if (!glyph) return;
+    for (const id of ev.targets || []) {
+      const e = byId(id);
+      if (e) glyphPop(glyph, e.x, 1.0, e.z, { size: 0.3, life: 0.4, rise: 0.2 });
+    }
+    if (ev.node === 'flow') {
+      const a = seatBody(ev.seat);
+      if (a) spawnMotes(a.x, a.z, { count: 6, spread: 0.25, color: SWORD.glow });
+    }
+  });
+  // scatter_burst: the jade shard burst is the Archer's recipe in
+  // render/vfx/signature.js (VFX redesign).
+  bus.on('skill_bolt_despawn', (ev) => {
+    if (ev.skill !== 'pinning_arrow' || ev.cause !== 'impact') return;
+    glyphPop('stake', ev.x, 0.8, ev.z, { size: 0.42, life: 0.6, rise: -0.15 });
+  });
+
+  // ---------------------------------------------------------------- frame --
+  let last = null;
+  function update(tSec, alpha = 1) {
+    const dt = last === null ? 1 / 60 : Math.max(0, Math.min(0.1, tSec - last));
+    last = tSec;
+    // One-shots.
+    for (let i = live.length - 1; i >= 0; i--) {
+      const f = live[i];
+      f.age += dt;
+      const k = Math.min(1, f.age / f.life);
+      f.step(k, f.obj);
+      if (k >= 1) {
+        root.remove(f.obj);
+        if (f.obj.geometry) f.obj.geometry.dispose();
+        if (f.obj.material) f.obj.material.dispose();
+        live.splice(i, 1);
+      }
+    }
+    fx.update(dt);
+    // Taunt plates follow every live taunt.
+    const seen = new Set();
+    const tick = world.tick;
+    for (const e of world.entities()) {
+      const t = e.status && e.status.taunt;
+      if (!t || !(t.untilTick > tick) || !(e.hp > 0)) continue;
+      seen.add(e.id);
+      let s = tauntPlates.get(e.id);
+      if (!s) {
+        s = glyphSprite('taunt', 0.3);
+        root.add(s);
+        tauntPlates.set(e.id, s);
+      }
+      const p = lerp(e, alpha);
+      s.position.set(p.x, 1.25 + Math.sin(tSec * 6) * 0.03, p.z);
+    }
+    for (const [id, s] of tauntPlates) {
+      if (seen.has(id)) continue;
+      root.remove(s);
+      s.material.dispose();
+      tauntPlates.delete(id);
+    }
+    // Iron Stance: riding the Tank while equipped.
+    const tank = seatBody(1);
+    const hasStance = !!(tank && tank.hp > 0 && owns(1, 'iron_stance'));
+    stance.visible = hasStance;
+    if (hasStance) {
+      const p = lerp(tank, alpha);
+      stance.position.set(p.x, 0.035, p.z);
+      stanceFlick = Math.max(0, stanceFlick - dt);
+      stanceRim.material.opacity = 0.35 + 0.5 * (stanceFlick / 0.4);
+      stanceMesh.material.opacity = 0.05 + 0.08 * (stanceFlick / 0.4);
+    }
+    // Razor Wake: 3 glints orbiting the fox.
+    const fox = seatBody(2);
+    const hasWake = !!(fox && fox.hp > 0 && owns(2, 'razor_wake'));
+    for (let i = 0; i < 3; i++) {
+      glints[i].visible = hasWake;
+      glintCores[i].visible = hasWake;
+      if (!hasWake) continue;
+      const p = lerp(fox, alpha);
+      const a = tSec * 3.2 + (i * Math.PI * 2) / 3;
+      glints[i].position.set(p.x + Math.cos(a) * 0.9, 0.45, p.z + Math.sin(a) * 0.9);
+      glintCores[i].position.copy(glints[i].position);
+      glintCores[i].rotation.set(-Math.PI / 2, 0, -a);
+    }
+    // Riposte / Parry node: crossed blades while the fox's parry is open.
+    const parryOpen = !!(fox && fox.guard && fox.guard.parry && fox.guard.active && fox.guard.untilTick > tick);
+    blades.visible = parryOpen;
+    if (parryOpen) {
+      const p = lerp(fox, alpha);
+      blades.position.set(p.x, 1.2 + Math.sin(tSec * 10) * 0.03, p.z);
+    }
+    // Combo pips while a combo window is open (the fox holds the finisher).
+    let combo = 0;
+    const P2 = P();
+    const st = P2 ? P2.seatState(2) : null;
+    if (fox && st && st.combo && owns(2, 'crescent_finisher')) {
+      for (const [sid, t] of Object.entries(st.combo)) if (sid !== 'crescent_finisher' && tick - t <= 120) combo += 1;
+    }
+    combo = Math.min(2, combo);
+    for (let i = 0; i < 2; i++) {
+      pips[i].visible = !!fox && i < combo;
+      if (pips[i].visible) {
+        const p = lerp(fox, alpha);
+        pips[i].position.set(p.x - 0.1 + i * 0.2, 1.05, p.z);
+      }
+    }
+    // Kestrel Watch: a small kestrel circling the hare.
+    const hare = seatBody(3);
+    const hasKestrel = !!(hare && hare.hp > 0 && owns(3, 'kestrel_watch'));
+    kestrel.visible = hasKestrel;
+    if (hasKestrel) {
+      const p = lerp(hare, alpha);
+      const a = tSec * 1.6;
+      kestrel.position.set(p.x + Math.cos(a) * 0.7, 1.45 + Math.sin(tSec * 3) * 0.06, p.z + Math.sin(a) * 0.7);
+    }
+    // Rain of Arrows: falling parchment streaks inside each live zone.
+    for (const z of world.entities()) {
+      if (z.kind !== 'zone' || z.skill !== 'rain_of_arrows') continue;
+      if (cosmetic.float() < dt * 26) {
+        const a = cosmetic.range(0, Math.PI * 2);
+        const r = Math.sqrt(cosmetic.float()) * z.radius;
+        const s = glyphSprite('streak', 0.5, 0.9);
+        s.material.depthTest = true;
+        const x = z.x + Math.cos(a) * r;
+        const zz = z.z + Math.sin(a) * r;
+        s.position.set(x, 1.8, zz);
+        track(s, 0.3, (k, o) => {
+          o.position.y = 1.8 - 1.6 * k;
+          o.material.opacity = 0.9 * (1 - k * 0.5);
+        });
+      }
+    }
+  }
+
+  // Program warm-up: park one of each material under the loading card so the
+  // first cast of a class skill links nothing mid-fight (GI.6).
+  for (const id of ['taunt', 'plate', 'blades', 'stake', 'kestrel', 'pip', 'hexring', 'streak', 'spark']) warmPark(root, glyphSprite(id, 0.1));
+  warmPark(root, new Mesh(new RingGeometry(0.8, 1, 48), add(PARCH, 0.5)));
+  warmPark(root, new Mesh(new PlaneGeometry(1, 1), add(PARCH, 0.5)));
+
+  function debugCounts() {
+    return { live: live.length, motes: fx.counts().motes, taunts: tauntPlates.size, stance: stance.visible, wake: glints[0].visible, kestrel: kestrel.visible, parry: blades.visible };
+  }
+  return { update, debugCounts };
+}

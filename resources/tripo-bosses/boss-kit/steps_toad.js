@@ -1,0 +1,15 @@
+const st=(n)=>({eval:'for(let i=0;i<'+n+';i++)__review.step(1/60);JSON.stringify(__review.state())'});
+module.exports=[{wait:2500},{eval:'JSON.stringify(__review.state())'},{shot:'idle'},
+ {eval:'__review.pause(true)',log:false},
+ {click:'Tongue Lash'},st(40),{wait:300},{shot:'lash_draw'},st(10),{wait:300},{shot:'lash_hit'},{click:'Side'},st(16),{wait:300},{shot:'lash_reel'},st(60),{click:'Tongue Lash'},st(70),
+ {click:'Game zoom'},{click:'Tongue Lash'},st(46),{wait:300},{shot:'lash_zoom_lane'},st(6),{wait:300},{shot:'lash_zoom'},st(80),{click:'Tongue Lash'},st(70),
+ {click:'Close'},{click:'Belly Flop'},st(44),{wait:300},{shot:'flop_heave'},st(12),{wait:300},{shot:'flop_air'},st(13),{wait:300},{shot:'flop_land'},st(22),{wait:300},{shot:'flop_crown'},st(70),{click:'Belly Flop'},st(60),
+ {click:'Game zoom'},{click:'Belly Flop'},st(60),{wait:300},{shot:'flop_zoom_air'},st(24),{wait:300},{shot:'flop_zoom_mire'},st(60),{click:'Belly Flop'},st(60),
+ {click:'Close'},{click:'Venom Shake'},st(66),{wait:300},{shot:'venom_charge'},st(22),{wait:300},{shot:'venom_shake'},st(16),{wait:300},{shot:'venom_gobs'},{click:'Game zoom'},st(40),{wait:300},{shot:'venom_pools'},st(30),{click:'Venom Shake'},st(20),{click:'Back'},{click:'Venom Shake'},st(72),{wait:300},{shot:'venom_back'},{click:'Top'},st(34),{wait:300},{shot:'venom_top'},st(70),{click:'Venom Shake'},st(30),{click:'Game zoom'},{click:'Venom Shake'},st(108),{wait:300},{shot:'venom_zoom'},st(60),{click:'Venom Shake'},st(40),
+ {click:'Game zoom'},{click:'Call the brood'},st(44),{wait:300},{shot:'croak'},{click:'Call the brood'},st(90),
+ {click:'Close'},{click:'Enrage'},st(42),{wait:300},{shot:'enrage'},{click:'Enrage'},st(100),{wait:300},{shot:'raged_idle'},
+ {click:'Walk'},st(30),{wait:300},{shot:'walk'},{click:'Turn left'},st(30),{click:'Turn right'},st(20),{click:'Forward'},st(20),{click:'Enraged'},st(30),{click:'Hurt'},st(5),{wait:300},{shot:'hurt'},{click:'Heavy hit'},st(12),{wait:300},{shot:'heavy'},{click:'Heavy hit'},st(80),
+ {click:'Idle'},{click:'Death'},st(66),{wait:300},{shot:'death_mid'},st(150),{wait:300},{shot:'death'},{click:'Death (press to spawn)'},st(30),{wait:300},{shot:'spawn'},st(90),
+ {click:'Side'},{click:'Front'},{click:'Back'},{click:'Top'},{wait:300},{shot:'top'},{click:'Close'},
+ {click:'Hit feel'},{click:'Effects'},{click:'Hero for scale'},{click:'Bones'},{wait:300},{shot:'bones'},{click:'Bones'},{click:'Hit feel'},{click:'Effects'},{click:'Hero for scale'},{click:'0.25×'},{click:'1×'},{click:'Pause'},{click:'Pause'},
+ st(10),{shot:'full',full:true}];

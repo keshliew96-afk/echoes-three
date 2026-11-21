@@ -1,0 +1,60 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S10",
+  "aim": [
+   0,
+   -3
+  ],
+  "slots": [
+   "kindred_shield",
+   "swift_mend"
+  ],
+  "allies": [
+   [
+    0,
+    -2.8,
+    0.4
+   ],
+   [
+    0.9,
+    -1.4,
+    0.6
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "seq": [
+   [
+    0.3,
+    "key",
+    "e"
+   ],
+   [
+    0.9,
+    "key",
+    "q"
+   ],
+   [
+    3.2,
+    "key",
+    "e"
+   ]
+  ],
+  "secs": 4.8,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()",
+  "guides": [
+   {
+    "k": "range",
+    "r": 3.2
+   }
+  ],
+  "cap": "S10 Swiftleaf"
+ }
+]

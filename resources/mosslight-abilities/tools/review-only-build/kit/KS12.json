@@ -1,0 +1,58 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_S12",
+  "aim": [
+   0,
+   -3
+  ],
+  "skill": "mending_tide",
+  "allies": [
+   [
+    -0.35,
+    -1.2,
+    0.5
+   ],
+   [
+    0.45,
+    -2.4,
+    0.5
+   ],
+   [
+    -0.3,
+    -3.6,
+    0.5
+   ]
+  ],
+  "setup": "const a=w.entities().find(e=>e.partyIndex===2);if(a){a.status=a.status||{};a.status.slow={mag:0.45,untilTick:1e9,src:0,at:0};}",
+  "seq": [
+   [
+    0.6,
+    "key",
+    "q"
+   ]
+  ],
+  "secs": 3.4,
+  "live": "(()=>{const w=window.__echoes.content.world();return w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+e.maxHp).join(' \u00b7 ');})()+(()=>{const a=window.__echoes.content.world().entities().find(e=>e.partyIndex===2);return a&&a.status&&a.status.slow?' \u00b7 middle ally slowed':' \u00b7 no slow';})()",
+  "guides": [
+   {
+    "k": "area",
+    "rect": true,
+    "c": [
+     0,
+     0
+    ],
+    "dir": [
+     0,
+     -1
+    ],
+    "len": 4.0,
+    "w": 1.6
+   }
+  ],
+  "cap": "S12 Dew Wave"
+ }
+]

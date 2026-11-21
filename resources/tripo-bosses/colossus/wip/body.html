@@ -1,0 +1,109 @@
+<div class="wrap">
+  <div>
+    <h1>Geode Colossus from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the Level IV boss that waits in the Heart Chamber on some seeds, with a skeleton and 12 moves added by hand. It walks on its fists like a gorilla: each fist is a foot as much as each leg is, pinned to the floor while it carries weight and stepping in diagonal pairs with the legs. The rock stays rock: the head, the fists, the feet, the crystal spires and the heart in the geode each move as one piece. Its timings are the game's. Pick a move, drag to turn it, and judge the weight and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Walk sets what it does between attacks, and Going turns it on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death holds it down: press it again and it spawns back in. The bar names the part of the move that is playing, in the game's own words. Enraged is its state under 40 percent health: the cracks over its back burn and the heart in the geode beats faster, and the Geode Burst throws six crystal shards. It stays on over every move until you switch it off; the Enrage action switches it on.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="rage" aria-pressed="false">Enraged</button>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="colossus-views.png" alt="The Tripo Geode Colossus from the front, its left, the back and its right, before rigging" width="1200" height="600">
+      <p class="note" style="padding-top:12px">It came through whole: the slate body in one welded piece, plus one crystal on the back of its left shoulder that came loose. The boxed head under its brow, the violet eyes, the split geode in the chest with nine crystal teeth round a heart, the shell over the hump with its crystal spires, the violet cracks over the back, the banded forearms and studded fists, and two stubby legs. It stands on its knuckles and its feet exactly on the floor, and the face points straight ahead, so nothing was corrected.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>27,222 <small>boss budget about 28,000 · as sent, nothing added</small></dd></div>
+    <div><dt>Bones</dt><dd>22 <small>hips, spine, chest, neck, head, the heart; 4 in each arm (shoulder, forearm, fist, knuckles) and 4 in each leg (thigh, shin, foot, toes)</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>2.3 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.5 u tall <small>to the tip of the tallest spire, the game's scale of 2.6, beside a 1 u hero</small></dd></div>
+    <div><dt>Width</dt><dd>2.6 u <small>fist to fist, the game's radius of 0.85 u for its body</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>Two slow heavy breaths that lift the hump and the shoulders while the weight rolls from fist to fist. The head turns to look right and then left, the left fist lifts and grinds back onto its knuckles, and a snort dips the head. The heart beats in the geode.</td><td>4.5 s loop</td></tr>
+      <tr><td>Walk</td><td>A knuckle-walk in diagonal pairs, the left fist with the right foot, as the game's rig walks it. Each fist rolls forward off its knuckles, swings and lands; the short legs shuffle under the body. The hump rolls over each planted pair and the head stays level.</td><td>Game: 1.15 u/s. One stride of 0.74 u every 0.64 s.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Turns on the spot, fists and feet stepping round in the same diagonal pairs, the head leading.</td><td>Mine: 70 degrees a second. The game turns it to its target at once.</td></tr>
+      <tr><td>Fissure</td><td>The right fist is hauled up overhead while the left fist shifts back under the body to take the weight, and the body coils and twists away. On the beat it lunges and drives the fist into the floor ahead, and a crack runs down the lane, leaving three patches of crystal. A recoil, and the fist goes back to its knuckles.</td><td>Game: Ember lane 1.0 u wide and up to 9 u long for 54 ticks; slam 2.5 frames, held 3 frames, settle 0.6 s. The crack leaves three crystal patches (radius 0.75 u, 4 s, 35 percent slow). Here the hero stands 6 u away.</td></tr>
+      <tr><td>Geode Rain</td><td>Unwarned: both fists come up to the chest and the geode brightens, a heave, and it rears and punches both fists at the ceiling. Four geodes come down out of the dark, one on the hero and three round it, each bursting where it lands and leaving crystal.</td><td>Game: no warning; the game's rig loads it over the last 30 ticks, heaves 1.5 frames, hurls 2.5 frames. Then four Ember rings of radius 1.1 u for 66 ticks: on the hero, 2.3 u either side and 2.3 u behind.</td></tr>
+      <tr><td>Geode Burst</td><td>With the hero close, it rears up off its fists with its arms spread wide while the geode blazes. On the beat it slams both fists down wide and the ring bursts. Then it is spent: it slumps with its arms slack and the geode dim, breathing hard and its head lolling, the party's chance to hit it. It hauls itself up and squares off.</td><td>Game: Ember ring of radius 2.6 u round itself for 60 ticks, only with a body inside 2.4 u; burst 2.5 frames, held 3 frames, spent 80 ticks, recover 0.6 s. Enraged, six crystal shards fly 4.5 u. Here the hero stands 2 u away.</td></tr>
+      <tr><td>Enrage</td><td>It rears up and beats its chest, left, right, left, right, then drives both fists into the floor. The Enraged state stays on after it.</td><td>Mine: 2 s, the length of the game's rage timeline (burn 0.4 s, then enraged). The game has no pose for it: the cracks burn and the geode beats faster.</td></tr>
+      <tr><td>Hurt</td><td>The head is knocked aside and the chest jolts. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Shoved back 0.3 u: the head snaps aside, the body rocks back off its fists, it shuffles back on fists and feet, shakes its head like a bull and drops its weight forward again.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>It grows out of the floor in a low crouch with its head down, comes up, rears and brings both fists down on the floor once.</td><td>Game: grow in 7 frames. The rise and the slam are mine.</td></tr>
+      <tr><td>Death</td><td>The geode's light goes out. A jolt rears it up with the arms thrown wide, its legs give and it drops onto its knees, sways, and topples forward to rest on its belly with its arms flung out on the floor and its head bowed down to one side. The cracks go dark.</td><td>2.8 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker takes every point of the model (16,620 of them) through every frame of every move (AUD_FRAMES frames) and looks for five things. Sizes are in u; it is 2.5 u tall.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>AUD_POP0</td><td>AUD_POP1</td></tr>
+      <tr><td>Any part under the floor</td><td>AUD_FLOOR0</td><td>AUD_FLOOR1</td></tr>
+      <tr><td>One part pushed through another</td><td>AUD_THRU0</td><td>AUD_THRU1</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>AUD_STR0</td><td>AUD_STR1</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>AUD_LOOP0</td><td>AUD_LOOP1</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Planted fists and feet</td><td>AUD_PLANT</td></tr>
+      <tr><td>Loops that jump when they restart (idle, walk, both turns)</td><td>AUD_LOOPS</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model: the eyes mirror each other about the middle line, so nothing was corrected.</td></tr>
+      <tr><td>Rock</td><td>The head, both fists, both feet, the crystal spires and the heart are rigid: each moves on one bone, so no rock bends. The bend is at the shoulders, elbows, wrists, hips, knees and ankles, and down the trunk.</td></tr>
+      <tr><td>Feet</td><td>The legs keep the model's stance, a little apart and turned out, which your rule allows for a heavy character.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>The enrage.</strong> The chest beat and the slam are mine; the game only burns the cracks and quickens the heart.</li>
+        <li><strong>The death.</strong> It goes down on its knees and rests on its belly, head bowed. It could crack apart instead, its plates and crystals falling away, which needs the model cut into pieces.</li>
+        <li><strong>The mouth.</strong> The face is carved shut and has too few points round the mouth to cut a jaw, so it does not open to roar. A Tripo export with an open mouth, or a separate jaw, would give it one.</li>
+        <li><strong>The turn.</strong> 70 degrees a second is mine; the game turns it at once.</li>
+      </ul>
+    </div>
+    <div>
+      <h2>Rough so far</h2>
+      <ul>
+        <li>The upper arm is short and the forearm huge, so when a fist goes high the skin at the elbow stretches a little.</li>
+        <li>The crystal spires do not move on their own.</li>
+        <li>The hero is a grey stand-in that does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for its power. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>

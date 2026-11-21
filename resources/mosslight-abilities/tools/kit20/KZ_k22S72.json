@@ -1,0 +1,61 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "aim": [
+   2.4,
+   -0.8
+  ],
+  "slots": [
+   "lure_lily"
+  ],
+  "allies": [
+   [
+    0.9,
+    -2.6,
+    0.5
+   ],
+   [
+    -1.6,
+    2.2,
+    0.6
+   ],
+   [
+    -3.2,
+    -1.0,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    3.6,
+    0.3
+   ],
+   [
+    5.2,
+    1.4,
+    "boar"
+   ],
+   [
+    5.0,
+    -3.2,
+    "boar"
+   ]
+  ],
+  "secs": 7.8,
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "cap": "S72 Lure Lily \u00b7 foes within 4 u walk to it and attack only it for 3 s; allies near it heal 4 a second; after 6 s it snaps shut: 20 to foes within 2.5 u",
+  "name": "kit20_S72",
+  "earlyHp": 400,
+  "live": "(()=>{const w=window.__echoes.content.world();const p=w.entities().filter(e=>e.partyIndex!==undefined).sort((a,b)=>a.partyIndex-b.partyIndex).map(e=>Math.round(e.hp)+'/'+Math.round(e.maxHp)).join(' \u00b7 ');const f=w.entities().filter(e=>e.faction==='hostile'&&e.hittable).reduce((s,e)=>s+Math.round(e.maxHp-e.hp),0);const l=(globalThis.__reviewLilies||[])[0];return p+' \u00b7 foes '+f+' damage'+(l?' \u00b7 lure '+(l.lure/60)+' s, burst '+l.burst+(l.ate?', seeds '+l.ate:''):'');})()",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ]
+  ]
+ }
+]

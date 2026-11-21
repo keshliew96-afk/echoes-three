@@ -1,0 +1,122 @@
+{
+ "idle": {
+  "dur": 5.4,
+  "frames": 325,
+  "slide_mm": 0,
+  "slideAt": "",
+  "reach_mm": 0,
+  "reachAt": "",
+  "lowest": 0,
+  "loAt": "mTarsusL@1.93",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "walk": {
+  "dur": 0.3,
+  "frames": 19,
+  "slide_mm": 0,
+  "slideAt": "FL@0.02",
+  "reach_mm": 0,
+  "reachAt": "FL@0.00",
+  "lowest": -0.0008,
+  "loAt": "mTarsusL@0.13",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "turnL": {
+  "dur": 0.35,
+  "frames": 22,
+  "slide_mm": 0,
+  "slideAt": "FL@0.02",
+  "reach_mm": 0,
+  "reachAt": "HR@0.33",
+  "lowest": -0.0011,
+  "loAt": "mTarsusL@0.17",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "turnR": {
+  "dur": 0.35,
+  "frames": 22,
+  "slide_mm": 0,
+  "slideAt": "",
+  "reach_mm": 0,
+  "reachAt": "HR@0.20",
+  "lowest": -0.0011,
+  "loAt": "mTarsusL@0.17",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "spitA": {
+  "dur": 1.3333333333333333,
+  "frames": 81,
+  "slide_mm": 0,
+  "slideAt": "",
+  "reach_mm": 0,
+  "reachAt": "",
+  "lowest": 0,
+  "loAt": "mTarsusL@0.50",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "spitB": {
+  "dur": 1.3333333333333333,
+  "frames": 81,
+  "slide_mm": 0,
+  "slideAt": "",
+  "reach_mm": 0,
+  "reachAt": "",
+  "lowest": 0,
+  "loAt": "mTarsusL@1.13",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "spitC": {
+  "dur": 1.3333333333333333,
+  "frames": 81,
+  "slide_mm": 0,
+  "slideAt": "",
+  "reach_mm": 0,
+  "reachAt": "",
+  "lowest": 0,
+  "loAt": "mTarsusL@1.27",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "hurt": {
+  "dur": 0.4,
+  "frames": 25,
+  "slide_mm": 0,
+  "slideAt": "",
+  "reach_mm": 0,
+  "reachAt": "",
+  "lowest": 0,
+  "loAt": "mTarsusL@0.00",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "spawn": {
+  "dur": 1.2,
+  "frames": 73,
+  "slide_mm": 0,
+  "slideAt": "",
+  "reach_mm": 0,
+  "reachAt": "",
+  "lowest": 0,
+  "loAt": "mTarsusL@0.50",
+  "under": 0,
+  "loopPopDeg": 0
+ },
+ "death": {
+  "dur": 2.2,
+  "frames": 133,
+  "slide_mm": 0,
+  "slideAt": "",
+  "reach_mm": 6.1,
+  "reachAt": "FR@0.87",
+  "lowest": -0.0146,
+  "loAt": "hips@0.57",
+  "under": 5,
+  "loopPopDeg": 0
+ }
+}

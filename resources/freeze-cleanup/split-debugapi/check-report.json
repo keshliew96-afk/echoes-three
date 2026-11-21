@@ -1,0 +1,48 @@
+{
+  "ok": true,
+  "url": "http://127.0.0.1:5199/",
+  "out": "/mnt/project-files/freeze-cleanup/split-debugapi",
+  "steps": [
+    "[boot] starting npm run net",
+    "[boot] npm run net up after 515 ms",
+    "[boot] starting npm run dev",
+    "[boot] npm run dev up after 927 ms",
+    "[title] game booted, version 0.5.355",
+    "[title] screen: {\"mode\":\"camp\",\"stack\":[\"title\"]}",
+    "[camp] body moved from {\"x\":1.35,\"z\":1} to {\"x\":2.9748890363706746,\"z\":0.26557400645227347}",
+    "[room1] startCampaign: {\"active\":true,\"phase\":\"transit\",\"combatActive\":false,\"room\":0,\"rooms\":8,\"act\":1,\"actName\":\"The Hollow Wood\",\"challenge\":\"standard\",\"layout\":null,\"mode\":null,\"wallet\":0,\"clearedRooms\":0,\"roomsDone\":0,\"freeSkillSlots\":4,\"frame\":{\"seed\":4175027232,\"modes\":[\"kill_all\",\"defend\",\"defend\",\"kill_all\",\"purge\",\"kill_all\",\"shop\",\"boss\"],\"defendAt\":[2,3],\"sides\":[1,1,0,1,1]},\"rewardFor\":{\"1\":\"skill\"},\"spoils\":null,\"spoilsTotal\":0,\"reward\":null,\"path\":null,\"shop\":null,\"boss\":null,\"relics\":{\"owned\":[],\"curse\":null,\"cursesTaken\":0,\"majors\":[],\"shelf\":null,\"offer\":null},\"vaults\":{\"key\":null,\"opened\":0,\"found\":0},\"tonics\":{\"slots\":[null,null,null,null],\"found\":0,\"used\":0},\"secrets\":{\"found\":0,\"seen\":0},\"shrine\":{\"aim\":6,\"room\":null,\"id\":null,\"used\":false,\"offered\":0},\"summary\":null,\"fadeTicksLeft\":0}",
+    "[room1] body moved from {\"x\":0,\"z\":0} to {\"x\":1.5576127064193035,\"z\":-1.4405911970838083}"
+  ],
+  "errors": [],
+  "warnings": [
+    {
+      "phase": "title",
+      "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+    },
+    {
+      "phase": "camp",
+      "text": "THREE.WebGLRenderer: KHR_parallel_shader_compile extension not supported."
+    }
+  ],
+  "camp": {
+    "before": {
+      "x": 1.35,
+      "z": 1
+    },
+    "after": {
+      "x": 2.9748890363706746,
+      "z": 0.26557400645227347
+    }
+  },
+  "room1": {
+    "before": {
+      "x": 0,
+      "z": 0
+    },
+    "after": {
+      "x": 1.5576127064193035,
+      "z": -1.4405911970838083
+    },
+    "entityCount": 15
+  }
+}

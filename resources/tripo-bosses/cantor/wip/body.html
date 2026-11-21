@@ -1,0 +1,117 @@
+<div class="wrap">
+  <div>
+    <h1>Hollow Cantor from Tripo, rigged <span style="font-weight:400;opacity:.6">· version 1</span></h1>
+    <p class="lede">Your export of the campaign's final boss, with a skeleton and 15 moves added by hand. It has no feet, so it floats: the hem hangs 0.32 u over the floor and the robe swings on eight columns a beat behind the body. I cut the mask's chin free so the mouth opens to sing, and built the halo ring with seven runes, the seven notes and six motes, which your model did not have. Its timings are the game's. Pick a move, drag to turn it, and judge the weight and the hit. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom · one floor square is 1 u</div></div>
+      <div class="controls">
+        <div class="row" id="moves"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <div class="phases" id="phases" hidden></div>
+        <p class="rule">Idle or Glide sets what it does between attacks, and Going backs it away or turns it on the spot. An Action plays over it and repeats until you press it again. Hurt plays on top of anything. Death holds it down: press it again and it spawns back in. The bar names the part of the move that is playing, in the game's own words. Verses are its three phases: each Verse lights one more note on the halo and makes the heart beat faster. From the second verse the Hollow Note throws five crystal shards, and in the game the Echo Step and the Heart Pulse only come with the second and third verses.</p>
+        <div class="row" id="verses"><span class="lab">Verses</span></div>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="fx" aria-pressed="true">Effects</button>
+          <button id="target" aria-pressed="true">Hero for scale</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane sent">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <img src="cantor-views.png" alt="The Tripo Hollow Cantor from the front, its left, the back and its right, before rigging" width="1200" height="600">
+      <p class="note" style="padding-top:12px">It came through whole and in one welded piece: the hood and the pale mask with both violet eyes, the layered cowl, the rib cage round a violet heart, the bell sleeves, the four tiers of the robe and the torn hem, and two hands with three crystal fingers and a crystal thumb each. The mask faces straight ahead, so nothing was corrected. The sleeves hang free of the robe below the shoulder, so the arms needed no cutting. There was no halo, no notes and no motes, and the mouth was closed.</p>
+    </section>
+  </div>
+
+  <dl class="facts">
+    <div><dt>Triangles</dt><dd>29,172 <small>boss budget about 28,000 · 27,696 as sent, the rest are the halo, runes, notes, motes and the inside of the mouth, all built here</small></dd></div>
+    <div><dt>Bones</dt><dd>64 <small>hips, spine, chest, neck, head, chin, heart, 3 in each arm and 4 fingers per hand, 16 in the robe, the halo, 7 notes, 6 motes</small></dd></div>
+    <div><dt>Texture</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>3.5 MB <small>one GLB with all the moves at 60 frames a second</small></dd></div>
+    <div><dt>Size on this page</dt><dd>2.4 u tall <small>to the top of the hood, the game's scale of 2.4, floating 0.32 u up, beside a 1 u hero</small></dd></div>
+    <div><dt>Halo</dt><dd>0.8 u across <small>the ring, with the notes 0.95 u across. Built here; see the open choices.</small></dd></div>
+  </dl>
+
+  <h2>The moves, and where their timing comes from</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Move</th><th>What it does</th><th>Timing</th></tr></thead>
+    <tbody>
+      <tr><td>Idle</td><td>It hangs in the air and breathes: a slow bob, the robe swinging a beat behind it, the hands turning and the crystal fingers opening and closing as if feeling for a note, the head tipping as if listening, and a hum where the mouth just parts. The heart beats and the halo rocks slowly.</td><td>4 s loop. Hover 0.32 u, the game's.</td></tr>
+      <tr><td>Glide</td><td>It glides, leaning into it: the hips tip forward, the robe trails behind and ripples, the arms drift back, the head stays level on its target.</td><td>Game: 1.35 u/s. The lean comes from its own speed, as in the game's rig.</td></tr>
+      <tr><td>Back away</td><td>It leans back and drifts away with the robe streaming forward. The game backs it off whenever a hero comes within 3 u, as a singer keeps its distance.</td><td>Game: 0.7 of its speed, 0.95 u/s. It keeps 3 to 5.5 u from its target.</td></tr>
+      <tr><td>Turn left, turn right</td><td>Turns on the spot, the robe twisting a beat behind and the head leading.</td><td>Mine: 120 degrees a second. The game turns it to its target at once.</td></tr>
+      <tr><td>Hollow Note</td><td>It fills its chest, the heart swells, the hands spread palms up and rise, the halo lifts and the head tips back as the mouth opens. On the note the mouth is wide, the halo is flung back, the notes fly off the ring, the robe squashes down and flares and the hands are thrown open. A recoil lifts it, and it settles.</td><td>Game: Ember ring of radius 1.7 u on the hero for 48 ticks, 10 damage. Sing 2.5 frames, held 3 frames, settle 0.62 s. From the second verse five crystal shards fly out of the burst along the floor (5 u/s, 5.5 u, 4 damage each), turned half a step each note.</td></tr>
+      <tr><td>Sung Lance</td><td>It draws its hands in and crosses them over its heart, square to the lane, and leans back with the robe drawn in. On the beat it lunges down the lane with both hands shoved straight out and the mouth wide, the robe flung back. A recoil, and it settles.</td><td>Game: Ember lane 1.2 u wide from its chest to up to 9 u for 54 ticks, 16 damage. Lance 2.5 frames, held 3 frames, settle 0.62 s. Here the lane is the full 9 u.</td></tr>
+      <tr><td>Heart Pulse</td><td>The chest and the halo swell, the heart beats harder and faster, the sleeves lift out and up, the robe draws in and the head drops to look at its own heart. On the pulse the chest is thrown open, the robe flares out all round, the arms are flung down and back and the motes are thrown out.</td><td>Game: Ember ring of radius 3.2 u round itself for 60 ticks, 18 damage, only in the third verse and only with a hero inside 3 u. Pulse 2.5 frames, held 3 frames, settle 0.7 s.</td></tr>
+      <tr><td>Echo Step</td><td>It folds: the robe folds in on itself, the arms wrap round it, the hood drops into it and the whole of it sinks into the floor. It comes back up out of the floor at the far side, already turned to the party, opens its robe and arms and sings a short note.</td><td>Game: an 18-tick fade (it cannot be hit) when a hero stands within 2.2 u for 45 ticks, from the second verse. It lands at the clear fixed point farthest from the party; here it lands 4.5 u back. Rise: the spawn-in's 7 frames, then 0.6 s.</td></tr>
+      <tr><td>Verse</td><td>It rises a little, throws its head back and both arms up, and sings the verse with the mouth wide while the halo and the heart flare, a column of violet light stands over it and one more note lights on the halo.</td><td>Game: at 75, 50 and 25 percent health, with the land's beasts. Mine: 1.6 s. The motes in the column take the land's colour: moss green, millrace blue, ash.</td></tr>
+      <tr><td>Hurt</td><td>The head and chest are knocked back and aside and the mouth gasps. Plays on top of any move.</td><td>0.42 s</td></tr>
+      <tr><td>Heavy hit</td><td>Thrown back 0.3 u through the air: the hips knocked back, the robe streams forward, the arms fly out, the halo jolts. It catches itself, the robe swings back past it, and it squares up.</td><td>1.1 s</td></tr>
+      <tr><td>Spawn</td><td>It grows out of the floor folded, rises into its hover, opens its robe and arms, lifts its head and sings one note with the halo flaring, then floats into its idle.</td><td>Game: grow in 7 frames. The rise and the note are mine.</td></tr>
+      <tr><td>Death</td><td>The falling-silent death: it cries out with its head back and arms up, then the song stops. The mouth closes, the hover fails and it sinks; the robe crumples and spreads on the floor, the hood falls forward, the arms drop across the heap, the halo sags behind it, the notes fall and fade and the heart goes dark. A column of violet light rises where it lies.</td><td>2.6 s, then it stays down</td></tr>
+    </tbody></table></div>
+
+  <h2>The detail audit</h2>
+  <p class="note">A checker takes every point of the model (17,884 of them) through every frame of every move (1,425 frames) and looks for five things. Sizes are in u; it is 2.4 u tall.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Checked</th><th>Found in the first build</th><th>Now</th></tr></thead>
+    <tbody>
+      <tr><td>A joint that jumps in one frame (a pop)</td><td>AUD_POP0</td><td>AUD_POP1</td></tr>
+      <tr><td>Any part under the floor</td><td>AUD_FLOOR0</td><td>AUD_FLOOR1</td></tr>
+      <tr><td>One part pushed through another</td><td>AUD_THRU0</td><td>AUD_THRU1</td></tr>
+      <tr><td>Skin torn or pulled (a seam that opens)</td><td>AUD_STR0</td><td>AUD_STR1</td></tr>
+      <tr><td>Smoothness (a move that stops dead, a loop that jumps)</td><td>AUD_LOOP0</td><td>AUD_LOOP1</td></tr>
+    </tbody></table></div>
+
+  <h2>Measured before sending</h2>
+  <div class="audit"><table>
+    <thead><tr><th>What was measured, on every frame of every move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>The hover</td><td>The hem holds 0.32 u over the floor and never drags. It dips to 0.23 u at the bottom of the Sung Lance's lunge and the Hollow Note's squash, and only touches the floor when it sinks into it (Echo Step, spawn, death).</td></tr>
+      <tr><td>Loops that jump when they restart (idle, glide, back away, both turns)</td><td>AUD_LOOPS</td></tr>
+      <tr><td>Head facing straight</td><td>Straight on the model: the mask's eyes mirror each other about the middle line, so nothing was corrected.</td></tr>
+      <tr><td>Robe</td><td>Eight columns from the hips, each in two parts; the lower part runs as a spring, so the hem trails the body and settles after it stops. The lining inside the hem follows the hips as far as it is from the outer surface, so a flared robe does not tear inside.</td></tr>
+      <tr><td>Halo</td><td>Rocks slowly on its own axis, as the game's does, and stays upright while the body leans: most of the trunk's tilt is taken back out of it.</td></tr>
+      <tr><td>Feet</td><td>None: it floats, so no step rule applies.</td></tr>
+    </tbody></table></div>
+  <p class="note">These numbers come from the model file. I checked the poses as still frames only: the cloud machine cannot play the page at full speed, so the weight, the timing and the hit are yours to judge.</p>
+
+  <div class="cols">
+    <div>
+      <h2>Open choices</h2>
+      <ul>
+        <li><strong>The halo, notes and motes.</strong> Your model has none, so they are mine: a violet ring with an inner ring and seven bone runes, seven violet notes on it and six crystal motes. A Tripo export with a halo would give it your own art.</li>
+        <li><strong>The mouth.</strong> The mask's chin is cut free under the lips so it opens to sing, with a dark mouth that glows violet when it is wide.</li>
+        <li><strong>Which notes light.</strong> The game lights a note per verse. Here they are the three at the top of the ring, so they show over the hood.</li>
+        <li><strong>The Echo Step landing.</strong> Here it lands 4.5 u straight back; the game picks the clear fixed point farthest from the party.</li>
+        <li><strong>The Verse pose.</strong> Arms up and head back is mine. The game's rig only flares the halo and the heart.</li>
+        <li><strong>The turn.</strong> 120 degrees a second is mine; the game turns it at once.</li>
+        <li><strong>The death.</strong> A heap of robe on the floor with the hood fallen forward. An empty robe that collapses with nothing inside is the other choice.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The arms have no bones inside the sleeves on the model, so a sleeve bends as one piece at the elbow; raised high, the bell of the sleeve stretches a little at the shoulder.</li>
+        <li>The cut chin shows a thin seam under the lips close up when it sings.</li>
+        <li>The notes, runes and motes are flat shapes in the model's own violet, with no texture of their own.</li>
+        <li>When it crosses its hands for the Sung Lance, the wide sleeves press into the front of the robe.</li>
+        <li>The hero is a grey stand-in that does not dodge.</li>
+        <li>No ink outline and no flat game colours yet, the same as the hero models.</li>
+        <li>The effects are stand-ins drawn for this page in the game's colours: Ember for the floor warnings, Violet for its power. They are kept dim on purpose.</li>
+      </ul>
+    </div>
+  </div>
+</div>

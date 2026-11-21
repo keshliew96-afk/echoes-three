@@ -1,0 +1,30 @@
+<!doctype html><meta charset="utf-8"><style>body{margin:0;background:#2b2a27;overflow:hidden}#lab{position:absolute;left:0;top:0;font:11px monospace;color:#fff;pointer-events:none}#lab div{position:absolute;background:rgba(0,0,0,.45);padding:0 3px}</style>
+<canvas id="c"></canvas><div id="lab"></div>
+<script type="importmap">{"imports":{"three":"./node_modules/three/build/three.module.js","three/addons/":"./node_modules/three/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+const q=new URLSearchParams(location.search);
+const clipName=q.get('clip'), times=q.get('t').split(',').map(Number), glb=q.get('glb')||'out.glb', bare=q.get('bare')==='1';
+const CW=+(q.get('cw')||230), CH=+(q.get('ch')||250), views=(q.get('views')||'q,s').split(',');
+const W=CW*times.length, H=CH*views.length;
+const cv=document.getElementById('c'); const r=new THREE.WebGLRenderer({canvas:cv,antialias:true,preserveDrawingBuffer:true}); r.setSize(W,H); r.setPixelRatio(1);
+const sc=new THREE.Scene(); sc.background=new THREE.Color('#6a665f');
+sc.add(new THREE.HemisphereLight('#ffffff','#55524c',1.6)); const dl=new THREE.DirectionalLight('#fff6e8',1.8); dl.position.set(-3,6,4); sc.add(dl);
+const grid=new THREE.GridHelper(6,12,'#3a3835','#4e4b46'); sc.add(grid);
+const ax=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.002,0.6),new THREE.MeshBasicMaterial({color:'#9db8cf'})); ax.position.set(0,0.001,0.3); sc.add(ax);
+const g=await new GLTFLoader().loadAsync(glb); const m=g.scene; sc.add(m);
+m.traverse(o=>{if(o.isMesh)o.frustumCulled=false;});
+if(bare){const w=m.getObjectByName('weapon'); if(w)w.visible=false;}
+const mixer=new THREE.AnimationMixer(m); const clip=g.animations.find(a=>a.name===clipName); if(!clip){document.title='NOCLIP';throw 0;}
+const act=mixer.clipAction(clip); act.play();
+const mk=(kind)=>{const c=new THREE.OrthographicCamera(-0.95,0.95,1.25,-0.8,0.1,30); const a=CW/CH; c.left=-1.025*a*1.0; c.right=1.025*a; 
+  if(kind==='q'){c.position.set(2.2,2.6,3.6);c.lookAt(0,0.5,0);} else if(kind==='s'){c.position.set(6,0.52,0);c.lookAt(0,0.52,0);} else if(kind==='f'){c.position.set(0,0.52,6);c.lookAt(0,0.52,0);} else if(kind==='t'){c.position.set(0,7,0.001);c.lookAt(0,0,0);} else if(kind==='b'){c.position.set(-2.2,2.6,-3.6);c.lookAt(0,0.5,0);}
+  c.updateProjectionMatrix(); return c;};
+const cams=views.map(mk); r.setScissorTest(true); r.autoClear=false; r.clear();
+const lab=document.getElementById('lab');
+times.forEach((t,i)=>{ mixer.setTime(Math.min(clip.duration-1e-4,t)); m.updateMatrixWorld(true);
+  views.forEach((v,j)=>{ r.setViewport(i*CW,(views.length-1-j)*CH,CW,CH); r.setScissor(i*CW,(views.length-1-j)*CH,CW,CH); r.clear(); r.render(sc,cams[j]); });
+  const d=document.createElement('div'); d.style.left=(i*CW+3)+'px'; d.style.top='2px'; d.textContent=t.toFixed(2); lab.appendChild(d); });
+document.title='DONE';
+</script>

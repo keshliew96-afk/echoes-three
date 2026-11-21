@@ -1,0 +1,1 @@
+[{"name": "BC", "cap": "Bare Claws moves \u00b7 no slab", "secs": 7.0, "shield": false, "tank": [-2.6, 0], "aim": [3, 0], "foes": [["rotcap", 1.0, 0.45], ["rotcap", 1.1, -0.45]], "seq": [[0.3, "hold", "KeyD", 0.7], [1.4, "combo"], [4.0, "dash", [1, 0]], [5.0, "aim", [-4, 0]], [5.4, "cast", "heavy_slam", [-4, 0]]]}]

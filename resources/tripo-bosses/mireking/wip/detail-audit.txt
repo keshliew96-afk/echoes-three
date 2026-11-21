@@ -1,0 +1,131 @@
+idle      floor clean
+          tg7 into sac                  59.1 mm at 3.70  (12 verts, 361 frames)
+          fLoL into hThL                30.5 mm at 4.80  (5 verts, 342 frames)
+          fUpR into sac                 19.4 mm at 3.08  (9 verts, 154 frames)
+          tg0 into tg3                  16.2 mm at 0.00  (1 verts, 361 frames)
+          fLoR into belly               16.2 mm at 3.95  (50 verts, 275 frames)
+          fLoL into belly               15.1 mm at 1.10  (29 verts, 166 frames)
+          fLoR into hThR                14.3 mm at 1.73  (9 verts, 232 frames)
+          hFtR into hips                14.1 mm at 1.10  (15 verts, 361 frames)
+          stretch x5.90 at 0.90 on eyeL
+walk      floor clean
+          hShR into fUpR                58.9 mm at 0.02  (19 verts, 32 frames)
+          hShL into fUpL                57.2 mm at 0.48  (30 verts, 29 frames)
+          tg7 into sac                  54.1 mm at 0.53  (11 verts, 55 frames)
+          fLoL into hShL                50.8 mm at 0.62  (43 verts, 22 frames)
+          fLoR into hThR                50.3 mm at 0.18  (25 verts, 24 frames)
+          hFtL into hips                49.8 mm at 0.45  (15 verts, 47 frames)
+          fUpL into hShL                49.5 mm at 0.38  (34 verts, 31 frames)
+          hFtR into hips                47.6 mm at 0.03  (27 verts, 55 frames)
+          stretch x14.52 at 0.62 on jaw
+turnL     floor clean
+          tg7 into sac                  58.3 mm at 0.32  (17 verts, 37 frames)
+          hShL into fUpL                53.0 mm at 0.18  (35 verts, 19 frames)
+          fUpL into hShL                50.5 mm at 0.13  (64 verts, 16 frames)
+          hFtL into hips                49.7 mm at 0.17  (8 verts, 23 frames)
+          hFtR into hips                46.8 mm at 0.00  (5 verts, 36 frames)
+          fLoL into hThL                45.7 mm at 0.60  (22 verts, 26 frames)
+          hShR into fUpR                42.9 mm at 0.08  (39 verts, 12 frames)
+          belly into fHandL             37.2 mm at 0.43  (8 verts, 9 frames)
+          stretch x18.14 at 0.37 on jaw
+turnR     floor clean
+          tg7 into sac                  58.9 mm at 0.08  (17 verts, 37 frames)
+          hShR into fUpR                51.4 mm at 0.48  (45 verts, 19 frames)
+          fUpR into hShR                50.8 mm at 0.47  (40 verts, 15 frames)
+          hShL into fUpL                49.9 mm at 0.35  (35 verts, 11 frames)
+          hFtR into hips                45.9 mm at 0.42  (6 verts, 37 frames)
+          hFtL into hips                44.7 mm at 0.28  (5 verts, 28 frames)
+          fLoR into hThR                43.1 mm at 0.30  (47 verts, 25 frames)
+          hShR into fLoR                36.5 mm at 0.37  (33 verts, 20 frames)
+          stretch x15.49 at 0.00 on jaw
+lash      floor clean
+          tg7 into sac                  59.3 mm at 0.67  (13 verts, 76 frames)
+          tg7 into jaw                  54.4 mm at 0.75  (25 verts, 70 frames)
+          tg2 into sac                  49.4 mm at 1.15  (7 verts, 2 frames)
+          hFtR into hips                45.3 mm at 0.93  (3 verts, 101 frames)
+          fLoL into hThL                41.3 mm at 0.82  (17 verts, 100 frames)
+          fLoR into hThR                41.2 mm at 0.85  (27 verts, 52 frames)
+          tg3 into sac                  40.6 mm at 1.15  (8 verts, 1 frames)
+          fUpR into sac                 39.6 mm at 0.68  (31 verts, 77 frames)
+          stretch x19.67 at 0.68 on jaw
+flop      floor clean
+          tg7 into sac                  59.5 mm at 1.48  (12 verts, 130 frames)
+          hFtR into hips                54.9 mm at 1.80  (16 verts, 124 frames)
+          hFtL into hips                49.6 mm at 1.83  (5 verts, 117 frames)
+          fLoL into hThL                35.9 mm at 1.10  (16 verts, 128 frames)
+          fUpR into sac                 34.3 mm at 0.68  (25 verts, 112 frames)
+          fUpL into sac                 32.5 mm at 0.67  (23 verts, 114 frames)
+          fLoR into belly               31.1 mm at 0.45  (58 verts, 77 frames)
+          belly into fLoL               30.6 mm at 0.98  (17 verts, 53 frames)
+          stretch x21.10 at 0.83 on hFtR
+venom     floor clean
+          tg7 into sac                  59.5 mm at 1.85  (15 verts, 157 frames)
+          fLoL into belly               35.2 mm at 1.48  (78 verts, 157 frames)
+          fLoR into belly               34.0 mm at 1.42  (76 verts, 157 frames)
+          fLoL into hThL                32.2 mm at 1.85  (7 verts, 154 frames)
+          fUpR into sac                 27.9 mm at 1.47  (21 verts, 115 frames)
+          fUpL into sac                 27.8 mm at 1.38  (15 verts, 102 frames)
+          hShR into fLoR                21.1 mm at 1.50  (19 verts, 44 frames)
+          hThR into fLoR                20.9 mm at 1.65  (2 verts, 5 frames)
+          stretch x16.34 at 1.50 on jaw
+croak     floor clean
+          tg7 into sac                  59.6 mm at 0.65  (9 verts, 103 frames)
+          fLoL into hThL                29.2 mm at 0.05  (4 verts, 103 frames)
+          fUpR into sac                 29.1 mm at 0.55  (27 verts, 73 frames)
+          fUpL into sac                 27.2 mm at 0.55  (25 verts, 73 frames)
+          fLoR into belly               24.7 mm at 0.32  (37 verts, 103 frames)
+          fLoL into belly               21.0 mm at 0.37  (35 verts, 94 frames)
+          tg7 into jaw                  18.6 mm at 0.55  (10 verts, 103 frames)
+          fLoR into hThR                16.6 mm at 0.47  (13 verts, 61 frames)
+          stretch x8.39 at 0.37 on jaw
+enrage    floor clean
+          tg7 into sac                  59.3 mm at 1.27  (15 verts, 91 frames)
+          fLoL into hThL                37.7 mm at 0.87  (9 verts, 91 frames)
+          sac into chest                35.5 mm at 0.85  (77 verts, 49 frames)
+          fUpR into sac                 32.7 mm at 0.47  (24 verts, 78 frames)
+          fUpL into sac                 29.5 mm at 0.57  (23 verts, 76 frames)
+          fLoR into hThR                29.2 mm at 0.72  (9 verts, 66 frames)
+          sac into fUpR                 26.3 mm at 1.02  (3 verts, 38 frames)
+          chest into sac                25.9 mm at 0.80  (22 verts, 41 frames)
+          snaps: crown 10 deg@0.60 (beside 0)
+          stretch x11.36 at 0.55 on fUpL
+hurt      floor clean
+          tg7 into sac                  59.1 mm at 0.08  (12 verts, 26 frames)
+          fLoL into hThL                28.8 mm at 0.42  (4 verts, 26 frames)
+          fUpR into sac                 21.0 mm at 0.05  (21 verts, 7 frames)
+          tg0 into tg3                  16.2 mm at 0.00  (1 verts, 26 frames)
+          fUpL into sac                 15.1 mm at 0.05  (11 verts, 7 frames)
+          hFtR into hips                13.8 mm at 0.00  (15 verts, 26 frames)
+          tg6 into tg0                  12.5 mm at 0.42  (10 verts, 26 frames)
+          sac into fUpL                 12.4 mm at 0.13  (1 verts, 15 frames)
+          stretch x6.03 at 0.05 on eyeL
+heavyHit  floor clean
+          tg7 into sac                  59.5 mm at 0.82  (12 verts, 76 frames)
+          hFtL into hips                43.3 mm at 0.10  (6 verts, 74 frames)
+          hFtR into hips                42.2 mm at 0.23  (3 verts, 74 frames)
+          fLoL into hThL                38.1 mm at 0.42  (17 verts, 74 frames)
+          hShR into fUpR                35.8 mm at 0.25  (1 verts, 2 frames)
+          hShR into fLoR                34.9 mm at 0.22  (23 verts, 17 frames)
+          fLoR into hThR                30.4 mm at 0.37  (22 verts, 21 frames)
+          fUpR into sac                 27.8 mm at 0.07  (18 verts, 60 frames)
+          stretch x10.63 at 0.10 on hFtL
+spawn     floor clean
+          tg7 into sac                  59.2 mm at 0.47  (12 verts, 91 frames)
+          fLoL into hThL                32.8 mm at 0.48  (6 verts, 91 frames)
+          fLoR into belly               32.0 mm at 0.08  (50 verts, 91 frames)
+          fUpR into sac                 30.3 mm at 0.82  (33 verts, 62 frames)
+          fLoL into belly               28.7 mm at 0.00  (57 verts, 91 frames)
+          fUpL into sac                 28.5 mm at 0.82  (28 verts, 56 frames)
+          fLoR into hShR                18.5 mm at 0.30  (22 verts, 23 frames)
+          fLoR into hThR                18.4 mm at 0.30  (12 verts, 56 frames)
+          stretch x16.49 at 0.30 on jaw
+death     floor weed1 -12mm@1.22, weed2 -9mm@1.22
+          tg7 into sac                  59.6 mm at 0.07  (11 verts, 104 frames)
+          fLoL into hThL                56.2 mm at 1.00  (20 verts, 175 frames)
+          tg2 into sac                  54.6 mm at 1.68  (1 verts, 7 frames)
+          fLoR into hThR                52.3 mm at 1.00  (29 verts, 73 frames)
+          hFtR into hips                49.4 mm at 2.18  (10 verts, 188 frames)
+          hShL into fUpL                48.4 mm at 1.02  (28 verts, 105 frames)
+          hFtL into hips                47.0 mm at 1.80  (8 verts, 168 frames)
+          hShR into fLoR                45.4 mm at 2.72  (24 verts, 134 frames)
+          stretch x15.09 at 0.92 on hFtR

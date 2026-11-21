@@ -1,0 +1,25 @@
+PASS a seat-0 frame carries rally, mark and heal target 3 ([{"kind":"dodge"},{"kind":"rally"},{"kind":"target_cycle"},{"kind":"target_select","index":2}]); any other seat's frame drops them (["dodge"])
+PASS two heal-target presses drained in one tick keep the first ally index
+PASS the session is up: the host on the Archer, the guest on the Healer ([{"role":"host","seat":3},{"role":"guest","seat":0}])
+PASS the guest Healer's Level Select pick starts Level 1 on the host (true)
+  presses: guest frames [2048] host steps ["rally","target_cycle","target_select","rally","target_cycle","target_select"]
+  guest at {"vis":"visible","focus":true,"away":false,"frozen":false,"ownReady":true,"seat":0,"keydowns":6,"gseat":0}
+FAIL the guest Healer's R, Tab and F2 reach the host's sim ([]) []
+PASS the host's tabs mark its own Archer "you" and the guest's Healer with the guest's name (["Guest","AI","AI","you"])
+PASS the host's UI can neither decide nor move the guest's Healer card ({"pick":false,"replace":false,"take":false})
+PASS the guest takes its own Healer card on its own page ({"clicked":true,"dis":false} -> {"phase":"reward","card0":{"seat":0,"type":"skill","id":"warding_aura","swap":false,"substituted":false,"line":null,"spoils":[],"replace":null,"suggest":{"choice":"take","replace":null},"decided":true,"choice":"take","by":"human"}})
+PASS the guest's auto-fill of its own Healer build goes to the host ({"ok":true,"op":"autofill","seat":0}); the host's own call on it is refused (false)
+PASS the guest's "Socket my new nodes" change mid-session reaches the host ([true,false,false,false])
+PASS the guest picks the relic it points at for the party ({"focus":1,"pick":false} -> {"type":"relic_gain","side":null,"relic":"champions_laurel","road":null,"reason":null} of ["brewers_satchel","champions_laurel","ash_feather"])
+PASS the guest points at a door with its own keys and its pick decides the door (host focus 0, guest {"focus":1,"pick":false} -> {"type":"path_chosen","side":1,"relic":null,"road":null,"reason":null})
+PASS the guest leaves the event card for the party ({"phase":"path","left":true})
+PASS the guest Healer buys from its own purse, the run wallet (500 -> 485; {"ok":true,"op":"buy"})
+PASS the host's Advance waits on the guest Healer ({"countdown":true,"leaveTick":5705,"waiting":[0]})
+PASS the guest's Done lets the party leave at once (212 ms), not after the countdown
+PASS the guest's Return to Camp on the end card takes the party to camp (true)
+PASS the guest picks the Kiln's road on the Level IV clear card ({"pick":"kiln","calls":{"chooseRelic":1,"choosePath":1,"chooseEncounter":1,"returnToCamp":1,"pickRoad":1,"levelSkip":1},"log":[{"type":"road_pick","side":null,"relic":null,"road":"kiln","reason":"pick"}]})
+PASS the guest's Enter on the level card sets the party out ({"ok":true,"sent":true}; host calls {"chooseRelic":1,"choosePath":1,"chooseEncounter":1,"returnToCamp":1,"pickRoad":1,"levelSkip":1})
+PASS the party sets out on the Kiln's road (true)
+PASS 0 desyncs over 657 snapshot hash checks
+PASS no page errors on either page
+21/22 checks pass

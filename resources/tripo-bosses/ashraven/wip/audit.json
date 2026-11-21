@@ -1,0 +1,855 @@
+{
+ "idle": {
+  "floor": {},
+  "through": {
+   "head into hackle": {
+    "deep_mm": 27.5,
+    "at": 3.583,
+    "verts": 11,
+    "frames": 44
+   },
+   "hackle into head": {
+    "deep_mm": 18.2,
+    "at": 4.183,
+    "verts": 14,
+    "frames": 162
+   },
+   "shinL into shinR": {
+    "deep_mm": 9.1,
+    "at": 1.1,
+    "verts": 1,
+    "frames": 110
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   8.75,
+   2.633,
+   "hackle"
+  ]
+ },
+ "walk": {
+  "floor": {
+   "footL": [
+    -6.1,
+    0.183
+   ],
+   "footR": [
+    -4.9,
+    0.2
+   ]
+  },
+  "through": {
+   "tail1 into tarsusR": {
+    "deep_mm": 17.6,
+    "at": 0.233,
+    "verts": 8,
+    "frames": 7
+   },
+   "tail1 into tarsusL": {
+    "deep_mm": 16.8,
+    "at": 0.217,
+    "verts": 8,
+    "frames": 6
+   },
+   "shinL into shinR": {
+    "deep_mm": 13.3,
+    "at": 0.3,
+    "verts": 6,
+    "frames": 15
+   },
+   "hackle into head": {
+    "deep_mm": 10.8,
+    "at": 0.4,
+    "verts": 26,
+    "frames": 10
+   },
+   "wingL into tail2": {
+    "deep_mm": 9.8,
+    "at": 0.033,
+    "verts": 7,
+    "frames": 3
+   },
+   "wingR into tail2": {
+    "deep_mm": 9.7,
+    "at": 0.033,
+    "verts": 5,
+    "frames": 3
+   },
+   "head into hackle": {
+    "deep_mm": 8.2,
+    "at": 0.2,
+    "verts": 1,
+    "frames": 2
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   10.05,
+   0.3,
+   "tail1"
+  ]
+ },
+ "turnL": {
+  "floor": {
+   "footL": [
+    -6.1,
+    0.183
+   ],
+   "footR": [
+    -4.9,
+    0.2
+   ]
+  },
+  "through": {
+   "wingL into tail2": {
+    "deep_mm": 17.4,
+    "at": 0.017,
+    "verts": 10,
+    "frames": 4
+   },
+   "shinR into shinL": {
+    "deep_mm": 13.3,
+    "at": 0.383,
+    "verts": 7,
+    "frames": 14
+   },
+   "head into hackle": {
+    "deep_mm": 12.2,
+    "at": 0.217,
+    "verts": 2,
+    "frames": 13
+   },
+   "shinL into shinR": {
+    "deep_mm": 11.3,
+    "at": 0.183,
+    "verts": 13,
+    "frames": 9
+   },
+   "hackle into head": {
+    "deep_mm": 11.0,
+    "at": 0.4,
+    "verts": 31,
+    "frames": 12
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   12.82,
+   0.2,
+   "shinL"
+  ]
+ },
+ "turnR": {
+  "floor": {
+   "footL": [
+    -6.1,
+    0.183
+   ],
+   "footR": [
+    -4.9,
+    0.2
+   ]
+  },
+  "through": {
+   "shinR into shinL": {
+    "deep_mm": 15.9,
+    "at": 0.217,
+    "verts": 5,
+    "frames": 18
+   },
+   "wingR into tail2": {
+    "deep_mm": 12.1,
+    "at": 0.033,
+    "verts": 6,
+    "frames": 4
+   },
+   "head into hackle": {
+    "deep_mm": 11.3,
+    "at": 0.217,
+    "verts": 1,
+    "frames": 11
+   },
+   "hackle into head": {
+    "deep_mm": 10.8,
+    "at": 0.067,
+    "verts": 21,
+    "frames": 11
+   },
+   "shinL into shinR": {
+    "deep_mm": 10.2,
+    "at": 0.033,
+    "verts": 4,
+    "frames": 15
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   9.19,
+   0.183,
+   "shinL"
+  ]
+ },
+ "dive": {
+  "floor": {
+   "footL": [
+    -9.3,
+    0.15
+   ],
+   "footR": [
+    -9.2,
+    0.167
+   ]
+  },
+  "through": {
+   "head into hackle": {
+    "deep_mm": 42.6,
+    "at": 0.65,
+    "verts": 10,
+    "frames": 35
+   },
+   "wingL into head": {
+    "deep_mm": 36.3,
+    "at": 1.5,
+    "verts": 19,
+    "frames": 41
+   },
+   "hackle into head": {
+    "deep_mm": 35.9,
+    "at": 1.217,
+    "verts": 23,
+    "frames": 54
+   },
+   "shinL into shinR": {
+    "deep_mm": 33.3,
+    "at": 0.817,
+    "verts": 21,
+    "frames": 92
+   },
+   "wingL into jaw": {
+    "deep_mm": 33.2,
+    "at": 1.433,
+    "verts": 18,
+    "frames": 20
+   },
+   "jaw into wingL": {
+    "deep_mm": 33.1,
+    "at": 1.45,
+    "verts": 36,
+    "frames": 20
+   },
+   "head into wingL": {
+    "deep_mm": 32.9,
+    "at": 1.433,
+    "verts": 52,
+    "frames": 21
+   },
+   "jaw into hackle": {
+    "deep_mm": 30.4,
+    "at": 1.267,
+    "verts": 2,
+    "frames": 4
+   },
+   "wingR into head": {
+    "deep_mm": 28.6,
+    "at": 0.867,
+    "verts": 30,
+    "frames": 21
+   },
+   "footR into hips": {
+    "deep_mm": 26.6,
+    "at": 0.567,
+    "verts": 25,
+    "frames": 11
+   },
+   "tail1 into tarsusL": {
+    "deep_mm": 26.0,
+    "at": 0.25,
+    "verts": 24,
+    "frames": 33
+   },
+   "jaw into chest": {
+    "deep_mm": 25.9,
+    "at": 0.883,
+    "verts": 60,
+    "frames": 25
+   },
+   "footL into hips": {
+    "deep_mm": 25.2,
+    "at": 0.567,
+    "verts": 20,
+    "frames": 16
+   },
+   "tarsusL into tail2": {
+    "deep_mm": 24.7,
+    "at": 0.667,
+    "verts": 15,
+    "frames": 6
+   },
+   "jaw into neck1": {
+    "deep_mm": 23.6,
+    "at": 1.433,
+    "verts": 19,
+    "frames": 38
+   },
+   "tail1 into tarsusR": {
+    "deep_mm": 23.3,
+    "at": 0.767,
+    "verts": 11,
+    "frames": 33
+   },
+   "tarsusL into tail1": {
+    "deep_mm": 22.4,
+    "at": 0.65,
+    "verts": 40,
+    "frames": 33
+   },
+   "chest into jaw": {
+    "deep_mm": 22.0,
+    "at": 0.883,
+    "verts": 8,
+    "frames": 20
+   },
+   "footR into tail1": {
+    "deep_mm": 21.4,
+    "at": 0.317,
+    "verts": 28,
+    "frames": 18
+   },
+   "tarsusR into tail2": {
+    "deep_mm": 21.4,
+    "at": 0.667,
+    "verts": 13,
+    "frames": 7
+   },
+   "head into wingR": {
+    "deep_mm": 21.3,
+    "at": 0.883,
+    "verts": 47,
+    "frames": 5
+   },
+   "footL into tail1": {
+    "deep_mm": 20.9,
+    "at": 0.283,
+    "verts": 55,
+    "frames": 19
+   },
+   "chest into head": {
+    "deep_mm": 20.8,
+    "at": 1.433,
+    "verts": 6,
+    "frames": 8
+   },
+   "tarsusR into tail1": {
+    "deep_mm": 19.3,
+    "at": 0.633,
+    "verts": 39,
+    "frames": 31
+   },
+   "shinR into shinL": {
+    "deep_mm": 15.8,
+    "at": 0.3,
+    "verts": 11,
+    "frames": 37
+   },
+   "neck1 into jaw": {
+    "deep_mm": 13.9,
+    "at": 1.433,
+    "verts": 5,
+    "frames": 19
+   },
+   "tarsusR into hips": {
+    "deep_mm": 11.7,
+    "at": 0.567,
+    "verts": 3,
+    "frames": 4
+   },
+   "tail1 into footL": {
+    "deep_mm": 11.0,
+    "at": 0.55,
+    "verts": 3,
+    "frames": 17
+   },
+   "hips into tarsusL": {
+    "deep_mm": 10.6,
+    "at": 0.6,
+    "verts": 1,
+    "frames": 1
+   },
+   "tail1 into footR": {
+    "deep_mm": 10.1,
+    "at": 0.55,
+    "verts": 4,
+    "frames": 16
+   },
+   "tarsusL into hips": {
+    "deep_mm": 8.2,
+    "at": 0.583,
+    "verts": 3,
+    "frames": 1
+   }
+  },
+  "snaps": [
+   [
+    24.1,
+    "tail2",
+    0.85,
+    5.2
+   ],
+   [
+    19.3,
+    "fR0",
+    0.85,
+    2.5
+   ],
+   [
+    19.3,
+    "fL0",
+    0.85,
+    2.5
+   ],
+   [
+    18.4,
+    "fR1",
+    0.85,
+    2.0
+   ],
+   [
+    18.4,
+    "fL1",
+    0.85,
+    2.0
+   ],
+   [
+    17.6,
+    "fR2",
+    0.85,
+    1.6
+   ],
+   [
+    17.6,
+    "fL2",
+    0.85,
+    1.6
+   ],
+   [
+    16.8,
+    "fR3",
+    0.85,
+    1.2
+   ],
+   [
+    16.8,
+    "fL3",
+    0.85,
+    1.2
+   ],
+   [
+    15.9,
+    "fR4",
+    0.85,
+    0.7
+   ],
+   [
+    15.9,
+    "fL4",
+    0.85,
+    0.7
+   ],
+   [
+    15.1,
+    "fR5",
+    0.85,
+    0.3
+   ]
+  ],
+  "stretch": [
+   22.65,
+   0.667,
+   "shinL"
+  ]
+ },
+ "gust": {
+  "floor": {},
+  "through": {
+   "wingL into head": {
+    "deep_mm": 38.9,
+    "at": 0.267,
+    "verts": 4,
+    "frames": 29
+   },
+   "wingR into head": {
+    "deep_mm": 38.6,
+    "at": 0.267,
+    "verts": 4,
+    "frames": 24
+   },
+   "jaw into neck1": {
+    "deep_mm": 8.5,
+    "at": 0.667,
+    "verts": 7,
+    "frames": 5
+   },
+   "hackle into head": {
+    "deep_mm": 8.3,
+    "at": 0.733,
+    "verts": 1,
+    "frames": 16
+   },
+   "jaw into chest": {
+    "deep_mm": 8.0,
+    "at": 0.683,
+    "verts": 1,
+    "frames": 1
+   },
+   "head into wingL": {
+    "deep_mm": 6.8,
+    "at": 0.567,
+    "verts": 1,
+    "frames": 2
+   },
+   "shinL into shinR": {
+    "deep_mm": 6.4,
+    "at": 1.1,
+    "verts": 1,
+    "frames": 21
+   },
+   "head into wingR": {
+    "deep_mm": 6.2,
+    "at": 0.567,
+    "verts": 1,
+    "frames": 1
+   }
+  },
+  "snaps": [
+   [
+    11.5,
+    "hackle",
+    0.65,
+    2.9
+   ]
+  ],
+  "stretch": [
+   13.95,
+   0.617,
+   "shinL"
+  ]
+ },
+ "omen": {
+  "floor": {
+   "footL": [
+    -4.1,
+    1.183
+   ]
+  },
+  "through": {
+   "wingL into head": {
+    "deep_mm": 37.3,
+    "at": 1.3,
+    "verts": 8,
+    "frames": 49
+   },
+   "head into hackle": {
+    "deep_mm": 36.8,
+    "at": 1.05,
+    "verts": 2,
+    "frames": 22
+   },
+   "wingR into head": {
+    "deep_mm": 23.8,
+    "at": 1.35,
+    "verts": 9,
+    "frames": 30
+   },
+   "hackle into head": {
+    "deep_mm": 13.1,
+    "at": 0.45,
+    "verts": 29,
+    "frames": 28
+   },
+   "head into wingL": {
+    "deep_mm": 11.0,
+    "at": 1.35,
+    "verts": 6,
+    "frames": 5
+   },
+   "head into wingR": {
+    "deep_mm": 9.9,
+    "at": 1.3,
+    "verts": 8,
+    "frames": 5
+   },
+   "shinL into shinR": {
+    "deep_mm": 6.4,
+    "at": 0.417,
+    "verts": 1,
+    "frames": 47
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   11.46,
+   1.4,
+   "hackle"
+  ]
+ },
+ "enrage": {
+  "floor": {},
+  "through": {
+   "head into hackle": {
+    "deep_mm": 49.6,
+    "at": 1.133,
+    "verts": 16,
+    "frames": 36
+   },
+   "wingL into head": {
+    "deep_mm": 34.2,
+    "at": 1.2,
+    "verts": 1,
+    "frames": 27
+   },
+   "wingR into head": {
+    "deep_mm": 34.1,
+    "at": 1.2,
+    "verts": 2,
+    "frames": 14
+   },
+   "hackle into head": {
+    "deep_mm": 11.6,
+    "at": 1.5,
+    "verts": 28,
+    "frames": 15
+   },
+   "shinL into shinR": {
+    "deep_mm": 6.4,
+    "at": 0.8,
+    "verts": 1,
+    "frames": 24
+   }
+  },
+  "snaps": [
+   [
+    11.9,
+    "tail2",
+    0.6,
+    3.0
+   ]
+  ],
+  "stretch": [
+   13.27,
+   0.567,
+   "shinL"
+  ]
+ },
+ "rageHold": {
+  "floor": {},
+  "through": {
+   "hackle into head": {
+    "deep_mm": 10.9,
+    "at": 0.2,
+    "verts": 25,
+    "frames": 31
+   },
+   "shinL into shinR": {
+    "deep_mm": 6.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 31
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   7.49,
+   0.183,
+   "hackle"
+  ]
+ },
+ "hurt": {
+  "floor": {},
+  "through": {
+   "head into hackle": {
+    "deep_mm": 22.8,
+    "at": 0.217,
+    "verts": 3,
+    "frames": 10
+   },
+   "hackle into head": {
+    "deep_mm": 16.4,
+    "at": 0.2,
+    "verts": 64,
+    "frames": 18
+   },
+   "wingR into tail2": {
+    "deep_mm": 12.4,
+    "at": 0.183,
+    "verts": 10,
+    "frames": 9
+   },
+   "jaw into neck1": {
+    "deep_mm": 9.8,
+    "at": 0.117,
+    "verts": 7,
+    "frames": 9
+   },
+   "shinL into shinR": {
+    "deep_mm": 6.2,
+    "at": 0.0,
+    "verts": 1,
+    "frames": 26
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   9.17,
+   0.217,
+   "hackle"
+  ]
+ },
+ "heavyHit": {
+  "floor": {},
+  "through": {
+   "wingL into head": {
+    "deep_mm": 38.9,
+    "at": 0.1,
+    "verts": 2,
+    "frames": 4
+   },
+   "hackle into head": {
+    "deep_mm": 31.7,
+    "at": 0.233,
+    "verts": 103,
+    "frames": 28
+   },
+   "jaw into neck1": {
+    "deep_mm": 20.1,
+    "at": 0.167,
+    "verts": 40,
+    "frames": 15
+   },
+   "shinR into shinL": {
+    "deep_mm": 18.3,
+    "at": 0.133,
+    "verts": 15,
+    "frames": 30
+   },
+   "neck1 into jaw": {
+    "deep_mm": 10.7,
+    "at": 0.15,
+    "verts": 6,
+    "frames": 7
+   },
+   "shinL into shinR": {
+    "deep_mm": 10.6,
+    "at": 0.05,
+    "verts": 6,
+    "frames": 22
+   },
+   "wingR into head": {
+    "deep_mm": 9.7,
+    "at": 0.117,
+    "verts": 2,
+    "frames": 1
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   11.38,
+   0.25,
+   "hackle"
+  ]
+ },
+ "spawn": {
+  "floor": {},
+  "through": {
+   "hackle into head": {
+    "deep_mm": 15.2,
+    "at": 0.483,
+    "verts": 50,
+    "frames": 36
+   },
+   "shinL into shinR": {
+    "deep_mm": 9.3,
+    "at": 0.767,
+    "verts": 1,
+    "frames": 51
+   },
+   "head into hackle": {
+    "deep_mm": 6.6,
+    "at": 0.65,
+    "verts": 1,
+    "frames": 1
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   11.02,
+   0.567,
+   "hackle"
+  ]
+ },
+ "death": {
+  "floor": {},
+  "through": {
+   "hackle into head": {
+    "deep_mm": 45.3,
+    "at": 1.2,
+    "verts": 182,
+    "frames": 85
+   },
+   "head into hackle": {
+    "deep_mm": 41.5,
+    "at": 1.767,
+    "verts": 12,
+    "frames": 116
+   },
+   "wingR into head": {
+    "deep_mm": 35.0,
+    "at": 0.683,
+    "verts": 1,
+    "frames": 23
+   },
+   "wingL into head": {
+    "deep_mm": 33.4,
+    "at": 0.65,
+    "verts": 2,
+    "frames": 28
+   },
+   "footR into thighR": {
+    "deep_mm": 30.8,
+    "at": 1.0,
+    "verts": 10,
+    "frames": 101
+   },
+   "footL into thighL": {
+    "deep_mm": 21.2,
+    "at": 2.6,
+    "verts": 9,
+    "frames": 99
+   },
+   "shinL into shinR": {
+    "deep_mm": 20.6,
+    "at": 0.617,
+    "verts": 11,
+    "frames": 157
+   },
+   "jaw into neck1": {
+    "deep_mm": 8.2,
+    "at": 0.083,
+    "verts": 4,
+    "frames": 3
+   },
+   "shinR into shinL": {
+    "deep_mm": 6.3,
+    "at": 0.233,
+    "verts": 2,
+    "frames": 5
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   16.6,
+   1.0,
+   "shinL"
+  ]
+ }
+}

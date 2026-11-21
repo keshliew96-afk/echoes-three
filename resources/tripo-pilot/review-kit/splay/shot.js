@@ -1,0 +1,10 @@
+const {chromium}=require('playwright');const fs=require('fs'),path=require('path');
+const types={'.json':'application/json','.js':'text/javascript','.html':'text/html','.glb':'model/gltf-binary','.png':'image/png','.jpg':'image/jpeg'};
+(async()=>{const b=await chromium.launch({args:['--use-gl=angle','--use-angle=swiftshader','--enable-unsafe-swiftshader']});
+const w=+(process.env.W||1200),h=+(process.env.H||600);
+const p=await b.newPage({viewport:{width:w,height:h}});
+await p.route('http://local.test/**',async r=>{const u=new URL(r.request().url());const f=path.join(__dirname,decodeURIComponent(u.pathname));
+ if(!fs.existsSync(f))return r.fulfill({status:404,body:''});r.fulfill({status:200,contentType:types[path.extname(f)]||'application/octet-stream',body:fs.readFileSync(f)});});
+p.on('console',m=>console.log('console:',m.text()));p.on('pageerror',e=>console.log('err:',e.message));
+await p.goto('http://local.test/'+process.argv[2]);await p.waitForFunction('window.done',null,{timeout:+(process.env.T||120000)});
+await p.screenshot({path:process.argv[3]});await b.close();})();

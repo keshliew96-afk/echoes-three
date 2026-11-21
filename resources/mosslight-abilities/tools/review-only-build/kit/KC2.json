@@ -1,0 +1,60 @@
+[
+ {
+  "key": null,
+  "aim": [
+   3,
+   0
+  ],
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C2",
+  "slots": [
+   "lantern_flurry",
+   "pale_lance"
+  ],
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    4.6,
+    1.7
+   ],
+   [
+    4.6,
+    -1.5
+   ]
+  ],
+  "secs": 6.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(400-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    0.55,
+    "key",
+    "e"
+   ]
+  ],
+  "cap": "Combo \u00b7 Scatter Seeds, then Rootspear through the seeds at once: every seed in the row sprouts into a Spitter without waiting its 1 s",
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}"
+ }
+]

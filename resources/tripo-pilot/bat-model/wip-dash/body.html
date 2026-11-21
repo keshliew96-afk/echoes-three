@@ -1,0 +1,105 @@
+<div class="wrap">
+  <div>
+    <h1>Bat Duskwing from Tripo, rigged</h1>
+    <p class="lede">Your Tripo bat, rigged and given a small hunter's moves. He has no weapon: he rakes with the claws at his wrists, strikes with his wings and bites. Every claw attack leaves torn scratch marks and the bite leaves a bite mark, in the style of your picture. Pick one move or combine several, and drag to turn him. Nothing in the game has changed.</p>
+  </div>
+
+  <div class="bench">
+    <section class="pane">
+      <header><h2>Tripo model</h2><span class="tag" id="clipname">idle</span></header>
+      <div class="stage"><canvas id="cv"></canvas><div class="load" id="load">Loading the model…</div><div class="hint">Drag to turn · scroll to zoom</div></div>
+      <div class="controls">
+        <div class="row" id="clips"><span class="lab">Move</span></div>
+        <div class="row" id="dirs"><span class="lab">Going</span></div>
+        <div class="row" id="acts"><span class="lab">Action</span></div>
+        <p class="layers" id="layers" aria-live="polite"></p>
+        <p class="rule">Pick more than one. Idle, Walk or Run sets the legs, and Going sets which way he walks, runs or dashes while he keeps facing the same way. Add one Action for the upper body, and Hurt on top. Tap attack plays one hit per press: press again after a hit lands to chain hits 1 to 6. Dash and Downed use the whole body, so they play alone. Press Downed again to revive him. Hit feel adds the freeze, the kick, the camera shake, the claw and bite marks and the dust; switch it off to see the bare moves. Dusk Rose marks swaps the red of your picture for his own colour in the game.</p>
+        <div class="row" id="speeds"><span class="lab">Speed</span></div>
+        <div class="row" id="views"><span class="lab">View</span></div>
+        <div class="row"><span class="lab">Show</span>
+          <button id="feel" aria-pressed="true">Hit feel</button>
+          <button id="bones" aria-pressed="false">Bones</button>
+          <button id="rose" aria-pressed="false">Dusk Rose marks</button>
+          <button id="pause" aria-pressed="false">Pause</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="pane">
+      <header><h2>Model as you sent it</h2><span class="tag">four views</span></header>
+      <div class="cur"><img src="bat-views.png" alt="The Tripo bat from the front, right, back and left, before rigging" style="width:100%;height:100%;object-fit:contain;display:block"></div>
+      <p class="note" style="padding-top:12px">The body is exactly as you sent it: nothing was thinned. The wings hang folded from his arms, as they came.</p>
+    </section>
+  </div>
+
+    <dl class="facts">
+    <div><dt>Triangles</dt><dd>14,608 <small>body only, as it came · budget 15,000</small></dd></div>
+    <div><dt>Bones</dt><dd>19 <small>spine, head, two ears, legs, and in each wing an upper arm, a forearm and two wing bones</small></dd></div>
+    <div><dt>Textures</dt><dd>1 × 2K <small>colour only</small></dd></div>
+    <div><dt>File</dt><dd>1.8 MB <small>one GLB with all 28 moves at 60 frames a second</small></dd></div>
+    <div><dt>Moves</dt><dd>31 <small>idle, 4 walks, 4 runs, 4 dashes, claw combo and its 6 hits, 4 casts, dusk dive, downed (fall, sit, shuffle, revive), hurt, wave</small></dd></div>
+  </dl>
+
+  <h2>The body and the wings</h2>
+  <div class="audit"><table>
+    <thead><tr><th>Part</th><th>As it came</th><th>What was done</th></tr></thead>
+    <tbody>
+      <tr><td>Body</td><td>14,608 triangles, one piece, sound. Ears, fangs, the fur ruff, the pendant and every wing finger came out whole</td><td>kept as it is, inside the 15,000 budget with no weapon to add</td></tr>
+      <tr><td>Wings</td><td>folded: each hangs down from the wrist like a closed fan, its finger tips against his side</td><td>four bones a side: upper arm, forearm, and two down the wing. The wing swings out from his side like a fan and lifts with the arm, so it can spread, sweep and wrap round him. It cannot truly unfold: the fingers stay as close together as they came</td></tr>
+      <tr><td>Ears</td><td>part of the head</td><td>one bone each. They trail every move and flick when he stops, and they are keyed: pricked forward before a strike, flat back in it</td></tr>
+      <tr><td>Fur ruff, pendant, tail nub</td><td>part of the body</td><td>move with his chest and hips; they have no bones of their own</td></tr>
+      <tr><td>Weapon</td><td>none</td><td>none. The claws are the thumb claws at his wrists</td></tr>
+    </tbody></table></div>
+
+  <h2>His moves</h2>
+  <p class="note"><strong>The rule for all of it:</strong> a small hunter: still, then sudden. He folds in tight before every move and bursts out of it. The wings are his cloak when he waits and his blades when he strikes, and the ears tell his mood.</p>
+  <p class="note"><strong>Idle.</strong> Alert and never quite still: he breathes, shrugs his wings up like a cloak and lets them settle, tilts his head to listen and flicks one ear, then the other.</p>
+  <p class="note"><strong>Walk and run.</strong> The walk is a quick bouncing waddle on tiny feet with the wings swinging like a cloak. In the run he pitches forward with the wings half open and swept back, beating once a stride as if about to take off.</p>
+  <p class="note"><strong>Claw combo, six hits in the same 1.35 seconds: rake, rake, bite, then three backstabs.</strong> Hit 1 (0.10 s): the right wing claw rakes down across his front and leaves three torn scratches. Hit 2 (0.24 s): the left claw rakes back the other way, so the two sets of scratches cross. Hit 3 (0.46 s): he rears up with both wings flared and snaps forward jaws first; two rows of torn tooth marks close on each other. Hits 4, 5 and 6 each have a blink of their own. He wraps himself in his wings, breaks into small bats (0.50 s) and comes out of the dark at the foe nearest the mouse; on this page the far post stands for that foe. Hit 4 (0.62 s) is the right claw. He blinks again (0.66 s) and hit 5 (0.78 s) is the left claw; he blinks a third time (0.83 s) and for hit 6 (0.96 s) he rears and drives both claws down together, which leaves two crossed sets of four cuts. Each blink goes to the foe nearest the mouse at that moment. When that is the same foe, as it is here, he comes out on a different side of it each time: behind it, then at one flank, then at the other, each a third of a turn apart and always facing it. He is gone for 0.06 seconds in each blink. After hit 6 he blinks home (1.04 s) and is back where he stood at 1.10 s. With Tap attack each press plays the next hit: hits 4, 5 and 6 each blink him out to their own side and bring him home if no press follows in time.</p>
+  <p class="note"><strong>Casts.</strong> <em>Screech</em> (0.42 s): he draws his wings in and leans back to fill his chest, then throws his head forward with the wings flung back and his ears flat, and rings of sound leave his mouth; for echo screech and bat swarm. <em>Nightfall</em> (0.60 s): he wraps both wings across himself and curls small, then throws them wide and high and the dark opens round him; for nightfall, shadow veil and blood moon. <em>Bloodbite</em> (0.44 s): the deep bite: he rears, lunges further than in the combo, clamps and shakes his head, then tears away to one side; a bigger bite mark, and a thread of rose is drawn from it back to his mouth. <em>Talon rake</em> (0.42 s): both wings wound back to his right, then his whole body whips round with the wings out flat; four long scratches. <em>Dusk dive</em> (0.56 s): he crouches, springs up with his wings thrown high, hangs spread for a beat and drops with both wings slammed down; this also stands for flit.</p>
+  <p class="note"><strong>Dash and downed.</strong> The dash is a blink, the fastest dash of all the heroes. He wraps himself in his wings and breaks into thirteen small bats that scatter (0.05 s); they stream to the spot and gather into him again (0.17 s), and he lands with his wings thrown open. The blink itself takes 0.12 s. When downed he sits down in a heap with his wings fallen round him, head hung and ears flat, and shuffles along on his seat.</p>
+  <p class="note"><strong>The marks.</strong> Each scratch is a tapered, ragged strip drawn three times: a pale torn rim, the colour, and a darker core, like the cuts in your picture. It tears open along its length in under a tenth of a second, holds, and fades by 0.6 s. The marks always face the camera and hang where the target would be, since the page has no enemies. The combo rakes leave three scratches, the talon rake four longer ones. The bite is two rows of tooth cuts with longer fangs that snap shut on each other. They are flat colour with no glow. They are red as in your picture; the Dusk Rose marks button shows the same marks in his own game colours (Dusk Rose with a Dusk Plum core and a Pale Moon rim), because the game keeps crimson for enemy attacks and the fox. Both are there for you to choose. The casts use his game colours: Pale Moon and Dusk Rose rings for the screech, a Dusk Plum ring and motes for nightfall, Wing Leather dust.</p>
+
+  <h2>Measured, 13 November</h2>
+  <p class="note">Every vertex of the model was placed in every frame of all 28 moves (60 a second) and the true gaps between parts were taken; smoothness was scored per bone; and every move was looked at as still frames from the front and the side. The cloud machine cannot play it at full speed, so timing, weight and feel are yours to judge.</p>
+  <div class="audit"><table>
+    <thead><tr><th>Smallest gap in any frame of any move</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td>Wing to his head</td><td>7.1 cm (combo hit 5, the left claw's wind-up)</td></tr>
+      <tr><td>Wing to his ear</td><td>9.9 cm (talon rake cast)</td></tr>
+      <tr><td>Wing to his belly</td><td>18.3 cm from the firm part of his trunk (the wing hangs 19.5 cm off as it came)</td></tr>
+      <tr><td>Wing to his legs</td><td>4.8 cm (hit 6, just after the blow). The first pass of the six-hit combo brought the wings to 0.1 cm from his legs as he wrapped up; the claws now rebound open before he wraps</td></tr>
+      <tr><td>Wing to wing</td><td>19.8 cm at the closest (combo hit 6): they never cross</td></tr>
+      <tr><td>Arm to his head</td><td>15.4 cm</td></tr>
+      <tr><td>Wing tips under the floor</td><td>0.7 cm at most (combo hit 5); they rest on the floor when he sits</td></tr>
+      <tr><td>Toes under the floor</td><td>1.2 cm at most, on the hard lunges: look at this one</td></tr>
+      <tr><td>Smoothness</td><td>137 jerk frames, 12 dead stops, 0 loop pops across all moves (the passed Hare: 226, 20, 0). The six-hit combo is the sharpest move, on purpose</td></tr>
+      <tr><td>Page tests</td><td>tap attack chains hits 1 to 6 and wraps; he stands at a different side of the post for each of hits 4, 5 and 6; a chain dropped after hit 4 brings him home; all four casts and the dive leave their marks or rings; dash cuts the combo, a cast and the dive off; no page errors</td></tr>
+    </tbody></table></div>
+
+
+  <div class="cols">
+    <div>
+      <h2>What works</h2>
+      <ul>
+        <li>The wings spread, sweep and wrap from the folded shape they came in, and the membrane holds together.</li>
+        <li>The four casts and the dive cover his 11 skills in the game.</li>
+        <li>The ears and wing tips trail every move and settle after he stops.</li>
+        <li>The claw and bite marks read from the game camera and from close up.</li>
+      </ul>
+    </div>
+    <div>
+      <h2 class="rough">What is rough</h2>
+      <ul>
+        <li>The wings cannot unfold. Spread wide they are a narrow fan, not a full bat wing. A model made with the wings open would spread properly but would not fold as neatly.</li>
+        <li>The combo's marks sit on two practice posts; the cast marks hang at a fixed reach because the page has no enemies. In the game they would sit on the enemy that was hit. They are a new effect compared with the game today and need your go before they enter it.</li>
+        <li>His legs are very short, so steps are small and the lunge comes from his body, not his feet.</li>
+        <li>His mouth does not open: the bite is a head snap and the mark does the rest.</li>
+        <li>The fur ruff, the pendant and the tail nub are stiff.</li>
+        <li>His feet can slide while he walks, the moves play in place (the dive does not carry him forward), and he has no ink outline or flat game colours yet.</li>
+        <li>The six-hit combo with its three blinks round the foe and the blink dash are new compared with the game today. They need your go and the freeze lifted before they enter it.</li>
+        <li>I only saw stills and per-frame numbers. Speed, weight and how the marks feel are yours to judge.</li>
+      </ul>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,641 @@
+{
+ "idle": {
+  "floor": {},
+  "through": {
+   "jaw into neck1": {
+    "deep_mm": 14.8,
+    "at": 5.25,
+    "verts": 7,
+    "frames": 60
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   6.04,
+   5.1,
+   "neck1"
+  ]
+ },
+ "walk": {
+  "floor": {
+   "hHoofL": [
+    -4.6,
+    0.067
+   ],
+   "hHoofR": [
+    -4.2,
+    0.417
+   ]
+  },
+  "through": {
+   "jaw into neck1": {
+    "deep_mm": 14.6,
+    "at": 0.2,
+    "verts": 7,
+    "frames": 43
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   6.22,
+   0.583,
+   "hShinR"
+  ]
+ },
+ "turnL": {
+  "floor": {
+   "hHoofL": [
+    -4.6,
+    0.083
+   ],
+   "hHoofR": [
+    -4.2,
+    0.433
+   ]
+  },
+  "through": {
+   "jaw into neck1": {
+    "deep_mm": 16.7,
+    "at": 0.7,
+    "verts": 4,
+    "frames": 43
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   6.02,
+   0.55,
+   "hShinR"
+  ]
+ },
+ "turnR": {
+  "floor": {
+   "hHoofL": [
+    -4.6,
+    0.083
+   ],
+   "hHoofR": [
+    -4.2,
+    0.433
+   ]
+  },
+  "through": {
+   "jaw into neck1": {
+    "deep_mm": 11.6,
+    "at": 0.7,
+    "verts": 4,
+    "frames": 43
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   6.02,
+   0.567,
+   "hShinR"
+  ]
+ },
+ "rush": {
+  "floor": {
+   "head": [
+    -28.5,
+    2.05
+   ],
+   "fHoofL": [
+    -9.4,
+    1.583
+   ],
+   "fHoofR": [
+    -9.3,
+    1.583
+   ],
+   "hHoofL": [
+    -6.1,
+    0.917
+   ],
+   "hHoofR": [
+    -5.8,
+    0.917
+   ],
+   "fCannonL": [
+    -4.7,
+    2.8
+   ]
+  },
+  "through": {
+   "chest into fCannonL": {
+    "deep_mm": 27.1,
+    "at": 1.517,
+    "verts": 2,
+    "frames": 1
+   },
+   "fHoofR into hCannonR": {
+    "deep_mm": 24.8,
+    "at": 1.067,
+    "verts": 22,
+    "frames": 5
+   },
+   "hHoofR into fHoofR": {
+    "deep_mm": 23.0,
+    "at": 1.033,
+    "verts": 5,
+    "frames": 7
+   },
+   "fHoofL into hCannonL": {
+    "deep_mm": 22.9,
+    "at": 1.267,
+    "verts": 11,
+    "frames": 4
+   },
+   "chest into head": {
+    "deep_mm": 22.6,
+    "at": 1.6,
+    "verts": 50,
+    "frames": 161
+   },
+   "fHoofR into hHoofR": {
+    "deep_mm": 22.2,
+    "at": 1.067,
+    "verts": 19,
+    "frames": 6
+   },
+   "chest into hShinR": {
+    "deep_mm": 20.9,
+    "at": 2.35,
+    "verts": 16,
+    "frames": 73
+   },
+   "chest into jaw": {
+    "deep_mm": 20.2,
+    "at": 0.333,
+    "verts": 23,
+    "frames": 36
+   },
+   "heart into head": {
+    "deep_mm": 20.2,
+    "at": 0.867,
+    "verts": 4,
+    "frames": 145
+   },
+   "head into chest": {
+    "deep_mm": 19.1,
+    "at": 1.467,
+    "verts": 62,
+    "frames": 155
+   },
+   "fHoofL into hHoofL": {
+    "deep_mm": 17.8,
+    "at": 1.267,
+    "verts": 13,
+    "frames": 4
+   },
+   "hHoofL into fHoofL": {
+    "deep_mm": 17.4,
+    "at": 1.283,
+    "verts": 45,
+    "frames": 4
+   },
+   "jaw into neck1": {
+    "deep_mm": 17.1,
+    "at": 3.167,
+    "verts": 4,
+    "frames": 134
+   },
+   "jaw into chest": {
+    "deep_mm": 15.4,
+    "at": 0.267,
+    "verts": 53,
+    "frames": 28
+   },
+   "chest into hShinL": {
+    "deep_mm": 15.4,
+    "at": 2.133,
+    "verts": 12,
+    "frames": 73
+   },
+   "heart into jaw": {
+    "deep_mm": 13.7,
+    "at": 0.9,
+    "verts": 7,
+    "frames": 5
+   },
+   "jaw into heart": {
+    "deep_mm": 13.3,
+    "at": 0.9,
+    "verts": 4,
+    "frames": 5
+   },
+   "chest into fCannonR": {
+    "deep_mm": 13.2,
+    "at": 2.25,
+    "verts": 2,
+    "frames": 15
+   },
+   "hHoofR into fCannonR": {
+    "deep_mm": 8.9,
+    "at": 1.05,
+    "verts": 4,
+    "frames": 1
+   },
+   "fCannonL into chest": {
+    "deep_mm": 7.0,
+    "at": 2.183,
+    "verts": 1,
+    "frames": 13
+   },
+   "fCannonR into hHoofR": {
+    "deep_mm": 6.7,
+    "at": 1.05,
+    "verts": 1,
+    "frames": 1
+   },
+   "hCannonR into fHoofR": {
+    "deep_mm": 6.5,
+    "at": 1.067,
+    "verts": 1,
+    "frames": 1
+   }
+  },
+  "snaps": [
+   [
+    33.5,
+    "fUpperL",
+    1.533,
+    4.0
+   ],
+   [
+    26.4,
+    "fUpperL",
+    1.5,
+    4.0
+   ],
+   [
+    22.2,
+    "fForeL",
+    0.867,
+    0.5
+   ],
+   [
+    15.1,
+    "fCannonR",
+    0.867,
+    1.7
+   ],
+   [
+    13.1,
+    "fCannonL",
+    0.9,
+    3.4
+   ],
+   [
+    10.6,
+    "hCannonL",
+    1.117,
+    2.7
+   ],
+   [
+    10.4,
+    "hCannonL",
+    1.333,
+    2.5
+   ]
+  ],
+  "stretch": [
+   9.34,
+   0.9,
+   "neck1"
+  ]
+ },
+ "call": {
+  "floor": {
+   "fHoofL": [
+    -9.5,
+    0.35
+   ]
+  },
+  "through": {
+   "jaw into neck1": {
+    "deep_mm": 9.1,
+    "at": 0.883,
+    "verts": 3,
+    "frames": 3
+   }
+  },
+  "snaps": [
+   [
+    13.5,
+    "tail1",
+    0.517,
+    1.5
+   ],
+   [
+    11.2,
+    "tail1",
+    0.55,
+    2.8
+   ]
+  ],
+  "stretch": [
+   6.93,
+   0.583,
+   "neck1"
+  ]
+ },
+ "enrage": {
+  "floor": {
+   "fHoofR": [
+    -8.3,
+    1.2
+   ],
+   "fHoofL": [
+    -7.8,
+    1.2
+   ]
+  },
+  "through": {
+   "heart into head": {
+    "deep_mm": 20.6,
+    "at": 0.267,
+    "verts": 8,
+    "frames": 20
+   },
+   "chest into jaw": {
+    "deep_mm": 20.5,
+    "at": 0.233,
+    "verts": 34,
+    "frames": 7
+   },
+   "head into chest": {
+    "deep_mm": 19.0,
+    "at": 0.45,
+    "verts": 55,
+    "frames": 22
+   },
+   "chest into head": {
+    "deep_mm": 18.9,
+    "at": 0.567,
+    "verts": 71,
+    "frames": 28
+   },
+   "jaw into chest": {
+    "deep_mm": 17.7,
+    "at": 0.233,
+    "verts": 32,
+    "frames": 8
+   },
+   "jaw into neck1": {
+    "deep_mm": 14.2,
+    "at": 0.067,
+    "verts": 7,
+    "frames": 13
+   },
+   "jaw into heart": {
+    "deep_mm": 7.6,
+    "at": 0.567,
+    "verts": 2,
+    "frames": 5
+   }
+  },
+  "snaps": [
+   [
+    9.5,
+    "fHoofR",
+    0.95,
+    1.2
+   ]
+  ],
+  "stretch": [
+   8.0,
+   0.567,
+   "neck1"
+  ]
+ },
+ "block": {
+  "floor": {},
+  "through": {
+   "chest into head": {
+    "deep_mm": 19.2,
+    "at": 0.033,
+    "verts": 6,
+    "frames": 3
+   },
+   "jaw into neck1": {
+    "deep_mm": 14.4,
+    "at": 0.3,
+    "verts": 3,
+    "frames": 19
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   4.94,
+   0.033,
+   "neck1"
+  ]
+ },
+ "hurt": {
+  "floor": {},
+  "through": {
+   "jaw into neck1": {
+    "deep_mm": 15.7,
+    "at": 0.083,
+    "verts": 4,
+    "frames": 12
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   3.91,
+   0.05,
+   "neck1"
+  ]
+ },
+ "heavyHit": {
+  "floor": {
+   "fHoofL": [
+    -4.5,
+    0.1
+   ]
+  },
+  "through": {
+   "jaw into neck1": {
+    "deep_mm": 26.2,
+    "at": 0.067,
+    "verts": 16,
+    "frames": 50
+   },
+   "chest into head": {
+    "deep_mm": 19.2,
+    "at": 0.4,
+    "verts": 6,
+    "frames": 8
+   },
+   "chest into jaw": {
+    "deep_mm": 15.0,
+    "at": 0.433,
+    "verts": 16,
+    "frames": 3
+   },
+   "jaw into chest": {
+    "deep_mm": 13.7,
+    "at": 0.45,
+    "verts": 7,
+    "frames": 4
+   }
+  },
+  "snaps": [
+   [
+    17.6,
+    "fCannonR",
+    0.05,
+    1.0
+   ]
+  ],
+  "stretch": [
+   6.43,
+   0.2,
+   "hShinR"
+  ]
+ },
+ "spawn": {
+  "floor": {
+   "fHoofR": [
+    -8.3,
+    0.867
+   ],
+   "fHoofL": [
+    -7.8,
+    0.867
+   ]
+  },
+  "through": {
+   "chest into head": {
+    "deep_mm": 33.1,
+    "at": 0.167,
+    "verts": 102,
+    "frames": 32
+   },
+   "heart into head": {
+    "deep_mm": 23.0,
+    "at": 0.167,
+    "verts": 2,
+    "frames": 20
+   },
+   "heart into jaw": {
+    "deep_mm": 22.0,
+    "at": 0.117,
+    "verts": 11,
+    "frames": 15
+   },
+   "jaw into chest": {
+    "deep_mm": 18.6,
+    "at": 0.383,
+    "verts": 57,
+    "frames": 12
+   },
+   "jaw into heart": {
+    "deep_mm": 18.1,
+    "at": 0.117,
+    "verts": 31,
+    "frames": 14
+   },
+   "chest into jaw": {
+    "deep_mm": 17.9,
+    "at": 0.467,
+    "verts": 14,
+    "frames": 11
+   },
+   "head into chest": {
+    "deep_mm": 17.2,
+    "at": 0.267,
+    "verts": 67,
+    "frames": 25
+   },
+   "jaw into neck1": {
+    "deep_mm": 13.6,
+    "at": 0.533,
+    "verts": 5,
+    "frames": 11
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   8.02,
+   0.0,
+   "neck1"
+  ]
+ },
+ "death": {
+  "floor": {
+   "hHoofR": [
+    -8.3,
+    1.317
+   ],
+   "fHoofR": [
+    -5.1,
+    1.25
+   ]
+  },
+  "through": {
+   "chest into head": {
+    "deep_mm": 28.0,
+    "at": 1.483,
+    "verts": 29,
+    "frames": 36
+   },
+   "head into chest": {
+    "deep_mm": 24.9,
+    "at": 1.383,
+    "verts": 42,
+    "frames": 36
+   },
+   "jaw into neck1": {
+    "deep_mm": 20.2,
+    "at": 2.35,
+    "verts": 13,
+    "frames": 144
+   },
+   "chest into fHoofR": {
+    "deep_mm": 18.7,
+    "at": 0.817,
+    "verts": 4,
+    "frames": 7
+   },
+   "fHoofR into fHoofL": {
+    "deep_mm": 16.1,
+    "at": 1.033,
+    "verts": 3,
+    "frames": 3
+   },
+   "fCannonR into fHoofL": {
+    "deep_mm": 14.5,
+    "at": 1.067,
+    "verts": 1,
+    "frames": 2
+   },
+   "hips into hCannonR": {
+    "deep_mm": 9.3,
+    "at": 1.017,
+    "verts": 3,
+    "frames": 6
+   },
+   "hShinL into hShinR": {
+    "deep_mm": 6.5,
+    "at": 1.083,
+    "verts": 2,
+    "frames": 1
+   },
+   "hCannonR into hShinL": {
+    "deep_mm": 6.0,
+    "at": 1.1,
+    "verts": 2,
+    "frames": 1
+   }
+  },
+  "snaps": [],
+  "stretch": [
+   8.34,
+   0.983,
+   "hShinR"
+  ]
+ }
+}

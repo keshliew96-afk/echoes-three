@@ -1,0 +1,19 @@
+{
+"01-mosslight-dewfall": "Mosslight · Dewfall: ground circle (radius 1.5 u) inside its 4 u reach",
+"02-mosslight-guardian-bond": "Mosslight · Guardian Bond: ally pick, 3.4 u reach; green rings on the two it will heal",
+"03-mosslight-pale-lance": "Mosslight · Pale Lance: line, 6 u, through up to 3 foes",
+"04-stonehide-shoulder-charge": "Stonehide · Shoulder Charge: dash up to 2.4 u, then the cone",
+"05-stonehide-brutal-cleave": "Stonehide · Brutal Cleave: cone, reach 0.95 u, half-angle 80°",
+"06-stonehide-ground-crack-cooldown": "Stonehide · Ground Crack on cooldown: the same circle in Bone grey",
+"07-ashfang-crescent-finisher": "Ashfang · Crescent Finisher: cone, reach 1 u, half-angle 70°",
+"08-ashfang-moonfang": "Ashfang · Moonfang: dash up to 3.2 u, then the cone",
+"09-windbriar-volley": "Windbriar · Volley: three bolts 12° apart, 4.8 u",
+"10-windbriar-vault-shot": "Windbriar · Vault Shot: the shot, plus the 1.6 u hop back",
+"11-windbriar-rain-of-arrows": "Windbriar · Rain of Arrows: ground circle (1.4 u) inside 5 u",
+"12-tidecaller-maelstrom": "Tidecaller · Maelstrom: pull from 3 u, burst 1.6 u a second later",
+"13-tidecaller-ripple-step": "Tidecaller · Ripple Step: hop 2.6 u away from the pointer, pool where it began",
+"14-bellwright-hang-bell": "Bellwright · Hang Bell: ground circle with the bell, inside 4 u",
+"15-bellwright-peal": "Bellwright · Peal with two bells hung: a ring round each bell",
+"16-duskwing-dusk-dive": "Duskwing · Dusk Dive: dive up to 3.6 u, then the ring; here the foes are close, so the dive stops short (the game's own stop rule)",
+"17-duskwing-echo-screech": "Duskwing · Echo Screech: long narrow cone, 2.6 u, half-angle 35°"
+}

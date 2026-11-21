@@ -1,0 +1,9 @@
+idle          {"dur":20,"frames":1201,"slide_mm":0,"slideAt":"","reach_mm":3.6,"reachAt":"HL@11.92","lowest":-0.0015,"loAt":"tail2@5.00","under":0,"loopPopDeg":0}
+walk          {"dur":1,"frames":61,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.001,"loAt":"tail2@0.00","under":0,"loopPopDeg":0}
+turnL         {"dur":1,"frames":61,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.001,"loAt":"tail2@0.00","under":0,"loopPopDeg":0}
+turnR         {"dur":1,"frames":61,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.001,"loAt":"tail2@0.00","under":0,"loopPopDeg":0}
+talk          {"dur":6.283333333333333,"frames":378,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":-0.0015,"loAt":"tail2@5.50","under":0,"loopPopDeg":0}
+hurt          {"dur":0.4,"frames":25,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.001,"loAt":"tail2@0.00","under":0,"loopPopDeg":0}
+spawn         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.001,"loAt":"tail2@0.00","under":0,"loopPopDeg":0}
+death         {"dur":0.5,"frames":31,"slide_mm":0,"slideAt":"","reach_mm":0,"reachAt":"","lowest":0.001,"loAt":"tail2@0.00","under":0,"loopPopDeg":0}
+wrote quill.glb 1.99 MB

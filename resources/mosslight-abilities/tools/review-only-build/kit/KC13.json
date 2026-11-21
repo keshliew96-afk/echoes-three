@@ -1,0 +1,60 @@
+[
+ {
+  "key": null,
+  "pin": true,
+  "fps": 15,
+  "pre": 0.25,
+  "name": "kit_C13",
+  "aim": [
+   0,
+   -3.6
+  ],
+  "slots": [
+   "lantern_flurry",
+   "bell_toll"
+  ],
+  "allies": [
+   [
+    -3.2,
+    2.6,
+    1
+   ],
+   [
+    -1.4,
+    3.0,
+    1
+   ],
+   [
+    3.2,
+    2.6,
+    1
+   ]
+  ],
+  "dummies": [
+   [
+    -0.5,
+    -3.6
+   ],
+   [
+    0.5,
+    -3.6
+   ]
+  ],
+  "setup": "for(const e of w.entities()) if((e.kind||e.type)==='dummy'){e.maxHp=400;e.hp=400;}",
+  "seq": [
+   [
+    0.3,
+    "key",
+    "q"
+   ],
+   [
+    0.5,
+    "key",
+    "e"
+   ]
+  ],
+  "secs": 5.0,
+  "live": "(()=>{const w=window.__echoes.content.world();return 'dummies '+w.entities().filter(e=>e.kind==='dummy').sort((a,b)=>a.id-b.id).map(e=>Math.round(e.maxHp-e.hp)).join(' \u00b7 ')+' damage';})()",
+  "cap": "C13 \u00b7 Scatter Seeds, then Wispfall wakes them"
+ }
+]
